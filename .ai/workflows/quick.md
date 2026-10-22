@@ -237,6 +237,7 @@ If the plan is missing, stop with: "phase-preparer failed to create ${QUICK_ID}-
 - Create/reuse/read back issues; update each owning PLAN's Threat ID link and
   keep its six-column register in place. Retain Pending dependencies.
 - Run in ordinary quick and quick-validate, outside check_plan; continue independent work.
+- Use the [consolidated security checklist](../templates/issues/security-risk-consolidated.md) for consolidated risks.
 </step>
 
 <step name="check_plan">
@@ -412,7 +413,7 @@ and the verification you actually ran
 
 > **ORCHESTRATOR RULE**: wait for the subagent. Do not edit code while it runs.
 
-After the coder returns, read `${QUICK_DIR}/${QUICK_ID}-SUMMARY.md`. A returned
+After the coder returns, read `${QUICK_DIR}/${QUICK_ID}-SUMMARY.md`.
 A coder assigned source-changing work who returns `complete` without the required
 summary file and owned commits is blocked. Read-only specialists complete with
 their assigned cited report fields and do not create commits or summaries.
@@ -437,6 +438,7 @@ escalate it rather than re-running the merge to get past it.
   Add discoveries to the owning PLAN; retain Pending dependencies and open risks.
 - Distinguish accepted/deferred from resolved; list closed only with readback/evidence.
 - Run in ordinary quick and quick-validate, outside verify; repeat after reviews.
+- Update consolidated risks using the [consolidated security checklist](../templates/issues/security-risk-consolidated.md).
 </step>
 
 <step name="run_checks">
@@ -452,7 +454,8 @@ completion; hand the failure back to the coder or stop for the user.
 
 <step name="track_integrated_slice">
 After the integrated slice's applicable checks pass, push the session branch and
-open or update its tracking draft before final verification. Use the stable title
+open or update its tracking draft before final verification. Copy the
+[PR File Template](../templates/pull-request.md#file-template) for the body. Use the stable title
 `Quick: ${DESCRIPTION}` and a `--body-file` built from the QUICK record and coder
 summary. State whether final verification is pending or was not requested, and list
 unfinished work under Known gaps. On the first push, run:

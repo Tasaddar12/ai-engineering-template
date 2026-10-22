@@ -93,6 +93,7 @@ unless `--force` is passed.
 | Verb | Effect |
 |---|---|
 | `pr.open <branch> [--phase N] [--base BASE] [--title TITLE] [--body BODY] [--body-file PATH] [--draft]` | Create the branch's PR or update that same PR |
+| `pr.validate --body-file PATH` | Read-only PR template section, field and table validation |
 | `pr.merge <branch> [--local-checks-passed] [--expected-head H]` | Merge after provider or explicit local evidence; expected-head pins local HEAD and OPEN PR through provider merge |
 
 For an existing PR, an explicit `--base` retargets it; omitting `--base`
@@ -100,6 +101,16 @@ preserves its current target, including a nondefault parent branch. A base-only
 edit returns `created: false`, `updated: true` and the refreshed PR fields.
 With no base, title or body requested, no edit runs and `updated` is false.
 `--body-file` takes precedence over `--body`.
+
+Keep the installed pull-request template's sections, field shapes and Verification
+tables. Omit only documented optional sections. Preserve the validated body file
+through publication; compare the returned body with its reviewed content.
+Before direct CLI/API/connector writes, run
+`phase_run query pr.validate --body-file PATH`, then compare the saved body with
+that content. If validation or readback fails, repair the body before continuing.
+Verify claim truth, evidence accessibility and prose quality separately.
+Expect `pr.open` to validate every effective create/edit body, including
+body-omitted edits.
 
 For a new PR, `--base` selects its target; omission uses the repository's
 existing default-base fallback. `--draft` creates a draft, and omission creates
@@ -409,15 +420,17 @@ claiming phases shipped when they did not is the record this exists to keep hone
   reviewed file, not the TODO. The runtime appends the stable
   `<!-- todo-id: UUID -->` marker. It does not redact or publish arbitrary local
   context for you.
-- `--variant` must be an exact canonical name from the issue template: `Bug`,
-  `Enhancement`, `Decision required`, `Security risk` or `UAT`. Publication checks
-  headings/order and UAT table columns, sequential rows and Human acceptance
-  fields before persisting a create attempt. Missing/unknown variants and missing
-  or malformed schema fail closed. The schema is `templates/issue.md` beside the
-  running runtime's namespace, including installed `.codex` and `.claude` trees.
-  `issue.validate` runs the same check without provider calls or planning writes.
-  Direct `gh`/API creates and edits bypass this gate. Structural success does
-  not verify working URLs, actual UI controls, safe content or human decisions.
+- Set `--variant` to `Bug`, `Enhancement`, `Decision required`, `Security risk`
+  or `UAT`. Read the File Templates in `templates/issues/` beside the running
+  runtime, including installed `.codex` and `.claude` trees. Preserve section
+  order, nonempty fields and paragraph/list/table shapes. For UAT, retain
+  sequential rows and Human acceptance fields. For consolidated risks, retain
+  the canonical table and one matching risk-ID heading/checkbox per row.
+  Run `phase_run query issue.validate --variant "Bug" --body-file PATH` with the
+  selected variant and reviewed file before direct `gh`/API writes. Use this
+  command for read-only validation without provider calls or planning writes.
+  If validation rejects the variant or schema, correct it before retrying.
+  Verify working URLs, actual UI controls, safe content and human decisions separately.
 - The preview token binds the TODO snapshot, repository, issue candidates and PR
   context. Re-preview and review again when any input changes. Provider access
   requires a supported GitHub HTTPS, SSH or scp-style `origin`, GitHub CLI auth,

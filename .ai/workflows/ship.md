@@ -135,6 +135,7 @@ Verify the work is ready to publish. Every check below blocks; none is advisory.
 - Reconcile each PLAN's threat links and SUMMARY outcomes through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
   Read back safe issue status/evidence; keep remaining risks explicit and Pending
   publication as a gap. Preserve the readiness and critical-risk gates below.
+- Check consolidated risk bodies against the [consolidated security checklist](../templates/issues/security-risk-consolidated.md).
 - Inspect the current independent [issue-link audit](../references/git-workflow.md#issue-link-audit)
   and its currentness/provider-readback gate. Run `refresh_issue_link_audit` below
   when missing or stale. Truthful tracking drafts may state Pending dependencies;
@@ -350,8 +351,12 @@ Populate it from the phase records:
 phase_run query planning.validate
 ```
 
-Append a short `### Record health` section when `warning_count` is above zero,
-naming each finding and the verb that resolves it. This never blocks the PR.
+Record planning-health findings and their repair verbs in the template's Known
+gaps list. Preserve its section and field shapes.
+
+```bash
+phase_run query pr.validate --body-file "${body_path}"
+```
 
 Include each declared issue's canonical URL in the body. Use resolving references
 only for demonstrated accepted work; deferred/unresolved/pending-human followups

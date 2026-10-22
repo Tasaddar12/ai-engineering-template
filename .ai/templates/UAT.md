@@ -10,9 +10,9 @@ Template for `.planning/phases/XX-name/{phase_num}-UAT.md` — persistent UAT se
 - Copy only the File Template block. Fill the visible bracket placeholders with
   the indicated content and length; remove unused rows/fields and prompts before
   delivery. Do not insert hidden HTML comments or authoring rationale in the body.
-- This template tracks a phase session. The [UAT issue variant](issue.md#uat)
-  is the canonical issue body; its readiness instructions own saved-issue
-  readback, saved entry-point checks and authoring/publication-error repair.
+- Use the [UAT issue template](issues/uat.md) for issue bodies.
+- Read back the saved issue body and verify its links and launch instructions
+  against the prepared UI. Repair authoring/publication errors before marking it ready.
 - Start with one exact accessible URL, including its full path and trailing slash
   when required, or a directly runnable supplied launcher. Verify it opens the
   delivered build. A homepage, package name or guessed route is insufficient.
@@ -21,7 +21,7 @@ Template for `.planning/phases/XX-name/{phase_num}-UAT.md` — persistent UAT se
   startup screen. The maintainer selects the source/build before handoff.
 - When multiple tests need an index, give a numbered run order with descriptive
   linked test names. Do not use bare issue numbers or ask the human to choose a
-  source/build. An issue index uses the same [issue UAT variant](issue.md#uat),
+  source/build. An issue index uses the same [issue UAT variant](issues/uat.md),
   preserving its headings, order and step table. Each numbered row names the
   linked test and exact opening action; its Actual outcome / evidence column
   says reporting belongs in that linked test. Record each reply there once.

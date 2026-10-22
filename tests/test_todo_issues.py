@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import yaml
+from publication_fixtures import issue_body
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / ".ai/runtime/phase.py"
@@ -187,25 +188,7 @@ class TodoIssues(unittest.TestCase):
         self.todo.write_text("---\ntitle: Private customer title\narea: tooling\nseverity: major\nfiles: [src/app.py:12]\ncustom: retain me\n---\n" + self.body,
                              encoding="utf-8")
         self.public = self.directory / "reviewed public.md"
-        self.public.write_text("""## Problem
-Blank search fails for signed-in users.
-## Expected behavior
-An empty result appears.
-## Actual behavior
-Build fixture-1 shows an error in the prepared test environment.
-## Reproduction
-Open https://example.test/search/ and click Search with an empty query.
-## Safe evidence
-https://example.test/evidence/fixture-1
-## Impact
-Users cannot clear a search.
-## Acceptance
-Blank searches show an empty result.
-## Scope
-In: blank searches. Out: ranking.
-## Related links
-https://example.test/requirements/search
-""", encoding="utf-8")
+        self.public.write_text(issue_body(), encoding="utf-8")
         self.fake = self.directory / "fake_gh.py"
         self.fake.write_text(FAKE_GH, encoding="utf-8")
         self.statefile = self.directory / "remote.json"
@@ -458,9 +441,8 @@ https://example.test/requirements/search
         preview = self.preview()
         before = self.todo.read_bytes()
         before_calls = self.remote()["calls"]
-        templates = dict(re.findall(r"^### ([^\n]+)\n\n```markdown\n(.*?)\n```",
-                                   (ROOT / ".ai/templates/issue.md").read_text(encoding="utf-8"),
-                                   re.M | re.S))
+        from test_issue_format import bodies
+        templates = bodies()
         cases = [(variant, "<" + tag + ">\n" + templates[variant] + "\n</" + tag + ">")
                  for variant in ("Bug", "UAT") for tag in ("pre", "script", "style", "textarea")]
         cases += [(variant, opening + "\n" + templates[variant] + "\n</" + tag + ">")
@@ -496,13 +478,13 @@ https://example.test/requirements/search
         before_calls = self.remote()["calls"]
         runtime = self.directory / ".codex/runtime"
         shutil.copytree(RUNTIME.parent, runtime)
-        templates = self.directory / ".codex/templates"
-        templates.mkdir()
+        templates = self.directory / ".codex/templates/issues"
+        templates.mkdir(parents=True)
         self.environment.update(FAKE_RUNTIME=str(runtime / "phase.py"),
                                 FAKE_RUNTIME_LIB=str(runtime))
         for schema in (None, "malformed schema"):
             if schema is not None:
-                (templates / "issue.md").write_text(schema, encoding="utf-8")
+                (templates / "bug.md").write_text(schema, encoding="utf-8")
             failure = self.publish(preview, ok=False)
             self.assertEqual(failure["code"], "issue-schema")
             self.assertEqual(self.todo.read_bytes(), before)

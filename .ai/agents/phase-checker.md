@@ -560,6 +560,7 @@ exemption.
   owner, status and evidence in the issue or safe coordinator handoff.
 - Accept worker Pending with concrete dependency before publication; report
   missing required publication after reconciliation as a gap.
+- Check consolidated bodies against the [consolidated security checklist](../templates/issues/security-risk-consolidated.md).
 
 ## Dimension 8: Nyquist Compliance
 

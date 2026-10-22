@@ -46,13 +46,18 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
 
 - Read [the pull request template](../templates/pull-request.md) and copy only its **File Template** block into the PR body file. Keep the outcome title stable; update the body as evidence grows. Rewrite the title only when the authorized scope materially changes.
 - Ground claims in summaries and the current verification report, not the diff alone. Do not present template prompts as evidence.
+- Run `phase_run query pr.validate --body-file PATH` on the reviewed body before
+  direct CLI, API or connector publication. Publish that same file content and
+  compare the saved body with it after readback. If validation or readback fails,
+  repair the body before continuing. Use `pr.open` for validated phase, quick and
+  non-phase creates and edits, including body-omitted edits.
+- Put each command, result and evidence reference in the template's Verification
+  table. Retain its section order and field shapes; record pending work in Known gaps.
 
 ## Follow-up issues
 
-- Read [the issue template](../templates/issue.md), select the appropriate
-  variant and copy only that variant's fenced **File Template** block into the
-  separately reviewed public issue body file. Never copy the whole source or all
-  variants. Authorized execution includes necessary issue creation/update for
+- Read the [issue templates](../templates/issues/README.md) and copy the selected file's **File Template** block into the reviewed public body file.
+  Authorized execution includes necessary issue creation/update for
   every actionable unresolved problem at normal, deferred or early handoff;
   do not request another issue approval. Honor actual platform permissions and
   sensitive-security reporting requirements.
@@ -77,6 +82,14 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
   reconciliation alone. Resolved inline work needs no new issue; this generic
   exemption does not waive separate threat-record tracking requirements.
 - Remove secrets, private logs and sensitive data from publishable text. Close an issue only after acceptance is demonstrated and closure is authorized. Do not use premature auto-closing references for tracking or deferred work.
+
+### Issue type and title
+
+- Use `type(scope): summary` for issue titles.
+- Preserve an existing issue's type from its original intent, labels and prior body.
+- If UAT reveals a bug, use Bug. If the work is an engineering prerequisite,
+  select its engineering issue type.
+- Use the [UAT authoring contract](../templates/UAT.md#authoring-contract) for human-test issues.
 
 ## Canonical threat tracking
 
@@ -108,7 +121,7 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
    Compare semantic scope; reuse an actionable full-scope match. Reuse resolved closed matches only
    with matching resolution evidence. For unresolved closed matches, use existing
    reopening authority or record the blocker; do not duplicate. Separate distinct risks.
-3. Serialize coordinator writes. Review the [Security risk template](../templates/issue.md)
+3. Serialize coordinator writes. Review the [Security risk template](../templates/issues/security-risk.md)
    title/body; run `phase_run query issue.validate --variant "Security risk" --body-file PATH`
    before authorized writes. Never create a TODO or use `todo.issue-publish` for threats.
 4. Create/reuse; read back key, aliases, scope, lifecycle, evidence and URL. After
@@ -143,14 +156,7 @@ canonical match, distinct entries in this phase security checklist are the
 mandatory default canonical references. Create the container only when needed after both searches, using the
 exact title and label above. Existing matching issue identities always take
 precedence, including a closed unresolved match's reopening-authority blocker.
-Use the Security risk variant's required headings and reviewed safe body;
-the checklist is a tracking container,
-never a combined PLAN register. Keep each full six-column register in its owning
-PLAN and keep SUMMARY/PR linked outcomes separate. Each entry must have:
-
-| Entry identity | Canonical risk key | Aliases / occurrences | PLAN / Threat ID | Owner | Scope / acceptance | Assessment / uncertainty | Lifecycle / outcome | Next action | Revision / check evidence | Canonical reference |
-|---|---|---|---|---|---|---|---|---|---|---|
-| Stable ### entry heading | Stable repository/surface/failure-mode key | Every source occurrence | Owning PLAN/ID link | Responsible owner | Bounded scope and observable acceptance | Link to owning PLAN assessment and uncertainty | Observed status and outcome | Concrete next action | Matching revision/check/result or Pending dependency | Verified heading-anchor URL or existing matching issue URL |
+Use the [consolidated security checklist](../templates/issues/security-risk-consolidated.md) for consolidated risk tracking issues.
 
 **Entry identity:** every risk entry is a stable `###` heading in the checklist
 issue BODY, including entries that link an existing canonical issue. Entry URLs
@@ -171,7 +177,9 @@ as the canonical reference and keep its lifecycle/evidence authoritative. A new
 entry is canonical only for a new planned risk with all fields above. Semantic
 deduplication, safe separate review, serialized writes, template validation,
 readback and uncertain-create recovery apply to the checklist and every entry.
-`issue.validate` checks structural shape, not per-risk completeness or identity.
+Run `issue.validate` to check structural shape, unique row IDs and matching risk
+headings/tasks. Verify per-risk facts, canonical identity, links and outcome
+evidence against the provider and source assessments.
 
 A distinct unplanned threat discovered during execution or review needs its own
 actionable standalone Security risk issue, or an existing full-scope matching
@@ -181,12 +189,7 @@ distinct unplanned risk. Never route threats through TODO publication. The gener
 resolved-problem exemption never waives this reconciliation, including findings
 already mitigated in the current execution.
 
-A checked checklist item requires individual outcome evidence. It does not mean
-issue closure or erase accepted/deferred/open work. Closing a checklist container
-requires scope-complete evidence for every included risk and existing explicit
-closure authority; checked items, accepted/deferred status and merge never grant
-that authority. Keep unavailable publication Pending with its dependency, and
-apply safe reporting and provider fallback below/above to every destination.
+Check a checklist item only with individual outcome evidence.
 
 ### Safe reporting
 

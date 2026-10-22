@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 import yaml
 import test_todo_issues as fixtures
+from publication_fixtures import pr_body
 
 class PhaseIssues(unittest.TestCase):
     setUp = fixtures.TodoIssues.setUp
@@ -234,12 +235,13 @@ else:
         self.sessions.parent.mkdir(parents=True, exist_ok=True)
         self.sessions.write_text(json.dumps({"sessions": [entry]}), encoding="utf-8")
         self.remote(pr={"number": 5, "url": "https://github.com/acme/project/pull/5", "state": "OPEN",
-            "headRefName": self.branch, "body": "", "isDraft": True, "baseRefName": "main"})
+            "headRefName": self.branch, "body": pr_body(), "isDraft": True, "baseRefName": "main"})
 
     def test_phase_session_cannot_bypass_handoff_by_omitting_phase(self):
         self.phase(declaration=False)
         self.session()
-        self.run_verb("pr.open", self.branch, "--body", "No declarations", ok=False)
+        result = self.run_verb("pr.open", self.branch, "--body", pr_body("No declarations"), ok=False)
+        self.assertEqual(result["code"], "phase-issues")
         self.assertEqual(self.remote().get("pr_edits", 0), 0)
 
     def test_followup_closing_keyword_and_body_omitted_retarget_are_blocked(self):
@@ -247,8 +249,9 @@ else:
         self.publish()
         self.session()
         for body in ("Fixes #1. Related: https://github.com/acme/project/issues/1", "Closes acme/project#1. Related: https://github.com/acme/project/issues/1", "Resolves https://github.com/acme/project/issues/1", "Closes [problem](https://github.com/acme/project/issues/1)"):
-            self.run_verb("pr.open", self.branch, "--body", body, ok=False)
-        data = self.remote(); data["pr"]["body"] = "Fixes #1"; self.save(data)
+            result = self.run_verb("pr.open", self.branch, "--body", pr_body(body), ok=False)
+            self.assertEqual(result["code"], "phase-issues")
+        data = self.remote(); data["pr"]["body"] = pr_body("Fixes #1"); self.save(data)
         self.run_verb("pr.open", self.branch, "--base", "other", ok=False)
         self.assertEqual(self.remote().get("pr_edits", 0), 0)
 
@@ -256,8 +259,8 @@ else:
         self.phase([self.entry()])
         self.publish()
         self.session()
-        self.run_verb("pr.open", self.branch, "--body", "Follow-up: https://github.com/acme/project/issues/1")
-        self.run_verb("pr.open", self.branch, "--phase", "2", "--body", "Follow-up: https://github.com/acme/project/issues/1", ok=False)
+        self.run_verb("pr.open", self.branch, "--body", pr_body("Follow-up: https://github.com/acme/project/issues/1"))
+        self.run_verb("pr.open", self.branch, "--phase", "2", "--body", pr_body("Follow-up: https://github.com/acme/project/issues/1"), ok=False)
         self.assertEqual(self.remote()["pr_edits"], 1)
 
     def folded(self, state="open"):
@@ -294,8 +297,8 @@ else:
 
     def uat_body(self):
         import re
-        template = (fixtures.ROOT / ".ai/templates/issue.md").read_text(encoding="utf-8")
-        return re.search(r"### UAT\n\n```markdown\n(.*?)\n```", template, re.S)[1]
+        template = (fixtures.ROOT / ".ai/templates/issues/uat.md").read_text(encoding="utf-8")
+        return re.search(r"## File Template\n\n```markdown\n(.*?)\n```", template, re.S)[1]
 
     def accepted_uat_body(self):
         body = self.uat_body()
@@ -313,12 +316,12 @@ else:
         self.publish(variant="UAT")
         self.session()
         url = "https://github.com/acme/project/issues/1"
-        self.run_verb("pr.open", self.branch, "--body", "Follow-up: " + url)
+        self.run_verb("pr.open", self.branch, "--body", pr_body("Follow-up: " + url))
         metadata = self.metadata(); entry = metadata["issue_refs"][0]
         entry.update(state="resolved", relationship="resolving", reason="Claimed human acceptance")
         self.write_record(metadata["issue_refs"])
         self.remote(issues=[self.issue(state="closed", body=self.public.read_text(encoding="utf-8"))])
-        self.run_verb("pr.open", self.branch, "--body", "Closes " + url, ok=False)
+        self.run_verb("pr.open", self.branch, "--body", pr_body("Closes " + url), ok=False)
         self.assertEqual(self.remote()["pr_edits"], 1)
 
     def test_closed_uat_without_human_acceptance_keeps_folded_todo_pending(self):
@@ -363,9 +366,9 @@ else:
         item.update(state="resolved", relationship="resolving", reason="Prepared bug fix is verified.")
         self.write_record([item])
         url = "https://github.com/acme/project/issues/1"
-        result = self.run_verb("pr.open", self.branch, "--body", "Closes " + url)
+        result = self.run_verb("pr.open", self.branch, "--body", pr_body("Closes " + url))
         self.assertTrue(result["created"] or result["updated"])
-        self.assertEqual(self.remote()["pr"]["body"], "Closes " + url)
+        self.assertEqual(self.remote()["pr"]["body"], pr_body("Closes " + url))
 
     def test_accepted_uat_issue_can_be_referenced_as_resolving_by_pr(self):
         self.phase([self.entry(variant="UAT")])
@@ -378,9 +381,9 @@ else:
         self.write_record([item])
         url = "https://github.com/acme/project/issues/1"
         self.remote(issues=[self.issue(state="closed", body=accepted_body)])
-        result = self.run_verb("pr.open", self.branch, "--body", "Closes " + url)
+        result = self.run_verb("pr.open", self.branch, "--body", pr_body("Closes " + url))
         self.assertTrue(result["created"] or result["updated"])
-        self.assertEqual(self.remote()["pr"]["body"], "Closes " + url)
+        self.assertEqual(self.remote()["pr"]["body"], pr_body("Closes " + url))
 
     def test_phase_session_ambiguity_and_wrong_origin_pr_cannot_mutate(self):
         self.phase()
@@ -388,10 +391,10 @@ else:
         state = json.loads(self.sessions.read_text(encoding="utf-8"))
         state["sessions"].append(dict(state["sessions"][0]))
         self.sessions.write_text(json.dumps(state), encoding="utf-8")
-        self.run_verb("pr.open", self.branch, "--body", "", ok=False)
+        self.run_verb("pr.open", self.branch, "--body", pr_body(), ok=False)
         state["sessions"].pop(); self.sessions.write_text(json.dumps(state), encoding="utf-8")
         data = self.remote(); data["pr"]["url"] = "https://github.com/other/project/pull/5"; self.save(data)
-        self.run_verb("pr.open", self.branch, "--body", "", ok=False)
+        self.run_verb("pr.open", self.branch, "--body", pr_body(), ok=False)
         self.assertEqual(self.remote().get("pr_edits", 0), 0)
 
     def test_reconciliation_rejects_unfolded_and_traversal_without_moving(self):
@@ -412,7 +415,7 @@ else:
         self.session()
         self.remote(pr=None)
         body = self.directory / "pr body.md"
-        body.write_text("Follow-up: https://github.com/acme/project/issues/1", encoding="utf-8")
+        body.write_text(pr_body("Follow-up: https://github.com/acme/project/issues/1"), encoding="utf-8")
         result = self.run_verb("pr.open", self.branch, "--base", "main", "--body", "Closes #1",
                               "--body-file", str(body), "--draft")
         self.assertTrue(result["created"])
@@ -447,12 +450,22 @@ else:
         self.publish()
         self.session()
         body = self.directory / "phase pr body.md"
-        expected = "Follow-up: https://github.com/acme/project/issues/1"
+        expected = pr_body("Follow-up: https://github.com/acme/project/issues/1")
         body.write_text(expected, encoding="utf-8")
         self.remote(mode="bodyfile-mutate", pr_body=str(body))
         self.run_verb("pr.open", self.branch, "--body-file", str(body))
         self.assertEqual(self.remote()["pr"]["body"], expected)
         self.assertEqual(body.read_text(encoding="utf-8"), "Closes #1")
+
+    def test_quick_session_uses_pr_template_gate_without_phase_declarations(self):
+        self.phase()
+        self.session(kind="quick")
+        invalid = pr_body().replace("## Verification\n", "## Verification\n\nFocused author checks passed offline53 and host146.\n")
+        result = self.run_verb("pr.open", self.branch, "--body", invalid, ok=False)
+        self.assertEqual(result["code"], "pr-format")
+        self.assertEqual(self.remote().get("pr_edits", 0), 0)
+        self.run_verb("pr.open", self.branch, "--body", pr_body())
+        self.assertEqual(self.remote()["pr_edits"], 1)
 
     def test_reviewed_empty_handoff_and_complete(self):
         self.phase()

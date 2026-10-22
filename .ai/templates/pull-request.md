@@ -82,6 +82,10 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
 
 ## How to fill it
 
+- Keep the File Template's section order and field shapes. Use the Verification
+  tables for revisions and per-command results. If Requirements or Issues or
+  Stack does not apply, omit that section. If no threat entries apply, replace the threat
+  table with `None identified: <inspected scope>.`.
 - Replace every bracketed value with facts from the authorized scope, owned
   summaries and verification records. Remove all remaining prompts, examples
   and instructional text before publishing.

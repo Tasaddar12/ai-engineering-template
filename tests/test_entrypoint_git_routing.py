@@ -2,6 +2,8 @@
 
 from pathlib import Path
 import re
+import subprocess
+import sys
 import unittest
 
 import test_install
@@ -32,7 +34,7 @@ class EntrypointGitRouting(unittest.TestCase):
         # Follow the policy's actual links to both templates on disk.
         template_links = re.findall(r"\[[^\]]+\]\(([^)]+)\)",
                                     reference.read_text(encoding="utf-8"))
-        for name in ("issue.md", "pull-request.md"):
+        for name in ("issues/README.md", "pull-request.md"):
             target = f"../templates/{name}"
             self.assertIn(target, template_links)
             resolved = (reference.parent / target).resolve()
@@ -57,12 +59,24 @@ class EntrypointGitRouting(unittest.TestCase):
         result = self.install("--host", host, "--no-hooks")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assert_routing(self.target / entrypoint, "." + host)
-        for name in ("issue.md", "pull-request.md"):
+        names = ["pull-request.md"] + ["issues/" + path.name
+                  for path in sorted((ROOT / ".ai/templates/issues").glob("*.md"))]
+        for name in names:
             source_path = f".ai/templates/{name}"
             expected = test_install.installer.render_asset(
                 source_path, (ROOT / source_path).read_bytes(), host)
             installed = self.target / ("." + host) / "templates" / name
             self.assertEqual(installed.read_bytes(), expected, installed)
+        self.assertFalse((self.target / ("." + host) / "templates/issue.md").exists())
+        from test_issue_format import bodies
+        for variant, body in bodies(self.target / ("." + host) / "templates/issues").items():
+            draft = self.target / "issue-body.md"
+            draft.write_text(body, encoding="utf-8")
+            check = subprocess.run([sys.executable,
+                str(self.target / ("." + host) / "runtime/phase.py"), "query", "issue.validate",
+                "--variant", variant, "--body-file", str(draft)],
+                cwd=self.target, capture_output=True, text=True)
+            self.assertEqual(check.returncode, 0, check.stdout + check.stderr)
 
     def test_fresh_codex_install_routes_to_installed_policy_and_templates(self):
         self.assert_installed_routing("codex", "AGENTS.md")

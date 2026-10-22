@@ -134,7 +134,9 @@ request is noise:
 phase_run query session.close "${SESSION_BRANCH}"
 ```
 
-Otherwise push and open the pull request:
+If the branch has deliverable changes, copy the
+[PR File Template](../templates/pull-request.md#file-template) into its body file.
+Fill it from the checked changes, then push and open the pull request:
 
 ```bash
 git -C "${SESSION_WORKTREE}" push -u origin "${SESSION_BRANCH}"

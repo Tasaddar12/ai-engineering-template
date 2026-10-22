@@ -545,7 +545,8 @@ updating the tracking draft. Apply the same-execution fixed-work exemption while
 reviewing leftovers; do not ticket ordinary in-process planned work. Put each
 resulting canonical issue URL in the tracking body. Then push the session branch
 and open or update the draft before dispatching the next wave or final
-verification. Use the stable phase title and `--body-file` composed from
+verification. Copy the [PR File Template](../templates/pull-request.md#file-template)
+for the body. Use the stable phase title and `--body-file` composed from
 integrated summaries and the current report. Mark final verification pending and
 list unfinished plans or runtime behavior under Known gaps. On the first push, run:
 
@@ -624,6 +625,7 @@ Read each SUMMARY.md and build the phase picture:
   canonical trackers and standalone tracking for distinct unplanned risks.
 - Carry still-open/accepted/deferred risks and evidenced closed issues distinctly;
   retain Pending dependencies and continue independent authorized work.
+- Use the [consolidated security checklist](../templates/issues/security-risk-consolidated.md) for consolidated risks.
 
 Report any phase requirement id that no summary claims. That is a gap, whether or
 not every plan reported complete.

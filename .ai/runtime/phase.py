@@ -241,6 +241,10 @@ def verb_session_close(workspace, positionals, options):
                                    force=bool(options.get("force")))
 
 
+def verb_pr_validate(workspace, positionals, options):
+    return issue_format.validate_pr_file(option_text(options, "body_file"))
+
+
 def verb_pr_open(workspace, positionals, options):
     branch = argument(positionals, 0, "branch")
     pull = delivery.open_pr(
@@ -828,6 +832,7 @@ VERBS = {
     "session.adopt": verb_session_adopt,
     "session.status": verb_session_status,
     "session.close": verb_session_close,
+    "pr.validate": verb_pr_validate,
     "pr.open": verb_pr_open,
     "pr.checks": verb_pr_checks,
     "pr.merge": verb_pr_merge,

@@ -19,10 +19,11 @@
 - Describe behavior that the current files and runtime support. Cite the owning file with a relative link.
 - Keep examples and commands runnable for the stated shell and project configuration.
 - Keep prose concise and current. Use scannable bullets, numbered steps, short paragraphs, small tables, and bounded format blocks instead of large undifferentiated blocks.
-- Preserve the context needed to apply an instruction correctly: scope, preconditions, constraints, roles, conditions, stop gates, exceptions, and evidence. Do not remove useful context merely because it explains why a rule or field matters.
-- Keep rationale concise and include it when it affects how a requirement, gate, exception, or evidence field is used. Omit redundant motivation, feature history, and legacy-component or migration instructions. Describe current instructions only.
+- State rules positively as direct actions. Put a concise example beside the format it defines.
+- Keep format definitions in the template. In workflows, roles, and references, name and link the template in one instruction.
+- Put rationale, rendering investigations, design limits, and implementation history in the PR description.
 - State required actions directly. Do not hedge with `consider`, `try to`, `may want to`, or `if possible`. Use `Run`, `Read`, `Return`, `Stop`, and `Do not`; write explicit `if`/`then` branches and name the exact action instead of saying `handle appropriately`.
-- Preserve required artifact fields, including commit `Why:` and ADR rationale. Explain a required field's purpose when that context is needed to complete or review it correctly.
+- Preserve required artifact fields, including commit `Why:` and ADR rationale.
 
 ### Good and bad wording
 

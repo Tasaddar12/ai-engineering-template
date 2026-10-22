@@ -117,7 +117,7 @@ def open_pr(workspace, branch, base=None, title=None, body=None, body_file=None,
     pull request rather than failing, because a workflow that resumes must not
     be blocked by its own earlier success.
     """
-    from . import phase_issues
+    from . import issue_format, phase_issues
     from .paths import read_text
     from .state import planning_lock
     session = phase_issues.phase_session(workspace, branch, phase)
@@ -125,27 +125,33 @@ def open_pr(workspace, branch, base=None, title=None, body=None, body_file=None,
         require_gh(workspace)
         repository = phase_issues.todo_issues.target(workspace) if session else None
         existing = view(workspace, branch, cwd=cwd, repository=repository)
+        if body_file:
+            try:
+                effective = read_text(body_file)
+            except (VerbError, OSError, UnicodeError):
+                raise VerbError("Reviewed PR body cannot be read", "pr-review") from None
+        elif body is not None:
+            effective = body
+        else:
+            effective = existing.get("body") if existing else ""
+        issue_format.validate_pr(effective)
         if session:
             if existing is not None:
                 phase_issues.pr_identity(repository, branch, existing)
-            if body_file:
-                try:
-                    effective = read_text(body_file)
-                except (VerbError, OSError, UnicodeError):
-                    raise VerbError("Reviewed PR body cannot be read", "phase-issues") from None
-            elif body is not None:
-                effective = body
-            else:
-                effective = existing.get("body") if existing else ""
             phase_issues.pr_body(workspace, session["label"], effective)
-            if body_file:
-                # Publish exactly the validated bytes even if the input changes.
-                with tempfile.TemporaryDirectory(prefix="phase-pr-public-") as directory:
-                    reviewed = Path(directory) / "body.md"
-                    reviewed.write_text(effective, encoding="utf-8")
-                    return _open_pr(workspace, branch, existing, base, title, body,
-                                    reviewed, draft, cwd, repository)
-        return _open_pr(workspace, branch, existing, base, title, body, body_file, draft, cwd, repository)
+        if body_file:
+            # Every publication path freezes the validated file, including quick
+            # and non-phase PRs. Provider edits cannot reread a changed input.
+            with tempfile.TemporaryDirectory(prefix="pr-public-") as directory:
+                reviewed = Path(directory) / "body.md"
+                reviewed.write_text(effective, encoding="utf-8", newline="")
+                result = _open_pr(workspace, branch, existing, base, title, body,
+                                  reviewed, draft, cwd, repository)
+        else:
+            result = _open_pr(workspace, branch, existing, base, title, body, None, draft, cwd, repository)
+        require(result.get("body") == effective,
+                "Published PR body readback differs from the reviewed body", "pr-unresolved")
+        return result
 
 
 def _open_pr(workspace, branch, existing, base, title, body, body_file, draft, cwd, repository=None):
@@ -164,7 +170,11 @@ def _open_pr(workspace, branch, existing, base, title, body, body_file, draft, c
         changed = bool(base is not None or title or body is not None or body_file)
         if changed:
             gh(workspace, *arguments, check=True, cwd=cwd)
-        refreshed = view(workspace, branch, cwd=cwd, repository=repository) or existing
+        refreshed = view(workspace, branch, cwd=cwd, repository=repository)
+        require(refreshed is not None or not changed,
+                "PR edit completed but fresh readback is unavailable; inspect before retrying",
+                "pr-unresolved")
+        refreshed = refreshed or existing
         if repository:
             from .phase_issues import pr_identity
             pr_identity(repository, branch, refreshed)

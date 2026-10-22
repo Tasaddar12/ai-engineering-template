@@ -387,13 +387,13 @@ precedence over `human_needed`; preserve the required human checks.
 
 Use the [canonical UAT template and authoring contract](../templates/UAT.md)
 for the phase session. For a new authorized human-test issue, select only the
-[UAT issue variant](../templates/issue.md#uat), following the same contract.
-For existing issue rewrites, follow the template's
-[type-preservation rule](../templates/issue.md#how-to-fill-it).
-For UAT issues, apply that variant's readiness instructions: saved-body readback
-and verified saved links/launch entry point against the prepared UI precede any
-ready claim. Direct verifier-generated human checks follow that contract too;
-the verifier returns its proposed script read-only and the coordinator persists
+[UAT issue variant](../templates/issues/uat.md), following the same contract.
+For existing issue rewrites, follow the
+[type-preservation rule](../references/git-workflow.md#issue-type-and-title).
+For UAT issues, read back the saved body. Verify its saved links and launch entry
+point against the prepared UI before claiming readiness. If either check fails,
+repair the issue before handoff. Apply the same contract to verifier-generated
+human checks; return the proposed script read-only and have the coordinator persist
 it. Keep technical evidence and build provenance in the separate maintainer-owned
 record.
 
