@@ -73,10 +73,20 @@ class NavigationFixtures(unittest.TestCase):
         annotation = '<!-- guidance-placeholder: missing.md | instructional example -->'
         for literal in ('```markdown\n' + annotation + '\n```',
                         '`' + annotation + '`',
+                        '`literal example\n' + annotation + '\n`',
+                        '``literal ` example\n' + annotation + '\n``',
                         '<!-- guidance-placeholder: missing.md |    -->',
                         '<!-- guidance-placeholder: missing.md |\t -->'):
             with self.subTest(literal=literal):
                 self.assertEqual(1, len(self.check(literal + '\n[real](missing.md)')))
+        genuine = ('<!-- guidance-placeholder: {phase}-SETUP.md | Replace phase. -->\n'
+                   '[output]({phase}-SETUP.md)\n[real](missing.md)')
+        for unmatched in ('`literal example\n', '`literal example\n``\n'):
+            with self.subTest(unmatched=unmatched):
+                # Unmatched/different-sized runs cannot swallow genuine comments
+                # or navigation. Only the exact genuine target is exempted.
+                self.assertEqual(1, len(self.check(unmatched + genuine)))
+
 
     def test_list_contained_fences_preserve_real_nested_navigation(self):
         for body in ('- Example:\n\n    ```markdown\n    [sample](missing.md)\n    ```',

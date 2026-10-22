@@ -7,6 +7,28 @@ import unicodedata
 from urllib.parse import unquote, urlsplit
 
 
+def without_inline_code(text, preserve_labels=False):
+    """Match whole backtick runs across lines; unmatched runs remain prose."""
+    runs = list(re.finditer(r"`+", text))
+    parts, cursor, index = [], 0, 0
+    while index < len(runs):
+        opening = runs[index]
+        closing_index = next((candidate for candidate in range(index + 1, len(runs))
+                              if runs[candidate][0] == opening[0]), None)
+        if closing_index is None:
+            index += 1
+            continue
+        closing = runs[closing_index]
+        content = text[opening.end():closing.start()]
+        parts.append(text[cursor:opening.start()])
+        if preserve_labels and not re.search(r"\]\s*[([]", content):
+            parts.append(content)  # Retain labels such as [`verb`](guide.md).
+        cursor = closing.end()
+        index = closing_index + 1
+    parts.append(text[cursor:])
+    return "".join(parts)
+
+
 def without_fences(text, inline=True):
     lines, fence, containers = [], None, []
     fence_indent = 0
@@ -43,8 +65,7 @@ def without_fences(text, inline=True):
             lines.append(line)
     text = "\n".join(lines)
     if inline:
-        text = re.sub(r"(`+)(.*?)\1", lambda match: "" if re.search(
-            r"\]\s*[([]", match[2]) else match[2], text)
+        text = without_inline_code(text, preserve_labels=True)
     return text
 
 
@@ -90,7 +111,7 @@ def audit(source, root):
     text = source.read_text(encoding='utf-8-sig')
     # Exact destinations only: an annotation never exempts neighboring links.
     comments = without_fences(text, inline=False)
-    comments = re.sub(r"(`+)(.*?)\1", "", comments)
+    comments = without_inline_code(comments)
     placeholders = set()
     for comment in re.findall(r'<!--(.*?)-->', comments, re.S):
         annotation = re.fullmatch(r'\s*guidance-placeholder:\s*(\S+)\s+\|([^\n]*)', comment)
