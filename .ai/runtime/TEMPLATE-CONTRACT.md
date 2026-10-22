@@ -61,20 +61,17 @@ must_haves: {truths: [], artifacts: [], key_links: []}
 issue_refs: []           # reviewed issue declaration mappings, not URL strings
 ```
 
-During registration, `plan.reconcile` consumes the canonical strict
-`planning_integrity.parse_record` result, validating required metadata/types and
-duplicate YAML keys in the same parse that supplies metadata and body. It checks
-the complete phase directory against
-the roadmap: filenames are `{padded_phase}-{NN}-PLAN.md` with two ASCII plan
-digits, frontmatter `phase` equals the directory name, and `plan` equals `NN`
-(or its YAML integer value). Each PLAN has exactly one nonempty `<objective>`.
-The proposal returns full objectives and suggested descriptions for semantic
-review. Applying explicit reviewed entries requires the inspected proposal's
-`--expected` fingerprint and the exact ordered on-disk
-IDs and count, retains all existing IDs and completed ticks, and verifies the
-saved ROADMAP and STATE. Structural success does not establish goal coverage or
-approve an objective's meaning. See [runtime registration](README.md) for the
-proposal/apply contract and interrupted-write behavior.
+Register through `plan.reconcile` using its strict `planning_integrity.parse_record`
+result. Require filenames `{padded_phase}-{NN}-PLAN.md` with two ASCII plan digits,
+frontmatter `phase` equal to the directory name, `plan` equal to `NN` (or its YAML
+integer value), and exactly one nonempty `<objective>`. Reject duplicate YAML keys,
+missing required metadata and invalid types.
+
+Review full returned objectives and descriptions for meaning and goal coverage.
+Apply explicit reviewed entries with the proposal's `--expected` fingerprint and
+exact ordered on-disk IDs/count. Preserve existing IDs and completed ticks; require
+verified ROADMAP and STATE readback. If registration fails or is interrupted,
+follow [runtime registration](README.md) before retrying.
 
 `files_modified` grants exact paths or directory prefixes ending in `/`;
 `files_deleted` grants exact files. A path belongs in one field, not both.

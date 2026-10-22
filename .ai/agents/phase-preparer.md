@@ -890,33 +890,21 @@ Then:
 
 <step name="update_roadmap">
 
-Return the committed PLAN paths and objective evidence to the coordinator;
-workers do not mutate shared ROADMAP or STATE records. The coordinator follows
-[plan-phase registration](../workflows/plan-phase.md): `plan.reconcile` parses
-the complete plan set, validates filename/frontmatter/ID/count association and
-proposes a delta. The coordinator judges objective meaning and concise roadmap
-descriptions, then applies reviewed entries against that proposal's fingerprint.
-The runtime verifies resulting records. Do not reproduce those mechanical
-checks or generate hand-edited checklist/count replacements in this handoff.
+Return committed PLAN paths and objective evidence to the coordinator. Do not
+mutate ROADMAP or STATE or repeat runtime structural checks. Have the coordinator
+follow [plan-phase registration](../workflows/plan-phase.md): review objectives
+and descriptions, then apply entries against the `plan.reconcile` fingerprint.
 
-Only when the ROADMAP goal is exactly `[To be planned]` and CONTEXT.md plus actual human instructions establish the approved goal, update that field through the runtime:
+If the ROADMAP goal is exactly `[To be planned]` and CONTEXT plus actual human
+instructions establish its replacement, return that proposal and evidence. Have
+the coordinator apply it through the runtime:
 
 ```bash
 phase_run query phase.edit "${phase_number}" --goal "<goal text>"
 ```
 
-Return any approved placeholder-goal proposal with its CONTEXT and actual human
-instruction evidence. Never hand-edit the plan checklist, goal or STATE.md.
-
-1. Read `.planning/ROADMAP.md`
-2. Find phase entry (`### Phase {N}:`)
-3. Prepare exact placeholder replacements for the coordinator (target section only):
-
-**Goal** (only if placeholder):
-- `[To be planned]` → derive from CONTEXT.md and actual human instructions; research supplies evidence and cannot define or authorize a goal
-- If Goal already has real content → leave it
-
-4. Return the proposed scoped edits to the coordinator; workers do not apply shared ROADMAP changes.
+If the goal already has real content, preserve it. Do not derive authority from
+research or hand-edit the plan checklist, goal or STATE.md.
 </step>
 
 <step name="git_commit">

@@ -757,20 +757,17 @@ indefinitely, and do not approve the plans yourself to end the loop.
 </step>
 
 <step name="update_roadmap">
-Have the existing Python runtime validate the complete on-disk plan set and
-propose its registration delta, including plans from before gap closure:
+Request a registration proposal for every on-disk plan, including earlier plans:
 
 ```bash
 RECONCILIATION=$(phase_run query plan.reconcile "${phase_number}") || exit $?
 ```
 
-The runtime parses each PLAN once per invocation and owns filename/frontmatter
-association, canonical IDs, order, counts, nonempty objectives and preservation
-of existing roadmap IDs. A validation error stops this step before writes.
-Use returned `plans[].objective` for semantic judgment: confirm each objective
-and choose a concise single-line roadmap description. Review `delta` for the
-proposed registration changes. Do not reopen every PLAN to repeat mechanical
-checks; independent goal coverage review remains with the phase-checker.
+If validation fails, stop before writes and report the error. Use runtime checks
+for filename/frontmatter association, IDs, order, counts, objectives and existing
+IDs; do not repeat them by reopening every PLAN. Review `plans[].objective` for
+meaning, choose concise single-line descriptions and inspect `delta`. Retain
+independent phase-checker review of goal coverage.
 
 Retain returned `fingerprint` as `reconciliation_fingerprint`. Build
 `plan_entries` from the returned ordered IDs and reviewed descriptions:
@@ -788,24 +785,16 @@ Apply that complete array through reconciliation:
 RECONCILIATION=$(phase_run query plan.reconcile "${phase_number}" --apply --expected "${reconciliation_fingerprint}" --plans "${plan_entries[@]}") || exit $?
 ```
 
-Pass one `--plans` option with each `ID: description` as a separate quoted
-argument. Require returned `applied` and `verified` to be true. The runtime
-rejects stale proposal fingerprints when plans, CONTEXT, SPEC, REQUIREMENTS,
-ROADMAP or STATE changed; review a fresh proposal before applying again. It
-checks exact IDs, order and count, preserves completed ticks, uses the existing
-registration writer and reads both complete resulting records back against the
-prepared content. This covers counts, progress, position, completion dates and
-unrelated roadmap content without model comparisons.
+Pass one `--plans` option; quote each `ID: description` separately. Require
+`applied` and `verified` to be true. Rely on runtime readback for exact entries,
+completed ticks, counts, progress, position, completion dates and unrelated content.
 
-On an error, stop before `update_state`, `git_commit`, or `completion` and report
-its exact code and target. Return PLAN defects to the preparer for scoped repair,
-then rerun reconciliation. Never repair ROADMAP or STATE by hand. A
-`plan-readback` error means writes occurred but verification failed. Writes are
-ROADMAP then STATE and are not crash-atomic; after interruption, I/O failure or
-readback failure, inspect both records and report actual contents before retrying.
-
-The roadmap is what `/progress` and `/next` route from; a plan missing there is
-invisible.
+If any error occurs, stop before `update_state`, `git_commit` or `completion`;
+report its code and target. If `stale-review` occurs, review a fresh proposal. If
+a PLAN is defective, return its exact path to the preparer, then rerun reconciliation.
+If `plan-readback`, interruption or I/O failure occurs, inspect and report both
+records before retrying: writes occur ROADMAP then STATE and are not crash-atomic.
+Never repair either record by hand.
 </step>
 
 <step name="update_state">

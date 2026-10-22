@@ -146,32 +146,29 @@ STATE.md's Markdown body is authoritative; its frontmatter counters are
 re-derived from ROADMAP.md on every write, so the two cannot disagree. Writers
 serialize on `.planning/.lock`.
 
-For plan-phase registration, use `plan.reconcile <phase>` first. It parses each
-PLAN once per invocation and returns `plans` (IDs, paths, full objectives),
-`count`, suggested single-line `entries`, a source `fingerprint`, and a `delta` with before/after rows
-and added IDs. This proposal leaves ROADMAP and STATE untouched. The runtime
-uses `planning_integrity.parse_record` to strictly validate complete current
-record metadata and return its parsed metadata/body in one parse. Duplicate YAML
-keys, missing required fields and schema-invalid values fail before proposal or
-apply. It also validates canonical filenames, directory and frontmatter association, a single
-nonempty objective, complete ordered IDs and counts, and missing existing PLAN
-files. Decimal phases and YAML integer plan numbers are supported. It rejects
-recognizable malformed PLAN filenames rather than silently excluding them.
+**Request a proposal.** Run `plan.reconcile <phase>` before registration. Review returned `plans` (IDs,
+paths, full objectives), `count`, suggested `entries`, `fingerprint` and `delta`
+(before/after rows and added IDs). The proposal leaves ROADMAP and STATE unchanged.
+Use the runtime's structural validation; judge goal coverage, objective meaning
+and description quality separately.
 
-Review the objectives semantically and supply concise descriptions with
-`plan.reconcile <phase> --apply --expected FINGERPRINT --plans "NN-NN: description" ...`. Apply requires
-explicit reviewed entries; it never treats a generated suggestion as approval.
-The inspected proposal's fingerprint covers complete PLAN contents (including
-acceptance, ownership and dependencies), CONTEXT, SPEC, REQUIREMENTS, ROADMAP and
-STATE. Changed inputs return `stale-review` before writes and require fresh review.
-The existing registration writer retains completed ticks and refreshes derived
-progress. Under the same planning lock, reconciliation compares the complete
-saved ROADMAP and STATE against the prepared records, including other phases,
-completion dates, position and counters. Only a matching readback returns
-`applied: true, verified: true`. Preconditions fail before either write;
-`plan-readback` means a write occurred but verification failed, so inspect both
-records before retrying. Writes remain ROADMAP then STATE, not crash-atomic.
-Goal coverage, objective meaning and description quality remain model judgments.
+Require canonical filenames, directory/frontmatter association, one nonempty
+objective, complete ordered IDs/counts and all existing PLAN files. Each PLAN is
+parsed once through `planning_integrity.parse_record`; duplicate YAML keys,
+missing fields, invalid schema values and recognizable malformed filenames fail
+before writes. Accept decimal phases and YAML integer plan numbers.
+
+**Apply reviewed entries.** Apply explicit reviewed descriptions with
+`plan.reconcile <phase> --apply --expected FINGERPRINT --plans "NN-NN: description" ...`.
+Do not treat suggested entries as approval. The fingerprint covers full PLANs,
+CONTEXT, SPEC, REQUIREMENTS, ROADMAP and STATE. If `stale-review` occurs, review a
+fresh proposal before retrying.
+
+**Check readback.** Require `applied: true, verified: true` before continuing. Under one planning lock,
+the writer preserves completed ticks, refreshes progress and compares both saved
+records with prepared content, including other phases, completion dates, position
+and counters. If `plan-readback`, interruption or I/O failure occurs, inspect and
+report both records before retrying: ROADMAP then STATE writes are not crash-atomic.
 
 `roadmap.set-plans` takes one phase number and a complete replacement list of
 quoted `NN-NN: description` entries. The `plans` option consumes all following
