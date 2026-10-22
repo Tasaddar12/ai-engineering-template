@@ -974,18 +974,20 @@ issue_refs: []
                     test_workflow_links.WorkflowNavigationTests().test_local_guidance_links_resolve_with_portable_case()
                 guide = (self.target / ("." + host) / "commands/install.md").read_text(encoding="utf-8")
                 self.assertIn("/main/.ai/install.py", guide)
-                # Source CI is deliberately absent in consumers. Both installed
-                # guides must retain navigable immutable upstream source links.
-                upstream = ("https://github.com/Tasaddar12/ai-engineering-template/blob/"
-                            "f2155b0579269f0c288a764ce7ed532493e8b5ba/")
+                # Follow the installed runtime's local provider reference.
+                host_root = self.target / ("." + host)
+                runtime_guide = host_root / "runtime/README.md"
+                destination = "../references/git-workflow.md#saved-pr-body-provider-check"
+                self.assertIn("](" + destination + ")", runtime_guide.read_text(encoding="utf-8"))
+                relative = destination.split("#")[0]
+                provider_guide = (runtime_guide.parent / relative).resolve()
+                self.assertEqual(host_root / "references/git-workflow.md", provider_guide)
+                self.assertIn("## Saved PR body provider check", provider_guide.read_text(encoding="utf-8"))
                 source_files = (".github/workflows/validate-saved-pr.yml",
                                 ".github/scripts/validate_saved_pr.py")
-                for relative in ("references/git-workflow.md", "runtime/README.md"):
-                    installed_guide = (self.target / ("." + host) / relative).read_text(encoding="utf-8")
-                    for source_file in source_files:
-                        self.assertIn("](" + upstream + source_file + ")", installed_guide)
-                        self.assertNotIn("](../../" + source_file + ")", installed_guide)
-                        self.assertFalse((self.target / source_file).exists())
+                for source_file in source_files:
+                    self.assertFalse((self.target / source_file).exists())
+                    self.assertFalse((host_root / source_file).exists())
 
     def test_existing_ai_is_preserved_and_requires_explicit_migration(self):
         (self.target / ".ai/runtime").mkdir(parents=True)
