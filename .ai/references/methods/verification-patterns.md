@@ -112,11 +112,17 @@ grep -E "\{ .* \}.*props|\bprops\.[a-zA-Z]+" "$component_path"
 grep -E "fetch\(|axios\.|useSWR|useQuery|getServerSideProps|getStaticProps" "$component_path"
 ```
 
-**Functional verification (human required):**
-- Does the component render visible content?
-- Do interactive elements respond to clicks?
-- Does data load and display?
-- Do error states show appropriately?
+**Functional verification:** Run objective assertions in the authorized consumer
+harness:
+- Assert that the component renders visible content.
+- Assert that interactive elements respond to clicks.
+- Assert that data loads and displays.
+- Assert that error states appear appropriately.
+
+Apply [browser acceptance routing](../ui-screenshots.md#acceptance-routing): accept
+conclusive revision-applicable evidence automatically; record missing observations
+as Pending/Unverified; return unresolved subjective choices to the user through the
+coordinator. Preserve required human-only UAT.
 
 </react_components>
 
