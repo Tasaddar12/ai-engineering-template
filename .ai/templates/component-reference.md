@@ -1,9 +1,8 @@
 # Consumer component reference scaffold
 
-Use this scaffold within the consumer project's existing PLAN to create/update
-an executable development page, story collection or equivalent. Read
-[UI contract responsibilities](../references/ui-contract.md). This is authoring
-guidance, not a runnable page or evidence that a consumer UI already exists.
+Read [UI contract responsibilities](../references/ui-contract.md). Fill this
+scaffold in the consumer's existing PLAN; assign an executable development page
+or story collection using inspected consumer sources.
 
 ## Implementation scaffold
 
@@ -22,18 +21,15 @@ Check: <existing focused test command, or assigned test prerequisite>
 Expected: <observable variants, state transitions and failure signal>
 ```
 
-Use the consumer's language, framework, naming and test conventions. Import its
-real components; do not substitute styled copies or create a parallel design
-system. Inspect supported props and providers rather than guessing their API.
-Keep fixture data local and non-sensitive. Do not add a dependency solely to
-host this reference when the existing app or story tooling can render it.
+Inspect supported props/providers and import the consumer's real components.
+Use its language, framework, naming, tests and existing app/story tooling.
+Keep fixture data local and non-sensitive; exclude styled component copies.
 
 ## Scenario scaffold
 
-Include one row per applicable variant/state, with stable scenario IDs. Split
-rows when variants have different behavior; do not hide missing cases behind a
-single "all states" row. Replace the illustrative rows with actual consumer
-components and supported states. Explain an inapplicable state explicitly.
+Replace the example rows with actual components and supported states. Assign
+stable scenario IDs and one row per applicable variant/state. If behavior differs,
+split the rows. Record a reason for each inapplicable state.
 
 | Scenario ID | Rule/acceptance IDs | Actual component + variant | Fixture/trigger | Observable result | Focused check |
 |---|---|---|---|---|---|
@@ -42,20 +38,16 @@ components and supported states. Explain an inapplicable state explicitly.
 | REF-03 | [UI-ID/A-ID] | [real data view + empty variant] | [empty result fixture] | [empty message and applicable next action] | [test path/name] |
 | REF-04 | [UI-ID/A-ID] | [real data view + error variant] | [failed mock; retry succeeds] | [error, recovery action and restored content] | [test path/name] |
 
-Declare each scenario's route/surface and applicable viewport bounds before
-running it. Carry the same acceptance IDs from CONTEXT through PLAN, SUMMARY and
-verification; reference-page coverage does not establish every production route.
-Add applicable grouped-tab, disabled, selected, validation, success and responsive
-scenarios from the contract. Keep the reference connected to production usage:
-name at least one consuming screen/source per changed shared component. Exercise
-real event handlers with controlled fixtures; a decorative button or permanently
-hardcoded loading view does not prove a transition.
+Declare routes/surfaces and viewport bounds before running scenarios. Carry
+acceptance IDs through CONTEXT, PLAN, SUMMARY and verification. Add applicable
+grouped-tab, disabled, selected, validation, success and responsive cases. Name
+at least one production screen/source per changed shared component. Exercise
+real handlers and transitions with controlled fixtures. Verify production route
+coverage separately; reference-page coverage alone cannot establish it.
 
 ## Handoff evidence
 
-Return source paths, scenario IDs, exact launch/check commands and observed
-results in the existing SUMMARY. The verifier checks imports, variants, fixtures
-and relevant production usage against the assigned revision. Record unexecuted
-scenarios and unavailable browser evidence as missing; never label the scaffold
-or an unrun command as a pass. Use existing verification and UAT rules for any
-required observation that remains unverified.
+Record source paths, scenario IDs, exact launch/check commands and results in
+the existing SUMMARY. Verify imports, variants, fixtures and production usage at
+the assigned revision. If a scenario is unexecuted or browser evidence unavailable,
+record the missing observation and apply existing verification/UAT routing.

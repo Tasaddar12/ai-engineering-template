@@ -1,10 +1,9 @@
 # UI contract template
 
-Use for a consumer project with a UI. Read the
-[ownership and consumption rules](../references/ui-contract.md). Copy the shared
-block into PROJECT's narrative section through the coordinator. Use existing
-design documentation by reference instead of duplicating token definitions.
-Do not populate the reusable adoption skeleton with an invented product.
+Read [ownership and consumption rules](../references/ui-contract.md). For a UI
+project, send the completed shared block to the coordinator for PROJECT's narrative
+section. Cite existing design/token documentation. Leave the reusable adoption
+skeleton unfilled during template maintenance.
 
 ## Shared contract block
 
@@ -29,9 +28,8 @@ Open questions: [exact unresolved choice and blocked surface/task, or none]
 
 ## Phase delta block
 
-Copy only this block into the phase CONTEXT when UI scope applies. Preserve
-the CONTEXT's existing decisions, canonical references and acceptance fields.
-The coordinator owns this record; a preparer returns proposed changes.
+For UI scope, send the completed delta block to the coordinator for phase
+CONTEXT. Preserve existing decisions, canonical references and acceptance fields.
 
 ```markdown
 ## UI Contract Delta
@@ -51,5 +49,5 @@ Good: `UI-03` uses the project's existing `formMaxWidth` token for settings;
 the phase delta cites `D-02/A-04` for a full-width comparison table on one route.
 Bad: "Make every page clean and modern" or an unexplained phase-wide redesign.
 
-The reference implementation and checks supply evidence; neither this table nor
-a preparer's proposed delta grants implementation authority or visual approval.
+Verify the rules through the reference implementation and checks. Obtain
+implementation authority and visual acceptance through the existing phase rules.

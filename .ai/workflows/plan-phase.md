@@ -378,12 +378,11 @@ explicitly before continuing.
 </step>
 
 <step name="spawn_preparer">
-For approved UI scope, include PROJECT's UI Contract, the CONTEXT UI Contract
-Delta, actual consumer UI source paths and
-[UI contract responsibilities](../references/ui-contract.md) in the preparer's
-assignment. Require the existing PLAN's `read_first`, ownership and checks to
-cover applicable rules and executable consumer reference scenarios. Missing
-decisions return to the coordinator; this adds no preparation or review phase.
+For approved UI scope, pass PROJECT's UI Contract, CONTEXT's UI Contract Delta,
+consumer UI source paths and [UI contract responsibilities](../references/ui-contract.md)
+to the preparer. Require PLAN `read_first`, owned paths and checks for applicable
+rules and executable reference scenarios. If a decision is missing, return the
+choice and blocked tasks to the coordinator.
 
 Capture the exact input revision before the preparer starts:
 

@@ -133,10 +133,10 @@ Remove this section for projects without a UI. -->
 - Include the "why" — constraints without rationale get questioned
 
 **UI Contract:**
-For UI projects, use the [UI contract template](ui-contract.md) and follow
-[contract ownership](../references/ui-contract.md). PROJECT owns shared UI rules;
-phase CONTEXT owns scoped deltas. The coordinator records actual decisions; do
-not fill the adopting-project skeleton during template maintenance.
+For UI projects, send actual decisions to the coordinator using the
+[UI contract template](ui-contract.md) and [contract ownership](../references/ui-contract.md).
+Record shared rules in PROJECT and scoped deltas in phase CONTEXT. Leave the
+adopting-project skeleton unfilled during template maintenance.
 
 **Key Decisions:**
 - Significant choices that affect future work
