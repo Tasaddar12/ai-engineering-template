@@ -95,8 +95,8 @@ Use existing planning, execution, review, verification and human acceptance rout
 
 ## Screenshot evidence
 
-Use [screenshot coverage evidence](ui-screenshots.md) for the planned route × state
-× viewport matrix, single consumer browser producer and deterministic runtime
-validation. Use its [manifest scaffold](../templates/screenshot-manifest.md)
-without creating a production UI in this workflow repository. Join missing
-coverage into the existing verification report.
+Declare the route × state × viewport matrix with the
+[manifest scaffold](../templates/screenshot-manifest.md). Assign one consumer
+browser producer and run [screenshot coverage validation](ui-screenshots.md).
+Record missing coverage in the existing verification report. Keep capture UI
+in the consumer project.

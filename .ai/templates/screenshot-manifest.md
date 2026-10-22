@@ -1,17 +1,15 @@
 # Screenshot scope and capture scaffold
 
-Use this scaffold in the consumer project's existing browser test harness. Read
-[coverage ownership and validation](../references/ui-screenshots.md). This is a
-fixture-shaped format example, not a claim about a real application or capture.
-Keep the scope separate from the producer's output so omitted captures stay visible.
+Read [coverage ownership and validation](../references/ui-screenshots.md). Replace
+the example inputs below from the approved PLAN and consumer sources. Write scope
+separately from the producer's capture manifest in the existing browser harness.
 
 ## Planned scope JSON
 
-Replace the revision, complete dependent route inventory, acceptance IDs, states,
-procedures, URLs and viewport bounds from the approved PLAN and inspected sources.
-For `local`, `affected_routes` selects changed routes. For `shared` (theme, layout,
-tokens or shared components), every route in `routes` requires capture; populate it
-with ALL dependent routes, including routes unaffected by the local screen edit.
+Fill revision, acceptance IDs, routes, states, procedures, resolved URLs and
+viewport bounds from PLAN and source. For `local`, set `affected_routes` to every
+affected route. For `shared` theme/layout/token/component changes, fill `routes`
+with ALL dependent routes; every listed route requires capture.
 
 ```json
 {
@@ -44,18 +42,17 @@ with ALL dependent routes, including routes unaffected by the local screen edit.
 }
 ```
 
-Each selected route expands criteria × states × viewports. Use only applicable
-combinations: split route entries with distinct stable IDs when scenarios need
-different viewport/state sets. Explain exclusions in the PLAN; never omit required
-coverage because a capture failed. Use exact resolved URLs, including test query
-parameters. Keep credentials and sensitive fixture values out of evidence.
+Include each required criterion × state × viewport cell. If scenarios need
+different state/viewport sets, split route entries with distinct stable IDs.
+Record exclusions in PLAN; retain required cells after capture failures. Use
+resolved URLs with test query parameters. Exclude credentials and sensitive data.
 
 ## Single producer interface
 
-Adapt this Python shape inside the consumer harness; resolve the installed runtime
-path for the selected host, rather than importing an invented production package.
-The callback uses the consumer's real browser tools, fixture setup and screenshot
-API. No browser dependency is bundled in this workflow template.
+Resolve the selected host's installed runtime directory. Set `runtime_directory`,
+`scope_file`, `expected_revision`, `private_artifact_directory` and `manifest_file`
+to actual consumer inputs. Implement `capture` with existing browser tools,
+fixtures and screenshot API before running this scaffold:
 
 ```python
 import json
@@ -80,14 +77,13 @@ manifest = produce(scope, expected_revision, capture, private_artifact_directory
 Path(manifest_file).write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 ```
 
-The producer invokes the callback once per required criterion/route/state/viewport,
-uses a fresh artifact filename, computes SHA-256 from the written bytes and records
-`result: captured` or `result: failed` with the error. It continues after individual
-failures. The output contains `schema`, `revision` and `captures`; each capture
-contains all requirement fields plus `result`, `artifact`, `sha256` and an optional
-`error`. Do not manufacture successful records for unavailable browser sessions.
+Save the producer's `schema`, `revision` and `captures`. Each capture includes
+the requirement fields, `result`, `artifact`, `sha256` and optional `error`.
+The producer calls `capture` once per required cell with a fresh filename and
+hashes the written bytes. If capture fails, retain `result: failed` and its error;
+continue remaining cells. Record success only for actual browser captures.
 
-Save scope, manifest and images outside Git when private. Absolute local paths and
-paths relative to the manifest directory are valid artifact references. Consumers
-need access to those bytes to validate the digest; a private inaccessible reference
-stays unverified. Publication of raw images or logs is never required.
+Save private scope, manifest and images outside Git. Use absolute artifact paths
+or paths relative to the manifest directory. Give validators access to image bytes;
+if bytes are inaccessible, keep the capture unverified. Publish raw images/logs
+only when requested.

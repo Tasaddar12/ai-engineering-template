@@ -857,10 +857,10 @@ payload; installation does not activate the provider check.
 
 ## UI screenshot coverage
 
-`verification.screenshots --scope-file PATH --manifest-file PATH --expected-revision SHA`
-validates the planned criterion/route/state/viewport matrix against the single
-consumer browser producer's manifest and artifact digests. It is read-only and
-reports `complete` or `gaps_found` with explicit missing coverage; it does not run
-a browser or judge visuals. See [coverage ownership](../references/ui-screenshots.md)
-and the [consumer scaffold](../templates/screenshot-manifest.md), including the
-exit-status contract for configured check wrappers and private artifact support.
+Run `verification.screenshots --scope-file PATH --manifest-file PATH --expected-revision SHA`
+through `phase.py query` with the planned scope, single producer manifest and full
+revision. Read `complete` or `gaps_found`, missing coverage and artifact digest errors.
+If wrapping this read-only query as a check, fail unless status is `complete`.
+Use [coverage ownership](../references/ui-screenshots.md) and the
+[consumer scaffold](../templates/screenshot-manifest.md) for browser capture,
+private artifacts and separate visual acceptance evidence.
