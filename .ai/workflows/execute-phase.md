@@ -79,6 +79,14 @@ discussion, planning and readiness do not grant implementation permission.
 
 <process>
 
+**Extract mechanical evidence.** Run
+`phase_run query evidence.extract --base <captured-base> --head <captured-head>`.
+If check JSON exists, add `--evidence-file <existing-check-output.json>`.
+Consume resolved revisions, changed paths, commit IDs and recorded check/receipt
+fields directly. Preserve partial and unknown results; apply existing receipt
+freshness and acceptance gates. If interpretation remains unresolved, follow
+[scout dispatch](../references/scout-dispatch.md).
+
 **Every execution exit uses `review_phase_issues` below.** Apply it on normal
 completion, deferral, a blocked/halted checkpoint, an exhausted continuation or
 early termination before the closing report or session handoff. Wait for active

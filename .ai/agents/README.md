@@ -20,7 +20,7 @@ source examples and result contracts.
 | [Code reviewer](code-reviewer.md) | execute-phase, verify-work, ship | Exact changed files, base and revision → read-only classified findings → orchestrator/coder |
 | [Debugger](debugger.md) | next, verify-work | Reproduction and assigned failure → diagnosis and regression/fix proposal → orchestrator/coder |
 | [Targeted fixer](targeted-fixer.md) | Coordinator via execute-phase, verify-work, ship | Diagnosed bounded assignment → owned repair commits/checks/SUMMARY → coordinator integration and fresh review |
-| [Scout](scout.md) | Any role, for every requested repeatable task class in scout-dispatch.md | Requested fields and revision → cited evidence packet → assigned decision owner |
+| [Scout](scout.md) | Any role, for source discovery and interpretation under scout-dispatch.md | Requested fields and revision → cited evidence packet → assigned decision owner |
 | [Verifier](verifier.md) | verify-work | Integrated acceptance, source and specialist evidence → independent VERIFICATION report → orchestrator correction or publication |
 
 Follow [scout dispatch](../references/scout-dispatch.md) for the task/output

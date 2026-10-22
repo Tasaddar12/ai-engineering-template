@@ -15,7 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib import (archive, bundles, codebase, delivery, gitops, handoff, milestones,  # noqa: E402
+from lib import (archive, bundles, codebase, delivery, evidence, gitops, handoff, milestones,  # noqa: E402
                  issue_format, models, phase_issues, phases, planning_integrity, project_record, quick, requirements, state,
                  todo_issues, todos, validate, verification, worktrees)
 from lib import plan_reconciliation  # noqa: E402
@@ -763,6 +763,15 @@ def verb_quick_update(workspace, positionals, options):
 
 # --- verification and dispatch -------------------------------------------
 
+def verb_evidence_extract(workspace, positionals, options):
+    require(isinstance(options.get("base"), str), "missing option: --base", "missing-argument")
+    head = options.get("head", "HEAD")
+    evidence_file = options.get("evidence_file")
+    require(evidence_file is None or (isinstance(evidence_file, str) and evidence_file.strip()),
+            "--evidence-file requires a nonblank path", "missing-argument")
+    return evidence.extract(workspace, options["base"], head, evidence_file)
+
+
 def verb_verification_status(workspace, positionals, options):
     return verification.status(workspace, argument(positionals, 0, "phase"))
 
@@ -930,6 +939,7 @@ VERBS = {
     "quick.update": verb_quick_update,
 
     "verification.status": verb_verification_status,
+    "evidence.extract": verb_evidence_extract,
     "verification.resolve-file": verb_verification_file,
     "verification.run-checks": verb_run_checks,
     "verification.qualify-successor": verb_qualify_successor,

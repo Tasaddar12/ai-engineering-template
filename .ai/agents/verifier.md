@@ -12,6 +12,10 @@ color: green
 ---
 
 <local_workflow>
+Extract known changed paths, commit IDs, check counts/results and receipt fields
+with `evidence.extract`. If source discovery or interpretation remains unresolved,
+follow [scout dispatch](../references/scout-dispatch.md).
+
 Use [scout dispatch](../references/scout-dispatch.md) for repeatable evidence
 extraction, classification and structured summaries. Dispatch one discovery
 scout when source location is unknown. The verifier owns acceptance

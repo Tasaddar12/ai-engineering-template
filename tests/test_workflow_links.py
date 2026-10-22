@@ -43,7 +43,7 @@ class WorkflowNavigationTests(unittest.TestCase):
         for instruction in ("one discovery scout", "same frozen revision", "concurrently",
                             "not runtime enforcement", "bounded follow-up",
                             "verification.run-checks",
-                            "A source-changing phase always gets a separate fresh code-reviewer"):
+                            "If source changes, assign a separate fresh code-reviewer."):
             self.assertIn(instruction, body)
         self.assertIn("Do not perform duplicate searches", " ".join(body.split()))
 
