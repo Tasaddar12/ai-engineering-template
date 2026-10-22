@@ -150,7 +150,10 @@ For plan-phase registration, use `plan.reconcile <phase>` first. It parses each
 PLAN once per invocation and returns `plans` (IDs, paths, full objectives),
 `count`, suggested single-line `entries`, a source `fingerprint`, and a `delta` with before/after rows
 and added IDs. This proposal leaves ROADMAP and STATE untouched. The runtime
-validates canonical filenames, directory and frontmatter association, a single
+uses `planning_integrity.parse_record` to strictly validate complete current
+record metadata and return its parsed metadata/body in one parse. Duplicate YAML
+keys, missing required fields and schema-invalid values fail before proposal or
+apply. It also validates canonical filenames, directory and frontmatter association, a single
 nonempty objective, complete ordered IDs and counts, and missing existing PLAN
 files. Decimal phases and YAML integer plan numbers are supported. It rejects
 recognizable malformed PLAN filenames rather than silently excluding them.

@@ -9,6 +9,11 @@ from lib import plan_reconciliation, planning_integrity, state
 from lib.paths import Workspace
 from lib.results import VerbError
 
+PLAN_METADATA = ("type: execute\nwave: 1\ndepends_on: []\nfiles_modified: []\n"
+                 "autonomous: true\nrequirements: [REQ-01]\nacceptance: [AC-01]\n"
+                 "documentation: []\nchecks: [[python, --version]]\n"
+                 "must_haves: {truths: [], artifacts: [], key_links: []}\nissue_refs: []\n")
+
 
 class PlanReconciliation(RuntimeCase):
     def setUp(self):
@@ -21,7 +26,7 @@ class PlanReconciliation(RuntimeCase):
     def write_plan(self, number, objective="An outcome", phase="01-foundation"):
         path = self.phase_dir / ("01-" + number + "-PLAN.md")
         path.write_text("---\nphase: " + phase + "\nplan: '" + number
-                        + "'\n---\n<objective>" + objective + "</objective>\n", encoding="utf-8")
+                        + "'\n" + PLAN_METADATA + "---\n<objective>" + objective + "</objective>\n", encoding="utf-8")
         return path
 
     def records(self):
@@ -50,15 +55,18 @@ class PlanReconciliation(RuntimeCase):
             with self.subTest(apply=apply):
                 proposal = plan_reconciliation.reconcile(workspace, "1")
                 with patch.object(plan_reconciliation, "read_text", wraps=plan_reconciliation.read_text) as reader:
-                    with patch.object(plan_reconciliation, "split_frontmatter",
-                                      wraps=plan_reconciliation.split_frontmatter) as parser:
-                        result = plan_reconciliation.reconcile(
-                            workspace, "1", ["01-01: First", "01-02: Second"],
-                            apply=apply, expected=proposal["fingerprint"])
+                    with patch.object(planning_integrity, "parse_record",
+                                      wraps=planning_integrity.parse_record) as parser:
+                        with patch.object(planning_integrity.yaml, "load", wraps=planning_integrity.yaml.load) as loader:
+                            result = plan_reconciliation.reconcile(
+                                workspace, "1", ["01-01: First", "01-02: Second"],
+                                apply=apply, expected=proposal["fingerprint"])
                 plan_reads = [call.args[0].name for call in reader.call_args_list
                               if call.args[0].name.endswith("-PLAN.md")]
                 self.assertEqual(plan_reads, ["01-01-PLAN.md", "01-02-PLAN.md"])
                 self.assertEqual(parser.call_count, 2)
+                self.assertEqual(sum(call.kwargs.get("Loader") is planning_integrity.IntegrityLoader
+                                     for call in loader.call_args_list), 2)
                 self.assertEqual(result["applied"], apply)
 
     def test_apply_preserves_completed_work_adds_gap_plan_and_verifies_records(self):
@@ -127,15 +135,16 @@ class PlanReconciliation(RuntimeCase):
 
     def test_wrong_missing_or_malformed_frontmatter_is_rejected(self):
         path = self.phase_dir / "01-01-PLAN.md"
-        for content in ("<objective>Missing metadata</objective>",
-                        "---\nphase: [broken\n---\n<objective>x</objective>",
-                        "---\nphase: 02-other\nplan: '01'\n---\n<objective>x</objective>",
-                        "---\nphase: 01-foundation\nplan: true\n---\n<objective>x</objective>"):
+        valid = path.read_text(encoding="utf-8")
+        for content, code in (("<objective>Missing metadata</objective>", "planning-integrity"),
+                              ("---\nphase: [broken\n---\n<objective>x</objective>", "planning-integrity"),
+                              (valid.replace("phase: 01-foundation", "phase: 02-other"), "plan-frontmatter"),
+                              (valid.replace("plan: '01'", "plan: true"), "planning-integrity")):
             with self.subTest(content=content):
                 path.write_text(content, encoding="utf-8")
                 before = self.records()
                 result = self.run_verb("plan.reconcile", "1", expect_ok=False)
-                self.assertIn(result["code"], ("plan-frontmatter", "bad-frontmatter"))
+                self.assertEqual(result["code"], code)
                 self.assertEqual(before, self.records())
 
     def test_empty_or_duplicate_objective_is_rejected(self):
@@ -158,12 +167,36 @@ class PlanReconciliation(RuntimeCase):
     def test_unquoted_yaml_plan_number_and_decimal_phase_are_supported(self):
         self.run_verb("phase.insert", "1", "Gap")
         path = self.directory / ".planning/phases/01.1-gap/01.1-01-PLAN.md"
-        path.write_text("---\nphase: 01.1-gap\nplan: 01\n---\n<objective>Fix gap</objective>", encoding="utf-8")
+        path.write_text("---\nphase: 01.1-gap\nplan: 01\n" + PLAN_METADATA
+                        + "---\n<objective>Fix gap</objective>", encoding="utf-8")
         proposal = self.run_verb("plan.reconcile", "1.1")
         result = self.run_verb("plan.reconcile", "1.1", "--apply", "--expected", proposal["fingerprint"],
                                "--plans", "01.1-01: Fix gap")
         self.assertEqual(result["count"], 1)
         self.assertTrue(result["verified"])
+
+    def test_canonical_invalid_metadata_is_rejected_in_proposal_and_apply(self):
+        path = self.phase_dir / "01-01-PLAN.md"
+        valid = path.read_text(encoding="utf-8")
+        invalid_cases = {
+            "missing required fields": "---\nphase: 01-foundation\nplan: '01'\n---\n<objective>x</objective>",
+            "zero wave": valid.replace("wave: 1", "wave: 0"),
+            "empty requirements": valid.replace("requirements: [REQ-01]", "requirements: []"),
+            "scalar acceptance": valid.replace("acceptance: [AC-01]", "acceptance: AC-01"),
+            "checks string list": valid.replace("checks: [[python, --version]]", "checks: [python]"),
+            "duplicate phase": valid.replace("phase: 01-foundation", "phase: 02-other\nphase: 01-foundation"),
+            "duplicate plan": valid.replace("plan: '01'", "plan: '02'\nplan: '01'"),
+        }
+        for name, content in invalid_cases.items():
+            with self.subTest(case=name):
+                path.write_text(valid, encoding="utf-8")
+                proposal = self.run_verb("plan.reconcile", "1")
+                path.write_text(content, encoding="utf-8")
+                with self.assertRaises(VerbError):
+                    planning_integrity.validate_record(".planning/phases/01-foundation/01-01-PLAN.md", content)
+                self.reject_unchanged(code="planning-integrity")
+                self.reject_unchanged("--apply", "--expected", proposal["fingerprint"], "--plans",
+                                      "01-01: First", "01-02: Second", code="planning-integrity")
 
     def test_corrupted_postwrite_records_are_reported_not_marked_verified(self):
         original = state.register_plans

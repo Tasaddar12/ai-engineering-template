@@ -3,11 +3,11 @@ import hashlib
 import json
 import re
 
-from . import phases, state
+from . import phases, planning_integrity, state
 from .paths import read_text
 from .results import require
 from .roadmap import Roadmap
-from .text import join_frontmatter, split_frontmatter
+from .text import join_frontmatter
 
 
 def reconcile(workspace, number, entries=None, apply=False, expected=None):
@@ -46,7 +46,9 @@ def reconcile(workspace, number, entries=None, apply=False, expected=None):
                 "PLAN must be a file inside phase directory: " + path.name, "plan-path")
         content = read_text(path)
         sources.append((workspace.relative(path), content))
-        metadata, body = split_frontmatter(content)
+        parsed = planning_integrity.parse_record(workspace.relative(path), content)
+        require(parsed is not None, "PLAN is not a canonical record: " + path.name, "plan-path")
+        metadata, body = parsed["metadata"], parsed["body"]
         require(metadata.get("phase") == directory.name,
                 path.name + ": frontmatter phase must equal " + directory.name, "plan-frontmatter")
         plan_number = metadata.get("plan")

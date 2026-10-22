@@ -61,7 +61,10 @@ must_haves: {truths: [], artifacts: [], key_links: []}
 issue_refs: []           # reviewed issue declaration mappings, not URL strings
 ```
 
-During registration, `plan.reconcile` checks the complete phase directory against
+During registration, `plan.reconcile` consumes the canonical strict
+`planning_integrity.parse_record` result, validating required metadata/types and
+duplicate YAML keys in the same parse that supplies metadata and body. It checks
+the complete phase directory against
 the roadmap: filenames are `{padded_phase}-{NN}-PLAN.md` with two ASCII plan
 digits, frontmatter `phase` equals the directory name, and `plan` equals `NN`
 (or its YAML integer value). Each PLAN has exactly one nonempty `<objective>`.
