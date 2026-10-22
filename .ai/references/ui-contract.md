@@ -92,3 +92,11 @@ unknown, record the exact question and blocked work.
 - Route unobserved required behavior through the existing `human_needed` policy.
 
 Use existing planning, execution, review, verification and human acceptance routes.
+
+## Screenshot evidence
+
+Declare the route × state × viewport matrix with the
+[manifest scaffold](../templates/screenshot-manifest.md). Assign one consumer
+browser producer and run [screenshot coverage validation](ui-screenshots.md).
+Record missing coverage in the existing verification report. Keep capture UI
+in the consumer project.

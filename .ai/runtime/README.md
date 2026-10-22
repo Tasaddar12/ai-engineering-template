@@ -854,3 +854,13 @@ For saved-body validation on `opened`, `edited`, `reopened`, `synchronize` and
 Use the trusted checkout's `lib.issue_format.validate_pr` without installing
 dependencies. If using an installed runtime, keep source-only CI outside its
 payload; installation does not activate the provider check.
+
+## UI screenshot coverage
+
+Run `verification.screenshots --scope-file PATH --manifest-file PATH --expected-revision SHA`
+through `phase.py query` with the planned scope, single producer manifest and full
+revision. Read `complete` or `gaps_found`, missing coverage and artifact digest errors.
+If wrapping this read-only query as a check, fail unless status is `complete`.
+Use [coverage ownership](../references/ui-screenshots.md) and the
+[consumer scaffold](../templates/screenshot-manifest.md) for browser capture,
+private artifacts and separate visual acceptance evidence.

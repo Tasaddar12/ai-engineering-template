@@ -810,6 +810,16 @@ def verb_reconcile_evidence(workspace, positionals, options):
                      options.get("fresh_evidence_file"), options.get("provider_run"), options.get("repository"))
 
 
+def verb_screenshots(workspace, positionals, options):
+    required = {"scope_file", "manifest_file", "expected_revision"}
+    require(not positionals and required <= set(options)
+            and not (set(options) - required - {"raw"})
+            and all(isinstance(options[k], str) for k in required),
+            "screenshots requires scope-file, manifest-file and expected-revision", "bad-options")
+    return verification.screenshots(workspace, options["scope_file"], options["manifest_file"],
+                                    options["expected_revision"])
+
+
 def verb_qualify_successor(workspace, positionals, options):
     required = {"evidence_file", "report_only_paths", "expected_head"}
     require(not positionals and required <= set(options)
@@ -970,6 +980,7 @@ VERBS = {
     "verification.resolve-file": verb_verification_file,
     "verification.run-checks": verb_run_checks,
     "verification.reconcile-evidence": verb_reconcile_evidence,
+    "verification.screenshots": verb_screenshots,
     "verification.qualify-successor": verb_qualify_successor,
 
     "resolve-model": verb_resolve_model,

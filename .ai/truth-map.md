@@ -12,6 +12,7 @@
 | Plan actions, ownership, prerequisites and checks | `NN-MM-PLAN.md` | Dispatch the committed assignment |
 | A plan's observed result | `NN-MM-SUMMARY.md` | Use commits and actual evidence |
 | Checking strategy | `NN-VALIDATION.md` when needed | Executable commands live in config/instructions |
+| Screenshot capture coverage | Planned scope plus single producer manifest; `verification.screenshots` result | [Coverage evidence](references/ui-screenshots.md) binds revision/criterion/route/state/viewport/procedure and image digest; verifier preserves missing cells |
 | Independent phase assessment | `NN-VERIFICATION.md` | Summaries do not replace verification |
 | Captured ideas not yet scoped | `.planning/todos/pending/` | Fold them in through discussion, never silently |
 | Small changes outside the roadmap | `.planning/quick/{id}/QUICK.md` | Quick tasks never enter ROADMAP.md |

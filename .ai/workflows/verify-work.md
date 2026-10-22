@@ -235,6 +235,15 @@ consumer reference scenario sources/results and
 verifier. Require rule/scenario reconciliation in Acceptance/Findings at the
 assigned revision; do not treat a scaffold or unexecuted scenario as passing.
 
+For UI scope:
+1. Read the ONE producer's manifest and planned route/state/viewport scope.
+   For shared edits, require the full dependent route inventory.
+2. Run `verification.screenshots` at `frozen_revision` using
+   [screenshot coverage validation](../references/ui-screenshots.md).
+3. Carry missing cells/errors into the existing verifier's Acceptance/Findings.
+   If coverage is incomplete, report its exact gaps; a homepage capture covers
+   only its declared cells. Reuse the producer and existing review route.
+
 This step, `check_integration`, `verify_docs`, and configured checks are one
 read-only dispatch batch. Start the provisional verifier, each applicable
 specialist and configured checks together against the `frozen_revision` captured
