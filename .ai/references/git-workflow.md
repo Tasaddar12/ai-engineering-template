@@ -320,21 +320,25 @@ unavailable readback first. The audit grants no new merge or issue closure autho
 
 ## Saved PR body provider check
 
-**Configure the trusted workflow.** Run only trusted workflow code at
-immutable `github.workflow_sha` under `pull_request_target`. Use `contents: read`
-and `pull-requests: read`; disable persisted checkout credentials. Never execute
-PR head content, install dependencies or restore caches. Pass API URL, repository,
-PR number and token through environment variables; never interpolate body text
-into shell commands. The installer excludes this source-only CI payload.
+**Configure the source-only workflow.** Keep `.github/workflows/validate-saved-pr.yml`
+on the trusted default branch. Run only trusted code at immutable
+`github.workflow_sha` under `pull_request_target`, with `contents: read`,
+`pull-requests: read` and `persist-credentials: false`. The installer excludes
+this CI payload. Never execute PR head code, install dependencies, restore caches
+or interpolate body text into shell commands.
 
-**Validate the saved snapshot.** Fetch the saved PR with bounded authenticated GET
-requests. Validate its identity
-and body with `lib.issue_format.validate_pr`, then re-read body, update timestamp,
-head and base revisions/ref identities. If the snapshot changes, the provider is
-unavailable, or a response/body is invalid, fail the check. Exclude body, token and
-provider error text from diagnostics. Do not use the event body as evidence.
-Require exit 0 and the structural-validation success message; if the validator
-exits 1, preserve its sanitized stderr failure and report the check as failed.
+**Validate the saved snapshot.** In the source checkout, run
+`python3 -I .github/scripts/validate_saved_pr.py` with `PHASE_PR_API_URL`,
+`PHASE_PR_REPOSITORY`, `PHASE_PR_NUMBER` and `PHASE_PR_TOKEN` as environment
+inputs. The script makes bounded authenticated GET requests and validates the
+saved PR identity and body with `lib.issue_format.validate_pr`. It then fetches a
+second snapshot and compares the body, update timestamp, head and base revisions,
+and ref identities. Do not use the event body as evidence. If a response is
+invalid, the provider is unavailable, or the snapshots differ, fail the check and
+report validation as unverified. Keep the body, token and provider error text out
+of diagnostics; preserve only sanitized stderr. Require exit 0 and
+`Saved PR body passes canonical structural validation (structural only).`; report
+failure for any other result.
 
 **Confirm rollout.** Put the workflow, script, parser and template on the
 trusted default branch and confirm an actual provider run. Until then, report
@@ -342,7 +346,7 @@ rollout and event-policy applicability as unverified. Keep repository policy,
 protections and issue state unchanged; provide no event opt-out.
 
 **Consume the result.** Treat a pass as structural evidence for the observed
-snapshot. If the body changes
-after the final read, rerun the check. Retain semantic review, the independent
-issue-link audit, verification currentness, readiness gates and explicit
-merge/closure authority; the check does not lock the body atomically.
+snapshot. If the body changes after the final read, rerun the check. Retain
+semantic review, the independent issue-link audit, verification currentness,
+readiness gates and explicit merge/closure authority; the check does not lock the
+body atomically.
