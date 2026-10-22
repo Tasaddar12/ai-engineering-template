@@ -58,6 +58,9 @@ def check_summary(path):
 
 def extract(workspace, base, head="HEAD", evidence_file=None):
     """Extract an explicit committed range and optionally existing check JSON."""
+    require(evidence_file is None or (isinstance(evidence_file, (str, os.PathLike))
+                                     and str(os.fspath(evidence_file)).strip()),
+            "evidence_file requires a nonblank path", "missing-argument")
     base_sha, head_sha = revision(workspace, base), revision(workspace, head)
     # --no-renames accounts for both removed and added paths; -z preserves
     # whitespace/newlines and avoids Git's quoted display-path format.
@@ -70,4 +73,4 @@ def extract(workspace, base, head="HEAD", evidence_file=None):
             "scope": "committed-endpoint-diff",
             "changed_paths": sorted(os.fsdecode(path) for path in changed.split(b"\0") if path),
             "commit_ids": commits,
-            "check_evidence": check_summary(evidence_file) if evidence_file else None}
+            "check_evidence": check_summary(evidence_file) if evidence_file is not None else None}

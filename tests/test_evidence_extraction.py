@@ -129,6 +129,33 @@ class EvidenceExtractionTests(unittest.TestCase):
             result = self.query("evidence.extract", *args, succeeds=False)
             self.assertFalse(result["ok"])
 
+    def test_explicit_empty_or_blank_evidence_fails_while_omission_is_allowed(self):
+        for filename in ("", " ", "\t\n"):
+            with self.subTest(filename=repr(filename)):
+                result = self.extract("--evidence-file", filename, succeeds=False)
+                self.assertEqual(result["code"], "missing-argument")
+                self.assertNotIn("check_evidence", result)
+        omitted = self.extract()
+        self.assertTrue(omitted["ok"])
+        self.assertIsNone(omitted["check_evidence"])
+
+    def test_core_rejects_blank_evidence_before_git_access(self):
+        script = '''import sys
+sys.path.insert(0, sys.argv[1])
+from lib.evidence import extract
+from lib.results import VerbError
+for filename in ("", " ", "\\t\\n"):
+    try:
+        extract(None, "unused", evidence_file=filename)
+    except VerbError as error:
+        assert error.code == "missing-argument", error
+    else:
+        raise AssertionError("blank evidence was accepted")
+'''
+        process = subprocess.run([sys.executable, "-c", script, str(RUNTIME.parent)],
+                                 cwd=self.root, capture_output=True, encoding="utf-8")
+        self.assertEqual(process.returncode, 0, process.stderr + process.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

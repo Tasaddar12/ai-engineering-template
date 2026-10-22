@@ -767,8 +767,8 @@ def verb_evidence_extract(workspace, positionals, options):
     require(isinstance(options.get("base"), str), "missing option: --base", "missing-argument")
     head = options.get("head", "HEAD")
     evidence_file = options.get("evidence_file")
-    require(evidence_file is None or isinstance(evidence_file, str),
-            "--evidence-file requires a path", "missing-argument")
+    require(evidence_file is None or (isinstance(evidence_file, str) and evidence_file.strip()),
+            "--evidence-file requires a nonblank path", "missing-argument")
     return evidence.extract(workspace, options["base"], head, evidence_file)
 
 
