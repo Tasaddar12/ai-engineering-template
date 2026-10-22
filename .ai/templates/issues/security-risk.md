@@ -1,10 +1,10 @@
 # Security Risk Issue Template
 
-Template for a separately composed standalone Security risk issue body.
+Use this template for standalone Security risk issue bodies.
 
 **Purpose:** Record an actionable security concern, assessment and bounded remediation.
 
-**Key principle:** The recorded lifecycle describes the observed risk state.
+**Key principle:** Record the observed risk state in the lifecycle.
 
 **Producer:** The coordinator or assigned author, using reviewed safe evidence.
 
@@ -97,7 +97,7 @@ Session reset tokens remain usable after the session is revoked.
   current behavior, secure behavior and plausible impact with public-safe facts.
 - Fill the assessment fields with the stable key, source references, severity
   rationale, owner, observed status, safe next action and matching evidence.
-- Use `Unknown` or `Pending` with the missing assessment or verification dependency.
+- If assessment or verification is unavailable, use `Unknown` or `Pending` with its dependency.
   State observable secure acceptance and link accessible redacted evidence.
 
 ## Completion and downstream handoff
@@ -105,4 +105,5 @@ Session reset tokens remain usable after the session is revoked.
 - Replace prompts and example values with the reviewed concern, assessment,
   bounded remediation and actual lifecycle evidence or pending dependencies.
 - Hand off the reviewed body and canonical reference under canonical threat
-  tracking. Report the saved issue URL after readback, or the exact blocker.
+  tracking. Read back the saved body, then report its URL.
+  If publication or readback fails, report the exact blocker.

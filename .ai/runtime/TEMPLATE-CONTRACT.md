@@ -280,8 +280,8 @@ mutations and warn-only conformance checking retain their established behavior.
   actual closed only with readback/evidence. Never infer closure from merge.
 - Workers return safe requests/SUMMARY; coordinators update each owning PLAN's
   links and reconcile status. Run phase and both quick-mode hooks outside optional review.
-- Limitation: issue.validate checks section and field shapes; semantic review and
-  provider reconciliation remain author/coordinator duties.
+- Run `issue.validate` to check section and field shapes. Have the author or
+  coordinator review semantics and reconcile provider evidence.
 
 ### Risk-routing destinations
 

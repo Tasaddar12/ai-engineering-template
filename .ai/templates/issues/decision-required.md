@@ -1,10 +1,10 @@
 # Decision Required Issue Template
 
-Template for a separately composed Decision required issue body.
+Use this template for Decision required issue bodies.
 
 **Purpose:** Present an answerable choice and the work it will unblock.
 
-**Key principle:** Each option states a concrete choice and its consequence.
+**Key principle:** State a concrete choice and consequence for each option.
 
 **Producer:** The coordinator or assigned author, using the actual blocking question.
 
@@ -96,6 +96,7 @@ Should import previews expire after one day or seven days?
 ## Completion and downstream handoff
 
 - Replace prompts and example values with the bounded question, alternatives,
-  evidence and blocking dependency. Leave an unmade decision explicit.
+  evidence and blocking dependency. If the decision is unmade, mark it pending.
 - Hand off the reviewed body file to the decision owner under the Git workflow.
-  Report the saved issue URL after readback, or the exact publication blocker.
+  Read back the saved body, then report its URL.
+  If publication or readback fails, report the exact blocker.

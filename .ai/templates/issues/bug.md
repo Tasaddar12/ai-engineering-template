@@ -1,11 +1,11 @@
 # Bug Issue Template
 
-Template for a separately composed Bug issue body.
+Use this template for Bug issue bodies.
 
 **Purpose:** Describe an observed failure, a reproducible starting point and the
 observable result required to fix it.
 
-**Key principle:** Reproduction and acceptance refer to the same failing behavior.
+**Key principle:** Match reproduction and acceptance to the same failing behavior.
 
 **Producer:** The coordinator or assigned author, using inspected behavior and evidence.
 
@@ -85,7 +85,7 @@ The search returns HTTP 200 with an empty result list.
 ## Guidelines
 
 - Retain the File Template headings and order. State current and expected
-  behavior separately; mark unobserved behavior `Unknown` with the missing check.
+  behavior separately. If behavior is unobserved, use `Unknown` with the missing check.
 - Record the tested build, environment, prepared setup and exact reproduction
   actions. Use the [UAT authoring contract](../UAT.md#authoring-contract) for
   user-facing entry points, visible controls and safe inputs.
@@ -96,5 +96,5 @@ The search returns HTTP 200 with an empty result list.
 
 - Replace prompts and example values with the reviewed failure, reproduction,
   evidence and acceptance; retain explicit dependencies for unavailable checks.
-- Hand off the reviewed body file under the Git workflow. Report the saved issue
-  URL after readback, or the exact publication blocker.
+- Hand off the reviewed body file under the Git workflow. Read back the saved body, then report its URL.
+  If publication or readback fails, report the exact blocker.

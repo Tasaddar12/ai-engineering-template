@@ -390,10 +390,10 @@ for the phase session. For a new authorized human-test issue, select only the
 [UAT issue variant](../templates/issues/uat.md), following the same contract.
 For existing issue rewrites, follow the
 [type-preservation rule](../references/git-workflow.md#issue-type-and-title).
-For UAT issues, apply the UAT authoring contract: saved-body readback
-and verified saved links/launch entry point against the prepared UI precede any
-ready claim. Direct verifier-generated human checks follow that contract too;
-the verifier returns its proposed script read-only and the coordinator persists
+For UAT issues, read back the saved body. Verify its saved links and launch entry
+point against the prepared UI before claiming readiness. If either check fails,
+repair the issue before handoff. Apply the same contract to verifier-generated
+human checks; return the proposed script read-only and have the coordinator persist
 it. Keep technical evidence and build provenance in the separate maintainer-owned
 record.
 

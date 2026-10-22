@@ -1,10 +1,10 @@
 # Enhancement Issue Template
 
-Template for a separately composed Enhancement issue body.
+Use this template for Enhancement issue bodies.
 
 **Purpose:** Connect a user's unmet need to a bounded, verifiable capability.
 
-**Key principle:** Acceptance describes an observable user outcome.
+**Key principle:** State observable user outcomes in Acceptance.
 
 **Producer:** The coordinator or assigned author, using the requested outcome and evidence.
 
@@ -81,7 +81,7 @@ Shoppers need to save a delivery address before placing an order.
 - Retain the File Template headings and order. Name the user, current limitation
   and proposed observable outcome in their respective sections.
 - Ground the current limitation in inspected behavior, build/environment and safe
-  evidence. Use `Unknown` or `Pending` with the missing fact or dependency.
+  evidence. If a fact is unavailable, use `Unknown` or `Pending` with its dependency.
 - Bound the capability in Scope and give two to four acceptance outcomes that a
   reviewer can check. Link the actual related requirements or issues.
 
@@ -89,5 +89,5 @@ Shoppers need to save a delivery address before placing an order.
 
 - Replace prompts and example values with the requested capability, inspected
   limitation, evidence and bounded acceptance.
-- Hand off the reviewed body file under the Git workflow. Report the saved issue
-  URL after readback, or the exact publication blocker.
+- Hand off the reviewed body file under the Git workflow. Read back the saved body, then report its URL.
+  If publication or readback fails, report the exact blocker.

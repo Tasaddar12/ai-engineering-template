@@ -59,7 +59,7 @@ ROUTING_DUTIES = {
     "standalone unplanned": ("distinct unplanned threat", "standalone Security risk", "checklist-only", "cannot replace"),
     "safe reconciliation": ("safe separate review", "serialized writes", "template validation",
                             "uncertain-create recovery", "Never route threats", "exemption never waives"),
-    "completion evidence": ("A checked checklist item requires individual outcome evidence.",),
+    "completion evidence": ("Check a checklist item only with individual outcome evidence.",),
 }
 AUDIT_DUTIES = {
     "independent scope": ("fresh independent", "must not be the author", "CONTEXT acceptance",

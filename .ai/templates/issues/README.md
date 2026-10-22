@@ -1,23 +1,26 @@
 # Issue templates
 
-Use the template for the issue type. Read its purpose, downstream consumers,
-examples, guidelines and completion instructions, then copy only its **File Template**
-block into the reviewed issue body.
-
-Use concrete facts and safe evidence. Use `N/A` with a reason only for fields that
-do not apply, and `Unknown` or `Pending` with the missing dependency for unavailable
-facts or checks. Review duplicates and publication authority under the
-[Git workflow](../../references/git-workflow.md), then validate the reviewed body
-with `issue.validate` before publication. Structural success checks format; it does
-not establish safe disclosure, working links, actual behavior or human acceptance.
-
-Preserve an existing issue's type from its original intent, labels and prior body.
-Bugs discovered during UAT remain Bug reports; do not convert engineering work
-into UAT without runnable human actions or classify by the word "acceptance" alone.
-Review open and closed issues and related PR context for duplicates. Keep defects
-within the current change's scope in that change. Publish a separately reviewed
-body file without private TODO metadata, then report its saved URL after readback
-or the exact blocker. Direct provider edits bypass the runtime validation gate.
+1. **Select the type.** Use the table below. If editing an existing issue, preserve
+   its type from its original intent, labels and prior body. If UAT reveals a bug,
+   use Bug. Use UAT only for runnable human actions.
+2. **Prepare the body.** Read the selected template's teaching sections. Copy only
+   its **File Template** block into the reviewed body file. Fill it with concrete
+   facts and safe evidence; exclude private TODO metadata. If a field does not
+   apply, use `N/A` with a reason. If a fact or check is unavailable, use `Unknown`
+   or `Pending` with its missing dependency.
+3. **Review identity and authority.** Follow the
+   [Git workflow](../../references/git-workflow.md). Compare open and closed issues
+   and related PRs for duplicates. Keep defects within the current change's scope
+   in that change.
+4. **Validate the reviewed file.** Run
+   `phase_run query issue.validate --variant "Bug" --body-file PATH`; replace
+   `Bug` with the exact variant below and `PATH` with the reviewed file. If
+   validation fails, correct the body before publication. Verify disclosure,
+   links, behavior and human acceptance separately. Apply this step before direct
+   provider edits too.
+5. **Publish and read back.** Publish the reviewed content under the Git workflow.
+   Compare the saved body with that content, then report its URL. If publication
+   or readback fails, report the exact blocker.
 
 | Type | Template | Validation variant |
 |---|---|---|

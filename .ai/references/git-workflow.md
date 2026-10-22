@@ -48,8 +48,9 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
 - Ground claims in summaries and the current verification report, not the diff alone. Do not present template prompts as evidence.
 - Run `phase_run query pr.validate --body-file PATH` on the reviewed body before
   direct CLI, API or connector publication. Publish that same file content and
-  compare the saved body with it after readback. `pr.open` applies this check to
-  phase, quick and non-phase creates and edits, including body-omitted edits.
+  compare the saved body with it after readback. If validation or readback fails,
+  repair the body before continuing. Use `pr.open` for validated phase, quick and
+  non-phase creates and edits, including body-omitted edits.
 - Put each command, result and evidence reference in the template's Verification
   table. Retain its section order and field shapes; record pending work in Known gaps.
 
@@ -86,7 +87,8 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
 
 - Use `type(scope): summary` for issue titles.
 - Preserve an existing issue's type from its original intent, labels and prior body.
-- Record bugs discovered during UAT as Bug issues and engineering prerequisites as engineering issues.
+- If UAT reveals a bug, use Bug. If the work is an engineering prerequisite,
+  select its engineering issue type.
 - Use the [UAT authoring contract](../templates/UAT.md#authoring-contract) for human-test issues.
 
 ## Canonical threat tracking
@@ -175,9 +177,9 @@ as the canonical reference and keep its lifecycle/evidence authoritative. A new
 entry is canonical only for a new planned risk with all fields above. Semantic
 deduplication, safe separate review, serialized writes, template validation,
 readback and uncertain-create recovery apply to the checklist and every entry.
-`issue.validate` checks structural shape, including unique row IDs and matching
-risk headings/tasks. Authors still verify per-risk facts, canonical identity,
-links and outcome evidence against the provider and source assessments.
+Run `issue.validate` to check structural shape, unique row IDs and matching risk
+headings/tasks. Verify per-risk facts, canonical identity, links and outcome
+evidence against the provider and source assessments.
 
 A distinct unplanned threat discovered during execution or review needs its own
 actionable standalone Security risk issue, or an existing full-scope matching
@@ -187,7 +189,7 @@ distinct unplanned risk. Never route threats through TODO publication. The gener
 resolved-problem exemption never waives this reconciliation, including findings
 already mitigated in the current execution.
 
-A checked checklist item requires individual outcome evidence.
+Check a checklist item only with individual outcome evidence.
 
 ### Safe reporting
 

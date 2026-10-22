@@ -1,10 +1,10 @@
 # Consolidated Security Risk Template
 
-Template for a separately composed consolidated Security risk issue body.
+Use this template for consolidated Security risk issue bodies.
 
 **Purpose:** Track related security risks in one concise table with one task per risk.
 
-**Key principle:** Each row and its task address the same stable risk identity.
+**Key principle:** Match each row and task to the same stable risk identity.
 
 **Producer:** The coordinator or assigned author, using reviewed risk assessments.
 
@@ -81,21 +81,22 @@ Follow [canonical threat tracking](../../references/git-workflow.md#canonical-th
 
 ## Guidelines
 
-- Use this block for consolidated security risks. One row and one task per risk.
+- Add one row and one task per risk.
   Retain the File Template headings, column order and matching risk-ID heading.
-- Put the task under the ID heading, label it `Remediation verified`.
+- Put the task under the ID heading. Label it `Remediation verified`.
 - Keep risk/remediation concise. Link the assessment and source records from the
   row; record the actual owner, observed status, acceptance and available evidence.
-- Fill unavailable facts or checks with `Pending` and the specific dependency.
+- If a fact or check is unavailable, use `Pending` with its specific dependency.
 - Link each planned risk's owning PLAN assessment and mitigation instead of
   copying its full register. Preserve stable headings on reruns and verify the
   provider's saved heading anchors before recording per-risk references.
 - Keep accepted/deferred risks distinct from resolved risks. Check a task only
-  with actual outcome evidence; checking it does not authorize issue closure.
+  with actual outcome evidence. Close the issue only with scope-complete evidence
+  and explicit closure authority.
 
 ## Completion and downstream handoff
 
 - Replace prompts and example values with the reviewed risk rows, matching tasks
   and verified source/canonical links.
 - Reconcile the saved body under canonical threat tracking. Hand off its verified
-  per-risk references and actual outcomes, or the exact readback blocker.
+  per-risk references and actual outcomes. If readback fails, report the exact blocker.

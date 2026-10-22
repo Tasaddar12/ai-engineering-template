@@ -1,10 +1,10 @@
 # UAT Issue Template
 
-Template for a separately composed human acceptance test issue body.
+Use this template for human acceptance test issue bodies.
 
 **Purpose:** Give a human reviewer a prepared test with visible actions and outcomes.
 
-**Key principle:** Human acceptance records the actual human decision.
+**Key principle:** Record only the actual human decision in Human acceptance.
 
 **Producer:** The coordinator or assigned author, using the prepared delivered build.
 
@@ -92,20 +92,22 @@ Reply for each numbered step: N PASS, N FAIL <short observation>, or N BLOCKED <
   fields. Put build/provenance evidence in the linked maintainer record.
 - Supply the exact verified entry point, prepared access and concrete safe inputs.
   Give each action one expected visible result and record the actual human reply.
-- Keep `PENDING HUMAN acceptance` until the human decision is recorded. Record
-  unavailable prerequisites as `BLOCKED` with the missing dependency.
-- For an index, retain the headings, step table and Human acceptance fields.
+- Keep `PENDING HUMAN acceptance` until the human decision is recorded. If a
+  prerequisite is unavailable, record `BLOCKED` with its missing dependency.
+- If preparing an index, retain the headings, step table and Human acceptance fields.
   Replace the standalone step-reply instruction with "Record action results only
   in each linked test; no separate index-row replies." Link the actual test
   decisions and evidence instead of adding duplicate acceptance actions.
 
 ## Completion and downstream handoff
 
-- Replace prompts and example values with the prepared test. Verify the saved
-  links and actions against the delivered UI before handing it to the reviewer.
-- Hand off the read-back issue URL under the UAT authoring contract. Retain pending
-  acceptance until the actual reviewer, date, decision and evidence are available.
-- Verify saved links and launch instructions against the prepared delivered UI
-  before claiming readiness. Repair publication errors; preserve product bugs as
-  FAIL/unresolved and unavailable prerequisites as BLOCKED. Recover an uncertain
-  create through the Git workflow's exact-intent procedure before retrying.
+1. **Prepare the handoff.** Replace prompts and examples with the prepared test.
+   Verify saved links and launch actions against the delivered UI before claiming
+   readiness. If authoring or publication is wrong, repair it. If the product
+   fails, record FAIL/unresolved. If a prerequisite is unavailable, record BLOCKED
+   with its dependency.
+2. **Recover uncertain publication.** If creation is uncertain, follow the Git
+   workflow's exact-intent recovery before retrying.
+3. **Return the saved test.** Hand off the read-back issue URL under the UAT
+   authoring contract. Keep acceptance pending until the actual reviewer, date,
+   decision and evidence are available.

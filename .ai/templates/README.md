@@ -22,7 +22,7 @@ connect those artifacts through the existing [procedures](../commands/README.md)
 | Inspected codebase maps | [architecture](codebase/architecture.md), [stack](codebase/stack.md) |
 | Project research | [architecture](research-project/ARCHITECTURE.md), [features](research-project/FEATURES.md), [pitfalls](research-project/PITFALLS.md), [stack](research-project/STACK.md), [summary](research-project/SUMMARY.md) |
 
-These artifact templates are the available sources. Configuration belongs in
+Use these artifact templates as sources. Keep configuration in
 [config.yaml](../../.planning/config.yaml). Removed variants and specialty templates
 are not required dependencies, and a template does not create records or register
 a command. Keep adopting-project identity unfilled until actual onboarding.
