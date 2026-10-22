@@ -79,6 +79,14 @@ discussion, planning and readiness do not grant implementation permission.
 
 <process>
 
+For mechanical review/verification packets, run
+`phase_run query evidence.extract --base <captured-base> --head <captured-head>`;
+add `--evidence-file <existing-check-output.json>` when check results exist.
+Consume its resolved revisions, changed paths, commit IDs and recorded check/receipt
+fields directly. No scout is required for extraction. Preserve partial/unknown
+results and existing receipt freshness/acceptance gates. Use
+[scout dispatch](../references/scout-dispatch.md) for unresolved interpretation.
+
 **Every execution exit uses `review_phase_issues` below.** Apply it on normal
 completion, deferral, a blocked/halted checkpoint, an exhausted continuation or
 early termination before the closing report or session handoff. Wait for active

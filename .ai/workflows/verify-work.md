@@ -58,6 +58,14 @@ Resolve conditional fixer dispatch through [bounded correction dispatch](../refe
 
 <process>
 
+For mechanical review/verification packets, run
+`phase_run query evidence.extract --base <captured-base> --head <captured-head>`;
+add `--evidence-file <existing-check-output.json>` when check results exist.
+Consume its resolved revisions, changed paths, commit IDs and recorded check/receipt
+fields directly. No scout is required for extraction. Preserve partial/unknown
+results and existing receipt freshness/acceptance gates. Use
+[scout dispatch](../references/scout-dispatch.md) for unresolved interpretation.
+
 <step name="initialize">
 ```bash
 _root="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"

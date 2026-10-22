@@ -6,6 +6,10 @@ color: blue
 ---
 
 <local_workflow>
+Use `evidence.extract` directly for known changed paths, commit IDs, check
+counts/results and receipt fields; no mechanical scout dispatch is required.
+The shared routing below assigns source discovery and interpretation to scouts.
+
 Use [scout dispatch](../references/scout-dispatch.md) for the task/output
 routing table. Send one discovery scout when source location is unknown; send
 extraction scouts only for named evidence packets. Dispatch normal workers for

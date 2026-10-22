@@ -1,4 +1,4 @@
-# Required repository evidence dispatch
+# Repository evidence dispatch
 
 Use this routing contract to assign repeatable evidence work to the `scout`
 role (`gpt-6-luna`/high on Codex; `haiku` on Claude). The scout extracts facts,
@@ -8,8 +8,8 @@ security, acceptance, or whether a phase passes. It is a read-only leaf: it does
 not edit, run tests, execute project code, or dispatch children.
 
 - Dispatch `scout` before unknown-location searches for files, symbols, history or matching skills.
-- Dispatch `scout` for requested inventories, fact extraction, classification, structured summaries or transformation proposals.
-- Route those requested outputs to scout even when input paths are known.
+- Use `evidence.extract` for mechanical changed paths, commit IDs, check counts/results and receipt fields from known Git ranges and existing check JSON. No scout call is required for these fields.
+- Dispatch `scout` for requested inventories, fact extraction, classification, structured summaries or transformation proposals that require source discovery or interpretation, even when input paths are known.
 - Apply this routing in every workflow and role, including coordinator work and search examples.
 - Keep reasoning, technical/design decisions and authoring with the owning agent.
 - Directly inspect already-known source needed for those decisions or necessary verification.
@@ -23,11 +23,11 @@ not edit, run tests, execute project code, or dispatch children.
 | Trigger or task | Owner and required output | Next action |
 |---|---|---|
 | A file, symbol, term, or source boundary is unknown | One discovery scout returns locations, search terms and citations | Join its result, then assign only uncovered questions |
-| A known source or supplied log/error/output needs fact extraction, classification, or a structured summary | Scout returns the requested fields with path:line or input-line evidence | Consume the packet; verify cited source only for conflict or a missing acceptance fact |
+| A known source or supplied log/error/output needs interpretation, classification, or a semantic structured summary | Scout returns the requested fields with path:line or input-line evidence | Consume the packet; verify cited source only for conflict or a missing acceptance fact |
 | A documentation claim needs comparison with source | Scout returns claim-to-source citations and mismatches; `doc-verifier` owns the required per-document claim verdict | Doc-verifier reports each required claim; writer fixes false prose |
-| A review needs changed-file, diff, or test inventory | Scout returns the inventory and cited evidence; `code-reviewer` owns correctness and security findings | Reviewer uses the packet and inspects changed source for the review decision |
+| A review needs committed changed paths, commit IDs or recorded check fields | `evidence.extract` returns the explicit range and existing recorded fields | Reviewer inspects changed source and owns correctness/security findings; scout interprets unresolved inventory questions |
 | Integration acceptance needs producer-to-consumer locations | Scout maps producer, consumer and entry point with citations; `integration-checker` owns the end-to-end flow verdict | Integration-checker follows the flow and reports observed evidence |
-| Existing check output needs summarizing | Scout extracts command, exit/result, revision and failure lines from supplied logs or receipts | Coordinator routes failures; a passing receipt remains deterministic check evidence |
+| Existing check output needs mechanical summarizing | `evidence.extract --evidence-file` returns counts, commands, exit/result, revisions, receipt/log references and bounded tails | Coordinator routes failures; scout interprets ambiguous output only; existing receipt validation still governs reuse |
 | A configured check must run | `verification.run-checks` executes it and returns a receipt | Do not ask a scout to run or repeat it |
 | A check failed or returned ambiguous output | Scout may extract exact failure facts from the existing result; `debugger` owns diagnosis, reproduction plan and fix proposal | Send the fact packet to debugger; only an authorized coder repairs source |
 | Source locations, acceptance and the requested result are already specified | Assigned implementation or decision owner reads those sources and proceeds | Do not dispatch a scout for duplicate extraction |
@@ -35,16 +35,16 @@ not edit, run tests, execute project code, or dispatch children.
 
 | Common assignment | Previous routing tendency | Required route now |
 |---|---|---|
-| One bug fix with named source paths and acceptance | Skip scouts whenever source paths are known | Coder implements. Route each requested repeatable extraction, classification, summary or transformation output to scout. A source-changing phase always gets a separate fresh code-reviewer. |
+| One bug fix with named source paths and acceptance | Skip scouts whenever source paths are known | Coder implements. Use runtime extraction for mechanical fields; route interpretation, classification or transformation proposals to scout. A source-changing phase always gets a separate fresh code-reviewer. |
 | Code change plus documentation review | Let code review stand in for factual documentation comparison | Coder implements; code-reviewer reviews changed source; doc-verifier checks changed documentation claims; verifier reconciles both reports. Route requested claim-to-source extraction to scout. |
-| Coding from a prepared plan | Have coder perform implementation and bulk evidence extraction | Route each requested repository-fact extraction or structured summary to scout; coder implements one plan with owned paths, acceptance IDs and checks. |
+| Coding from a prepared plan | Have coder perform implementation and bulk evidence extraction | Use runtime extraction for mechanical fields and scout for repository interpretation; coder implements one plan with owned paths, acceptance IDs and checks. |
 | Feature planning | Ask researcher to perform repetitive repository inventory along with technical decisions | Researcher owns technical decisions; phase-preparer writes plans; phase-checker reviews plans; scout returns requested repository-pattern, constraint and evidence fields. |
 | Integration checking | Have integration-checker repeat producer/consumer location extraction while tracing flow | Scout maps the named producer, consumer and entry point; integration-checker uses the map and receipts to trace the flow and owns the verdict. |
-| Test running | Ask an agent to execute tests or inspect outputs by rerunning commands | `verification.run-checks` executes configured checks and records receipts; scout summarizes supplied receipt/log fields but never executes tests or project code. |
+| Test running | Ask an agent to execute tests or inspect outputs by rerunning commands | `verification.run-checks` executes configured checks and records receipts; runtime extraction summarizes recorded fields; scout interprets ambiguity and never executes tests or project code. |
 
-Dispatch `scout` for every requested repeatable extraction, classification,
-structured-summary or transformation output in the routing table, even when
-the source locations are known. For other specialist roles, dispatch only when
+Apply the mechanical runtime route first in every workflow and role. Dispatch
+`scout` for interpretation, classification, semantic structured summaries or
+transformation proposals in the routing table, even when source locations are known. For other specialist roles, dispatch only when
 a named unresolved claim, acceptance criterion, or risk decision requires
 evidence from that specialist's domain. Do not dispatch a second scout when one
 result answers the assigned question. Dispatch multiple
@@ -63,6 +63,26 @@ decision and report the missing evidence. When citations conflict, assign a
 targeted extraction of the exact conflicting paths or inputs; the stronger
 decision owner resolves the conflict and records its basis. These are prompt and
 tool-permission instructions, not runtime enforcement of search behavior.
+
+## Mechanical evidence without model dispatch
+
+Run `phase_run query evidence.extract --base <base> --head <head>` for a committed
+endpoint diff and the ordered commit IDs reachable from head but not base. Add
+`--evidence-file <existing-run-checks.json>` for recorded check counts/results and
+receipt fields. Omit it when check evidence is unavailable; `check_evidence: null`
+means absent, never passed. Dirty and untracked changes are outside this range.
+
+The verb uses the existing strict evidence reader. Counts distinguish literal
+`passed: true`, `false` and unknown values; partial/aggregate fields and per-check
+revisions remain separate. Receipt references are recorded-only: extraction does
+not authenticate receipts, establish freshness, execute checks or decide acceptance.
+Use the existing verification evidence rules for those decisions. Do not infer a
+full pass from counts, a zero exit, or the runtime invocation's `ok` field.
+
+Request a scout only for an unresolved interpretive question such as what an
+ambiguous failure means or which source behavior a result describes. Supply the
+extracted packet and exact evidence paths rather than re-extracting mechanical
+fields. No nested-dispatch fallback or model availability gate applies to this verb.
 
 ## Assignment and result structures
 

@@ -765,6 +765,31 @@ output is read from log paths only when needed. `configured: false` remains the
 empty-command result. JSON `ok` still reports successful runtime invocation;
 callers must inspect aggregate/check `passed` to judge command outcomes.
 
+## Mechanical evidence extraction
+
+```bash
+python .ai/runtime/phase.py query evidence.extract --base <base> --head <head> --evidence-file <existing-check-output.json>
+```
+
+This read-only verb resolves commit references and returns `base_revision`,
+`head_revision`, `changed_paths` (committed endpoint diff, both sides of renames),
+and ordered `commit_ids` (base..head). Head defaults to HEAD. Dirty/untracked paths
+are excluded. Git references cannot start with `-`; no checks or project code run.
+
+The optional existing check JSON uses the same strict reader as successor evidence.
+`check_evidence` contains original batch fields, recorded check fields, receipt/log
+references, bounded tails and counts (`total`, `passed`, `failed`, `unknown`,
+`reused`, `receipts`). Boolean pass counts require literal JSON booleans. Without
+an evidence file, `check_evidence` is null. Missing files, malformed JSON or invalid
+check lists fail explicitly. Extraction never writes receipts or planning records.
+
+`validation: recorded-only` means these are supplied claims, not authenticated
+receipt evidence. Preserve each check's tested revision, aggregate status and
+partial selection. Counts do not prove a full passing batch or freshness. Existing
+verification qualification and acceptance rules still apply. Mechanical extraction
+requires no scout; request one for unresolved interpretation through
+[scout dispatch](../references/scout-dispatch.md).
+
 ## Codex project concurrency
 
 Codex installation writes this setting to `.codex/config.toml` on fresh install,
