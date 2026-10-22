@@ -27,49 +27,57 @@ commit's hash, which the verifier never examined.
 ## Reconcile a claimed tested SHA
 
 Run `verification.reconcile-evidence` before using a claimed test result for a
-candidate. Supply the complete original `verification.run-checks` JSON. Keep
-that input outside the checkout. For example:
+candidate. Use full lowercase commit SHAs and `--kind local` (default), `github`
+or `gitlab`.
 
-    phase_run query verification.reconcile-evidence --evidence-file "$private_evidence" \\
-      --claimed-revision "$tested_sha" --expected-head "$candidate_sha" --kind local
+### Load test evidence
 
-`kind` is `local` (default), `github` or `gitlab`. Use full lowercase commit
-SHAs. For a live GitHub workflow run, replace `--evidence-file` with
-`--provider-run ID --repository OWNER/REPO --kind github`. This uses the existing
-read-only `delivery.gh` adapter to obtain the run's own `id`, `head_sha`, `status`,
-`conclusion` and `event`. A direct push, manual workflow dispatch or scheduled
-run is reconciled against its run SHA. Refresh this read when the run changes
-or publication requires it. Projects using custom checkouts still need evidence
-of the checkout actually tested.
+For local checks, supply the complete original `verification.run-checks` JSON.
+Keep it outside the checkout. Run:
 
-Caller-supplied GitHub or GitLab JSON is accepted for diagnostic observation
-only and always classified Unverified, even if it claims success. GitLab has no
-live adapter in this runtime. A PR's head SHA does not identify a merge checkout,
-and a trusted `pull_request_target` workflow SHA does not establish that PR code
-was tested. PR and unknown workflow events remain Unverified; an arbitrary
-`tested_revision` field cannot attest otherwise. Preserve actual merge checkout
-evidence separately, using authenticated local test receipts when available.
-Structural body validation establishes only body shape, not that PR code was tested.
+    phase_run query verification.reconcile-evidence --evidence-file "$private_evidence" --claimed-revision "$tested_sha" --expected-head "$candidate_sha" --kind local
 
-The read-only result separates `claimed_revision`, `candidate_revision`, each
-observation's `actual_revision`, and `terminal_result`. `classification` is
-`Passed`, `Failed`, `Pending` or `Unverified`. A mismatch, missing/invalid
-evidence, unknown or skipped provider result, dirty candidate or stale revision
-stays `Unverified`; an in-progress matching provider run stays `Pending`.
-`terminal_result` preserves the observed result even when SHA reconciliation
-fails. Neither Pending nor Unverified is a pass. Local evidence must match
-intact receipts/logs and the current configured check inputs. Reused rows keep
-their original actual tested SHA; the aggregate's newer invocation SHA never
-relabels them.
+For a live GitHub run, replace `--evidence-file` with
+`--provider-run ID --repository OWNER/REPO --kind github`. Read the run's own
+`id`, `head_sha`, `status`, `conclusion` and `event` through `delivery.gh`.
+Refresh the read when the run changes or publication requires it. For custom
+checkouts, supply evidence of the checkout actually tested.
 
-For a local report-only successor, supply `--report-only-paths` and, when
-required, `--fresh-evidence-file` as described below. The command invokes the
-existing successor qualifier without changing its rules. Provider runs require
-fresh evidence on the candidate; this adapter does not infer independence for
-an opaque remote run. This result does not replace phase acceptance or shipping
-gates. It returns private evidence references and compact observations, never
-raw log contents. Do not force publication of private receipts, logs or capture
-files; use an approved safe summary where public evidence is needed.
+- Use caller-supplied GitHub/GitLab JSON only for diagnostics; retain
+  `Unverified` even when it reports success. GitLab has no live adapter.
+- For direct push, manual dispatch or scheduled GitHub runs, reconcile the run
+  SHA. For PR or unknown events, retain `Unverified`. Do not substitute a PR head
+  SHA, `pull_request_target` workflow SHA or arbitrary `tested_revision` field
+  for tested-checkout evidence. Preserve merge-checkout evidence separately;
+  use authenticated local receipts when available.
+- Treat structural body validation as evidence of body shape only.
+
+### Record the reconciliation result
+
+Record `claimed_revision`, `candidate_revision`, each observation's
+`actual_revision`, `terminal_result`, `classification`, `current`, `reason` and
+evidence references. Preserve the observed terminal result if SHA reconciliation
+fails. Apply these branches:
+
+- If evidence is missing/invalid, SHAs mismatch, the candidate is dirty/stale,
+  or the provider result is unknown/skipped, retain `Unverified`.
+- If a matching provider run is in progress, retain `Pending`.
+- Accept neither `Pending` nor `Unverified` as a pass.
+- If `current` is true and classification is `Passed`, use the result as check
+  evidence. If classification is `Failed`, record the failure and block readiness.
+
+For local evidence, require intact receipts/logs and current configured check
+inputs. Keep reused rows' original tested SHAs; do not relabel them with the
+aggregate invocation SHA.
+
+### Qualify a successor
+
+For a local report-only successor, supply `--report-only-paths` and, if required
+below, `--fresh-evidence-file`. Apply the existing successor rules. For provider
+runs, obtain fresh evidence on the candidate; do not infer remote-run independence.
+Apply phase acceptance and shipping gates separately. Keep private evidence
+references and compact observations; do not force publication of receipts, logs
+or capture files. If public evidence is needed, use an approved safe summary.
 
 ## Coordinator currentness check
 

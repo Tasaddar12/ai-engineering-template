@@ -186,10 +186,11 @@ None — all verifiable items checked programmatically.
 |---|---|---|---|---|---|
 | {full SHA} | {actual receipt/run SHA} | {full SHA} | {Passed / Failed / Pending / Unverified} | {verification.reconcile-evidence classification and reason} | {private local reference or approved safe provider reference} |
 
-Preserve Pending and Unverified. Keep original tested SHAs across report-only
-successors and cite their qualification separately. Follow
-[verification evidence](../../../.ai/references/verification-evidence.md#reconcile-a-claimed-tested-sha);
-raw logs and private evidence do not need public publication.
+Preserve Pending and Unverified. For report-only successors, keep original tested
+SHAs and cite qualification separately. Follow
+[verification evidence](../../../.ai/references/verification-evidence.md#reconcile-a-claimed-tested-sha).
+Do not require public raw logs or private evidence. If public evidence is needed,
+use an approved safe summary.
 
 ---
 *Verified: {timestamp}*
