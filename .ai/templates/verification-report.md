@@ -180,6 +180,18 @@ None — all verifiable items checked programmatically.
 **Human checks required:** {N}
 **Total verification time:** {duration}
 
+### Evidence reconciliation
+
+| Claimed tested SHA | Actual test/provider run SHA | Current candidate SHA | Terminal result | Reconciliation | Evidence reference |
+|---|---|---|---|---|---|
+| {full SHA} | {actual receipt/run SHA} | {full SHA} | {Passed / Failed / Pending / Unverified} | {verification.reconcile-evidence classification and reason} | {private local reference or approved safe provider reference} |
+
+Preserve Pending and Unverified. For report-only successors, keep original tested
+SHAs and cite qualification separately. Follow
+[verification evidence](../../../.ai/references/verification-evidence.md#reconcile-a-claimed-tested-sha).
+Do not require public raw logs or private evidence. If public evidence is needed,
+use an approved safe summary.
+
 ---
 *Verified: {timestamp}*
 *Verifier: Claude (subagent)*

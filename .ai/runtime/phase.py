@@ -794,6 +794,22 @@ def verb_run_checks(workspace, positionals, options):
     return verification.run_checks(workspace, options.get("only_checks"))
 
 
+def verb_reconcile_evidence(workspace, positionals, options):
+    from lib.evidence_reconciliation import reconcile
+    required = {"claimed_revision", "expected_head"}
+    optional = {"evidence_file", "kind", "report_only_paths", "fresh_evidence_file", "provider_run", "repository", "raw"}
+    require(not positionals and required <= set(options) and not (set(options) - required - optional),
+            "reconcile-evidence requires claimed-revision and expected-head", "bad-options")
+    require(("evidence_file" in options) != ("provider_run" in options),
+            "provide exactly one evidence-file or provider-run", "bad-options")
+    require(all(isinstance(options[key], str) for key in required | (set(options) & {"evidence_file", "kind", "fresh_evidence_file", "provider_run", "repository"}))
+            and ("report_only_paths" not in options or isinstance(options["report_only_paths"], list)),
+            "reconcile-evidence options require values", "bad-options")
+    return reconcile(workspace, options.get("evidence_file"), options["claimed_revision"], options["expected_head"],
+                     options.get("kind", "local"), options.get("report_only_paths"),
+                     options.get("fresh_evidence_file"), options.get("provider_run"), options.get("repository"))
+
+
 def verb_qualify_successor(workspace, positionals, options):
     required = {"evidence_file", "report_only_paths", "expected_head"}
     require(not positionals and required <= set(options)
@@ -953,6 +969,7 @@ VERBS = {
     "evidence.extract": verb_evidence_extract,
     "verification.resolve-file": verb_verification_file,
     "verification.run-checks": verb_run_checks,
+    "verification.reconcile-evidence": verb_reconcile_evidence,
     "verification.qualify-successor": verb_qualify_successor,
 
     "resolve-model": verb_resolve_model,

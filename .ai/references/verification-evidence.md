@@ -24,6 +24,61 @@ currentness rule below. The report's `revision` remains the exact commit tested
 by the verifier. The coordinator must not replace it with the later report-only
 commit's hash, which the verifier never examined.
 
+## Reconcile a claimed tested SHA
+
+Run `verification.reconcile-evidence` before using a claimed test result for a
+candidate. Use full lowercase commit SHAs and `--kind local` (default), `github`
+or `gitlab`.
+
+### Load test evidence
+
+For local checks, supply the complete original `verification.run-checks` JSON.
+Keep it outside the checkout. Run:
+
+    phase_run query verification.reconcile-evidence --evidence-file "$private_evidence" --claimed-revision "$tested_sha" --expected-head "$candidate_sha" --kind local
+
+For a live GitHub run, replace `--evidence-file` with
+`--provider-run ID --repository OWNER/REPO --kind github`. Read the run's own
+`id`, `head_sha`, `status`, `conclusion` and `event` through `delivery.gh`.
+Refresh the read when the run changes or publication requires it. For custom
+checkouts, supply evidence of the checkout actually tested.
+
+- Use caller-supplied GitHub/GitLab JSON only for diagnostics; retain
+  `Unverified` even when it reports success. GitLab has no live adapter.
+- For direct push, manual dispatch or scheduled GitHub runs, reconcile the run
+  SHA. For PR or unknown events, retain `Unverified`. Do not substitute a PR head
+  SHA, `pull_request_target` workflow SHA or arbitrary `tested_revision` field
+  for tested-checkout evidence. Preserve merge-checkout evidence separately;
+  use authenticated local receipts when available.
+- Treat structural body validation as evidence of body shape only.
+
+### Record the reconciliation result
+
+Record `claimed_revision`, `candidate_revision`, each observation's
+`actual_revision`, `terminal_result`, `classification`, `current`, `reason` and
+evidence references. Preserve the observed terminal result if SHA reconciliation
+fails. Apply these branches:
+
+- If evidence is missing/invalid, SHAs mismatch, the candidate is dirty/stale,
+  or the provider result is unknown/skipped, retain `Unverified`.
+- If a matching provider run is in progress, retain `Pending`.
+- Accept neither `Pending` nor `Unverified` as a pass.
+- If `current` is true and classification is `Passed`, use the result as check
+  evidence. If classification is `Failed`, record the failure and block readiness.
+
+For local evidence, require intact receipts/logs and current configured check
+inputs. Keep reused rows' original tested SHAs; do not relabel them with the
+aggregate invocation SHA.
+
+### Qualify a successor
+
+For a local report-only successor, supply `--report-only-paths` and, if required
+below, `--fresh-evidence-file`. Apply the existing successor rules. For provider
+runs, obtain fresh evidence on the candidate; do not infer remote-run independence.
+Apply phase acceptance and shipping gates separately. Keep private evidence
+references and compact observations; do not force publication of receipts, logs
+or capture files. If public evidence is needed, use an approved safe summary.
+
 ## Coordinator currentness check
 
 Use this rule in both `/verify-work` report reuse and `/ship` preflight. Let
