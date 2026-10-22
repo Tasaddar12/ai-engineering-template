@@ -592,11 +592,11 @@ VERIFICATION.md; a grep hit alone is not proof of behavior or a defect.
 ## When to Require Human Verification
 
 Apply [browser acceptance routing](../ui-screenshots.md#acceptance-routing).
-Objective criteria use automatic assertions and revision-applicable evidence,
-including visual appearance, user flows, real-time and external-service results.
-Return unresolved subjective choices to the user through the coordinator. Keep
-missing objective evidence Pending/Unverified; a browser-related category alone
-does not require human review. Preserve explicitly required human-only UAT.
+Run objective assertions for explicit visual, flow, real-time and external-service
+criteria. If revision-applicable evidence passes, accept automatically. If objective
+evidence is missing, record Pending/Unverified and the missing observation. If a
+subjective choice is unresolved, return it to the user through the coordinator.
+Preserve explicitly required human-only UAT.
 
 **Route to human verification when:**
 - A subjective acceptance choice requires a user decision that is not already recorded.

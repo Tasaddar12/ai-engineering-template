@@ -245,10 +245,12 @@ For UI scope:
    only its declared cells. Reuse the producer and existing review route.
 
 Apply [acceptance routing](../references/ui-screenshots.md#acceptance-routing):
-use explicit criteria and the producer's actual browser assertions for automatic
-objective acceptance. Keep missing objective evidence Pending/Unverified with its
-reason and required observation; return unresolved subjective choices to the user
-through the existing decision/UAT route. Preserve required human-only acceptance.
+- Compare explicit criteria with the producer's actual browser assertions.
+  If conclusive evidence passes, accept the objective criterion automatically.
+- If objective evidence is missing, record Pending/Unverified, its reason and
+  the required observation.
+- If a subjective choice is unresolved, return it through the existing user
+  decision/UAT route. Preserve required human-only acceptance.
 
 This step, `check_integration`, `verify_docs`, and configured checks are one
 read-only dispatch batch. Start the provisional verifier, each applicable

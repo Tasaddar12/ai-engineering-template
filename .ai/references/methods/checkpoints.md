@@ -59,18 +59,18 @@ component before preparing an executable continuation.
 <type name="human-verify">
 ## checkpoint:human-verify
 
-**When:** a required human-only observation or acceptance remains after authorized
-automated checks. Apply [browser acceptance routing](../ui-screenshots.md#acceptance-routing)
-before assigning UI checks to a human. Automatically accept explicit objective
-criteria with conclusive evidence; route unresolved subjective choices as decisions.
+**When:** required human-only observation or acceptance remains after authorized
+checks. Apply [browser acceptance routing](../ui-screenshots.md#acceptance-routing).
+If conclusive evidence passes an explicit objective criterion, accept it
+automatically. If a subjective choice is unresolved, use a decision checkpoint.
 
 Human observations are collected through the local phase UAT procedure when
 required. Record the expected behavior and concrete steps in the plan's validation
 notes; do not rely on an unimplemented mode flag to suppress or approve checkpoints.
 
 **Use for:**
-The following domains require a human only for observations automation cannot
-establish or explicitly required human-only UAT. They are not blanket human gates.
+Assign the following checks to a human only for a required observation automation
+cannot establish or for explicitly required human-only UAT:
 
 - Visual UI checks (layout, styling, responsiveness)
 - Interactive flows (click through wizard, test user flows)

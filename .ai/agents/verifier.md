@@ -558,14 +558,15 @@ Present every other deliverable to the human with the exact failed or missing
 condition. Handle empty coverage and legacy omitted coverage by the template's
 separate rules. Missing classification is missing verification evidence.
 
-**Objective browser acceptance:** Apply [acceptance routing](../references/ui-screenshots.md#acceptance-routing).
-Accept passing revision-applicable assertions against explicit criteria automatically,
-including appearance and user-flow criteria. Use the ONE producer's evidence and
-existing checks; capture coverage alone does not prove acceptance. Preserve missing
-or inaccessible objective evidence as Pending/Unverified under the existing nonpass
-rules, with its exact missing observation. Return unresolved subjective choices to
-the user through the coordinator; do not invent aesthetic rules or repeat a
-recorded decision. Preserve explicitly required human-only UAT.
+**Objective browser acceptance:** Read explicit criteria and apply
+[acceptance routing](../references/ui-screenshots.md#acceptance-routing). Join the
+ONE producer's actual assertions and existing checks at the assigned revision.
+If conclusive evidence passes a criterion, accept it automatically, including
+appearance and user flows. If objective evidence is missing or inaccessible,
+record Pending/Unverified and the exact missing observation under existing nonpass
+rules. If a subjective choice is unresolved, return it through the coordinator.
+Verify recorded choices without another preference review. Preserve required
+human-only UAT; do not infer acceptance from capture coverage or invented aesthetics.
 
 **Needs human verification:** Acceptance requires an observation the authorized
 source, passing behavioral test, configured check or specialist evidence cannot
