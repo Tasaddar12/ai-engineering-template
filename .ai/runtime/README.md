@@ -771,24 +771,24 @@ callers must inspect aggregate/check `passed` to judge command outcomes.
 python .ai/runtime/phase.py query evidence.extract --base <base> --head <head> --evidence-file <existing-check-output.json>
 ```
 
-This read-only verb resolves commit references and returns `base_revision`,
-`head_revision`, `changed_paths` (committed endpoint diff, both sides of renames),
-and ordered `commit_ids` (base..head). Head defaults to HEAD. Dirty/untracked paths
-are excluded. Git references cannot start with `-`; no checks or project code run.
+**Read the committed range.** Use commit references without a leading `-`.
+Omit `--head` to use HEAD. Read `base_revision`, `head_revision`, `changed_paths`
+and ordered `commit_ids`. Treat paths as the committed endpoint diff, including
+both sides of renames; inspect dirty or untracked changes separately.
 
-The optional existing check JSON uses the same strict reader as successor evidence.
-`check_evidence` contains original batch fields, recorded check fields, receipt/log
-references, bounded tails and counts (`total`, `passed`, `failed`, `unknown`,
-`reused`, `receipts`). Boolean pass counts require literal JSON booleans. Without
-an evidence file, `check_evidence` is null. Missing files, malformed JSON or invalid
-check lists fail explicitly. Extraction never writes receipts or planning records.
+**Read existing check evidence.** If check JSON exists, supply `--evidence-file`.
+Inspect batch fields, check fields, receipt/log references, bounded tails and
+counts (`total`, `passed`, `failed`, `unknown`, `reused`, `receipts`). Count passes
+only from literal JSON booleans. If omitted, treat `check_evidence: null` as absent
+evidence. If the file is missing, malformed or has an invalid check list, correct
+the input before retrying.
 
-`validation: recorded-only` means these are supplied claims, not authenticated
-receipt evidence. Preserve each check's tested revision, aggregate status and
-partial selection. Counts do not prove a full passing batch or freshness. Existing
-verification qualification and acceptance rules still apply. Mechanical extraction
-requires no scout; request one for unresolved interpretation through
-[scout dispatch](../references/scout-dispatch.md).
+**Qualify the result.** Treat `validation: recorded-only` as supplied claims.
+Preserve tested revisions, aggregate status and partial selection. Apply existing
+receipt qualification, freshness and acceptance rules; never infer a full pass
+from counts, zero exit or runtime `ok`. Use this read-only extraction without a
+scout, check execution or record writes. If interpretation remains unresolved,
+follow [scout dispatch](../references/scout-dispatch.md).
 
 ## Codex project concurrency
 
