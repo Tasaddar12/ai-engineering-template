@@ -27,6 +27,8 @@ RUNTIME = ROOT / ".ai" / "runtime" / "phase.py"
 
 sys.path.insert(0, str(ROOT / ".ai" / "runtime"))
 from lib import delivery  # noqa: E402
+from lib.results import VerbError
+from publication_fixtures import pr_body
 
 CONFIG = """commit_docs: true
 worktree:
@@ -534,7 +536,7 @@ class OpeningPullRequests(unittest.TestCase):
         self.pull = {
             "number": 7, "url": "https://example.test/pull/7", "state": "OPEN",
             "isDraft": True, "baseRefName": "stack-parent",
-            "headRefName": self.BRANCH, "title": "Original", "body": "Original body",
+            "headRefName": self.BRANCH, "title": "Original", "body": pr_body(),
         }
         self.calls = []
         self.edit_error = None
@@ -578,7 +580,11 @@ class OpeningPullRequests(unittest.TestCase):
             if self.edit_error:
                 code, stderr = 1, self.edit_error
             else:
+                if getattr(self, "change_input", None):
+                    self.change_input.write_text("Changed after validation", encoding="utf-8")
                 self.apply_fields(args)
+                if getattr(self, "tamper_readback", False):
+                    self.pull["body"] = "Unreviewed provider body"
         elif args[:2] == ["pr", "create"]:
             self.assertIsNone(self.pull, "must update the existing PR")
             self.assertEqual(args[args.index("--head") + 1], self.BRANCH)
@@ -636,22 +642,22 @@ class OpeningPullRequests(unittest.TestCase):
 
     def test_metadata_edits_preserve_target_and_body_file_precedence(self):
         body_file = self.directory / "pull body.md"
-        body_file.write_text("File body", encoding="utf-8")
+        body_file.write_text(pr_body(), encoding="utf-8")
         result = delivery.open_pr(self.workspace, self.BRANCH, title="Updated",
                                   body="Ignored body", body_file=body_file)
         self.assertEqual(result["baseRefName"], "stack-parent")
         self.assertEqual(self.pull["title"], "Updated")
-        self.assertEqual(self.pull["body"], "File body")
+        self.assertEqual(self.pull["body"], pr_body())
         self.assertTrue(result["updated"])
         self.assertNotIn("--base", self.mutations()[0])
         self.assertNotIn("--body", self.mutations()[0])
 
     def test_explicit_base_and_metadata_update_the_same_pr(self):
         result = delivery.open_pr(self.workspace, self.BRANCH, base="new-parent",
-                                  title="Retargeted", body="")
+                                  title="Retargeted", body=pr_body())
         self.assertEqual(result["baseRefName"], "new-parent")
         self.assertEqual(self.pull["title"], "Retargeted")
-        self.assertEqual(self.pull["body"], "")
+        self.assertEqual(self.pull["body"], pr_body())
         self.assertEqual(result["number"], 7)
         self.assertEqual(len(self.mutations()), 1)
 
@@ -669,20 +675,22 @@ class OpeningPullRequests(unittest.TestCase):
 
     def test_new_pr_uses_default_base_title_and_draft(self):
         self.pull = None
-        result = delivery.open_pr(self.workspace, self.BRANCH)
+        result = delivery.open_pr(self.workspace, self.BRANCH, body=pr_body())
         self.assertEqual(result["baseRefName"], "main")
         self.assertEqual(self.pull["title"], self.BRANCH)
-        self.assertEqual(self.pull["body"], "")
+        self.assertEqual(self.pull["body"], pr_body())
         self.assertTrue(result["isDraft"])
         self.assertTrue(result["created"])
         self.assertFalse(result["updated"])
 
     def test_new_pr_uses_explicit_base_metadata_and_ready_state(self):
         body_file = self.directory / "pull body.md"
-        body_file.write_text("Creation body", encoding="utf-8")
+        creation = pr_body().replace("Safe fixture detail", "Creation detail")
+        inline = pr_body().replace("Safe fixture detail", "Inline detail")
+        body_file.write_text(creation, encoding="utf-8")
         for body_options, expected_body in (
-                ({"body": "Inline body"}, "Inline body"),
-                ({"body": "Ignored body", "body_file": body_file}, "Creation body")):
+                ({"body": inline}, inline),
+                ({"body": "Ignored body", "body_file": body_file}, creation)):
             with self.subTest(body_options=body_options):
                 self.pull = None
                 self.calls.clear()
@@ -694,6 +702,43 @@ class OpeningPullRequests(unittest.TestCase):
                 self.assertFalse(result["isDraft"])
                 self.assertTrue(result["created"])
                 self.assertFalse(result["updated"])
+
+    def test_nonphase_create_edit_and_body_omitted_edit_reject_untemplated_body(self):
+        invalid = pr_body().replace("## Verification\n", "## Verification\n\nFocused author checks passed offline53 and host146.\n")
+        for existing, options in ((None, {"body": invalid}), (dict(self.pull), {"body": ""}),
+                                  (dict(self.pull, body=invalid), {"base": "other"})):
+            with self.subTest(existing=bool(existing), options=options):
+                self.pull = existing
+                self.calls.clear()
+                with self.assertRaises(VerbError) as caught:
+                    delivery.open_pr(self.workspace, self.BRANCH, **options)
+                self.assertEqual(caught.exception.code, "pr-format")
+                self.assertEqual(self.mutations(), [])
+
+    def test_nonphase_body_file_is_frozen_before_publication(self):
+        body_file = self.directory / "reviewed.md"
+        body_file.write_text(pr_body(), encoding="utf-8")
+        self.change_input = body_file
+        result = delivery.open_pr(self.workspace, self.BRANCH, body_file=body_file)
+        self.assertEqual(result["body"], pr_body())
+        self.assertEqual(body_file.read_text(encoding="utf-8"), "Changed after validation")
+
+    def test_nonphase_changed_provider_readback_is_not_success_or_retried(self):
+        self.tamper_readback = True
+        with self.assertRaises(VerbError) as caught:
+            delivery.open_pr(self.workspace, self.BRANCH, body=pr_body())
+        self.assertEqual(caught.exception.code, "pr-unresolved")
+        self.assertEqual(len(self.mutations()), 1)
+
+    def test_edit_missing_fresh_readback_never_uses_pre_edit_snapshot(self):
+        for options in ({"body": pr_body()}, {"title": "Changed title"}):
+            with self.subTest(options=options):
+                self.calls.clear()
+                with patch.object(delivery, "view", side_effect=[dict(self.pull), None]):
+                    with self.assertRaises(VerbError) as caught:
+                        delivery.open_pr(self.workspace, self.BRANCH, **options)
+                self.assertEqual(caught.exception.code, "pr-unresolved")
+                self.assertEqual(len(self.mutations()), 1)
 
     def test_failed_retarget_propagates_gh_error_without_success(self):
         self.edit_error = "target branch does not exist"

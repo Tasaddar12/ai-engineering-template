@@ -93,6 +93,7 @@ unless `--force` is passed.
 | Verb | Effect |
 |---|---|
 | `pr.open <branch> [--phase N] [--base BASE] [--title TITLE] [--body BODY] [--body-file PATH] [--draft]` | Create the branch's PR or update that same PR |
+| `pr.validate --body-file PATH` | Read-only PR template section, field and table validation |
 | `pr.merge <branch> [--local-checks-passed] [--expected-head H]` | Merge after provider or explicit local evidence; expected-head pins local HEAD and OPEN PR through provider merge |
 
 For an existing PR, an explicit `--base` retargets it; omitting `--base`
@@ -100,6 +101,15 @@ preserves its current target, including a nondefault parent branch. A base-only
 edit returns `created: false`, `updated: true` and the refreshed PR fields.
 With no base, title or body requested, no edit runs and `updated` is false.
 `--body-file` takes precedence over `--body`.
+
+Every create or edit validates the effective body against the installed namespace's
+pull-request template, including body-omitted edits. Keep its sections, field shapes
+and Verification tables; omit only the documented optional sections. Body files are
+frozen after validation and the returned body must match the reviewed content.
+Use `pr.validate --body-file PATH` before direct CLI/API/connector writes, then
+compare the saved body with that reviewed content. External writes do not execute
+this local gate automatically. Structural validation does not verify claim truth,
+evidence accessibility or general prose quality.
 
 For a new PR, `--base` selects its target; omission uses the repository's
 existing default-base fallback. `--draft` creates a draft, and omission creates
@@ -411,9 +421,11 @@ claiming phases shipped when they did not is the record this exists to keep hone
   context for you.
 - `--variant` must be an exact canonical name from the issue template: `Bug`,
   `Enhancement`, `Decision required`, `Security risk` or `UAT`. Publication checks
-  headings/order and UAT table columns, sequential rows and Human acceptance
-  fields before persisting a create attempt. Missing/unknown variants and missing
-  or malformed schema fail closed. The schemas are `templates/issues/{type}.md` beside the
+  section order, nonempty fields, paragraph/list/table shapes and UAT sequential
+  rows and Human acceptance fields before persisting a create attempt. Consolidated
+  risks require the canonical table and one matching risk-ID heading/checkbox per row.
+  Missing/unknown variants and missing or malformed schema fail closed. The schemas
+  are the File Templates in `templates/issues/` beside the
   running runtime's namespace, including installed `.codex` and `.claude` trees.
   `issue.validate` runs the same check without provider calls or planning writes.
   Direct `gh`/API creates and edits bypass this gate. Structural success does

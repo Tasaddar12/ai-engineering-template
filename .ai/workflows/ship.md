@@ -351,8 +351,12 @@ Populate it from the phase records:
 phase_run query planning.validate
 ```
 
-Append a short `### Record health` section when `warning_count` is above zero,
-naming each finding and the verb that resolves it. This never blocks the PR.
+Record planning-health findings and their repair verbs in the template's Known
+gaps list. Preserve its section and field shapes.
+
+```bash
+phase_run query pr.validate --body-file "${body_path}"
+```
 
 Include each declared issue's canonical URL in the body. Use resolving references
 only for demonstrated accepted work; deferred/unresolved/pending-human followups

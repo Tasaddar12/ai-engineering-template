@@ -134,7 +134,8 @@ request is noise:
 phase_run query session.close "${SESSION_BRANCH}"
 ```
 
-Otherwise push and open the pull request:
+Otherwise compose the body from the [PR File Template](../templates/pull-request.md#file-template),
+then push and open the pull request:
 
 ```bash
 git -C "${SESSION_WORKTREE}" push -u origin "${SESSION_BRANCH}"

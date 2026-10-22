@@ -87,6 +87,11 @@ Follow [canonical threat tracking](../../references/git-workflow.md#canonical-th
 - Keep risk/remediation concise. Link the assessment and source records from the
   row; record the actual owner, observed status, acceptance and available evidence.
 - Fill unavailable facts or checks with `Pending` and the specific dependency.
+- Link each planned risk's owning PLAN assessment and mitigation instead of
+  copying its full register. Preserve stable headings on reruns and verify the
+  provider's saved heading anchors before recording per-risk references.
+- Keep accepted/deferred risks distinct from resolved risks. Check a task only
+  with actual outcome evidence; checking it does not authorize issue closure.
 
 ## Completion and downstream handoff
 

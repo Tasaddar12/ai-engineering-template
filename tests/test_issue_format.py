@@ -84,22 +84,13 @@ class IssueFormat(unittest.TestCase):
                 result = subprocess.run(command, cwd=root, capture_output=True, text=True)
                 self.assertEqual(result.returncode, code, result.stdout + result.stderr)
 
-    def test_security_assessment_values_remain_structural_only(self):
+    def test_security_assessment_fields_are_required(self):
         body = bodies()["Security risk"]
-        # Correct shape with absent/incorrect risk facts still passes today.
-        # This is negative evidence: semantic review is required after validation.
         missing = re.sub(r"^- (Threat ID / risk key|Source aliases|Severity|Owner|Status|"
                          r"Mitigation or safe next action|Resolution evidence):.*\n",
                          "", body, flags=re.M)
-        wrong = re.sub(r"^- Severity:.*$", "- Severity: banana", body, flags=re.M)
-        wrong = re.sub(r"^- Status:.*$", "- Status: merged-means-secure", wrong, flags=re.M)
-        wrong = re.sub(r"^- Resolution evidence:.*$", "- Resolution evidence: unknown",
-                       wrong, flags=re.M)
-        for changed in (missing, wrong):
-            with self.subTest(body=changed):
-                result = issue_format.validate(changed, "Security risk")
-                self.assertTrue(result["valid"])
-                self.assertTrue(result["structuralOnly"])
+        self.assert_invalid(missing, "Security risk")
+        self.assert_invalid(body.replace("- Owner:", "- Unrequested field:"), "Security risk")
 
     def test_missing_unknown_or_noncanonical_variant(self):
         for variant in (None, "", "bug", "expected-behavior", True):
@@ -124,7 +115,7 @@ class IssueFormat(unittest.TestCase):
                      "    ## Problem", "> ## Problem", "| ## Problem |",
                      "<!--\n## Problem\n-->"):
             self.assert_invalid(body.replace("## Problem", fake, 1), "Bug")
-        self.assertTrue(issue_format.validate(body + "\n```\n## Problem\n```", "Bug")["valid"])
+        self.assert_invalid(body + "\n```\n## Problem\n```", "Bug")
 
     def test_uat_header_columns_separator_and_numbered_rows(self):
         body = bodies()["UAT"]
@@ -178,7 +169,7 @@ class IssueFormat(unittest.TestCase):
             with self.subTest(opening=opening):
                 self.assert_invalid(uat.replace(table, opening + "\n" + table + "\n" + closing))
 
-    def test_literal_examples_and_shallow_tables_preserve_real_structure(self):
+    def test_untemplated_literal_content_is_rejected_and_runtime_marker_preserved(self):
         for variant, body in bodies().items():
             extra = "\n<pre class=\"literal\">\n## Problem\n| Fake | Table |\n</PRE>\n"
             extra += "\n```html\n<pre>\n## Problem\n</pre>\n```\n"
@@ -186,9 +177,8 @@ class IssueFormat(unittest.TestCase):
             extra += "\n- Example with `<pre>` and inline code.\n| Example | `<pre>` |\n"
             extra += "\n<preview>\nExample unrelated tag.\n</preview>\n"
             with self.subTest(variant=variant):
-                self.assertTrue(issue_format.validate(body + extra, variant)["valid"])
-                self.assertTrue(issue_format.validate(
-                    "<preview>\nExample unrelated tag.\n</preview>\n\n" + body, variant)["valid"])
+                self.assert_invalid(body + extra, variant)
+                self.assert_invalid("<preview>\nExample unrelated tag.\n</preview>\n\n" + body, variant)
                 self.assertTrue(issue_format.validate(body + "\n<!-- todo-id: fixture -->\n", variant)["valid"])
         for spaces in (1, 2, 3):
             padded = re.sub(r"^(\|.*)$", lambda match: " " * spaces + match[1], bodies()["UAT"], flags=re.M)
@@ -255,6 +245,75 @@ class IssueFormat(unittest.TestCase):
         body = re.search(r"^## File Template\n\n```markdown\n(.*?)\n```", text, re.M | re.S)[1]
         self.assertTrue(issue_format.validate(body, "Security risk")["valid"])
         self.assertEqual(list(issue_format.schema()), list(bodies()))
+
+    def test_consolidated_filled_rows_columns_identity_and_checkboxes(self):
+        text = (TEMPLATE / "security-risk-consolidated.md").read_text(encoding="utf-8")
+        body = re.search(r"^## File Template\n\n```markdown\n(.*?)\n```", text, re.M | re.S)[1]
+        body = body.replace("[Risk ID]", "R-001")
+        body = re.sub(r"\[(?![ xX]\])[^\]\n]+\]", "Safe fixture detail", body)
+        row = next(line for line in body.splitlines() if line.startswith("| R-001 |"))
+        body = body.replace(row, row + "\n" + row.replace("R-001", "R-002"))
+        body = body.replace("- [ ] Remediation verified", "- [ ] Remediation verified\n\n### R-002\n\n- [x] Remediation verified")
+        self.assertTrue(issue_format.validate(body, "Security risk")["valid"])
+        changes = (
+            body.replace("| Owner | Status |", "| Status | Owner |"),
+            body.replace("| Owner |", "|", 1),
+            body.replace("|---|---|---|---|---|---|---|", "|---|---|---|---|---|---|"),
+            body.replace("| R-002 |", "| R-001 |"),
+            body.replace("### R-002", "### R-003"),
+            body.replace("### R-002", "### R-001"),
+            body.replace("- [x] Remediation verified", "Remediation verified"),
+            body.replace("- [x] Remediation verified", "- [x] Other task"),
+            body.replace("- [x] Remediation verified", "    - [x] Remediation verified"),
+            re.sub(r"^(\|.*)$", r"    \1", body, flags=re.M),
+            body.replace("- [x] Remediation verified", "- [x] Remediation verified\n- [ ] Remediation verified"),
+            body.replace("### R-002\n\n- [x] Remediation verified", ""),
+            body + "\n### R-003\n\n- [ ] Remediation verified",
+        )
+        for changed in changes:
+            with self.subTest(changed=changed):
+                self.assert_invalid(changed, "Security risk")
+
+        for namespace in (".codex", ".claude"):
+            with self.subTest(namespace=namespace), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                runtime = root / namespace / "runtime"
+                shutil.copytree(ROOT / ".ai/runtime", runtime)
+                templates = runtime.parent / "templates/issues"
+                shutil.copytree(TEMPLATE, templates)
+                shutil.copytree(TEMPLATE, root / ".ai/templates/issues")
+                target = templates / "security-risk-consolidated.md"
+                target.write_text(target.read_text(encoding="utf-8").replace(
+                    "| Owner |", "| Installed owner |"), encoding="utf-8")
+                draft = root / "body.md"
+                for content, expected in ((body, 1), (body.replace("| Owner |", "| Installed owner |"), 0)):
+                    draft.write_text(content, encoding="utf-8")
+                    result = subprocess.run([sys.executable, "-B", str(runtime / "phase.py"),
+                                             "query", "issue.validate", "--variant", "Security risk",
+                                             "--body-file", str(draft)], cwd=root, capture_output=True, text=True)
+                    self.assertEqual(result.returncode, expected, result.stdout + result.stderr)
+                target.unlink()
+                result = subprocess.run([sys.executable, "-B", str(runtime / "phase.py"),
+                                         "query", "issue.validate", "--variant", "Security risk",
+                                         "--body-file", str(draft)], cwd=root, capture_output=True, text=True)
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertIn('"issue-schema"', result.stdout)
+
+    def test_consolidated_schema_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "issues"
+            shutil.copytree(TEMPLATE, path)
+            target = path / "security-risk-consolidated.md"
+            source = target.read_text(encoding="utf-8")
+            for malformed in (source.replace("| Owner |", "|"),
+                              source.replace("| Owner |", "| Status |"),
+                              source.replace("### [Risk ID]", "### Other ID", 1),
+                              source.replace("- [ ] Remediation verified", "Remediation verified", 1),
+                              source + source):
+                target.write_text(malformed, encoding="utf-8")
+                with self.assertRaises(VerbError) as caught:
+                    issue_format.validate(bodies()["Bug"], "Bug", path)
+                self.assertEqual(caught.exception.code, "issue-schema")
 
     def test_examples_outside_file_template_do_not_change_schema(self):
         with tempfile.TemporaryDirectory() as directory:

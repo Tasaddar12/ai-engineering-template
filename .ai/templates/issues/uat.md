@@ -94,6 +94,10 @@ Reply for each numbered step: N PASS, N FAIL <short observation>, or N BLOCKED <
   Give each action one expected visible result and record the actual human reply.
 - Keep `PENDING HUMAN acceptance` until the human decision is recorded. Record
   unavailable prerequisites as `BLOCKED` with the missing dependency.
+- For an index, retain the headings, step table and Human acceptance fields.
+  Replace the standalone step-reply instruction with "Record action results only
+  in each linked test; no separate index-row replies." Link the actual test
+  decisions and evidence instead of adding duplicate acceptance actions.
 
 ## Completion and downstream handoff
 
@@ -101,3 +105,7 @@ Reply for each numbered step: N PASS, N FAIL <short observation>, or N BLOCKED <
   links and actions against the delivered UI before handing it to the reviewer.
 - Hand off the read-back issue URL under the UAT authoring contract. Retain pending
   acceptance until the actual reviewer, date, decision and evidence are available.
+- Verify saved links and launch instructions against the prepared delivered UI
+  before claiming readiness. Repair publication errors; preserve product bugs as
+  FAIL/unresolved and unavailable prerequisites as BLOCKED. Recover an uncertain
+  create through the Git workflow's exact-intent procedure before retrying.
