@@ -769,3 +769,11 @@ python -m unittest discover -s tests -v
 temporary git repositories, so it exercises the contract the workflows depend on
 rather than internals. The installer does not copy the source test suite into
 adopting projects.
+
+## Saved PR body provider check
+
+For saved-body validation on `opened`, `edited`, `reopened`, `synchronize` and
+`ready_for_review`, follow the [Git workflow provider boundary](../references/git-workflow.md#saved-pr-body-provider-check).
+Use the trusted checkout's `lib.issue_format.validate_pr` without installing
+dependencies. If using an installed runtime, keep source-only CI outside its
+payload; installation does not activate the provider check.

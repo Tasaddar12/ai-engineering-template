@@ -317,3 +317,36 @@ unavailable readback first. The audit grants no new merge or issue closure autho
 - Preserve dirty, unmerged, blocked, unowned or unclear worktrees and ignored data. Remove only owned clean worktrees with repository evidence that their work integrated or merged.
 - Limit the planning-record-only exception to the named runtime-owned planning workflows in [worktree sessions](worktree-sessions.md). Reusable `.ai` instructions, templates or tooling, and changes mixed with source use the source session and PR path. Template maintenance does not broaden the exception.
 - `auto_advance` may advance already-authorized transitions; it never waives implementation authority, merge confirmation or verified ship gates.
+
+## Saved PR body provider check
+
+**Configure the source-only workflow.** Keep `.github/workflows/validate-saved-pr.yml`
+on the trusted default branch. Run only trusted code at immutable
+`github.workflow_sha` under `pull_request_target`, with `contents: read`,
+`pull-requests: read` and `persist-credentials: false`. The installer excludes
+this CI payload. Never execute PR head code, install dependencies, restore caches
+or interpolate body text into shell commands.
+
+**Validate the saved snapshot.** In the source checkout, run
+`python3 -I .github/scripts/validate_saved_pr.py` with `PHASE_PR_API_URL`,
+`PHASE_PR_REPOSITORY`, `PHASE_PR_NUMBER` and `PHASE_PR_TOKEN` as environment
+inputs. The script makes bounded authenticated GET requests and validates the
+saved PR identity and body with `lib.issue_format.validate_pr`. It then fetches a
+second snapshot and compares the body, update timestamp, head and base revisions,
+and ref identities. Do not use the event body as evidence. If a response is
+invalid, the provider is unavailable, or the snapshots differ, fail the check and
+report validation as unverified. Keep the body, token and provider error text out
+of diagnostics; preserve only sanitized stderr. Require exit 0 and
+`Saved PR body passes canonical structural validation (structural only).`; report
+failure for any other result.
+
+**Confirm rollout.** Put the workflow, script, parser and template on the
+trusted default branch and confirm an actual provider run. Until then, report
+rollout and event-policy applicability as unverified. Keep repository policy,
+protections and issue state unchanged; provide no event opt-out.
+
+**Consume the result.** Treat a pass as structural evidence for the observed
+snapshot. If the body changes after the final read, rerun the check. Retain
+semantic review, the independent issue-link audit, verification currentness,
+readiness gates and explicit merge/closure authority; the check does not lock the
+body atomically.
