@@ -961,6 +961,31 @@ issue_refs: []
         self.assertEqual(before, self.snapshot())
 
     def test_installed_guidance_links_resolve_in_both_destinations(self):
+        self.check_installed_guidance_links()
+
+    @unittest.skipUnless(os.name == "nt", "Windows short path aliases required")
+    def test_installed_guidance_links_resolve_from_windows_short_path(self):
+        import ctypes
+        from ctypes import wintypes
+
+        get_short_path = ctypes.WinDLL("kernel32", use_last_error=True).GetShortPathNameW
+        get_short_path.argtypes = (wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD)
+        get_short_path.restype = wintypes.DWORD
+        size = get_short_path(str(self.base), None, 0)
+        if not size:
+            self.skipTest("Temporary filesystem does not expose a short path alias")
+        buffer = ctypes.create_unicode_buffer(size)
+        length = get_short_path(str(self.base), buffer, size)
+        self.assertGreater(length, 0)
+        self.assertLess(length, size)
+        alias = Path(buffer.value)
+        if str(alias).casefold() == str(self.base.resolve()).casefold():
+            self.skipTest("Temporary filesystem has no distinct short path alias")
+        self.assertTrue(alias.samefile(self.base))
+        self.base = alias
+        self.check_installed_guidance_links()
+
+    def check_installed_guidance_links(self):
         import test_workflow_links
 
         for host in ("codex", "claude"):
@@ -981,7 +1006,7 @@ issue_refs: []
                 self.assertIn("](" + destination + ")", runtime_guide.read_text(encoding="utf-8"))
                 relative = destination.split("#")[0]
                 provider_guide = (runtime_guide.parent / relative).resolve()
-                self.assertEqual(host_root / "references/git-workflow.md", provider_guide)
+                self.assertEqual((host_root / "references/git-workflow.md").resolve(), provider_guide)
                 self.assertIn("## Saved PR body provider check", provider_guide.read_text(encoding="utf-8"))
                 source_files = (".github/workflows/validate-saved-pr.yml",
                                 ".github/scripts/validate_saved_pr.py")
