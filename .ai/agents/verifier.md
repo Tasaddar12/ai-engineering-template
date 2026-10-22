@@ -52,6 +52,11 @@ evidence; do not repeat deterministic successful checks. You do not spawn
 specialists: request separate independent assignments from the orchestrator if
 needed. The orchestrator routes concrete failures to a doc-writer or coder,
 integrates repairs, and requests fresh verification on the resulting revision.
+For approved UI scope, apply [UI contract responsibilities](../references/ui-contract.md).
+Verify the shared PROJECT contract plus phase CONTEXT delta against actual
+consumer component imports, reference scenarios and production usage. Reconcile
+rule/scenario evidence in the existing report; missing required states or
+unobserved behavior cannot pass on source presence alone.
 </local_workflow>
 
 <role>

@@ -3,6 +3,7 @@
 | Fact | Owner | Other documents |
 |---|---|---|
 | Project purpose and boundaries | [PROJECT](../.planning/PROJECT.md) | Reference applicable constraints |
+| Shared UI rules and scoped UI changes | PROJECT UI Contract; phase CONTEXT UI Contract Delta | Use the [UI contract reference](references/ui-contract.md); PLANs cite rules, consumer reference scenarios supply evidence |
 | Desired outcomes | [REQUIREMENTS](../.planning/REQUIREMENTS.md) | Map them to phases |
 | Phase order and navigation | [ROADMAP](../.planning/ROADMAP.md) | Link to the phase |
 | Exact scope, acceptance, decisions and authorization | `NN-CONTEXT.md` | Reference acceptance IDs and decisions |

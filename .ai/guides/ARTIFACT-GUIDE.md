@@ -38,7 +38,7 @@ in the affected project phase.
 ## Complete template catalog
 
 The tables list retained authoring sources and their producing/consuming roles.
-The navigation catalog is separate from the 26 artifact templates. Select only
+The navigation catalog is separate from the artifact templates. Select only
 the artifacts needed for the current project outcome.
 
 ### Project identity and continuity
@@ -61,6 +61,8 @@ their applicable structure; an unavailable upstream health command is not a chec
 |---|---|---|
 | [spec.md](../templates/spec.md) | `NN-SPEC.md`: locked desired requirements, boundaries, edge and negative coverage | Specification discussion → discuss/planner/verifier |
 | [context.md](../templates/context.md) | `NN-CONTEXT.md`: implementation choices and applicable context | Discussion coordinator → researcher/planner; local authorization additions feed runner |
+| [ui-contract.md](../templates/ui-contract.md) | PROJECT UI Contract plus phase CONTEXT UI Contract Delta | Coordinator → phase-preparer/coder/verifier through the [UI contract reference](../references/ui-contract.md) |
+| [component-reference.md](../templates/component-reference.md) | Executable reference surface in the consumer project, using actual components and states | Phase-preparer plans → coder implements → verifier reconciles evidence |
 | [discussion-log.md](../templates/discussion-log.md) | `NN-DISCUSSION-LOG.md`: required discussion audit trail | Discussion coordinator → human audit; excluded from routine worker required reading |
 | [research.md](../templates/research.md) | `NN-RESEARCH.md`: relevant ecosystem research | Phase researcher → planner and implementation workers |
 | [phase-prompt.md](../templates/phase-prompt.md) | `NN-CC-PLAN.md`: executable task instructions | Planner → checker, scheduler and assigned worker |

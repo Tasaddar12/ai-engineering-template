@@ -14,6 +14,7 @@ connect those artifacts through the existing [procedures](../commands/README.md)
 |---|---|
 | Project intent and continuity | [project](project.md), [requirements](requirements.md), [roadmap](roadmap.md), [state](state.md) |
 | Phase decisions and requirements | [context](context.md), [spec](spec.md), [discussion log](discussion-log.md) |
+| UI decisions and executable consumer references | [UI contract](ui-contract.md), [component reference scaffold](component-reference.md) |
 | Research and preparation | [research](research.md), [phase prompt](phase-prompt.md), [planner prompt](planner-subagent-prompt.md), [validation](VALIDATION.md) |
 | Results, acceptance and continuation | [summary](summary.md), [verification](verification-report.md), [UAT](UAT.md), [continue here](continue-here.md), [user setup](user-setup.md) |
 | Shipped delivery history | [milestone entry](milestone.md) |

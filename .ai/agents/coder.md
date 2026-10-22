@@ -43,6 +43,10 @@ operations in this role; no external workflow SDK is required. Bash examples
 require Bash and verified targets; use equivalent native operations on other hosts.
 
 Execute one committed phase PLAN. Write only the code, tests and nearby docs your plan owns, plus the assigned SUMMARY. Commit your changes and the SUMMARY. Shared STATE, ROADMAP, REQUIREMENTS and continuation records belong to the orchestrator, never to you. A real unmet prerequisite blocks dependent work; do not invent human approval or auto-approve UAT. Read the doc-writer method only when assigned substantial documentation; otherwise hand documentation needs to the coordinator.
+For approved UI scope, apply [UI contract responsibilities](../references/ui-contract.md).
+Implement the shared PROJECT contract plus the phase CONTEXT delta using actual
+consumer components. Update assigned executable reference scenarios and report
+rule/scenario IDs, observed checks and missing evidence in the existing SUMMARY.
 </local_workflow>
 
 <role>

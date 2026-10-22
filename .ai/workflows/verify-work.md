@@ -229,6 +229,12 @@ initial prompt.
 </step>
 
 <step name="spawn_verifier">
+For approved UI scope, pass PROJECT's UI Contract, the CONTEXT UI Contract Delta,
+consumer reference scenario sources/results and
+[UI contract responsibilities](../references/ui-contract.md) to the existing
+verifier. Require rule/scenario reconciliation in Acceptance/Findings at the
+assigned revision; do not treat a scaffold or unexecuted scenario as passing.
+
 This step, `check_integration`, `verify_docs`, and configured checks are one
 read-only dispatch batch. Start the provisional verifier, each applicable
 specialist and configured checks together against the `frozen_revision` captured
@@ -269,6 +275,7 @@ only as its reading rule allows.
 
 <required_reading>
 - {paths.roadmap} (the phase's goal and success criteria)
+- .planning/PROJECT.md (shared UI Contract when UI scope applies)
 - {phase_dir}/{padded_phase}-CONTEXT.md (decisions the implementation had to honour)
 - {phase_dir}/{padded_phase}-*-PLAN.md (what was promised, including must_haves)
 - {phase_dir}/{padded_phase}-*-SUMMARY.md (what was claimed)
