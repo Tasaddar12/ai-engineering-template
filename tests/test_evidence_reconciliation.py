@@ -1,5 +1,6 @@
 """Reconcile actual receipts/provider payloads through the public runtime CLI."""
 import json
+import copy
 import os
 from pathlib import Path
 import subprocess
@@ -16,6 +17,7 @@ sys.path.insert(0, str(RUNTIME.parent))
 from lib.evidence_reconciliation import reconcile
 from lib.paths import Workspace
 from lib.results import VerbError
+from lib.verification_checks import digest
 REPORT = '.planning/phases/01-test/01-VERIFICATION.md'
 
 
@@ -206,6 +208,75 @@ class ReconciliationTests(unittest.TestCase):
         self.assertEqual(result['classification'], 'Passed', result)
         self.assertEqual(result['observations'][0]['actual_revision'], tested)
         self.assertNotIn('PRIVATE OUTPUT', json.dumps(result))
+
+    def test_complete_selected_current_evidence_and_invalid_accounting(self):
+        evidence = self.cli('verification.run-checks', '--only-checks', '0')
+        self.assertFalse(evidence['partial'])
+        self.assertEqual(self.reconcile(evidence)['classification'], 'Passed')
+        for field, value in [('selected_indices', []), ('selected_indices', [True]),
+                             ('selected_indices', [0, 0]), ('selected_passed', False),
+                             ('full_configuration_sha256', 'wrong'), ('full_order_sha256', 'wrong')]:
+            with self.subTest(field=field, value=value):
+                invalid = copy.deepcopy(evidence)
+                invalid[field] = value
+                self.assertEqual(self.reconcile(invalid)['classification'], 'Unverified')
+        missing = copy.deepcopy(evidence)
+        del missing['selected_indices']
+        self.assertEqual(self.reconcile(missing)['classification'], 'Unverified')
+        normal = self.cli('verification.run-checks')
+        forged = dict(normal, **{key: evidence[key] for key in
+                                 ('selected_indices', 'selected_passed', 'full_configuration_sha256', 'full_order_sha256')})
+        forged['partial'] = False
+        self.assertEqual(self.reconcile(forged)['classification'], 'Unverified')
+        self.git('commit', '--allow-empty', '-qm', 'advance candidate')
+        self.head = self.git('rev-parse', 'HEAD')
+        self.assertEqual(self.reconcile(evidence)['classification'], 'Unverified')
+
+    def test_partial_selected_evidence_cannot_claim_complete_configuration(self):
+        self.write('.planning/config.yaml', yaml.safe_dump({'verification': {'commands':
+                   [self.command, dict(self.command, command=[sys.executable, '-c', 'print(2)'])]}}))
+        self.commit()
+        self.head = self.git('rev-parse', 'HEAD')
+        evidence = self.cli('verification.run-checks', '--only-checks', '0')
+        self.assertTrue(evidence['partial'])
+        self.assertEqual(self.reconcile(evidence)['classification'], 'Unverified')
+        evidence.update(partial=False, passed=True, selected_passed=True, selected_indices=[0, 1])
+        self.assertEqual(self.reconcile(evidence)['classification'], 'Unverified')
+
+    def test_selected_receipt_requires_current_fresh_execution_revision(self):
+        evidence = self.cli('verification.run-checks', '--only-checks', '0')
+        envelope = json.loads((self.root / evidence['checks'][0]['receipt']).read_text(encoding='utf-8'))
+        receipt = envelope['receipt']
+        receipt['inputs']['fresh_execution_revision'] = '0' * 40
+        receipt['key'] = digest(receipt['inputs'])
+        reference = '.planning/verification-receipts/' + receipt['key'] + '.json'
+        receipt['result']['receipt'] = reference
+        envelope['sha256'] = digest(receipt)
+        (self.root / reference).write_text(json.dumps(envelope), encoding='utf-8')
+        evidence['checks'][0]['receipt'] = reference
+        result = self.reconcile(evidence)
+        self.assertEqual(result['classification'], 'Unverified')
+        self.assertIn('complete current selected-check accounting', result['reason'])
+
+    def test_missing_and_malformed_fresh_successor_evidence_preserve_observations(self):
+        evidence = self.cli('verification.run-checks')
+        tested = self.head
+        self.write(REPORT, 'verification report')
+        self.commit()
+        self.head = self.git('rev-parse', 'HEAD')
+        missing = Path(self.temp.name) / 'missing-fresh.json'
+        malformed = Path(self.temp.name) / 'malformed-fresh.json'
+        malformed.write_text('{invalid JSON', encoding='utf-8')
+        for fresh in (missing, malformed):
+            with self.subTest(path=fresh.name):
+                result = self.reconcile(evidence, tested, 'local', '--report-only-paths', REPORT,
+                                        '--fresh-evidence-file', str(fresh))
+                self.assertTrue(result['ok'])
+                self.assertEqual(result['classification'], 'Unverified')
+                self.assertEqual(result['terminal_result'], 'Passed')
+                self.assertEqual(result['observations'][0]['actual_revision'], tested)
+                self.assertIn('successor evidence unavailable', result['reason'])
+                self.assertNotIn('PRIVATE OUTPUT', json.dumps(result))
 
 
 if __name__ == '__main__':

@@ -4,6 +4,7 @@ import subprocess
 
 from . import verification_checks as checks
 from . import verification_successors as successors
+from .results import VerbError
 
 
 def sha(value):
@@ -115,7 +116,6 @@ def reconcile(workspace, evidence_file, claimed_revision, expected_head, kind="l
                     or any(part in {".", ".."} for part in repository.split("/"))):
                 raise ValueError("live provider read requires kind github, numeric provider-run and owner/repository")
             from .delivery import gh
-            from .results import VerbError
             try:
                 response = gh(workspace, "api", "repos/" + repository + "/actions/runs/" + provider_run, check=True)
             except VerbError as exc:
@@ -149,8 +149,11 @@ def reconcile(workspace, evidence_file, claimed_revision, expected_head, kind="l
             if kind != "local" or not report_only_paths:
                 raise ValueError("actual run SHA does not cover current candidate; fresh evidence required")
             from .verification import qualify_successor
-            qualification = qualify_successor(workspace, evidence_file, report_only_paths,
-                                              expected_head, fresh_evidence_file)
+            try:
+                qualification = qualify_successor(workspace, evidence_file, report_only_paths,
+                                                  expected_head, fresh_evidence_file)
+            except VerbError as exc:
+                raise ValueError("successor evidence unavailable: " + str(exc)) from None
             result["successor"] = {key: qualification[key] for key in
                                    ("qualified", "tested_revision", "qualified_revision", "reason",
                                     "fresh_required", "qualifications", "original_receipts")}
@@ -161,8 +164,21 @@ def reconcile(workspace, evidence_file, claimed_revision, expected_head, kind="l
             from .config import get
             import os
             commands = configured_checks(workspace)
-            _, current_inputs = checks.capture_inputs(root, commands, get(workspace, "verification", {}),
-                                                      CHECK_TIMEOUT, expected_head, os.environ.copy())
+            configuration = get(workspace, "verification", {})
+            specifications, current_inputs = checks.capture_inputs(
+                root, commands, configuration, CHECK_TIMEOUT, expected_head, os.environ.copy())
+            selected_fields = {"selected_indices", "selected_passed", "full_configuration_sha256", "full_order_sha256"}
+            if selected_fields & set(evidence) or any("fresh_execution_revision" in row for row in original_inputs):
+                indices = evidence.get("selected_indices")
+                if (not selected_fields <= set(evidence) or evidence.get("partial") is not False
+                        or not isinstance(indices, list) or any(type(v) is not int for v in indices)
+                        or indices != list(range(len(commands)))
+                        or evidence.get("selected_passed") is not evidence["passed"]
+                        or evidence.get("full_configuration_sha256") != checks.digest(configuration)
+                        or evidence.get("full_order_sha256") != checks.digest(specifications)
+                        or any(row.get("fresh_execution_revision") != expected_head for row in original_inputs)):
+                    raise ValueError("complete current selected-check accounting required")
+                current_inputs = [dict(row, fresh_execution_revision=expected_head) for row in current_inputs]
             if checks.digest(original_inputs) != checks.digest(current_inputs):
                 raise ValueError("receipt inputs do not match current configured checks")
         if checks.git(root, "rev-parse", "HEAD").decode().strip() != expected_head or checks.git(
