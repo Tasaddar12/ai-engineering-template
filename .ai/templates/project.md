@@ -64,6 +64,13 @@ One sentence that drives prioritization when tradeoffs arise.]
 
 Common types: Tech stack, Timeline, Budget, Dependencies, Compatibility, Performance, Security
 
+## UI Contract
+
+<!-- OPTIONAL - for projects with a UI. Use the shared contract block from
+.ai/templates/ui-contract.md, with actual project components/tokens or links to
+existing authoritative design docs. Phase CONTEXT records only scoped deltas.
+Remove this section for projects without a UI. -->
+
 ## Key Decisions
 
 <!-- Decisions that constrain future work. Add throughout project lifecycle. -->
@@ -124,6 +131,12 @@ Common types: Tech stack, Timeline, Budget, Dependencies, Compatibility, Perform
 - Hard limits on implementation choices
 - Tech stack, timeline, budget, compatibility, dependencies
 - Include the "why" — constraints without rationale get questioned
+
+**UI Contract:**
+For UI projects, use the [UI contract template](ui-contract.md) and follow
+[contract ownership](../references/ui-contract.md). PROJECT owns shared UI rules;
+phase CONTEXT owns scoped deltas. The coordinator records actual decisions; do
+not fill the adopting-project skeleton during template maintenance.
 
 **Key Decisions:**
 - Significant choices that affect future work

@@ -378,6 +378,13 @@ explicitly before continuing.
 </step>
 
 <step name="spawn_preparer">
+For approved UI scope, include PROJECT's UI Contract, the CONTEXT UI Contract
+Delta, actual consumer UI source paths and
+[UI contract responsibilities](../references/ui-contract.md) in the preparer's
+assignment. Require the existing PLAN's `read_first`, ownership and checks to
+cover applicable rules and executable consumer reference scenarios. Missing
+decisions return to the coordinator; this adds no preparation or review phase.
+
 Capture the exact input revision before the preparer starts:
 
 ```bash
@@ -411,6 +418,7 @@ and open a listed file only as its reading rule allows.
 
 <required_reading>
 - {paths.state} (Project State)
+- .planning/PROJECT.md (shared UI Contract when UI scope applies)
 - {paths.roadmap} (Roadmap)
 - {paths.requirements} (Requirements)
 - {phase_dir}/{padded_phase}-CONTEXT.md (USER DECISIONS from /discuss-phase — locked)

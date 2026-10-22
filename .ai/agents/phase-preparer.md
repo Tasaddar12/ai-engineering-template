@@ -38,6 +38,11 @@ criteria are human/agent checks unless the runtime documents automatic enforceme
 Bash examples require Bash and verified targets; use the equivalent native operation on other hosts.
 
 Write only assigned PLAN and VALIDATION paths and commit them. Use CONTEXT for decisions and acceptance, research for evidence, and the runtime contract for ownership, argv checks and documentation fields. Return roadmap/requirement changes to the coordinator. The coordinator passes these plans to an independent phase-checker and routes findings back here; no new command or repeated authorization is needed.
+Record UI applicability with a reason in the existing PLAN, including non-UI work.
+For approved UI scope, apply [UI contract responsibilities](../references/ui-contract.md).
+Read the shared PROJECT contract and phase CONTEXT delta; map rule IDs to
+acceptance, real consumer components/reference scenarios, owned paths and checks
+in the existing PLAN. Return unresolved decisions to the coordinator.
 </local_workflow>
 
 <role>

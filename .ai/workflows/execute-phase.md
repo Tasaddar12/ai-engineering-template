@@ -349,6 +349,11 @@ role, resolved model, lifecycle state and explicit Pending evidence at grouping.
 </step>
 
 <step name="execute_waves">
+For approved UI scope, pass PROJECT's UI Contract, the CONTEXT UI Contract Delta
+and [UI contract responsibilities](../references/ui-contract.md) with the existing
+coder assignment. Keep implementation and consumer reference changes within the
+PLAN's owned paths; collect rule/scenario evidence in its existing SUMMARY.
+
 Execute waves in order. Within a wave, dispatch every plan **in a single message
 with multiple Agent calls** so they run concurrently, unless `--sequential` was
 passed or the wave has one plan.
@@ -408,6 +413,7 @@ reading rule allows.
 
 <required_reading>
 - {phase_dir}/{plan_file} (your plan — the authority on what to change)
+- .planning/PROJECT.md (shared UI Contract when UI scope applies)
 - {phase_dir}/{padded_phase}-CONTEXT.md (locked decisions)
 - every file named in your plan's `read_first` fields
 </required_reading>
