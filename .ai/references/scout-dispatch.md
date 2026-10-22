@@ -42,27 +42,8 @@ not edit, run tests, execute project code, or dispatch children.
 | Integration checking | Have integration-checker repeat producer/consumer location extraction while tracing flow | Scout maps the named producer, consumer and entry point; integration-checker uses the map and receipts to trace the flow and owns the verdict. |
 | Test running | Ask an agent to execute tests or inspect outputs by rerunning commands | Run configured checks through `verification.run-checks`. Extract recorded fields with the runtime. If output is ambiguous, assign scout to interpret it; never assign scout test or project-code execution. |
 
-Apply the mechanical runtime route first in every workflow and role. Dispatch
-`scout` for interpretation, classification, semantic structured summaries or
-transformation proposals in the routing table, even when source locations are known. For other specialist roles, dispatch only when
-a named unresolved claim, acceptance criterion, or risk decision requires
-evidence from that specialist's domain. Do not dispatch a second scout when one
-result answers the assigned question. Dispatch multiple
-scouts only for separately named questions with different source areas or
-evidence types; start independent assignments against the same frozen revision
-and join every result before repair or acceptance. Do not perform duplicate
-searches for the scout's assigned fields. Independent read-only checks or
-specialist evidence collection may run concurrently against the same frozen
-revision; keep every write and source-changing operation within its declared
-owner and do not start repairs before the batch joins.
-
-Reuse a scout result only when the question, revision, search scope and supplied
-inputs match. For missing required fields, send one bounded follow-up naming the
-fields. If the result remains incomplete or blocked, block only the dependent
-decision and report the missing evidence. When citations conflict, assign a
-targeted extraction of the exact conflicting paths or inputs; the stronger
-decision owner resolves the conflict and records its basis. These are prompt and
-tool-permission instructions, not runtime enforcement of search behavior.
+Apply the mechanical evidence route and task table first; follow the
+[dispatch procedure](#dispatch-procedure) for assignments and result handling.
 
 ## Mechanical evidence without model dispatch
 
@@ -133,32 +114,38 @@ scout_result:
 1. Read the assignment and supplied context. Name the claim, acceptance criterion
    or risk decision and list the evidence it needs. Follow the routing table; if
    the table assigns the work directly to an owner, do not add a scout.
+   Dispatch another specialist only for a named unresolved claim, acceptance
+   criterion or risk decision that needs evidence from that specialist's domain.
 2. If a source area is unknown, assign one discovery scout. Join and validate its
    revision and citations before assigning the distinct questions it revealed.
 3. Batch compatible fields for one bounded question as a single requested output.
-   Keep distinct questions as separate outputs. Reuse a result only
-   when question, revision, scope and inputs all match; otherwise assign a new
-   question with the exact uncovered scope. Resolve each scout through
+   Keep distinct questions as separate outputs. Dispatch multiple scouts only
+   for separately named questions with different source areas or evidence types.
+   Reuse a result only when the question, revision, search scope and supplied
+   inputs match; otherwise assign a new question with the exact uncovered scope.
+   Do not dispatch a second scout when one result answers the assigned question.
+   Resolve each scout through
    `phase_run query resolve-agent scout --host codex` or `--host claude` in the
    source namespace. Pass the returned model and effort inline; omit `inherit`.
-4. Start independent specialist assignments concurrently when shared host capacity
-   allows; respect the host's actual open-worker limit and count queued/open
-   workers, not just currently running ones. Wait for all assignments in a batch
-   before integrating their evidence. Do not duplicate the assigned extraction.
-   Independent read-only checks and specialist assignments may run concurrently
-   against the frozen revision. Keep writes and source-changing work with the
-   assigned owner; start repairs only after the results join. Use the host's
-   available lifecycle tools; do not invent one.
+4. Run independent specialist assignments and read-only checks concurrently
+   within shared host capacity; respect its actual open-worker limit and count
+   queued/open workers, not just currently running ones. Keep them on the same
+   frozen revision and wait for every result before acceptance or repair. Do not
+   duplicate assigned searches. Keep writes and source-changing work with the
+   assigned owner; confirm a worker has stopped before reassigning its paths. Use
+   the host's available lifecycle tools; do not invent one.
 5. Validate each result's id, `task_class`, revision, status, answer,
    `field_results` for every `requested_fields` entry, evidence, search_scope,
    uncertainty and unresolved_questions. Check `missing_test_cases` when it was
-   requested. A partial or unsupported answer does not satisfy its question;
-   send a bounded follow-up for the missing evidence or report the remaining gap.
+   requested. A partial or unsupported answer does not satisfy its question; use
+   step 6 for the missing evidence or report the remaining gap.
 6. If required output fields are missing, make one bounded follow-up naming each
-   missing field. If the follow-up remains incomplete, block the dependent
-   decision. For conflicting citations, target the exact conflicting paths or
-   inputs and have the stronger domain owner resolve the conflict. Preserve
-   paths, line numbers and excerpts; do not claim more than cited evidence proves.
+   missing field. If the follow-up remains incomplete, block only the dependent
+   decision and report the missing evidence. For conflicting citations, target the
+   exact conflicting paths or inputs and have the stronger domain owner resolve
+   the conflict. Preserve paths, line numbers and excerpts; do not claim more than
+   cited evidence proves. These prompt and tool-permission instructions do not
+   enforce search behavior at runtime.
 
 ## Direct nested dispatch and unsupported-host fallback
 
