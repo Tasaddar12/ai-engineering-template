@@ -772,9 +772,9 @@ adopting projects.
 
 ## Saved PR body provider check
 
-The source repository's [saved-body workflow](../../.github/workflows/validate-saved-pr.yml)
+The source repository's [saved-body workflow](https://github.com/Tasaddar12/ai-engineering-template/blob/f2155b0579269f0c288a764ce7ed532493e8b5ba/.github/workflows/validate-saved-pr.yml)
 reads the actual saved GitHub PR body on `opened`, `edited`, `reopened`,
-`synchronize` and `ready_for_review`. Its [stdlib script](../../.github/scripts/validate_saved_pr.py)
+`synchronize` and `ready_for_review`. Its [stdlib script](https://github.com/Tasaddar12/ai-engineering-template/blob/f2155b0579269f0c288a764ce7ed532493e8b5ba/.github/scripts/validate_saved_pr.py)
 imports `lib.issue_format.validate_pr` directly from the trusted checkout; it
 installs no runtime dependencies. See the [Git workflow provider boundary](../references/git-workflow.md#saved-pr-body-provider-check)
 for trust, rollout and evidence limits. The source workflow is not installed into

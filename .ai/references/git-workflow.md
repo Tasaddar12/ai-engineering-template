@@ -320,7 +320,7 @@ unavailable readback first. The audit grants no new merge or issue closure autho
 
 ## Saved PR body provider check
 
-The [saved-body workflow](../../.github/workflows/validate-saved-pr.yml) uses
+The [saved-body workflow](https://github.com/Tasaddar12/ai-engineering-template/blob/f2155b0579269f0c288a764ce7ed532493e8b5ba/.github/workflows/validate-saved-pr.yml) uses
 `pull_request_target` and checks out the immutable `github.workflow_sha` from the
 trusted default-branch workflow context. It uses `contents: read` and
 `pull-requests: read`, disables persisted checkout credentials, and runs only the
@@ -329,7 +329,7 @@ PR head content, installs dependencies, or restores caches. Pass API URL,
 repository, PR number and token through the step environment; never interpolate
 body text into shell commands.
 
-The [validator](../../.github/scripts/validate_saved_pr.py) fetches the saved PR
+The [validator](https://github.com/Tasaddar12/ai-engineering-template/blob/f2155b0579269f0c288a764ce7ed532493e8b5ba/.github/scripts/validate_saved_pr.py) fetches the saved PR
 through authenticated GET requests, validates its identity, and calls the canonical
 `lib.issue_format.validate_pr` parser. It re-reads body, update timestamp, head and
 base revisions/ref identities before reporting success. A changed snapshot,
