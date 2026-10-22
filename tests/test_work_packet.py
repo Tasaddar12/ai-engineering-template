@@ -1,5 +1,7 @@
 """Real Git/CLI packet behavior, including installed runtime namespace."""
 import hashlib
+import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -70,10 +72,27 @@ class WorkPacketTests(unittest.TestCase):
         self.assertEqual(list((self.root / ".planning/handoffs").glob("*.json")), [handoff])
 
     def test_size_bound_counts_pretty_printed_utf8_success_envelope(self):
-        packet = self.packet()
-        size = len((json.dumps(packet, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
-        self.assertTrue(self.packet("--max-bytes", str(size))["dispatchable"])
-        self.assertEqual(self.packet("--max-bytes", str(size - 1), ok=False)["code"], "packet-too-large")
+        self.write("constraints.md", "Acceptance: preserve caf\u00e9.\nSecurity: deny unauthenticated access.\n")
+        command = [sys.executable, str(self.runtime), "query", "handoff.packet", "worker",
+                   "--base", self.base, "--sources", "constraints.md"]
+        def capture(*extra):
+            # Keep binary stdout: text mode hides Windows CRLF expansion.
+            return subprocess.run(command + list(extra), cwd=self.root, capture_output=True,
+                                  env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"))
+        initial = capture()
+        self.assertEqual(initial.returncode, 0, initial.stderr)
+        packet = json.loads(initial.stdout)
+        size = len(initial.stdout)
+        expected = (json.dumps(packet, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+        self.assertEqual(initial.stdout, expected)
+        self.assertNotIn(b"\r\n", initial.stdout)
+        accepted = capture("--max-bytes", str(size))
+        self.assertEqual(accepted.returncode, 0, accepted.stderr)
+        self.assertLessEqual(len(accepted.stdout), size)
+        self.assertEqual(json.loads(accepted.stdout)["required_sources"], packet["required_sources"])
+        rejected = capture("--max-bytes", str(size - 1))
+        self.assertEqual(rejected.returncode, 1, rejected.stderr)
+        self.assertEqual(json.loads(rejected.stdout)["code"], "packet-too-large")
 
     def test_oversized_packet_explicitly_fails_without_trimming_constraints(self):
         self.write("constraints.md", "Acceptance\n" + "S" * 70000 + "\nSecurity: deny access")
@@ -153,6 +172,29 @@ class WorkPacketTests(unittest.TestCase):
         self.runtime = target / "phase.py"
         self.bind()
         self.assertTrue(self.packet()["reusable_context"])
+
+
+class ResultEmissionTests(unittest.TestCase):
+    def test_emitter_overrides_crlf_translation_and_preserves_fallback_streams(self):
+        specification = importlib.util.spec_from_file_location("packet_results", RUNTIME.parent / "lib/results.py")
+        results = importlib.util.module_from_spec(specification)
+        specification.loader.exec_module(results)
+        payload = {"ok": True, "constraint": "caf\u00e9\nSecurity: deny access"}
+        expected = (json.dumps(payload, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+        buffer = io.BytesIO()
+        stream = io.TextIOWrapper(buffer, encoding="ascii", newline="\r\n")
+        results.emit(payload, stream=stream)
+        stream.flush()
+        self.assertEqual(buffer.getvalue(), expected)
+        fallback = io.StringIO()
+        results.emit(payload, stream=fallback)
+        self.assertEqual(fallback.getvalue().encode("utf-8"), expected)
+        class Unconfigurable(io.StringIO):
+            def reconfigure(self, **kwargs):
+                raise ValueError("stream already read")
+        fallback = Unconfigurable()
+        results.emit(payload, stream=fallback)
+        self.assertEqual(fallback.getvalue().encode("utf-8"), expected)
 
 
 if __name__ == "__main__":

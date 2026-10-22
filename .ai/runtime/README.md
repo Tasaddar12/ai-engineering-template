@@ -91,6 +91,8 @@ unresolved findings, recorded check fields and missing inputs. The caller suppli
 every mandatory core, acceptance/security, plan and dependency source. Missing
 inputs make it nondispatchable; exceeding the default 65,536 UTF-8 JSON bytes
 fails explicitly with required full-source references and no truncation.
+Runtime JSON emission uses literal LF newlines on every platform, including
+Windows; the bound counts those exact formatted output bytes and success envelope.
 
 `handoff.write --findings ... --files-read ...` binds saved context to current
 HEAD and the input byte hashes. Reuse requires both to match; changed or unbound
