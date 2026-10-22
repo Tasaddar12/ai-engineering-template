@@ -248,9 +248,9 @@ Do not return `complete` when required work, evidence, commits, or artifacts are
 - Read the relevant project's configured checks and the assigned workflow before running commands.
 - Run the checks required by the assignment. Do not invent a check or report an unrun check as passed.
 - For documentation, inspect Markdown structure, local links, command spellings, examples, and the final diff.
-- Run `python -m unittest discover -s tests -p 'test_contribution_conformance.py'` and `python -m unittest discover -s tests -p 'test_workflow_links.py'` for template or workflow contributions. Keep the existing command/skill parity checks.
-- Audit real navigation in templates as well as other guidance, including path case and heading anchors. Put literal examples in fenced or inline code. For an instructional destination that must remain a link, add `<!-- guidance-placeholder: exact-target | reason -->` in that source; this exempts only that exact destination, never other missing paths.
-- Extend the existing [artifact contract table](.ai/runtime/TEMPLATE-CONTRACT.md) with producing and consuming owners, the applicable validator and a valid/invalid behavioral fixture. Identify manual review explicitly where no runtime validator exists. Fixtures call the actual runtime boundary; matching a phrase is not validation.
+- For template or workflow changes, run `python -m unittest discover -s tests -p 'test_contribution_conformance.py'` and `python -m unittest discover -s tests -p 'test_workflow_links.py'`. Preserve command/skill parity checks.
+- Audit guidance links in templates and other documents, including path case and heading anchors. Put literal examples in fenced or inline code. If an instructional destination must remain a link, add `<!-- guidance-placeholder: exact-target | reason -->` in that source. Exempt only that exact destination.
+- If adding a runtime artifact, extend the [artifact contract table](.ai/runtime/TEMPLATE-CONTRACT.md) with its producer, consumer, validator and valid/invalid behavioral fixture. Exercise the runtime boundary in fixtures. If no runtime validator exists, name the manual review owner.
 - Stage only assigned paths. Inspect staged paths and content before committing.
 - Commit each completed meaningful slice with a descriptive `type(scope): outcome` subject and a body containing `Why:`, `Changes:`, and `Verification:`.
 - Include the required worker SUMMARY in the same owned slice when the assignment requires it.

@@ -18,18 +18,25 @@ contract adds the local execution metadata; it does not replace upstream guidanc
 | Issue body | [issue workflow](../references/git-workflow.md) | [provider publication](../references/git-workflow.md) | Selected canonical type and structural fields | [issue format](lib/issue_format.py); Source-only fixture: `tests/test_contribution_conformance.py::BehaviorFixtures.test_issue_bodies` |
 | Pull request body | [ship](../workflows/ship.md) | [provider publication](../references/git-workflow.md) | Canonical PR sections and evidence tables | [publication format](lib/issue_format.py); Source-only fixture: `tests/test_contribution_conformance.py::BehaviorFixtures.test_pr_body` |
 
-The contribution suite resolves every producer, consumer and validator link in
-this table and executes each named behavioral fixture from the current source
-checkout. Source-only fixture locators use `path::Class.method`; they identify
-upstream tests, which are not copied into installed `.codex` or `.claude` trees.
-Runtime validator links resolve in both source and installed trees. Manual rows identify the
-review owner explicitly; structural acceptance never proves semantic quality.
-The report reader exposes metadata; completion review requires `passed` and
-nonempty revision/date fields. It does not validate SHA/date syntax, authenticate
-the report or establish its semantic claims. Manual verifier/coordinator review
-must assess those facts. Receipt validation supplies separate executed-check
-evidence and does not validate the authored report.
-Extend this table when adding a runtime artifact; do not maintain a second index.
+### Validate artifact coverage
+
+In the source checkout, run
+`python -m unittest discover -s tests -p 'test_contribution_conformance.py'`.
+Require every producer, consumer and validator link to resolve and every named
+fixture to execute from the current source. If a link or fixture fails, correct
+its target or contract before accepting coverage.
+
+Keep source-only fixture locators as `path::Class.method`; tests are not installed
+in `.codex` or `.claude`. Keep runtime validator links valid in both trees.
+
+If no runtime validator exists, name the manual review owner. Review semantic
+quality separately from structural acceptance. For verification reports, require
+`passed` and nonempty revision/date fields. If either is absent, leave completion
+unverified. Have the verifier/coordinator check SHA/date syntax, authenticity and
+semantic claims; the report reader does not validate them. Validate executed-check
+receipts separately from authored reports.
+
+If adding a runtime artifact, extend this table. Do not create a second index.
 
 ## Author a context
 
