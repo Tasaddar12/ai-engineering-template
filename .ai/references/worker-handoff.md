@@ -157,9 +157,10 @@ phase_run query handoff.write <id from the advisory> \
 
 A prompt with a `<handoff>` block is a continuation:
 
-- Ingest the block first. It replaces the assignment's required reading.
-- Do not re-read a file it lists as already read, repeat a search its findings
-  answer, or re-verify an established finding.
+- Ingest the runtime work packet first. Read its complete required sources.
+- Reuse saved context only when `reusable_context` is true and its exact
+  revision and input hashes still match. Re-read changed or unbound inputs
+  and re-establish `unverified` findings. Findings remain context, never proof.
 - Open a file only to edit it, for a fact the block lacks, or when
   `git diff <revision at interruption> -- <path>` shows it changed. Read only
   the part you need.
@@ -171,7 +172,8 @@ A prompt with a `<handoff>` block is a continuation:
 
 ```bash
 phase_run query handoff.list          # pending records, oldest first
-phase_run query handoff.read <id>     # the record plus its continuation brief
+phase_run query handoff.read <id>     # inspect the existing state owner
+phase_run query handoff.packet <id> --base <input-sha> --sources <required paths> ...
 phase_run query handoff.consume <id>  # delete it once the work is reassigned
 ```
 
@@ -182,9 +184,26 @@ For every continuation:
 
 1. Run `handoff.list` and pick the record whose `agent` is the role being
    continued. With no record, continue without a `<handoff>` block.
-2. Run `handoff.read <id>` and take its `continuation` field.
-3. Dispatch the same `Agent(...)` call with that field verbatim in a
-   `<handoff>` block ahead of `<required_reading>`. Do not paraphrase or trim
-   it, and do not add the original required reading back. Assign only the
-   remaining work.
+2. Run `handoff.packet` with the exact assignment base and every mandatory
+   core, CONTEXT acceptance/security, PLAN, `read_first` and dependency source.
+   The caller owns source completeness; the runtime does not infer authority
+   from arbitrary prose. Required sources must be full UTF-8 files inside this
+   checkout; escaping paths fail explicitly. Add `--evidence-file <json>` for
+   existing check fields, which retain their recorded-only status and source hash.
+3. Dispatch only a `dispatchable: true` packet, verbatim, assigning the remaining
+   work. Check its revision and hashes immediately before dispatch; rebuild on
+   change. Missing sources produce a nondispatchable packet. The default bound
+   is 65,536 UTF-8 JSON bytes; `--max-bytes <positive integer>` overrides it.
+   Oversize fails with `packet-too-large` and full-source references. Narrow
+   remaining work or explicitly raise the bound; never trim acceptance, security
+   constraints, unresolved findings or required sources to fit. This bounds the
+   packet output, not a project's loaded-context budget.
 4. Run `handoff.consume <id>` in the same turn.
+
+Packets are read-only projections, local and ephemeral like handoffs. Do not
+commit them, maintain another status ledger, or cite them as verification
+evidence. `changes` and recorded check fields come from `evidence.extract`;
+receipt qualification stays with verification. `handoff.write` binds a digest
+to revision and input hashes when `--findings` and `--files-read` are supplied
+together. Legacy/unbound digests require fresh reading. A digest update does
+not authenticate its claims or replace mandatory acceptance/security reading.

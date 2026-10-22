@@ -309,7 +309,7 @@ class Reading(HandoffCase):
         self.assertNotIn("sess--agent-r3.json", brief)
         self.assertIn("Artifact in progress: .planning/phases/04-a/04-RESEARCH.md", brief)
         self.assertIn("- OIDC callback is api/auth.py:120", brief)
-        self.assertIn("Already read (do not re-read):\n- api/auth.py", brief)
+        self.assertIn("Previously read (re-read changed or unbound inputs):\n- api/auth.py", brief)
         self.assertIn("- Standard stack", brief)
         self.assertIn("Remaining: SAML elevation", brief)
         self.assertIn("Next action: read the SAML library docs", brief)

@@ -83,6 +83,22 @@ unless `--force` is passed.
 
 ### Sessions
 
+`handoff.packet <id> --base <assignment-sha> --sources <paths> ...
+[--evidence-file <json>] [--max-bytes <positive integer>]` produces a read-only,
+local work packet from the existing handoff plus `evidence.extract`. It includes
+full required sources and hashes, exact revision, changes, remaining work,
+unresolved findings, recorded check fields and missing inputs. The caller supplies
+every mandatory core, acceptance/security, plan and dependency source. Missing
+inputs make it nondispatchable; exceeding the default 65,536 UTF-8 JSON bytes
+fails explicitly with required full-source references and no truncation.
+
+`handoff.write --findings ... --files-read ...` binds saved context to current
+HEAD and the input byte hashes. Reuse requires both to match; changed or unbound
+inputs require reading and stale findings require re-establishment. A packet is
+ephemeral context, never verification evidence or another mutable state owner.
+Check revision/hashes again before dispatch. Follow the complete
+[continuation contract](../references/worker-handoff.md#dispatching-a-continuation).
+
 | Verb | Effect |
 |---|---|
 | `session.status` | Open session entries with kind, label, status, worktree and branch |

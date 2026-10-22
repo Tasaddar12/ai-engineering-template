@@ -195,13 +195,12 @@ limits; do not restart completed work or resume an exhausted session.
 Check `phase_run query handoff.list` before dispatching new work and after any
 agent returns. A pending record means an attempt stopped early — from the
 context limit, or from an executor that exited without a `complete` SUMMARY —
-and the work is unassigned until you place it. For each record, read it with
-`phase_run query handoff.read <id>`, put its `continuation` brief verbatim in a
-`<handoff>` block of the fresh subagent's prompt, dispatch against the remaining
-tasks only, then `phase_run query handoff.consume <id>` in that same turn. The
-brief carries the stopped agent's digest — what it read and established — so do
-not add the original required reading back or paraphrase the brief: that is
-what makes the continuation re-read everything. See
+and the work is unassigned until you place it. For each record, produce
+`handoff.packet` with the exact input base and complete required source list.
+Follow its revision/hash freshness and size gates; dispatch only a dispatchable
+packet verbatim against remaining tasks, then consume the handoff in that turn.
+Preserve full acceptance and security constraints and re-establish stale findings.
+Recorded check fields still require verification qualification. See
 [dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation). Consuming is what
 stops a second agent from being handed a plan the first is already finishing;
 a record you leave behind is one you will dispatch twice. Handoffs are local and

@@ -129,6 +129,13 @@ def read_one(workspace, identifier):
     return record
 
 
+def packet(workspace, identifier, required_sources, base, evidence_file=None,
+           max_bytes=65536):
+    from .work_packet import build
+    return build(workspace, read_one(workspace, identifier), required_sources,
+                 base, evidence_file, max_bytes)
+
+
 #: Roles whose output is one assigned artifact rather than a plan executed to a
 #: SUMMARY, and roles that report on existing work. The same lists live in
 #: `.ai/hooks/lib/agent-roles.sh`, which the hook sources; a test holds the two
@@ -165,8 +172,8 @@ def _digest(record):
         lines.append(f"Artifact in progress: {record['artifact']}")
     for key, heading in (("completed", "Already done"),
                          ("findings",
-                          "Established findings (rely on these; do not re-derive them)"),
-                         ("files_read", "Already read (do not re-read)")):
+                          "Saved findings (context only; validate input freshness before reuse)"),
+                         ("files_read", "Previously read (re-read changed or unbound inputs)")):
         items = _items(record.get(key))
         if items:
             lines.append(heading + ":")
@@ -198,7 +205,10 @@ def _reading_rule(record, executor):
     if executor:
         rule += (" Of the plan's read_first files, read only those a remaining task edits "
                  "or depends on.")
-    return rule
+    return ("Build handoff.packet before dispatch. Its revision and input hashes govern "
+            "context reuse; unbound or changed inputs require re-reading and findings "
+            "require re-establishment. Never omit required acceptance or security sources. "
+            "The following reuse guidance applies only to unchanged, hash-bound inputs: " + rule)
 
 
 def _brief(record):
@@ -317,6 +327,12 @@ def write(workspace, identifier, reason, plan=None, agent=None, summary=None,
         record["summary"] = plan[: -len("-PLAN.md")] + "-SUMMARY.md"
     record["created_at"] = existing.get("created_at") or _now()
     record["updated_at"] = _now()
+    if findings is not None or files_read is not None:
+        from .work_packet import snapshot
+        # A digest update never blesses old findings just because new files
+        # were listed. Both fields must be supplied together to bind reuse.
+        record["input_snapshot"] = snapshot(
+            workspace, _items(files_read) if _items(findings) else [])
     write_text(path, json.dumps(record, ensure_ascii=False, indent=2) + "\n")
     record["id"] = path.stem
     record["file"] = path.as_posix()
