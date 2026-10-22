@@ -315,6 +315,21 @@ class IssueFormat(unittest.TestCase):
                     issue_format.validate(bodies()["Bug"], "Bug", path)
                 self.assertEqual(caught.exception.code, "issue-schema")
 
+    def test_issue_tables_cannot_use_indented_literal_structure(self):
+        from publication_fixtures import issue_body
+        for variant in ("Decision required", "UAT"):
+            body = issue_body(variant)
+            tables = re.findall(r"(?m)^\|.*(?:\n\|.*)*", body)
+            self.assertTrue(tables)
+            for table in tables:
+                for prefix in ("    ", "\t", " \t"):
+                    with self.subTest(variant=variant, table=table, prefix=repr(prefix)):
+                        changed = body.replace(table, "\n".join(prefix + row for row in table.splitlines()))
+                        self.assert_invalid(changed, variant)
+                for row in table.splitlines():
+                    with self.subTest(variant=variant, row=row):
+                        self.assert_invalid(body.replace(row, "    " + row, 1), variant)
+
     def test_examples_outside_file_template_do_not_change_schema(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "issues"

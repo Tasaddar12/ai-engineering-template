@@ -161,6 +161,28 @@ class PublicationFormat(unittest.TestCase):
         self.assertTrue(issue_format.validate(body + "\n<!-- todo-id: fixture -->\n", "Bug")["valid"])
         self.assertTrue(issue_format.validate(issue_body("UAT"), "UAT")["valid"])
 
+    def test_each_required_pr_table_rejects_indented_literal_structure(self):
+        body = pr_body()
+        tables = re.findall(r"(?m)^\|.*(?:\n\|.*)*", body)
+        self.assertEqual(len(tables), 2)
+        for table in tables:
+            for prefix in ("    ", "\t", " \t"):
+                with self.subTest(header=table.splitlines()[0], prefix=repr(prefix)):
+                    self.invalid_pr(body.replace(table, "\n".join(prefix + row for row in table.splitlines())))
+            for row in table.splitlines():
+                with self.subTest(row=row):
+                    self.invalid_pr(body.replace(row, "    " + row, 1))
+
+    def test_indentation_preserves_wrapped_prose_lists_fields_and_autolinks(self):
+        body = pr_body().replace("## Goal\n\nSafe fixture detail",
+                                 "## Goal\n\nA wrapped goal\n    continues with <https://example.test/goal>.")
+        body = body.replace("- Risks: Fixture-only change.",
+                            "- Risks: Fixture-only change\n    with ordinary wrapped details.")
+        self.assertTrue(issue_format.validate_pr(body)["valid"])
+        body = issue_body("UAT").replace("Decision: Safe fixture detail",
+                                        "Decision: Pending human review\n    of the prepared test.")
+        self.assertTrue(issue_format.validate(body, "UAT")["valid"])
+
 
 if __name__ == "__main__":
     unittest.main()

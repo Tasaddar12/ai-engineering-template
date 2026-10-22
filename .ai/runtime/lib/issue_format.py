@@ -132,12 +132,15 @@ def _sections(content, expected, code, optional=(), risk_entries=False, issue_ma
 
 def _blocks(lines, field_lines=False):
     result = []
-    for line in lines:
+    for line, visible in zip(lines, visible_lines("\n".join(lines))):
         if not line.strip():
             if result:
                 result[-1][2] = True
             continue
-        kind = ("table" if cells(line) is not None else
+        # Keep raw prose/list continuations, but only rendered Markdown rows
+        # can supply required table structure. cells() intentionally strips
+        # whitespace for cell values and is not a visibility check.
+        kind = ("table" if cells(visible) is not None else
                 "bullets" if re.match(r"^ {0,3}[-*+]\s+", line) else
                 "ordered" if re.match(r"^ {0,3}\d+\.\s+", line) else
                 "fields" if field_lines and not re.match(r"^[A-Za-z][A-Za-z0-9+.-]*://", line)
