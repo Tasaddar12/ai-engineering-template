@@ -5,15 +5,38 @@ template's File Template is the output skeleton; its examples and teaching
 sections stay in the source template. Keep every applicable output section. This
 contract adds the local execution metadata; it does not replace upstream guidance.
 
-| Artifact | Producer | Consumer | Local additions |
-|---|---|---|---|
-| NN-CONTEXT.md | discuss-phase | researcher, phase-preparer, phase-checker | phase, discussion, issue_refs, decisions, canonical refs, code context, deferred ideas, folded todos |
-| NN-DISCUSSION-LOG.md | discuss-phase | Human audit only | Actual questions, options, selections and rationale |
-| NN-RESEARCH.md | researcher | phase-preparer | Findings tied to a revision, with what they unblock |
-| NN-MM-PLAN.md | phase-preparer | phase-checker, orchestrator, coder | wave, depends_on, files_modified, requirements, acceptance, must_haves, per-task verify with fails_when |
-| NN-MM-SUMMARY.md | coder / doc-writer | orchestrator, downstream plans, verifier | status, commits, acceptance and documentation coverage, actual check results |
-| NN-VERIFICATION.md | verifier | orchestrator, ship gate | status, reviewed revision, verified_at, finding counts |
-| ARCHITECTURE.md, STACK.md | codebase-mapper | plan-phase, researcher | freshness derived from the commit that last wrote the file, via `codebase.status` |
+| Artifact | Producer | Consumer | Local additions | Validator and behavioral coverage |
+|---|---|---|---|---|
+| NN-CONTEXT.md | [discuss-phase](../workflows/discuss-phase.md) | [researcher](../agents/researcher.md), [phase-preparer](../agents/phase-preparer.md), [phase-checker](../agents/phase-checker.md) | phase, discussion, issue_refs, decisions, canonical refs, code context, deferred ideas, folded todos | [planning integrity](lib/planning_integrity.py); Source-only fixture: `tests/test_contribution_conformance.py::BehaviorFixtures.test_context` |
+| NN-DISCUSSION-LOG.md | [discuss-phase](../workflows/discuss-phase.md) | [Human audit](../templates/discussion-log.md) only | Actual questions, options, selections and rationale | Manual: [discussion audit guidance](../templates/discussion-log.md); no runtime semantic validator |
+| NN-RESEARCH.md | [researcher](../agents/researcher.md) | [phase-preparer](../agents/phase-preparer.md) | Findings tied to a revision, with what they unblock | Manual: [research review](../agents/phase-checker.md); no runtime semantic validator |
+| NN-MM-PLAN.md | [phase-preparer](../agents/phase-preparer.md) | [phase-checker](../agents/phase-checker.md), [orchestrator](../agents/coordinator.md), [coder](../agents/coder.md) | wave, depends_on, files_modified, requirements, acceptance, must_haves, per-task verify with fails_when | [planning integrity](lib/planning_integrity.py); Source-only fixture: `tests/test_contribution_conformance.py::BehaviorFixtures.test_plan` |
+| NN-MM-SUMMARY.md | [coder](../agents/coder.md) / [doc-writer](../agents/doc-writer.md) | [orchestrator](../agents/coordinator.md), downstream plans, [verifier](../agents/verifier.md) | status, commits, acceptance and documentation coverage, actual check results | [planning integrity](lib/planning_integrity.py); Source-only fixture: `tests/test_contribution_conformance.py::BehaviorFixtures.test_summary` |
+| NN-VERIFICATION.md | [verifier](../agents/verifier.md) | [orchestrator](../agents/coordinator.md), [ship gate](../workflows/ship.md) | status, reviewed revision, verified_at, finding counts | [report status reader](lib/verification.py), [completion evidence checks](lib/planning_review.py); Source-only fixture: `tests/test_contribution_conformance.py::BehaviorFixtures.test_verification_report` |
+| Verification check receipts | [configured check runner](lib/verification_checks.py) | [verification runtime](lib/verification.py), [verifier](../agents/verifier.md) | Executed command, result, tested revision, logs and reuse evidence | [receipt checks](lib/verification_checks.py); Source-only fixture: `tests/test_contribution_conformance.py::BehaviorFixtures.test_verification_receipts` |
+| ARCHITECTURE.md, STACK.md | [codebase-mapper](../agents/codebase-mapper.md) | [plan-phase](../workflows/plan-phase.md), [researcher](../agents/researcher.md) | freshness derived from the commit that last wrote the file, via `codebase.status` | Manual: [map content review](../agents/codebase-mapper.md); freshness is not a semantic validator |
+| Issue body | [issue workflow](../references/git-workflow.md) | [provider publication](../references/git-workflow.md) | Selected canonical type and structural fields | [issue format](lib/issue_format.py); Source-only fixture: `tests/test_contribution_conformance.py::BehaviorFixtures.test_issue_bodies` |
+| Pull request body | [ship](../workflows/ship.md) | [provider publication](../references/git-workflow.md) | Canonical PR sections and evidence tables | [publication format](lib/issue_format.py); Source-only fixture: `tests/test_contribution_conformance.py::BehaviorFixtures.test_pr_body` |
+
+### Validate artifact coverage
+
+In the source checkout, run
+`python -m unittest discover -s tests -p 'test_contribution_conformance.py'`.
+Require every producer, consumer and validator link to resolve and every named
+fixture to execute from the current source. If a link or fixture fails, correct
+its target or contract before accepting coverage.
+
+Keep source-only fixture locators as `path::Class.method`; tests are not installed
+in `.codex` or `.claude`. Keep runtime validator links valid in both trees.
+
+If no runtime validator exists, name the manual review owner. Review semantic
+quality separately from structural acceptance. For verification reports, require
+`passed` and nonempty revision/date fields. If either is absent, leave completion
+unverified. Have the verifier/coordinator check SHA/date syntax, authenticity and
+semantic claims; the report reader does not validate them. Validate executed-check
+receipts separately from authored reports.
+
+If adding a runtime artifact, extend this table. Do not create a second index.
 
 ## Author a context
 

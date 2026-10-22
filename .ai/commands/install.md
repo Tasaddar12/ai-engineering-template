@@ -40,7 +40,7 @@ the agent to read its full Markdown role. Claude worker roles carry no model
 frontmatter; the installer adds `model: haiku` only to exported Claude scout
 metadata and keeps the shared role body host agnostic. Claude worker model and effort are
 resolved from `.planning/config.yaml` and passed on the dispatch call; the scout
-model and effort are fixed by host. See [native host models](../agents/README.md#native-host-models)
+model and effort are fixed by host. See [native host models](../agents/README.md#native-host-definitions)
 for defaults and the separate runtime-route behavior. A fresh Claude installation uses CLAUDE.md and `.claude/skills`.
 
 The Claude directory is lowercase `.claude`, including on Windows. These are

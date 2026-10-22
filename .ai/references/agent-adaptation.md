@@ -28,7 +28,7 @@ edit the checkout nor commit; their report is captured by the orchestrator.
 Use the orchestrator-dispatched native host agents under the same local lifecycle
 rules. Agent names and tool lists describe responsibilities and
 capabilities. The installer supplies native agent definitions as described in the
-[agent catalog](../agents/README.md#native-host-models); role names do not register
+[agent catalog](../agents/README.md#native-host-definitions); role names do not register
 host tools or slash commands.
 The runtime dispatches code, documentation, independent code review and phase
 verification. Code review uses `reviewer_command`, falling back to the read-only
@@ -73,7 +73,7 @@ The role and method files describe the following actual local operations:
 | Verify artifacts, wiring or behavior | Trace source and callers, inspect actual results and run the authorized project checks; return a report with the exact revision |
 | Configure execution | `.planning/config.yaml` owns commit behavior, model and effort overrides and the project's checks; do not invent unsupported configuration keys or mode flags |
 | Resolve decisions or setup | Coordinator records actual human input and commits an executable continuation; unresolved prerequisites block dependent work |
-| Apply TDD | Use the native feature structure and observed RED/GREEN evidence in [TEMPLATE-CONTRACT](../runtime/TEMPLATE-CONTRACT.md#native-tdd-feature-plans) and [TDD method](methods/tdd.md) |
+| Apply TDD | Use the native feature structure and observed RED/GREEN evidence in [TEMPLATE-CONTRACT](../runtime/TEMPLATE-CONTRACT.md#author-an-executable-plan) and [TDD method](methods/tdd.md) |
 | Schedule work | `phase-plan-index` inventories plan IDs, paths, declared dependencies and available summaries; in `execute-phase`, the coordinator forms dependency and file-overlap waves from satisfied prerequisites and overlapping `files_modified`, then integrates and checks each wave before releasing the next |
 | Research or estimate | Inspect evidence and use available host tools; label uncertainty and estimates rather than fabricating unavailable helper output |
 | Save review evidence | Host captures the full result outside the checkout for the attempt/revision; coordinator audits and stores required phase evidence |
