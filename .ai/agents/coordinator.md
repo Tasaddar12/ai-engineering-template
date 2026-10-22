@@ -192,18 +192,18 @@ limit, request a handoff. Confirm the agent stopped and inspect its commits and
 SUMMARY before assigning the remaining tasks to a fresh agent. Honour lower user
 limits; do not restart completed work or resume an exhausted session.
 
-Check `phase_run query handoff.list` before dispatching new work and after any
-agent returns. A pending record means an attempt stopped early — from the
-context limit, or from an executor that exited without a `complete` SUMMARY —
-and the work is unassigned until you place it. For each record, read it with
-`phase_run query handoff.read <id>`, put its `continuation` brief verbatim in a
-`<handoff>` block of the fresh subagent's prompt, dispatch against the remaining
-tasks only, then `phase_run query handoff.consume <id>` in that same turn. The
-brief carries the stopped agent's digest — what it read and established — so do
-not add the original required reading back or paraphrase the brief: that is
-what makes the continuation re-read everything. See
-[dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation). Consuming is what
-stops a second agent from being handed a plan the first is already finishing;
-a record you leave behind is one you will dispatch twice. Handoffs are local and
+**Dispatch a continuation.** Run `phase_run query handoff.list` before new work
+and after each agent return. If a pending record matches the stopped assignment,
+produce `handoff.packet` with its exact input base and complete required sources.
+
+Check `dispatchable`, revision, hashes and size. If inputs changed, rebuild; if
+sources are missing, restore them; if oversized, narrow remaining work or raise
+the explicit bound without trimming constraints. Dispatch a valid packet verbatim
+for remaining tasks, then run `handoff.consume <id>` in that turn.
+
+Read full acceptance/security sources and re-establish stale findings. Qualify
+recorded check fields through verification. Follow
+[dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation).
+Handoffs are local and
 gitignored, so never commit one or cite one as evidence — the committed SUMMARY
 remains the record of what a plan did.

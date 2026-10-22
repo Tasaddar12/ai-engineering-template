@@ -22,11 +22,11 @@ def require(condition, message, code="error"):
 
 
 def use_utf8(stream):
-    """Windows consoles default to cp1252; results carry box-drawing characters."""
+    """Use UTF-8 with literal LF, including on Windows, for stable wire bytes."""
     if hasattr(stream, "reconfigure"):
         try:
-            stream.reconfigure(encoding="utf-8", errors="replace")
-        except (AttributeError, ValueError, OSError):
+            stream.reconfigure(encoding="utf-8", errors="replace", newline="\n")
+        except (AttributeError, TypeError, ValueError, OSError):
             pass
     return stream
 

@@ -490,12 +490,12 @@ the checkout it worked in — this session worktree, or under
 `harness-worktree` the plan's own worktree. Run `phase_run query handoff.list`
 from each, and for every record:
 
-1. Inspect the plan's commits and SUMMARY, as for any blocked plan.
-2. Re-dispatch the plan's same `Agent(...)` call into a fresh isolated checkout,
-   as `checkpoint_handling` does, with the record's brief in the `<handoff>`
-   block — the four steps in
+1. Inspect the stopped plan's commits and SUMMARY.
+2. Build and validate the runtime work packet for that assignment through
    [dispatching a continuation](../references/worker-handoff.md#dispatching-a-continuation).
-3. `handoff.consume` the record in the same turn.
+   Dispatch its `dispatchable: true` packet verbatim to the same bounded
+   assignment in a fresh isolated checkout.
+3. Consume the record in the same turn after dispatch.
 
 Continue each plan at most twice. If a continuation returns blocked on the same
 remaining tasks, report it as a blocker.

@@ -29,7 +29,7 @@ from lib.text import slugify  # noqa: E402
 
 IDENTITY = {"packageName": "ai-phase-runtime", "contract": "1.0"}
 LIST_OPTIONS = {"files", "requirements", "plans", "deletions", "remaining", "completed",
-                "findings", "files_read", "only", "todos", "report_only_paths", "only_checks"}
+                "findings", "files_read", "sources", "only", "todos", "report_only_paths", "only_checks"}
 
 
 def parse(argv):
@@ -324,6 +324,16 @@ def verb_handoff_list(workspace, positionals, options):
 
 def verb_handoff_read(workspace, positionals, options):
     return success(handoff.read_one(workspace, argument(positionals, 0, "handoff id")))
+
+
+def verb_handoff_packet(workspace, positionals, options):
+    require(isinstance(options.get("base"), str), "missing option: --base", "missing-argument")
+    evidence_file = options.get("evidence_file")
+    require(evidence_file is None or isinstance(evidence_file, str),
+            "--evidence-file requires a path", "missing-argument")
+    return success(handoff.packet(
+        workspace, argument(positionals, 0, "handoff id"), options.get("sources"),
+        options["base"], evidence_file, options.get("max_bytes", 65536)))
 
 
 def verb_handoff_consume(workspace, positionals, options):
@@ -867,6 +877,7 @@ VERBS = {
     "handoff.limits": verb_handoff_limits,
     "handoff.list": verb_handoff_list,
     "handoff.read": verb_handoff_read,
+    "handoff.packet": verb_handoff_packet,
     "handoff.consume": verb_handoff_consume,
     "handoff.write": verb_handoff_write,
 

@@ -12,6 +12,12 @@ color: yellow
 ---
 
 <local_workflow>
+Continue from packets through [worker handoff](../references/worker-handoff.md#continuing-from-a-handoff).
+Read full required acceptance/security sources. If the exact revision or input
+hashes differ, re-read affected inputs and re-establish stale findings.
+Treat packets and handoffs as local context; never cite them as verification
+evidence or maintain them as another status record.
+
 Extract known changed paths, commit IDs, check counts/results and receipt fields
 with `evidence.extract`. If source discovery or interpretation remains unresolved,
 follow [scout dispatch](../references/scout-dispatch.md).
