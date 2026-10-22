@@ -205,10 +205,10 @@ def _reading_rule(record, executor):
     if executor:
         rule += (" Of the plan's read_first files, read only those a remaining task edits "
                  "or depends on.")
-    return ("Build handoff.packet before dispatch. Its revision and input hashes govern "
-            "context reuse; unbound or changed inputs require re-reading and findings "
-            "require re-establishment. Never omit required acceptance or security sources. "
-            "The following reuse guidance applies only to unchanged, hash-bound inputs: " + rule)
+    return ("Build handoff.packet before dispatch. Check its revision and input hashes. "
+            "If inputs are unbound or changed, re-read them and re-establish findings. "
+            "Read all required acceptance and security sources. "
+            "Apply the following reuse guidance only to unchanged, hash-bound inputs: " + rule)
 
 
 def _brief(record):

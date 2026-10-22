@@ -12,10 +12,11 @@ color: yellow
 ---
 
 <local_workflow>
-For continuation packets, follow [worker handoff](../references/worker-handoff.md#continuing-from-a-handoff).
-Read full required acceptance/security sources; reuse context only at the packet's
-exact revision and input hashes. Re-establish stale findings. Packets and handoffs
-are local context, never verification evidence or another status record.
+Continue from packets through [worker handoff](../references/worker-handoff.md#continuing-from-a-handoff).
+Read full required acceptance/security sources. If the exact revision or input
+hashes differ, re-read affected inputs and re-establish stale findings.
+Treat packets and handoffs as local context; never cite them as verification
+evidence or maintain them as another status record.
 
 Extract known changed paths, commit IDs, check counts/results and receipt fields
 with `evidence.extract`. If source discovery or interpretation remains unresolved,

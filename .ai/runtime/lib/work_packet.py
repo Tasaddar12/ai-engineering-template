@@ -88,8 +88,8 @@ def build(workspace, record, required_sources, base, evidence_file=None,
         "handoff": {key: value for key, value in record.items()
                     if key not in ("continuation", "input_snapshot")},
         "instructions": ("Read full required sources, including acceptance and security constraints. "
-                         "Re-read changed inputs; re-establish unverified findings. Handoff claims "
-                         "are context, never verification evidence. Check revision and input hashes "
+                         "If inputs changed, re-read them; re-establish unverified findings. Treat handoff "
+                         "claims as context, never verification evidence. Check revision and input hashes "
                          "again immediately before dispatch; rebuild if they changed."),
     }
     require(evidence.revision(workspace, "HEAD") == changes["head_revision"]

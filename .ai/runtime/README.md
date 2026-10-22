@@ -83,22 +83,30 @@ unless `--force` is passed.
 
 ### Sessions
 
-`handoff.packet <id> --base <assignment-sha> --sources <paths> ...
-[--evidence-file <json>] [--max-bytes <positive integer>]` produces a read-only,
-local work packet from the existing handoff plus `evidence.extract`. It includes
-full required sources and hashes, exact revision, changes, remaining work,
-unresolved findings, recorded check fields and missing inputs. The caller supplies
-every mandatory core, acceptance/security, plan and dependency source. Missing
-inputs make it nondispatchable; exceeding the default 65,536 UTF-8 JSON bytes
-fails explicitly with required full-source references and no truncation.
-Runtime JSON emission uses literal LF newlines on every platform, including
-Windows; the bound counts those exact formatted output bytes and success envelope.
+**Build a continuation packet.** Run:
 
-`handoff.write --findings ... --files-read ...` binds saved context to current
-HEAD and the input byte hashes. Reuse requires both to match; changed or unbound
-inputs require reading and stale findings require re-establishment. A packet is
-ephemeral context, never verification evidence or another mutable state owner.
-Check revision/hashes again before dispatch. Follow the complete
+```bash
+phase_run query handoff.packet <id> --base <assignment-sha> --sources <required-path> [<required-path> ...] [--evidence-file <json>] [--max-bytes <positive-integer>]
+```
+
+Supply every mandatory core, acceptance/security, PLAN, `read_first` and dependency
+source as a full UTF-8 file inside the checkout. Read `required_sources`,
+`input_revision`, `input_hashes`, `changes`, `remaining`, `unresolved_findings`,
+`reusable_evidence`, `missing_inputs`, `reusable_context` and `dispatchable`.
+
+**Resolve packet limits.** If inputs are missing, restore them before dispatch.
+If output exceeds the default 65,536 UTF-8 JSON bytes, use the returned full-source
+references to narrow remaining work or explicitly raise `--max-bytes`.
+Never truncate sources, acceptance/security constraints or unresolved findings.
+Count the formatted success envelope and literal LF newlines on every platform.
+
+**Reuse bound context.** Supply `--findings` and `--files-read` together to
+`handoff.write` to bind context to HEAD and input byte hashes. If either revision
+or hashes differ, or context is unbound, re-read inputs and re-establish findings.
+Read full required acceptance/security sources regardless of reuse.
+Check revision/hashes immediately before dispatch; if changed, rebuild.
+Treat packets as ephemeral read-only context; never use them as verification
+evidence or another mutable state owner. Follow the
 [continuation contract](../references/worker-handoff.md#dispatching-a-continuation).
 
 | Verb | Effect |
