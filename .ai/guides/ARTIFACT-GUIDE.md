@@ -75,6 +75,7 @@ their applicable structure; an unavailable upstream health command is not a chec
 | Template | Artifact or use | Producer → consumer |
 |---|---|---|
 | [summary.md](../templates/summary.md) | Full `NN-CC-SUMMARY.md` guidance and skeleton | Component worker → integrator, dependents and verifier |
+| [screenshot-manifest.md](../templates/screenshot-manifest.md) | Planned route/state/viewport scope plus private capture manifest | Preparer declares scope → ONE consumer browser producer → runtime `verification.screenshots` validates coverage → existing verifier joins Acceptance/Findings |
 | [verification-report.md](../templates/verification-report.md) | `NN-VERIFICATION.md`: independent goal evidence and findings | Verifier → coordinator and publication gate |
 | [UAT.md](../templates/UAT.md) | `NN-UAT.md`: persistent acceptance session and gaps | Coordinator recording human observations → returning sessions and acceptance gate |
 | [milestone.md](../templates/milestone.md) | One `.planning/MILESTONES.md` entry: what a milestone shipped | `milestone.complete` and the closing coordinator → returning sessions, milestone summariser and onboarding readers |

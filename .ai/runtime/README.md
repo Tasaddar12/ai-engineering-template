@@ -854,3 +854,13 @@ For saved-body validation on `opened`, `edited`, `reopened`, `synchronize` and
 Use the trusted checkout's `lib.issue_format.validate_pr` without installing
 dependencies. If using an installed runtime, keep source-only CI outside its
 payload; installation does not activate the provider check.
+
+## UI screenshot coverage
+
+`verification.screenshots --scope-file PATH --manifest-file PATH --expected-revision SHA`
+validates the planned criterion/route/state/viewport matrix against the single
+consumer browser producer's manifest and artifact digests. It is read-only and
+reports `complete` or `gaps_found` with explicit missing coverage; it does not run
+a browser or judge visuals. See [coverage ownership](../references/ui-screenshots.md)
+and the [consumer scaffold](../templates/screenshot-manifest.md), including the
+exit-status contract for configured check wrappers and private artifact support.

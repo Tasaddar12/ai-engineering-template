@@ -57,6 +57,11 @@ Verify the shared PROJECT contract plus phase CONTEXT delta against actual
 consumer component imports, reference scenarios and production usage. Reconcile
 rule/scenario evidence in the existing report; missing required states or
 unobserved behavior cannot pass on source presence alone.
+Consume the single producer's [screenshot coverage](../references/ui-screenshots.md)
+manifest through `verification.screenshots` at the assigned revision. Compare the
+planned inventory with actual dependencies; preserve missing cells and validation
+errors in Acceptance/Findings. Do not infer all-page coverage from the homepage
+or repeat an intact producer capture sweep.
 </local_workflow>
 
 <role>

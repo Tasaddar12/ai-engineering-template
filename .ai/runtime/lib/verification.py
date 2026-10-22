@@ -75,3 +75,9 @@ def qualify_successor(workspace, evidence_file, report_only_paths, expected_head
     return validate_successor(workspace, evidence, report_only_paths, expected_head,
                               configured_checks(workspace), config_get(workspace, 'verification', {}),
                               CHECK_TIMEOUT, fresh)
+
+
+def screenshots(workspace, scope_file, manifest_file, expected_revision):
+    """Join the single browser producer's evidence to planned UI coverage."""
+    from .ui_screenshots import validate_files
+    return validate_files(scope_file, manifest_file, expected_revision)
