@@ -1,7 +1,7 @@
 # Test-driven development
 
 Adapted supporting method; attribution is in [third-party notices](../../THIRD-PARTY-NOTICES.md).
-The [local TDD contract](../../runtime/TEMPLATE-CONTRACT.md#native-tdd-feature-plans)
+The [local TDD contract](../../runtime/TEMPLATE-CONTRACT.md#author-an-executable-plan)
 owns executable plan fields and evidence. This method provides the design and
 review procedure; it does not introduce an SDK or an automatic pre-GREEN gate.
 Follow the user's validation limits. If tests are explicitly deferred, report
