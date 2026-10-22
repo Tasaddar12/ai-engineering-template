@@ -757,52 +757,20 @@ indefinitely, and do not approve the plans yourself to end the loop.
 </step>
 
 <step name="update_roadmap">
-Make the roadmap's plan checklist match the plans that now exist. For each plan
-the preparer wrote that has no roadmap entry, the phase entry's `Plans:` list
-needs the id and a one-line description.
+Request a registration proposal for every on-disk plan, including earlier plans:
 
 ```bash
-phase_run query roadmap.get-phase "${phase_number}"
+RECONCILIATION=$(phase_run query plan.reconcile "${phase_number}") || exit $?
 ```
 
-If `roadmap.get-phase` returns a nonzero exit status, stop here and report its
-error; do not continue to the index or any mutation.
+If validation fails, stop before writes and report the error. Use runtime checks
+for filename/frontmatter association, IDs, order, counts, objectives and existing
+IDs; do not repeat them by reopening every PLAN. Review `plans[].objective` for
+meaning, choose concise single-line descriptions and inspect `delta`. Retain
+independent phase-checker review of goal coverage.
 
-Read the complete on-disk index as well. It includes every PLAN file in the
-phase directory, including plans prepared before a gap-closure assignment:
-
-```bash
-phase_run query phase-plan-index "${phase_number}" || exit $?
-```
-
-Before changing shared records, inspect the returned index and phase summary and
-stop on any mismatch:
-
-1. Confirm the indexed phase and roadmap phase are `${phase_number}`, and the
-   roadmap's `padded` number and `slug` match `${padded_phase}` and
-   `${phase_slug}`. Confirm `count` equals the number of `plans` in the index
-   and is nonzero.
-2. For every indexed `plans[].file`, confirm the path exists under
-   `${phase_dir}`, then read the full PLAN. Its filename must match
-   `${padded_phase}-${NN}-PLAN.md`, with exactly two ASCII digits for `NN`.
-   Its index `id` must equal that filename with only the terminal `-PLAN.md`
-   removed. Its frontmatter `phase` must equal `${padded_phase}-${phase_slug}`
-   and `plan` must equal `NN`. Confirm the IDs are canonical, unique, belong to
-   this phase, and are kept in index order. The runtime derives IDs from
-   filenames and does not check this frontmatter association for you.
-3. Each PLAN must contain a nonempty `<objective>`. Read the complete objective
-   and derive a nonempty, single-line roadmap description from it. Build one
-   runtime entry per indexed PLAN, using `ID: description`; the entry count must
-   equal the index count.
-4. Compare the existing roadmap `plans` array against the complete index. Keep
-   every existing ID, including completed IDs, in the replacement list. If an
-   existing roadmap ID has no indexed PLAN file, stop and report it; do not
-   silently drop it. This also keeps earlier plans present during gap closure.
-
-Remove only the terminal `-PLAN.md` when deriving runtime IDs:
-`03-01-PLAN.md` maps to `03-01`. Never pass a PLAN
-filename as a roadmap ID. For example, after reading `03-01-PLAN.md` and
-`03-02-PLAN.md`, with the objectives shown, construct the Bash array as follows:
+Retain returned `fingerprint` as `reconciliation_fingerprint`. Build
+`plan_entries` from the returned ordered IDs and reviewed descriptions:
 
 ```bash
 plan_entries=(
@@ -811,46 +779,27 @@ plan_entries=(
 )
 ```
 
-Call the registration verb exactly once with that complete ordered array, then
-read the phase summary again:
+Apply that complete array through reconciliation:
 
 ```bash
-phase_run query roadmap.set-plans "${phase_number}" --plans "${plan_entries[@]}" || exit $?
-phase_run query roadmap.get-phase "${phase_number}" || exit $?
+RECONCILIATION=$(phase_run query plan.reconcile "${phase_number}" --apply --expected "${reconciliation_fingerprint}" --plans "${plan_entries[@]}") || exit $?
 ```
 
-Pass exactly one `--plans` option followed by every `ID: description` entry as a
-separate quoted argument. Include the complete ordered phase plan list;
-registration replaces the checklist.
+Pass one `--plans` option; quote each `ID: description` separately. Require
+`applied` and `verified` to be true. Rely on runtime readback for exact entries,
+completed ticks, counts, progress, position, completion dates and unrelated content.
 
-After registration, compare the returned `plans` to `plan_entries`: exact IDs,
-descriptions, order and count must match. Confirm each previously completed ID
-still has `done: true`. Inspect `git diff -- .planning/ROADMAP.md
-.planning/STATE.md`; only the target phase's plan list and runtime-derived
-progress may change. Other phase entries and unrelated roadmap content must
-remain intact. In the ROADMAP progress table, confirm completion dates and
-`Shipped` labels remain unchanged for phases that are still complete. Confirm
-STATE.md's frontmatter counters and progress bar reflect the resulting ROADMAP
-plan totals and completed ticks.
-
-If a precondition, runtime call, or post-write comparison fails, stop before
-`update_state`, `git_commit`, or `completion`. Report the exact file, frontmatter
-field, index ID, objective/description, count, completed tick, or runtime error.
-Return a PLAN defect as a scoped correction to the phase-preparer for its
-assigned file, then rerun the index and complete reconciliation. Never repair
-ROADMAP.md or STATE.md by hand. A handled runtime validation error returns a
-structured error and exit status 1 before either record is written. The runtime
-writes ROADMAP.md and then STATE.md after preparing both, but the pair is not
-crash-atomic; after interruption or an I/O error, read both records and report
-their actual contents before retrying.
-
-The roadmap is what `/progress` and `/next` route from; a plan missing there is
-invisible.
+If any error occurs, stop before `update_state`, `git_commit` or `completion`;
+report its code and target. If `stale-review` occurs, review a fresh proposal. If
+a PLAN is defective, return its exact path to the preparer, then rerun reconciliation.
+If `plan-readback`, interruption or I/O failure occurs, inspect and report both
+records before retrying: writes occur ROADMAP then STATE and are not crash-atomic.
+Never repair either record by hand.
 </step>
 
 <step name="update_state">
-After successful reconciliation, set `plan_count` to the actual index `count`
-and `first_plan_path` to the first indexed plan's `file`; do not use a stale
+After successful reconciliation, set `plan_count` to its returned `count`
+and `first_plan_path` to the first returned plan's `file`; do not use a stale
 initialization count or an unverified path.
 
 ```bash

@@ -61,6 +61,18 @@ must_haves: {truths: [], artifacts: [], key_links: []}
 issue_refs: []           # reviewed issue declaration mappings, not URL strings
 ```
 
+Register through `plan.reconcile` using its strict `planning_integrity.parse_record`
+result. Require filenames `{padded_phase}-{NN}-PLAN.md` with two ASCII plan digits,
+frontmatter `phase` equal to the directory name, `plan` equal to `NN` (or its YAML
+integer value), and exactly one nonempty `<objective>`. Reject duplicate YAML keys,
+missing required metadata and invalid types.
+
+Review full returned objectives and descriptions for meaning and goal coverage.
+Apply explicit reviewed entries with the proposal's `--expected` fingerprint and
+exact ordered on-disk IDs/count. Preserve existing IDs and completed ticks; require
+verified ROADMAP and STATE readback. If registration fails or is interrupted,
+follow [runtime registration](README.md) before retrying.
+
 `files_modified` grants exact paths or directory prefixes ending in `/`;
 `files_deleted` grants exact files. A path belongs in one field, not both.
 Declarations use Git's exact case and spelling; traversal and globs fail. Every

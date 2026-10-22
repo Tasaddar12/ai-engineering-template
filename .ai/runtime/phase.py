@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import (archive, bundles, codebase, delivery, gitops, handoff, milestones,  # noqa: E402
                  issue_format, models, phase_issues, phases, planning_integrity, project_record, quick, requirements, state,
                  todo_issues, todos, validate, verification, worktrees)
+from lib import plan_reconciliation  # noqa: E402
 from lib.config import get as config_get  # noqa: E402
 from lib.config import set_value as config_set  # noqa: E402
 from lib.paths import Workspace  # noqa: E402
@@ -409,6 +410,14 @@ def verb_find_phase(workspace, positionals, options):
 
 def verb_plan_index(workspace, positionals, options):
     return phases.plan_index(workspace, argument(positionals, 0, "phase"))
+
+
+def verb_plan_reconcile(workspace, positionals, options):
+    with planning_lock(workspace):
+        return plan_reconciliation.reconcile(
+            workspace, argument(positionals, 0, "phase"),
+            entries=as_list(options.get("plans")) if "plans" in options else None,
+            apply=bool(options.get("apply")), expected=options.get("expected"))
 
 
 # --- roadmap --------------------------------------------------------------
@@ -868,6 +877,7 @@ VERBS = {
     "phases.list": verb_phases_list,
     "find-phase": verb_find_phase,
     "phase-plan-index": verb_plan_index,
+    "plan.reconcile": verb_plan_reconcile,
 
     "roadmap.get-phase": verb_roadmap_get_phase,
     "roadmap.analyze": verb_roadmap_analyze,

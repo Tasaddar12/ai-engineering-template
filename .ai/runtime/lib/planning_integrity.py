@@ -77,7 +77,13 @@ class IntegrityLoader(yaml.SafeLoader):
         return super().flatten_mapping(node)
 
 
-def validate_record(path, content):
+def parse_record(path, content):
+    """Strictly parse and validate a canonical record once, returning its data.
+
+    Consumers needing metadata/body must use this boundary rather than pairing
+    the permissive historical reader with a separate schema validation parse.
+    Noncanonical paths return None, as validate_record has always done.
+    """
     kind = record_kind(path)
     if not kind:
         return None
@@ -118,7 +124,14 @@ def validate_record(path, content):
         phase_issues.entries(data, required=True)
     except VerbError as exc:
         raise VerbError(str(path) + ': issue_refs: ' + str(exc), CODE) from None
-    return {'record': str(path), 'kind': kind, 'valid': True}
+    return {'record': str(path), 'kind': kind, 'valid': True,
+            'metadata': data, 'body': content[block.end():]}
+
+
+def validate_record(path, content):
+    parsed = parse_record(path, content)
+    return ({key: parsed[key] for key in ('record', 'kind', 'valid')}
+            if parsed is not None else None)
 
 
 def git_read(cwd, *args):
@@ -259,6 +272,8 @@ def mutation_warnings(workspace, before, verb, positionals, options, result=None
 
 def expected_roadmap(before, after, verb, positionals, options, result=None):
     """Normalize only the explicit operation's generated roadmap changes."""
+    if verb == 'plan.reconcile' and options.get('apply'):
+        verb = 'roadmap.set-plans'
     if verb == 'phase.remove' and positionals:
         # Remove only the expressly selected block before renumbering successors.
         number = phases.display_number(positionals[0])
