@@ -584,8 +584,8 @@ documentation; none is required just to read this workflow method.
 | Click email verification link | No | NO |
 | Enter credit card with 3DS | No | NO |
 | Complete OAuth in browser | No | NO |
-| Visually verify UI looks correct | No | NO |
-| Test interactive user flows | No | NO |
+| Verify visual UI criteria | Yes for explicit objective criteria with conclusive revision-applicable evidence; follow [acceptance routing](../ui-screenshots.md#acceptance-routing) | Automate objective checks; reserve human input for unresolved subjective choices, observations authorized automation cannot establish or explicitly required human-only UAT |
+| Test interactive user flows | Yes for explicit objective criteria with conclusive revision-applicable evidence; follow [acceptance routing](../ui-screenshots.md#acceptance-routing) | Automate objective checks; reserve human input for unresolved subjective choices, observations authorized automation cannot establish or explicitly required human-only UAT |
 
 </automation_reference>
 
