@@ -129,11 +129,10 @@ scout_result:
    source namespace. Pass the returned model and effort inline; omit `inherit`.
 4. Run independent specialist assignments and read-only checks concurrently
    within shared host capacity; respect its actual open-worker limit and count
-   queued/open workers, not just currently running ones. Keep them on the same
-   frozen revision and wait for every result before acceptance or repair. Do not
-   duplicate assigned searches. Keep writes and source-changing work with the
-   assigned owner; confirm a worker has stopped before reassigning its paths. Use
-   the host's available lifecycle tools; do not invent one.
+   queued/open workers, not just currently running ones. Keep all assignments on the same frozen revision
+   and wait for every result before acceptance or repair. Do not perform duplicate searches for assigned fields.
+   Keep writes and source-changing work with the assigned owner; confirm a worker has stopped before reassigning
+   its paths. Use the host's available lifecycle tools; do not invent one.
 5. Validate each result's id, `task_class`, revision, status, answer,
    `field_results` for every `requested_fields` entry, evidence, search_scope,
    uncertainty and unresolved_questions. Check `missing_test_cases` when it was
@@ -144,8 +143,7 @@ scout_result:
    decision and report the missing evidence. For conflicting citations, target the
    exact conflicting paths or inputs and have the stronger domain owner resolve
    the conflict. Preserve paths, line numbers and excerpts; do not claim more than
-   cited evidence proves. These prompt and tool-permission instructions do not
-   enforce search behavior at runtime.
+   cited evidence proves. These agent instructions are not runtime enforcement of search behavior.
 
 ## Direct nested dispatch and unsupported-host fallback
 
