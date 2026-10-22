@@ -76,6 +76,7 @@ Every bundle also carries `commit_docs`, `response_language`, `text_mode`,
 | `phases.list` | Active and archived phases with status, counts, directory and execution completeness; `count` is active, with separate `archived_count` and `total_count` |
 | `find-phase <number-or-slug>` | Resolve a phase by number or name fragment |
 | `phase-plan-index <phase>` | Plan files on disk with their declared dependencies and summaries |
+| `plan.reconcile <phase> [--plans <entry> ...] [--apply --expected FINGERPRINT]` | Validate on-disk plans and propose their registration delta; apply reviewed descriptions and verify both saved records |
 
 `phase.remove` refuses a phase with completed plans or a non-empty directory
 unless `--force` is passed.
@@ -144,6 +145,30 @@ handled `gh-failed` error rather than a successful update.
 STATE.md's Markdown body is authoritative; its frontmatter counters are
 re-derived from ROADMAP.md on every write, so the two cannot disagree. Writers
 serialize on `.planning/.lock`.
+
+For plan-phase registration, use `plan.reconcile <phase>` first. It parses each
+PLAN once per invocation and returns `plans` (IDs, paths, full objectives),
+`count`, suggested single-line `entries`, a source `fingerprint`, and a `delta` with before/after rows
+and added IDs. This proposal leaves ROADMAP and STATE untouched. The runtime
+validates canonical filenames, directory and frontmatter association, a single
+nonempty objective, complete ordered IDs and counts, and missing existing PLAN
+files. Decimal phases and YAML integer plan numbers are supported. It rejects
+recognizable malformed PLAN filenames rather than silently excluding them.
+
+Review the objectives semantically and supply concise descriptions with
+`plan.reconcile <phase> --apply --expected FINGERPRINT --plans "NN-NN: description" ...`. Apply requires
+explicit reviewed entries; it never treats a generated suggestion as approval.
+The inspected proposal's fingerprint covers complete PLAN contents (including
+acceptance, ownership and dependencies), CONTEXT, SPEC, REQUIREMENTS, ROADMAP and
+STATE. Changed inputs return `stale-review` before writes and require fresh review.
+The existing registration writer retains completed ticks and refreshes derived
+progress. Under the same planning lock, reconciliation compares the complete
+saved ROADMAP and STATE against the prepared records, including other phases,
+completion dates, position and counters. Only a matching readback returns
+`applied: true, verified: true`. Preconditions fail before either write;
+`plan-readback` means a write occurred but verification failed, so inspect both
+records before retrying. Writes remain ROADMAP then STATE, not crash-atomic.
+Goal coverage, objective meaning and description quality remain model judgments.
 
 `roadmap.set-plans` takes one phase number and a complete replacement list of
 quoted `NN-NN: description` entries. The `plans` option consumes all following

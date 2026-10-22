@@ -259,6 +259,8 @@ def mutation_warnings(workspace, before, verb, positionals, options, result=None
 
 def expected_roadmap(before, after, verb, positionals, options, result=None):
     """Normalize only the explicit operation's generated roadmap changes."""
+    if verb == 'plan.reconcile' and options.get('apply'):
+        verb = 'roadmap.set-plans'
     if verb == 'phase.remove' and positionals:
         # Remove only the expressly selected block before renumbering successors.
         number = phases.display_number(positionals[0])

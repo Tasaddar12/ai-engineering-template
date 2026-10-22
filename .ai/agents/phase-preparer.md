@@ -890,16 +890,14 @@ Then:
 
 <step name="update_roadmap">
 
-**Local operation:** Coordinator handoff: return proposed roadmap changes and their PLAN evidence; do not edit ROADMAP as a worker.
-Return scoped ROADMAP.md placeholder/count/list proposals for the coordinator; do not mutate shared phase records as a worker:
-
-**Coordinator instruction — use runtime verbs for runtime-owned ROADMAP.md and STATE.md fields.** A whole-file `Write` destroys phase entries outside the replacement window. The coordinator applies returned plan-list proposals with `roadmap.set-plans` and an approved placeholder-goal change with `phase.edit`; NEVER pass the entire ROADMAP.md content to `Write` or manually `Edit` runtime-owned fields. The preparer returns the proposals without editing ROADMAP. Use scoped `Edit` only for authorized existing ROADMAP prose that those runtime fields do not own.
-
-Apply the complete plan list in one runtime call, using `NN-NN: description` arguments rather than PLAN filenames:
-
-```bash
-phase_run query roadmap.set-plans "${phase_number}" --plans "${plan_entries[@]}"
-```
+Return the committed PLAN paths and objective evidence to the coordinator;
+workers do not mutate shared ROADMAP or STATE records. The coordinator follows
+[plan-phase registration](../workflows/plan-phase.md): `plan.reconcile` parses
+the complete plan set, validates filename/frontmatter/ID/count association and
+proposes a delta. The coordinator judges objective meaning and concise roadmap
+descriptions, then applies reviewed entries against that proposal's fingerprint.
+The runtime verifies resulting records. Do not reproduce those mechanical
+checks or generate hand-edited checklist/count replacements in this handoff.
 
 Only when the ROADMAP goal is exactly `[To be planned]` and CONTEXT.md plus actual human instructions establish the approved goal, update that field through the runtime:
 
@@ -907,7 +905,8 @@ Only when the ROADMAP goal is exactly `[To be planned]` and CONTEXT.md plus actu
 phase_run query phase.edit "${phase_number}" --goal "<goal text>"
 ```
 
-The complete index, filename-to-ID mapping, runtime call checks and post-registration reconciliation are owned by [the plan-phase workflow](../workflows/plan-phase.md). Do not hand-edit the plan checklist, phase goal or STATE.md.
+Return any approved placeholder-goal proposal with its CONTEXT and actual human
+instruction evidence. Never hand-edit the plan checklist, goal or STATE.md.
 
 1. Read `.planning/ROADMAP.md`
 2. Find phase entry (`### Phase {N}:`)
@@ -916,18 +915,6 @@ The complete index, filename-to-ID mapping, runtime call checks and post-registr
 **Goal** (only if placeholder):
 - `[To be planned]` → derive from CONTEXT.md and actual human instructions; research supplies evidence and cannot define or authorize a goal
 - If Goal already has real content → leave it
-
-**Plans** (always update):
-- Update count: `**Plans:** {N} plans`
-
-**Plan list** (always update):
-```
-Plans:
-- [ ] {phase}-01-PLAN.md — {brief objective}
-- [ ] {phase}-02-PLAN.md — {brief objective}
-```
-
-For runtime registration, derive the ID by removing only the terminal `-PLAN.md`: `03-01-PLAN.md` becomes `03-01`.
 
 4. Return the proposed scoped edits to the coordinator; workers do not apply shared ROADMAP changes.
 </step>

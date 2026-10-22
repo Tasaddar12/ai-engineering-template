@@ -61,6 +61,18 @@ must_haves: {truths: [], artifacts: [], key_links: []}
 issue_refs: []           # reviewed issue declaration mappings, not URL strings
 ```
 
+During registration, `plan.reconcile` checks the complete phase directory against
+the roadmap: filenames are `{padded_phase}-{NN}-PLAN.md` with two ASCII plan
+digits, frontmatter `phase` equals the directory name, and `plan` equals `NN`
+(or its YAML integer value). Each PLAN has exactly one nonempty `<objective>`.
+The proposal returns full objectives and suggested descriptions for semantic
+review. Applying explicit reviewed entries requires the inspected proposal's
+`--expected` fingerprint and the exact ordered on-disk
+IDs and count, retains all existing IDs and completed ticks, and verifies the
+saved ROADMAP and STATE. Structural success does not establish goal coverage or
+approve an objective's meaning. See [runtime registration](README.md) for the
+proposal/apply contract and interrupted-write behavior.
+
 `files_modified` grants exact paths or directory prefixes ending in `/`;
 `files_deleted` grants exact files. A path belongs in one field, not both.
 Declarations use Git's exact case and spelling; traversal and globs fail. Every
