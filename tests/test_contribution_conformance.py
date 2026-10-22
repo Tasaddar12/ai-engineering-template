@@ -240,11 +240,18 @@ class ArtifactCoverage(unittest.TestCase):
                 artifacts.add(row[0])
                 for column in (row[1], row[2], row[4]):
                     self.assertTrue(list(links(column)), 'Missing owner/validator reference: ' + column)
-                fixture = re.findall(r'`BehaviorFixtures\.(test_\w+)`', row[4])
+                fixture = re.findall(r'`([^`]+\.py)::([A-Za-z_]\w*)\.(test_\w+)`', row[4])
                 if fixture:
                     self.assertEqual(1, len(fixture))
-                    self.assertTrue(callable(getattr(BehaviorFixtures, fixture[0], None)))
-                    fixtures.add(fixture[0])
+                    relative, case_name, method = fixture[0]
+                    fixture_path = (ROOT / relative).resolve()
+                    self.assertTrue(fixture_path.is_relative_to(ROOT))
+                    self.assertTrue(fixture_path.is_file())
+                    case = getattr(sys.modules[__name__], case_name, None)
+                    self.assertIs(BehaviorFixtures, case)
+                    self.assertEqual(fixture_path, Path(sys.modules[case.__module__].__file__).resolve())
+                    self.assertTrue(callable(getattr(case, method, None)))
+                    fixtures.add(method)
                 else:
                     self.assertTrue(row[4].startswith('Manual:'), 'Declare manual review limits explicitly')
         for kind in planning_integrity.REQUIRED:
