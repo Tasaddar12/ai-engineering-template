@@ -550,6 +550,7 @@ and assignment/result fields are in [scout dispatch](../references/scout-dispatc
 | `verification.status <phase>` | Whether a verification report exists, and what it concluded |
 | `verification.resolve-file <phase>` | The path a verifier should write |
 | `verification.run-checks [--only-checks INDEX ...]` | Run checks/reuse receipts; a selected subset runs fresh with incomplete aggregate accounting |
+| `verification.reconcile-evidence --claimed-revision R --expected-head H (--evidence-file PATH OR --provider-run ID --repository OWNER/REPO --kind github)` | Compare claimed, actual and candidate SHAs with terminal results; preserve Pending/Unverified and private evidence references; see [verification evidence](../references/verification-evidence.md#reconcile-a-claimed-tested-sha) |
 | `verification.qualify-successor --evidence-file PATH --report-only-paths PATH ... --expected-head H [--fresh-evidence-file PATH]` | Read-only qualification of authentic schema-1 evidence across exact approved phase reports |
 | `config-get <dotted>` / `config-set <dotted> <value>` | Read or write `.planning/config.yaml` |
 | `commit <message> --files ...` | Stage the named paths and commit, honouring `commit_docs` |
