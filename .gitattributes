@@ -1,10 +1,4 @@
 * text=auto
+*.py text eol=lf
 *.md text eol=lf
-*.yaml text eol=lf
-*.sh text eol=lf
-nginx.conf text eol=lf
-nginx.conf.template text eol=lf
-.ai/library/** text eol=lf
-.ai/templates/** text eol=lf
-.ai/install-assets/** text eol=lf
-.ai/bin/** text eol=lf
+*.json text eol=lf

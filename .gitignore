@@ -1,17 +1,6 @@
-# The immediate-child worktree root is local orchestration state, never a scaffold file.
-.worktrees/
-# Handoff records for interrupted attempts. Local to one machine, deleted the
-# moment they are consumed, and never evidence of what a plan did -- that stays
-# in the plan's committed SUMMARY.md.
-.planning/handoffs/
-# Local reusable check evidence and full subprocess logs.
-.planning/verification-receipts/
-# Local agent settings and operating-system/editor noise.
-.codex/settings.local.*
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
 .DS_Store
 Thumbs.db
-*.swp
-
-.venv
-__pycache__/
-*.pyc
