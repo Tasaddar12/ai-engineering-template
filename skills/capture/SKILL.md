@@ -1,5 +1,5 @@
 ---
-name: gsd-capture
+name: capture
 description: "Capture ideas, tasks, notes, and seeds to their destination"
 argument-hint: "[--note | --backlog | --seed | --list | --list-seeds] [text]"
 allowed-tools:
@@ -43,13 +43,13 @@ Mode routing:
 </routing>
 
 <execution_context>
-@~/.claude/gsd-core/workflows/add-todo.md
-@~/.claude/gsd-core/workflows/note.md
-@~/.claude/gsd-core/workflows/add-backlog.md
-@~/.claude/gsd-core/workflows/plant-seed.md
-@~/.claude/gsd-core/workflows/check-todos.md
-@~/.claude/gsd-core/workflows/list-seeds.md
-@~/.claude/gsd-core/references/ui-brand.md
+@~/.claude/workflows/add-todo.md
+@~/.claude/workflows/note.md
+@~/.claude/workflows/add-backlog.md
+@~/.claude/workflows/plant-seed.md
+@~/.claude/workflows/check-todos.md
+@~/.claude/workflows/list-seeds.md
+@~/.claude/references/ui-brand.md
 </execution_context>
 
 <context>

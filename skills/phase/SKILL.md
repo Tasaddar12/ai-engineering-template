@@ -1,5 +1,5 @@
 ---
-name: gsd-phase
+name: phase
 description: "Multi-phase management — add, insert, remove, or edit phases in ROADMAP.md (roadmap phase CRUD)"
 argument-hint: "[--insert | --remove | --edit] <phase-name-or-number>"
 allowed-tools:
@@ -37,10 +37,10 @@ Mode routing:
 </routing>
 
 <execution_context>
-@~/.claude/gsd-core/workflows/add-phase.md
-@~/.claude/gsd-core/workflows/insert-phase.md
-@~/.claude/gsd-core/workflows/remove-phase.md
-@~/.claude/gsd-core/workflows/edit-phase.md
+@~/.claude/workflows/add-phase.md
+@~/.claude/workflows/insert-phase.md
+@~/.claude/workflows/remove-phase.md
+@~/.claude/workflows/edit-phase.md
 </execution_context>
 
 <context>
@@ -52,7 +52,7 @@ Parse the first token of the `<arguments>` block:
 - If it is `--edit`: strip the flag, pass remainder (phase-number [--force]) to edit-phase workflow
 - Otherwise: pass all of the `<arguments>` block (phase description) to add-phase workflow
 
-Roadmap and state are resolved in-workflow via `init phase-op` and targeted reads.
+Roadmap and state are resolved in-workflow via `framework-tools query init.phase-op` and targeted reads.
 </context>
 
 <process>
