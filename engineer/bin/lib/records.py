@@ -173,6 +173,16 @@ def phase_list(args):
 def phase_change(args, action):
     path = planning()/"ROADMAP.md"
     with planning_lock():
+        if action == "set-plans":
+            if not path.is_file():
+                raise Failure("no-roadmap", "ROADMAP.md is required before registering plans")
+            state_path = planning()/"STATE.md"
+            if not state_path.is_file():
+                raise Failure("missing-state", "STATE.md is required before registering plans")
+            _, state_body = split_frontmatter(read(state_path))
+            position = re.search(r"(?ms)^## Current Position\s*\n(.*?)(?=^## |\Z)", state_body)
+            if not position or any(not re.search(r"(?m)^"+field+r":\s*\S", position[1]) for field in ("Phase", "Plan", "Status")):
+                raise Failure("invalid-state", "Current Position requires phase, plan and status before plan registration")
         text = read(path, "# Roadmap\n\n")
         existing = roadmap_phases()
         if action in ("add", "insert"):
@@ -241,23 +251,14 @@ def phase_change(args, action):
             else:
                 block = block.rstrip()+"\n**Status:** Complete\n\n"
         elif action == "set-plans":
-            ids = args.all("plans")
-            parsed = []
-            for value in ids:
-                plan_id, _, title = value.partition(":")
-                plan_id = plan_id.strip().removesuffix("-PLAN.md")
-                if not re.fullmatch(re.escape(phase["number"])+r"-\d+", plan_id):
-                    raise Failure("invalid-plan-id", value)
-                parsed.append((plan_id, title.strip()))
-            if len({identifier for identifier, _ in parsed}) != len(parsed):
-                raise Failure("duplicate-plan-id", "Plan identifiers must be unique")
-            checked = set(re.findall(r"(?m)^- \[x\]\s*(\d+(?:\.\d+)?-\d+)", block))
-            replacement = f"**Plans:** {len(parsed)} plans\n\nPlans:\n"+"\n".join(f"- [{'x' if identifier in checked else ' '}] {identifier}: {title}" for identifier, title in parsed)
-            pattern = r"(?m)^\*\*Plans(?::\*\*|\*\*:).*?(?=\n(?:\*\*|#{1,3} )|\Z)"
-            block = re.sub(pattern, lambda _: replacement+"\n", block, flags=re.S) if re.search(pattern, block, re.S) else block.rstrip()+"\n"+replacement+"\n\n"
+            from .plan_registration import rewrite
+            if args.has("summary") and len(args.all("summary")) != 1:
+                raise Failure("bad-plan", "Provide one explicit single-line summary")
+            block, registered = rewrite(block, phase["number"], args.all("plans"), args.get("summary"))
         write(path, before+block+after)
         sync_roadmap()
-        return {"updated": True, "phase": phase["number"], "action": action}
+        return {"updated": True, "phase": phase["number"], "action": action,
+                **({"plans": registered} if action == "set-plans" else {})}
 
 
 def plan_index(args):

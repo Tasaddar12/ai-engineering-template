@@ -54,6 +54,11 @@ Record owners include `phase.add/insert/edit/remove/complete`,
 `todo.add/list/match-phase/complete`. Removal archives phase artifacts.
 `planning.archive` requires an explicit milestone and `--confirm`; it moves the
 requested `--scope phases|quick` under `.planning/milestones`.
+Plan registration requires a usable STATE current position and exact padded phase
+IDs with two ASCII ordinal digits. It replaces only rows under one unambiguous
+`Plans:` label, retains completed identities and surrounding authored notes, and
+refuses malformed/orphan rows before writing either record. `--summary TEXT`
+sets the single-line plan-count description without replacing nearby prose.
 
 Plan and evidence gates include `verify.plan-structure`, `plan.task-structure`,
 `check.verify-command-paths`, `check.verify-failure-directions`,
