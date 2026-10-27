@@ -87,7 +87,7 @@ A worker verifies root, branch and HEAD before mutation. It never creates its ow
 
 Source-changing workers commit owned changes and their assigned SUMMARY before returning complete. Use exact-path staging and preserve unrelated dirty files. Return status, base identity, commit hashes, summary path, actual checks and Remaining. A partial artifact writer preserves useful committed work and states uncovered scope instead of claiming completion.
 
-Read-only specialists write no commit or SUMMARY. A coordinator-assigned external capture path is permitted only for the explicitly assigned report or browser evidence; it must resolve outside the checkout.
+Read-only specialists return their complete cited packet or report with captured revision and examined scope. They write no commit or SUMMARY. A coordinator-assigned external capture path is permitted only for the explicitly assigned report or browser evidence; it must resolve outside the checkout.
 
 ## Native hosts
 

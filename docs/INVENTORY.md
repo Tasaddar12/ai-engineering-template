@@ -10,7 +10,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `agents/code-fixer.md` | reconciled | 770 | 66 |
 | `agents/code-reviewer.md` | reconciled | 358 | 0 |
 | `agents/codebase-mapper.md` | reconciled | 860 | 2 |
-| `agents/coordinator.md` | local-only | 141 | 1 |
+| `agents/coordinator.md` | local-only | 142 | 1 |
 | `agents/debug-session-manager.md` | reconciled | 421 | 50 |
 | `agents/debugger.md` | reconciled | 1168 | 1 |
 | `agents/doc-verifier.md` | reconciled | 168 | 1 |
@@ -26,7 +26,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `agents/scout.md` | local-only | 43 | 0 |
 | `agents/security-auditor.md` | reconciled | 177 | 0 |
 | `agents/ui-auditor.md` | reconciled | 558 | 1 |
-| `agents/ui-checker.md` | reconciled | 412 | 1 |
+| `agents/ui-checker.md` | reconciled | 404 | 1 |
 | `agents/ui-researcher.md` | reconciled | 457 | 3 |
 | `agents/verifier.md` | reconciled | 789 | 0 |
 | `bin/install-assets/PROJECT.txt` | local-only | 69 | 0 |
@@ -66,7 +66,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `commands/code-review.md` | reconciled | 73 | 0 |
 | `commands/complete-milestone.md` | reconciled | 148 | 0 |
 | `commands/debug.md` | reconciled | 57 | 1 |
-| `commands/discuss-phase.md` | reconciled | 118 | 0 |
+| `commands/discuss-phase.md` | reconciled | 112 | 0 |
 | `commands/docs-update.md` | reconciled | 54 | 2 |
 | `commands/execute-phase.md` | reconciled | 66 | 0 |
 | `commands/explore.md` | reconciled | 27 | 1 |
@@ -89,7 +89,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `commands/review-backlog.md` | reconciled | 65 | 2 |
 | `commands/secure-phase.md` | reconciled | 41 | 0 |
 | `commands/ship.md` | reconciled | 29 | 0 |
-| `commands/spec-phase.md` | reconciled | 62 | 0 |
+| `commands/spec-phase.md` | reconciled | 57 | 0 |
 | `commands/thread.md` | reconciled | 29 | 0 |
 | `commands/ui-phase.md` | reconciled | 40 | 0 |
 | `commands/ui-review.md` | reconciled | 38 | 0 |
@@ -98,7 +98,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `commands/verify-work.md` | reconciled | 44 | 0 |
 | `docs/INVENTORY.md` | local-only | 389 | 2 |
 | `docs/prompts.md` | upstream | 200 | 0 |
-| `engineer/bin/README.md` | local-only | 354 | 0 |
+| `engineer/bin/README.md` | local-only | 347 | 0 |
 | `engineer/bin/engineer.py` | local-only | 157 | 0 |
 | `engineer/bin/engineer_run` | reconciled | 24 | 0 |
 | `engineer/bin/lib/__init__.py` | local-only | 1 | 0 |
@@ -285,13 +285,13 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `engineer/workflows/code-review/steps/dispatch-fix.md` | reconciled | 40 | 0 |
 | `engineer/workflows/complete-milestone.md` | reconciled | 684 | 76 |
 | `engineer/workflows/debug.md` | reconciled | 296 | 60 |
-| `engineer/workflows/discuss-phase.md` | reconciled | 561 | 17 |
+| `engineer/workflows/discuss-phase.md` | reconciled | 557 | 17 |
 | `engineer/workflows/discuss-phase/modes/all.md` | upstream | 30 | 0 |
 | `engineer/workflows/discuss-phase/modes/auto.md` | upstream | 53 | 0 |
 | `engineer/workflows/discuss-phase/modes/default.md` | reconciled | 143 | 0 |
 | `engineer/workflows/discuss-phase/modes/text.md` | reconciled | 57 | 0 |
 | `engineer/workflows/discuss-phase/templates/checkpoint.json` | upstream | 18 | 0 |
-| `engineer/workflows/discuss-phase/templates/context.md` | reconciled | 152 | 0 |
+| `engineer/workflows/discuss-phase/templates/context.md` | reconciled | 149 | 0 |
 | `engineer/workflows/discuss-phase/templates/discussion-log.md` | upstream | 52 | 0 |
 | `engineer/workflows/docs-update.md` | reconciled | 1016 | 69 |
 | `engineer/workflows/docs-update/detail/elaboration.md` | reconciled | 180 | 0 |

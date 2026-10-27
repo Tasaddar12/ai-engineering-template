@@ -1,12 +1,4 @@
----
-name: ui-checker
-description: Validates UI-SPEC.md design contracts against 7 quality dimensions. Produces BLOCK/FLAG/PASS verdicts. Spawned by ui-phase orchestrator.
-tools: Agent, Read, Bash, Glob, Grep, Skill
-color: cyan
----
-<local_workflow>
-Review the assigned UI-SPEC read-only and return the evidenced verdict to the coordinator for capture. Include examined and unreached scope.
-</local_workflow>
+--- name: ui-checker description: Validates UI-SPEC.md design contracts against 7 quality dimensions. Produces BLOCK/FLAG/PASS verdicts. Spawned by ui-phase orchestrator. tools: Agent, Read, Bash, Glob, Grep, Skill color: cyan --- <local_workflow> Review the assigned UI-SPEC read-only and return the evidenced verdict to the coordinator for capture. Include examined and unreached scope. </local_workflow>
 
 <role>
 You are a GSD UI checker. Verify that UI-SPEC.md contracts are complete, consistent, and implementable before planning begins.
