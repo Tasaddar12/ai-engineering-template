@@ -254,6 +254,45 @@ class _WindowsJob:
                 ctypes.c_void_p(self.handle), ctypes.c_void_p(int(process._handle))):
             raise Failure("pipeline-job", "Cannot assign host to the owned Windows job")
 
+    def resume(self, process):
+        """Resume the suspended primary thread only after its job owns it."""
+        from ctypes import wintypes as w
+
+        class ThreadEntry(ctypes.Structure):
+            _fields_ = [("size", w.DWORD), ("usage", w.DWORD), ("thread", w.DWORD),
+                        ("owner", w.DWORD), ("priority", w.LONG), ("delta", w.LONG), ("flags", w.DWORD)]
+
+        self.api.CreateToolhelp32Snapshot.argtypes = [w.DWORD, w.DWORD]
+        self.api.CreateToolhelp32Snapshot.restype = w.HANDLE
+        self.api.Thread32First.argtypes = [w.HANDLE, ctypes.POINTER(ThreadEntry)]
+        self.api.Thread32Next.argtypes = [w.HANDLE, ctypes.POINTER(ThreadEntry)]
+        self.api.OpenThread.argtypes = [w.DWORD, w.BOOL, w.DWORD]
+        self.api.OpenThread.restype = w.HANDLE
+        self.api.ResumeThread.argtypes = [w.HANDLE]
+        self.api.ResumeThread.restype = w.DWORD
+        snapshot = self.api.CreateToolhelp32Snapshot(0x4, 0)
+        if not snapshot or snapshot == ctypes.c_void_p(-1).value:
+            raise Failure("pipeline-job", "Cannot locate suspended host thread")
+        try:
+            entry = ThreadEntry()
+            entry.size = ctypes.sizeof(entry)
+            present = self.api.Thread32First(w.HANDLE(snapshot), ctypes.byref(entry))
+            while present:
+                if entry.owner == process.pid:
+                    thread = self.api.OpenThread(0x2, False, entry.thread)
+                    if not thread:
+                        raise Failure("pipeline-job", "Cannot open suspended host thread")
+                    try:
+                        if self.api.ResumeThread(w.HANDLE(thread)) != 1:
+                            raise Failure("pipeline-job", "Host thread did not resume from its initial suspension")
+                        return
+                    finally:
+                        self.api.CloseHandle(w.HANDLE(thread))
+                present = self.api.Thread32Next(w.HANDLE(snapshot), ctypes.byref(entry))
+            raise Failure("pipeline-job", "Suspended host thread was not found")
+        finally:
+            self.api.CloseHandle(w.HANDLE(snapshot))
+
     def stop(self):
         if self.handle:
             if not self.api.TerminateJobObject(ctypes.c_void_p(self.handle), 1):
@@ -298,12 +337,52 @@ def _stop(process, job=None):
     return True
 
 
+def _stdout_receipt(attempt, task, data):
+    """Accept a bounded final response without expanding worker write access."""
+    with Path(attempt["stdout"]).open("rb") as stream:
+        stream.seek(0, 2)
+        stream.seek(max(0, stream.tell()-4*1024*1024))
+        output = stream.read().decode("utf-8", errors="replace")
+    found = []
+
+    def inspect(value, depth=0):
+        if depth > 12:
+            return
+        if isinstance(value, dict):
+            for child in value.values():
+                inspect(child, depth+1)
+        elif isinstance(value, list):
+            for child in value:
+                inspect(child, depth+1)
+        elif isinstance(value, str):
+            for line in value.splitlines():
+                offset = line.find("ENGINEER_OUTCOME:")
+                if offset < 0:
+                    continue
+                try:
+                    packet, _ = json.JSONDecoder().raw_decode(line[offset+len("ENGINEER_OUTCOME:"):].strip())
+                except ValueError:
+                    continue
+                if isinstance(packet, dict) and all(packet.get(key) == expected for key, expected in {
+                    "pipeline_id": data["id"], "task_id": task["id"], "attempt_token": attempt["token"]}.items()):
+                    found.append(packet)
+
+    for line in output.splitlines():
+        try:
+            inspect(json.loads(line))
+        except ValueError:
+            inspect(line)
+    if not found or any(packet != found[-1] for packet in found):
+        raise Failure("pipeline-receipt", "No single consistent token-bound outcome was returned by the host")
+    return found[-1]
+
+
 def _receipt(attempt, task, data):
     path = Path(attempt["path"])
     receipt_path = Path(attempt["receipt"])
     if receipt_path.is_symlink():
         raise Failure("pipeline-receipt", "Receipt may not be a symlink")
-    receipt = load_json(receipt_path)
+    receipt = load_json(receipt_path) if receipt_path.is_file() else _stdout_receipt(attempt, task, data)
     if not isinstance(receipt, dict) or any(receipt.get(k) != v for k, v in {
         "pipeline_id": data["id"], "task_id": task["id"], "attempt_token": attempt["token"]}.items()):
         raise Failure("pipeline-receipt", "Missing or mismatched outcome receipt")
@@ -322,6 +401,7 @@ def _receipt(attempt, task, data):
         raise Failure("pipeline-dirty-worker", "Uncommitted work is preserved, not integrated")
     if _git("branch", "--show-current", cwd=path).stdout.strip() != attempt["branch"]:
         raise Failure("pipeline-branch", "Worker changed its assigned branch")
+    write_json(receipt_path, receipt)
     return head, receipt
 
 
@@ -359,7 +439,7 @@ def _recover(directory, data):
             if os.name == "nt" and attempt["status"] != "integrating" and not attempt.get("job_guard"):
                 raise Failure("pipeline-worker-uncertain", "Inspect preserved Windows process tree before recovery; leader exit alone is insufficient", attempt=attempt)
             data["spent_seconds"] += max(0, time.time() - attempt.get("accounted_at", time.time()))
-            if Path(attempt["receipt"]).is_file():
+            if Path(attempt["receipt"]).is_file() or Path(attempt["stdout"]).is_file():
                 try:
                     _accept(directory, data, task, attempt)
                     continue
@@ -392,8 +472,9 @@ def _attempt(directory, data, task, argv):
     prompt = ("Implement only this explicitly authorized task in the assigned isolated checkout. "
               "Do not publish, merge, alter other worktrees, or launch detached workers. Preserve prior commits. "
               "Commit actual changes. Report blocked work honestly. Verification may remain unverified; "
-              "do not invent passing checks. Write a JSON outcome receipt to the absolute path below, "
-              "outside the checkout, after committing. Receipt schema: "
+              "do not invent passing checks. After committing, return a final single-line response "
+              "beginning ENGINEER_OUTCOME: followed by a JSON outcome receipt. The runner persists it; "
+              "you do not need permission to write outside this checkout. Receipt schema: "
               '{"pipeline_id": "...", "task_id": "...", "attempt_token": "...", '
               '"status": "implemented|blocked|failed", "head": "actual Git HEAD", '
               '"reason": "actual outcome", "verification": {"status": "unverified|passed", "evidence": []}}.\n'
@@ -412,7 +493,7 @@ def _attempt(directory, data, task, argv):
     started = time.monotonic()
     timed_out = cancelled = False
     with Path(attempt["stdout"]).open("wb") as stdout, Path(attempt["stderr"]).open("wb") as stderr:
-        options = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {"start_new_session": True}
+        options = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP | 0x4} if os.name == "nt" else {"start_new_session": True}
         try:
             process = subprocess.Popen(argv, cwd=path, env=env, stdin=subprocess.PIPE, stdout=stdout, stderr=stderr, shell=False, **options)
         except OSError as exc:
@@ -426,6 +507,8 @@ def _attempt(directory, data, task, argv):
             job.assign(process)
             attempt.update(pid=process.pid, status="running", job_guard=os.name == "nt")
             _save(directory, data)
+            if os.name == "nt":
+                job.resume(process)
             def send_prompt():
                 try:
                     process.stdin.write(prompt.encode("utf-8"))
@@ -493,6 +576,9 @@ def _attempt(directory, data, task, argv):
 
 
 def _publish(directory, data, args):
+    remaining = data["budget_seconds"]-data["spent_seconds"]
+    if remaining <= 0:
+        return {"requested": True, "published": False, "status": "pending", "reason": "Runner budget exhausted; resume with a fresh explicit budget"}
     accepted = [a for t in data["tasks"] for a in t["attempts"]
                 if a["status"] == _DONE and a.get("head") == data["head"]]
     if not accepted:
@@ -545,7 +631,7 @@ def _publish(directory, data, args):
 def _track_failure(task, data):
     from . import issues
     attempt = task["attempts"][-1] if task["attempts"] else {}
-    title = "Pipeline " + data["id"] + ": " + task["id"] + " " + task["status"]
+    title = "Pipeline " + data["id"] + ": " + task["id"] + " execution issue"
     values = [title, "--problem", str(task.get("reason", attempt.get("error", task["status"]))),
               "--expected", "The explicitly authorized task produces accepted committed work.",
               "--actual", task["status"], "--evidence", json.dumps(attempt, ensure_ascii=False),
@@ -554,7 +640,8 @@ def _track_failure(task, data):
               "--acceptance", "Resolve the recorded failure and independently verify the original task acceptance.",
               "--publish"]
     try:
-        task["issue"] = issues.command(Args(values), "finding")
+        with issues.budget(max(0, data["budget_seconds"]-data["spent_seconds"])):
+            task["issue"] = issues.command(Args(values), "finding")
     except Exception as exc:
         task["issue"] = {"status": "pending", "error": str(exc)}
 
@@ -574,6 +661,7 @@ def _execute(directory, data, args):
         raise Failure("pipeline-branch-drift", "Pipeline branch changed outside this runner")
     data.update(host=host, command=argv, status="running", runner={"pid": os.getpid(), "started": now()})
     _save(directory, data)
+    tracked = set()
     while True:
         if (directory / "cancel.json").exists() or data["spent_seconds"] >= data["budget_seconds"]:
             break
@@ -601,24 +689,33 @@ def _execute(directory, data, args):
         if selected["status"] == "failed" and latest.get("retry_safe") and len(selected["attempts"]) <= selected["max_retries"]:
             selected["status"] = "pending"
         if args.has("track-issues") and selected["status"] in ("failed", "blocked", "interrupted"):
+            before_tracking = time.monotonic()
             _track_failure(selected, data)
+            data["spent_seconds"] += time.monotonic()-before_tracking
+            tracked.add(selected["id"])
         if latest.get("retry_safe") is False and selected["status"] != _DONE:
             break  # Preserve serialization when descendants may still exist.
         _save(directory, data)
     statuses = [t["status"] for t in data["tasks"]]
     if args.has("track-issues"):
         for task in data["tasks"]:
-            if task["status"] in ("failed", "blocked", "interrupted") and "issue" not in task:
+            issue = task.get("issue", {})
+            confirmed = bool(issue.get("url") and (issue.get("published") or issue.get("linked")))
+            if task["status"] in ("failed", "blocked", "interrupted") and not confirmed and task["id"] not in tracked:
+                before_tracking = time.monotonic()
                 _track_failure(task, data)
+                data["spent_seconds"] += time.monotonic()-before_tracking
     data["status"] = ("cancelled" if (directory / "cancel.json").exists() else
                       "completed_unverified" if all(s == _DONE for s in statuses) else
                       "budget_exhausted" if data["spent_seconds"] >= data["budget_seconds"] else "blocked")
     data.pop("runner", None)
     if args.has("publish"):
+        before_publication = time.monotonic()
         try:
             data["publication"] = _publish(directory, data, args)
         except (Failure, OSError, ValueError, subprocess.TimeoutExpired) as exc:
             data["publication"] = {"requested": True, "published": False, "status": "pending", "error": str(exc)}
+        data["spent_seconds"] += time.monotonic()-before_publication
     _save(directory, data)
     return data
 
@@ -641,6 +738,8 @@ def command(args, action):
         raise Failure("unknown-pipeline-action", action, 2)
     with _ownership(directory):
         directory, data = _load(identifier)
+        if args.has("budget-seconds") and action in ("run", "resume"):
+            data["budget_seconds"] = data["spent_seconds"]+_number(args.get("budget-seconds"), "budget-seconds", 28800, 1, 604800)
         if action == "retry":
             _recover(directory, data)
             task = next((t for t in data["tasks"] if t["id"] == args.get("task")), None)

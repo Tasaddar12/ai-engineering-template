@@ -23,7 +23,8 @@ class Args:
     """Parse long options without shell interpolation; multi-value options stay lists."""
     FLAGS = {"raw", "json", "force", "confirm", "fix", "mvp", "mutating", "stdin",
              "commits-only", "uat-only", "require-verification", "discuss", "research",
-             "validate", "full", "no-archive-phases", "milestone-bound", "tdd", "dry-run"}
+             "validate", "full", "no-archive-phases", "milestone-bound", "tdd", "dry-run",
+             "publish", "execution-authorized", "authorize-execution", "track-issues", "list"}
 
     def __init__(self, values):
         self.pos, self.opts = [], {}
@@ -80,9 +81,13 @@ def slug(value):
     return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-") or "untitled"
 
 
-def run(argv, cwd=None, check=True, timeout=None):
-    result = subprocess.run([str(x) for x in argv], cwd=cwd, text=True,
-                            encoding="utf-8", errors="replace", capture_output=True, timeout=timeout)
+def run(argv, cwd=None, check=True, timeout=None, env=None, stdin=None):
+    try:
+        result = subprocess.run([str(x) for x in argv], cwd=cwd, text=True, env=env, stdin=stdin,
+                                encoding="utf-8", errors="replace", capture_output=True, timeout=timeout)
+    except subprocess.TimeoutExpired as exc:
+        raise Failure("command-timeout", "Command exceeded its time budget", 124,
+                      command=list(map(str, argv)), timeout=timeout) from exc
     if check and result.returncode:
         raise Failure("command-failed", result.stderr.strip() or result.stdout.strip(),
                       command=list(map(str, argv)), exit_code=result.returncode)

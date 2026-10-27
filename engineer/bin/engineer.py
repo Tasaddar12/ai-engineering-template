@@ -2,6 +2,7 @@
 """Python 3.11+ standard-library CLI: engineer_run query <verb>."""
 from __future__ import annotations
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from lib import phase_issues
 from lib import planning_review
 from lib import requirements
 from lib import planning_integrity
+from lib import manager, pipelines, ideas
 from lib.core import Args, Failure, pick, raw, root, slug
 
 IDENTITY = {"packageName": "engineer-runtime", "contract": "2.0"}
@@ -60,6 +62,11 @@ def registry():
         "phase.locate": sessions.locate,
         "phase.reconcile-todos": phase_issues.reconcile_todos,
         "verification.current": lambda a: verification.current_evidence(a.need()),
+        "init.manager": manager.dashboard,
+        "dispatch-should-flatten": lambda a: True,
+        "init.seeds": lambda a: ideas.command(a, "init-seeds"),
+        "list-seeds": lambda a: ideas.command(a, "list-seeds"),
+        "seed-enrich": lambda a: ideas.command(a, "seed-enrich"),
     }
     for action in ("add", "insert", "edit", "remove", "complete"):
         verbs["phase."+action] = lambda a, action=action: records.phase_change(a, action)
@@ -98,6 +105,14 @@ def registry():
         verbs["phase.issue-"+action] = lambda a, action=action: issues.publication(a, action, "phase")
     for action in ("preview", "apply"):
         verbs["cleanup."+action] = lambda a, action=action: cleanup.command(a, action)
+    for action in ("create", "status", "run", "resume", "retry", "cancel"):
+        verbs["pipeline."+action] = lambda a, action=action: pipelines.command(a, action)
+    for action in ("init", "status", "dashboard", "enqueue", "continue", "run", "resume", "retry", "cancel"):
+        verbs["manager."+action] = lambda a, action=action: manager.command(a, action)
+    for action in ("capture", "list", "get", "update", "promote", "match"):
+        verbs["idea."+action] = lambda a, action=action: ideas.command(a, action)
+    for action in ("list", "search", "get", "close", "reopen", "link", "capture", "finding", "validate"):
+        verbs["issue."+action] = lambda a, action=action: issues.command(a, action)
     for kind in ("code-review", "complete-milestone", "execute-phase", "new-milestone", "new-project", "onboard", "phase-op", "plan-phase", "progress", "quick", "quick-batch", "todos", "verify-work", "ship"):
         verbs["init."+kind] = lambda a, kind=kind: bundles.init(a, kind)
     return verbs
@@ -113,6 +128,14 @@ VERBS = registry()
 
 def main(argv=None):
     values = list(sys.argv[1:] if argv is None else argv)
+    if values and (values[0] == "--cwd" or values[0].startswith("--cwd=")):
+        option = values.pop(0)
+        selected = option.partition("=")[2] if "=" in option else values.pop(0) if values else None
+        if not selected or not Path(selected).is_dir():
+            print(json.dumps({"error": "invalid-cwd", "message": "--cwd requires an existing directory"}), file=sys.stderr)
+            return 2
+        os.chdir(Path(selected).resolve())
+        os.environ["ENGINEER_ROOT"] = str(Path.cwd())
     if not values:
         print("Usage: engineer_run query <verb> [arguments] [--raw] [--pick dotted.field]", file=sys.stderr)
         return 2
@@ -121,7 +144,7 @@ def main(argv=None):
     if not values:
         return 2
     name = values.pop(0)
-    if name in ("init", "check", "verify", "frontmatter", "quick-batch", "spec", "phase", "state", "roadmap", "worktree", "uat") and values and not values[0].startswith("-"):
+    if name in ("init", "check", "verify", "frontmatter", "quick-batch", "spec", "phase", "state", "roadmap", "worktree", "uat", "pipeline", "manager", "idea", "issue") and values and not values[0].startswith("-"):
         name += "."+values.pop(0)
     args = Args(values)
     try:

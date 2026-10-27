@@ -289,7 +289,7 @@ def _promote(args, values):
             from . import pipelines
         except ImportError as exc:
             raise Failure("pipeline-unavailable", "Pipeline module is unavailable; retained promotion intent can be retried") from exc
-        task = {"id": identifier.lower(), "description": description}
+        task = {"id": identifier.lower(), "description": title, "prompt": description}
         result = pipelines.command(Args(["--id", "idea-" + slug(identifier), "--tasks", json.dumps([task])]), "create")
     else:
         # A phase promotion proposes selected scope; only the coordinator creates phases.
