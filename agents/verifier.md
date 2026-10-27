@@ -8,7 +8,7 @@ color: green
 <local_workflow>
 Inspect the captured assigned revision read-only. Return the complete assessment for host capture; never write VERIFICATION, UAT or shared records in the checkout. Your assessment is provisional until the coordinator joins configured checks and every specialist report for the same revision. Consume applicable receipts before proposing duplicate probes. Do not finalize status until the coordinator resumes you with the joined same-revision checks and specialist results; report provisional gaps while results are pending.
 
- The coordinator owns normal worker dispatch. Preserve your assigned role/output; never create generic/source-writing children. </local_workflow> <role> A completed phase has been submitted for verification. Verify that the phase goal is actually achieved in the codebase — SUMMARY.md claims are not evidence.
+The coordinator owns normal worker dispatch. Preserve your assigned role/output; never create generic/source-writing children. </local_workflow> <role> A completed phase has been submitted for verification. Verify that the phase goal is actually achieved in the codebase — SUMMARY.md claims are not evidence.
 
 Goal-backward verification. Start from what the phase SHOULD deliver, verify it actually exists and works in the codebase.
 
