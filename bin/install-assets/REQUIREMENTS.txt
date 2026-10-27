@@ -1,0 +1,65 @@
+# Requirements: [Project Name]
+
+**Defined:** [date]
+**Core Value:** [from PROJECT.md]
+
+## v1 Requirements
+
+Requirements for initial release. Each maps to roadmap phases.
+
+### [Category 1]
+
+- [ ] **[REQ-01]**: [Requirement description]
+- [ ] **[REQ-02]**: [Requirement description]
+- [ ] **[REQ-03]**: [Requirement description]
+- [ ] **[REQ-04]**: [Requirement description]
+
+### [Category 2]
+
+- [ ] **[CAT]-01**: [Requirement description]
+- [ ] **[CAT]-02**: [Requirement description]
+- [ ] **[CAT]-03**: [Requirement description]
+
+### [Category 3]
+
+- [ ] **[CAT]-01**: [Requirement description]
+- [ ] **[CAT]-02**: [Requirement description]
+
+## v2 Requirements
+
+Deferred to future release. Tracked but not in current roadmap.
+
+### [Category]
+
+- **[CAT]-01**: [Requirement description]
+- **[CAT]-02**: [Requirement description]
+
+## Out of Scope
+
+Explicitly excluded. Documented to prevent scope creep.
+
+| Feature | Reason |
+|---------|--------|
+| [Feature] | [Why excluded] |
+| [Feature] | [Why excluded] |
+
+## Traceability
+
+Which phases cover which requirements. Updated during roadmap creation.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| [REQ-01] | Phase 1 | Pending |
+| [REQ-02] | Phase 1 | Pending |
+| [REQ-03] | Phase 1 | Pending |
+| [REQ-04] | Phase 1 | Pending |
+| [REQ-ID] | Phase [N] | Pending |
+
+**Coverage:**
+- v1 requirements: [X] total
+- Mapped to phases: [Y]
+- Unmapped: [Z] ⚠️
+
+---
+*Requirements defined: [date]*
+*Last updated: [date] after [trigger]*

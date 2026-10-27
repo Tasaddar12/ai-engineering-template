@@ -1,0 +1,6 @@
+name = "scout"
+description = "Engineering scout role"
+model = "gpt-6-luna"
+model_reasoning_effort = "high"
+developer_instructions = "Read and follow the complete method at agents/scout.md."
+sandbox_mode = "read-only"

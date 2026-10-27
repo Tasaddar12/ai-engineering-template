@@ -1,0 +1,5 @@
+name = "pattern-mapper"
+description = "Engineering pattern-mapper role"
+model = "gpt-6.1-sol"
+model_reasoning_effort = "high"
+developer_instructions = "Read and follow the complete method at agents/pattern-mapper.md."
