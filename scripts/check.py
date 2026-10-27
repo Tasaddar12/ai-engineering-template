@@ -36,7 +36,7 @@ def selected_checks(text, phases, all_phases=False):
         if key not in blocks:
             raise ValueError(f"Unknown phase: {phase}")
         for line in blocks[key]:
-            if phase == "5" and "scripts/overhaul/progress.py" in line and "--stage" not in line:
+            if phase == "5" and "scripts/progress.py" in line and "--stage" not in line:
                 line += " --stage core"
             result.append((phase, line))
     return result

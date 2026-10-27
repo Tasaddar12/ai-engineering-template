@@ -29,7 +29,6 @@ this file under the discuss-phase byte budget (32000 bytes, #717; mirrors the ag
 | `--chain` in $ARGUMENTS | `workflows/discuss-phase/modes/default.md` + `workflows/discuss-phase/modes/chain.md` |
 | `--text` in $ARGUMENTS or `workflow.text_mode: true` | `workflows/discuss-phase/modes/text.md` overlay |
 | `--batch` in $ARGUMENTS | `workflows/discuss-phase/modes/batch.md` overlay |
-| `--analyze` in $ARGUMENTS | `workflows/discuss-phase/modes/analyze.md` overlay |
 | ADVISOR_MODE = true (USER-PROFILE.md exists) | `workflows/discuss-phase/modes/advisor.md` |
 | no flags above | `workflows/discuss-phase/modes/default.md` |
 | in `write_context` step | `workflows/discuss-phase/templates/context.md` |
@@ -106,6 +105,44 @@ Phase: "API documentation"       → Structure/navigation, Code examples depth, 
 
 **Text mode** (`--text` or `workflow.text_mode: true`): follow `workflows/discuss-phase/modes/text.md` — do not use AskUserQuestion at all.
 </answer_validation>
+
+<discussion_analysis>
+## Effect
+
+Before presenting each question (or question group, in batch mode), provide
+a brief **trade-off analysis** for the decision:
+- 2-3 options with pros/cons based on codebase context and common patterns
+- A recommended approach with reasoning
+- Known pitfalls or constraints from prior phases
+
+## Example
+
+```markdown
+**Trade-off analysis: Authentication strategy**
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| Session cookies | Simple, httpOnly prevents XSS | Requires CSRF protection, sticky sessions |
+| JWT (stateless) | Scalable, no server state | Token size, revocation complexity |
+| OAuth 2.0 + PKCE | Industry standard for SPAs | More setup, redirect flow UX |
+
+💡 Recommended: OAuth 2.0 + PKCE — your app has social login in requirements (REQ-04) and this aligns with the existing NextAuth setup in `src/lib/auth.ts`.
+
+How should users authenticate?
+```
+
+This gives the user context to make informed decisions without extra
+prompting.
+
+## Sourcing the analysis
+
+- Pros/cons should reflect the codebase context loaded in `scout_codebase`
+  and any prior decisions surfaced in `load_prior_context`.
+- The recommendation must explicitly tie to project context (e.g.,
+  existing libraries, prior phase decisions, documented requirements).
+- If a related ADR or spec is referenced in CONTEXT.md `<canonical_refs>`,
+  cite it in the recommendation.
+</discussion_analysis>
 
 <process>
 
@@ -195,7 +232,6 @@ fi
   - `--chain` → Read `workflows/discuss-phase/modes/chain.md` before `auto_advance`.
   - `--text` (or `workflow.text_mode: true`) → Read `workflows/discuss-phase/modes/text.md` before any AskUserQuestion call.
   - `--batch` → Read `workflows/discuss-phase/modes/batch.md` before `discuss_areas`.
-  - `--analyze` → Read `workflows/discuss-phase/modes/analyze.md` before `discuss_areas`.
   - `ADVISOR_MODE = true` → Read `workflows/discuss-phase/modes/advisor.md` before `analyze_phase` (it changes the discussion flow and adds an `advisor_research` substep).
   - No flags → Read `workflows/discuss-phase/modes/default.md` before `discuss_areas`.
 
@@ -407,9 +443,7 @@ Discussion behavior is defined by the active mode file(s):
 Overlays (combine with the active mode):
 - `--text` → `workflows/discuss-phase/modes/text.md` (replace AskUserQuestion with plain-text numbered lists)
 - `--batch` → `workflows/discuss-phase/modes/batch.md` (group 2–5 questions per turn)
-- `--analyze` → `workflows/discuss-phase/modes/analyze.md` (trade-off table before each question)
 
-**Overlay stacking:** overlays combine and apply outer→inner in fixed order `--analyze` → `--batch` → `--text` (e.g., `--batch --analyze` = trade-off table per question group; add `--text` for plain-text rendering). Mode-specific precedence (e.g., `--auto --power`) is documented in each overlay file's "Combination rules" section.
 
 All modes preserve the universal rules below.
 

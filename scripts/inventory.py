@@ -22,7 +22,7 @@ def render_inventory(root):
         baseline[path] = metadata.split()[2]
     source_names = {destination: source for source, destination in manifest()["renames"].items()}
     source_names["engineer/templates/TEMPLATE.md"] = "engineer/templates/README.md"
-    lines = ["# Workflow file inventory", "", f"Anchor baseline: `{BASELINE}`. Origins compare Git blob content with the downloaded upstream copy at `{UPSTREAM_COPY}` after structural path mapping.", "", "Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with `--check`.", "", "| File | Origin | Lines | Remaining gsd references |", "|---|---|---:|---:|"]
+    lines = ["# Workflow file inventory", "", f"Anchor baseline: `{BASELINE}`. Origins compare Git blob content with the downloaded upstream copy at `{UPSTREAM_COPY}` after structural path mapping.", "", "Regenerate with `python -I scripts/inventory.py --apply`; compare with `--check`.", "", "| File | Origin | Lines | Remaining gsd references |", "|---|---|---:|---:|"]
     paths = sorted(files(root, INVENTORY_ROOTS), key=lambda path: path.relative_to(root).as_posix())
     entries = []
     for path in paths:
