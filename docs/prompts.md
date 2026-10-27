@@ -175,7 +175,7 @@ incomplete-phase check. Recommend one next command, but do not run it.
 `/next` decides and proceeds.
 
 **Sources:** [progress command](../commands/progress.md),
-[command overview](../commands/README.md#the-lifecycle).
+[command overview](../commands/COMMAND.md#core-commands).
 
 ## Future prompt ideas
 

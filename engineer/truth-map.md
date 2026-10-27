@@ -21,11 +21,12 @@ Each fact has one owner; consumers link to it. Resolve disagreement with approve
 | Security planned assessment/mitigation | Each PLAN six-column threat register | Canonical checklist entry links to PLAN |
 | Optional reusable specification | .planning/specs/SPEC-*.md | Approved observable contract |
 | Shared authority and gates | engineer/RULES.md | Every command/workflow/role |
-| Role ownership/return contract | agents/ and agents/README.md | Host dispatch |
-| User-facing entry and procedure name | commands/ | Skill mirrors and user |
+| Role ownership/return contract | agents/ and agents/AGENT.md | Host dispatch |
+| User-facing entry and procedure name | commands/ and commands/COMMAND.md | Skill mirrors and user |
 | Step ordering and routing | engineer/workflows/ | Commands and coordinator |
 | Reusable method | engineer/references/ | Consuming role/workflow |
 | Complete artifact schema | engineer/templates/ and registry README | Producer and consumer/runtime |
+| Runtime-owned record sections and integrity boundaries | engineer/references/template-contract.md | Artifact producers, validators and record operations |
 | Configuration schema/defaults | engineer/templates/config.yaml and runtime config owner | .planning/config.yaml overrides |
 | Actual runtime CLI and result shape | engineer/bin/README.md and implementation | engineer_run query callers |
 | Installed host adaptation | bin/install-assets, installer and native Claude/Codex files | Only supported two hosts |

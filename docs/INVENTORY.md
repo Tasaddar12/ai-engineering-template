@@ -27,8 +27,8 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `agents/security-auditor.md` | reconciled | 289 | 0 |
 | `agents/ui-auditor.md` | reconciled | 468 | 0 |
 | `agents/ui-checker.md` | reconciled | 422 | 0 |
-| `agents/ui-researcher.md` | reconciled | 465 | 0 |
-| `agents/verifier.md` | reconciled | 783 | 0 |
+| `agents/ui-researcher.md` | reconciled | 477 | 0 |
+| `agents/verifier.md` | reconciled | 799 | 0 |
 | `bin/config_support.py` | local-only | 153 | 0 |
 | `bin/generate-assets.py` | local-only | 42 | 0 |
 | `bin/install-assets/PROJECT.txt` | local-only | 69 | 0 |
@@ -299,7 +299,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `engineer/templates/summary.md` | reconciled | 353 | 0 |
 | `engineer/templates/user-setup.md` | reconciled | 302 | 0 |
 | `engineer/templates/verification-report.md` | reconciled | 360 | 0 |
-| `engineer/truth-map.md` | local-only | 35 | 0 |
+| `engineer/truth-map.md` | local-only | 36 | 0 |
 | `engineer/workflows/WORKFLOW.md` | reconciled | 55 | 0 |
 | `engineer/workflows/_canonical-threat-tracking.md` | local-only | 78 | 0 |
 | `engineer/workflows/_runtime-launcher.snippet.sh` | reconciled | 42 | 0 |

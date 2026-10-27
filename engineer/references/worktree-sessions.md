@@ -21,7 +21,7 @@ Record exact authorized paths and deletion paths. `worktree.record-agent` regist
 - Verify [branch identity](worktree-branch-check.md) for harness dispatch and [path containment](worktree-path-safety.md) for every write/check target.
 - Relative paths are preferred; canonicalize absolute paths and account for symlink parents.
 - Each writer owns distinct paths/resources for its active group. Worktrees do not prevent semantic conflicts or shared database/port interference.
-- The hook at `../../hooks/worktree-guard.sh` is advisory and cannot establish authorization or reliable containment by itself.
+- The hook at `../../hooks/worktree-path-guard.py` is advisory and cannot establish authorization or reliable containment by itself.
 - Preserve user changes, uncommitted work and uncertain processes. Never reset a worker merely because a base mismatch is inconvenient.
 
 ## Integration

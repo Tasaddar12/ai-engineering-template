@@ -4,7 +4,7 @@ Adapt the copied upstream role body directly. Preserve complete methods, example
 
 ## Role ownership
 
-Read `agents/README.md`, the assigned role, consuming workflow and required references. Keep facts in their owning layer: commands name procedures, workflows route steps, roles bound work, templates define complete artifacts, references hold reusable methods and the runtime owns structured planning mutations.
+Read `agents/AGENT.md`, the assigned role, consuming workflow and required references. Keep facts in their owning layer: commands name procedures, workflows route steps, roles bound work, templates define complete artifacts, references hold reusable methods and the runtime owns structured planning mutations.
 
 ## Supported hosts
 

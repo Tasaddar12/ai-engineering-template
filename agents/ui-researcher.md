@@ -162,13 +162,22 @@ Try in order, stopping at the first that answers:
 
 ```bash
 <installed-shadcn> info 2>/dev/null                                                # shadcn projects
-node -p "Object.keys(require('<pkg>/package.json').exports || {}).length"  # exports map
-node -p "require('<pkg>/package.json').version"                            # RESOLVED version
+# Set PACKAGE_JSON to the actual resolved installed package manifest, including
+# its workspace/hoisted location; do not assume a root node_modules layout.
+python -I -c 'import json, sys; from pathlib import Path; data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8")); exports = data.get("exports"); assert isinstance(exports, dict), "exports map unavailable"; print(len(exports))' "$PACKAGE_JSON"  # exports map
+python -I -c 'import json, sys; from pathlib import Path; data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8")); version = data.get("version"); assert isinstance(version, str) and version.strip(), "resolved version unavailable"; print(version)' "$PACKAGE_JSON"  # RESOLVED version
 ```
 
 A first-party CLI with a JSON mode, or an MCP tool the design system ships, beats all three. What
 matters is that the command is **recorded and re-runnable**. Take the version from the installed
 package, not the range in your dependent's `package.json` — a caret range hides staleness.
+
+An exports-map count is package-entry-point evidence, not automatically a count
+of UI components: an export may aggregate many components or expose non-UI
+utilities. Inspect the package's shipped component paths/catalog or first-party
+enumeration to map the count to components. Missing/non-object exports remain
+unavailable evidence. Use Python 3 standard-library JSON reads for manifest data;
+do not require a JavaScript interpreter merely to read package metadata.
 
 **Cross-check the first answer — always.** A tool's count is a claim, not a fact: `<installed-shadcn> info`
 reports "No components installed" on a project whose primitives were hand-authored or predate the
@@ -184,16 +193,19 @@ If the two disagree — including a tool that reports none while files exist —
 silently. Record the larger, filesystem-backed count with the command that produced it, and add a
 line directly under the provenance line: `Mismatch: <tool> reported <A>, filesystem has <B>.`
 
-**A failed lookup is a failure, never a pass-through.** `2>/dev/null` hides why a `node -p` call died,
-so treat empty output, a non-zero exit, or the literal `undefined` as that step failing. When
-`node_modules` is absent the `require()` version lookup fails; resolve the version from the lockfile
-instead — still not the caret range:
+**A failed lookup is a failure, never a pass-through.** Preserve JSON-read and
+first-party tool diagnostics; treat empty output, a non-zero exit or an unresolved
+field as that step failing. When the installed manifest is absent, resolve the
+version from the lockfile instead — still not the caret range. For package-lock
+v2/v3 set PACKAGE_LOCK_KEY to the actual resolved entry, such as
+`node_modules/<pkg>` (or the inspected workspace/nested package key):
 
 ```bash
-node -p "(require('./package-lock.json').packages['node_modules/<pkg>']||{}).version"
+python -I -c 'import json, sys; from pathlib import Path; data = json.loads(Path("package-lock.json").read_text(encoding="utf-8")); entry = data.get("packages", {}).get(sys.argv[1]); assert isinstance(entry, dict), "resolved lockfile entry unavailable"; version = entry.get("version"); assert isinstance(version, str) and version.strip(), "resolved lockfile version unavailable"; print(version)' "$PACKAGE_LOCK_KEY"
 ```
 
-For `pnpm-lock.yaml` or `yarn.lock`, read the resolved version for `<pkg>` from that file. If the
+For package-lock v1, inspect the exact nested `dependencies` entry and its resolved
+version. For `pnpm-lock.yaml` or `yarn.lock`, read the resolved version for `<pkg>` from that file. Resolve the actual importer/workspace and dependency instance when more than one version exists; do not choose an arbitrary matching package name. If the
 lockfile cannot answer either, say `<version unresolved: <reason>>` in the version slot rather than
 leaving it empty or guessing.
 
