@@ -4,6 +4,8 @@ import hashlib
 import json
 import secrets
 import os
+import stat
+import contextlib
 from . import config, gitops, records, worktrees, repository, delivery, sessions
 from .core import Failure, load_json, now, planning_lock, root, run, safe_path, write_json
 
@@ -101,10 +103,242 @@ def ownership():
     return owners
 
 
+def backup_owners():
+    """Only an explicit resource recorded by a single eligible owner can retire."""
+    result = {}
+    for owners in ownership().values():
+        for owner in owners:
+            for value in owner["record"].get("backups", []):
+                value = value.get("path") if isinstance(value, dict) else value
+                if not isinstance(value, str):
+                    continue
+                raw = Path(value)
+                raw = raw if raw.is_absolute() else root()/raw
+                result.setdefault(str(Path(os.path.abspath(raw))), []).append(owner)
+    return result
+
+
+def backup_inventory():
+    """Capture unowned siblings too: new content cannot inherit an old approval."""
+    base = root()/".workflow-backups"
+    if not base.exists() and not base.is_symlink():
+        return []
+    if aliased_path(base):
+        raise Failure("cleanup-aliased-backup", "Backup storage is aliased")
+    result = []
+    def visit(path):
+        if aliased_path(path):
+            raise Failure("cleanup-aliased-backup", "Symlink or junction backup content is preserved")
+        info = path.lstat()
+        if not stat.S_ISDIR(info.st_mode) and not stat.S_ISREG(info.st_mode):
+            raise Failure("cleanup-special-backup", "Special backup content is preserved")
+        row = {"path": str(path.relative_to(base)), "directory": stat.S_ISDIR(info.st_mode),
+               "identity": [info.st_dev, info.st_ino], "mode": info.st_mode}
+        if row["directory"]:
+            result.append(row)
+            for child in sorted(path.iterdir(), key=lambda child: child.name):
+                visit(child)
+        else:
+            row.update({"size": info.st_size, "mtime_ns": info.st_mtime_ns,
+                        "digest": hashlib.sha256(path.read_bytes()).hexdigest()})
+            after = path.lstat()
+            if (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns) != (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns):
+                raise Failure("cleanup-backup-race", "Backup changed while capturing its content")
+            result.append(row)
+    visit(base)
+    return result
+
+
+def backup_tree(path, inventory):
+    prefix = str(path.relative_to(root()/".workflow-backups"))
+    return [row for row in inventory if row["path"] == prefix or Path(row["path"]).is_relative_to(prefix)]
+
+
+def validate_backup(entry, inventory=None):
+    target = Path(entry["path"])
+    base = root()/".workflow-backups"
+    if not target.is_absolute() or aliased_path(target) or target.resolve() != target or target == base or not target.is_relative_to(base) or not target.is_dir():
+        raise Failure("cleanup-unsafe-backup", "Only a physical recorded backup below repository backup storage can retire")
+    candidates = backup_owners()
+    owners = candidates.get(str(target), [])
+    if len(owners) != 1 or owners[0] != entry["owner"]:
+        raise Failure("cleanup-owner-drift", "Backup ownership changed or is ambiguous")
+    for name in candidates:
+        other = Path(name)
+        if other != target and (other.is_relative_to(target) or target.is_relative_to(other)):
+            raise Failure("cleanup-nested-ownership", "Overlapping recorded backup ownership is preserved")
+    record = owners[0]["record"]
+    branch = record["branch"]
+    if direct_head(branch) != entry["head"] or run(["git", "merge-base", "--is-ancestor", entry["head"], "HEAD"], root(), check=False).returncode:
+        raise Failure("cleanup-not-integrated", "Backup owner branch is not integrated")
+    worker = owners[0]["kind"] == "worker"
+    if worker and (not record.get("integration_revision") or run(["git", "merge-base", "--is-ancestor", record["integration_revision"], "HEAD"], root(), check=False).returncode):
+        raise Failure("cleanup-integration-drift", "Backup owner integration is unavailable")
+    if provider_evidence(branch, entry["head"], worker) != entry["provider"]:
+        raise Failure("cleanup-provider-drift", "Backup owner provider evidence changed")
+    tracked = run(["git", "ls-files", "--", str(target)], root()).stdout
+    if tracked:
+        raise Failure("cleanup-tracked-backup", "Tracked repository content cannot be a disposable backup")
+    # A repository/worktree or administration folder must never be hidden inside
+    # a backup tree, even if its owner recorded the parent path.
+    inventory = backup_inventory() if inventory is None else inventory
+    rows = backup_tree(target, inventory)
+    if any(Path(row["path"]).name in (".git", ".planning") for row in rows):
+        raise Failure("cleanup-repository-backup", "Nested repository or planning content is preserved")
+    if rows != entry["tree"]:
+        raise Failure("cleanup-backup-drift", "Backup identity or content changed since approval")
+
+
+@contextlib.contextmanager
+def windows_backup_handles(entry):
+    """Pin directory traversal and file bytes until handle-relative deletion.
+
+    Windows parent handles omit FILE_SHARE_DELETE so an ancestor cannot be
+    renamed/replaced during traversal. Approved files additionally omit
+    FILE_SHARE_WRITE. Deletion is requested through those same DELETE-capable
+    handles, rather than by reopening a mutable path after closing the guard.
+    """
+    import ctypes
+    from ctypes import wintypes
+    import msvcrt
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    create = kernel.CreateFileW
+    create.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, wintypes.LPVOID, wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+    create.restype = wintypes.HANDLE
+    close = kernel.CloseHandle
+    close.argtypes, close.restype = [wintypes.HANDLE], wintypes.BOOL
+    attributes = kernel.GetFileInformationByHandleEx
+    attributes.argtypes = [wintypes.HANDLE, ctypes.c_int, wintypes.LPVOID, wintypes.DWORD]
+    attributes.restype = wintypes.BOOL
+    class AttributeTag(ctypes.Structure):
+        _fields_ = [("attributes", wintypes.DWORD), ("tag", wintypes.DWORD)]
+    handles = {}
+    base = root()/".workflow-backups"
+    target = Path(entry["path"])
+    rows = {base/row["path"]: row for row in entry["tree"]}
+    ancestors = list(reversed([parent for parent in target.parents if parent == root() or parent.is_relative_to(root())]))
+    paths = list(dict.fromkeys(ancestors+sorted(rows, key=lambda path: len(path.parts))))
+    try:
+        for path in paths:
+            row = rows.get(path)
+            directory = row is None or row["directory"]
+            # DELETE access only belongs to approved nodes, not pinned parents.
+            access = 0x80 | (0x10000 if row else 0) | (0x80000000 if not directory else 0)
+            share = 0x1 | (0x2 if directory else 0)
+            handle = create(str(path), access, share, None, 3, 0x02000000 | 0x00200000, None)
+            if handle == ctypes.c_void_p(-1).value:
+                raise Failure("cleanup-backup-locked", "Backup node cannot be pinned against replacement or writing")
+            handles[path] = {"handle": handle, "fd": None}
+            info = AttributeTag()
+            if not attributes(handle, 9, ctypes.byref(info), ctypes.sizeof(info)) or info.attributes & 0x400:
+                raise Failure("cleanup-aliased-backup", "Pinned backup node is a reparse point or cannot be inspected")
+            if row:
+                actual = path.lstat()
+                if [actual.st_dev, actual.st_ino] != row["identity"] or actual.st_mode != row["mode"]:
+                    raise Failure("cleanup-backup-race", "Pinned backup identity differs from approval")
+                if not directory:
+                    fd = msvcrt.open_osfhandle(handle, os.O_RDONLY | os.O_BINARY)
+                    handles[path]["fd"] = fd
+                    content = hashlib.sha256()
+                    while chunk := os.read(fd, 1024*1024):
+                        content.update(chunk)
+                    if content.hexdigest() != row["digest"] or actual.st_size != row["size"] or actual.st_mtime_ns != row["mtime_ns"]:
+                        raise Failure("cleanup-backup-race", "Pinned backup bytes differ from approval")
+        for path, row in rows.items():
+            if row["directory"]:
+                expected_children = {candidate.name for candidate in rows if candidate.parent == path}
+                if {child.name for child in path.iterdir()} != expected_children:
+                    raise Failure("cleanup-backup-race", "Backup gained unapproved children while its nodes were pinned")
+        yield handles
+    finally:
+        for resource in reversed(list(handles.values())):
+            if resource["fd"] is not None:
+                os.close(resource["fd"])
+            else:
+                close(resource["handle"])
+
+
+def delete_windows_backup_handle(resource):
+    """Mark the already pinned node for deletion, then close its own handle."""
+    import ctypes
+    from ctypes import wintypes
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    disposition = kernel.SetFileInformationByHandle
+    disposition.argtypes = [wintypes.HANDLE, ctypes.c_int, wintypes.LPVOID, wintypes.DWORD]
+    disposition.restype = wintypes.BOOL
+    delete = ctypes.c_ubyte(1)  # FILE_DISPOSITION_INFO.DeleteFile (BOOLEAN).
+    if not disposition(resource["handle"], 4, ctypes.byref(delete), ctypes.sizeof(delete)):
+        raise Failure("cleanup-backup-removal-failed", "Pinned backup node could not be marked for deletion; remaining nodes are preserved")
+
+
+def remove_backup(entry):
+    try:
+        return remove_backup_nodes(entry)
+    except (Failure, OSError) as exc:
+        if not isinstance(exc, Failure):
+            exc = Failure("cleanup-backup-race", "Backup filesystem changed during exact removal")
+        base = root()/".workflow-backups"
+        exc.details["absent_backup_nodes"] = [str(base/row["path"]) for row in entry["tree"]
+                                               if not (base/row["path"]).exists() and not (base/row["path"]).is_symlink()]
+        raise exc
+
+
+def remove_backup_nodes(entry):
+    """Delete exactly captured regular files, never follow a child alias."""
+    target = Path(entry["path"])
+    base = root()/".workflow-backups"
+    # All resolved recursive targets are checked before any removal (including
+    # Windows reparse points), then again at each individual filesystem action.
+    validate_backup(entry)
+    if os.name == "nt":
+        # Keep parent guards open throughout. Closing each approved node after
+        # its disposition request completes deletion before its parent is tried.
+        with windows_backup_handles(entry) as handles:
+            # File bytes were read through the pinned handles above. Reopening
+            # them with Python's default sharing mode could conflict with our
+            # DELETE access; use that captured tree for owner/provider checks.
+            validate_backup(entry, inventory=entry["tree"])
+            import ctypes
+            from ctypes import wintypes
+            close = ctypes.WinDLL("kernel32", use_last_error=True).CloseHandle
+            close.argtypes, close.restype = [wintypes.HANDLE], wintypes.BOOL
+            for row in sorted(entry["tree"], key=lambda row: len(Path(row["path"]).parts), reverse=True):
+                path = base/row["path"]
+                resource = handles[path]
+                delete_windows_backup_handle(resource)
+                if resource["fd"] is not None:
+                    os.close(resource["fd"])
+                elif not close(resource["handle"]):
+                    raise Failure("cleanup-backup-removal-failed", "Pinned backup directory close did not succeed")
+                del handles[path]
+        if target.exists() or target.is_symlink():
+            raise Failure("cleanup-removal-unconfirmed", "Backup removal lacks absent-path readback")
+        return
+    validate_backup(entry)
+    for row in sorted(entry["tree"], key=lambda row: len(Path(row["path"]).parts), reverse=True):
+        path = base/row["path"]
+        if not path.is_relative_to(target) or aliased_path(path) or path.resolve() != path:
+            raise Failure("cleanup-backup-race", "Backup path changed before removal")
+        info = path.lstat()
+        if [info.st_dev, info.st_ino] != row["identity"] or info.st_mode != row["mode"]:
+            raise Failure("cleanup-backup-race", "Backup node identity changed before removal")
+        if row["directory"]:
+            path.rmdir()  # Fails on newly introduced content; never recursively follows it.
+        else:
+            if info.st_size != row["size"] or info.st_mtime_ns != row["mtime_ns"] or hashlib.sha256(path.read_bytes()).hexdigest() != row["digest"]:
+                raise Failure("cleanup-backup-race", "Backup content changed before removal")
+            path.unlink()
+    if target.exists() or target.is_symlink():
+        raise Failure("cleanup-removal-unconfirmed", "Backup removal lacks absent-path readback")
+
+
 def validate_entry(entry, require_worktree=True):
     target = Path(entry["path"])
     if aliased_path(target) or target.resolve() == root():
         raise Failure("cleanup-aliased-resource", "Active and aliased paths are preserved")
+    protected = config.lookup(config.load(), "git.protected_branches", ["main", "master"])
+    if entry["branch"] in protected or any(item.get("branch") == entry["branch"] and Path(item["path"]).resolve() != target.resolve() for item in worktrees.list_worktrees()):
+        raise Failure("cleanup-protected-resource", "Protected branches and branches owned by another checkout are preserved")
     owners = ownership().get((str(target.resolve()), entry["branch"]), [])
     if len(owners) != 1 or owners[0] != entry["owner"]:
         raise Failure("cleanup-owner-drift", "Exact resource ownership changed")
@@ -146,13 +380,48 @@ def snapshot():
         if len(owners) != 1:
             continue
         try:
-            entry = {"path": str(target), "branch": item["branch"], "head": item["head"], "owner": owners[0],
+            entry = {"kind": "worktree_remove", "path": str(target), "branch": item["branch"], "head": item["head"], "owner": owners[0],
                      "provider": provider_evidence(item["branch"], item["head"], owners[0]["kind"] == "worker")}
             validate_entry(entry)
         except (Failure, OSError, ValueError, KeyError, TypeError):
             continue
         items.append(entry)
-    return items
+        items.append({**entry, "kind": "branch_delete"})
+    # A previously removed checkout does not make its recorded integrated direct
+    # branch unowned. Never infer branch ownership from a naming convention.
+    registered_paths = {str(Path(item["path"]).resolve()) for item in worktrees.list_worktrees()}
+    for (name, branch), owners in owned.items():
+        target = Path(name)
+        if len(owners) != 1 or name in registered_paths or target.exists() or aliased_path(target) or not target.is_relative_to(allowed_root) or target == active:
+            continue
+        try:
+            head = direct_head(branch)
+            entry = {"kind": "branch_delete", "path": name, "branch": branch, "head": head, "owner": owners[0],
+                     "provider": provider_evidence(branch, head, owners[0]["kind"] == "worker")}
+            validate_entry(entry, require_worktree=False)
+            items.append(entry)
+        except (Failure, OSError, ValueError, KeyError, TypeError):
+            continue
+    backups = []
+    try:
+        inventory = backup_inventory()
+        for name, owners in sorted(backup_owners().items()):
+            if len(owners) != 1:
+                continue
+            try:
+                owner = owners[0]
+                head = direct_head(owner["record"]["branch"])
+                entry = {"kind": "backup", "path": name, "owner": owner, "head": head,
+                         "provider": provider_evidence(owner["record"]["branch"], head, owner["kind"] == "worker"),
+                         "tree": backup_tree(Path(name), inventory)}
+                validate_backup(entry, inventory)
+                backups.append(entry)
+            except (Failure, OSError, ValueError, KeyError, TypeError):
+                continue
+    except (Failure, OSError, ValueError):
+        # Aliased or unreadable backup storage grants no backup deletion rights.
+        pass
+    return backups+items
 
 
 def command(args, action):
@@ -164,7 +433,11 @@ def cleanup_command(args, action):
     store = records.planning()/"cleanup"
     if action == "preview":
         entries = snapshot()
-        payload = {"entries": entries, "nonce": secrets.token_hex(16)}
+        try:
+            inventory = backup_inventory()
+        except (Failure, OSError, ValueError):
+            inventory = None
+        payload = {"entries": entries, "backup_inventory": inventory, "nonce": secrets.token_hex(16)}
         token = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
         with planning_lock():
             write_json(store/(token+".json"), {**payload, "created": now()})
@@ -178,10 +451,27 @@ def cleanup_command(args, action):
     approved = load_json(path)
     if not approved or approved.get("consumed"):
         raise Failure("cleanup-preview-missing", "Create a fresh exact approval preview")
-    payload = {"entries": approved.get("entries"), "nonce": approved["nonce"]} if "nonce" in approved else approved.get("entries")
+    payload = {"entries": approved.get("entries"), "backup_inventory": approved.get("backup_inventory"), "nonce": approved["nonce"]}
     expected = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
     if expected != token:
         raise Failure("cleanup-preview-corrupt", "Stored entries no longer match exact approval")
+    def validate_inventory(removed):
+        original = approved.get("backup_inventory")
+        if original is None:
+            if any(entry.get("kind") == "backup" for entry in approved["entries"]):
+                raise Failure("cleanup-backup-drift", "Backup inventory was unavailable")
+            return
+        deleted = [Path(entry["path"]).relative_to(root()/".workflow-backups") for entry in removed if entry.get("kind") == "backup"]
+        expected_inventory = [row for row in original if not any(Path(row["path"]).is_relative_to(path) for path in deleted)]
+        if backup_inventory() != expected_inventory:
+            raise Failure("cleanup-backup-drift", "Backup storage changed outside the exact approved removals")
+    # Refuse the whole stale approval before its first destructive action.
+    validate_inventory([])
+    for entry in approved["entries"]:
+        if entry.get("kind") == "backup":
+            validate_backup(entry)
+        else:
+            validate_entry(entry, require_worktree=entry.get("kind") == "worktree_remove")
     with planning_lock():
         current = load_json(path)
         if current != approved:
@@ -192,16 +482,37 @@ def cleanup_command(args, action):
     for entry in approved["entries"]:
         # Recompute the eligible resources before every deletion; earlier removals
         # cannot authorize later resources that drifted in the meantime.
-        validate_entry(entry)
+        try:
+            validate_inventory(removed)
+            if entry.get("kind") == "backup":
+                remove_backup(entry)
+                removed.append(entry)
+                approved["removed"] = removed
+                write_json(path, approved)
+                continue
+            validate_entry(entry, require_worktree=entry.get("kind") == "worktree_remove")
+        except (Failure, OSError) as exc:
+            if not isinstance(exc, Failure):
+                exc = Failure("cleanup-backup-race", "Backup filesystem changed during exact removal")
+            exc.details.update({"removed": removed, "resource": entry})
+            raise exc
         target = safe_path(entry["path"])
-        run(["git", "worktree", "remove", str(target)], root())
-        if target.exists() or any(Path(item["path"]).resolve() == target for item in worktrees.list_worktrees()):
-            raise Failure("cleanup-removal-unconfirmed", "Worktree removal did not remove the actual owned checkout", removed=removed)
-        validate_entry(entry, require_worktree=False)
-        reference = "refs/heads/"+entry["branch"]
-        run(["git", "update-ref", "--no-deref", "-d", reference, entry["head"]], root())
-        if run(["git", "show-ref", "--verify", "--quiet", reference], root(), check=False).returncode == 0 or run(["git", "symbolic-ref", "-q", reference], root(), check=False).returncode == 0:
-            raise Failure("cleanup-removal-unconfirmed", "Branch removal has no absent-ref readback", removed=removed)
+        try:
+            if entry.get("kind") == "worktree_remove":
+                run(["git", "worktree", "remove", str(target)], root())
+                if target.exists() or any(Path(item["path"]).resolve() == target for item in worktrees.list_worktrees()):
+                    raise Failure("cleanup-removal-unconfirmed", "Worktree removal did not remove the actual owned checkout")
+            else:
+                if target.exists() or any(Path(item["path"]).resolve() == target for item in worktrees.list_worktrees()):
+                    raise Failure("cleanup-worktree-drift", "Branch still has checkout content")
+                validate_entry(entry, require_worktree=False)
+                reference = "refs/heads/"+entry["branch"]
+                run(["git", "update-ref", "--no-deref", "-d", reference, entry["head"]], root())
+                if run(["git", "show-ref", "--verify", "--quiet", reference], root(), check=False).returncode == 0 or run(["git", "symbolic-ref", "-q", reference], root(), check=False).returncode == 0:
+                    raise Failure("cleanup-removal-unconfirmed", "Branch removal has no absent-ref readback")
+        except Failure as exc:
+            exc.details.update({"removed": removed, "resource": entry})
+            raise
         removed.append(entry)
         approved["removed"] = removed
         write_json(path, approved)
