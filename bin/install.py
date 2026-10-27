@@ -160,13 +160,13 @@ def render_asset(relative, data, host):
 
 
 def agent_native(role, description="Engineering workflow role", method=""):
-    model = "gpt-6-luna" if role in ("scout", "targeted-fixer") else "gpt-6.1-sol"
+    model = "gpt-6-luna" if role in ("scout", "targeted-fixer", "codebase-mapper", "doc-writer", "doc-verifier", "integration-checker") else "gpt-6.1-sol"
     effort = "medium" if role in ("executor", "doc-verifier", "integration-checker") else "high"
     lines = ["name = " + json.dumps(role), "description = " + json.dumps(description),
              "model = " + json.dumps(model), "model_reasoning_effort = " + json.dumps(effort),
              "developer_instructions = " + json.dumps("Follow the complete method at .codex/agents/" + role + ".md.\n\n" + method)]
-    if role == "scout":
-        lines.append('sandbox_mode = "read-only"')
+    if role in ("scout", "targeted-fixer"):
+        lines.append('sandbox_mode = ' + json.dumps("read-only" if role == "scout" else "workspace-write"))
     return ("\n".join(lines) + "\n").encode()
 
 

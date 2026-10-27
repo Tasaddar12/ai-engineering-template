@@ -559,7 +559,7 @@ issue_refs: []
                         name = config["name"]
                         self.assertEqual(definition.stem, name)
                         self.assertEqual(methods[name][1]["description"], config["description"])
-                        expected = "gpt-6-luna" if name in {"scout", "targeted-fixer"} else "gpt-6.1-sol"
+                        expected = "gpt-6-luna" if name in {"scout", "targeted-fixer", "codebase-mapper", "doc-writer", "doc-verifier", "integration-checker"} else "gpt-6.1-sol"
                         self.assertEqual(expected, config["model"])
                         checkers = {"executor", "doc-verifier", "integration-checker"}
                         effort = "medium" if name in checkers else "high"
@@ -568,8 +568,8 @@ issue_refs: []
                         self.assertIn(role_path, config["developer_instructions"])
                         self.assertNotIn(".ai/", config["developer_instructions"])
                         self.assertTrue((self.target / role_path).is_file())
-                        if name == "scout":
-                            self.assertEqual("read-only", config["sandbox_mode"])
+                        if name in ("scout", "targeted-fixer"):
+                            self.assertEqual("read-only" if name == "scout" else "workspace-write", config["sandbox_mode"])
                 else:
                     self.assertEqual([], list(agents.glob("*.toml")))
                 before = self.snapshot()
@@ -590,7 +590,7 @@ issue_refs: []
                     if host == "claude":
                         # Empty project overrides defer to the native role file.
                         method = self.target / ".claude/agents" / (name + ".md")
-                        native = yaml.safe_load(method.read_text().split("---", 2)[1])
+                        native = yaml.safe_load(method.read_text(encoding="utf-8").split("---", 2)[1])
                         self.assertEqual(model, native["model"])
                         self.assertEqual(effort, native.get("effort"))
                 config = self.target / ".planning/config.yaml"
@@ -600,12 +600,12 @@ issue_refs: []
                                   "  targeted-fixer:\n    model: wrong\n    effort: max\n")
                 if host == "codex":
                     native = self.target / ".codex/agents/executor.toml"
-                    native.write_text(native.read_text().replace('"gpt-6.1-sol"', '"custom-codex"')
-                                      .replace('"medium"', '"xhigh"'))
+                    native.write_text(native.read_text(encoding="utf-8").replace('"gpt-6.1-sol"', '"custom-codex"')
+                                      .replace('"medium"', '"xhigh"'), encoding="utf-8")
                     for name in ("scout", "targeted-fixer"):
                         fixed = self.target / ".codex/agents" / (name + ".toml")
-                        fixed.write_text(fixed.read_text().replace('"gpt-6-luna"', '"wrong"')
-                                         .replace('"high"', '"max"'))
+                        fixed.write_text(fixed.read_text(encoding="utf-8").replace('"gpt-6-luna"', '"wrong"')
+                                         .replace('"high"', '"max"'), encoding="utf-8")
                 runtime = "." + host + "/engineer/bin/engineer.py"
                 resolved = json.loads(command(sys.executable, runtime, "query", "resolve-agent",
                                               "executor", cwd=self.target))
