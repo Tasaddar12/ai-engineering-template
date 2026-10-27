@@ -101,8 +101,7 @@ independent of automatic execution point configuration.
 Resolve depth as explicit --depth > `config-get workflow.code_review_depth
 --default standard --raw` > standard. Only quick/standard/deep are valid. Report
 invalid configured values and use standard with fallback provenance; unreadable
-config is an input error. The overrides array has no implemented matching
-resolver; do not claim to apply it. Record requested and effective depth. Resolve
+config is an input error. Record requested and effective depth. Resolve
 model and effort immediately before every dispatch:
 
 ```sh

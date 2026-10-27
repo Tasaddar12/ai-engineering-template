@@ -101,14 +101,14 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `commands/validate-phase.md` | reconciled | 41 | 0 |
 | `commands/verify-work.md` | reconciled | 33 | 0 |
 | `docs/ARTIFACT-GUIDE.md` | local-only | 49 | 0 |
-| `docs/INVENTORY.md` | local-only | 420 | 2 |
+| `docs/INVENTORY.md` | local-only | 421 | 2 |
 | `docs/PHASE-WORKFLOW.md` | local-only | 46 | 0 |
 | `docs/REQUESTS.md` | local-only | 35 | 0 |
 | `docs/WORKFLOW-FEATURES.md` | local-only | 30 | 0 |
 | `docs/prompts.md` | reconciled | 193 | 0 |
 | `engineer/RULES.md` | local-only | 135 | 0 |
 | `engineer/bin/README.md` | local-only | 563 | 0 |
-| `engineer/bin/engineer.py` | local-only | 179 | 0 |
+| `engineer/bin/engineer.py` | local-only | 181 | 0 |
 | `engineer/bin/engineer_run` | reconciled | 24 | 0 |
 | `engineer/bin/lib/__init__.py` | local-only | 1 | 0 |
 | `engineer/bin/lib/archive.py` | local-only | 436 | 0 |
@@ -139,6 +139,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `engineer/bin/lib/records.py` | local-only | 733 | 0 |
 | `engineer/bin/lib/repository.py` | local-only | 28 | 0 |
 | `engineer/bin/lib/requirements.py` | local-only | 41 | 0 |
+| `engineer/bin/lib/review_disposition.py` | local-only | 285 | 1 |
 | `engineer/bin/lib/scope.py` | local-only | 50 | 0 |
 | `engineer/bin/lib/security_tracking.py` | local-only | 379 | 0 |
 | `engineer/bin/lib/sessions.py` | local-only | 194 | 0 |
@@ -311,8 +312,8 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `engineer/workflows/check-todos.md` | reconciled | 52 | 0 |
 | `engineer/workflows/clean-planning.md` | local-only | 42 | 0 |
 | `engineer/workflows/cleanup.md` | reconciled | 27 | 0 |
-| `engineer/workflows/code-review-fix.md` | reconciled | 265 | 0 |
-| `engineer/workflows/code-review.md` | reconciled | 271 | 0 |
+| `engineer/workflows/code-review-fix.md` | reconciled | 267 | 0 |
+| `engineer/workflows/code-review.md` | reconciled | 270 | 0 |
 | `engineer/workflows/code-review/steps/dispatch-fix.md` | reconciled | 19 | 0 |
 | `engineer/workflows/complete-milestone.md` | reconciled | 169 | 0 |
 | `engineer/workflows/debug.md` | reconciled | 296 | 60 |
@@ -329,7 +330,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `engineer/workflows/docs-update/steps/dispatch-monorepo-packages.md` | reconciled | 51 | 0 |
 | `engineer/workflows/edit-phase.md` | reconciled | 44 | 0 |
 | `engineer/workflows/execute-phase.md` | reconciled | 257 | 1 |
-| `engineer/workflows/execute-phase/steps/code-review-disposition.md` | reconciled | 1054 | 0 |
+| `engineer/workflows/execute-phase/steps/code-review-disposition.md` | reconciled | 272 | 0 |
 | `engineer/workflows/execute-phase/steps/completion-reconciliation.md` | reconciled | 9 | 0 |
 | `engineer/workflows/execute-phase/steps/executor-isolation-dispatch.md` | reconciled | 15 | 0 |
 | `engineer/workflows/execute-phase/steps/executor-progress-policy.md` | reconciled | 41 | 0 |

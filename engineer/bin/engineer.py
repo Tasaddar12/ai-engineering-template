@@ -17,6 +17,7 @@ from lib import archive
 from lib import requirements
 from lib import planning_integrity
 from lib import security_tracking
+from lib import review_disposition
 from lib.core import Args, Failure, pick, raw, root, slug
 
 IDENTITY = {"packageName": "engineer-runtime", "contract": "2.0"}
@@ -66,6 +67,7 @@ def registry():
         "phase.locate": sessions.locate,
         "phase.reconcile-todos": phase_issues.reconcile_todos,
         "verification.current": lambda a: verification.current_evidence(a.arg(0, a.get("phase")), a.get("quick")),
+        "review.disposition": review_disposition.record,
     }
     for action in ("add", "insert", "edit", "remove", "complete"):
         verbs["phase."+action] = lambda a, action=action: records.phase_change(a, action)
