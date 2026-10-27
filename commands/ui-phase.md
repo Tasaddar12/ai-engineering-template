@@ -22,7 +22,7 @@ The text inside `<arguments>` is exactly what the user typed after the command n
 <objective>
 Create a UI design contract (UI-SPEC.md) for a frontend phase.
 Orchestrates ui-researcher and ui-checker.
-Flow: Validate → Research UI → Verify UI-SPEC → Done
+Flow: Validate scope/decisions → Isolated UI-SPEC artifact → Independent checker → Coordinator evidence binding. No-UI phases return not_applicable; design never grants implementation authority.
 </objective>
 
 <execution_context>

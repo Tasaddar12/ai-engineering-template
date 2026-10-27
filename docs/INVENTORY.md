@@ -15,7 +15,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `agents/debugger.md` | reconciled | 1162 | 1 |
 | `agents/doc-verifier.md` | reconciled | 162 | 1 |
 | `agents/doc-writer.md` | reconciled | 618 | 2 |
-| `agents/dom-verifier.md` | reconciled | 157 | 2 |
+| `agents/dom-verifier.md` | reconciled | 162 | 0 |
 | `agents/executor.md` | reconciled | 607 | 0 |
 | `agents/integration-checker.md` | reconciled | 472 | 0 |
 | `agents/nyquist-auditor.md` | reconciled | 210 | 0 |
@@ -25,9 +25,9 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `agents/planner.md` | reconciled | 765 | 4 |
 | `agents/scout.md` | local-only | 43 | 0 |
 | `agents/security-auditor.md` | reconciled | 289 | 0 |
-| `agents/ui-auditor.md` | reconciled | 552 | 1 |
-| `agents/ui-checker.md` | reconciled | 404 | 1 |
-| `agents/ui-researcher.md` | reconciled | 451 | 3 |
+| `agents/ui-auditor.md` | reconciled | 468 | 0 |
+| `agents/ui-checker.md` | reconciled | 422 | 0 |
+| `agents/ui-researcher.md` | reconciled | 465 | 0 |
 | `agents/verifier.md` | reconciled | 783 | 0 |
 | `bin/config_support.py` | local-only | 153 | 0 |
 | `bin/generate-assets.py` | local-only | 42 | 0 |
@@ -146,7 +146,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `engineer/bin/lib/tdd.py` | local-only | 153 | 0 |
 | `engineer/bin/lib/text.py` | local-only | 329 | 0 |
 | `engineer/bin/lib/uat.py` | local-only | 297 | 0 |
-| `engineer/bin/lib/ui.py` | local-only | 23 | 0 |
+| `engineer/bin/lib/ui.py` | local-only | 148 | 0 |
 | `engineer/bin/lib/verification.py` | local-only | 365 | 0 |
 | `engineer/bin/lib/verify.py` | local-only | 56 | 0 |
 | `engineer/bin/lib/worktrees.py` | local-only | 272 | 0 |
@@ -362,7 +362,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `engineer/workflows/new-project/steps/codebase-map-offer.md` | reconciled | 7 | 0 |
 | `engineer/workflows/next.md` | reconciled | 40 | 0 |
 | `engineer/workflows/onboard.md` | reconciled | 280 | 4 |
-| `engineer/workflows/plan-phase.md` | reconciled | 243 | 0 |
+| `engineer/workflows/plan-phase.md` | reconciled | 271 | 0 |
 | `engineer/workflows/plan-phase/steps/closed-phase-gate.md` | reconciled | 7 | 0 |
 | `engineer/workflows/plan-phase/steps/stall-detection-helpers.md` | reconciled | 217 | 0 |
 | `engineer/workflows/plan-phase/steps/windows-troubleshooting.md` | reconciled | 23 | 0 |
@@ -386,12 +386,12 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `engineer/workflows/ship.md` | reconciled | 96 | 0 |
 | `engineer/workflows/spec-phase.md` | reconciled | 534 | 1 |
 | `engineer/workflows/thread.md` | reconciled | 236 | 64 |
-| `engineer/workflows/ui-phase.md` | reconciled | 576 | 33 |
-| `engineer/workflows/ui-review.md` | reconciled | 251 | 16 |
+| `engineer/workflows/ui-phase.md` | reconciled | 494 | 0 |
+| `engineer/workflows/ui-review.md` | reconciled | 200 | 0 |
 | `engineer/workflows/update.md` | reconciled | 44 | 0 |
 | `engineer/workflows/validate-phase.md` | reconciled | 180 | 0 |
-| `engineer/workflows/verify-work.md` | reconciled | 251 | 1 |
-| `engineer/workflows/verify-work/steps/automated-ui-verification.md` | reconciled | 94 | 0 |
+| `engineer/workflows/verify-work.md` | reconciled | 296 | 1 |
+| `engineer/workflows/verify-work/steps/automated-ui-verification.md` | reconciled | 102 | 0 |
 | `hooks/README.md` | local-only | 30 | 0 |
 | `hooks/ai-tier-notice.py` | local-only | 21 | 0 |
 | `hooks/ai-tier-notice.sh` | local-only | 3 | 0 |

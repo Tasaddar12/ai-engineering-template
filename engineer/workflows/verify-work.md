@@ -16,7 +16,7 @@ Verify the actual phase goal using a single frozen-revision read-only batch and 
 @~/.claude/engineer/workflows/validate-phase.md
 </required_reading>
 <available_agent_types>
-Use verifier, integration-checker, doc-verifier, code-reviewer and policy-enabled security-auditor for independent read-only evidence; nyquist-auditor only for isolated write preflight before freezing; planner, executor, debugger and code-fixer for separately isolated gap work.
+Use verifier, integration-checker, doc-verifier, code-reviewer, applicable ui-auditor/dom-verifier and policy-enabled security-auditor for independent read-only evidence; nyquist-auditor only for isolated write preflight before freezing; planner, executor, debugger and code-fixer for separately isolated gap work.
 </available_agent_types>
 <model_selection>
 Resolve every exact role's model and effort inline with engineer_run query resolve-model and resolve-effort. Omit each inherited value. Do not substitute an author for an independent reviewer or let a read-only specialist modify source or shared records.
@@ -135,6 +135,27 @@ AUDITOR_EFFORT=$(engineer_run query resolve-effort security-auditor --raw)
 
 Failed resolution blocks dispatch; omit each inherit/empty host parameter and pass every other actual value inline. Prepare the complete required-reading packet and full report template now. Capture security policy, register origins, authority, prior evidence, canonical/provider snapshot and all security input paths/digests with the other frozen inputs in run_checks. A fresh enabled verify-work batch always includes the auditor; the direct secure-phase L1 evidence reuse shortcut is not a reason to omit that batch member. Current complete security evidence can be consumed by the auditor without repeating permitted checks. Existing-verification reuse above additionally requires complete current security coverage under the actual enabled policy; policy/input changes invalidate reuse.
 </step>
+<step name="prepare_ui_batch">
+Before freezing, read the COMPLETE engineer/workflows/ui-review.md,
+engineer/workflows/verify-work/steps/automated-ui-verification.md,
+agents/ui-auditor.md and agents/dom-verifier.md when actual UI scope or UI-SPEC
+exists. Prepare their full methods, seven-dimension contract, six audit pillars,
+actual acceptance/state/keyboard/accessibility criteria, declared fixtures and
+browser capabilities. Read workflow.ui_interaction_capture (default false) and
+workflow.live_dom_uat (default false) explicitly. No actual UI scope yields cited
+not_applicable without browser, fake score or invented screen. Existing missing
+UI-SPEC for required UI scope is a design evidence gap, not permission to replace
+locked acceptance with generic standards.
+
+Resolve both exact roles' models and efforts inline. Prepare root/branch/base,
+phase/session/caller, full source revision and input digests, complete
+CONTEXT/UI-SPEC/PLAN/SUMMARY/acceptance, authority/check-order constraints, assigned
+running fixture URL/identity and explicitly assigned capture_dir outside source
+(resolved including symlinks). Do not install drivers/packages, start servers or
+promise unavailable APIs. A missing browser/fixture/capture or deferred check leaves
+required observations BLOCKED/unverified; source/screenshot existence is no pass.
+All preparation completes before the freeze; no worker writes source or records.
+</step>
 <step name="run_checks">
 Require a joined, reconciled validation preflight with no active writer, then require a clean source state and capture `frozen_revision=$(git rev-parse HEAD)` plus the exact assigned file/input set. Start `engineer_run query verification.run-checks` alongside the provisional verifier and applicable read-only specialists. The check runner consumes configured argv/timeouts and reuses current input-bound passing receipts; it takes no phase positional argument. Preserve full check IDs, revisions, fingerprints, exit status, timeout and output tails. When testing is explicitly deferred, do not start it: record pending required checks and withhold passed/current verification.
 
@@ -183,20 +204,44 @@ The auditor does not replace the independent verifier's issue-link audit. Give t
 
 Keep every verdict's full report and closed, blocking-open and below-threshold-open tables. Require `required_dependencies_pending` as an explicit list with reason, owner, affected scope and next action (an empty list must be evidenced). Missing verdict/count/dependency field, incomplete coverage or a truncated report is missing mandatory security evidence. Obtain a read-only continuation on the same frozen revision; do not translate an absent result into threats_open: 0. All other workers/checks remain part of the same join.
 </step>
+<step name="spawn_ui_audits">
+For actual UI scope, dispatch independent read-only ui-auditor in the SAME frozen
+batch as configured checks, provisional verifier, security/doc/integration/review,
+using the full prepared packet and the exact same frozen_revision. Require
+canonical `## UI REVIEW`, full proposed report, six evidenced pillar scores,
+observed/source-derived/failed/BLOCKED criteria, complete interaction/capture
+status and source/input/fixture identity. No commit, SUMMARY, shared write, child
+agent, provider mutation or independent user prompt.
+
+When workflow.live_dom_uat is true and actual UI criteria exist, also dispatch
+read-only dom-verifier in this SAME batch, with the complete prepared packet and
+exact criterion IDs, to return full DOM-VERIFY content and per-criterion
+passed/failed/needs_review or could_not_look. Use only actually available documented
+Claude/Codex host/browser APIs. Off remains an explicit disabled observation lane;
+missing required behavior evidence still cannot pass under another label. A lock,
+unreachable target, unsupported interaction, missing safe fixture or deferred
+browser execution is concrete BLOCKED/unverified evidence, never nothing_to_report.
+Only genuinely absent UI criteria use no_criteria. Serialize exclusive shared
+browser/profile use within this frozen batch and keep all specialists joined.
+Neither role repairs source or writes phase reports. External captures require the
+explicit assigned safe directory; all other output is returned to the coordinator.
+</step>
 <step name="reconcile_evidence">
-Join every configured check and specialist, including partial continuations. Require that each inspected frozen_revision and its complete assigned coverage. Compare actual source head and input digests after the join. Resume the provisional verifier with all joined evidence, preserving its original independent role and explaining any conflicting reports. If any source changed during the batch, discard the provisional decision, invalidate affected receipts and start a new frozen batch only after confirmed specialist stop. Never combine evidence from different source states into one passing verdict.
+Join every configured check and specialist, including partial continuations. This includes ui-auditor and enabled dom-verifier at this SAME frozen revision: reconcile their complete reports, source/input/fixture identity, observed/failed/BLOCKED criteria and every required state or human judgment. Send their entire evidence to the original independent provisional verifier. Missing required browser observations cannot be discharged by source matches, screenshot existence or provisional pillar scores. No record writes, fixes or new batch before ALL returns/stops. Require that each inspected frozen_revision and its complete assigned coverage. Compare actual source head and input digests after the join. Resume the provisional verifier with all joined evidence, preserving its original independent role and explaining any conflicting reports. If any source changed during the batch, discard the provisional decision, invalidate affected receipts and start a new frozen batch only after confirmed specialist stop. Never combine evidence from different source states into one passing verdict.
 
 The join includes every prohibition projection/proof result, unresolved obligation, edge/backstop evidence and separate judgment review; exact selected-to-projected-to-PLAN-to-evidence equality is required. A missing or flagged proof blocks passed even if coverage says resolved. The join also reconciles the pre-freeze validation packet and current required test coverage; uncovered/generated/pending required evidence blocks passed. It never starts a write-capable auditor inside the batch. The join includes the policy-enabled security-auditor, its complete proposed SECURITY report and required_dependencies_pending. A timeout does not establish worker exit; no source repair, shared write, canonical publication, new batch or accepted verdict starts before ALL configured checks and read-only specialists (and same-revision continuations) have returned/stopped. Verify security's source/input/policy identity and coverage too. Send the entire security result to the original provisional verifier together with the joined checks and independent issue-link audit; it must account for security in its proposed VERIFICATION. Discharge a provisional dependency only with the joined cited evidence that actually satisfies it, such as the independent non-author link audit. Preserve each unsatisfied dependency; do not relabel it optional to obtain a pass. Wait for the verifier's reconciliation return before any shared write or verdict.
 
 SECURED requires zero blocking-open threats AND no unresolved required dependency. Count OPEN severities at/above the actual threshold (critical > high > medium > low); missing/unparseable OPEN severity is critical. `block_on: none` suppresses severity-triggered counting only. Required mitigation/check evidence, canonical target/audit dependencies and actual acceptance/transfer authority still gate readiness. Below-threshold risks retain distinct open status and owner/actions. OPEN_THREATS, ESCALATE, not_executed, an absent enabled audit or stale/incomplete report cannot support passed. Required unexecuted checks remain Pending even if source inspection suggests the mitigation exists.
 </step>
 <step name="prepare_human_acceptance">
-When an actual UI-SPEC exists, first read engineer/workflows/verify-work/steps/automated-ui-verification.md. Read engineer/templates/UAT.md in full and author a concrete script for each required human-only outcome: setup, exact action, expected observation, evidence to retain, reset/cleanup and accepted/failed/blocked reply. Do not infer human acceptance from an automated result or source inspection. Browser unavailability yields BLOCKED for that observation, not a successful screenshot check.
+Use the UI observations already joined from this frozen batch; do not launch a late separate browser audit from human-acceptance preparation. The full automated UI procedure was loaded before freezing. Read engineer/templates/UAT.md in full and author a concrete script for each required human-only outcome: setup, exact action, expected observation, evidence to retain, reset/cleanup and accepted/failed/blocked reply. Do not infer human acceptance from an automated result or source inspection. Browser unavailability yields BLOCKED for that observation, not a successful screenshot check.
 
 Use the canonical issue template's UAT variant for unresolved human acceptance. Assign exactly one author per issue, retain stable finding IDs, preview the exact public title/body with `--variant UAT` and exactly one reviewed --existing-issue URL_OR_NUMBER or --no-match disposition, publish once with the same hash-bound disposition/token within authorized issue scope and verify provider readback. Mark `PENDING HUMAN acceptance` until a real accepted reply with evidence exists. Do not ask for unrelated human actions or stop independent technical verification.
 </step>
 <step name="persist_nonpass_report">
 Read and execute the complete engineer/workflows/_canonical-threat-tracking.md procedure for planned and unplanned phase risks. Preserve each PLAN register, deterministic checklist identity, explicit match review, full Security risk variant, actual provider-rendered anchors and independent audit. Never default to a standalone issue for every planned risk.
+
+After every specialist has returned/stopped and currentness is checked, the coordinator alone captures complete UI-REVIEW/DOM-VERIFY records from their returned reports when applicable, retaining revisions/digests and all failed/unverified scope. Persist these outside a frozen batch and before any final clean baseline; their creation changes inputs and requires fresh affected frozen coverage. Never include them in a success bookkeeping commit or the exact final VERIFICATION-report-only exception.
 
 For nonpass, the coordinator prepares the complete canonical report from joined evidence; retain a provisional passing report EXTERNAL to the checkout through the provisional join. Neither a passing report nor its commit may precede the final batch. Prepare the report with the actual source revision, check receipts/pending checks, specialist coverage, issue-link audit and verdict. Preserve every unmet acceptance and exact required human decision. Planned threats use the canonical `--variant "Security risk"` and retain their canonical checklist/container identities and provider-rendered anchors; only distinct unplanned risks need standalone issues. Reconcile issue_refs through phase.issue-declare and its digest guard; public mutations require their content-bound preview token and provider readback. A failed or uncertain publication is an explicit blocker, not a fabricated canonical URL.
 

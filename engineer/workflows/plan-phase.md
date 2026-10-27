@@ -41,6 +41,34 @@ When warranted, dispatch `Agent(subagent_type="phase-researcher", model=<inline 
 
 Wait without editing the worker's paths. For a partial result, preserve usable evidence and continue the same bounded question from the recorded handoff in a fresh isolated checkout, at most twice. Consume a handoff only after its continuation is integrated. An unavailable recommendation check stays explicitly unvalidated. On a blocked research result, stop only dependent planning; report the missing evidence rather than inventing a recommendation. Use `engineer_run query handoff.list` and `handoff.consume` for actual continuation records.
 </step>
+<step name="ui_contract_before_planning">
+After maps and technical research are integrated, and before the planner packet
+or ANY planner dispatch, inspect actual ROADMAP/locked CONTEXT and product UI
+scope. Read workflow.ui_phase with config-get (default auto). CLI/backend phases
+without actual UI return cited not_applicable; do not create screens or launch a
+browser. An explicit enabled option requests assessment, never new product scope.
+
+For actual UI scope with the track enabled, execute the complete
+engineer/workflows/ui-phase.md procedure in this SAME phase session. Reuse current
+decisions without routine confirmation. The researcher writes only its exact
+NN-UI-SPEC.md in a registered artifact-role ui-researcher isolated worktree;
+merge-artifacts integrates it before the read-only checker. Preserve complete
+seven-dimension and state-coverage evidence, checked contract/input digests,
+revision and coordinator sign-off. Planning/design never authorizes execution.
+When disabled, record the actual opt-out and preserve existing required UI
+acceptance; disabling automation does not waive a locked design contract.
+
+Run `engineer_run query check.ui-plan-gate "${PHASE_NUMBER}"` after the final
+contract and checker evidence are committed, only when check execution is allowed.
+Inspect actual blocked/required/reason and evidence currentness. A BLOCK, absent or
+stale checker/decision evidence, unresolved required choice, unavailable runtime
+protection or deferred required gate stops dependent planner dispatch; report the
+precise dependency without force approval. Refresh INIT/actual UI-SPEC path after
+integration. Capture PLAN_INPUT_REVISION only after this hook and independent
+pattern/map/research steps finish. Keep the full final UI-SPEC and checker evidence
+in planner AND plan-checker packets; lift every resolved UI consideration with
+explicit/backstop tier and preserve all unresolved assumptions visibly.
+</step>
 <step name="check_existing_plans">
 If plans exist, show their IDs and whether each already has a SUMMARY. Offer Replace, Review, or Cancel for the concrete selected plan set. Replacing an executed plan can invalidate evidence; require explicit scope and preserve history. Review does not authorize rewriting, and Cancel leaves the plans untouched.
 </step>
