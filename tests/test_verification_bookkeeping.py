@@ -98,14 +98,14 @@ class BookkeepingCompensationTests(unittest.TestCase):
         self.assertEqual("value = 'new source'\n", (self.repo / "src/app.py").read_text())
 
     def test_workflow_documents_the_guarded_failure_path(self):
-        workflow = (ROOT / ".ai/workflows/verify-work.md").read_text(encoding="utf-8")
-        evidence = (ROOT / ".ai/references/verification-evidence.md").read_text(encoding="utf-8")
+        workflow = (ROOT / "engineer/workflows/verify-work.md").read_text(encoding="utf-8")
+        evidence = (ROOT / "engineer/references/verification-evidence.md").read_text(encoding="utf-8")
         self.assertIn("pre_bookkeeping_revision=$(git rev-parse HEAD)", workflow)
         self.assertIn('git revert --no-edit "${bookkeeping_commit}"', evidence)
         self.assertIn('git rev-parse "${bookkeeping_commit}^"', evidence)
         self.assertIn("The exact direct-child commit", workflow)
         self.assertIn("never a pass", workflow)
-        ship = (ROOT / ".ai/workflows/ship.md").read_text(encoding="utf-8")
+        ship = (ROOT / "engineer/workflows/ship.md").read_text(encoding="utf-8")
         ship = " ".join(ship.split())
         self.assertIn("preparation_record_changed=false", ship)
         self.assertIn("skip another verifier dispatch and report commit", ship)

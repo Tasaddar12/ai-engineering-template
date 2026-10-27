@@ -13,10 +13,10 @@ def guidance_files():
     for name in ("AGENTS.md", "CLAUDE.md", "README.md"):
         if (ROOT / name).is_file():
             yield ROOT / name
-    for directory in (".ai", ".codex", ".claude", ".agents", ".planning", "docs"):
+    for directory in ("agents", "commands", "engineer", "hooks", "skills", ".planning", "docs"):
         for path in (ROOT / directory).rglob("*.md"):
             relative = path.relative_to(ROOT).as_posix()
-            if any(relative.startswith(root + "/templates/") for root in (".ai", ".codex", ".claude")):
+            if relative.startswith("engineer/templates/"):
                 continue  # Imported source has its own provenance/reference audit.
             yield path
 
@@ -28,7 +28,7 @@ def without_fences(text):
 
 class WorkflowNavigationTests(unittest.TestCase):
     def test_scout_contract_has_fixed_task_routes_and_complete_structures(self):
-        body = (ROOT / ".ai/references/scout-dispatch.md").read_text(encoding="utf-8")
+        body = (ROOT / "engineer/references/scout-dispatch.md").read_text(encoding="utf-8")
         procedure = body.split("## Dispatch procedure", 1)[1].split("## Direct nested", 1)[0]
         self.assertEqual([str(n) for n in range(1, 7)], re.findall(r"^(\d+)\. ", procedure, re.M))
         for field in ("scout_assignment:", "scout_result:", "scout_request:", "search_scope:",
@@ -48,17 +48,17 @@ class WorkflowNavigationTests(unittest.TestCase):
         self.assertIn("Do not perform duplicate searches", " ".join(body.split()))
 
     def test_phase_handoff_producers_and_post_merge_reconciliation_are_wired(self):
-        execute = (ROOT / ".ai/workflows/execute-phase.md").read_text(encoding="utf-8")
-        ship = (ROOT / ".ai/workflows/ship.md").read_text(encoding="utf-8")
-        git = (ROOT / ".ai/references/git-workflow.md").read_text(encoding="utf-8")
-        runtime = (ROOT / ".ai/runtime/README.md").read_text(encoding="utf-8")
+        execute = (ROOT / "engineer/workflows/execute-phase.md").read_text(encoding="utf-8")
+        ship = (ROOT / "engineer/workflows/ship.md").read_text(encoding="utf-8")
+        git = (ROOT / "engineer/references/git-workflow.md").read_text(encoding="utf-8")
+        runtime = (ROOT / "engineer/bin/README.md").read_text(encoding="utf-8")
         self.assertIn('step name="review_phase_issues"', execute)
         for boundary in ("normal", "deferral", "blocked/halted", "early termination"):
             self.assertIn(boundary, execute)
         self.assertIn("phase.issue-declare", execute)
         self.assertIn("phase.handoff", execute)
         wave_tracking = execute.split('<step name="track_integrated_slice">', 1)[1].split("</step>", 1)[0]
-        self.assertLess(wave_tracking.index("review_phase_issues"), wave_tracking.index("phase_run query pr.open"))
+        self.assertLess(wave_tracking.index("review_phase_issues"), wave_tracking.index("engineer_run query pr.open"))
         self.assertIn("canonical issue URL", wave_tracking)
         self.assertIn("same-execution fixed-work exemption", wave_tracking)
         self.assertNotIn("query todo.complete", execute)
