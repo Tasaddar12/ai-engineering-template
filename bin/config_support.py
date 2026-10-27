@@ -44,7 +44,7 @@ def flatten(value, prefix=""):
     return result
 
 
-def insert_missing(text, dotted, value):
+def insert_missing(text, dotted, value, yaml):
     """Insert one simple required key while retaining all existing text."""
     parts = dotted.split(".")
     lines = text.splitlines(keepends=True)
@@ -63,6 +63,18 @@ def insert_missing(text, dotted, value):
             break
         if depth == len(parts) - 1:
             break
+        # Extend a supported one-line flow parent in place. Preserve the rest of
+        # the document and any trailing comment instead of appending a duplicate
+        # key or classifying valid user formatting as invalid configuration.
+        match = re.match(r"^(\s*" + re.escape(key) + r":\s*)(\{.*\})([^\r\n]*)(\r?\n)?$", lines[found])
+        if match:
+            mapping = yaml.yaml_load(key + ": " + match[2])[key]
+            cursor = mapping
+            for part in parts[depth + 1:-1]:
+                cursor = cursor.setdefault(part, {})
+            cursor[parts[-1]] = deepcopy(value)
+            lines[found] = match[1] + json.dumps(mapping, ensure_ascii=False) + match[3] + (match[4] or "")
+            return "".join(lines)
         # An empty inline map has no user fields to disturb.
         if re.match(r"^\s*" + re.escape(key) + r":\s*\{\}\s*(?:#.*)?(?:\r?\n)?$", lines[found]):
             lines[found] = re.sub(r"\{\}", "", lines[found], count=1)
@@ -115,12 +127,22 @@ def review(source, before, defaults):
                 errors.append(name + " has invalid value")
         if errors:
             return before, missing, optional, "; ".join(sorted(set(errors)))
-        for name, value in missing.items():
-            text = insert_missing(text, name, value)
+        if text.lstrip().startswith("{") and missing:
+            merged = deepcopy(current)
+            for name, value in missing.items():
+                cursor = merged
+                parts = name.split(".")
+                for part in parts[:-1]:
+                    cursor = cursor.setdefault(part, {})
+                cursor[parts[-1]] = deepcopy(value)
+            # JSON itself is valid YAML; retain all explicitly configured values.
+            text = json.dumps(merged, indent=2, ensure_ascii=False) + "\n"
+        else:
+            for name, value in missing.items():
+                text = insert_missing(text, name, value, yaml)
         result = (b"\xef\xbb\xbf" if before and before.startswith(b"\xef\xbb\xbf") else b"") + text.encode()
         parsed = yaml.yaml_load(text)
-        # A flow-style parent cannot be extended textually without replacing user
-        # formatting. Require review instead of emitting duplicate YAML keys.
+        # Confirm every required insertion survived parsing before proposing it.
         for name, value in missing.items():
             cursor = parsed
             for part in name.split("."):

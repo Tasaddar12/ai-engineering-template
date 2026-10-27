@@ -563,6 +563,29 @@ class ReviewedUpdates(unittest.TestCase):
                     update.apply_plan(plan, self.source, self.baseline)
                 self.assertEqual(before, self.snapshot())
 
+    def test_missing_required_keys_extend_flow_parents_and_json_without_resetting_values(self):
+        old = {"workflow": {"auto_advance": True}, "handoff": {"context_tokens": 30000},
+               "agents": {"executor": {"model": "custom"}}, "verification": {"commands": [["python", "check.py"]]}}
+        documents = ("# project comment\nworkflow: {auto_advance: true} # keep this comment\n"
+                     "handoff: {context_tokens: 30000}\nagents: {executor: {model: custom}}\n"
+                     "verification: {commands: [[python, check.py]]}\n", json.dumps(old))
+        for document in documents:
+            with self.subTest(document=document):
+                config = self.target / ".planning/config.yaml"
+                config.write_text(document)
+                plan = self.plan()
+                self.assertIsNone(self.entry(plan, ".planning/config.yaml")["conflict"])
+                update.apply_plan(plan, self.source, self.baseline)
+                result = yaml.safe_load(config.read_text())
+                self.assertEqual("auto", result["workflow"]["isolation"])
+                self.assertTrue(result["workflow"]["auto_advance"])
+                self.assertEqual(old["agents"], result["agents"])
+                self.assertEqual(old["verification"]["commands"], result["verification"]["commands"])
+                self.assertEqual(30000, result["handoff"]["context_tokens"])
+                if document.startswith("#"):
+                    self.assertIn("# project comment", config.read_text())
+                    self.assertIn("# keep this comment", config.read_text())
+
     def test_legacy_can_upgrade_after_reviewed_classification(self):
         (self.target / ".codex/workflow-ownership.json").unlink()
         plan = self.plan()
