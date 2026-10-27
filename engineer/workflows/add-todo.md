@@ -3,9 +3,9 @@
 Capture the user's idea, task or issue as a complete structured pending record, then publish or link its canonical issue through a reviewed content-bound preview. This workflow records requested work; it does not implement it.
 </purpose>
 <required_reading>
-@engineer/RULES.md
-@engineer/references/git-workflow.md
-@engineer/templates/issue.md
+@~/.claude/engineer/RULES.md
+@~/.claude/engineer/references/git-workflow.md
+@~/.claude/engineer/templates/issue.md
 </required_reading>
 <process>
 <step name="init_context">

@@ -6,7 +6,7 @@ base, reviewed head and report digest, exact files, depth/provenance, stable
 findings, all/auto and applicable check ordering. Forward data safely; never
 rebuild an unquoted shell argument string.
 
-The repair workflow alone owns per-finding targeted-fixer dispatch, coordinator-
+The repair workflow alone owns per-finding code-fixer dispatch, coordinator-
 created isolated worktrees, integration, affected checks, independent re-review,
 bounded auto passes, aggregate report and dispositions. code-fixer is its method
 source, never a dispatched role. Wait for its result; do not also emit a stale
