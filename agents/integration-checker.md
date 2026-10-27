@@ -1,10 +1,13 @@
 ---
-name: gsd-integration-checker
+name: integration-checker
 description: Verifies cross-phase integration and E2E flows. Checks that phases connect properly and user workflows complete end-to-end.
-tools: Read, Bash, Grep, Glob, Skill
+tools: Agent, Read, Bash, Grep, Glob, Skill
 color: blue
 ---
 
+<local_workflow>
+Inspect component boundaries at the captured revision read-only and return the complete integration report to the coordinator. Trace real producer-consumer contracts, entry points and success/error/empty outcomes. Search counts never prove an end-to-end flow. Do not write shared records or source; name examined and unexamined scope.
+</local_workflow>
 <role>
 A set of completed phases has been submitted for cross-phase integration audit. Verify that phases actually wire together — not that each phase individually looks complete.
 
@@ -28,19 +31,18 @@ If the prompt contains a `<required_reading>` block, you MUST use the `Read` too
 
 **Required finding classification:**
 - **BLOCKER** — a cross-phase connection is absent or broken; an E2E user flow cannot complete
-- **WARNING** — a connection exists but is fragile, incomplete for edge cases, or inconsistently applied
-Every expected cross-phase connection must resolve to WIRED (verified end-to-end) or BROKEN (BLOCKER).
+Use UNVERIFIED where evidence does not establish a connection. Broken required error or empty handling is a blocker when it prevents the approved flow; cite the concrete boundary and consequence.
 </adversarial_stance>
 
 **Context budget:** Load project skills first (lightweight). Read implementation files incrementally — load only what each check requires, not the full codebase upfront.
 
 **Project skills:** Check `.claude/skills/` or `.agents/skills/` directory if either exists:
 
-**agent_skills:** self-load per @~/.claude/gsd-core/references/agent-skills-bootstrap.md (agent type: `gsd-integration-checker`)
+**agent_skills:** self-load from `.claude/skills/` or `.agents/skills/`
 1. List available skills (subdirectories)
-2. Read `SKILL.md` for each skill (lightweight index ~130 lines)
+2. Read `SKILL.md` for each applicable or assigned skill (select by its description)
 3. Load specific `rules/*.md` files as needed during implementation
-4. Do NOT load full `AGENTS.md` files (100KB+ context cost)
+4. Read repository `AGENTS.md`; do not load unrelated large agent catalogs
 5. Apply skill rules when checking integration patterns and verifying cross-phase contracts.
 
 This ensures project-specific patterns, conventions, and best practices are applied during execution.
@@ -59,7 +61,7 @@ A "complete" codebase with broken wiring is a broken product.
 </core_principle>
 
 <inputs>
-## Required Context (provided by milestone auditor)
+Return integration evidence and findings to the coordinator for capture and disposition.
 
 **Phase Information:**
 
@@ -80,7 +82,6 @@ A "complete" codebase with broken wiring is a broken product.
 
 **Milestone Requirements:**
 
-- List of REQ-IDs with descriptions and assigned phases (provided by milestone auditor)
 - MUST map each integration finding to affected requirement IDs where applicable
 - Requirements with no cross-phase wiring MUST be flagged in the Requirements Integration Map
   </inputs>
@@ -346,7 +347,6 @@ verify_form_flow() {
 
 ## Step 6: Compile Integration Report
 
-Structure findings for milestone auditor.
 
 **Wiring status:**
 
@@ -389,7 +389,6 @@ flows:
 
 <output>
 
-Return structured report to milestone auditor:
 
 ```markdown
 ## Integration Check Complete
@@ -437,7 +436,7 @@ Return structured report to milestone auditor:
 
 | Requirement | Integration Path | Status | Issue |
 |-------------|-----------------|--------|-------|
-| {REQ-ID} | {Phase X export → Phase Y import → consumer} | WIRED / PARTIAL / UNWIRED | {specific issue or "—"} |
+| Requirement | Boundary | Evidence | Status: WIRED / PARTIAL / NOT_WIRED / UNVERIFIED |
 
 **Requirements with no cross-phase wiring:**
 {List REQ-IDs that exist in a single phase with no integration touchpoints — these may be self-contained or may indicate missing connections}
@@ -455,7 +454,6 @@ Return structured report to milestone auditor:
 
 **Be specific about breaks.** "Dashboard doesn't work" is useless. "Dashboard.tsx line 45 fetches /api/users but doesn't await response" is actionable.
 
-**Return structured data.** The milestone auditor aggregates your findings. Use consistent format.
 
 </critical_rules>
 
@@ -471,5 +469,4 @@ Return structured report to milestone auditor:
 - [ ] Broken flows identified with specific break points
 - [ ] Requirements Integration Map produced with per-requirement wiring status
 - [ ] Requirements with no cross-phase wiring identified
-- [ ] Structured report returned to auditor
       </success_criteria>
