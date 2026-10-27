@@ -24,7 +24,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `agents/plan-checker.md` | reconciled | 851 | 0 |
 | `agents/planner.md` | reconciled | 771 | 4 |
 | `agents/scout.md` | local-only | 43 | 0 |
-| `agents/security-auditor.md` | reconciled | 177 | 0 |
+| `agents/security-auditor.md` | reconciled | 289 | 0 |
 | `agents/ui-auditor.md` | reconciled | 558 | 1 |
 | `agents/ui-checker.md` | reconciled | 404 | 1 |
 | `agents/ui-researcher.md` | reconciled | 457 | 3 |
@@ -89,7 +89,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `commands/quick-batch.md` | reconciled | 117 | 2 |
 | `commands/quick.md` | reconciled | 28 | 0 |
 | `commands/review-backlog.md` | reconciled | 65 | 2 |
-| `commands/secure-phase.md` | reconciled | 41 | 0 |
+| `commands/secure-phase.md` | reconciled | 40 | 0 |
 | `commands/ship.md` | reconciled | 35 | 0 |
 | `commands/spec-phase.md` | reconciled | 57 | 0 |
 | `commands/thread.md` | reconciled | 29 | 0 |
@@ -376,7 +376,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `engineer/workflows/quick/steps/quick-verification.md` | reconciled | 7 | 0 |
 | `engineer/workflows/quick/steps/worktree-pre-dispatch-commit.md` | reconciled | 9 | 0 |
 | `engineer/workflows/remove-phase.md` | reconciled | 37 | 0 |
-| `engineer/workflows/secure-phase.md` | reconciled | 242 | 16 |
+| `engineer/workflows/secure-phase.md` | reconciled | 260 | 0 |
 | `engineer/workflows/ship.md` | reconciled | 96 | 0 |
 | `engineer/workflows/spec-phase.md` | reconciled | 599 | 19 |
 | `engineer/workflows/thread.md` | reconciled | 236 | 64 |
@@ -384,7 +384,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `engineer/workflows/ui-review.md` | reconciled | 251 | 16 |
 | `engineer/workflows/update.md` | reconciled | 44 | 0 |
 | `engineer/workflows/validate-phase.md` | reconciled | 234 | 19 |
-| `engineer/workflows/verify-work.md` | reconciled | 128 | 0 |
+| `engineer/workflows/verify-work.md` | reconciled | 186 | 0 |
 | `engineer/workflows/verify-work/steps/automated-ui-verification.md` | reconciled | 94 | 0 |
 | `hooks/README.md` | local-only | 21 | 0 |
 | `hooks/ai-tier-notice.py` | local-only | 18 | 0 |

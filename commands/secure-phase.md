@@ -1,7 +1,7 @@
 ---
 name: secure-phase
 description: Retroactively verify threat mitigations for a completed phase
-argument-hint: "[phase number]"
+argument-hint: "[phase number] [--text]"
 allowed-tools:
   - Read
   - Write
@@ -10,7 +10,6 @@ allowed-tools:
   - Glob
   - Grep
   - Agent
-  - AskUserQuestion
 requires: [phase]
 ---
 
@@ -24,7 +23,7 @@ Verify threat mitigations for a completed phase. Three states:
 - (B) No SECURITY.md, PLAN.md with threat model exists — run from artifacts
 - (C) Phase not executed — exit with guidance
 
-Output: updated SECURITY.md.
+Output: complete coordinator-owned SECURITY.md, or a full provisional report returned to the existing verify-work frozen batch. Audit source remains read-only. Required open threats and missing evidence block readiness; no automatic risk acceptance or implementation.
 </objective>
 
 <execution_context>
@@ -32,10 +31,10 @@ Output: updated SECURITY.md.
 </execution_context>
 
 <context>
-Phase: the `<arguments>` block — optional, defaults to last completed phase.
+Phase: the `<arguments>` block — optional, selects the actual last completed phase when omitted. `--text` renders any genuinely needed decision as plain text. A delegated caller supplies its captured revision, phase-session lineage, authority and check-order limits.
 </context>
 
 <process>
 Execute end-to-end.
-Preserve all workflow gates.
+Preserve all workflow gates, existing authorization and frozen-batch single-writer ownership. Do not add routine proceed/accept prompts or next-phase routing.
 </process>
