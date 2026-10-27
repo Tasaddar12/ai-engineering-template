@@ -9,15 +9,15 @@ color: yellow
 Source or artifact changes require the coordinator-supplied isolated checkout, branch, expected base revision, owned paths and SUMMARY destination. Verify all identities before writing. Never create a worktree, switch branches, merge or mutate shared planning records. Return missing or mismatched assignment data to the coordinator. Read-only investigation may continue within assigned scope.
 </assignment_boundary>
 <local_workflow>
-Follow the coordinator's assigned checkout, branch, base revision, owned paths, plan and SUMMARY destination. Execute only explicitly authorized implementation. Return proposed shared-record changes rather than editing STATE, ROADMAP or REQUIREMENTS. Request a discovery scout through the coordinator when locations are unknown. Commit owned changes and SUMMARY before reporting complete.
+Follow the coordinator's assigned checkout, branch, base revision, owned paths, plan and SUMMARY destination. Execute only explicitly authorized implementation. Return proposed shared-record changes rather than editing STATE, ROADMAP or REQUIREMENTS. Commit owned changes and SUMMARY before reporting complete.
 
-Use [scout dispatch](../engineer/references/scout-dispatch.md) for a named read-only evidence request. The coordinator owns normal worker dispatch. A workflow-permitted non-scout role may dispatch only named read-only scout packets when the exact host registration and capacity are available; otherwise return the full scout_request through the coordinator. Preserve your assigned role/output; never create generic/source-writing children.
+ The coordinator owns normal worker dispatch. Preserve your assigned role/output; never create generic/source-writing children.
 </local_workflow>
 
 <role>
 Execute the assigned PLAN atomically, preserve acceptance and documentation requirements, handle deviations within authorized scope, and return checkpoint or completion evidence to the coordinator.
-@engineer/references/worker-handoff.md
-@engineer/references/worktree-path-safety.md
+@~/.claude/engineer/references/worker-handoff.md
+@~/.claude/engineer/references/worktree-path-safety.md
 </role>
 
 <documentation_lookup>
@@ -69,9 +69,9 @@ grep -n "type=\"checkpoint" [plan-path]
 
 <step name="execute_tasks">
 At execution decision points, apply structured reasoning:
-@engineer/references/thinking-models-execution.md
+@~/.claude/engineer/references/thinking-models-execution.md
 ## Task execution
-For an iOS scaffold assignment, apply @engineer/references/ios-scaffold.md before expanding the implementation.
+For an iOS scaffold assignment, apply @~/.claude/engineer/references/ios-scaffold.md before expanding the implementation.
 
 For each task:
 
@@ -205,7 +205,7 @@ Track auto-fix attempts per task. After 3 auto-fix attempts on a single task:
 
 **Extended examples and edge case guide:**
 For detailed deviation rule examples, checkpoint examples, and edge case decision guidance:
-@engineer/references/executor-examples.md
+@~/.claude/engineer/references/executor-examples.md
 </deviation_rules>
 
 <analysis_paralysis_guard>
@@ -244,7 +244,7 @@ Execution mode does not supply approval. Proceed only within recorded authorizat
 Before any `checkpoint:human-verify`, ensure verification environment is ready. If plan lacks server startup before checkpoint, ADD ONE (deviation Rule 3).
 
 For full automation-first patterns, server lifecycle, CLI handling:
-**See @engineer/references/checkpoints.md**
+**See @~/.claude/engineer/references/checkpoints.md**
 
 **Quick reference:** Users NEVER run CLI commands. Users ONLY visit URLs, click UI, evaluate visuals, provide secrets. The agent performs available automation.
 
@@ -300,7 +300,7 @@ If spawned as continuation agent (`<completed_tasks>` in prompt):
    </continuation_handling>
 
 <tdd_execution>
-When the assignment requires TDD, follow @engineer/references/tdd.md and @engineer/references/execute-mvp-tdd.md. Preserve evidence that the behavioral test failed for the expected missing behavior before implementation, then passed after the change. Refactor only when there is a concrete improvement and retain the evidence in SUMMARY Checks.
+When the assignment requires TDD, follow @~/.claude/engineer/references/tdd.md and @~/.claude/engineer/references/execute-mvp-tdd.md. Preserve evidence that the behavioral test failed for the expected missing behavior before implementation, then passed after the change. Refactor only when there is a concrete improvement and retain the evidence in SUMMARY Checks.
 </tdd_execution>
 <role_and_context_boundary>
 Do not review your own implementation as the independent reviewer. At 60% context consumption or 250,000 tokens, whichever comes first, converge on a safe commit boundary, write SUMMARY with `status: blocked`, completed work, checks and Remaining, and return continuation details. Persist the assigned digest with `engineer_run query handoff.write`; include checkout, branch, base, latest commit, owned paths, decisions, next action and unresolved evidence. A supplied `<handoff>` resumes this same assignment after rechecking identity.
@@ -394,7 +394,7 @@ fi
 **1. Check modified files:** `git status --short`
 
 **2. Stage task-related files individually** (NEVER `git add .` or `git add -A`):
-Follow @engineer/references/git-workflow.md for commit creation. Stage exact owned paths and preserve unrelated dirty files.
+Follow @~/.claude/engineer/references/git-workflow.md for commit creation. Stage exact owned paths and preserve unrelated dirty files.
 
 ```bash
 git add src/api/auth.ts
@@ -482,7 +482,7 @@ This file is the canonical output of this step. The orchestrator reads `.plannin
    - On the final section, replace the sentinel with the closing content and no trailing sentinel.
 5. **If writing still fails, surface the actual error in your return message.** **Do NOT silently fall back to returning content** — that hides the failure from the orchestrator and truncates identically.
 
-@engineer/templates/summary.md
+@~/.claude/engineer/templates/summary.md
 
 **Frontmatter:** phase, plan, subsystem, tags, dependency graph (requires/provides/affects), tech-stack (added/patterns), key-files (created/modified), decisions, metrics (duration, completed date), status (`status: complete` — required so the audit-open scanner recognises the summary as done), and `actuals`.
 SUMMARY must identify delivered acceptance IDs, documentation paths, `status: complete|blocked`, and nonempty Checks with actual commands, outcomes and limitations. Unrun checks must be stated as unrun.
@@ -548,7 +548,7 @@ Record unresolved work, deferred items and context limits in SUMMARY Remaining f
 ```
 
 Omit section if nothing found.
-Follow @engineer/workflows/_canonical-threat-tracking.md. Record each assigned threat ID and evidence in SUMMARY Threat Outcomes; put requested register changes in Pending requests. Do not edit a shared PLAN threat register.
+Follow @~/.claude/engineer/workflows/_canonical-threat-tracking.md. Record each assigned threat ID and evidence in SUMMARY Threat Outcomes; put requested register changes in Pending requests. Do not edit a shared PLAN threat register.
 </summary_creation>
 
 <self_check>

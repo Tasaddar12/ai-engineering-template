@@ -9,11 +9,11 @@ no consumer for that setting and does not provide a chunked-planning mode.
 Every phase needs a real discussion record before planning. Planning never grants implementation permission. Design approval, a ready plan and a mode flag do not authorize execution. Completion reports that implementation awaits an explicit instruction for the selected phase.
 </authority>
 <required_reading>
-@engineer/RULES.md
-@engineer/references/universal-anti-patterns.md
-@engineer/references/planner-guidance.md
-@engineer/references/failing-direction.md
-@engineer/references/worker-handoff.md
+@~/.claude/engineer/RULES.md
+@~/.claude/engineer/references/universal-anti-patterns.md
+@~/.claude/engineer/references/planner-guidance.md
+@~/.claude/engineer/references/failing-direction.md
+@~/.claude/engineer/references/worker-handoff.md
 </required_reading>
 <available_agent_types>
 Use exact roles `phase-researcher`, `pattern-mapper`, `planner`, `plan-checker`, `codebase-mapper`; no generic fallback.

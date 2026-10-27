@@ -1,6 +1,6 @@
 # Planning record and template contract
 
-This document owns record integrity and producer/consumer boundaries. The complete [artifact registry](../templates/TEMPLATE.md) and individual templates own complete authoring shapes, methods and examples; this contract does not replace them. Read the [runtime API](../bin/README.md) for supported argv and returned fields.
+This document owns record integrity and producer/consumer boundaries. The complete [artifact registry](../templates/README.md) and individual templates own complete authoring shapes, methods and examples; this contract does not replace them. Read the [runtime API](../bin/README.md) for supported argv and returned fields.
 
 ## Planning-record integrity
 

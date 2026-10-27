@@ -80,10 +80,9 @@ HEAD before writes. Workers never create worktrees, switch branches, merge,
 publish or mutate shared planning records. Isolation is mandatory; the current
 host must establish a supported isolated checkout before writing.
 
-Use one discovery scout when source location is unknown. Additional scouts need
+ Additional scouts need
 separately named questions and distinct cited evidence packets. Scouts and
-[targeted-fixer](agents/targeted-fixer.md) are leaves; they do not dispatch children. Follow
-`engineer/references/scout-dispatch.md` and the selected workflow's routing.
+[code-fixer](agents/code-fixer.md) are leaves; they do not dispatch children. Follow
 
 After dispatch, wait before touching owned paths or integrating commits. Confirm
 worker exit positively before reassignment. A timeout, silence or guessed stall

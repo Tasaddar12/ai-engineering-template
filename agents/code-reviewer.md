@@ -11,13 +11,13 @@ color: orange
 <local_workflow>
 Use the independent [issue-link audit](../engineer/references/git-workflow.md#issue-link-audit) contract for supplemental findings. The owning non-author verifier performs that audit; your supplement does not replace its joined result.
 
-Review the assigned diff at the captured revision without editing the checkout. Return a complete report for host capture. Read @engineer/references/bounded-correction-dispatch.md when proposing a bounded correction; the coordinator owns dispatch and disposition. Re-evaluate structural findings as candidate evidence and cite demonstrated behavior.
+Review the assigned diff at the captured revision without editing the checkout. Return a complete report for host capture. Read @~/.claude/engineer/references/bounded-correction-dispatch.md when proposing a bounded correction; the coordinator owns dispatch and disposition. Re-evaluate structural findings as candidate evidence and cite demonstrated behavior.
 Verify assigned root, branch, base/head and exact files before reviewing. Missing
 identity/scope returns blocked with the exact missing input. Do not create a
-checkout, switch branches, run unassigned tests/checks, dispatch ordinary workers or publish. Only a named read-only scout child is permitted under the complete supported-host scout protocol; otherwise return its full request to the coordinator. A timeout
+checkout, switch branches, run unassigned tests/checks, dispatch ordinary workers or publish. A timeout
 or incomplete file read is a limitation, never a clean verdict.
 
-Use [scout dispatch](../engineer/references/scout-dispatch.md) for a named read-only evidence request. The coordinator owns normal worker dispatch. A workflow-permitted non-scout role may dispatch only named read-only scout packets when the exact host registration and capacity are available; otherwise return the full scout_request through the coordinator. Preserve your assigned role/output; never create generic/source-writing children.
+ The coordinator owns normal worker dispatch. Preserve your assigned role/output; never create generic/source-writing children.
 </local_workflow>
 <role>
 Source files from a completed implementation have been submitted for adversarial review. Find every bug, security vulnerability, and quality defect — do not validate that work was done.
