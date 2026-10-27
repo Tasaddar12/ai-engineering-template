@@ -462,15 +462,38 @@ class CleanupTests(unittest.TestCase):
         self.owner["backups"] = [str(backup)]
         self.write_owner()
         preview = self.preview()
-        original_unlink = Path.unlink
-        def race(path, *args, **options):
-            if path == backup/"valuable":
+        validate = cleanup.validate_backup
+        calls = []
+        def race(entry, *args, **options):
+            result = validate(entry, *args, **options)
+            calls.append(entry)
+            if len(calls) == 1:
                 (backup/"new valuable").write_text("new unapproved content")
-            return original_unlink(path, *args, **options)
-        with patch.object(Path, "unlink", race):
+            return result
+        with patch.object(cleanup, "validate_backup", side_effect=race):
             with self.assertRaises(Failure): self.apply(preview)
         self.assertTrue((backup/"new valuable").is_file())
         self.assertTrue(self.tree.is_dir())
+
+    def test_windows_pinned_backup_handles_block_rename_write_and_report_delete_failure(self):
+        backup = self.backup()
+        entry = next(entry for entry in self.preview()["entries"] if entry["kind"] == "backup")
+        if os.name == "nt":
+            with cleanup.windows_backup_handles(entry):
+                with self.assertRaises(OSError): backup.rename(backup.with_name("moved"))
+                with self.assertRaises(OSError): (backup/"valuable").write_text("unapproved replacement")
+            preview = self.preview()
+            with patch.object(cleanup, "delete_windows_backup_handle", side_effect=Failure("cleanup-backup-removal-failed", "injected native disposition failure")):
+                self.refused(preview, "cleanup-backup-removal-failed")
+            self.assertEqual("approved original", (backup/"valuable").read_text())
+            self.assertTrue(self.tree.is_dir())
+        else:
+            # Portable hosts still exercise the exact stale-content refusal;
+            # they do not claim to have executed Windows handle semantics.
+            preview = self.preview()
+            (backup/"valuable").write_text("unapproved replacement")
+            self.refused(preview, "cleanup-backup-drift")
+            self.assertEqual("unapproved replacement", (backup/"valuable").read_text())
 
 
 class CurrentCleanupGuards(CleanupTests):

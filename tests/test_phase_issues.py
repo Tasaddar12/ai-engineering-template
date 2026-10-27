@@ -56,6 +56,8 @@ class PhaseIssues(fixtures.IssueFixture):
             if "--body-file" in args: self.pull["body"] = Path(args[args.index("--body-file")+1]).read_text(encoding="utf-8")
             return subprocess.CompletedProcess(args, 0, "", "")
         if args[:2] == ["pr", "view"] and not getattr(self, "pull", None):
+            if check:
+                raise Failure("pr-not-found", "Offline fixture has no PR")
             return subprocess.CompletedProcess(args, 1, "", "no pull requests found")
         if self.mode == "bodyfile-mutate" and args[:2] == ["issue", "view"]:
             self.pr_body_file.write_text("Closes #1", encoding="utf-8")

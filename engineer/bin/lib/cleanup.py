@@ -5,6 +5,7 @@ import json
 import secrets
 import os
 import stat
+import contextlib
 from . import config, gitops, records, worktrees, repository, delivery, sessions
 from .core import Failure, load_json, now, planning_lock, root, run, safe_path, write_json
 
@@ -188,12 +189,131 @@ def validate_backup(entry, inventory=None):
         raise Failure("cleanup-backup-drift", "Backup identity or content changed since approval")
 
 
+@contextlib.contextmanager
+def windows_backup_handles(entry):
+    """Pin directory traversal and file bytes until handle-relative deletion.
+
+    Windows parent handles omit FILE_SHARE_DELETE so an ancestor cannot be
+    renamed/replaced during traversal. Approved files additionally omit
+    FILE_SHARE_WRITE. Deletion is requested through those same DELETE-capable
+    handles, rather than by reopening a mutable path after closing the guard.
+    """
+    import ctypes
+    from ctypes import wintypes
+    import msvcrt
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    create = kernel.CreateFileW
+    create.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, wintypes.LPVOID, wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+    create.restype = wintypes.HANDLE
+    close = kernel.CloseHandle
+    close.argtypes, close.restype = [wintypes.HANDLE], wintypes.BOOL
+    attributes = kernel.GetFileInformationByHandleEx
+    attributes.argtypes = [wintypes.HANDLE, ctypes.c_int, wintypes.LPVOID, wintypes.DWORD]
+    attributes.restype = wintypes.BOOL
+    class AttributeTag(ctypes.Structure):
+        _fields_ = [("attributes", wintypes.DWORD), ("tag", wintypes.DWORD)]
+    handles = {}
+    base = root()/".workflow-backups"
+    target = Path(entry["path"])
+    rows = {base/row["path"]: row for row in entry["tree"]}
+    ancestors = list(reversed([parent for parent in target.parents if parent == root() or parent.is_relative_to(root())]))
+    paths = list(dict.fromkeys(ancestors+sorted(rows, key=lambda path: len(path.parts))))
+    try:
+        for path in paths:
+            row = rows.get(path)
+            directory = row is None or row["directory"]
+            # DELETE access only belongs to approved nodes, not pinned parents.
+            access = 0x80 | (0x10000 if row else 0) | (0x80000000 if not directory else 0)
+            share = 0x1 | (0x2 if directory else 0)
+            handle = create(str(path), access, share, None, 3, 0x02000000 | 0x00200000, None)
+            if handle == ctypes.c_void_p(-1).value:
+                raise Failure("cleanup-backup-locked", "Backup node cannot be pinned against replacement or writing")
+            handles[path] = {"handle": handle, "fd": None}
+            info = AttributeTag()
+            if not attributes(handle, 9, ctypes.byref(info), ctypes.sizeof(info)) or info.attributes & 0x400:
+                raise Failure("cleanup-aliased-backup", "Pinned backup node is a reparse point or cannot be inspected")
+            if row:
+                actual = path.lstat()
+                if [actual.st_dev, actual.st_ino] != row["identity"] or actual.st_mode != row["mode"]:
+                    raise Failure("cleanup-backup-race", "Pinned backup identity differs from approval")
+                if not directory:
+                    fd = msvcrt.open_osfhandle(handle, os.O_RDONLY | os.O_BINARY)
+                    handles[path]["fd"] = fd
+                    content = hashlib.sha256()
+                    while chunk := os.read(fd, 1024*1024):
+                        content.update(chunk)
+                    if content.hexdigest() != row["digest"] or actual.st_size != row["size"] or actual.st_mtime_ns != row["mtime_ns"]:
+                        raise Failure("cleanup-backup-race", "Pinned backup bytes differ from approval")
+        for path, row in rows.items():
+            if row["directory"]:
+                expected_children = {candidate.name for candidate in rows if candidate.parent == path}
+                if {child.name for child in path.iterdir()} != expected_children:
+                    raise Failure("cleanup-backup-race", "Backup gained unapproved children while its nodes were pinned")
+        yield handles
+    finally:
+        for resource in reversed(list(handles.values())):
+            if resource["fd"] is not None:
+                os.close(resource["fd"])
+            else:
+                close(resource["handle"])
+
+
+def delete_windows_backup_handle(resource):
+    """Mark the already pinned node for deletion, then close its own handle."""
+    import ctypes
+    from ctypes import wintypes
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    disposition = kernel.SetFileInformationByHandle
+    disposition.argtypes = [wintypes.HANDLE, ctypes.c_int, wintypes.LPVOID, wintypes.DWORD]
+    disposition.restype = wintypes.BOOL
+    delete = ctypes.c_ubyte(1)  # FILE_DISPOSITION_INFO.DeleteFile (BOOLEAN).
+    if not disposition(resource["handle"], 4, ctypes.byref(delete), ctypes.sizeof(delete)):
+        raise Failure("cleanup-backup-removal-failed", "Pinned backup node could not be marked for deletion; remaining nodes are preserved")
+
+
 def remove_backup(entry):
+    try:
+        return remove_backup_nodes(entry)
+    except (Failure, OSError) as exc:
+        if not isinstance(exc, Failure):
+            exc = Failure("cleanup-backup-race", "Backup filesystem changed during exact removal")
+        base = root()/".workflow-backups"
+        exc.details["absent_backup_nodes"] = [str(base/row["path"]) for row in entry["tree"]
+                                               if not (base/row["path"]).exists() and not (base/row["path"]).is_symlink()]
+        raise exc
+
+
+def remove_backup_nodes(entry):
     """Delete exactly captured regular files, never follow a child alias."""
     target = Path(entry["path"])
     base = root()/".workflow-backups"
     # All resolved recursive targets are checked before any removal (including
     # Windows reparse points), then again at each individual filesystem action.
+    validate_backup(entry)
+    if os.name == "nt":
+        # Keep parent guards open throughout. Closing each approved node after
+        # its disposition request completes deletion before its parent is tried.
+        with windows_backup_handles(entry) as handles:
+            # File bytes were read through the pinned handles above. Reopening
+            # them with Python's default sharing mode could conflict with our
+            # DELETE access; use that captured tree for owner/provider checks.
+            validate_backup(entry, inventory=entry["tree"])
+            import ctypes
+            from ctypes import wintypes
+            close = ctypes.WinDLL("kernel32", use_last_error=True).CloseHandle
+            close.argtypes, close.restype = [wintypes.HANDLE], wintypes.BOOL
+            for row in sorted(entry["tree"], key=lambda row: len(Path(row["path"]).parts), reverse=True):
+                path = base/row["path"]
+                resource = handles[path]
+                delete_windows_backup_handle(resource)
+                if resource["fd"] is not None:
+                    os.close(resource["fd"])
+                elif not close(resource["handle"]):
+                    raise Failure("cleanup-backup-removal-failed", "Pinned backup directory close did not succeed")
+                del handles[path]
+        if target.exists() or target.is_symlink():
+            raise Failure("cleanup-removal-unconfirmed", "Backup removal lacks absent-path readback")
+        return
     validate_backup(entry)
     for row in sorted(entry["tree"], key=lambda row: len(Path(row["path"]).parts), reverse=True):
         path = base/row["path"]

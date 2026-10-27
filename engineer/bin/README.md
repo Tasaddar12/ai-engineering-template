@@ -52,6 +52,36 @@ lock, revalidates before each removal, confirms actual worktree disappearance,
 then rechecks provider/ownership/ancestry and deletes only the captured branch
 OID with `update-ref --no-deref`. Missing success readback is a failure.
 
+`cleanup.preview` returns a fresh `approval_token` and distinct `entries` with
+`kind: backup`, `worktree_remove` or `branch_delete`; `count` counts individual
+operations. `cleanup.apply --approval-token TOKEN --confirm` consumes that exact
+snapshot once. A separately removed recorded checkout may leave an eligible
+direct branch; no branch is inferred from its name. Backup candidates must be
+explicitly recorded in one eligible owner's `backups` list, physically below
+`.workflow-backups`, untracked and outside nested repository/planning content.
+Overlapping ownership, aliases, changed content and unapproved siblings preserve
+the resource. Apply binds file identities and byte digests and rechecks the
+entire backup inventory before every operation. On Windows, pinned parent
+handles deny rename/replacement and approved file handles deny writing; the
+same DELETE-capable handles request disposition before closing. Failures report
+completed operations and any absent backup nodes without claiming whole-resource
+success. Native handle behavior remains subject to the actual Windows tests.
+
+Issue preview, publication and update require explicit `--title`, a separate
+`--body-file`, the exact `--variant`, and the reviewed `--existing-issue URL|NUMBER`
+or `--no-match` decision. A token binds initial private source bytes, canonical
+template, complete paginated open/closed issue and PR context, public intent,
+labels and origin. An uncertain create consumes its preview before provider
+mutation; retry the original token with identical reviewed inputs to recover
+one verified provenance match. No unique match means inspection is required,
+never another automatic creation. `issues.unresolved_attempt(source)` exposes
+the read-only TODO retirement guard. Updates select the actual linked issue;
+declaration edits preserve publication identity and issue kind. Session-owned
+publication infers its phase/quick audit even when a scope option is omitted.
+UAT acceptance shape additionally requires every current numbered action to
+record PASS. Those fields and provider readbacks remain necessary evidence;
+they cannot independently establish human authenticity or semantic assurance.
+
 Use Python 3.11 or newer. The runtime uses only the standard library. The POSIX
 shim selects a namespace virtual environment, a project virtual environment, or
 `python3` / `python` and executes the CLI in isolated mode.

@@ -45,6 +45,17 @@ https://example.invalid/requirements/search
 """
 
 
+class PartialWriter:
+    def __init__(self, handle): self.handle = handle
+    def __enter__(self): return self
+    def __exit__(self, *args): return self.handle.__exit__(*args)
+    def __getattr__(self, name): return getattr(self.handle, name)
+    def write(self, value):
+        self.handle.write(value[:20])
+        self.handle.flush()
+        raise OSError("injected partial atomic write")
+
+
 class IssueFixture(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="engineer-issues-")
@@ -213,6 +224,33 @@ class TodoIssues(IssueFixture):
             self.assertEqual(0, self.creates)
             self.assertEqual(before, self.todo.read_bytes())
 
+    def test_partial_writes_preserve_prepared_attempted_and_linked_evidence(self):
+        for stage in ("prepared", "attempted", "linked"):
+            case = TodoIssues()
+            case.setUp()
+            try:
+                preview = None if stage == "prepared" else case.preview()
+                before = case.todo.read_bytes()
+                fdopen, json_write, source_write = os.fdopen, issues.write_json, issues.write
+                def partial(*args, **kwargs): return PartialWriter(fdopen(*args, **kwargs))
+                def failing_json(path, value):
+                    target_stage = "attempted" if value.get("used") else "prepared"
+                    if stage == target_stage:
+                        with patch.object(core.os, "fdopen", side_effect=partial): return json_write(path, value)
+                    return json_write(path, value)
+                def failing_source(path, content):
+                    with patch.object(core.os, "fdopen", side_effect=partial): return source_write(path, content)
+                with patch.object(issues, "write_json", side_effect=failing_json), patch.object(issues, "write", side_effect=failing_source if stage == "linked" else source_write):
+                    case.fails(lambda: case.publish(preview) if preview else case.preview())
+                self.assertEqual(before, case.todo.read_bytes())
+                self.assertEqual(1 if stage == "linked" else 0, case.creates)
+                self.assertEqual([case.todo], list(case.todo.parent.iterdir()))
+                if stage == "linked":
+                    self.assertTrue(issues.unresolved_attempt(case.todo))
+                    self.assertTrue(case.publish(preview)["reused"])
+                    self.assertEqual(1, case.creates)
+            finally: case.doCleanups()
+
     def test_direct_duplicate_changes_refuse_stale_review(self):
         for changes in ({"title": "Changed"}, {"body": PUBLIC+"Changed"}, {"state": "CLOSED"}):
             self.rows = [self.issue()]
@@ -365,6 +403,15 @@ class TodoIssues(IssueFixture):
         self.assertTrue(self.publish(preview)["reused"])
         self.assertEqual(1, self.creates)
         self.assertFalse(issues.unresolved_attempt(self.todo))
+        case = TodoIssues()
+        case.setUp()
+        try:
+            preview = case.preview()
+            case.mode = "create-after"
+            self.assertTrue(case.publish(preview)["reused"])
+            self.assertEqual(1, case.creates)
+            self.assertEqual(1, len(case.rows))
+        finally: case.doCleanups()
 
     def test_readback_title_body_and_snapshot_mismatch_leave_attempted(self):
         for mode in ("bad-title", "bad-body", "mutate"):
