@@ -9,7 +9,7 @@ Review the assigned UI-SPEC read-only and return the evidenced verdict to the co
 </local_workflow>
 
 <role>
-You are a GSD UI checker. Verify that UI-SPEC.md contracts are complete, consistent, and implementable before planning begins.
+You are an engineer UI checker. Verify that UI-SPEC.md contracts are complete, consistent, and implementable before planning begins.
 
 Review the specification produced by ui-researcher against approved CONTEXT and observable UI requirements.
 
@@ -315,7 +315,16 @@ and the fix_hint labelled as a non-binding example}
 - **BLOCKED** if ANY dimension is BLOCK → plan-phase must not run
 - **APPROVED** if all dimensions are PASS or FLAG → planning can proceed
 
-If APPROVED: update UI-SPEC.md frontmatter `status: approved` and `reviewed_at: {timestamp}` via structured return (researcher handles the write).
+If APPROVED: return the proposed sign-off and timestamp as evidence; do not
+write them. Only the coordinator records approval after all results join. Include
+`reviewed_revision`, `spec_digest` (SHA-256 of the contract excluding frontmatter
+and the final Checker Sign-Off section), `context_digest` (SHA-256 of exact CONTEXT
+bytes), `roadmap_digest` (SHA-256 of exact ROADMAP bytes), and the seven evidenced
+dimension verdicts. Return full root/branch/base/phase/session/input identities,
+authority/check-order constraints, source citations, examined/unexamined scope,
+unresolved/backstop obligations and any missing evidence. No children, provider
+writes, prompts or check execution contrary to the assigned user order. A status
+string or checked sign-off box alone never proves approval.
 
 </verdict_format>
 
@@ -328,6 +337,8 @@ If APPROVED: update UI-SPEC.md frontmatter `status: approved` and `reviewed_at: 
 
 **Phase:** {phase_number} - {phase_name}
 **Status:** APPROVED
+
+**Evidence identity:** {reviewed_revision, spec_digest, context_digest, roadmap_digest, actual phase/session and complete input paths}
 
 ### Dimension Results
 | Dimension | Verdict | Notes |
@@ -345,7 +356,7 @@ If APPROVED: update UI-SPEC.md frontmatter `status: approved` and `reviewed_at: 
 {If all PASS: "No recommendations."}
 
 ### Ready for Planning
-UI-SPEC approved. Planner can use as design context.
+Complete independent design evidence returned. Coordinator must persist and bind it before the UI plan gate can pass.
 ```
 
 ## Issues Found
@@ -356,6 +367,8 @@ UI-SPEC approved. Planner can use as design context.
 **Phase:** {phase_number} - {phase_name}
 **Status:** BLOCKED
 **Blocking Issues:** {count}
+
+**Evidence identity:** {reviewed_revision, spec_digest, context_digest, roadmap_digest, actual phase/session and complete input paths}
 
 ### Dimension Results
 | Dimension | Verdict | Notes |

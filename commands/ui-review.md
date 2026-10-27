@@ -20,7 +20,7 @@ The text inside `<arguments>` is exactly what the user typed after the command n
 <objective>
 Conduct a retroactive 6-pillar visual audit. Produces UI-REVIEW.md with
 graded assessment (1-4 per pillar). Works on any project.
-Output: {phase_num}-UI-REVIEW.md
+Output: coordinator captures {phase_num}-UI-REVIEW.md after joined read-only evidence. In verify-work this audit shares the same frozen batch. Missing required browser evidence stays BLOCKED.
 </objective>
 
 <execution_context>

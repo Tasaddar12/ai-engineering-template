@@ -4,139 +4,74 @@ Generate a UI design contract (UI-SPEC.md) for frontend phases. Orchestrates ui-
 UI-SPEC.md locks spacing, typography, color, copywriting, and design system decisions before the planner creates tasks. This prevents design debt caused by ad-hoc styling decisions during execution.
 </purpose>
 
+
 <required_reading>
 @engineer/references/ui-brand.md
 </required_reading>
 
+
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+Valid engineer subagent types (use exact names — do not fall back to 'general-purpose'):
 - ui-researcher — Researches UI/UX approaches
 - ui-checker — Reviews UI implementation quality
 </available_agent_types>
 
+
 <process>
 
-## 1. Initialize
 
-```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
-$ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-_engineer_identity_ok() {
-  [ -f "$1" ] || return 1
-  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
-}
-_engineer_select() {
-  for _engineer_candidate do
-    if _engineer_identity_ok "$_engineer_candidate"; then
-      ENGINEER_RUN="$_engineer_candidate"
-      return 0
-    fi
-  done
-  return 1
-}
-if [ -n "${ENGINEER_RUN:-}" ]; then
-  _engineer_identity_ok "$ENGINEER_RUN" || {
-    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
-    exit 1
-  }
-else
-  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
-  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
-  _engineer_select \
-    "$_engineer_root/engineer/bin/engineer_run" \
-    "$_engineer_runtime_root/engineer/bin/engineer_run" \
-    "$_engineer_root/.claude/engineer/bin/engineer_run" \
-    "$_engineer_root/.codex/engineer/bin/engineer_run" \
-    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
-    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
-    "$_engineer_path_candidate" || {
-    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
-    exit 1
-  }
-fi
-export ENGINEER_RUN
-engineer_run() {
-  sh "$ENGINEER_RUN" "$@"
-}
-if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
-  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
-fi
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.plan-phase ${GSD_WS:+--ws=${GSD_WS##* }} "$PHASE")
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_UI=$(engineer_run query agent-skills ui-researcher ${GSD_WS:+--ws=${GSD_WS##* }})
-AGENT_SKILLS_UI_CHECKER=$(engineer_run query agent-skills ui-checker ${GSD_WS:+--ws=${GSD_WS##* }})
-```
+## 1. Initialize and locate the phase
 
-Parse JSON for: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `has_context`, `has_research`, `commit_docs`, `response_language`.
+Read `engineer/RULES.md`, `engineer/references/worker-handoff.md`,
+`engineer/references/git-workflow.md` and the complete `engineer/templates/UI-SPEC.md`.
+Execute `engineer/workflows/_runtime-launcher.snippet.sh`. Parse the phase from
+`$ARGUMENTS`, or resolve the next genuinely unplanned roadmap phase from current
+records; do not use an adopting template example as a phase. Run
+`engineer_run query phase.locate "${PHASE_NUMBER}"`, require a consistent found
+result, quote and enter its worktree, then run
+`engineer_run query init.plan-phase "${PHASE_NUMBER}"`. Read actual `phase_dir`,
+`padded_phase`, `context_path`, `research_path`, `ui_spec_path`, `artifact_files`,
+`models`, `efforts` and `text_mode`; never invent a paths map.
 
-**If `response_language` is set:** All user-facing output of this workflow — narration between tool calls, status updates, progress notes, findings, questions, prompts, and explanations — MUST be presented in `{response_language}`. Technical terms, code, file paths, and subagent prompts stay in English — only user-facing output is translated.
+Apply response_language to user-facing prose; technical paths and packet keys stay
+in English. Read `workflow.ui_phase` through config-get with default `auto`.
+`false` disables this track; `auto` enables it only for actual UI scope in the
+ROADMAP/locked CONTEXT and observed product source. An explicit enabled setting
+requests assessment, never permission to invent screens in CLI/backend phases.
+Document a cited no-UI result and return without a UI-SPEC or browser when there is
+no actual UI scope. Missing records require onboarding; do not fill this template's
+adopting identity during maintenance.
 
-**File paths:** `state_path`, `roadmap_path`, `requirements_path`, `context_path`, `research_path`.
 
-Detect sketch findings:
-```bash
-SKETCH_FINDINGS_PATH=$(ls ./.claude/skills/sketch-findings-*/SKILL.md 2>/dev/null | head -1 || true)
-```
+## 2. Open the phase session
 
-Resolve UI agent models:
+Inspect `session.status` and locator lineage. Reuse the matching session; adopt a
+named clean isolated checkout with `engineer_run query session.adopt phase N`
+only when ownership is established, otherwise use `session.open phase N`. Quote
+and enter its returned worktree, verify root/branch, re-run init.plan-phase there,
+and retain the source revision and session identity. No direct primary-checkout
+writes. This workflow prepares design only: discussion, UI approval and `--auto`
+never grant phase implementation authority or chain into execute-phase.
 
-```bash
-UI_RESEARCHER_MODEL=$(engineer_run query resolve-model ui-researcher --raw)
-UI_CHECKER_MODEL=$(engineer_run query resolve-model ui-checker --raw)
-```
 
-Check config:
+## 3. Read decisions and prerequisites
 
-```bash
-UI_ENABLED=$(engineer_run query config-get workflow.ui_phase --raw 2>/dev/null || echo "true")
-```
+Read complete PROJECT, STATE, ROADMAP, REQUIREMENTS, CONTEXT, existing UI-SPEC,
+relevant product UI sources and RESEARCH when present. A genuine discussion and
+locked CONTEXT decisions are required before dependent planning. If absent, return
+the concrete missing decision/discussion dependency; do not continue as though it
+were approved. Missing RESEARCH is informational when the actual design stack is
+already established. Preserve existing design-system choices and approved outcomes.
+No routine confirmation is needed for answered questions or safe choices within
+recorded Agent Discretion. Route genuinely missing consequential choices through
+the coordinator; continue independent inventory.
 
-**If `UI_ENABLED` is `false`:**
-```
-UI phase is disabled in config. Enable via /settings.
-```
-Exit workflow.
+Resolve model and effort for each exact `ui-researcher` and `ui-checker` dispatch
+with `engineer_run query resolve-model ROLE --raw` and `resolve-effort ROLE --raw`.
+Pass both actual values inline, omitting each inherited field. Use the host's
+native Claude/Codex dispatch and available question tools; tool names in examples
+are capabilities, not proof that a host registered them.
 
-**If `planning_exists` is false:** Error — run `/new-project` first.
-
-## 2. Parse and Validate Phase
-
-Extract phase number from $ARGUMENTS. If not provided, detect next unplanned phase.
-
-```bash
-PHASE_INFO=$(engineer_run query roadmap.get-phase "${PHASE}")
-```
-
-**If `found` is false:** Error with available phases.
-
-## 3. Check Prerequisites
-
-**If `has_context` is false:**
-```
-No CONTEXT.md found for Phase {N}.
-Recommended: run /discuss-phase {N} first to capture design preferences.
-Continuing without user decisions — UI researcher will ask all questions.
-```
-Continue (non-blocking).
-
-**If `has_research` is false:**
-```
-No RESEARCH.md found for Phase {N}.
-Note: stack decisions (component library, styling approach) will be asked during UI research.
-```
-Continue (non-blocking).
-
-**If `SKETCH_FINDINGS_PATH` is not empty:**
-```
-⚡ Sketch findings detected: {SKETCH_FINDINGS_PATH}
-   Validated design decisions from /sketch will be loaded into the UI researcher.
-   Pre-validated decisions (layout, palette, typography, spacing) should be treated as locked — not re-asked.
-```
 
 ## 4. Check Existing UI-SPEC
 
@@ -154,7 +89,7 @@ rewrites the whole contract and drops answers a person already recorded in it, a
 without verifying anything. A `--auto` run most often meets this file as an unverified draft from
 a run that ended before its checker ran, which is exactly the state the checker should now see.
 
-**Otherwise:** Use AskUserQuestion:
+**Otherwise:** Reuse and check the current contract by default. Only an explicit update request authorizes regenerating existing answers. For a user-requested view/update choice, use the available host question tool:
 - header: "Existing UI-SPEC"
 - question: "UI-SPEC.md already exists for Phase {N}. What would you like to do?"
 - options:
@@ -166,11 +101,28 @@ If "View": display file contents, exit.
 If "Skip": proceed to step 7 (checker).
 If "Update": continue to step 5.
 
+
 ## 5. Spawn ui-researcher
+
+The researcher is an **artifact-only isolated writer**. Capture the integrated
+input revision. For orchestrator-created isolation use
+`engineer_run query worktree.create UI_TAG --phase N --base REV --artifact-role ui-researcher --files ACTUAL_NN_UI_SPEC_PATH`.
+For host-created isolation register its actual branch/path/base with
+`worktree.record-agent UI_TAG --phase N --branch BRANCH --path PATH --base REV --artifact-role ui-researcher --files ACTUAL_NN_UI_SPEC_PATH`.
+Replace every metavariable with actual values. Give the worker the resulting
+absolute root, branch, base, exact owned UI-SPEC path, complete inputs and limits.
+It writes and commits only that artifact, no SUMMARY, product code, package install,
+shared status or design-system initialization. Wait for confirmed completion; then
+integrate with `engineer_run query worktree.merge-artifacts --phase N` and inspect
+its actual artifacts/merged/preserved results before dispatching the checker.
+A partial or dirty worker is not integrated as complete. Revision workers use the
+same exact artifact-only lifecycle from the new integrated revision.
+
 
 Display:
 ```
-### GSD ► UI DESIGN CONTRACT — PHASE {N}
+
+### ENGINEER ► UI DESIGN CONTRACT — PHASE {N}
 
 ◆ Spawning UI researcher... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
@@ -178,7 +130,7 @@ Display:
 Build prompt:
 
 ```markdown
-Read ~/.claude/agents/ui-researcher.md for instructions.
+Read the resolved source or installed `agents/ui-researcher.md` in full.
 
 <objective>
 Create UI design contract for Phase {phase_number}: {phase_name}
@@ -191,10 +143,11 @@ Answer: "What visual and interaction contracts does this phase need?"
 - {requirements_path} (Requirements)
 - {context_path} (USER DECISIONS from /discuss-phase)
 - {research_path} (Technical Research — stack decisions)
-- {SKETCH_FINDINGS_PATH} (Sketch Findings — validated design decisions, CSS patterns, visual direction from /sketch, if exists)
+
 </required_reading>
 
-${AGENT_SKILLS_UI}
+
+Read only assigned/applicable skills by their descriptions.
 
 <output>
 Write to: {phase_dir}/{padded_phase}-UI-SPEC.md
@@ -202,7 +155,9 @@ Template: engineer/templates/UI-SPEC.md
 </output>
 
 <config>
-commit_docs: {commit_docs}
+source_revision: {full captured source revision}
+session: {actual phase session}
+check_order: {actual user validation limits}
 phase_dir: {phase_dir}
 padded_phase: {padded_phase}
 </config>
@@ -219,11 +174,13 @@ Agent(
   prompt=ui_research_prompt,
   subagent_type="ui-researcher",
   model="{UI_RESEARCHER_MODEL}",
+  effort="{UI_RESEARCHER_EFFORT}",
   description="UI Design Contract Phase {N}"
 )
 ```
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+
 
 ## 6. Handle Researcher Return
 
@@ -233,11 +190,22 @@ Display confirmation. Continue to step 7.
 **If `## UI-SPEC BLOCKED`:**
 Display blocker details and options. Exit workflow.
 
+
 ## 7. Spawn ui-checker
+
+Capture the integrated specification revision and exact content digest. Supply
+root/branch/base, phase/session/caller, full authority/check-order packet, complete
+UI-SPEC and acceptance/CONTEXT, source inputs and their digests. The checker is
+read-only, returns all seven dimensions with cited evidence and uncovered scope,
+and never writes approval or dispatches children. A missing/truncated dimension
+or wrong revision is missing evidence, not approval. Join all assigned results
+before coordinator writes. Require the canonical status and preserve BLOCKs.
+
 
 Display:
 ```
-### GSD ► VERIFYING UI-SPEC
+
+### ENGINEER ► VERIFYING UI-SPEC
 
 ◆ Spawning UI checker... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
@@ -245,7 +213,7 @@ Display:
 Build prompt:
 
 ```markdown
-Read ~/.claude/agents/ui-checker.md for instructions.
+Read the resolved source or installed `agents/ui-checker.md` in full.
 
 <objective>
 Validate UI design contract for Phase {phase_number}: {phase_name}
@@ -258,7 +226,8 @@ Check all 7 dimensions. Return APPROVED or BLOCKED.
 - {research_path} (Technical Research — check stack alignment)
 </required_reading>
 
-${AGENT_SKILLS_UI_CHECKER}
+
+Read only assigned/applicable skills by their descriptions.
 
 <config>
 ui_safety_gate: {ui_safety_gate config value}
@@ -270,11 +239,13 @@ Agent(
   prompt=ui_checker_prompt,
   subagent_type="ui-checker",
   model="{UI_CHECKER_MODEL}",
+  effort="{UI_CHECKER_EFFORT}",
   description="Verify UI-SPEC Phase {N}"
 )
 ```
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+
 
 ## 8. Handle Checker Return
 
@@ -283,6 +254,7 @@ Display dimension results. Proceed to step 9.5.
 
 **If `## ISSUES FOUND`:**
 Display blocking issues. Proceed to step 9.
+
 
 ## 9. Revision Loop (Max 2 Iterations)
 
@@ -296,6 +268,7 @@ Track `revision_count` (starts at 0).
 ```markdown
 <revision>
 The UI checker found issues with the current UI-SPEC.md.
+
 
 ### Issues to Fix
 {paste blocking issues from checker return}
@@ -327,35 +300,25 @@ Do NOT re-ask the user questions that are already answered.
   escalation below, so declining to spend an iteration cannot make this path unbounded.
 - **On any other return:** increment `revision_count`, then re-spawn checker (step 7)
 
-**If `revision_count` >= 2:**
-```
-Max revision iterations reached. Remaining issues:
+**If `revision_count` >= 2 or the repeated-conflict cap fires:** retain BLOCKED
+and the exact required properties, conflicts and alternatives. Stop only dependent
+planning. Do not offer force approval, waive a BLOCK, relitigate a locked answer
+or add a routine proceed/ignore prompt. A genuine user decision changing the
+contract must be recorded in CONTEXT before a fresh bounded revision.
 
-{list remaining issues}
-
-Options:
-1. Force approve — proceed with current UI-SPEC (FLAGs become accepted)
-2. Edit manually — open UI-SPEC.md in editor, re-run /ui-phase
-3. Abandon — exit without approving
-```
-
-Use AskUserQuestion for the choice.
-
-**On "Force approve":** proceed to step 9.5 (the UI-consideration probe still runs on the accepted UI-SPEC, so state coverage is recorded even when quality FLAGs were accepted), then step 10. **On "Edit manually" / "Abandon":** exit without running the probe.
 
 ## 9.5. UI-Consideration Probe (post-verification)
 
-Run AFTER the checker approves the UI-SPEC (VERIFIED, or force-approved at step 9) — never inline
+Run AFTER the checker approves the UI-SPEC (VERIFIED) — never inline
 during authoring, so a revision-loop researcher rewrite (step 9) cannot clobber the section and the
 `## UI Considerations` block is committed with the FINAL UI-SPEC. This is the visual analog of
 spec-phase Step 5.5's edge probe, retargeted to the UI element/state axis. Reference:
 @engineer/references/ui-consideration-probe.md.
 
-**Skip conditions:** if `--auto` and the UI-SPEC already carries a resolved `## UI Considerations`
-section (re-run), the write-back is idempotent (it REPLACES that section, never appends). If the
-runtime is non-Claude and the probe engine cannot be resolved, the shim FAILS LOUD (below) — it
-never silently no-ops (a silent skip would drop the whole state-coverage axis).
-
+Existing resolved UI Considerations may be reused only for unchanged surfaces and
+input decisions. Write-back replaces the section, never appends a duplicate. A
+faithful agent-judged table supplies this axis where the runtime lacks a UI probe;
+missing automation never silently skips state coverage.
 **Non-English projects — `text_en` carries the classifier-facing translation; the UI-SPEC is
 not.** The element cues the classifier matches are **English** word-boundary patterns, so
 element prose written in another language matches nothing, classifies to zero kinds, and lands
@@ -377,126 +340,50 @@ any language (the recorded recall gap — ADR-857 §98 / ADR-550 D7b, not a tran
 author an explicit `elements` array on that element instead of relying on the prose classifier.
 (#4657)
 
-**Runtime coverage compute — resolve and invoke ui-consideration-probe.cjs:**
+**Coverage compute — explicit element table, never a fabricated executable.**
+Read the whole final contract, including surfaces named in prose, Copywriting,
+Design System and component sections. Author one stable `{id,text,text_en?,elements?}`
+entry per actual surface; a regex of token tables cannot recover this inventory.
+Reject empty/placeholder input. Load the COMPLETE
+`engineer/references/ui-consideration-probe.md`, including all eight categories,
+applicability sets and exact questions. Use a documented existing Python runtime
+verb only if its actual interface supports this axis. Otherwise compute an
+agent-judged table from that full reference, explicitly recording that provenance;
+do not reference a missing compiled module, install Node or run a build.
 
-```bash
-# Resolve the compiled ui-consideration-probe.cjs against the GSD install dir via RUNTIME_DIR
-# (#448) — NOT the consuming project's git root — falling back to git toplevel / $HOME/.claude.
-# Mirrors spec-phase.md Step 5.5's edge-probe resolution idiom verbatim (same candidate paths).
-_GSD_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-UI_PROBE_JS=$(for _c in \
-  "$_GSD_RT/engineer/bin/lib/ui-consideration-probe.cjs" \
-  "$_GSD_RT/bin/lib/ui-consideration-probe.cjs" \
-  "$_GSD_RT/.claude/bin/lib/ui-consideration-probe.cjs" \
-  "$HOME/.claude/engineer/bin/lib/ui-consideration-probe.cjs" \
-  "$HOME/.claude/bin/lib/ui-consideration-probe.cjs"; do
-  [ -f "$_c" ] && { echo "$_c"; break; }
-done)
+For each element record proposed kinds (`form`, `list-collection`, `nav`, `media`,
+`interactive-control`, `static-content`) and EVERY applicable category: empty,
+loading, error, populated, partial, overflow, zero-one-many, long-text. No kind
+match raises one `unclassified` unresolved item; explicit `elements: []` requires
+an explained applicability decision. Preserve stable IDs, original-language text
+and faithful text_en where relevant. If all elements are unclassified or zero
+categories apply, re-inspect the actual surfaces; record evidence for any genuinely
+state-free surface or the precise unresolved gap. Never silently write an empty
+coverage section or manufacture a no-UI result.
 
-# Graceful degradation — never a silent skip. Build ONLY when $_GSD_RT is a verified GSD source
-# checkout (has tsconfig.build.json + src/ui-consideration-probe.cts), pinned with --prefix so we
-# never trigger the CONSUMING project's own build during a ui-phase. Real installs ship the
-# compiled .cjs via prepublishOnly, so this path only matters in a GSD dev checkout.
-if [ -z "$UI_PROBE_JS" ]; then
-  if [ -f "$_GSD_RT/tsconfig.build.json" ] && [ -f "$_GSD_RT/src/ui-consideration-probe.cts" ]; then
-    npm --prefix "$_GSD_RT" run build:lib 2>/dev/null || true
-    UI_PROBE_JS=$(for _c in \
-      "$_GSD_RT/engineer/bin/lib/ui-consideration-probe.cjs" \
-      "$_GSD_RT/bin/lib/ui-consideration-probe.cjs" \
-      "$_GSD_RT/.claude/bin/lib/ui-consideration-probe.cjs" \
-      "$HOME/.claude/engineer/bin/lib/ui-consideration-probe.cjs" \
-      "$HOME/.claude/bin/lib/ui-consideration-probe.cjs"; do
-      [ -f "$_c" ] && { echo "$_c"; break; }
-    done)
-  fi
-  if [ -z "$UI_PROBE_JS" ]; then
-    echo "ERROR: ui-consideration-probe.cjs not found — reinstall GSD or run \`npm run build:lib\` in your GSD checkout." >&2
-    exit 1
-  fi
-fi
-
-# Element extraction (MANUAL BY DESIGN — not an oversight): the agent reads the researcher-authored
-# UI-SPEC prose (the described surfaces — the Design System / Copywriting rows and any element the
-# researcher named) and writes ONE object per UI element/surface: {"id","text","text_en"?} where
-# text is the prose describing it. This mirrors spec-phase Step 5.5's edge-probe REQS_JSON step
-# VERBATIM — a
-# hand-populated heredoc guarded by the fail-loud <replace:> check below — the established, shipped
-# pattern for feeding a probe from a prose spec. It is NOT mechanized on purpose: a UI-SPEC has no
-# single machine-parseable "elements" column — surfaces are distributed across design-token tables
-# (Design System / Typography / Color), the Copywriting section, and prose the researcher names, so a
-# regex/table parse would fail-OPEN (miss a prose-named surface, or feed a design-token row as a bogus
-# element). The agent-authored heredoc + fail-loud guard is the conservative choice, identical to the
-# requirement-side edge-probe path (RR-04). If a future UI-SPEC gains a canonical element table,
-# revisit to parse it. Populate the heredoc from the UI-SPEC; the guard below fails loud on a
-# forgotten substitution (never a no-op). When `response_language` is set, ALSO add `text_en` — a
-# faithful ENGLISH translation of `text` (see the Non-English projects note above); the element
-# cues are English-only, so original-language `text` alone classifies to zero kinds. `text` itself
-# stays the UI-SPEC's own wording and is never translated.
-ELEMENTS_JSON=$(mktemp "${TMPDIR:-/tmp}/ui-probe-elements-XXXXXX") && mv "$ELEMENTS_JSON" "${ELEMENTS_JSON}.json" && ELEMENTS_JSON="${ELEMENTS_JSON}.json" || exit 1
-cat > "$ELEMENTS_JSON" <<'JSON'
-[
-  { "id": "E1", "text": "<replace: element/surface description from the UI-SPEC prose>" }
-]
-JSON
-if ! node -e 'const a=require(process.argv[1]);if(!Array.isArray(a)||a.length===0)process.exit(1);if(a.some(e=>typeof e.text!=="string"||!e.text.trim()||e.text.includes("<replace:")))process.exit(1)' "$ELEMENTS_JSON" 2>/dev/null; then
-  rm -f "$ELEMENTS_JSON"
-  echo "ERROR: ui-probe elements JSON is empty/invalid or still holds the <replace: …> placeholder — populate \$ELEMENTS_JSON from the UI-SPEC's described surfaces before this step runs." >&2
-  exit 1
-fi
-# Invoke the compiled engine and CAPTURE its report. FATAL-INVOKE GUARD: use `if ! COVERAGE=$(…)`,
-# NEVER a bare `COVERAGE=$(node …)` — a bare capture swallows the engine's exit 2 (invalid shape /
-# bad input) and falls through to prose re-derivation: fail-OPEN at the exact boundary the engine
-# validation protects.
-if ! COVERAGE=$(node "$UI_PROBE_JS" "$ELEMENTS_JSON"); then
-  rm -f "$ELEMENTS_JSON"
-  echo "ERROR: ui-consideration-probe engine failed (invalid shapes or bad input) — fix the element(s) and re-run; never proceed with empty coverage." >&2
-  exit 1
-fi
-rm -f "$ELEMENTS_JSON"
-# Malformed-report guard: exit 0 but garbage. The report must parse as { items[], coverage{} }.
-if ! printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let r;try{r=JSON.parse(s)}catch{process.exit(1)}if(!r||!Array.isArray(r.items)||typeof r.coverage!=="object"||r.coverage===null)process.exit(1)})'; then
-  echo "ERROR: ui-consideration-probe produced an unparseable or malformed coverage report — refusing to proceed with the resolution loop." >&2
-  exit 1
-fi
-# Zero-applicable guard: a report where NO category applied across ANY element is far more likely a
-# classification miss (or malformed elements) than a genuinely state-free UI. Surface it loudly.
-APPLICABLE=$(printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let n=0;try{n=JSON.parse(s).coverage.applicable}catch{n=0}process.stdout.write(String(n))})')
-UNCLASSIFIED=$(printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let n=0;try{n=JSON.parse(s).coverage.unclassified}catch{n=0}process.stdout.write(String(n))})')
-# #4656: all-unclassified reads as a non-zero applicable — widen the guard to fire there too.
-if [ "$APPLICABLE" = "0" ] || [ "$UNCLASSIFIED" = "$APPLICABLE" ]; then
-  echo "WARNING: ui-consideration-probe proposed ZERO applicable categories across all elements — likely a classification miss or malformed elements, not a genuinely state-free UI. Do NOT silently write an empty UI Considerations section." >&2
-fi
-```
-
-If the guard above fired (`$APPLICABLE` is `0`, or every element is unclassified — `$UNCLASSIFIED = $APPLICABLE`, #4656), do NOT proceed silently: ask via AskUserQuestion ("The UI probe found no
-applicable state considerations — is this genuinely a state-free surface, or should we revisit the
-element descriptions?"). Only write an empty section after explicit confirmation.
-
-**Propose-then-confirm (the partial-cue mitigation — load-bearing).** For each element, the engine
-reports the DETECTED element kinds (`classifyElement` over the built `.cjs`). The prose classifier
+**Propose-then-confirm (the partial-cue mitigation — load-bearing).** For each element, the coverage table
+reports the proposed element kinds. The prose classifier
 is heuristic and LOSSY: a surface that is genuinely both a form and a list, but whose prose trips
 only the form cue, under-covers — and because SOMETHING classified, no `unclassified` signal fires.
-So SURFACE the detected kinds to the user (AskUserQuestion) and ask whether any real element kind
-was missed. If the user ADDs a kind, re-run that element with an authored `elements` override
+Review the detected kinds against every locked decision and actual surface; ask only for a genuinely missing consequential user decision, through the coordinator. If the user ADDs a kind, re-run that element with an authored `elements` override
 (the union of detected + added) so the missed categories are raised. A single tripped cue is a
 SIGNAL, not proof the element is only that kind — the confirm step, not the heuristic, is what makes
 coverage sound.
 
-**Resolution loop** (mirror spec-phase 5.5): resolve each applicable consideration via
-AskUserQuestion — **Specify** (→ `resolved`, verification: explicit; write a concrete truth) / **Dismiss (reason required)** /
+**Resolution loop** (mirror spec-phase 5.5): resolve each applicable consideration from locked acceptance and delegated discretion; route only unresolved consequential decisions through the coordinator — **Specify** (→ `resolved`, verification: explicit; write a concrete truth) / **Dismiss (reason required)** /
 **Backstop** (→ `resolved`, verification: backstop; a held-out/visual UI-state test) / **Defer** (→ `unresolved`). An `unclassified` row is
 a manual-review nudge, not a hard block. Text mode (`workflow.text_mode` / `--text`) → numbered lists.
 
 **Kind-confirmation under `--auto`.** The propose-then-confirm step above is an AskUserQuestion, so
-under `--auto` it follows the spec-phase 5.5 convention (replace AskUserQuestion with Claude's
-recommended choice): Claude re-reads each element's prose and authors the `elements` override (the
+under `--auto` it follows the spec-phase 5.5 convention (replace AskUserQuestion with the agent's
+recommended choice): the agent re-reads each element's prose and authors the `elements` override (the
 union of the detected kinds + any kind it identifies as missed) instead of prompting — so `--auto`
-recall rests on Claude's kind-identification, not the heuristic cue-match alone. This matters because
-`autoResolve` (below) is a RESOLUTION floor only: it resolves the *detected* categories and cannot
+recall rests on the agent's kind-identification, not the heuristic cue-match alone. This matters because
+The resolution floor below covers detected categories only: it resolves the *detected* categories and cannot
 recover a kind that was never surfaced, so recall is fixed HERE, at kind-confirmation, before
 resolution runs.
 
-**`--auto` mode (two layers).** The adapter's `autoResolve` is the CODE floor: every applicable
+**`--auto` mode (two layers).** The agent-judged table applies this resolution floor: every applicable
 consideration auto-resolves with `verification: backstop` (carrying the taxonomy question as its
 resolution) and an `unclassified` candidate stays `unresolved` — it NEVER auto-`dismiss`es and never
 auto-resolves an unclassified item with backstop (#1110). On top of that floor the workflow MAY
@@ -514,63 +401,49 @@ error-state COPY stays in `## Copywriting Contract` — the considerations secti
 STATE coverage and REFERENCES those rows rather than restating the copy (de-dup). IDEMPOTENT: if a
 `## UI Considerations` section already exists, REPLACE it — never append a duplicate.
 
-## 10. Present Final Status
 
-Display:
-```
-### GSD ► UI-SPEC READY ✓
+## 10. Final checker and coordinator approval
 
-**Phase {N}: {Name}** — UI design contract approved
+The consideration section is part of the contract. If it changed after review,
+obtain fresh checker evidence against the complete final content. After ALL
+artifact writers/checkers have stopped, the coordinator writes the Checker
+Sign-Off, `status: approved` and reviewed timestamp only from complete APPROVED
+read-only evidence. Retain reviewed revision, input/spec identity, dimension
+citations, unresolved/backstop obligations and provenance; status alone is not
+proof. A semantic content change invalidates prior approval. Run
+`engineer_run query check.ui-plan-gate N` only when checks are permitted. Inspect
+its actual blocked/required/reason result; if the installed gate lacks needed
+scope/approval-evidence validation, report that concrete dependency instead of
+claiming it supplied those protections. Pending gate execution blocks a claimed
+checked planning gate, not independent authorized design authoring.
 
-Dimensions: 7/7 passed
-{If any FLAGs: "Recommendations: {N} (non-blocking)"}
 
----
+## 11. Commit and durable decisions
 
-## ▶ Next Up — [${PROJECT_CODE}] ${PROJECT_TITLE}
+Inspect and stage only the coordinator-owned UI-SPEC approval/probe changes;
+commit the meaningful slice under `engineer/references/git-workflow.md`.
+Record design-system choices that outlive this phase with
+`engineer_run query state.add-decision` using actual decision/rationale, never
+invented human approval. Use `state.record-session` with the actual stopped-at
+and resume-file. Follow user delivery/check-order overrides. No routine
+maintenance SUMMARY is required when the assignment excludes it.
 
-{If CONTEXT.md exists for this phase:}
-**Plan Phase {N}** — planner will use UI-SPEC.md as design context
 
-`/clear` then: `/plan-phase {N}`
+## 12. Present final status
 
-{If CONTEXT.md does NOT exist:}
-**Discuss Phase {N}** — gather implementation context before planning
-
-`/clear` then: `/discuss-phase {N}`
-
-(or `/plan-phase {N}` to skip discussion)
-
----
-```
-
-## 11. Commit (if configured)
-
-```bash
-engineer_run query commit "docs(${padded_phase}): UI design contract" --files "${PHASE_DIR}/${PADDED_PHASE}-UI-SPEC.md"
-```
-
-## 12. Update State
-
-```bash
-engineer_run query state.record-session \
-  --stopped-at "Phase ${PHASE} UI-SPEC approved" \
-  --resume-file "${PHASE_DIR}/${PADDED_PHASE}-UI-SPEC.md"
-```
+Report the actual contract path, reviewed revision, seven dimension outcomes,
+nonblocking FLAGs, state coverage and remaining dependencies. Say whether planning
+has usable design evidence. Design completion never authorizes implementation.
+No command chaining, forced acceptance or routine stop prompt.
 
 </process>
-
 <success_criteria>
-- [ ] Config checked (exit if ui_phase disabled)
-- [ ] Phase validated against roadmap
-- [ ] Prerequisites checked (CONTEXT.md, RESEARCH.md — non-blocking warnings)
-- [ ] Existing UI-SPEC handled (update/view/skip)
-- [ ] ui-researcher spawned with correct context and file paths
-- [ ] UI-SPEC.md created in correct location
-- [ ] ui-checker spawned with UI-SPEC.md
-- [ ] All 7 dimensions evaluated
-- [ ] Revision loop if BLOCKED (max 2 iterations)
-- [ ] Final status displayed with next steps
-- [ ] UI-SPEC.md committed (if commit_docs enabled)
-- [ ] State updated
+- Actual phase/session/scope and recorded discussion decisions loaded.
+- No-UI scope returned honestly without invented product surfaces.
+- Exact isolated artifact-only writer integrated through merge-artifacts.
+- Complete retained UI template, inventory, accessibility, interaction and state methods applied.
+- All seven read-only checker dimensions joined against the final content.
+- Coordinator alone records evidence-based approval and durable choices.
+- Required gate/check execution remains pending until permitted.
+- Closing status preserves actual authority and every unresolved dependency.
 </success_criteria>

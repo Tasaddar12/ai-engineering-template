@@ -1,5 +1,5 @@
 <purpose>
-Retroactive 6-pillar visual audit of implemented frontend code. Standalone command that works on any project — GSD-managed or not. Produces scored UI-REVIEW.md with actionable findings.
+Retroactive 6-pillar visual audit of implemented frontend code. Standalone command that works on any project — engineer-managed or not. Produces scored UI-REVIEW.md with actionable findings.
 </purpose>
 
 <required_reading>
@@ -7,85 +7,33 @@ Retroactive 6-pillar visual audit of implemented frontend code. Standalone comma
 </required_reading>
 
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+Valid engineer subagent types (use exact names — do not fall back to 'general-purpose'):
 - ui-auditor — Audits UI against design requirements
 </available_agent_types>
 
 <process>
 
-## 0. Initialize
+## 0. Initialize and reuse the phase session
 
-```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
-$ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-_engineer_identity_ok() {
-  [ -f "$1" ] || return 1
-  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
-}
-_engineer_select() {
-  for _engineer_candidate do
-    if _engineer_identity_ok "$_engineer_candidate"; then
-      ENGINEER_RUN="$_engineer_candidate"
-      return 0
-    fi
-  done
-  return 1
-}
-if [ -n "${ENGINEER_RUN:-}" ]; then
-  _engineer_identity_ok "$ENGINEER_RUN" || {
-    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
-    exit 1
-  }
-else
-  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
-  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
-  _engineer_select \
-    "$_engineer_root/engineer/bin/engineer_run" \
-    "$_engineer_runtime_root/engineer/bin/engineer_run" \
-    "$_engineer_root/.claude/engineer/bin/engineer_run" \
-    "$_engineer_root/.codex/engineer/bin/engineer_run" \
-    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
-    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
-    "$_engineer_path_candidate" || {
-    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
-    exit 1
-  }
-fi
-export ENGINEER_RUN
-engineer_run() {
-  sh "$ENGINEER_RUN" "$@"
-}
-if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
-  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
-fi
-RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --default "" 2>/dev/null || echo "")
-PHASE_ARG=$(echo "$GSD_ARGS" | sed -E 's/--ws[[:space:]]+[A-Za-z0-9._-]+//g' | xargs)
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.phase-op ${GSD_WS:+--ws=${GSD_WS##* }} "${PHASE_ARG}")
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_UI_REVIEWER=$(engineer_run query agent-skills ui-auditor ${GSD_WS:+--ws=${GSD_WS##* }})
-# workflow.ui_interaction_capture (default false): read here and handed to the auditor
-# through its <config> block — the agent carries no engineer_run resolver of its own.
-INTERACTION_CAPTURE=$(engineer_run query config-get workflow.ui_interaction_capture --raw 2>/dev/null || echo "false")
-[ "$INTERACTION_CAPTURE" = "true" ] || INTERACTION_CAPTURE="false"
-```
+Read `engineer/RULES.md`, `engineer/references/worker-handoff.md`,
+`engineer/references/verification-evidence.md`, the complete `agents/ui-auditor.md`
+and canonical `engineer/references/git-workflow.md`. Execute the runtime launcher
+snippet, resolve the actual phase using `engineer_run query phase.locate N`, quote
+and enter its worktree, then run `init.phase-op N`. Require phase_found and actual
+phase paths; never fabricate a phase for an unonboarded template.
 
-**If `response_language` is set:** All user-facing output of this workflow — narration between tool calls, status updates, progress notes, findings, questions, prompts, and explanations — MUST be presented in `{response_language}`. Technical terms, code, file paths, and subagent prompts stay in English — only user-facing output is translated.
+Inspect `session.status` and reuse the matching caller/session. Adopt an owned
+clean isolated checkout with `session.adopt phase N`, otherwise use `session.open
+phase N`. Recheck root/branch and initialize there. When invoked by verify-work,
+reuse its prepared packet and SAME frozen batch; do not run initialization,
+record-writing or publication steps inside that batch.
 
-Parse: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `commit_docs`.
-
-```bash
-UI_AUDITOR_MODEL=$(engineer_run query resolve-model ui-auditor --raw)
-```
-
-Display banner:
-```
-### GSD ► UI AUDIT — PHASE {N}: {name}
-```
+Read actual UI scope, locked decisions and source. For a CLI/backend phase with
+no UI, return cited not_applicable without invented screens, audit scores or
+browser use. Resolve `workflow.ui_interaction_capture` explicitly (default false),
+text_mode and response_language. Resolve exact ui-auditor model and effort with
+resolve-model/resolve-effort; pass both inline, omitting inherited fields. An
+unavailable role/capability is a concrete dependency, not permission to self-audit.
 
 ## 1. Detect Input State
 
@@ -98,21 +46,10 @@ UI_REVIEW_FILE=$(ls "${PHASE_DIR}"/*-UI-REVIEW.md 2>/dev/null | head -1)
 **If `SUMMARY_FILES` empty:** Exit — "Phase {N} not executed. Run /execute-phase {N} first."
 
 **Text mode (`workflow.text_mode: true` in config or `--text` flag):** Set `TEXT_MODE=true` if `--text` is present in `$ARGUMENTS` OR `text_mode` from init JSON is `true`. When TEXT_MODE is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for non-Claude runtimes (OpenAI Codex) where `AskUserQuestion` is not available.
-**If `UI_REVIEW_FILE` non-empty:**
-
-**If `--auto`:** Auto-select "View" — keep the existing UI-REVIEW.md untouched and exit without
-re-auditing. Log: `[auto] UI-REVIEW.md exists — reusing as-is.` "Re-audit" is the regenerating
-choice; an unattended run reuses an existing artifact instead (#4776).
-
-**Otherwise:** Use AskUserQuestion:
-- header: "Existing UI Review"
-- question: "UI-REVIEW.md already exists for Phase {N}."
-- options:
-  - "Re-audit — run fresh audit"
-  - "View — display current review and exit"
-
-If "View": display file, exit.
-If "Re-audit": continue.
+**If an existing review exists:** reuse only if its source revision, full input
+digests and required live evidence are current. Explicit View returns it with its
+actual limitations. Otherwise audit the current requested scope without a routine
+re-audit/view confirmation. A reused stale score cannot establish acceptance.
 
 ## 2. Gather Context Paths
 
@@ -131,7 +68,7 @@ Build file list for auditor:
 Build prompt:
 
 ```markdown
-Read ~/.claude/agents/ui-auditor.md for instructions.
+Read the resolved source or installed `agents/ui-auditor.md` in full.
 
 <objective>
 Conduct 6-pillar visual audit of Phase {phase_number}: {phase_name}
@@ -146,28 +83,35 @@ Conduct 6-pillar visual audit of Phase {phase_number}: {phase_name}
 - {context_path} (User decisions, if exists)
 </required_reading>
 
-${AGENT_SKILLS_UI_REVIEWER}
+Read assigned/applicable skills selected by description.
 
 <config>
 phase_dir: {phase_dir}
 padded_phase: {padded_phase}
-interaction_capture: {interaction_capture}
+interaction_capture: {actual resolved policy}
+frozen_revision: {full captured revision}
+identity: {absolute root, branch/base, phase/session/caller}
+inputs: {actual UI-SPEC/CONTEXT/PLAN/source paths and digests}
+authority: {actual implementation/design authority and check-order constraints}
+fixture: {explicit assigned running URL and safe fixture identity, or unavailable}
+capture_dir: {explicit external directory outside the source checkout, or absent}
+acceptance: {complete criterion IDs, UI-SPEC and required interaction/state coverage}
 </config>
 ```
 
-Omit null file paths. `interaction_capture` is always present — the `$INTERACTION_CAPTURE` value read in step 0, `true` only when
-`workflow.ui_interaction_capture` is on; the auditor's `<screenshot_approach>` branches on it and
-falls back to its Playwright-only static capture when it is `false` or no Chrome binary resolves.
-
-<!-- #2517 model-omit-on-inherit -->
-
-> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`UI_AUDITOR_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @engineer/references/model-profile-resolution.md.
+Omit null file paths but explicitly report missing required inputs. Captures use
+only actual available host/browser APIs; no automatic package/driver installs,
+arbitrary server probing or source-tree screenshots. The auditor is read-only,
+returns the COMPLETE report and coverage limitations, and never commits, writes
+phase records, prompts independently, publishes or dispatches children. Missing
+live/browser/fixture evidence is BLOCKED/unverified, never a visual pass.
 
 ```
 Agent(
   prompt=ui_audit_prompt,
   subagent_type="ui-auditor",
   model="{UI_AUDITOR_MODEL}",
+  effort="{UI_AUDITOR_EFFORT}",
   description="UI Audit Phase {N}"
 )
 ```
@@ -176,12 +120,20 @@ Agent(
 
 ## 4. Handle Return
 
-**If `## UI REVIEW COMPLETE`:**
+Require canonical `## UI REVIEW`, observed/gaps_found/blocked status, exact
+frozen source/input identity, complete six-pillar report, criterion evidence and
+unexamined scope. The compatibility `## UI REVIEW COMPLETE` marker alone cannot
+prove a live audit. Wait for ALL assigned checks/specialists and continuations
+before shared writes, corrections or a joined verdict. In verify-work, return the
+report to its original independent verifier for reconciliation; do not persist it
+mid-batch. A timeout is not confirmed worker stop.
+
+After a valid joined return:
 
 Display score summary:
 
 ```
-### GSD ► UI AUDIT COMPLETE ✓
+### ENGINEER ► UI AUDIT COMPLETE ✓
 
 **Phase {N}: {Name}** — Overall: {score}/24
 
@@ -203,36 +155,33 @@ Full review: {path to UI-REVIEW.md}
 
 ---
 
-## ▶ Next
-
-`/clear` then:
-
-- `/verify-work {N}` — UAT testing before phase completion
-
----
+Required live evidence missing: {exact BLOCKED criteria and next evidence needed}
 ```
 
 ## Automated UI Verification (when Playwright-MCP is available)
 
-If `mcp__playwright__*` tools are accessible in this session:
+Use the same complete method in
+`engineer/workflows/verify-work/steps/automated-ui-verification.md` while preparing
+the frozen batch. Available host browser APIs may navigate only the assigned
+fixture, capture the actual declared states and compare dimensions, color, layout,
+spacing and typography against UI-SPEC. Observed/failed/BLOCKED remain distinct;
+brand feel and content tone needing human judgment enter the concrete UAT script.
+No live capability means source-derived review with required observations still
+BLOCKED, not an automatic pass or silent skip.
 
-1. Navigate to each UI component described in the phase's UI-SPEC.md using
-   `mcp__playwright__navigate` (or equivalent Playwright-MCP tool).
-2. Take a screenshot of each component using `mcp__playwright__screenshot`.
-3. Compare against the spec's visual requirements — dimensions, color palette,
-   layout, spacing scale, and typography.
-4. Report any dimension, color, or layout discrepancies automatically as
-   additional findings within the relevant pillar section of UI-REVIEW.md.
-5. Flag items that require human judgment (brand feel, content tone) as
-   `needs_human_review: true` in the findings — these are surfaced to the user
-   separately after the automated pass completes.
+## 4a. Findings and coordinator capture
 
-If Playwright-MCP is not available in this session, this section is skipped
-entirely. The audit falls back to the standard code-only review described above.
-No configuration change is required — the availability of `mcp__playwright__*`
-tools is detected at runtime.
+After the complete join and currentness check, the coordinator records the full
+report at the actual `{phase_dir}/{padded_phase}-UI-REVIEW.md`, preserving source,
+input, fixture and capture identities, all scores, top three fixes and detailed
+findings. Route required in-scope defects to authorized isolated correction and
+fresh verification. Keep unrelated recommendations in the report's Deferred
+scope with evidence; never turn them into required rework. Canonical issues use
+the full issue template, stable identity, matching, hash-bound preview/publication
+and provider readback from git-workflow; report actual unavailable dependencies.
+No routine verify/accept/ignore menu, acceptance waiver or automatic new scope.
 
-## 5. Commit (if configured)
+## 5. Commit coordinator-owned report when permitted
 
 ```bash
 engineer_run query commit "docs(${padded_phase}): UI audit review" --files "${PHASE_DIR}/${PADDED_PHASE}-UI-REVIEW.md"
@@ -247,5 +196,5 @@ engineer_run query commit "docs(${padded_phase}): UI audit review" --files "${PH
 - [ ] ui-auditor spawned with correct context
 - [ ] UI-REVIEW.md created in phase directory
 - [ ] Score summary displayed to user
-- [ ] Next steps presented
+- [ ] Exact failed/unverified acceptance and user authority preserved
 </success_criteria>
