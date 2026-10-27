@@ -99,7 +99,7 @@ packet or report; it does not create a commit or SUMMARY.md.
 
 ## Skills
 
-The skills under `.agents/skills/` mirror `.ai/commands/` one-for-one; a host
+The skills under `skills/` mirror `commands/` one-for-one; a host
 that discovers skills and a host that registers slash commands behave
 identically. Load the skills that match the work, plus those named in the plan's
 `read_first` section — do not read every skill body.

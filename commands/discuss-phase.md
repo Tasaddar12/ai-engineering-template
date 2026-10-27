@@ -1,7 +1,7 @@
 ---
 name: discuss-phase
 description: Gather phase context through adaptive questioning before planning.
-argument-hint: "<phase> [--all] [--auto] [--chain] [--batch] [--analyze] [--text] [--power] [--assumptions]"
+argument-hint: "<phase> [--all] [--auto] [--chain] [--text] [--power] [--assumptions]"
 allowed-tools:
   - Read
   - Write
