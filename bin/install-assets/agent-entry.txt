@@ -79,9 +79,6 @@ HEAD before writes. Workers never create worktrees, switch branches, merge,
 publish or mutate shared planning records. Isolation is mandatory; the current
 host must establish a supported isolated checkout before writing.
 
- Additional scouts need
-separately named questions and distinct cited evidence packets. Scouts and
-code-fixer are leaves; they do not dispatch children. Follow
 
 After dispatch, wait before touching owned paths or integrating commits. Confirm
 worker exit positively before reassignment. A timeout, silence or guessed stall
