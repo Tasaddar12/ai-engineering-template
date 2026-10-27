@@ -369,7 +369,7 @@ issue_refs: []
                                           cwd=self.target, text=True, encoding="utf-8", capture_output=True)
                 self.assertEqual(adoption.returncode, 1)
                 self.assertNotIn("Traceback", adoption.stderr)
-                self.assertEqual(json.loads(adoption.stdout)["code"], "phase-not-found")
+                self.assertEqual(json.loads(adoption.stderr.strip().splitlines()[-1])["error"], "phase-not-found")
                 self.assertFalse((self.target / ".git" / "ai-phase" / "sessions.json").exists())
                 self.assertEqual(before, self.snapshot())
                 # An expected failure is a result, not a traceback.
@@ -378,7 +378,7 @@ issue_refs: []
                                         capture_output=True)
                 self.assertEqual(1, failed.returncode)
                 self.assertNotIn("Traceback", failed.stderr)
-                self.assertEqual("phase-not-found", json.loads(failed.stdout)["code"])
+                self.assertEqual("phase-not-found", json.loads(failed.stderr.strip().splitlines()[-1])["error"])
 
     def test_new_project_starts_runtime_and_omits_template_history(self):
         result = self.install()
@@ -681,6 +681,19 @@ issue_refs: []
                 command("git", "add", ".", cwd=self.target)
                 command("git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
                         "commit", "--quiet", "-m", "Install workflow", cwd=self.target)
+                # A real worker request targeting the primary checkout must be
+                # refused by the runtime on either host, irrespective of hooks.
+                runtime = "." + host + "/engineer/bin/engineer.py"
+                before_workers = command("git", "worktree", "list", "--porcelain", cwd=self.target)
+                refused = subprocess.run([sys.executable, runtime, "query", "worktree.create",
+                                          "unsafe-worker", "--path", "."], cwd=self.target,
+                                         text=True, encoding="utf-8", capture_output=True)
+                self.assertEqual(1, refused.returncode, refused.stderr)
+                self.assertEqual("primary-worktree-refused",
+                                 json.loads(refused.stderr.strip().splitlines()[-1])["error"])
+                self.assertEqual(before_workers, command("git", "worktree", "list", "--porcelain",
+                                                          cwd=self.target))
+                self.assertFalse((self.target / ".planning/worktrees/session.json").exists())
                 worktree = self.target / ".worktrees/phase"
                 command("git", "worktree", "add", "-b", "codex/phase", str(worktree), cwd=self.target)
                 runtime = "." + host + "/engineer/bin/engineer.py"
