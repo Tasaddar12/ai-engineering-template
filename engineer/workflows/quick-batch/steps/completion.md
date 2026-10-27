@@ -10,9 +10,8 @@ failed, row 32) — are left exactly as their respective routing step set
 them. No STATE row, no `complete` status, worktree preserved where
 applicable.
 
-**Final commit.** Stage only exact coordinator-owned artifacts produced this run (PLAN.md, SUMMARY.md,
-`--research` RESEARCH.md, `--validate` VERIFICATION.md, per item, plus
-`.planning/STATE.md`) and commit:
+**Final commit.** Stage only exact coordinator-owned artifacts produced this run: integrated planning/research records where their producing artifact contract assigns them to the coordinator, full persisted `--validate` VERIFICATION.md, batch records and
+`.planning/STATE.md`. Worker-owned complete SUMMARY.md is already committed by its source worker; inspect/integrate it, never reserve its first commit for this final step. Commit:
 `$BATCH_ARTIFACT_FILES` is a bash ARRAY (not a plain string — a plain
 space-joined string re-splits unpredictably under `set -f`/globbing and
 diverges between bash and zsh, the #4109 word-splitting bug class):

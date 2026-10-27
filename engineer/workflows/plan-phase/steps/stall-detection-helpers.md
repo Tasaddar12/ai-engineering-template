@@ -18,7 +18,7 @@ Disabled means use the host's ordinary completion/join mechanism and consume the
 
 ## Dispatch and record real identities
 
-For each of the five routes above, resolve the exact role's model AND effort, prepare supported isolation for writers and dispatch through the actual host interface. Record assignment ID, native returned handle, role, source/input revision, exact owned artifacts, dispatch time and last meaningful progress time. Preserve each resolution inline; omit inherited parameters.
+For each of the five routes above, resolve the exact role's model AND effort with `engineer_run query resolve-model ROLE --raw` and `engineer_run query resolve-effort ROLE --raw`, prepare supported isolation for writers and dispatch through the actual host interface. Record assignment ID, native returned handle, role, source/input revision, exact owned artifacts, dispatch time and last meaningful progress time. Preserve each resolution inline; omit inherited parameters.
 
 - Codex with collaboration tools: retain the returned canonical agent ID; observe through `collaboration.list_agents` and wait for mailbox/progress through `collaboration.wait_agent` with a timeout no greater than 60,000 ms. Match actual returned updates to that exact ID. Do not use application chat handles as subagent IDs.
 - Claude with an installed exact Agent role: use the host-supported background/completion route only when available, retaining its actual returned identity and reading its result through that host's advertised wait/result capability. If that capability is absent, use ordinary blocking Agent completion and record the observation limitation. Never require a result filename the API did not return.
