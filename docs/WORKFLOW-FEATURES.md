@@ -8,7 +8,6 @@ The workflow combines copied upstream methods with explicit user authority, isol
 | Bounded planning | Complete templates and exact ownership | Dependencies/files/resources form actual groups |
 | Implementation authority | User instructs execution of named phase | Actual instruction in CONTEXT; readiness is insufficient |
 | Mandatory isolation | Open/adopt isolated workflow session | Root/branch/base guards; no opt-out |
-| Coordinated specialists | Resolve exact role/model/effort | Coordinator owns lifecycle; scouts remain read-only |
 | TDD | Assigned TDD plans/tasks | Actual RED and GREEN evidence plus ancestry |
 | Frozen verification | Capture revision and join every result | Current receipts and v4 digest; no invented evidence |
 | Human acceptance | Runnable actions, fixtures and reply format | Actual final human acceptance |
