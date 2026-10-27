@@ -583,10 +583,16 @@ issue_refs: []
                 self.target = self.base / host
                 self.assertEqual(0, self.install("--host", host, "--no-hooks").returncode)
                 runtime = "." + host + "/engineer/bin/engineer.py"
-                for name, model, effort in (("executor", "sonnet", "high"), ("planner", "opus", "medium")):
+                for name, model, effort in (("executor", "sonnet", None), ("planner", "opus", "medium")):
                     default = json.loads(command(sys.executable, runtime, "query", "resolve-agent", name, cwd=self.target))
-                    self.assertEqual("gpt-6.1-sol" if host == "codex" else model, default["model"])
-                    self.assertEqual(("medium" if name == "executor" else "high") if host == "codex" else effort, default["effort"])
+                    self.assertEqual("gpt-6.1-sol" if host == "codex" else "inherit", default["model"])
+                    self.assertEqual(("medium" if name == "executor" else "high") if host == "codex" else "inherit", default["effort"])
+                    if host == "claude":
+                        # Empty project overrides defer to the native role file.
+                        method = self.target / ".claude/agents" / (name + ".md")
+                        native = yaml.safe_load(method.read_text().split("---", 2)[1])
+                        self.assertEqual(model, native["model"])
+                        self.assertEqual(effort, native.get("effort"))
                 config = self.target / ".planning/config.yaml"
                 config.write_text("agents:\n  executor:\n    model: opus\n    effort: max\n"
                                   "  planner:\n    model: sonnet\n    effort: low\n"

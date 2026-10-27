@@ -1,5 +1,7 @@
 """Strict planning integrity preflight for prospective commit commands."""
 import shlex
+import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -7,34 +9,101 @@ import tempfile
 from hook_common import read_event, root_for, query
 
 
-def commit_arguments(command):
-    try:
-        if isinstance(command, list):
-            words = command
-        elif isinstance(command, str):
-            lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|")
-            lexer.whitespace_split = True
-            words = list(lexer)
+def shell_words(command, windows=False):
+    # Shell comments start at a word boundary. shlex's default comment handling
+    # incorrectly discards literal hashes in message arguments.
+    cleaned, quote, escaped, boundary = [], None, False, True
+    index = 0
+    while index < len(command):
+        char = command[index]
+        if not windows and char == "\\" and index + 1 < len(command) and command[index + 1] == "\n":
+            index += 2
+            continue
+        if escaped:
+            cleaned.append(char)
+            escaped = False
+            boundary = False
+        elif char == "\\" and not windows and quote != "'":
+            cleaned.append(char)
+            escaped = True
+        elif char in ("'", '"'):
+            if quote == char:
+                quote = None
+            elif quote is None:
+                quote = char
+            cleaned.append(char)
+            boundary = False
+        elif char == "#" and quote is None and boundary:
+            while index < len(command) and command[index] != "\n":
+                index += 1
+            continue
         else:
-            return None
-    except (ValueError, TypeError):
+            cleaned.append(";" if char == "\n" and quote is None else char)
+            if quote is None:
+                boundary = char.isspace() or char in ";&|"
+        index += 1
+    lexer = shlex.shlex("".join(cleaned), posix=not windows, punctuation_chars=";&|")
+    lexer.whitespace_split = True
+    lexer.commenters = ""
+    return [word[1:-1] if windows and len(word) >= 2 and word[0] == word[-1] and word[0] in "\"'" else word for word in lexer]
+
+
+def command_segments(command, windows=False, depth=0):
+    if depth > 8:
+        raise ValueError("inline shell nesting exceeds supported inspection depth")
+    words = list(command) if isinstance(command, list) else shell_words(command, windows)
+    segments, current = [], []
+    for word in [*words, ";"]:
+        if word in (";", "&&", "||", "|", "&"):
+            if current:
+                segments.append(current)
+                current = []
+        else:
+            current.append(word)
+    for words in segments:
+        while words and (words[0] in ("command", "exec", "env", "time", "!") or
+                         re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", words[0])):
+            words = words[1:]
+        if not words:
+            continue
+        executable = words[0].replace("\\", "/").rsplit("/", 1)[-1].lower().removesuffix(".exe")
+        if executable in ("bash", "sh", "powershell", "pwsh", "cmd"):
+            inline = next((i for i, word in enumerate(words[1:], 1)
+                           if word.lower() in ("-command", "/c") or
+                           executable in ("bash", "sh") and word.startswith("-") and "c" in word[1:]), None)
+            if inline is None:
+                continue  # --help, --version and interactive launches do not commit.
+            if len(words) != inline + 2:
+                raise ValueError("unsupported inline shell invocation; provide one complete command string")
+            yield from command_segments(words[inline + 1], executable in ("powershell", "pwsh", "cmd"), depth + 1)
+        else:
+            yield words
+
+
+def commit_arguments(command, windows=False):
+    if not isinstance(command, (str, list)):
         return None
-    for index, word in enumerate(words):
-        if isinstance(word, str) and Path(word).name.lower() in ("git", "git.exe") and (index == 0 or words[index - 1] in (";", "&&", "||", "|")):
-            remaining = words[index + 1:]
-            cursor = 0
-            while cursor < len(remaining):
-                token = remaining[cursor]
-                if token in ("-C", "-c", "--git-dir", "--work-tree"):
-                    cursor += 2
-                elif token.startswith("-"):
-                    cursor += 1
-                else:
-                    if token != "commit":
-                        break
-                    tail = remaining[cursor + 1:]
-                    end = next((i for i, item in enumerate(tail) if item in (";", "&&", "||", "|")), len(tail))
-                    return remaining[:cursor], tail[:end]
+    additions = []
+    for words in command_segments(command, windows):
+        executable = words[0].replace("\\", "/").rsplit("/", 1)[-1].lower()
+        if executable not in ("git", "git.exe"):
+            continue
+        cursor = 1
+        while cursor < len(words):
+            token = words[cursor]
+            if token in ("-C", "-c", "--git-dir", "--work-tree"):
+                cursor += 2
+            elif token.startswith("-"):
+                cursor += 1
+            else:
+                break
+        if cursor >= len(words):
+            continue
+        prefix, arguments = words[1:cursor], words[cursor + 1:]
+        if words[cursor] == "add":
+            additions.append((prefix, arguments))
+        elif words[cursor] == "commit":
+            return prefix, arguments, additions
     return None
 
 
@@ -57,10 +126,21 @@ def commit_selection(arguments):
             only = True
         elif item in ("--include", "-i"):
             include = True
-        elif item in ("--all", "-a") or item.startswith(("-am", "-av", "-aq")):
+        elif item.startswith("-") and not item.startswith("--") and len(item) > 2:
+            # Short options preceding m/F/C/c consume the rest as their value.
+            for position, option in enumerate(item[1:], 1):
+                if option == "a":
+                    all_tracked = True
+                elif option == "o":
+                    only = True
+                elif option == "i":
+                    include = True
+                if option in "mFCc":
+                    if position == len(item) - 1:
+                        cursor += 1
+                    break
+        elif item in ("--all", "-a"):
             all_tracked = True
-            if item == "-am":
-                cursor += 1
         elif item in takes_value:
             cursor += 1
         elif not item.startswith("-"):
@@ -70,46 +150,76 @@ def commit_selection(arguments):
 
 
 def snapshot(root, event, invocation, temporary):
-    prefix, arguments = invocation
+    prefix, arguments, additions = invocation
     cwd = Path(event.get("cwd") or root)
-    git = ["git", *prefix]
-    original_git = list(git)
-    def run(*args):
-        return subprocess.run([*git, *args], cwd=cwd, check=True, capture_output=True, timeout=5).stdout
-    actual = Path(run("rev-parse", "--show-toplevel").decode().strip()).resolve()
+    def execute(prefix, *args, check=True):
+        return subprocess.run(["git", *prefix, *args], cwd=cwd, check=check,
+                              capture_output=True, timeout=5)
+    def top(prefix):
+        return Path(execute(prefix, "rev-parse", "--show-toplevel").stdout.decode().strip()).resolve()
+    actual = top(prefix)
     if actual != root.resolve():
         raise ValueError("prospective commit targets a different repository")
-    git = ["git", "-C", str(actual)]
-    names = set(run("ls-files", "-z", "--", ".planning").decode().split("\0"))
+    git = ["-C", str(actual)]
+    def names(prefix, paths, others=False):
+        options = ["ls-files", "--full-name", "-z", "--cached"]
+        if others:
+            options += ["--others", "--exclude-standard"]
+        return set(filter(None, execute(prefix, *options, "--", *paths).stdout.decode().split("\0")))
+    tracked = names(git, [".planning"])
+    working = set()
+    for add_prefix, add_args in additions:
+        if top(add_prefix) != actual:
+            raise ValueError("preceding git add targets a different repository")
+        add_paths, update, repository_wide = [], False, False
+        after_separator = False
+        for token in add_args:
+            if token == "--":
+                after_separator = True
+            elif not after_separator and token in ("-u", "--update"):
+                update = True
+                repository_wide = True
+            elif not after_separator and token in ("-A", "--all"):
+                repository_wide = True
+            elif not after_separator and token.startswith("-"):
+                raise ValueError("unsupported prospective git add option: " + token)
+            else:
+                add_paths.append(token)
+        if add_paths or repository_wide:
+            selected = names(add_prefix if add_paths else git, add_paths or [".planning"], not update)
+            selected = {name for name in selected if name.startswith(".planning/")}
+            tracked.update(selected)
+            working.update(selected)
     only, include, all_tracked, pathspec = commit_selection(arguments)
-    selected = set()
-    if pathspec:
-        selected = set(subprocess.run([*original_git, "ls-files", "--full-name", "-z", "--", *pathspec], cwd=cwd,
-                                      check=True, capture_output=True, timeout=5).stdout.decode().split("\0"))
-    if only and not selected:
+    selected = names(prefix, pathspec) & tracked if pathspec else set()
+    # Newly added paths are now prospective index members, including glob matches.
+    if pathspec and additions:
+        selected |= names(prefix, pathspec, True) & working
+    if only and not pathspec:
         raise ValueError("cannot establish --only prospective paths without an explicit -- path list")
-    if only:
-        head = subprocess.run([*git, "ls-tree", "-r", "--name-only", "-z", "HEAD", "--", ".planning"], cwd=cwd,
-                              capture_output=True, timeout=5)
-        if head.returncode == 0:
-            names.update(head.stdout.decode().split("\0"))
-    for name in filter(None, names):
+    for name in sorted(tracked):
         path = Path(name)
         if path.is_absolute() or ".." in path.parts or not name.startswith(".planning/"):
             raise ValueError("unsafe prospective planning path")
         if only and name not in selected:
-            # Unrelated staged records do not enter a --only commit.
-            result = subprocess.run([*git, "show", "HEAD:" + name], cwd=cwd, capture_output=True, timeout=5)
-            if result.returncode:
-                continue
-            data = result.stdout
-        elif all_tracked or only or include and name in selected:
+            continue  # Unrelated staged records do not enter a --only commit.
+        from_working = all_tracked or only or name in working or include and name in selected
+        if from_working:
             current = actual / path
             if not current.exists():
                 continue
+            attributes = execute(git, "check-attr", "filter", "--", name).stdout.decode().rstrip().rsplit(": ", 1)[-1]
+            if attributes not in ("unspecified", "unset"):
+                raise ValueError("Cannot validate a planning record with a clean filter: " + name)
             data = current.read_bytes()
         else:
-            data = run("show", ":" + name)
+            staged = execute(git, "show", ":" + name, check=False)
+            if staged.returncode:
+                continue  # Deletions have no prospective bytes.
+            data = staged.stdout
+        previous = execute(git, "show", "HEAD:" + name, check=False)
+        if previous.returncode == 0 and previous.stdout == data:
+            continue  # Unchanged historical records cannot block a source commit.
         target = Path(temporary) / path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
@@ -118,10 +228,16 @@ def snapshot(root, event, invocation, temporary):
 def main():
     try:
         event = read_event()
+        if event.get("tool_name") not in ("Bash", "exec_command", "shell_command", "shell"):
+            return 0
         data = event.get("tool_input") or {}
         command = data.get("command") or data.get("cmd") or ""
-        invocation = commit_arguments(command)
-        if event.get("tool_name") not in ("Bash", "exec_command", "shell_command", "shell") or invocation is None:
+        try:
+            invocation = commit_arguments(command, os.name == "nt" and event.get("tool_name") != "Bash")
+        except (ValueError, TypeError) as exc:
+            print("Planning integrity could not inspect shell command: " + str(exc), file=sys.stderr)
+            return 2
+        if invocation is None:
             return 0
         root = root_for(event)
         try:
