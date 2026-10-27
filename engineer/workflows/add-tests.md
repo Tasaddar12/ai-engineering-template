@@ -338,5 +338,5 @@ Route discovered bugs by stable finding IDs using engineer/references/git-workfl
 - [ ] Bugs discovered by tests flagged (not fixed)
 - [ ] Test files committed with proper message
 - [ ] Coverage gaps documented
-- [ ] Next steps presented to user
+- [ ] Complete evidence and remaining obligations returned to the user/caller
 </success_criteria>

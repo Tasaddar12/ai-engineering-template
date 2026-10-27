@@ -24,7 +24,7 @@ Extract flags from the user's invocation:
 - `--dry-run` — classify findings without fixing (shows classification table only)
 - `--source <audit>` — which audit to run (default: **audit-uat**)
 
-Require --max to be an integer from 1 through 20; reject malformed/negative/zero values and unknown flags. Validate severity and `--source` against the listed enums. Validate `--source` is a supported audit. Currently supported:
+Require --max to be a positive integer; reject malformed/negative/zero values and unknown flags. Validate severity and `--source` against the listed enums. Validate `--source` is a supported audit. Currently supported:
 - `audit-uat`
 
 If `--source` is not supported, stop with an error:

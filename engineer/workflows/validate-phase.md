@@ -48,13 +48,13 @@ Display `ENGINEER > VALIDATE PHASE {N}: {name}`.
 ## 1. Detect Input State
 
 ```bash
-VALIDATION_FILE=$(ls "${PHASE_DIR}"/*-VALIDATION.md 2>/dev/null | head -1)
-SUMMARY_FILES=$(ls "${PHASE_DIR}"/*-SUMMARY.md 2>/dev/null)
+VALIDATION_FILE=$(engineer_run query init.phase-op "${PHASE_NUMBER}" --pick validation_path)
+SUMMARY_FILES=$(engineer_run query init.phase-op "${PHASE_NUMBER}" --pick summaries)
 ```
 
-- **State A** (`VALIDATION_FILE` non-empty): Audit existing
-- **State B** (`VALIDATION_FILE` empty, `SUMMARY_FILES` non-empty): Reconstruct from artifacts
-- **State C** (`SUMMARY_FILES` empty): Exit — "Phase {N} not executed. Run /execute-phase {N} first."
+- **State A** (validation_path is an existing non-null file): Audit existing
+- **State B** (validation_path null, summaries is a nonempty array of committed complete SUMMARYs): Reconstruct from artifacts
+- **State C** (summaries array empty, or no executed complete SUMMARY): Return not_executed with the missing execution evidence; do not authorize execution or write a validated report
 
 ## 2. Discovery
 
@@ -90,9 +90,9 @@ Classify each requirement:
 | PARTIAL | Test exists, failing or incomplete |
 | MISSING | No test found |
 
-Build: `{ task_id, requirement, gap_type, suggested_test_path, suggested_command }`
+Build: `{ task_id, requirement, gap_type, suggested_test_path, suggested_command_argv }`
 
-For every COVERED claim, cite the requirement wording, exact assertion/test ID, source revision, actual runner argv, and a current passing receipt or explicit pending execution. A filename/import/description match is a candidate, not coverage proof. Track sampling frequency (no three consecutive tasks without automated validation), feedback latency and every requirement, including edge/backstop and prohibition obligations. Human-only outcomes stay separately required.
+For every COVERED claim, cite the requirement wording, exact assertion/test ID, source revision, actual runner argv and a current passing receipt. If execution is pending, label the requirement PENDING/PARTIAL rather than COVERED. A filename/import/description match is a candidate, not coverage proof. Track sampling frequency (at least two automated verifications in every consecutive three-task window within a wave), feedback latency and every requirement, including edge/backstop and prohibition obligations. Human-only outcomes stay separately required.
 
 No demonstrated gaps → Step 6. Set `nyquist_compliant: true` only when all required automated and sampling obligations have actual current passing evidence. User-deferred execution leaves coverage pending and compliance false.
 

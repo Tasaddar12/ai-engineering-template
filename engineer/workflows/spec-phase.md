@@ -69,7 +69,7 @@ INIT=$(engineer_run query init.phase-op "${PHASE}")
 
 Require phase_found=true. No overflow-file protocol or workspace flag is supported. Keep root/branch/base/session identity and actual user authority. Spec authoring authorizes requirements clarification, never discussion completion, phase planning/implementation or another phase. A --auto flag selects defensible defaults within existing intent; it cannot invent a human answer, override locked acceptance or grant execution permission. Record consequential decisions through state.add-decision with actual authority; unresolved conflicts remain visible.
 
-Parse JSON for: `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `state_path`, `requirements_path`, `roadmap_path`, `planning_path`, `has_spec`, `spec_path`, `response_language`, `commit_docs`.
+Parse JSON for: `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `state_path`, `requirements_path`, `roadmap_path`, `planning_dir`, `has_spec`, `spec_path`, `response_language`, `commit_docs`.
 
 **If `response_language` is set:** All user-facing text in this workflow — narration between tool calls, status updates, progress notes, findings, questions, and report prose — MUST be in `{response_language}`. Technical terms, code, and file paths stay in English.
 
@@ -459,11 +459,13 @@ Write to: `{phase_dir}/{padded_phase}-SPEC.md`
 
 ## Step 7: Commit
 
+Honor an explicit commit_docs:false before calling the verb: report SPEC authored/uncommitted and preserve the file. Otherwise commit the exact SPEC path using the required Why/Changes/Verification body from git-workflow.md (including any pending probes):
+
 ```bash
 engineer_run query commit "spec(phase-${phase_number}): add SPEC.md for ${phase_name} — ${requirement_count} requirements (#2213)" --files "${phase_dir}/${padded_phase}-SPEC.md"
 ```
 
-If `commit_docs` is false the CLI returns `skipped`; SPEC.md is written, not committed.
+Inspect actual committed/hash or no-change output. The commit verb does not implement a commit_docs skip; the workflow owns that conditional. Do not claim an uncommitted file was committed. Follow authorized delivery and canonical draft tracking for this same session; never auto-chain another workflow or merge.
 
 ## Step 8: Wrap Up
 
