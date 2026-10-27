@@ -91,10 +91,7 @@ If no todos were folded: omit this subsection entirely.]
 
 **Downstream agents MUST read these before planning or implementing.**
 
-[MANDATORY section. Write the FULL accumulated canonical refs list here.
-Sources: ROADMAP.md refs + REQUIREMENTS.md refs + user-referenced docs during
- Group by topic area.
-Every entry needs a full relative path — not just a name.]
+[MANDATORY section. Write the FULL accumulated canonical refs list here. Group by topic area. Every entry needs a full relative path — not just a name.]
 
 ### [Topic area 1]
 - `path/to/adr-or-spec.md` — [What it decides/defines that's relevant]

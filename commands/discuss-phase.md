@@ -22,13 +22,7 @@ The text inside `<arguments>` is exactly what the user typed after the command n
 <objective>
 Extract implementation decisions that downstream agents need — researcher and planner will use CONTEXT.md to know what to investigate and what choices are locked.
 
-**How it works:**
-1. Load prior context (PROJECT.md, REQUIREMENTS.md, STATE.md, prior CONTEXT.md files)
-2. Scout codebase for reusable assets and patterns
-3. Analyze phase — skip gray areas already decided in prior phases
-4. Present remaining gray areas — user selects which to discuss
-5. Deep-dive each selected area until satisfied
-6. Create CONTEXT.md with decisions that guide research and planning
+**How it works:** 1. Load prior context (PROJECT.md, REQUIREMENTS.md, STATE.md, prior CONTEXT.md files) 2. Scout codebase for reusable assets and patterns 3. Analyze phase — skip gray areas already decided in prior phases 4. Present remaining gray areas — user selects which to discuss 5. Deep-dive each selected area until satisfied 6. Create CONTEXT.md with decisions that guide research and planning
 
 **Output:** `{phase_num}-CONTEXT.md` — decisions clear enough that downstream agents can act without asking the user again
 </objective>
