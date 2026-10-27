@@ -64,3 +64,7 @@ Preserve exact goals, approved decisions, source identities, base/head revisions
 ## Resume
 
 Read the durable handoff, assigned role, current source artifacts and existing user authorization. Verify repository/branch/head and check for drift from the captured revision. Preserve completed valid work; reconcile changed inputs before using receipts or plans. Resume the exact first remaining action, then report deviations and updated evidence. Use [progress](../../commands/progress.md) for a report or [next](../../commands/next.md) when authorized to advance; installation follows [install](../../commands/install.md).
+
+## Verification-only continuation
+
+A read-only verifier returns a complete external report and never commits it. The coordinator owns its exact report-only commit after every same-revision check and specialist has joined. Preserve the actual tested revision separately from any later report-publication HEAD, the v4 covered digest/fingerprint, source inputs and pending dependencies. A continuation cannot finalize provisional status without the joined evidence. Follow [verification evidence](verification-evidence.md#coordinator-report-currentness) for the exact per-commit report-path exception; a source, security, configuration or other planning change requires fresh applicable frozen verification and cannot be disguised as report-only publication.

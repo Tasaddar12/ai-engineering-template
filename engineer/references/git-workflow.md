@@ -68,6 +68,10 @@ Continue IDs after the highest existing phase register; preserve source aliases 
 
 Canonical risk identity is **repository + surface/control + failure mode/remediation scope**, not a newly invented ID scheme. A stable threat/finding ID locates a source occurrence; semantic deduplication determines whether occurrences describe the same full risk. Preserve every alias and source occurrence.
 
+### Matching evidence and provider authority
+
+Keep a stable canonical risk key and all aliases/occurrences across reruns. A closed match is reusable only when its semantic scope and matching resolution evidence cover the entire obligation; otherwise retain the reopening-authority blocker. Inspect uncertain creation against the exact reviewed intent before retrying. Runtime issue publication is GitHub-only; on another provider a verified authorized host tool must preserve the same complete template, matching, preview/readback and authority contract. If that route is unavailable, retain a Pending/publication blocker. Never invent a URL or change provider to bypass a closed unresolved identity.
+
 ### Deterministic planned-risk container lookup
 
 Before per-risk search, look up the exact repository/phase-scoped checklist container in both open and closed issues:
@@ -112,7 +116,13 @@ Keep unresolved, mitigated, accepted and deferred distinct. Checked checklist it
 
 Close a checklist container only when every risk has scope-complete evidence **and** actual explicit closure authority exists. Preserve remaining exposure and required human decisions. Closed unresolved trackers need authorized reopen rather than duplication. Missing provider access or evidence remains `Pending: reason; owner; next action`, blocking dependent readiness/publication without inventing links or abandoning independent work.
 
-### Independent issue-link audit
+### Safe reporting
+
+Publish sanitized evidence only after checking destination visibility. Keep exploitable details, secrets and private data in the authorized restricted channel; safe public text states impact and the next action without exposing a reproduction payload. When disclosure needs private-channel approval, prepare the redacted issue and record that dependency. Missing access or visibility authority blocks only the dependent publication, not independent work. A same-execution fixed-work exemption for ordinary findings never waives threat canonicalization, safe separate review, serialized writes, template validation, uncertain-create recovery or required issue-link audit. Never route threats through a generic fixed-work exemption.
+
+## Issue-link audit
+
+The verifier owns this audit and must not be the author of the issue/PR body. A code-reviewer may supply optional supplementary evidence; it does not replace a fresh non-author verifier. Join the result before readiness.
 
 Before readiness, obtain a fresh independent non-author audit of the actual source/head SHA and provider snapshot. The packet contains:
 
@@ -122,6 +132,10 @@ Before readiness, obtain a fresh independent non-author audit of the actual sour
 - Coverage of every planned and unplanned canonical risk, including aliases and full remediation scope.
 - Neutral references versus closing references and their authority/evidence.
 - Safe-content, lifecycle, human-decision and closure findings, with Pending for unavailable evidence.
+
+Audit CONTEXT acceptance, every PLAN threat/checklist, SUMMARY outcomes, PR links and ordinary linked follow-ups. Find omitted risks, duplicate tracking, wrong planned-checklist versus standalone routing, and unsafe destinations. `issue.validate` proves shape only. Check neutral versus closing keywords on GitHub and GitLab; never infer closure from merge or issue state. Every closing relationship needs scope-complete evidence and explicit closure authority.
+
+Preserve unresolved findings/dependencies as Pending, never a pass. Changed source, head, body, links, canonical lifecycle or provider state invalidate affected evidence. Obtain a fresh applicable audit or a documented coordinator currentness check against the exact new snapshot; do not silently reuse the old packet. After publication, recheck actual PR body/head and linked issue states. Before merge, retain the last provider readback and timestamp and revalidate changed inputs; with no new merge authority, keep the PR open.
 
 The coordinator joins all findings before ready/ship. An author's structural validation is not the independent audit; inaccessible provider evidence cannot silently pass. Preserve exact audit revision and readback evidence for runtime handoff/readiness checks.
 

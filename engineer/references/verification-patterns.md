@@ -5,6 +5,8 @@
 How to verify different types of artifacts are real implementations, not stubs or placeholders.
 
 <core_principle>
+The examples below are discovery aids, not a mandatory second scan. Account for every required artifact/link using current cited specialist evidence or valid configured-check receipts first; inspect only uncovered, stale or conflicting claims.
+
 **Existence ≠ Implementation**
 
 A file existing does not mean the feature works. Verification must check:

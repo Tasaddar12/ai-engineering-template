@@ -14,7 +14,8 @@ PATHS = (REFERENCE, WORKFLOW, COORDINATOR, RULES, ENTRY)
 COLUMNS = ("Assignment / PLAN", "Worker id", "Role", "Resolved model", "Plan state",
            "Execute state", "Verify state", "Last observed progress", "Stall flag",
            "Blocker", "PR/MR")
-HOOKS = ("discover_and_group_plans", "execute_waves", "integrate_wave", "run_checks")
+HOOKS = {"discover_and_group_plans": "discover_and_group_plans", "execute_waves": "execute_waves",
+         "integrate_wave": "execute_waves", "run_checks": "run_checks"}
 LINK = "../references/parallel-status.md"
 COORDINATOR_LINK = "../engineer/references/parallel-status.md"
 
@@ -31,8 +32,8 @@ DUTIES = {
     },
     "Bounded stall decision": {
         "stall decision": ("second consecutive", "neither progress", "host state change",
-                           "requires `stalled`", "coordinator", "decision", "both observation intervals"),
-        "bounded choices": ("continue one", "status/handoff", "access/decision blocker", "external blocker"),
+                           "mark the row stalled", "coordinator", "decision", "both observation intervals"),
+        "bounded choices": ("Continue one", "status/handoff", "access/decision blocker", "external blocker"),
         "stop safety": ("never proves", "never grants", "wait timeout", "host confirmation",
                         "Do not automatically", "confirmed stopped/interrupted", "dirty work",
                         "continuation limits", "fresh independent verification"),
@@ -69,15 +70,16 @@ def contract_errors(root):
     }.items():
         if not all(t in intro for t in tokens):
             errors.append(label)
-    for name in HOOKS:
-        if LINK not in steps(content[WORKFLOW]).get(name, ""):
+    for name, owner in HOOKS.items():
+        body = steps(content[WORKFLOW]).get(owner, "")
+        if LINK not in body or (name == "integrate_wave" and "worktree.merge-wave" not in body):
             errors.append(name + ": hook")
-    execution = re.search(r"<execution>(.*?)</execution>", content[COORDINATOR], re.S)
+    execution = re.search(r"<worker_lifecycle>(.*?)</worker_lifecycle>", content[COORDINATOR], re.S)
     if not execution or COORDINATOR_LINK not in execution.group(1):
         errors.append("coordinator hook")
     rules = section(content[RULES], "Orchestration and handoffs")
-    if not all(t in rules for t in ("timeout", "host confirms", "stop before reassigning",
-                                    "dirty work", "continuation", "Never automatically")):
+    if not all(t in rules for t in ("timeout", "Confirm worker exit positively", "before reassigning",
+                                    "Never automatically terminate", "worker-handoff.md", "parallel-status.md")):
         errors.append("canonical stop rule")
     recovery = section(content[RULES], "Interruption and recovery")
     if not all(t in recovery for t in ("host wait timeout", "does not establish exit",
@@ -136,12 +138,12 @@ class ParallelStatusContract(unittest.TestCase):
                         self.assertIn(label, contract_errors(root))
 
     def test_each_lifecycle_hook(self):
-        for name in HOOKS:
+        for name, owner in HOOKS.items():
             with self.subTest(step=name):
                 root = self.fixture()
                 path = root / WORKFLOW
                 text = path.read_text(encoding="utf-8")
-                body = steps(text)[name]
+                body = steps(text)[owner]
                 path.write_text(text.replace(body, body.replace(LINK, "missing.md"), 1), encoding="utf-8")
                 self.assertIn(name + ": hook", contract_errors(root))
         root = self.fixture()
@@ -150,8 +152,8 @@ class ParallelStatusContract(unittest.TestCase):
 
     def test_stop_rule_and_entry_link(self):
         for name, token, expected in (
-            (RULES, "stop before reassigning", "canonical stop rule"),
-            (RULES, "Never automatically", "canonical stop rule"),
+            (RULES, "Confirm worker exit positively", "canonical stop rule"),
+            (RULES, "Never automatically terminate", "canonical stop rule"),
             (ENTRY, "engineer/RULES.md#orchestration-and-handoffs", "entry stop link"),
         ):
             with self.subTest(token=token):

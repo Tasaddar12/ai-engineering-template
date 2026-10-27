@@ -67,7 +67,7 @@ Generate `{phase}-USER-SETUP.md` when plan frontmatter contains `user_setup` fie
 
 **Location:** Same directory as PLAN.md and SUMMARY.md.
 
-**Timing:** Generated during execute-plan.md after tasks complete, before SUMMARY.md creation.
+**Timing:** Generated during the assigned executor plan in engineer/workflows/execute-phase.md after tasks complete, before SUMMARY.md creation.
 
 ---
 

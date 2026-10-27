@@ -80,7 +80,7 @@ Apply the reviewed migration by omitting `--dry-run`, or use `python -I bin/inst
 
 ## Updating a managed installation
 
-Use [update](update.md) and its `bin/update.py` procedure. Updates are previews by default, pinned to a source revision and recorded as a complete plan:
+Use the canonical `commands/update.md` command and its `bin/update.py` procedure. Updates are previews by default, pinned to a source revision and recorded as a complete plan:
 ```bash
 python -I bin/update.py --source "${SOURCE_REPO}" --ref "${PIN}" --target "${TARGET_DIR}" --host "${HOST}" --plan "${PLAN_FILE}"
 ```

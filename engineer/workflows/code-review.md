@@ -4,7 +4,7 @@ roles: [coordinator, code-reviewer, code-fixer, debugger]
 produces: [REVIEW.md, optional REVIEW-FIX.md]
 ---
 
-@~/.claude/engineer/references/response-language-directive.md
+Read and execute `engineer/workflows/_runtime-launcher.snippet.sh` before runtime calls. Resolve the configured response language with `engineer_run query config-get response_language --raw`; when an init result already supplies `response_language`, use that value. Apply this language to all user-facing prose: narration between tool calls, status updates, progress notes, questions, explanations and reported findings. Preserve code, paths, command names, identifiers, machine-readable keys and required protocol markers verbatim. Do not translate source code or a consumer-required sentinel.
 
 <purpose>
 Independently review exact submitted source for bugs, security and code quality.

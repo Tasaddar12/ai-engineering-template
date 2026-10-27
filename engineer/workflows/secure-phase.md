@@ -4,7 +4,6 @@ Verify threat mitigations for a completed phase. Confirm PLAN.md threat register
 
 <required_reading>
 @~/.claude/engineer/RULES.md
-@~/.claude/engineer/references/ui-brand.md
 @~/.claude/engineer/references/worker-handoff.md
 @~/.claude/engineer/references/verification-evidence.md
 @~/.claude/engineer/references/security-asvs-levels.md

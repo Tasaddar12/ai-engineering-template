@@ -1,4 +1,4 @@
-@~/.claude/engineer/references/response-language-directive.md
+Read and execute `engineer/workflows/_runtime-launcher.snippet.sh` before runtime calls. Resolve the configured response language with `engineer_run query config-get response_language --raw`; when an init result already supplies `response_language`, use that value. Apply this language to all user-facing prose: narration between tool calls, status updates, progress notes, questions, explanations and reported findings. Preserve code, paths, command names, identifiers, machine-readable keys and required protocol markers verbatim. Do not translate source code or a consumer-required sentinel.
 
 <purpose>
 Cross-phase audit of all UAT and verification files. Finds every outstanding item (pending, skipped, blocked, human_needed), optionally verifies against the codebase to detect stale docs, and produces a prioritized human test plan.

@@ -17,7 +17,7 @@ PRODUCERS = (
     "engineer/workflows/quick.md", "engineer/workflows/ship.md",
     "engineer/references/template-contract.md",
 )
-PATHS = (CANONICAL,) + PRODUCERS
+PATHS = (CANONICAL, "engineer/workflows/_canonical-threat-tracking.md") + PRODUCERS
 PLAN_FIELDS = ("Threat ID", "Category", "Component", "Severity", "Disposition", "Mitigation Plan")
 FLAG_FIELDS = ("Flag", "File", "Description")
 OUTCOME_FIELDS = ("PLAN / Threat ID", "Canonical issue", "Outcome", "Git state", "Evidence")
@@ -47,49 +47,47 @@ AUDIT_STEPS = (
 )
 # Short cues within real sections replace embedded original paragraphs.
 ROUTING_DUTIES = {
-    "lookup": ("Checklist lookup", "chore(security): phase {phase-id} security checklist",
-               "phase-security-checklist", "title AND label", "before any", "open and closed"),
+    "lookup": ("Before per-risk search", "chore(security): phase {phase-id} security checklist",
+               "phase-security-checklist", "both open and closed", "Exactly one matching container"),
     "lookup recovery": ("Multiple matches", "Pending", "uncertain creation", "before retrying"),
     "existing identity": ("remain canonical", "reopening-authority blocker", "bypass"),
-    "planned default": ("NEW planned risks", "accepted/deferred", "mandatory default", "without an existing", "both searches"),
-    "heading identity": ("stable `###` heading", "issue BODY", "provider heading anchors",
-                         "never fabricate anchor slugs", "Reuse the matching heading", "Pending"),
-    "heading stability": ("renaming a heading breaks", "all affected references", "without a", '"(comment)"'),
-    "assessment links": ("owning PLAN assessment", "PLAN/ID", "SUMMARY/PR linked outcomes separate"),
-    "register separation": ("never a combined PLAN register", "six-column register", "owning PLAN"),
-    "standalone unplanned": ("distinct unplanned threat", "standalone Security risk", "checklist-only", "cannot replace"),
+    "planned default": ("All NEW planned risks", "accepted/deferred", "without such a tracker", "use checklist entries"),
+    "heading identity": ("stable `###` heading", "**issue body**", "provider heading anchor",
+                         "Never fabricate a slug", "Preserve headings on reruns", "Pending reason"),
+    "heading stability": ("necessary rename requires repairing every reference", "provider readback", "`(comment)`"),
+    "assessment links": ("Checklist entries link the PLAN assessment and mitigation", "PLAN/ID", "Threat Outcomes"),
+    "register separation": ("Never move or collapse a PLAN's register", "six-column threat register", "PLAN owns"),
+    "standalone unplanned": ("Distinct UNPLANNED threats", "standalone Security risk", "checklist-only tracking is insufficient"),
     "safe reconciliation": ("safe separate review", "serialized writes", "template validation",
-                            "uncertain-create recovery", "Never route threats", "exemption never waives"),
-    "checked is not closed": ("individual outcome evidence", "does not mean", "scope-complete evidence",
-                              "existing explicit closure authority"),
+                            "uncertain-create recovery", "Never route threats", "never waives"),
+    "checked is not closed": ("individual outcome evidence", "a checked box is not itself that evidence",
+                              "scope-complete evidence", "explicit closure authority"),
 }
 AUDIT_DUTIES = {
     "independent scope": ("fresh independent", "must not be the author", "CONTEXT acceptance",
-                          "PLAN threat/checklist", "SUMMARY outcomes", "Ordinary linked follow-ups", "issue.validate"),
-    "coverage": ("omitted", "duplicate tracking", "planned-checklist", "standalone", "safe destination"),
-    "closure": ("Neutral versus closing", "GitLab", "scope-complete", "explicit closure authority", "Never infer closure"),
-    "packet": ("source revision", "head SHA", "body/link snapshot", "verified URLs", "provider readback",
-               "when it was read", "unresolved findings/dependencies", "never a pass"),
-    "currentness": ("invalidate", "fresh applicable", "coordinator-currentness-check",
-                    "Before merge", "last provider readback", "no new merge"),
+                          "PLAN threat/checklist", "SUMMARY outcomes", "ordinary linked follow-ups", "issue.validate"),
+    "coverage": ("omitted risks", "duplicate tracking", "planned-checklist", "standalone", "unsafe destinations"),
+    "closure": ("neutral versus closing", "GitLab", "scope-complete", "explicit closure authority", "never infer closure"),
+    "packet": ("Source/head SHA", "issue body plus link snapshot", "verifiedURLs", "provider readback timestamps",
+               "unresolved findings/dependencies", "never a pass"),
+    "currentness": ("invalidate", "fresh applicable", "coordinator currentness check", "Before merge",
+                    "last provider readback", "no new merge authority"),
     "verifier ownership": ("verifier owns", "optional supplementary", "fresh non-author verifier",
                            "Join the result", "After publication", "Pending"),
 }
 PUBLICATION_DUTIES = {
-    "### Identity and publication": {
+    "### Matching evidence and provider authority": {
         "risk identity": ("stable canonical risk key", "aliases/occurrences", "across reruns"),
-        "closed-match evidence": ("semantic scope", "matching resolution evidence", "reopening authority"),
+        "closed-match evidence": ("semantic scope", "matching resolution evidence", "reopening-authority blocker"),
         "uncertain recovery": ("uncertain creation", "exact reviewed intent", "before retrying"),
         "provider fallback": ("GitHub-only", "verified authorized host tool", "Pending/publication blocker"),
     },
     "### Safe reporting": {
-        "safe disclosure": ("sanitized", "without private-channel approval", "restricted channel",
-                            "blocks only", "destination visibility"),
+        "safe disclosure": ("sanitized", "private-channel approval", "restricted channel", "blocks only", "destination visibility"),
     },
-    "### Assessment, status and closure": {
-        "assessment ownership": ("owning PLAN assessment", "rather than copying", "six-column register"),
-        "evidenced closure": ("neutral issue links", "scope-complete", "explicit closure authority",
-                              "Never label accepted/deferred", "readback"),
+    "## Canonical threat tracking": {
+        "assessment ownership": ("PLAN owns its assessment/mitigation", "six-column threat register", "without editing shared PLANs"),
+        "evidenced closure": ("scope-complete", "explicit closure authority", "never authorizes closure", "provider readback"),
     },
 }
 
@@ -139,11 +137,15 @@ def reaches_canonical(root, source):
         path = root / name
         if not path.is_file():
             continue
-        for target in re.findall(r"\[[^\]\n]+\]\(([^)\n]+)\)", path.read_text(encoding="utf-8")):
+        body = path.read_text(encoding="utf-8")
+        targets = re.findall(r"\[[^\]\n]+\]\(([^)\n]+)\)", body)
+        # Required @-reads are navigation in the agent/workflow format too.
+        targets += ["/" + target for target in re.findall(r"@((?:agents|commands|engineer|docs)/[\w./-]+\.md(?:#[\w-]+)?)", body)]
+        for target in targets:
             target = unquote(target.split("#", 1)[0].strip("<>"))
             if not target or re.match(r"[a-zA-Z][\w+.-]*:", target):
                 continue
-            next_path = (path.parent / target).resolve()
+            next_path = (root / target.lstrip("/")).resolve() if target.startswith("/") else (path.parent / target).resolve()
             if next_path.is_relative_to(root.resolve()):
                 queue.append(next_path.relative_to(root.resolve()).as_posix())
     return False
@@ -155,7 +157,7 @@ def artifact_errors(root):
     plan = file_template(content["engineer/templates/phase-prompt.md"])
     if "<threat_model>" not in plan or PLAN_FIELDS not in table_headers(plan):
         errors.append("PLAN register")
-    if not all(t in plan for t in ("[Threat ID]", "canonical issue URL", "Pending: dependency")):
+    if not all(t in plan for t in ("T-{phase}-NN", "verified canonical reference", "Pending: reason; owner; next action")):
         errors.append("PLAN identity")
     summary = file_template(content["engineer/templates/summary.md"])
     flags = section(summary, "## Threat Flags")
@@ -179,7 +181,7 @@ def artifact_errors(root):
         errors.append("preparer assessment")
     gate = section(content["agents/plan-checker.md"], "## Dimension 7d: Security Planning Gate")
     errors += duty_errors(gate, {"checker security gate": ("planner.md#security-planning-gate",
-                             "dispositions", "BLOCKER", "non-applicability", "absent setting")})
+                             "disposition", "BLOCKER", "non-applicability", "absent setting")})
     for name in PRODUCERS:
         if not reaches_canonical(root, name):
             errors.append(name + ": unreachable")
@@ -188,8 +190,8 @@ def artifact_errors(root):
         if TRACK_LINK not in body or re.search(r"^\*\*Only when", body, re.M):
             errors.append(step + ": mandatory tracking")
     order = list(steps(content["engineer/workflows/quick.md"]))
-    for before, after in (("plan", "reconcile_plan_threats"), ("reconcile_plan_threats", "check_plan"),
-                          ("execute", "reconcile_summary_threats"), ("reconcile_summary_threats", "verify")):
+    for before, after in (("plan", "reconcile_plan_threats"), ("reconcile_plan_threats", "optional_plan_check"),
+                          ("execute", "reconcile_summary_threats"), ("reconcile_summary_threats", "optional_verification")):
         if before not in order or after not in order or order.index(before) >= order.index(after):
             errors.append("quick ordering")
     return errors
@@ -197,18 +199,18 @@ def artifact_errors(root):
 
 def routing_errors(root):
     text = (root / CANONICAL).read_text(encoding="utf-8")
-    routing = section(text, "### Planned checklist and unplanned routing")
+    routing = section(text, "## Canonical threat tracking")
     errors = duty_errors(routing, ROUTING_DUTIES)
     for heading, duties in PUBLICATION_DUTIES.items():
         errors += duty_errors(section(text, heading), duties)
     if CHECKLIST_FIELDS not in table_headers(routing):
         errors.append("entry fields")
-    if routing.find("Checklist lookup") >= routing.find("Then perform"):
+    if routing.find("Before per-risk search") >= routing.find("Then search each risk"):
         errors.append("lookup ordering")
     template = section((root / "engineer/templates/issue.md").read_text(encoding="utf-8"), "### Security risk")
     errors += duty_errors(template, {
-        "template routing": ("mandatory default", "stable `###` heading", "heading-anchor URLs",
-                             "Existing actionable", "Distinct unplanned", "owning PLANs"),
+        "template routing": ("New planned risks", "stable `###` entries", "actual provider anchors",
+                             "existing full-scope tracker remains canonical", "Distinct unplanned", "each PLAN"),
     })
     risk_block = re.search(r"^```markdown\n(.*?)^```", template, re.M | re.S).group(1)
     guidance = template.split("```", 2)[-1]
@@ -240,18 +242,16 @@ def audit_errors(root):
         if AUDIT_LINK not in steps((root / name).read_text(encoding="utf-8")).get(step, ""):
             errors.append(step + ": audit hook")
     verifier = (root / "agents/verifier.md").read_text(encoding="utf-8")
-    context = section(verifier, "## Step 1: Load Context")
-    if AUDIT_LINK not in context or "owning non-author verifier" not in context:
+    if "../engineer/references/git-workflow.md#issue-link-audit" not in verifier or "owning non-author verifier" not in verifier:
         errors.append("verifier audit")
     workflow = steps((root / "engineer/workflows/verify-work.md").read_text(encoding="utf-8"))
-    prompt = workflow["spawn_verifier"].split('prompt="', 1)[1]
-    if not all(t in prompt for t in (AUDIT_LINK, "Own the independent", "source/body/link snapshot", "provider readback")):
+    prompt = workflow["spawn_verifier"]
+    if not all(t in prompt for t in (AUDIT_LINK, "Assign ownership of the independent", "source/body/link snapshot", "provider readback")):
         errors.append("verify assignment")
     ship = steps((root / "engineer/workflows/ship.md").read_text(encoding="utf-8"))
     dispatch = ship.get("refresh_issue_link_audit", "")
-    if not all(t in dispatch for t in ('subagent_type="verifier"', "fresh non-author", "{current_source_revision}",
-                                       "{provider_head_sha}", "{current_body_and_links}",
-                                       "{timestamped_provider_readback_or_Pending_dependency}", "Join the result")):
+    if not all(t in dispatch for t in ("fresh non-author verifier", "current source revision", "provider-read PR head SHA",
+                                       "full published body", "canonical URL/link snapshot", "provider identity", "Join it")):
         errors.append("ship dispatch")
     for step in ("preflight_checks", "create_pr", "merge_and_close"):
         if "refresh_issue_link_audit" not in ship[step]:
@@ -260,7 +260,7 @@ def audit_errors(root):
         errors.append("publication recheck")
     reviewer = (root / "agents/code-reviewer.md").read_text(encoding="utf-8")
     local = reviewer.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0]
-    if AUDIT_LINK not in local or "supplement" not in local or "verifier" not in local:
+    if "../engineer/references/git-workflow.md#issue-link-audit" not in local or "supplement" not in local or "verifier" not in local:
         errors.append("reviewer supplement")
     return errors
 
@@ -297,7 +297,7 @@ class ThreatTrackingContract(unittest.TestCase):
     def test_register_and_discovery_mutations(self):
         for name, token, expected in (
             ("engineer/templates/phase-prompt.md", "| Mitigation Plan |", "PLAN register"),
-            ("engineer/templates/phase-prompt.md", "Pending: dependency", "PLAN identity"),
+            ("engineer/templates/phase-prompt.md", "Pending: reason; owner; next action", "PLAN identity"),
             ("engineer/templates/summary.md", "| Flag | File | Description |", "conditional discovery"),
             ("engineer/templates/summary.md", "omit this section", "conditional discovery"),
             ("agents/executor.md", "**Threat model reference:**", "coder mitigation"),
@@ -336,8 +336,8 @@ class ThreatTrackingContract(unittest.TestCase):
         self.assertIn("reconcile_summary_threats: mandatory tracking", artifact_errors(root))
 
     def test_quick_reconciliation_cannot_move_into_optional_steps(self):
-        for required, optional in (("reconcile_plan_threats", "check_plan"),
-                                   ("reconcile_summary_threats", "verify")):
+        for required, optional in (("reconcile_plan_threats", "optional_plan_check"),
+                                   ("reconcile_summary_threats", "optional_verification")):
             with self.subTest(step=required):
                 root = self.fixture()
                 path = root / "engineer/workflows/quick.md"
@@ -372,6 +372,7 @@ class ThreatTrackingContract(unittest.TestCase):
         path = root / name
         text = path.read_text(encoding="utf-8")
         text = re.sub(r"\[([^\]\n]+)\]\([^)\n]+\)", r"\1", text)
+        text = re.sub(r"@(?:agents|commands|engineer|docs)/[\w./-]+\.md(?:#[\w-]+)?", "Removed required read", text)
         path.write_text(text, encoding="utf-8")
         self.assertFalse(reaches_canonical(root, name))
         self.assertIn(name + ": unreachable", artifact_errors(root))
@@ -381,7 +382,7 @@ class ThreatTrackingContract(unittest.TestCase):
             for token in tokens:
                 with self.subTest(label=label, token=token):
                     root = self.fixture()
-                    self.mutate(root, CANONICAL, token, heading="### Planned checklist and unplanned routing")
+                    self.mutate(root, CANONICAL, token, heading="## Canonical threat tracking")
                     self.assertIn(label, routing_errors(root))
 
     def test_each_entry_field(self):
@@ -389,7 +390,7 @@ class ThreatTrackingContract(unittest.TestCase):
             with self.subTest(field=field):
                 root = self.fixture()
                 self.mutate(root, CANONICAL, "| " + field + " |",
-                            heading="### Planned checklist and unplanned routing")
+                            heading="## Canonical threat tracking")
                 self.assertIn("entry fields", routing_errors(root))
 
     def test_publication_safety_mutations(self):
@@ -431,7 +432,7 @@ class ThreatTrackingContract(unittest.TestCase):
                 root = self.fixture()
                 self.mutate(root, name, token,
                             step="aggregate_results" if "execute-phase" in name else None,
-                            heading="### Risk-routing destinations" if "TEMPLATE-CONTRACT" in name else None)
+                            heading="### Risk-routing destinations" if "template-contract" in name else None)
                 self.assertIn(expected, routing_errors(root))
         root = self.fixture()
         self.mutate(root, "engineer/workflows/execute-phase.md", "canonical default", "optional path; may use",
@@ -459,11 +460,11 @@ class ThreatTrackingContract(unittest.TestCase):
     def test_verifier_and_ship_dispatch_packets(self):
         for name, token, expected in (
             ("agents/verifier.md", "owning non-author verifier", "verifier audit"),
-            ("engineer/workflows/verify-work.md", "Own the independent", "verify assignment"),
-            ("engineer/workflows/ship.md", 'subagent_type="verifier"', "ship dispatch"),
-            ("engineer/workflows/ship.md", "{current_source_revision}", "ship dispatch"),
-            ("engineer/workflows/ship.md", "{current_body_and_links}", "ship dispatch"),
-            ("engineer/workflows/ship.md", "{timestamped_provider_readback_or_Pending_dependency}", "ship dispatch"),
+            ("engineer/workflows/verify-work.md", "Assign ownership of the independent", "verify assignment"),
+            ("engineer/workflows/ship.md", "fresh non-author verifier", "ship dispatch"),
+            ("engineer/workflows/ship.md", "current source revision", "ship dispatch"),
+            ("engineer/workflows/ship.md", "full published body", "ship dispatch"),
+            ("engineer/workflows/ship.md", "provider identity", "ship dispatch"),
             ("engineer/workflows/ship.md", "after publication", "publication recheck"),
         ):
             with self.subTest(token=token):

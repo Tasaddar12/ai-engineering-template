@@ -1,6 +1,6 @@
 # Reconcile and publish canonical phase or quick threats
 
-Read `engineer/references/git-workflow.md#canonical-threat-tracking` and the complete Security risk variant in `engineer/templates/issue.md`. This procedure applies their policy; the reference owns identity, lifecycle and closure authority, and the pinned runtime owns argv/schema. Do not infer mitigation, acceptance or closure from issue state, a checked entry or a merge.
+Read [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking) and the complete Security risk variant in `engineer/templates/issue.md`. This procedure applies their policy; the reference owns identity, lifecycle and closure authority, and the pinned runtime owns argv/schema. Do not infer mitigation, acceptance or closure from issue state, a checked entry or a merge.
 
 ## Select the real scope
 

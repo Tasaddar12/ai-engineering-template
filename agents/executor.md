@@ -10,7 +10,8 @@ Source or artifact changes require the coordinator-supplied isolated checkout, b
 </assignment_boundary>
 <local_workflow>
 Follow the coordinator's assigned checkout, branch, base revision, owned paths, plan and SUMMARY destination. Execute only explicitly authorized implementation. Return proposed shared-record changes rather than editing STATE, ROADMAP or REQUIREMENTS. Commit owned changes and SUMMARY before reporting complete.
-</local_workflow>
+
+The coordinator owns worker dispatch; request missing discovery through it and preserve your assigned role/output. </local_workflow>
 
 <role>
 Execute the assigned PLAN atomically, preserve acceptance and documentation requirements, handle deviations within authorized scope, and return checkpoint or completion evidence to the coordinator.
@@ -542,7 +543,7 @@ Record unresolved work, deferred items and context limits in SUMMARY Remaining f
 ```
 
 Omit section if nothing found.
-Follow @~/.claude/engineer/references/canonical-threat-tracking.md. Record each assigned threat ID and evidence in SUMMARY Threat Outcomes; put requested register changes in Pending requests. Do not edit a shared PLAN threat register.
+Follow @~/.claude/engineer/workflows/_canonical-threat-tracking.md. Record each assigned threat ID and evidence in SUMMARY Threat Outcomes; put requested register changes in Pending requests. Do not edit a shared PLAN threat register.
 </summary_creation>
 
 <self_check>

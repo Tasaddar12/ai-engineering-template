@@ -25,3 +25,11 @@ Use the exact registered `code-fixer` for a narrow deterministic repair when its
 ## Conflict route
 
 If a finding contradicts approved scope or a locked decision, preserve the decision, cite both sources and return the specific conflict to the coordinator. Continue nonconflicting corrections. Do not weaken acceptance, silently defer work or invent approval to close the review.
+
+## Host dispatch and isolation
+
+Read [the code-fixer role](../../agents/code-fixer.md), [branch identity](worktree-branch-check.md) and [path safety](worktree-path-safety.md). Resolve `engineer_run query resolve-model code-fixer --raw` and `engineer_run query resolve-effort code-fixer --raw` immediately before dispatch; pass concrete values inline and omit inherited fields.
+
+Read `engineer_run query dispatch-isolation --raw`, adding `--plan PLAN_ID` when the actual caller supplies a plan identity. Use the configured supported strategy: orchestrator-worktree creates and records the isolated checkout through `worktree.create` before assignment; harness-worktree uses the host's actual `isolation="worktree"` mechanism and records its returned identity before mutation. Neither strategy permits writes in the shared caller checkout. Do not emit harness isolation on an orchestrator-worktree call. Include the exact root, branch, base, finding origin, required property, diagnosis, owned paths, exclusions, check order, complete summary path and result destination.
+
+On Claude use the exact `subagent_type="code-fixer"`; on Codex use its registered code-fixer definition and native model/effort fields. Do not invent generic fallback agents. The originating debugger/reviewer supplies cited evidence, not a mutable ownership transfer or independent approval. Wait for complete committed repair and confirmed stop before integration. Require fresh independent review and verification on the integrated result, then return to the active caller rather than starting a second shipping session.

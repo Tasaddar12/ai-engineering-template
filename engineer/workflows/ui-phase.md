@@ -6,7 +6,9 @@ UI-SPEC.md locks spacing, typography, color, copywriting, and design system deci
 
 
 <required_reading>
-@~/.claude/engineer/references/ui-brand.md
+@~/.claude/engineer/templates/UI-SPEC.md
+@agents/ui-researcher.md
+@agents/ui-checker.md
 </required_reading>
 
 
@@ -167,7 +169,7 @@ Omit null file paths from `<required_reading>`.
 
 <!-- #2517 model-omit-on-inherit -->
 
-> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`UI_RESEARCHER_MODEL`, `UI_CHECKER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
+> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`UI_RESEARCHER_MODEL`, `UI_CHECKER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/agent-adaptation.md#supported-hosts.
 
 ```
 Agent(

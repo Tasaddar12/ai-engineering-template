@@ -54,6 +54,10 @@ Each PLAN retains its complete six-column threat register: Threat ID, Category, 
 
 Update PLANs only under the assigned planning/correction ownership. Workers executing code do not rewrite shared plans to declare success. A plan-ready state does not authorize implementation.
 
+### Risk-routing destinations
+
+The mandatory default for new planned risks, including accepted/deferred exposure without an existing full-scope tracker, is the deterministic planned checklist entry. Preserve each owning PLAN register and link its assessment/mitigation. Existing full-scope canonical trackers remain canonical; distinct unplanned risks require standalone tracking or an existing full-scope tracker. Never fabricate provider anchors or use a missing link as secured evidence. Follow [canonical threat tracking](git-workflow.md#canonical-threat-tracking) and the complete [procedure](../workflows/_canonical-threat-tracking.md).
+
 ## SUMMARY
 
 **Path:** same phase/plan identity, `NN-MM-SUMMARY.md`.

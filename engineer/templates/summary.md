@@ -12,9 +12,8 @@ Required current-record metadata: `phase`, `plan`, `status`, `requirements-compl
 ---
 phase: XX-name
 plan: YY
-subsystem:
-  [primary category: auth, payments, ui, api, database, infra, testing, etc.]
-tags: [searchable tech: jwt, stripe, react, postgres, prisma]
+subsystem: "[primary category: auth, payments, ui, api, database, infra, testing, etc.]"
+tags: ["searchable tech: jwt, stripe, react, postgres, prisma"]
 
 # Dependency graph
 requires:
@@ -169,17 +168,19 @@ None - no external service configuration required.
 
 ## Threat Flags
 
-| Threat ID | Finding / boundary | Canonical issue | Status |
-|-----------|--------------------|-----------------|--------|
-| [T-{phase}-NN] | [specific finding] | [URL or Pending reason] | [open / mitigated / accepted decision reference] |
+[Newly discovered surfaces only; omit this section when none were found. These flags do not replace the owning PLAN register.]
+
+| Flag | File | Description |
+|------|------|-------------|
+| [threat_flag: category] | [exact file] | [new boundary/surface and impact] |
 
 ## Threat Outcomes
 
-| Threat ID | Delivered mitigation | Evidence | Remaining exposure |
-|-----------|----------------------|----------|--------------------|
-| [T-{phase}-NN] | [change] | [behavioral evidence] | [remaining work or none] |
+| PLAN / Threat ID | Canonical issue | Outcome | Git state | Evidence |
+|------------------|-----------------|---------|-----------|----------|
+| [exact PLAN / stable ID] | [verified canonical URL or Pending reason] | [unresolved / mitigated / accepted / deferred, with remaining exposure] | [actual owned commit/integration state] | [tested revision and actual check result or Pending] |
 
-Follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking); do not silently drop open threats.
+Follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking); do not silently drop open threats. Keep mitigation details and remaining exposure in the outcome/evidence cells; do not duplicate the six-column PLAN register here.
 
 ## Next Phase Readiness
 
@@ -207,7 +208,7 @@ _Completed: [date]_
 
 **Patterns:** Established conventions future phases should maintain.
 
-**Population:** Frontmatter is populated during summary creation in execute-plan.md. See `<step name="create_summary">` for field-by-field guidance.
+**Population:** Frontmatter is populated during summary creation in agents/executor.md. See `<summary_creation>` for field-by-field guidance.
 
 **Status:** `status: complete` is the default — the plan finished. Use `status: halted` instead when the plan reached a designed stop (a gate failure, a spike concluding without expanding into the full build, or any other intentional non-completion) and intentionally left tasks unfinished. `halted` is machine-read: any plan whose `depends_on` (directly or transitively) names a halted plan is reported as blocked, not offered to the executor, until the halt is resolved and re-summarized as `complete`.
 </frontmatter_guidance>

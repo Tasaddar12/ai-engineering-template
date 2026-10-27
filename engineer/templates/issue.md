@@ -172,7 +172,9 @@ Bad: pause the entire assignment or ask for the same approval again because anot
 
 ## Risk assessment and lifecycle
 
-[Assessment, severity, uncertainty, authority and distinct unresolved/mitigated/accepted/deferred state.]
+- Severity: [critical/high/medium/low, with concrete impact/likelihood rationale and uncertainty].
+- Lifecycle / authority: [distinct unresolved/mitigated/accepted/deferred status with actual authority and evidence].
+- Mitigation or safe next action: [smallest sufficient full-scope outcome, accountable owner and dependency].
 
 ### [Stable per-risk issue BODY heading]
 
@@ -192,7 +194,8 @@ Bad: pause the entire assignment or ask for the same approval again because anot
 
 [Exact included obligation, excluded unrelated work and required human/closure decisions.]
 
-- [ ] [Individual scope-complete outcome evidence].
+- [ ] [Safe remediation outcome with individual scope-complete evidence].
+- [ ] [Observable secure check with actual revision/result, or explicit Pending dependency].
 - [ ] [Fresh independent non-author issue-link audit].
 - [ ] [Actual closure authority when closure is proposed].
 
@@ -202,6 +205,8 @@ Bad: pause the entire assignment or ask for the same approval again because anot
 ```
 
 **Producer:** coordinator from PLAN registers or unplanned findings. **Consumers:** executor, reviewer/security-auditor, verifier, independent issue-link auditor and ready/ship gates. The SAME eight-heading variant is required for a standalone Security risk and a planned checklist container. Per-risk stable `###` entries live under Risk assessment and lifecycle; do not create an abbreviated checklist variant.
+
+Only checklist entries link the owning PLAN rather than repeating its assessment and mitigation. Record `PLAN assessment:` and `PLAN mitigation:` with exact owning source/anchor links. Standalone issues require no PLAN and carry their own assessment, mitigation, secure check and next action.
 
 Before per-risk search, lookup exact title `chore(security): phase {phase-id} security checklist` plus `phase-security-checklist` label in both open and closed issues. Multiple/unavailable lookup remains Pending; do not create a duplicate. A closed unresolved match needs separately authorized reopen. New planned risks, including accepted/deferred, use entries unless an existing full-scope tracker remains canonical. Distinct unplanned risks need a standalone tracker or existing full-scope match, never checklist-only tracking.
 
