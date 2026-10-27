@@ -14,6 +14,7 @@ Verify the actual phase goal using a single frozen-revision read-only batch and 
 @engineer/references/git-workflow.md
 @engineer/workflows/secure-phase.md
 @engineer/workflows/validate-phase.md
+@engineer/workflows/execute-phase.md
 </required_reading>
 <available_agent_types>
 Use verifier, integration-checker, doc-verifier, code-reviewer, applicable ui-auditor/dom-verifier and policy-enabled security-auditor for independent read-only evidence; nyquist-auditor only for isolated write preflight before freezing; planner, executor, debugger and targeted-fixer for separately isolated gap work.

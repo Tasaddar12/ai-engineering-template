@@ -56,8 +56,9 @@ that require a ROADMAP phase goal.
 </check_dimensions>
 
 <expected_output>
-- ## VERIFICATION PASSED — all checks pass
-- ## ISSUES FOUND — structured issue list
+- ## PLAN REVIEW
+- Verdict: approved | needs-revision
+- Full reviewed revision/scope, stable finding IDs and explicit BLOCKER or INFO severity. Missing coverage is not approval.
 </expected_output>
 ",
   subagent_type="plan-checker",
@@ -73,9 +74,10 @@ that require a ROADMAP phase goal.
 counts as BLOCKER, fail closed; pure INFO entries are advisory only and never
 enter the revision loop):
 
-- **`## VERIFICATION PASSED`** (with no BLOCKER/WARNING entry) or all-INFO: proceed to the next item.
-- **`## VERIFICATION PASSED` that nevertheless lists an entry whose severity is BLOCKER or WARNING, in the YAML issues block or listed in prose (a mention such as "no warnings" or a zero count is not an entry):** handled as `## ISSUES FOUND`, counting the prose entries as BLOCKER/WARNING entries; the sentinel never decides alone (#5578).
-- **Any BLOCKER/WARNING:** revision loop, max 2 iterations total for this item.
+- Require canonical `## PLAN REVIEW` and exactly `Verdict: approved` or `Verdict: needs-revision`. A legacy sentinel, absent/malformed verdict, contradictory verdicts or incomplete assigned coverage is unusable review evidence and blocks this entry.
+- **approved with complete coverage and no BLOCKER:** proceed; INFO remains advisory. An all-INFO list without canonical approval is not approval.
+- **approved that nevertheless lists a BLOCKER or a finding with missing/unrecognized severity:** reject the contradictory approval and revise the actual blocker. A prose statement such as "no blockers" is not itself a finding. Legacy VERIFICATION PASSED / ISSUES FOUND markers are diagnostic text only, never a verdict.
+- **needs-revision or any actual BLOCKER:** bounded correction loop, max 2 iterations total for this item. Preserve exact finding evidence and acceptance; a retry cap never waives it.
 
 **Revision (iteration < 2):**
 ```
@@ -122,8 +124,7 @@ Resolve an alternative within delegated discretion with evidence; if changing a 
 the blocker still open is NOT offered here — the blocking `required_property` still fails, and
 that choice belongs to the iteration-exhaustion escalation below, unchanged.
 
-A quick-batch item has no REVIEWS.md and no phase, so `workflow.plan_review_convergence` has
-nothing to arbitrate over here; a locked human decision blocks only this entry. Re-spawn the planner with the actually authorized
+A quick-batch item has no REVIEWS.md and no phase; a locked human decision blocks only this entry. Re-spawn the planner with the actually authorized
 resolution, then re-evaluate its return from the top of this handler — do not fall through to the
 checker spawn below. A second conflict is still a conflict, not a revised plan.
 

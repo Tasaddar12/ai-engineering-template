@@ -44,6 +44,8 @@ Check must_haves against the actual codebase. Return the complete canonical quic
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: after calling Agent() above, wait for it to return before continuing.
 
+After the host confirms verifier completion, validate the complete returned report against the assigned item/revision and persist its full content verbatim at `${ITEM_DIR}/${quick_id}-VERIFICATION.md` before any status/current query. The read-only worker does not write that file. Preserve all findings, coverage, pending checks and human items; a heading-only extract cannot substitute. Commit this exact coordinator-owned report after required same-revision readers have joined. Missing or partial content blocks this entry; do not query a stale earlier file.
+
 Read status via the SAME canonical, total query `/quick` uses (never
 re-derive the status vocabulary inline):
 ```bash
