@@ -483,18 +483,7 @@ All `init.*` results include these keys:
 | `pending_todos`, `open_quick` | actual pending todos and nonterminal quick records |
 | `milestone_phases`, `incomplete_phase` | parsed roadmap phases and first incomplete phase or null |
 
-Role maps cover executor, planner, verifier, phase-researcher, plan-checker,
-code-reviewer, doc-writer, doc-verifier, integration-checker,
-security-auditor, nyquist-auditor, ui-researcher, ui-checker, ui-auditor,
-and codebase-mapper. A missing required role fails explicitly.
-Codex reads native TOML model/effort definitions from
-`bin/install-assets/codex-agents` in source, or the installed `.codex/agents`.
-Claude reads `agents.<final-role>` configuration.
-`code-fixer.md` remains readable method context and is never a dispatch role;
-direct resolution fails with agent-method-only. Compatibility code_fixer/fixer
-model/effort fields resolve code-fixer policy. The dispatch map omits the
-method-only name. Isolation defaults to `auto` and negotiates the host's supported
-worktree mode; no supported setting disables isolation.
+Role maps cover executor, planner, verifier, phase-researcher, plan-checker, code-reviewer, doc-writer, doc-verifier, integration-checker, security-auditor, nyquist-auditor, ui-researcher, ui-checker, ui-auditor, scout, code-fixer, and codebase-mapper. A missing required role fails explicitly. Codex reads native TOML model/effort definitions from `bin/install-assets/codex-agents` in source, or the installed `.codex/agents`. Claude reads `agents.<final-role>` configuration. `code-fixer.md` remains readable method context and is never a dispatch role; direct resolution fails with agent-method-only. Compatibility code_fixer/fixer model/effort fields resolve code-fixer policy. The dispatch map omits the method-only name. Isolation defaults to `auto` and negotiates the host's supported worktree mode; no supported setting disables isolation.
 
 `init.phase-op`, `init.plan-phase`, `init.execute-phase`, `init.verify-work`,
 `init.ship`, and `init.code-review` add this shared phase packet:
