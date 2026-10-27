@@ -33,7 +33,7 @@ class UatChecks(RuntimeCase):
     def test_audits_preserve_distinct_same_day_quick_owners(self):
         owners = ["261027-001-first", "261027-002-second"]
         for owner in owners:
-            self.put(".planning/quick/"+owner+"/QUICK.md", "---\nstatus: open\n---\n")
+            self.put(".planning/quick/"+owner+"/QUICK.md", "---\nid: "+owner+"\nstatus: open\n---\n")
             self.put(".planning/quick/"+owner+"/"+owner+"-VERIFICATION.md",
                      "---\nstatus: human_needed\nhuman_verification: [Inspect actual result]\n---\nAwaiting observation.\n")
         self.assertEqual(owners, sorted(item["quick"] for item in self.cli("audit-uat")["items"]))

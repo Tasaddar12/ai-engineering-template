@@ -6,10 +6,17 @@ except ImportError:
 
 
 class TddChecks(RuntimeCase):
+    def setUp(self):
+        super().setUp()
+        self.put("tests/test_app.py", "# failing behavior test\n")
+        self.git("add", "tests/test_app.py")
+        self.git("commit", "-m", "test(01-01): RED behavior fixture")
+        self.red_commit = self.git("rev-parse", "HEAD")
+
     def evidence(self, **overrides):
         record = {"command": "python -m unittest tests.test_app", "exitCode": 1,
                   "output": "FAIL: test_behavior (tests.test_app.App.test_behavior)\nAssertionError: 1 != 2\nRan 1 test in 0.1s\nFAILED (failures=1)\n",
-                  "targetTest": "tests.test_app.App.test_behavior", "targetFile": "tests/test_app.py", "expected": 2, "actual": 1}
+                  "targetTest": "tests.test_app.App.test_behavior", "targetFile": "tests/test_app.py", "expected": 2, "actual": 1, "testCommit": self.red_commit}
         record.update(overrides)
         return self.put("red.json", json.dumps(record))
 
@@ -48,8 +55,7 @@ class TddChecks(RuntimeCase):
     def test_red_commit_must_precede_implementation(self):
         self.put("tests/test_app.py", "# failing behavior test\n")
         self.git("add", "tests/test_app.py")
-        self.git("commit", "-m", "test(01-01): RED")
-        red = self.git("rev-parse", "HEAD")
+        red = self.red_commit
         self.put("src/app.py", "def app(): return 2\n")
         self.git("add", "src/app.py")
         self.git("commit", "-m", "feat(01-01): GREEN")
@@ -58,3 +64,30 @@ class TddChecks(RuntimeCase):
         self.assertEqual("RED_EVIDENCE_OK", self.cli("check.tdd-red-evidence", path, "--raw", raw=True))
         path = self.evidence(testCommit=green, implementationCommit=red)
         self.cli("check.tdd-red-evidence", path, status=1, raw=True)
+
+    def test_pre_green_requires_committed_red_target_without_future_implementation(self):
+        path = self.evidence()
+        result = self.cli("check.tdd-red-evidence", path)
+        self.assertEqual("RED_EVIDENCE_OK", result["verdict"])
+        self.assertEqual(self.red_commit, result["evidence"]["testCommit"])
+        self.assertEqual(self.red_commit, result["evidence"]["checkedRevision"])
+        self.assertIsNone(result["evidence"]["implementationCommit"])
+        for changes in ({"testCommit": None}, {"testCommit": "HEAD"}, {"testCommit": "0"*40},
+                        {"testCommit": self.red_commit, "implementationCommit": self.red_commit}):
+            path = self.evidence(**changes)
+            self.cli("check.tdd-red-evidence", path, status=1, raw=True)
+
+    def test_uncommitted_or_unrelated_test_cannot_borrow_red_commit(self):
+        self.put("tests/test_app.py", "# changed assertion after RED\n")
+        self.cli("check.tdd-red-evidence", self.evidence(), status=1, raw=True)
+        self.put("tests/test_other.py", "# unrelated test\n")
+        self.cli("check.tdd-red-evidence", self.evidence(targetFile="tests/test_other.py"), status=1, raw=True)
+
+    def test_red_commit_on_unrelated_branch_cannot_authorize_green(self):
+        self.git("switch", "-c", "sibling", "HEAD~1")
+        self.put("tests/test_app.py", "# failing behavior test\n")
+        self.git("add", "tests/test_app.py")
+        self.git("commit", "-m", "test(02-01): unrelated RED")
+        sibling = self.git("rev-parse", "HEAD")
+        self.git("switch", "main")
+        self.cli("check.tdd-red-evidence", self.evidence(testCommit=sibling), status=1, raw=True)
