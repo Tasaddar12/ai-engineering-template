@@ -16,7 +16,7 @@ In your mandatory init step — right after `mandatory-initial-read.md` / the
 2. **Query your configured skills.** Use **your own agent type**: the one your agent
    file states on its `agent_skills:` pointer line, as `(agent type: \`executor\`)`.
 Do not read it from your frontmatter `name:`— Claude Code shows a subagent only the
-body, the Kimi converter drops frontmatter, and Codex keeps it in a TOML key. Run the
+body, and Codex keeps it in a TOML key. Run the
 query with`--skills-only`, in the **same bash call** as the launcher so `gsd_run`is
 defined when it runs. Substitute your type for`<your-agent-type>`:
 

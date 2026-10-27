@@ -77,8 +77,7 @@ omitted rather than set.
 If `model_profile` is `"adaptive"`, agents resolve to role-based assignments (opus/sonnet/
 haiku based on agent type).
 
-If `model_profile` is `"inherit"`, all agents resolve to `"inherit"` (useful for OpenCode
-`/model`).
+If `model_profile` is `"inherit"`, all agents resolve to `"inherit"`.
 
 ## Usage
 

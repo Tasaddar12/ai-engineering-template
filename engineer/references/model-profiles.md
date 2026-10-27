@@ -96,11 +96,10 @@ The three layers compose: `models` defaults a phase, `model_overrides` carves an
 
 **inherit** - Follow the current session model
 - All agents resolve to `inherit`
-- Best when you switch models interactively (for example OpenCode or Kilo `/model`)
-- **Required when using non-Anthropic providers** (OpenRouter, local models, etc.) — otherwise GSD may call Anthropic models directly, incurring unexpected costs
+- Best when you switch models interactively
 - Use when: you want GSD to follow your currently selected runtime model
 
-## Using Non-Claude Runtimes (Codex, OpenCode, Antigravity CLI, Kilo)
+## Using Non-Claude Runtimes (Codex)
 
 When installed for a non-Claude runtime, the GSD installer sets `resolve_model_ids: "omit"` in `~/.gsd/defaults.json`. This returns an empty model parameter for all agents, so each agent uses the runtime's default model. No manual setup is needed.
 
@@ -119,23 +118,6 @@ To assign different models to different agents, add `model_overrides` with model
 ```
 
 The same tiering logic applies: stronger models for planning and debugging, cheaper models for execution and mapping.
-
-## Using Claude Code with Non-Anthropic Providers (OpenRouter, Local)
-
-If you're using Claude Code with OpenRouter, a local model, or any non-Anthropic provider, set the `inherit` profile to prevent GSD from calling Anthropic models for subagents:
-
-```bash
-# Via settings command
-/gsd:settings
-# → Select "Inherit" for model profile
-
-# Or manually in .planning/config.json
-{
-  "model_profile": "inherit"
-}
-```
-
-Without `inherit`, GSD's default `balanced` profile spawns specific Anthropic models (`opus`, `sonnet`, `haiku`) for each agent type, which can result in additional API costs through your non-Anthropic provider.
 
 ## Advisor Tool (Claude Code)
 
@@ -253,7 +235,7 @@ Override specific agents without changing the entire profile:
 }
 ```
 
-Overrides take precedence over the profile. Valid values: `opus`, `sonnet`, `haiku`, `fable`, `inherit`, or any fully-qualified model ID (e.g., `"o3"`, `"openai/o3"`, `"google/gemini-2.5-pro"`). `fable` is a Claude Code Agent-tool alias, not a GSD profile tier — it has no column in the profile table above.
+Overrides take precedence over the profile. Valid values: `opus`, `sonnet`, `haiku`, `fable`, `inherit`, or any fully-qualified model ID (e.g., `"o3"`, `"openai/o3"`). `fable` is a Claude Code Agent-tool alias, not a GSD profile tier — it has no column in the profile table above.
 
 On the Claude runtime, fully-qualified Claude model IDs are honored as explicit generation pins (#4192): an ID that names the current tier default (e.g. `"claude-sonnet-5"`) resolves to its tier alias — the same model in the form the Agent tool always accepts — while any other ID (e.g. `"claude-opus-4-7"`) resolves verbatim, with a warn-once stderr note that setups accepting only tier aliases will not honor a full ID. To pin a generation for a whole tier rather than one agent, set `model_profile_overrides.claude.<tier>` (see docs/CONFIGURATION.md — Runtime-Aware Profiles).
 
@@ -286,4 +268,4 @@ Read-only exploration and pattern extraction. No reasoning required, just struct
 Claude Code's `"opus"` alias maps to a specific model version. Organizations may block older opus versions while allowing newer ones. GSD returns `"inherit"` for opus-tier agents, causing them to use whatever opus version the user has configured in their session. This avoids version conflicts and silent fallbacks to Sonnet.
 
 **Why `inherit` profile?**
-Some runtimes (including OpenCode) let users switch models at runtime (`/model`). The `inherit` profile keeps all GSD subagents aligned to that live selection.
+Some runtimes let users switch models at runtime (`/model`). The `inherit` profile keeps all GSD subagents aligned to that live selection.

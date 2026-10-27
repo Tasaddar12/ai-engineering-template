@@ -1,0 +1,110 @@
+"""Session worktrees are recorded in Git's shared administrative directory."""
+from pathlib import Path
+from . import config, records, worktrees
+from .core import Failure, load_json, now, root, run, slug, write_json
+
+
+def store():
+    common = Path(run(["git", "rev-parse", "--git-common-dir"], root()).stdout.strip())
+    if not common.is_absolute():
+        common = root()/common
+    return common.resolve()/"engineer/sessions.json"
+
+
+def command(args, action):
+    path = store()
+    data = load_json(path, {"sessions": []})
+    if action == "status":
+        opened = [{**s, "exists": Path(s["worktree"]).is_dir()} for s in data["sessions"] if s.get("status") != "closed"]
+        return {"sessions": data["sessions"], "count": len(data["sessions"]), "open": opened, "open_count": len(opened)}
+    if action == "close":
+        branch = args.need()
+        matching = [s for s in data["sessions"] if s["branch"] == branch and s.get("status") != "closed"]
+        if len(matching) != 1:
+            raise Failure("session-not-found", branch)
+        entry = matching[0]
+        target = Path(entry["worktree"])
+        if target.resolve() == root():
+            raise Failure("active-session", "Close a session from a different checkout")
+        actual = run(["git", "branch", "--show-current"], target).stdout.strip()
+        if actual != branch:
+            raise Failure("session-identity-drift", actual)
+        if run(["git", "status", "--porcelain"], target).stdout:
+            raise Failure("dirty-session", str(target))
+        head = run(["git", "rev-parse", "HEAD"], target).stdout.strip()
+        if run(["git", "merge-base", "--is-ancestor", head, "HEAD"], root(), check=False).returncode:
+            raise Failure("session-not-integrated", "Integrate session changes before closing")
+        run(["git", "worktree", "remove", str(target)], root())
+        run(["git", "branch", "-d", branch], root())
+        entry.update({"status": "closed", "closed": now()})
+        write_json(path, data)
+        return {"closed": True, **entry}
+    kind, label = args.need(), args.need(1)
+    if kind not in ("phase", "quick", "milestone", "onboard"):
+        raise Failure("invalid-session-kind", kind, 2)
+    label = records.number(label) if kind == "phase" else slug(label)
+    matching = [s for s in data["sessions"] if s["kind"] == kind and s["label"] == label and s.get("status") != "closed"]
+    if matching:
+        if len(matching) != 1:
+            raise Failure("ambiguous-session", "Multiple open sessions have the same kind and label")
+        entry = matching[0]
+        if Path(entry["worktree"]).is_dir():
+            actual = run(["git", "branch", "--show-current"], Path(entry["worktree"])).stdout.strip()
+            if actual != entry["branch"]:
+                raise Failure("session-identity-drift", actual)
+            return {**entry, "reused": True}
+        raise Failure("missing-session-worktree", entry["worktree"])
+    common = path.parent.parent
+    primary = common.parent if common.name == ".git" else root()
+    base = run(["git", "rev-parse", args.get("base", "HEAD")+"^{commit}"], root()).stdout.strip()
+    if action == "adopt":
+        if root() == primary:
+            raise Failure("primary-session-refused", "Adopt an isolated worktree")
+        if run(["git", "status", "--porcelain"], root()).stdout:
+            raise Failure("dirty-session", "Adoption requires a clean checkout")
+        branch = run(["git", "branch", "--show-current"], root()).stdout.strip()
+        if not branch:
+            raise Failure("detached-session", "Adoption requires a named branch")
+        target = root()
+    else:
+        branch = config.lookup(config.load(), "worktree.branch_prefix", "codex/")+kind+"-"+label
+        target = primary/str(config.lookup(config.load(), "worktree.directory", ".worktrees"))/slug(branch)
+        target = target.resolve()
+        if not target.is_relative_to(primary.resolve()) or target == primary.resolve():
+            raise Failure("unsafe-session-path", str(target))
+        ignored = run(["git", "check-ignore", "--quiet", "--", str(target)], primary, check=False)
+        if ignored.returncode:
+            raise Failure("root-not-ignored", "Ignore the configured worktree root before creating sessions")
+        if target.exists():
+            raise Failure("session-path-exists", str(target))
+        run(["git", "worktree", "add", "-b", branch, str(target), base], primary)
+    entry = {"kind": kind, "label": label, "branch": branch, "worktree": str(target), "base": base,
+             "status": "open", "created": now(), "adopted": action == "adopt"}
+    data["sessions"].append(entry)
+    write_json(path, data)
+    return {**entry, "reused": False}
+
+
+def locate(args):
+    identifier = records.number(args.need())
+    data = load_json(store(), {"sessions": []})
+    matches = [entry for entry in data["sessions"] if entry.get("kind") == "phase" and entry.get("status") != "closed" and records.number(entry["label"]) == identifier]
+    if len(matches) > 1:
+        raise Failure("ambiguous-phase-session", identifier)
+    if matches:
+        entry = matches[0]
+        target = Path(entry["worktree"]).resolve()
+        if not target.is_dir():
+            raise Failure("missing-session-worktree", str(target))
+        actual = run(["git", "branch", "--show-current"], target).stdout.strip()
+        if actual != entry["branch"]:
+            raise Failure("session-identity-drift", actual)
+        candidates = list((target/".planning/phases").glob(identifier+"-*"))
+        if len(candidates) != 1:
+            raise Failure("phase-not-found", f"Phase session exists but its phase directory is absent or ambiguous: {identifier}")
+        return {"found": True, "source": "session", "padded_phase": identifier, "worktree": str(target), "branch": actual, "session": entry, "phase_dir": str(candidates[0])}
+    try:
+        directory = records.phase_dir(identifier)
+        return {"found": True, "source": "current", "padded_phase": identifier, "worktree": str(root()), "branch": run(["git", "branch", "--show-current"], root()).stdout.strip(), "phase_dir": str(directory), "session": None}
+    except Failure:
+        return {"found": False, "source": None, "padded_phase": identifier, "worktree": None, "session": None}

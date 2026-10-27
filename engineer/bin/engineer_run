@@ -1,0 +1,24 @@
+#!/bin/sh
+# Resolve symlinks before selecting source or installed Python environments.
+set -eu
+source_path=$0
+while [ -L "$source_path" ]; do
+    source_dir=$(CDPATH= cd -- "$(dirname -- "$source_path")" && pwd -P)
+    link=$(readlink "$source_path")
+    case "$link" in /*) source_path=$link ;; *) source_path=$source_dir/$link ;; esac
+done
+runtime_dir=$(CDPATH= cd -- "$(dirname -- "$source_path")" && pwd -P)
+namespace_dir=$(CDPATH= cd -- "$runtime_dir/../.." && pwd -P)
+project_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd -P)
+for interpreter in "$namespace_dir-venv/bin/python" "$namespace_dir-venv/Scripts/python.exe" "$project_root/.venv/bin/python" "$project_root/.venv/Scripts/python.exe"; do
+    if [ -x "$interpreter" ]; then
+        exec "$interpreter" -I "$runtime_dir/engineer.py" "$@"
+    fi
+done
+for interpreter in python3 python; do
+    if command -v "$interpreter" >/dev/null 2>&1; then
+        exec "$interpreter" -I "$runtime_dir/engineer.py" "$@"
+    fi
+done
+printf '%s\n' 'engineer-runtime requires Python 3.11 or newer' >&2
+exit 127

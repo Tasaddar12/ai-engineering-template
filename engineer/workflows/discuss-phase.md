@@ -26,12 +26,8 @@ this file under the discuss-phase byte budget (32000 bytes, #717; mirrors the ag
 | `--power` in $ARGUMENTS | `workflows/discuss-phase/modes/power.md` (then exit standard flow) |
 | `--all` in $ARGUMENTS | `workflows/discuss-phase/modes/all.md` overlay |
 | `--auto` in $ARGUMENTS | `workflows/discuss-phase/modes/auto.md` + `workflows/discuss-phase/modes/chain.md` (auto-advance) |
-| `--chain` in $ARGUMENTS | `workflows/discuss-phase/modes/default.md` + `workflows/discuss-phase/modes/chain.md` |
 | `--text` in $ARGUMENTS or `workflow.text_mode: true` | `workflows/discuss-phase/modes/text.md` overlay |
-| `--batch` in $ARGUMENTS | `workflows/discuss-phase/modes/batch.md` overlay |
-| `--analyze` in $ARGUMENTS | `workflows/discuss-phase/modes/analyze.md` overlay |
 | ADVISOR_MODE = true (USER-PROFILE.md exists) | `workflows/discuss-phase/modes/advisor.md` |
-| no flags above | `workflows/discuss-phase/modes/default.md` |
 | in `write_context` step | `workflows/discuss-phase/templates/context.md` |
 | in `git_commit` step | `workflows/discuss-phase/templates/discussion-log.md` |
 | writing checkpoints | `workflows/discuss-phase/templates/checkpoint.json` |
@@ -107,6 +103,44 @@ Phase: "API documentation"       → Structure/navigation, Code examples depth, 
 **Text mode** (`--text` or `workflow.text_mode: true`): follow `workflows/discuss-phase/modes/text.md` — do not use AskUserQuestion at all.
 </answer_validation>
 
+<discussion_analysis>
+## Effect
+
+Before presenting each question (or question group, in batch mode), provide
+a brief **trade-off analysis** for the decision:
+- 2-3 options with pros/cons based on codebase context and common patterns
+- A recommended approach with reasoning
+- Known pitfalls or constraints from prior phases
+
+## Example
+
+```markdown
+**Trade-off analysis: Authentication strategy**
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| Session cookies | Simple, httpOnly prevents XSS | Requires CSRF protection, sticky sessions |
+| JWT (stateless) | Scalable, no server state | Token size, revocation complexity |
+| OAuth 2.0 + PKCE | Industry standard for SPAs | More setup, redirect flow UX |
+
+💡 Recommended: OAuth 2.0 + PKCE — your app has social login in requirements (REQ-04) and this aligns with the existing NextAuth setup in `src/lib/auth.ts`.
+
+How should users authenticate?
+```
+
+This gives the user context to make informed decisions without extra
+prompting.
+
+## Sourcing the analysis
+
+- Pros/cons should reflect the codebase context loaded in `scout_codebase`
+  and any prior decisions surfaced in `load_prior_context`.
+- The recommendation must explicitly tie to project context (e.g.,
+  existing libraries, prior phase decisions, documented requirements).
+- If a related ADR or spec is referenced in CONTEXT.md `<canonical_refs>`,
+  cite it in the recommendation.
+</discussion_analysis>
+
 <process>
 
 **Express path available:** If you already have a PRD or acceptance criteria document, use `/gsd:plan-phase {phase} --prd path/to/prd.md` to skip this discussion and go straight to planning.
@@ -119,7 +153,7 @@ IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
 $ARGUMENTS
 GSD_ARGS_END
 GSD_ARGS=${GSD_ARGS%$'\n'}
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${ANTIGRAVITY_CONFIG_DIR:-$HOME/.gemini/antigravity}" "$HOME/.gemini/antigravity-ide" "$HOME/.gemini/antigravity-cli" "${AUGMENT_CONFIG_DIR:-$HOME/.augment}" "${CLINE_CONFIG_DIR:-$HOME/.cline}" "${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}" "${CODEX_HOME:-$HOME/.codex}" "${COPILOT_CONFIG_DIR:-${COPILOT_HOME:-$HOME/.copilot}}" "${CURSOR_CONFIG_DIR:-$HOME/.cursor}" "${HERMES_HOME:-$HOME/.hermes}" "${KILO_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/kilo}" "${KIMI_CONFIG_DIR:-$HOME/.config/agents}" "$HOME/.agents" "${KIMI_CODE_HOME:-$HOME/.kimi-code}" "${OPENCODE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/opencode}" "${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}" "${QWEN_CONFIG_DIR:-$HOME/.qwen}" "${TRAE_CONFIG_DIR:-$HOME/.trae}" "${WINDSURF_CONFIG_DIR:-$HOME/.codeium/windsurf}" "${ZCODE_CONFIG_DIR:-$HOME/.zcode}" "${GROK_AGENTS_HOME:-$HOME/.agents}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving gsd_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok gsd_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
+_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving gsd_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok gsd_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
 GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
 INIT=$(gsd_run query init.phase-op ${GSD_WS:+--ws=${GSD_WS##* }} "${PHASE}"); [[ "$INIT" == @file:* ]] && INIT=$(cat "${INIT#@file:}")
 AGENT_SKILLS_ADVISOR=$(gsd_run query agent-skills gsd-advisor-researcher ${GSD_WS:+--ws=${GSD_WS##* }})
@@ -153,10 +187,7 @@ fi
   - `--auto` → Read `workflows/discuss-phase/modes/auto.md` before `check_existing` (it overrides several steps).
   - `--chain` → Read `workflows/discuss-phase/modes/chain.md` before `auto_advance`.
   - `--text` (or `workflow.text_mode: true`) → Read `workflows/discuss-phase/modes/text.md` before any AskUserQuestion call.
-  - `--batch` → Read `workflows/discuss-phase/modes/batch.md` before `discuss_areas`.
-  - `--analyze` → Read `workflows/discuss-phase/modes/analyze.md` before `discuss_areas`.
   - `ADVISOR_MODE = true` → Read `workflows/discuss-phase/modes/advisor.md` before `analyze_phase` (it changes the discussion flow and adds an `advisor_research` substep).
-  - No flags → Read `workflows/discuss-phase/modes/default.md` before `discuss_areas`.
 
 **If `phase_found` is true:** Continue to `check_blocking_antipatterns`.
 </step>
@@ -357,18 +388,14 @@ Continue to `discuss_areas` with selected areas (or to `advisor_research` per `m
 </step>
 
 <step name="discuss_areas">
-Discussion behavior is defined by the active mode file(s):
+Use the native discussion method in `<discussion_analysis>` before each question.
 
 - **Advisor mode (ADVISOR_MODE = true):** follow `workflows/discuss-phase/modes/advisor.md` — research-backed comparison tables, table-first selection.
 - **--auto:** follow `workflows/discuss-phase/modes/auto.md` — Claude picks recommended option for every question; no AskUserQuestion. Single-pass cap enforced.
-- **Default (no flags):** follow `workflows/discuss-phase/modes/default.md` — 4 single-question turns per area, then check whether to continue.
 
 Overlays (combine with the active mode):
 - `--text` → `workflows/discuss-phase/modes/text.md` (replace AskUserQuestion with plain-text numbered lists)
-- `--batch` → `workflows/discuss-phase/modes/batch.md` (group 2–5 questions per turn)
-- `--analyze` → `workflows/discuss-phase/modes/analyze.md` (trade-off table before each question)
 
-**Overlay stacking:** overlays combine and apply outer→inner in fixed order `--analyze` → `--batch` → `--text` (e.g., `--batch --analyze` = trade-off table per question group; add `--text` for plain-text rendering). Mode-specific precedence (e.g., `--auto --power`) is documented in each overlay file's "Combination rules" section.
 
 All modes preserve the universal rules below.
 
