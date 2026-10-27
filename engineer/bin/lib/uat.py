@@ -172,8 +172,9 @@ def outstanding(args=None):
     result = []
     for directory in session_directories():
         scope = "quick" if (directory/"QUICK.md").is_file() else "phase"
+        owner = verification.quick_identity(directory) if scope == "quick" else directory.name.split("-")[0]
         for path in directory.glob("*-UAT.md"):
-            result.extend(session_status(path)["blocking_items"])
+            result.extend({**item, scope: owner} for item in session_status(path)["blocking_items"])
         for path in directory.glob("*-VERIFICATION.md"):
             metadata, body = split_frontmatter(read(path))
             if metadata.get("status") == "human_needed":

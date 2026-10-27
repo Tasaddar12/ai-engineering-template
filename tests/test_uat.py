@@ -40,3 +40,14 @@ class UatChecks(RuntimeCase):
         audit = self.cli("audit-open")
         self.assertEqual(owners, sorted(item["quick"] for item in audit["uat"]))
         self.assertEqual(owners, sorted(item["quick"] for item in audit["verification"]))
+
+    def test_every_quick_uat_blocker_has_its_actual_owner(self):
+        owners = ["261027-001-first", "261027-002-second"]
+        for owner in owners:
+            self.put(".planning/quick/"+owner+"/QUICK.md", "---\nid: "+owner+"\nstatus: open\n---\n")
+            self.put(".planning/quick/"+owner+"/"+owner+"-UAT.md",
+                     "---\nquick: "+owner+"\nstatus: testing\n---\n## Tests\n\n### 1. Inspect result\nresult: pending\n")
+        items = self.cli("audit-uat")["items"]
+        self.assertEqual(set(owners), {item["quick"] for item in items})
+        self.assertTrue(any(item.get("id") == "human-acceptance" for item in items))
+        self.assertTrue(any(item.get("status") == "missing" for item in items))
