@@ -115,7 +115,7 @@ The executor agent reads `<precondition>` before any other task work:
 |---|---|
 | **Absent** | No visible change — execute the task exactly as today. Back-compat for every existing plan. |
 | **Met** | No visible change — proceed with the task. The precondition is logged in the SUMMARY only if it was non-trivial to verify. |
-| **Unmet** | Preserve completed slices and commits. Record the exact unmet precondition; stop only dependent work and request the missing fact/decision through the checkpoint contract. Never roll back completed unrelated work or rubber-stamp a missing prerequisite. |
+| **Unmet** | STOP before edits or a partial commit for this task. Return a `human-action` checkpoint with `gate="blocking-human"`, the exact unmet fact, read-only evidence, blocked task, safe satisfaction steps and recheck. Preserve prior independent completed commits. A human can satisfy the fact and resume without plan revision; revise only when the assumption or approved scope must change. Never auto-approve a missing prerequisite. |
 
 ## Plan-structure validation
 

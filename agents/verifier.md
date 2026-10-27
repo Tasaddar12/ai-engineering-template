@@ -423,7 +423,7 @@ Return UAT content for host capture when behavior requires human observation. In
 
 Classify status using this decision tree IN ORDER (most restrictive first):
 
-Any required key link that is PARTIAL or NOT_WIRED is a gap; record the missing edge and affected acceptance.
+1. IF any required truth is FAILED, any required artifact is missing or a stub, any required key link is PARTIAL or NOT_WIRED, OR a blocker anti-pattern prevents the approved outcome: record the concrete defect, affected acceptance and missing/broken connection as a gap. An observable absence is FAILED, not UNCERTAIN; human observation cannot waive it.
    → **status: gaps_found**
 
 2. IF Step 8 produced ANY human verification items (section is non-empty) — this includes every ⚠️ PRESENT_BEHAVIOR_UNVERIFIED truth from Step 3:

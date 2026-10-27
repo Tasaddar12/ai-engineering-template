@@ -552,7 +552,7 @@ Apply TDD detection heuristic. Apply user setup detection.
 <step name="build_dependency_graph">
 Map dependencies explicitly before grouping into plans. Record needs/creates/has_checkpoint for each task.
 
-Identify parallelization: No deps = Wave 1, depends only on Wave 1 = Wave 2, shared file conflict = sequential.
+Identify parallelization from explicit producer-consumer dependencies: no prerequisites can enter Wave 1; consumers follow their producers. Investigate shared files for actual data dependencies or resource contention. Declare the former in `depends_on` and the latter in `resources`; overlapping filenames alone do not create an implicit dependency.
 
 Prefer vertical slices over horizontal layers.
 </step>
@@ -576,7 +576,7 @@ Respect @engineer/references/git-workflow.md and @engineer/references/planner-co
 <step name="group_into_plans">
 Rules:
 1. Same-wave tasks with no file conflicts → parallel plans
-2. Shared files → same plan or sequential plans (shared file = implicit dependency → later wave)
+2. Shared files → investigate ownership. Group edits in one plan or declare the actual producer-consumer `depends_on` edge; use `resources` for serialization without an invented dependency. Assign waves from those explicit edges.
 3. Checkpoint tasks → `autonomous: false`
 Size each plan for one coherent outcome within the configured task cap; split separate outcomes rather than padding tasks.
 </step>

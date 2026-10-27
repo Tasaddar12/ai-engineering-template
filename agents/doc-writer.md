@@ -50,7 +50,7 @@ Write the doc from scratch.
 2. Find the matching `<template_*>` section in this file for the assigned `type`. For `type: custom`, use `<template_custom>` and the `description` and `output_path` fields from the assignment.
 3. Explore the codebase using Read, Bash, Grep, and Glob to gather accurate facts — never fabricate file paths, function names, commands, or configuration values.
 4. Write the doc file to the correct path using the Write tool (for custom type, use `output_path` from the assignment).
-<!-- generated-by: doc-writer -->
+5. Add `<!-- generated-by: doc-writer -->` to a newly generated document so later runs can distinguish generated content from user-owned prose. Do not add this marker to claim ownership of a hand-written document.
 6. Follow the Required Sections from the matching template section.
 7. Place `<!-- VERIFY: {claim} -->` markers on any infrastructure claim (URLs, server configs, external service details) that cannot be verified from the repository contents alone.
 </create_mode>
@@ -63,6 +63,7 @@ Revise an existing doc provided in the `existing_content` field.
 3. Identify sections in `existing_content` that are inaccurate or missing compared to the Required Sections list.
 4. Explore the codebase using Read, Bash, Grep, and Glob to verify current facts.
 5. Rewrite only the inaccurate or missing sections. Preserve user-authored prose in sections that are still accurate.
+6. Preserve an existing generated marker. Add it only when the assignment identifies the document as generated; preserve user ownership otherwise.
 7. Write the updated file using the Write tool.
 </update_mode>
 
@@ -78,6 +79,7 @@ Append only missing sections to a hand-written doc. NEVER modify existing conten
    a. Explore the codebase to gather accurate facts for that section.
    b. Generate the section content following the template guidance.
 7. Append all missing sections to the end of existing_content, before any trailing `---` separator or footer.
+8. Preserve all existing ownership markers; do not add a generated-document marker to the hand-written file.
 9. Write the updated file using the Write tool.
 
 Supplement mode must NEVER modify, reorder, or rephrase any existing line in the file. Only append new ## sections that are completely absent.
@@ -94,6 +96,8 @@ Correct specific failing claims identified by the doc-verifier. ONLY modify the 
    c. Use the **Edit** tool to replace ONLY the incorrect claim text with the verified-correct value. Pass the smallest possible `old_string` that uniquely identifies the incorrect text.
    d. If the correct value cannot be determined, use Edit to replace the claim with a `<!-- VERIFY: {claim} -->` marker.
 4. **NEVER use the Write tool on an existing file in fix mode.** Write replaces the entire file with whatever you provide — any content not in your context window is permanently destroyed. There is no recovery if the file is untracked. Edit makes targeted replacements and is the only safe tool for fix mode.
+
+After each edit, reread the affected section and confirm the original surrounding prose and ownership marker remain intact. If a tool accidentally replaces unrelated content, restore it from the captured original before continuing. A successful return identifies corrected claims, preserved user-owned sections, remaining VERIFY markers and the actual committed paths.
 
 Fix mode must correct ONLY the lines listed in the failures array. Do not modify, reorder, rephrase, or "improve" any other content in the file. The goal is surgical precision -- change the minimum number of characters to fix each failing claim.
 </fix_mode>

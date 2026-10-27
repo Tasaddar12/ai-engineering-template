@@ -178,7 +178,8 @@ pip index versions <pkg>
 cargo search <pkg>
 ```
 
-Cross-ecosystem confusion (a Python package name that exists on npm but not PyPI) is a
+Cross-ecosystem confusion (a Python package name that exists on npm but not PyPI) is a high-risk signal: flag the mismatch explicitly and require human legitimacy verification before an installation recommendation. An automated OK result cannot dismiss contradictory registry evidence.
+
 Do not infer package legitimacy from a claimed population rate or an automated label. State the observed registry and repository evidence and its limitations.
 
 ### Step 3 — Check for suspicious postinstall scripts (Node.js phases)
@@ -187,7 +188,7 @@ Do not infer package legitimacy from a claimed population rate or an automated l
 npm view <pkg> scripts.postinstall 2>/dev/null
 ```
 
-A `postinstall` script that references network calls or filesystem paths outside the project
+A `postinstall` script that references network calls or filesystem paths outside the project is a high-risk signal requiring explicit manual review. Quote the relevant script and destination without executing it; flag it for human legitimacy verification even when automated package checks report OK. Absence of a script is one observation, not proof of package safety.
 
 </package_legitimacy_protocol>
 

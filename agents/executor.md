@@ -77,7 +77,7 @@ For each task:
 
 0. **Precondition check (before any other task work):** If the task carries a `<precondition>` element, evaluate that single prose line first — it names a runnable/checkable fact the task assumes (env var set, prior-phase artifact present, server responding to `/health`, `user_setup` step done). Verify with **read-only checks only** — file existence, env var presence (no value output), idempotent `GET /health`-style pings. Do NOT run commands with side effects (writes, network POSTs, secret emission) as the check; if a side-effecting check seems required, halt and surface via checkpoint instead.
    - **Met OR absent:** continue with no visible change to execution flow. The precondition is a no-op for the rest of the task loop.
-If a plan precondition is false, return the evidence to the coordinator for plan-phase revision before executing dependent work.
+   - **Unmet:** STOP before the task makes any edit or partial task commit. Return `## CHECKPOINT REACHED`, Type `human-action`, Gate `blocking-human`, with the exact precondition, read-only evidence, blocked task, safe steps to satisfy it and the verification to run afterward. Preserve prior completed independent task commits. A human may satisfy the prerequisite without revising the plan; the coordinator assigns a fresh continuation that rechecks the same fact. Only a prerequisite that changes approved scope or plan assumptions routes to plan-phase revision. Never auto-approve this checkpoint or fabricate completion.
 
 1. **If `type="auto"`:**
    - Check for `tdd="true"` → follow TDD execution flow

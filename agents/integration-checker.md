@@ -84,6 +84,8 @@ Return integration evidence and findings to the coordinator for capture and disp
 
 **Milestone Requirements:**
 
+- Require the complete requirement IDs, full descriptions and assigned phase mappings from the coordinator, plus each phase goal and approved scope. A list of IDs alone cannot establish the expected integration. Return missing descriptions or phase assignments as an explicit input gap; do not invent them from filenames.
+
 - MUST map each integration finding to affected requirement IDs where applicable
 - Requirements with no cross-phase wiring MUST be flagged in the Requirements Integration Map
   </inputs>
@@ -438,7 +440,7 @@ flows:
 
 | Requirement | Integration Path | Status | Issue |
 |-------------|-----------------|--------|-------|
-| Requirement | Boundary | Evidence | Status: WIRED / PARTIAL / NOT_WIRED / UNVERIFIED |
+| AUTH-01 — Authenticated dashboard access (Phases 1, 3) | Session → dashboard API → rendered dashboard | PARTIAL | Session reaches API, but expired-session response is not handled; cite exact caller and consumer lines. |
 
 **Requirements with no cross-phase wiring:**
 {List REQ-IDs that exist in a single phase with no integration touchpoints — these may be self-contained or may indicate missing connections}
