@@ -20,7 +20,7 @@ def integrity(args, strict=False):
         schema = next((kind for kind in frontmatter.SCHEMAS if path.name.endswith("-"+kind.upper()+".md")), None)
         try:
             metadata, body = split_frontmatter(read(path))
-            findings = frontmatter.errors(metadata, schema) if schema else []
+            findings = frontmatter.errors(metadata, schema)+frontmatter.path_errors(path, metadata, schema) if schema else []
         except Failure as exc:
             findings = [exc.message]
         errors.extend({"path": str(path), "error": finding} for finding in findings)

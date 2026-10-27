@@ -51,7 +51,14 @@ type: execute
 wave: 1
 depends_on: []
 files_modified: ["src/app.py"]
+files_deleted: []
+resources: []
 autonomous: true
+requirements: [REQ-01]
+acceptance: []
+documentation: []
+checks: []
+issue_refs: []
 must_haves:
   truths: ["A behavior exists"]
   artifacts: []
@@ -119,6 +126,7 @@ class IsolationSafety(RuntimeCase):
         self.cli("cleanup.apply", "--approval-token", preview["approval_token"], "--confirm", status=1, raw=True)
         self.assertTrue(target.exists())
         (target/"untracked.txt").unlink()
+        preview = self.cli("cleanup.preview")
         self.assertEqual(1, self.cli("cleanup.apply", "--approval-token", preview["approval_token"], "--confirm")["count"])
         self.assertFalse(target.exists())
         self.cli("cleanup.apply", "--approval-token", preview["approval_token"], "--confirm", status=1, raw=True)
@@ -129,7 +137,7 @@ class IsolationSafety(RuntimeCase):
         target = Path(worker["path"])
         summary = target/".planning/phases/01-behavior/01-01-SUMMARY.md"
         summary.parent.mkdir(parents=True)
-        summary.write_text('---\nphase: "01"\nplan: "01"\nstatus: complete\nissue_refs: []\n---\nDelivered\n', encoding="utf-8")
+        summary.write_text('---\nphase: "01"\nplan: "01"\nstatus: complete\nrequirements-completed: []\nacceptance: []\ndocumentation: []\nissue_refs: []\n---\nDelivered\n', encoding="utf-8")
         (target/"README.md").unlink()
         self.git("-C", str(target), "add", "--all")
         self.git("-C", str(target), "commit", "-m", "feat(01-01): unexpected deletion")

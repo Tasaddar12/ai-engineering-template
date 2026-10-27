@@ -2,6 +2,7 @@
 from pathlib import Path
 import hashlib
 import json
+import secrets
 from . import config, gitops, records, worktrees
 from .core import Failure, load_json, now, planning_lock, root, run, safe_path, write_json
 
@@ -37,11 +38,10 @@ def command(args, action):
     store = records.planning()/"cleanup"
     if action == "preview":
         entries = snapshot()
-        token = hashlib.sha256(json.dumps(entries, sort_keys=True).encode()).hexdigest()
+        payload = {"entries": entries, "nonce": secrets.token_hex(16)}
+        token = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
         with planning_lock():
-            prior = load_json(store/(token+".json"))
-            if not prior or not prior.get("consumed"):
-                write_json(store/(token+".json"), {"entries": entries, "created": now()})
+            write_json(store/(token+".json"), {**payload, "created": now()})
         return {"approval_token": token, "entries": entries, "count": len(entries)}
     if not args.has("confirm"):
         raise Failure("cleanup-not-approved", "Cleanup requires the exact preview token and --confirm")
@@ -52,7 +52,8 @@ def command(args, action):
     approved = load_json(path)
     if not approved or approved.get("consumed"):
         raise Failure("cleanup-preview-missing", "Create a fresh exact approval preview")
-    expected = hashlib.sha256(json.dumps(approved.get("entries"), sort_keys=True).encode()).hexdigest()
+    payload = {"entries": approved.get("entries"), "nonce": approved["nonce"]} if "nonce" in approved else approved.get("entries")
+    expected = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
     if expected != token:
         raise Failure("cleanup-preview-corrupt", "Stored entries no longer match exact approval")
     with planning_lock():

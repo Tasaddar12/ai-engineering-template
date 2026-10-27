@@ -99,6 +99,7 @@ def audit_pr(phase, body, quick=None):
 
 
 def accepted_human(body):
+    body = re.sub(r"(?m)^- (?=(?:Status|Reviewer|Date|Decision|Evidence):)", "", body.replace("**", ""))
     if not re.search(r"(?mi)^Status:\s*ACCEPTED\s*$", body):
         return False
     for field in ("Reviewer", "Date", "Decision", "Evidence"):

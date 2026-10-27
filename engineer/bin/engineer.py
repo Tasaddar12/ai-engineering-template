@@ -28,6 +28,7 @@ def registry():
         "generate-slug": lambda a: slug(a.need()), "project-instruction-file": models.instruction,
         "resolve-model": lambda a: models.resolution(a, "model"), "resolve-effort": lambda a: models.resolution(a, "effort"),
         "resolve-agent": lambda a: models.resolution(a, "agent"), "agent-skills": models.agent_skills,
+        "agents.list": models.list_agents,
         "agent.classify-failure": models.classify, "commit": gitops.commit, "git.base-branch": gitops.base_branch,
         "dispatch-isolation": worktrees.isolation, "dispatch-capacity": quick_batch.capacity,
         "find-phase": lambda a: records.find(a.need()), "phases.list": records.phase_list,
@@ -100,6 +101,7 @@ def registry():
         verbs["phase.issue-"+action] = lambda a, action=action: issues.publication(a, action, "phase")
     for action in ("review", "preview", "publish", "audit"):
         verbs["phase.threat-"+action] = lambda a, action=action: security_tracking.command(a, action)
+        verbs["quick.threat-"+action] = lambda a, action=action: security_tracking.command(a, action, "quick")
     for action in ("preview", "apply"):
         verbs["cleanup."+action] = lambda a, action=action: cleanup.command(a, action)
     for kind in ("code-review", "complete-milestone", "execute-phase", "new-milestone", "new-project", "onboard", "phase-op", "plan-phase", "progress", "quick", "quick-batch", "todos", "verify-work", "ship"):

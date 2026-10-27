@@ -10,7 +10,7 @@ DEFAULTS = {
     "context_window": 200000, "model_profile": "balanced",
     "workflow": {
         "text_mode": False, "auto_advance": False, "discuss_mode": "discuss",
-        "isolation": "worktree", "agent_hint_routing": True,
+        "isolation": "auto", "agent_hint_routing": True,
         "code_review": True, "code_review_depth": "standard", "code_review_depth_overrides": [],
         "context_coverage_gate": True, "human_verify_mode": "end-of-phase", "live_dom_uat": False,
         "mvp_mode": False, "plan_chunked": False, "security_asvs_level": 1,

@@ -71,6 +71,18 @@ corruption fails a mutation. Existing corruption is reported as a warning so a
 repair command can still operate. Frontmatter setters reject schema regressions
 before writing.
 
+Current PLAN metadata requires phase-or-quick identity, plan/type/wave,
+depends_on, files_modified/files_deleted/resources, autonomous, requirements,
+acceptance/documentation/checks/issue_refs lists and must_haves with
+truths/artifacts/key_links lists. Phase plans name their owning requirement IDs;
+genuine quick plans follow the assigned quick contract. `checks` is a list of
+nonempty argv string arrays, never shell command strings or arbitrary mappings.
+SUMMARY requires identity, plan, status, requirements-completed,
+acceptance/documentation/issue_refs lists. CONTEXT requires identity, discussion
+(`pending` or `complete`) and issue_refs. Identity must match actual record paths
+and phase PLAN/SUMMARY basenames. These checks do not fabricate approval or
+require SUMMARY artifacts from unrelated read-only/artifact-only roles.
+
 Configure verification commands as argv arrays:
 
 ```yaml
@@ -88,11 +100,26 @@ all nonplanning Git-visible files form the input set. A passing receipt is reuse
 only when inputs match and its revision is in current history. Revision or input
 drift during a check fails the frozen run. `verification.fingerprint` hashes phase
 PLAN/SUMMARY records and covered sources while excluding the report itself.
+Fingerprinting also writes and returns `covered_digest: v4:sha256:<hex>` over the
+same canonical coverage. Currentness rejects absent, malformed, older-version or
+stale v4 coverage even when a raw fingerprint matches. `fingerprint`, `revision`
+and `covered_files` remain compatible fields; report schema validation checks v4.
 `verification.current` checks the report fingerprint, frozen revision, clean
 working tree, and current check receipts. `verification.append-audit` suppresses
 an identical last audit block.
 
 `phase.uat-passed`, `audit-uat`, `audit-open`, and `uat.*` expose acceptance work.
+Local UAT requires existing complete committed source SUMMARYs, every remaining
+required action/checklist outcome to pass, and actual Human acceptance fields
+`status: ACCEPTED`, `accepted_by`, `accepted_at`, and final `decision`. Skipped,
+not-testable, blocked, pending and unresolved actions remain blocking. Historical
+`result: issue` is preserved and distinguished as effectively resolved only when
+stable gap_id/resolved_by/resolved_at identify a real committed executed PLAN and
+complete matching SUMMARY with specific resolution evidence. An explicit human
+retest obligation requires its actual recorded pass. Diagnosis and status labels
+never supply human acceptance. `uat.complete-session` enforces these same gates,
+preserves historical observations and synchronizes actual counters. Quick UAT is
+included in open audits and ready/merge gates without fabricating phase identity.
 `spec.edge-probe` reads requirement and resolution JSON files;
 `spec.section SPEC.md edges|prohibitions` extracts explicit sections.
 `quick-batch.*` persists items, computes bounded scheduling and deterministic merge
@@ -104,6 +131,9 @@ an existing isolated checkout; `session.close` refuses dirty or unintegrated
 changes. Worker `worktree.create` records its base and owned files/deletions.
 `worktree.merge-wave` requires committed complete summaries, verifies scope and
 declared deletions, and integrates workers in recorded order.
+For `worktree.create`, `merge-wave` and `cleanup-wave`, `--phase` is a worker
+registry label, not a phase lookup or authority grant. `--phase quick-001` records
+workers for that actual quick session without creating a phase record.
 
 `todo.issue-preview` / `phase.issue-preview` validate issue templates and persist
 a content-bound token. Publication and update require `--preview-token`, consume
@@ -171,6 +201,7 @@ passed as one shell argument. `--raw`, `--json`, and `--pick FIELD` are global.
 | `project-instruction-file` | `[claude|codex]` | host instruction filename |
 | `generate-claude-md` | `[--output PATH]` | `written, path`; preserves unmanaged content |
 | `resolve-agent` | `ROLE [--host claude|codex]` | name/agent/model/effort/host/inherit/effort_inherit/model_source/effort_source/native_file; raw prints name; absent role fails |
+| `agents.list` | none | actual dispatchable role files and separately identified method_sources; code-fixer is method-only |
 | `resolve-model`, `resolve-effort` | `ROLE [--host claude|codex]` | named value/source/inherit/host/agent; raw prints scalar; fixed scout/fixer policy applies |
 | `agent-skills` | `ROLE` | ready-to-inject `<agent_skills>` block |
 | `agent.classify-failure` | `-- RETURN_BODY...` | `kind, classification, retryable, wait_hint` |
@@ -335,7 +366,7 @@ All `init.*` results include these keys:
 | `section_manifest` | null: load kept workflow steps as the safe superset |
 | `models`, `efforts` | maps keyed by final role name |
 | `<role_with_underscores>_model`, `<role_with_underscores>_effort` | same per-role values as maps |
-| `researcher_model/effort`, `checker_model/effort`, `reviewer_model/effort`, `fixer_model/effort` | aliases for phase-researcher, plan-checker, code-reviewer, code-fixer |
+| `researcher_model/effort`, `checker_model/effort`, `reviewer_model/effort`, `fixer_model/effort` | aliases for phase-researcher, plan-checker, code-reviewer, targeted-fixer |
 | `fix` | explicit `--fix` echo |
 | `paths` | core record/root/planning/template paths, plus phase path when found |
 | `context_window` | configured model context window |
@@ -344,13 +375,18 @@ All `init.*` results include these keys:
 | `milestone_phases`, `incomplete_phase` | parsed roadmap phases and first incomplete phase or null |
 
 Role maps cover executor, planner, verifier, phase-researcher, plan-checker,
-code-reviewer, code-fixer, doc-writer, doc-verifier, integration-checker,
+code-reviewer, doc-writer, doc-verifier, integration-checker,
 security-auditor, nyquist-auditor, ui-researcher, ui-checker, ui-auditor, scout,
 targeted-fixer, and codebase-mapper. A missing required role fails explicitly.
 Codex reads native TOML model/effort definitions from
 `bin/install-assets/codex-agents` in source, or the installed `.codex/agents`.
 Claude reads `agents.<final-role>` configuration. Scout and targeted-fixer have
 fixed Codex `gpt-6-luna`/`high` and Claude `haiku`/`inherit` policies.
+`code-fixer.md` remains readable method context and is never a dispatch role;
+direct resolution fails with agent-method-only. Compatibility code_fixer/fixer
+model/effort fields resolve targeted-fixer policy. The dispatch map omits the
+method-only name. Isolation defaults to `auto` and negotiates the host's supported
+worktree mode; no supported setting disables isolation.
 
 `init.phase-op`, `init.plan-phase`, `init.execute-phase`, `init.verify-work`,
 `init.ship`, and `init.code-review` add this shared phase packet:
@@ -400,11 +436,14 @@ roadmap phases/counts/percent, progress_percent, and all_phases_verified.
 | `phase.threat-preview` | `N --entries-file FILE --variant "Security risk"` | reviewed checklist/standalone bodies and source/template/origin/provider-bound previewToken; refuses Pending review |
 | `phase.threat-publish` | same plus `--preview-token TOKEN` | published container/standalone URLs and actual provider-rendered entry links; consumes before provider writes |
 | `phase.threat-audit` | `N` | ready/pending; checks each PLAN's declared issue/heading target by provider readback; Pending exits 1 |
+| `quick.threat-review/preview/publish/audit` | same arguments with real quick `ID` replacing phase `N` | same contracts in the actual quick directory; no phase record is fabricated |
 
-The entries file is a nonempty JSON array. Each entry supplies `key`, `id`,
+The entries file is a nonempty JSON array. Each entry supplies `key`,
 `heading`, `plan` (the phase-local PLAN filename), `threat_id`, boolean `planned`,
 `owner`, `scope_acceptance`, `assessment_uncertainty`, `lifecycle_outcome`,
 `next_action`, `revision_check_evidence`, `aliases_occurrences`, and `match_review`.
+The stable BODY heading is Entry identity; optional `id` retains an existing
+caller alias and never replaces the canonical risk key or source Threat ID.
 The stable canonical key includes repository, surface/control and failure
 mode/remediation scope; review evidence must establish that identity. A match
 review supplies `disposition: existing|no-match|pending`, cited `evidence`,
@@ -421,13 +460,19 @@ Pending. Existing actionable full-scope identities take precedence. An unresolve
 closed match or closed checklist requires independent reopening authority;
 these verbs never reopen or close issues.
 
+Quick tracking resolves the actual QUICK.md directory and padded ID. Its exact
+title is `chore(security): quick {quick-id} security checklist` and its dedicated
+label is `quick-security-checklist`. Preview identity binds scope kind, ID and
+actual directory, so a phase and quick task cannot share an approval accidentally.
+PLAN/SUMMARY/VERIFICATION frontmatter uses exactly one `phase` or `quick` identity.
+
 All new planned risks, including accepted and deferred risks, receive separate
 stable `###` entries under Risk assessment and lifecycle in the single checklist.
 The container uses the same eight-heading Security risk variant as standalone
 risks. Existing canonical issue identities
 are linked from their entries. Entry fields are Entry identity, Canonical risk
-key, Aliases/occurrences, PLAN/Threat ID, Owner, Scope/acceptance,
-Assessment/uncertainty, Lifecycle/outcome, Next action, Revision/check evidence,
+key, Aliases / occurrences, PLAN / Threat ID, Owner, Scope / acceptance,
+Assessment / uncertainty, Lifecycle / outcome, Next action, Revision / check evidence,
 and Canonical reference. The PLAN remains the owner of severity and mitigation.
 Reruns preserve headings; a rename fails until references are repaired and read
 back. Returned URLs come from actual provider-rendered anchors, never a computed

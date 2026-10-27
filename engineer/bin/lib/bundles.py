@@ -44,7 +44,7 @@ def init(args, kind):
     packet["milestone_phases"] = progress["phases"]
     packet["incomplete_phase"] = next((phase for phase in progress["phases"] if not phase["complete"]), None)
     packet["models"], packet["efforts"] = {}, {}
-    roles = ("executor", "planner", "verifier", "phase-researcher", "plan-checker", "code-reviewer", "code-fixer", "doc-writer", "doc-verifier", "integration-checker", "security-auditor", "nyquist-auditor", "ui-researcher", "ui-checker", "ui-auditor", "scout", "targeted-fixer", "codebase-mapper")
+    roles = ("executor", "planner", "verifier", "phase-researcher", "plan-checker", "code-reviewer", "doc-writer", "doc-verifier", "integration-checker", "security-auditor", "nyquist-auditor", "ui-researcher", "ui-checker", "ui-auditor", "scout", "targeted-fixer", "codebase-mapper")
     packet["missing_agents"] = [role for role in roles if not (models.agents_dir()/(role+".md")).is_file()]
     packet["agents_installed"] = not packet["missing_agents"]
     for role in roles:
@@ -53,6 +53,8 @@ def init(args, kind):
         packet[key+"_effort"] = models.resolve(role, "effort")
         packet["models"][role] = packet[key+"_model"]
         packet["efforts"][role] = packet[key+"_effort"]
+    packet["code_fixer_model"] = packet["targeted_fixer_model"]
+    packet["code_fixer_effort"] = packet["targeted_fixer_effort"]
     packet.update({"researcher_model": packet["phase_researcher_model"], "checker_model": packet["plan_checker_model"],
                    "reviewer_model": packet["code_reviewer_model"], "fixer_model": packet["code_fixer_model"]})
     packet.update({"researcher_effort": packet["phase_researcher_effort"], "checker_effort": packet["plan_checker_effort"],
@@ -92,7 +94,7 @@ def init(args, kind):
         except (Failure, ValueError):
             pass
         return {**packet, "phase_found": False, "phase_dir": None, "expected_phase_dir": expected,
-                "has_spec": False, "research_partial": False, "phase_number": value, "plans": [],
+                "has_spec": False, "spec_path": None, "research_partial": False, "phase_number": value, "plans": [],
                 "incomplete_plans": [], "plan_count": 0, "incomplete_count": 0, "phase_req_ids": []}
     packet.update(info)
     directory = Path(info["phase_dir"])

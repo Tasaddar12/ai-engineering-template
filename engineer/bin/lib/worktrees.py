@@ -135,7 +135,7 @@ def command(args, action):
 
 def isolation(args):
     settings = config.load()
-    requested = args.get("force-isolation", config.lookup(settings, "workflow.isolation", "worktree"))
+    requested = args.get("force-isolation", config.lookup(settings, "workflow.isolation", "auto"))
     if requested not in ("worktree", "auto", "harness-worktree", "orchestrator-worktree"):
         raise Failure("isolation-required", "Worker isolation cannot be disabled", requested=requested)
     host = models.resolve_host()

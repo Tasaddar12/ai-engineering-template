@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/"engineer/bin"))
-from lib import bundles, cleanup, codebase, config, delivery, handoff, issues, misc, models, numbering, planning_review, records, security_tracking, verification, worktrees
+from lib import bundles, cleanup, codebase, config, delivery, frontmatter, handoff, issues, misc, models, numbering, planning_review, records, security_tracking, uat, verification, worktrees
 from lib.core import Args, Failure, read, write_json
 from lib.text import join_frontmatter, split_frontmatter
 
@@ -52,6 +52,18 @@ class PreservationCase(unittest.TestCase):
 
 
 class IsolationContract(PreservationCase):
+    def test_method_only_code_fixer_is_readable_but_never_dispatchable(self):
+        namespace = self.root/"namespace"
+        self.put("namespace/agents/code-fixer.md", "---\nname: code-fixer\n---\nFull retained method\n")
+        self.put("namespace/agents/targeted-fixer.md", "---\nname: targeted-fixer\n---\nScoped role\n")
+        with patch.object(models, "NAMESPACE", namespace):
+            packet = models.list_agents(Args([]))
+            self.assertEqual(["targeted-fixer"], [item["name"] for item in packet["agents"]])
+            self.assertEqual("code-fixer", packet["method_sources"][0]["name"])
+            with self.assertRaises(Failure) as caught:
+                models.resolve_agent("code-fixer")
+        self.assertEqual("agent-method-only", caught.exception.code)
+
     def test_negotiates_only_real_isolation_and_refuses_unignored_root(self):
         with self.assertRaises(Failure):
             worktrees.isolation(Args([]))
@@ -181,6 +193,35 @@ class HandoffAndFreshness(PreservationCase):
 
 
 class IssueProvider(PreservationCase):
+    def test_uat_bullet_acceptance_fields_and_step_rows_follow_selected_variant(self):
+        self.prepare_issue()
+        template = self.namespace/"engineer/templates/issue.md"
+        body = """## Steps and expected outcomes
+
+| Step | Action | Expected outcome | Actual outcome / evidence |
+|------|--------|------------------|---------------------------|
+| 1 | Open delivered page | Title visible | pending |
+
+## Human acceptance
+
+- Status: PENDING HUMAN acceptance
+- Reviewer: pending
+- Date: pending
+- Decision: pending
+- Evidence: pending
+"""
+        template.write_text(read(template)+"\n### UAT\n\n```markdown\n"+body+"```\n", encoding="utf-8")
+        issues.validate("Delivered acceptance", body, "UAT")
+        with self.assertRaises(Failure):
+            issues.validate("Delivered acceptance", body.replace("PENDING HUMAN acceptance", "ACCEPTED"), "UAT")
+
+    def test_pr_validation_uses_fenced_body_and_keeps_optional_sections_optional(self):
+        self.prepare_issue()
+        template = self.namespace/"engineer/templates/pull-request.md"
+        body = "## Goal\nObserved outcome\n## Changes\nConcrete change\n## Verification\nPending ordered final batch\n## Known gaps\nFinal checks\n## Risks or rollback\nRevert the owned commit\n"
+        template.write_text("# PR\n## File Template\n```markdown\n"+body+"## Requirements or Issues\nOptional\n## Stack\nConditional\n```\n## Authoring and consumer contract\nGuidance\n", encoding="utf-8")
+        delivery.validate_body(body)
+
     def test_variant_catalog_parser_ignores_other_fences_and_catalog_prose(self):
         template = self.put("catalog.md", """## Introduction
 ```markdown
@@ -226,7 +267,7 @@ fake
         if args[:2] == ["issue", "create"]:
             self.creates += 1
             body = Path(args[args.index("--body-file")+1]).read_text(encoding="utf-8")
-            self.remote = [{"url": "https://github.com/example/preservation/issues/7", "title": "Fix boundary", "body": body, "state": "OPEN"}]
+            self.remote = [{"url": "https://github.com/example/preservation/issues/7", "number": 7, "title": "Fix boundary", "body": body, "state": "OPEN", "labels": []}]
             if self.timeout:
                 raise Failure("provider-timeout", "uncertain create")
             return subprocess.CompletedProcess(args, 0, self.remote[0]["url"], "")
@@ -244,7 +285,7 @@ fake
 
     def test_reviewed_closed_match_stays_pending_and_no_match_conflict_blocks(self):
         argv = self.prepare_issue()
-        self.remote = [{"url": "https://github.com/example/preservation/issues/7", "title": "Fix boundary", "body": read(self.body), "state": "CLOSED"}]
+        self.remote = [{"url": "https://github.com/example/preservation/issues/7", "number": 7, "title": "Fix boundary", "body": read(self.body), "state": "CLOSED", "labels": []}]
         self.creates, self.timeout = 0, False
         with patch.object(delivery, "gh", side_effect=self.provider):
             with self.assertRaises(Failure):
@@ -258,6 +299,25 @@ fake
 
 
 class QuickVerification(PreservationCase):
+    def test_v4_coverage_binding_is_required_and_source_drift_invalidates_it(self):
+        directory = self.phase("Covered source")
+        self.put("src/app.py", "original\n")
+        self.commit("source")
+        args = Args(["01", "--covered-files", "src/app.py"])
+        packet = verification.fingerprint(args)
+        self.assertRegex(packet["covered_digest"], r"^v4:sha256:[a-f0-9]{64}$")
+        report = Path(packet["path"])
+        metadata, body = split_frontmatter(read(report))
+        metadata["status"] = "passed"
+        report.write_text(join_frontmatter(metadata, body), encoding="utf-8")
+        self.commit("verification")
+        self.assertTrue(verification.current_evidence("01")["current"])
+        metadata["covered_digest"] = "v3:sha256:"+packet["fingerprint"]
+        report.write_text(join_frontmatter(metadata, body), encoding="utf-8")
+        self.commit("stale digest scheme")
+        self.assertTrue(any("v4" in reason for reason in verification.current_evidence("01")["reasons"]))
+        self.assertTrue(any("v4" in error for error in frontmatter.errors(metadata, "verification")))
+
     def test_unknown_check_selection_cannot_produce_vacuous_passing_receipt(self):
         self.put(".planning/config.yaml", "verification:\n  commands:\n    - id: real\n      argv: [python, -c, pass]\n")
         with self.assertRaises(Failure) as caught:
@@ -287,6 +347,87 @@ class QuickVerification(PreservationCase):
         self.assertFalse(verification.current_evidence(quick=quick["id"])["current"])
 
 
+class RecordSchemas(PreservationCase):
+    def plan_metadata(self):
+        return {"phase": "01", "plan": "01", "type": "execute", "wave": 1, "depends_on": [],
+                "files_modified": [], "files_deleted": [], "resources": [], "autonomous": True,
+                "requirements": ["REQ-01"], "acceptance": [], "documentation": [], "checks": [], "issue_refs": [],
+                "must_haves": {"truths": [], "artifacts": [], "key_links": []}}
+
+    def test_complete_metadata_and_actual_argv_are_required_without_inventing_approval(self):
+        metadata = self.plan_metadata()
+        self.assertEqual([], frontmatter.errors(metadata, "plan"))
+        for field in ("acceptance", "documentation", "checks", "issue_refs"):
+            incomplete = {key: value for key, value in metadata.items() if key != field}
+            self.assertTrue(any(field in error for error in frontmatter.errors(incomplete, "plan")))
+        for checks in (["python -m unittest"], [["python", ""]], [{"argv": ["python", "-m", "unittest"]}]):
+            self.assertTrue(any("argv" in error for error in frontmatter.errors({**metadata, "checks": checks}, "plan")))
+        self.assertEqual([], frontmatter.errors({**metadata, "checks": [["python", "-m", "unittest"]]}, "plan"))
+        self.assertTrue(frontmatter.errors({"phase": "01", "discussion": "approved", "issue_refs": []}, "context"))
+        self.assertEqual([], frontmatter.errors({"phase": "01", "discussion": "pending", "issue_refs": []}, "context"))
+        self.assertTrue(frontmatter.errors({"phase": "01", "plan": "01", "status": "complete"}, "summary"))
+        quick = {key: value for key, value in metadata.items() if key != "phase"}
+        quick.update({"quick": "001", "requirements": []})
+        self.assertEqual([], frontmatter.errors(quick, "plan"))
+        self.assertTrue(frontmatter.errors({**quick, "quick": "invented-phase"}, "plan"))
+
+
+class LocalHumanUAT(PreservationCase):
+    def plan_metadata(self):
+        return RecordSchemas.plan_metadata(self)
+
+    def prepare_session(self, result="pass", accepted=True, gaps="", checklist="A-1 delivered outcome"):
+        directory = self.phase("Human acceptance")
+        plan = self.plan_metadata()
+        self.put(str(directory.relative_to(self.root)/"01-01-PLAN.md"), join_frontmatter(plan, "Delivered fixture behavior\n"))
+        summary = {"phase": "01", "plan": "01", "status": "complete", "requirements-completed": [], "acceptance": [], "documentation": [], "issue_refs": []}
+        self.put(str(directory.relative_to(self.root)/"01-01-SUMMARY.md"), join_frontmatter(summary, "Committed fixture source\n"))
+        self.commit("delivered fixture")
+        path = directory/"01-UAT.md"
+        body = ("## Acceptance checklist\n\n- [x] "+checklist+"\n\n## Tests\n\n### 1. Owner boundary\nacceptance: A-1\nexpected: Owner-only update succeeds\nresult: "+result+"\n\n"
+                "## Human acceptance\n\nstatus: "+("ACCEPTED" if accepted else "PENDING HUMAN acceptance")+"\naccepted_by: "+("Human fixture" if accepted else '""')+"\naccepted_at: "+("2026-10-27" if accepted else '""')+"\ndecision: "+("Accepted the covered fixture build" if accepted else '""')+"\n\n## Gaps\n\n"+gaps)
+        path.write_text(join_frontmatter({"phase": "01", "status": "partial", "source": ["01-01-SUMMARY.md"]}, body), encoding="utf-8")
+        return path
+
+    def test_all_pass_actions_still_need_actual_final_human_fields(self):
+        path = self.prepare_session(accepted=False)
+        self.assertFalse(uat.session_status(path)["passed"])
+        with self.assertRaises(Failure):
+            uat.complete(Args([str(path)]))
+        metadata, body = split_frontmatter(read(path))
+        self.assertEqual("partial", metadata["status"])
+        self.assertIn('accepted_by: ""', body)
+
+    def test_skipped_blocked_unresolved_and_not_testable_actions_never_complete(self):
+        path = self.prepare_session()
+        original = read(path)
+        for status in ("skipped", "not-testable", "blocked", "issue", "pending"):
+            with self.subTest(status=status):
+                path.write_text(original.replace("result: pass", "result: "+status), encoding="utf-8")
+                self.assertFalse(uat.session_status(path)["passed"])
+                with self.assertRaises(Failure):
+                    uat.complete(Args([str(path)]))
+
+    def test_historical_gap_requires_executed_matching_resolution_and_human_retest_when_requested(self):
+        gap = "- gap_id: G-1\n  status: resolved\n  test: 1\n  resolved_by: 01-02-PLAN.md\n  resolved_at: 2026-10-27\n"
+        path = self.prepare_session(result="issue", gaps=gap)
+        self.assertFalse(uat.session_status(path)["passed"])
+        plan = {**self.plan_metadata(), "plan": "02"}
+        self.put(str(path.parent.relative_to(self.root)/"01-02-PLAN.md"), join_frontmatter(plan, "Resolve stable gap G-1\n"))
+        summary = {"phase": "01", "plan": "02", "status": "complete", "requirements-completed": [], "acceptance": ["G-1: owner-check fixture passed"], "documentation": [], "issue_refs": []}
+        summary_path = self.put(str(path.parent.relative_to(self.root)/"01-02-SUMMARY.md"), join_frontmatter(summary, "## Resolution evidence\n\nG-1 fixture regression outcome recorded.\n"))
+        self.commit("executed gap closure fixture")
+        self.assertTrue(uat.session_status(path)["passed"])
+        self.assertEqual(["1"], uat.session_status(path)["resolved_tests"])
+        self.assertIn("result: issue", read(path))
+        original = read(path)
+        path.write_text(original.replace("A-1 delivered outcome", "A-1 human retest action 1"), encoding="utf-8")
+        self.assertFalse(uat.session_status(path)["passed"])
+        path.write_text(original, encoding="utf-8")
+        summary_path.write_text(read(summary_path)+"uncommitted drift\n", encoding="utf-8")
+        self.assertFalse(uat.session_status(path)["passed"])
+
+
 class CanonicalSecurityTracking(PreservationCase):
     def prepare_risk(self):
         directory = self.phase("Security boundary")
@@ -312,6 +453,25 @@ class CanonicalSecurityTracking(PreservationCase):
         self.addCleanup(namespace_patch.stop)
         return Args(["01", "--entries-file", str(self.entries), "--variant", "Security risk"])
 
+    def test_quick_tracking_uses_actual_quick_identity_and_dedicated_container(self):
+        self.prepare_risk()
+        quick = records.quick(Args(["Secure quick boundary"]), "create")
+        plan = Path(quick["directory"])/"001-PLAN.md"
+        plan.write_text(read(self.plan), encoding="utf-8")
+        self.entry["plan"] = plan.name
+        self.entries.write_text(json.dumps([self.entry]), encoding="utf-8")
+        searches = []
+        def search(query, label=None):
+            searches.append((query, label))
+            return []
+        with patch.object(security_tracking, "issue_search", side_effect=search), patch.object(security_tracking, "query", return_value=[]):
+            packet = security_tracking.command(Args([quick["id"], "--entries-file", str(self.entries)]), "review", "quick")
+        self.assertTrue(packet["ready"])
+        self.assertEqual("001", packet["quick"])
+        self.assertEqual("quick:001", packet["scope"]["key"])
+        self.assertNotIn("phase", packet)
+        self.assertEqual(('"chore(security): quick 001 security checklist"', "quick-security-checklist"), searches[0])
+
     def test_unavailable_or_duplicate_container_lookup_never_creates(self):
         args = self.prepare_risk()
         with patch.object(security_tracking, "issue_search", side_effect=Failure("offline", "lookup unavailable")), patch.object(security_tracking, "query", return_value=[]):
@@ -331,7 +491,7 @@ class CanonicalSecurityTracking(PreservationCase):
         self.prepare_risk()
         body = security_tracking.entry_body(self.entry, None)
         url = "https://github.com/example/preservation/issues/9"
-        provider = {"html_url": url, "body": body,
+        provider = {"html_url": url, "number": 9, "state": "open", "body": body,
                     "body_html": '<h3><a id="provider-anchor-42" href="#actual-heading-42"></a>Handler owner boundary</h3>'}
         with patch.object(security_tracking, "query", return_value=provider):
             result = security_tracking.render_readback(url, body, [self.entry])

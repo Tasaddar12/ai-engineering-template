@@ -25,6 +25,10 @@ VARIANTS = ("Bug", "Enhancement", "Decision required", "Security risk", "UAT")
 def variant_template(template, variant):
     if variant not in VARIANTS:
         raise Failure("issue-variant-required", "Select an exact canonical issue variant", variants=VARIANTS)
+    return file_template(template, variant)
+
+
+def file_template(template, variant=None):
     catalog, selected, fence, body = False, False, None, []
     for line in read(template).splitlines(keepends=True):
         stripped = line.strip()
@@ -42,8 +46,8 @@ def variant_template(template, variant):
             continue
         if stripped.startswith("## "):
             catalog = stripped == "## File Template"
-            selected = False
-        elif catalog and stripped.startswith("### "):
+            selected = catalog and variant is None
+        elif catalog and variant is not None and stripped.startswith("### "):
             selected = stripped == "### "+variant
     raise Failure("issue-template-variant-missing", "Canonical variant has no fenced File Template body", variant=variant)
 
@@ -60,7 +64,7 @@ def validate(title, body, variant):
     if actual != headings:
         raise Failure("invalid-issue", "Issue sections must match the selected variant's headings and order", expected=headings, actual=actual)
     if variant == "UAT":
-        normalized = body.replace("**", "")
+        normalized = re.sub(r"(?m)^- (?=(?:Status|Reviewer|Date|Decision|Evidence):)", "", body.replace("**", ""))
         for field in ("Status", "Reviewer", "Date", "Decision", "Evidence"):
             if not re.search(r"(?mi)^"+field+r":\s*\S", normalized):
                 raise Failure("invalid-uat-issue", "UAT requires explicit human acceptance fields or Pending", field=field)
@@ -86,6 +90,7 @@ def validate_command(args):
 
 
 def semantic_key(title, body):
+    body = re.sub(r"<!-- engineer-issue:[a-f0-9]{64} -->", "", body)
     problem = re.search(r"(?ms)^## (?:Problem|Summary)\s*\n(.*?)(?=^## |\Z)", body)
     return re.sub(r"\s+", " ", title.strip().casefold())+"\n"+re.sub(r"\s+", " ", (problem[1] if problem else body).strip().casefold())
 
@@ -212,13 +217,24 @@ def publication(args, action, family="todo"):
                 reused = recovered[0]
     url = reused["url"] if reused else existing if action == "update" else (result.stdout.strip().splitlines() or [""])[-1]
     if not re.match(r"https://[^/]+/[^/]+/[^/]+/issues/\d+$", str(url)):
-        raise Failure("issue-publication-uncertain", "Provider returned no issue URL; inspect before retrying")
+        recovered = candidates(title, body, provenance)
+        if len(recovered) != 1 or recovered[0]["identity_match"] != "provenance":
+            raise Failure("issue-publication-uncertain", "Provider returned no issue URL and no unique provenance readback; inspect before retrying")
+        reused = recovered[0]
+        url = reused["url"]
     repository.require_url(str(url), "issues")
-    issue = json.loads(delivery.gh(["issue", "view", str(url), "--json", "url,title,body,state"]).stdout)
+    issue = json.loads(delivery.gh(["issue", "view", str(url), "--json", "url,title,body,state,labels,number"]).stdout)
     if (not reused or recovering or reused.get("identity_match") == "provenance") and (issue.get("title") != title or issue.get("body", "").strip() != body.strip()):
         raise Failure("issue-readback-mismatch", "Published issue differs from the validated preview", url=url)
     if issue.get("url") != url:
         raise Failure("issue-readback-mismatch", "Readback URL does not match selected issue", url=url)
+    actual_labels = {label.get("name") if isinstance(label, dict) else label for label in issue.get("labels", [])}
+    if (not reused or recovering or reused.get("identity_match") == "provenance") and not set(args.all("labels")).issubset(actual_labels):
+        raise Failure("issue-readback-mismatch", "Requested labels are absent from provider readback", url=url)
+    if str(issue.get("state", "")).upper() not in ("OPEN", "CLOSED"):
+        raise Failure("issue-readback-mismatch", "Provider state is unavailable", url=url)
+    if issue.get("number") != repository.require_url(str(url), "issues"):
+        raise Failure("issue-readback-mismatch", "Provider number does not match canonical URL", url=url)
     with planning_lock():
         if repository.identity() != origin or digest([source, template]) != snapshot["source_digest"]:
             raise Failure("issue-source-drift", "Issue published but source changed; reconcile the returned URL", url=url)

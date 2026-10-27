@@ -13,12 +13,10 @@ from . import delivery, issues, models, records, repository
 from .core import Failure, digest, load_json, now, planning_lock, read, root, run, safe_path, write_json
 
 LABEL = "phase-security-checklist"
-FIELDS = ("Entry identity", "Canonical risk key", "Aliases/occurrences", "PLAN/Threat ID", "Owner", "Scope/acceptance",
-          "Assessment/uncertainty", "Lifecycle/outcome", "Next action", "Revision/check evidence", "Canonical reference")
+FIELDS = ("Entry identity", "Canonical risk key", "Aliases / occurrences", "PLAN / Threat ID", "Owner", "Scope / acceptance",
+          "Assessment / uncertainty", "Lifecycle / outcome", "Next action", "Revision / check evidence", "Canonical reference")
 RISK_HEADINGS = ("Security concern", "Affected surface and behavior", "Impact", "Risk assessment and lifecycle", "Safe evidence",
                  "Requested remediation", "Scope and acceptance", "Related links")
-RISK_FIELDS = ("Threat/risk key", "Source aliases", "Severity", "Rationale", "Uncertainty", "Owner", "Observed status",
-               "Mitigation/safe next action", "Resolution evidence")
 REGISTER = ("Threat ID", "Category", "Component", "Severity", "Disposition", "Mitigation Plan")
 
 
@@ -62,12 +60,13 @@ def load_entries(args):
     entries = load_json(path)
     if not isinstance(entries, list) or not entries:
         raise Failure("security-entries-required", "entries-file must contain a nonempty JSON risk array")
-    required = ("key", "id", "heading", "plan", "threat_id", "owner", "scope_acceptance", "assessment_uncertainty",
+    required = ("key", "heading", "plan", "threat_id", "owner", "scope_acceptance", "assessment_uncertainty",
                 "lifecycle_outcome", "next_action", "revision_check_evidence", "aliases_occurrences", "match_review")
     seen = set()
     for entry in entries:
         if not isinstance(entry, dict) or any(not entry.get(key) for key in required):
             raise Failure("security-entry-incomplete", "Every risk needs identity, PLAN, assessment, lifecycle and match-review evidence", required=required)
+        entry.setdefault("id", entry["heading"])
         if any(not isinstance(entry[field], str) or "\n" in entry[field] for field in ("key", "id", "heading", "plan", "threat_id")) or entry["key"] in seen or not isinstance(entry.get("planned"), bool):
             raise Failure("security-entry-identity", "Risk keys must be unique; planned must be boolean; headings must be single lines")
         seen.add(entry["key"])
@@ -81,21 +80,30 @@ def load_entries(args):
                 raise Failure("security-risk-body-shape", "Standalone security risk headings must follow canonical order", headings=RISK_HEADINGS)
             if entry["key"] not in body or entry["owner"] not in body or entry["threat_id"] not in body:
                 raise Failure("security-risk-body-shape", "Standalone body must carry risk key, owner and source alias")
-            if any(not re.search(r"(?mi)^(?:\*\*)?"+re.escape(field)+r"(?::\*\*|\*\*:|:)\s*\S", body) for field in RISK_FIELDS):
-                raise Failure("security-risk-body-shape", "Standalone risk lifecycle fields must be explicit", fields=RISK_FIELDS)
             sections = re.split(r"(?m)^## [^\n]+\n", body)[1:]
             if any(not section.strip() for section in sections):
                 raise Failure("security-risk-body-shape", "Security risk sections must contain supplied evidence or Pending dependencies")
     return path, entries
 
 
-def review(args):
-    phase = records.number(args.need())
+def scope_for(args, kind):
+    if kind == "quick":
+        from .verification import quick_dir
+        directory = quick_dir(args.need())
+        identifier = directory.name.split("-")[0]
+    else:
+        identifier = records.number(args.need())
+        directory = records.phase_dir(identifier)
+    return {"kind": kind, "id": identifier, "directory": str(directory), "key": kind+":"+identifier}
+
+
+def review(args, kind="phase"):
+    scope = scope_for(args, kind)
     source, entries = load_entries(args)
     identity = repository.identity()
     if any(identity["slug"].casefold() not in entry["key"].casefold() for entry in entries):
         raise Failure("security-risk-key-origin", "Canonical risk keys must include the pinned repository identity", repository=identity["slug"])
-    directory = records.phase_dir(phase)
+    directory = Path(scope["directory"])
     registers = plan_registers(directory)
     for entry in entries:
         plan = safe_path(directory/entry["plan"])
@@ -103,10 +111,11 @@ def review(args):
             raise Failure("security-plan-reference", "Entry must cite an actual PLAN and threat occurrence", key=entry["key"])
         if entry["planned"] and not any(Path(row["plan"]) == plan and row["threat_id"] == entry["threat_id"] for row in registers):
             raise Failure("security-plan-reference", "Planned threat must occur in its own six-column PLAN register", key=entry["key"])
-    title = "chore(security): phase "+phase+" security checklist"
+    title = "chore(security): "+kind+" "+scope["id"]+" security checklist"
+    label = "quick-security-checklist" if kind == "quick" else LABEL
     pending, risks = [], []
     try:
-        checklists = [item for item in issue_search('"'+title+'"', LABEL) if item["title"] == title]
+        checklists = [item for item in issue_search('"'+title+'"', label) if item["title"] == title]
         if len(checklists) > 1:
             pending.append("Multiple canonical checklist containers; reconcile before publication")
     except Failure as exc:
@@ -152,7 +161,7 @@ def review(args):
             failures.append("Canonical match lookup unavailable: "+exc.message)
         pending.extend(key+": "+failure for failure in failures)
         risks.append({"key": key, "entry": entry, "candidates": candidates, "prs": prs, "canonical": chosen, "pending": failures})
-    return {"phase": phase, "title": title, "label": LABEL, "checklists": checklists, "risks": risks,
+    return {kind: scope["id"], "scope": scope, "title": title, "label": label, "checklists": checklists, "risks": risks,
             "pending": pending, "ready": not pending, "source": str(source),
             "semantic_security_audit": "required independently; structural and provider checks do not prove semantic safety"}
 
@@ -192,7 +201,7 @@ def audit_plan_links(directory):
 
 
 def entry_body(entry, canonical):
-    values = (entry["id"], entry["key"], entry["aliases_occurrences"], entry["plan"]+" / "+entry["threat_id"], entry["owner"],
+    values = (entry["heading"], entry["key"], entry["aliases_occurrences"], entry["plan"]+" / "+entry["threat_id"], entry["owner"],
               entry["scope_acceptance"], entry["assessment_uncertainty"], entry["lifecycle_outcome"], entry["next_action"],
               entry["revision_check_evidence"], canonical or "This canonical planned checklist entry; PLAN owns assessment and mitigation")
     return "### "+entry["heading"]+"\n\n"+"\n".join(field+": "+str(value) for field, value in zip(FIELDS, values))+"\n"
@@ -225,13 +234,20 @@ class RenderedHeadings(HTMLParser):
             self.current = False
 
 
-def render_readback(url, expected_body, entries):
+def render_readback(url, expected_body, entries, expected_title=None, expected_label=None):
     number = repository.require_url(url, "issues")
     identity = repository.identity()
     issue = query(["api", "repos/"+identity["owner"]+"/"+identity["repository"]+"/issues/"+str(number),
                    "--hostname", identity["hostname"], "--header", "Accept: application/vnd.github.full+json"])
     if issue.get("html_url") != url or issue.get("body", "").strip() != expected_body.strip():
         raise Failure("security-readback-mismatch", "Published risk content differs from its preview", url=url)
+    if expected_title is not None and issue.get("title") != expected_title:
+        raise Failure("security-readback-mismatch", "Published risk title differs from its preview", url=url)
+    if issue.get("number") != number or str(issue.get("state", "")).upper() not in ("OPEN", "CLOSED"):
+        raise Failure("security-readback-mismatch", "Provider identity/state is unavailable", url=url)
+    labels = {label.get("name") if isinstance(label, dict) else label for label in issue.get("labels", [])}
+    if expected_label and (expected_label not in labels or str(issue.get("state", "")).upper() != "OPEN"):
+        raise Failure("security-readback-mismatch", "Canonical checklist label/open lifecycle differs from preview", url=url)
     parsed = RenderedHeadings()
     parsed.feed(issue.get("body_html", ""))
     links = []
@@ -247,11 +263,12 @@ def render_readback(url, expected_body, entries):
     return links
 
 
-def command(args, action):
+def command(args, action, kind="phase"):
     if action == "audit":
-        failures = audit_plan_links(records.phase_dir(args.need()))
+        scope = scope_for(args, kind)
+        failures = audit_plan_links(Path(scope["directory"]))
         return {"ready": not failures, "pending": failures, "semantic_security_audit": "independent review required"}, int(bool(failures))
-    packet = review(args)
+    packet = review(args, kind)
     if action == "review":
         return packet
     if args.get("variant") != "Security risk":
@@ -262,7 +279,7 @@ def command(args, action):
     if container and str(container.get("state", "")).upper() == "CLOSED" and any(item["entry"]["planned"] for item in packet["risks"]):
         raise Failure("security-checklist-closed", "Closed checklist requires independent reopen authority; never create a duplicate")
     body = container.get("body", "") if container else (
-        "## Security concern\n\nTrack the phase's planned security risks using canonical issue identities.\n\n"
+        "## Security concern\n\nTrack this "+kind+"'s planned security risks using canonical issue identities.\n\n"
         "## Affected surface and behavior\n\nSee each linked PLAN register and entry scope.\n\n"
         "## Impact\n\nSee each PLAN assessment; this container does not assign blanket severity.\n\n"
         "## Risk assessment and lifecycle\n\nPLAN registers own assessments and mitigations; entries retain lifecycle evidence.\n\n"
@@ -299,7 +316,9 @@ def command(args, action):
             section = section.rstrip()+"\n\n"+block+"\n"
         body = body[:lifecycle.start(1)]+section+body[lifecycle.end(1):]
     sources = [safe_path(packet["source"])]
-    sources.extend(records.phase_dir(packet["phase"]).glob("*-PLAN.md"))
+    sources.extend(Path(packet["scope"]["directory"]).glob("*-PLAN.md"))
+    if kind == "quick":
+        sources.append(Path(packet["scope"]["directory"])/"QUICK.md")
     template = models.NAMESPACE/"engineer/templates/issue.md"
     if not template.is_file():
         raise Failure("issue-template-missing", "Install the canonical issue template before security publication")
@@ -308,7 +327,7 @@ def command(args, action):
     for item in standalone:
         issues.validate(item["title"], item["body"], "Security risk")
     sources.append(template)
-    snapshot = {"origin": repository.identity(), "source_digest": digest(sources), "phase": packet["phase"],
+    snapshot = {"origin": repository.identity(), "source_digest": digest(sources), "scope": packet["scope"],
                 "title": packet["title"], "body": body, "container": container, "standalone": standalone, "planned": planned, "variant": "Security risk"}
     token = hashlib.sha256(json.dumps(snapshot, sort_keys=True).encode()).hexdigest()
     path = records.planning()/"issue-previews"/(token+".json")
@@ -338,17 +357,17 @@ def command(args, action):
             argv = ["issue", "edit", job["url"]] if job["url"] else ["issue", "create"]
             argv += ["--title", job["title"], "--body-file", str(body_file)]
             if job["planned"] and not job["url"]:
-                argv += ["--label", LABEL]
+                argv += ["--label", packet["label"]]
             try:
                 response = delivery.gh(argv)
                 url = job["url"] or (response.stdout.strip().splitlines() or [""])[-1]
             except (Failure, OSError) as exc:
-                found = [item for item in issue_search('"'+job["title"]+'"', LABEL if job["planned"] else None)
+                found = [item for item in issue_search('"'+job["title"]+'"', packet["label"] if job["planned"] else None)
                          if item["title"] == job["title"] and item["body"].strip() == job["body"].strip()]
                 if len(found) != 1:
                     raise Failure("security-publication-uncertain", "Inspect consumed attempt and provider readback before any retry") from exc
                 url = found[0]["url"]
-        links = render_readback(url, job["body"], job["planned"])
+        links = render_readback(url, job["body"], job["planned"], job["title"], packet["label"] if job["planned"] else None)
         if repository.identity() != snapshot["origin"] or digest(sources) != snapshot["source_digest"]:
             raise Failure("security-publication-drift", "Published issue requires reconciliation after source/origin drift", url=url)
         publications.append({"url": url, "entries": links, "key": job.get("entry", {}).get("key")})
