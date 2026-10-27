@@ -17,6 +17,9 @@ def git(*arguments):
 
 
 def main():
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="backslashreplace")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--output-dir", type=Path, required=True)
@@ -34,7 +37,8 @@ def main():
         parser.error("no test modules found")
     revision = git("rev-parse", "HEAD")
     status = git("status", "--porcelain", "--untracked-files=all")
-    environment = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1", "NO_COLOR": "1", "PYTHON_COLORS": "0"}
+    environment = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1", "PYTHONIOENCODING": "utf-8",
+                   "NO_COLOR": "1", "PYTHON_COLORS": "0"}
 
     def run(module):
         command = [sys.executable, "-B", "-m", "unittest", "discover", "-s", "tests", "-p", module, "-v"]

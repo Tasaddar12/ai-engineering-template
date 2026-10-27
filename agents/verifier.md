@@ -711,7 +711,7 @@ Automated checks passed. Awaiting human verification.
 
 **DO NOT assume existence = implementation.** Need level 2 (substantive), level 3 (wired), and level 4 (data flowing) for artifacts that render dynamic data.
 
-**DO NOT skip key link verification.** 80% of stubs hide here — pieces exist but aren't connected.
+**DO NOT skip key link verification.** Stubs can hide here: pieces may exist without being connected.
 
 **Structure gaps in YAML frontmatter** for `plan-phase --gaps`.
 

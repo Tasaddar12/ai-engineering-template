@@ -991,7 +991,9 @@ class Bundles(RuntimeCase):
         self.assertTrue(bundle["agents_installed"])
         self.assertEqual(bundle["missing_agents"], [])
 
-    def test_plan_phase_bundle_inherits_mapper_dispatch_without_overrides(self):
+    def test_plan_phase_bundle_preserves_explicit_mapper_inheritance(self):
+        self.run_verb("config-set", "agents.codebase-mapper.model", "inherit")
+        self.run_verb("config-set", "agents.codebase-mapper.effort", "inherit")
         bundle = self.run_verb("init.plan-phase", "1")
         self.assertIn("codebase-mapper", bundle["models"])
         self.assertIn("codebase-mapper", bundle["efforts"])
@@ -1111,8 +1113,9 @@ class Dispatch(RuntimeCase):
         failure = self.run_verb("no-such-verb", expect_ok=False)
         self.assertEqual(failure["code"], "unknown-verb")
 
-    def test_resolve_model_inherits_when_no_override_is_configured(self):
-        """Agent files carry no model; the host chooses unless config overrides."""
+    def test_resolve_model_honors_explicit_inheritance(self):
+        """A project can delegate the model even when its seed has a choice."""
+        self.run_verb("config-set", "agents.executor.model", "inherit")
         result = self.run_verb("resolve-model", "executor")
         self.assertEqual(result["source"], "default")
         self.assertEqual(result["model"], "inherit")
@@ -1131,7 +1134,8 @@ class Dispatch(RuntimeCase):
         self.assertEqual(
             self.run_verb("resolve-model", "executor")["model"], "fable")
 
-    def test_resolve_effort_inherits_when_no_override_is_configured(self):
+    def test_resolve_effort_honors_explicit_inheritance(self):
+        self.run_verb("config-set", "agents.executor.effort", "inherit")
         result = self.run_verb("resolve-effort", "executor")
         self.assertEqual(result["source"], "default")
         self.assertEqual(result["effort"], "inherit")
@@ -1146,6 +1150,7 @@ class Dispatch(RuntimeCase):
 
     def test_effort_resolves_independently_of_model(self):
         """One dial set is not the other set — a role may carry either alone."""
+        self.run_verb("config-set", "agents.verifier.model", "inherit")
         self.run_verb("config-set", "agents.verifier.effort", "max")
         self.assertEqual(
             self.run_verb("resolve-model", "verifier")["model"], "inherit")
@@ -1171,7 +1176,7 @@ class Dispatch(RuntimeCase):
         self.run_verb("config-set", "agents.executor.effort", "high")
         bundle = self.run_verb("init.execute-phase", "1")
         self.assertEqual(bundle["efforts"]["executor"], "high")
-        self.assertEqual(bundle["efforts"]["code-reviewer"], "inherit")
+        self.assertEqual(bundle["efforts"]["code-reviewer"], "high")
         self.assertEqual(set(bundle["efforts"]), set(bundle["models"]))
 
 

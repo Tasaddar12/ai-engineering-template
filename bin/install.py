@@ -113,6 +113,12 @@ def same_text(a, b):
         return False
 
 
+def executable_drift(path):
+    path = Path(path)
+    executable = path.suffix == ".sh" or path.as_posix().endswith("/engineer/bin/engineer_run")
+    return os.name != "nt" and executable and path.is_file() and path.stat().st_mode & 0o111 != 0o111
+
+
 def render_asset(relative, data, host):
     """Render full methods, replacing only host paths and generated metadata."""
     skill_root(host)
@@ -548,7 +554,9 @@ def plan_install(source, target, host="codex", hooks=True, **kwargs):
                     raise ValueError("customized managed entry or host registration; reconcile with reviewed update: " + name)
             elif not same_text(before, candidate):
                 raise ValueError("conflict at " + name + "; use reviewed update")
-        if before is None or not same_text(before, candidate):
+        if before is None or not same_text(before, candidate) or executable_drift(path):
+            if before is not None and same_text(before, candidate):
+                candidate = before  # A mode repair preserves existing line endings.
             changes.append((path, candidate))
             if before is not None:
                 originals[path] = before
@@ -576,22 +584,40 @@ def backup_migration(target, originals):
     return backup
 
 
+def change_destination(target, path):
+    """Accept filesystem aliases only after inspecting the original path chain."""
+    root = Path(target).resolve()
+    path = Path(path).absolute()
+    if ".." in path.parts:
+        raise ValueError("unsafe change path: " + str(path))
+    cursor = path
+    while True:
+        # Do this before resolve: resolving first hides an in-tree link, even
+        # one that points back inside the target. 8.3 aliases are not links.
+        if linked(cursor):
+            raise ValueError("linked path refused: " + str(cursor))
+        if cursor.resolve() == root:
+            return destination(root, path.relative_to(cursor).as_posix())
+        if cursor == cursor.parent:
+            raise ValueError("change path is outside target: " + str(path))
+        cursor = cursor.parent
+
+
 def write_changes(target, changes):
     # Validate the entire batch before creating a parent or writing the first file.
     for path, data in changes:
-        checked = destination(target, path.relative_to(Path(target).resolve()).as_posix())
+        checked = change_destination(target, path)
         if checked.exists() and not checked.is_file():
             raise ValueError("directory occupies installed file: " + str(checked))
     for path, data in changes:
-        relative = path.relative_to(Path(target).resolve()).as_posix()
-        checked = destination(target, relative)
+        checked = change_destination(target, path)
         checked.parent.mkdir(parents=True, exist_ok=True)
         if data is None:
             if checked.exists():
                 checked.unlink()
         else:
             checked.write_bytes(data)
-            if checked.suffix == ".sh":
+            if checked.suffix == ".sh" or checked.as_posix().endswith("/engineer/bin/engineer_run"):
                 checked.chmod(checked.stat().st_mode | 0o111)
 
 

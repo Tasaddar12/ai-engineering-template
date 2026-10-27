@@ -50,10 +50,10 @@ def registered(entry):
     if len(matching) != 1:
         raise Failure("unregistered-session-worktree", "Recorded path must match one registered Git worktree", entry=entry)
     if matching[0]["branch"] != entry["branch"]:
-        raise Failure("session-branch-mismatch", "Recorded branch differs from registered branch", entry=entry, actual_branch=matching[0]["branch"])
+        raise Failure("session-branch-mismatch", f"Recorded branch {entry['branch']} differs from registered branch {matching[0]['branch']}", entry=entry, recorded_branch=entry["branch"], actual_branch=matching[0]["branch"], candidates=matching)
     actual = run(["git", "branch", "--show-current"], target).stdout.strip()
     if actual != entry["branch"]:
-        raise Failure("session-branch-mismatch", actual)
+        raise Failure("session-branch-mismatch", f"Recorded branch {entry['branch']} differs from actual branch {actual}", entry=entry, recorded_branch=entry["branch"], actual_branch=actual, candidates=matching)
     return target.resolve()
 
 

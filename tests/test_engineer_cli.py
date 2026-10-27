@@ -73,9 +73,8 @@ class LauncherAndRegistryContract(RuntimeCase):
              "launcher-contract", snippet.as_posix()], cwd=self.root, env=environment,
             text=True, encoding="utf-8", capture_output=True)
         self.assertEqual(0, result.returncode, result.stderr)
-        lines = result.stdout.splitlines()
-        self.assertEqual(2, len(lines), result.stdout)
-        return json.loads(lines[0]), lines[1]
+        document, launcher = result.stdout.rstrip().rsplit("\n", 1)
+        return json.loads(document), launcher
 
     def test_launcher_snippet_selects_source_runtime(self):
         environment = {**self.env, "RUNTIME_DIR": SOURCE.as_posix()}

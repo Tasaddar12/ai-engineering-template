@@ -253,7 +253,9 @@ class MigrationTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(prefix="migration-target-")
         self.addCleanup(temporary.cleanup)
-        self.target = Path(temporary.name)
+        # Runtime inventories intentionally return canonical filesystem paths.
+        # Windows TEMP may use RUNNER~1 while the same target resolves long.
+        self.target = Path(temporary.name).resolve()
         self.write(".ai/RULES.md", b"# Rules\r\nCustom approval rule. Read .ai/commands/worktree.md\r\n")
         self.write(".ai/runtime/phase.py", b"# customized old runtime\n")
         self.write(".ai/private/archive.bin", b"\x00\xff\x01.ai/original\r\n")
@@ -322,10 +324,10 @@ class MigrationTests(unittest.TestCase):
                 before = self.snapshot()
                 changes, backups, notes = self.plan(host)
                 self.assertEqual(before, self.snapshot(), "preflight must be read-only")
-                recoverable = {path.relative_to(self.target).as_posix(): path.read_bytes() for path in backups}
+                recoverable = {path.resolve().relative_to(self.target.resolve()).as_posix(): path.read_bytes() for path in backups}
                 self.assertEqual(before[".ai/runtime/phase.py"], recoverable[".ai/runtime/phase.py"])
-                self.assertFalse(any(".git" in path.relative_to(self.target).parts for path in backups))
-                self.assertFalse(any(".worktrees" in path.relative_to(self.target).parts for path in backups))
+                self.assertFalse(any(".git" in path.resolve().relative_to(self.target.resolve()).parts for path in backups))
+                self.assertFalse(any(".worktrees" in path.resolve().relative_to(self.target.resolve()).parts for path in backups))
                 self.apply(changes)
                 namespace = "." + host
                 self.assertFalse((self.target / ".ai").exists())

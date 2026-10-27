@@ -18,6 +18,11 @@ def shell_words(command, windows=False):
     index = 0
     while index < len(command):
         char = command[index]
+        if windows and char == "`" and quote != "'":
+            # PowerShell escape expansion can change quoting and manufacture
+            # apparent path arguments. Require an argv payload or message file
+            # rather than guess at a prospective commit's selection.
+            raise ValueError("unsupported native shell escape; use explicit argv or --file")
         if not windows and char == "\\" and index + 1 < len(command) and command[index + 1] == "\n":
             index += 2
             continue
@@ -44,10 +49,36 @@ def shell_words(command, windows=False):
             if quote is None:
                 boundary = char.isspace() or char in ";&|"
         index += 1
-    lexer = shlex.shlex("".join(cleaned), posix=not windows, punctuation_chars=";&|")
+    if windows:
+        # Native shells concatenate quoted and unquoted parts of one argument.
+        # posix=False shlex splits -am"two words" into fake path arguments;
+        # posix=True instead destroys native path separators such as C:\repo.
+        words, word, quote, started = [], [], None, False
+        for char in cleaned:
+            if char in ("'", '"') and (quote is None or quote == char):
+                quote = None if quote else char
+                started = True
+            elif quote is None and (char.isspace() or char in ";&|"):
+                if started:
+                    words.append("".join(word))
+                    word, started = [], False
+                if char in ";&|":
+                    if words and words[-1] == char and char in "&|":
+                        words[-1] += char
+                    else:
+                        words.append(char)
+            else:
+                word.append(char)
+                started = True
+        if quote:
+            raise ValueError("unterminated native shell quote")
+        if started:
+            words.append("".join(word))
+        return words
+    lexer = shlex.shlex("".join(cleaned), posix=True, punctuation_chars=";&|")
     lexer.whitespace_split = True
     lexer.commenters = ""
-    return [word[1:-1] if windows and len(word) >= 2 and word[0] == word[-1] and word[0] in "\"'" else word for word in lexer]
+    return list(lexer)
 
 
 def command_segments(command, windows=False, depth=0):
@@ -154,9 +185,9 @@ def commit_selection(arguments):
 def snapshot(root, event, invocation, temporary):
     prefix, arguments, additions = invocation
     cwd = Path(event.get("cwd") or root)
-    def execute(prefix, *args, check=True):
+    def execute(prefix, *args, check=True, input=None):
         return subprocess.run(["git", *prefix, *args], cwd=cwd, check=check,
-                              capture_output=True, timeout=5)
+                              capture_output=True, timeout=5, input=input)
     def top(prefix):
         return Path(execute(prefix, "rev-parse", "--show-toplevel").stdout.decode().strip()).resolve()
     actual = top(prefix)
@@ -220,8 +251,17 @@ def snapshot(root, event, invocation, temporary):
                 continue  # Deletions have no prospective bytes.
             data = staged.stdout
         previous = execute(git, "show", "HEAD:" + name, check=False)
-        if previous.returncode == 0 and previous.stdout == data:
-            continue  # Unchanged historical records cannot block a source commit.
+        if previous.returncode == 0:
+            if previous.stdout == data:
+                continue
+            if from_working:
+                # Git's built-in conversion honors autocrlf, eol and encoding.
+                # The filter guard above is mandatory: never execute a project's
+                # clean filter. No -w means neither object store nor index changes.
+                prospective = execute(git, "hash-object", "--path=" + name, "--stdin", input=data).stdout.strip()
+                historical = execute(git, "rev-parse", "HEAD:" + name).stdout.strip()
+                if prospective == historical:
+                    continue  # Unchanged Git bytes do not revalidate legacy schema.
         target = Path(temporary) / path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)

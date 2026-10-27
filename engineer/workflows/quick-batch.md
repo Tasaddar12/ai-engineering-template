@@ -53,7 +53,6 @@ if [ $QB_PARSE_RC -ne 0 ]; then
   echo "$QB_PARSE_JSON" >&2
   exit 1
 fi
-if [[ "$QB_PARSE_JSON" == @file:* ]]; then QB_PARSE_JSON=$(cat "${QB_PARSE_JSON#@file:}"); fi
 ```
 
 Parse `$QB_PARSE_JSON` for `jobs` (`"auto"` or an integer), `validate` (bool), `research` (bool), `resume` (batch id or null). Store as `$JOBS`, `$VALIDATE_MODE`, `$RESEARCH_MODE`, `$RESUME_BATCH_ID`.

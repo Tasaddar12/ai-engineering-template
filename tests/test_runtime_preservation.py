@@ -18,7 +18,7 @@ class PreservationCase(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
-        self.root = Path(self.temporary.name)
+        self.root = Path(self.temporary.name).resolve()
         self.environment = patch.dict(os.environ, {"ENGINEER_ROOT": str(self.root), "ENGINEER_HOST": "codex"})
         self.environment.start()
         self.addCleanup(self.environment.stop)
@@ -355,7 +355,10 @@ class QuickVerification(PreservationCase):
         self.commit("quick verification")
         self.assertEqual("passed", verification.status(Args(["--quick", quick["id"]]))["status"])
         self.assertTrue(verification.current_evidence(quick=quick["id"])["current"])
-        pr = {"number": 1, "url": "https://github.com/example/preservation/pull/1", "headRefOid": "0"*40, "state": "OPEN", "headRefName": "codex/quick", "body": ""}
+        body = ("## Goal\nPreserve the quick boundary\n## Changes\nCorrect the scoped behavior\n"
+                "## Verification\nCurrent structured report\n## Known gaps\nNone in this fixture\n"
+                "## Risks or rollback\nRevert the implementation commit\n")
+        pr = {"number": 1, "url": "https://github.com/example/preservation/pull/1", "headRefOid": "0"*40, "state": "OPEN", "headRefName": "codex/quick", "body": body}
         with patch.object(delivery, "view", return_value=pr):
             with self.assertRaises(Failure) as caught:
                 delivery.verified_delivery(Args(["--quick", quick["id"]]), "codex/quick")

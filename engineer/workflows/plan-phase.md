@@ -1,6 +1,9 @@
 <!-- workflow: plan-phase; roles: coordinator, phase-researcher, pattern-mapper, planner, plan-checker -->
 <purpose>
 Prepare executable phase plans through a planner and an independent goal-backward plan-checker. The coordinator owns routing, revision integration and shared records; it does not write the plan it dispatched or review its own work.
+The current planning workflow uses the standard planning route; although
+`workflow.plan_chunked` may appear in project configuration, this workflow has
+no consumer for that setting and does not provide a chunked-planning mode.
 </purpose>
 <authority>
 Every phase needs a real discussion record before planning. Planning never grants implementation permission. Design approval, a ready plan and a mode flag do not authorize execution. Completion reports that implementation awaits an explicit instruction for the selected phase.

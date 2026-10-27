@@ -825,7 +825,7 @@ Never silently install a CLI, framework or package. Use an existing configured c
 </task>
 ```
 
-**Why bad:** Stripe has an API. Claude should create the webhook via API and write to .env directly.
+**Why bad:** This example combines external mutation with unsafe secret handling. Create or change the webhook only through the provider interface the user explicitly authorized. Enter its signing secret through the provider's secure secret-entry flow or the project's configured secret manager; do not copy it into `.env`, conversation, logs, command arguments or committed files. Confirm only the named endpoint and secret reference are configured, without displaying the secret value.
 
 </anti_patterns>
 

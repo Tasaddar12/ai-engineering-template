@@ -151,8 +151,13 @@ Plan and evidence gates include `verify.plan-structure`, `plan.task-structure`,
 `verify.key-links`, `verify.commits`, and `check.tdd-red-evidence`.
 `planning.integrity` fails on malformed record frontmatter;
 `planning.validate` also checks roadmap/state/requirements/phase consistency,
-dependency ownership and active retirement markers, without blocking unless
-`--strict` is explicit. Structural repair previews include exact before/after
+dependency ownership and active retirement markers. By default its findings
+are warnings: inspect the cited owner and source evidence, then reconcile
+structured records with their owning runtime operation and authored narrative
+by editing its owner. This warn-only report is separate from `phase.handoff`,
+which has its own readiness result for issue and summary reconciliation. Use
+`--strict` only when an explicit caller needs validation to fail on findings.
+Structural repair previews include exact before/after
 content and a digest. Repair adds missing STATE sections and synchronizes only
 derived progress; it does not resolve author decisions or fabricate approval.
 

@@ -96,7 +96,10 @@ For genuine quick use `quick.get ID` and `session.status` to locate the actual
 record/session; require exactly one matching open identity when needed. Read
 `config-get workflow.code_review --raw`; false skips explicitly, actual read
 failure is reported, never converted silently to enabled. Manual review is
-independent of automatic execution point configuration.
+independent of automatic execution point configuration. The retained
+`workflow.code_review_depth_overrides` setting does not activate path-based
+overrides in the current method. Depth comes only from an explicit `--depth`
+or `workflow.code_review_depth` (default `standard`).
 
 Resolve depth as explicit --depth > `config-get workflow.code_review_depth
 --default standard --raw` > standard. Only quick/standard/deep are valid. Report

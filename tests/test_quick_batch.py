@@ -141,4 +141,4 @@ class QuickBatchChecks(RuntimeCase):
         self.assertEqual("auto", result["jobs"])
         self.assertTrue(result["validate"])
         for text in ("--jobs 0", "--jobs -1", "--jobs nope", "--unknown", "--discuss", "--full", "--resume a --file tasks.json"):
-            self.cli("quick-batch.parse-args", "--stdin", stdin=text, status=2, raw=True)
+            self.cli("quick-batch.parse-args", "--stdin", stdin=text, status=1 if text in ("--unknown", "--discuss", "--full") else 2, raw=True)

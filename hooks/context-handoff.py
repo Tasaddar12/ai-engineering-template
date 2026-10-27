@@ -52,12 +52,34 @@ def owned_path(root, value):
     return path if path.is_relative_to(root) else None
 
 
+def worker_transcript(event):
+    """Select the worker stream, never a known coordinator event stream."""
+    explicit = event.get("agent_transcript_path")
+    if explicit:
+        return Path(explicit)
+    supplied = event.get("transcript_path")
+    agent = event.get("agent_id")
+    if not supplied or not agent:
+        return None
+    path = Path(supplied)
+    worker = "agent-" + slug(agent)
+    if path.parent.name == "subagents" and path.stem == worker:
+        return path
+    derived = path.with_suffix("") / "subagents" / (worker + ".jsonl")
+    if derived.is_file():
+        return derived
+    # Claude SubagentStop supplies the parent's transcript_path; the explicit
+    # agent_transcript_path is its worker stream. Dispatch records also carry
+    # the parent stream, and session-named streams belong to the coordinator.
+    if (event.get("hook_event_name") == "SubagentStop" or
+            path.stem == str(event.get("session_id", ""))):
+        return None
+    return path if path.is_file() else None
+
+
 def assignment(event, root):
     plan, summary = event.get("plan", ""), event.get("summary", "")
-    transcript = event.get("agent_transcript_path")
-    if not transcript and event.get("agent_id") and event.get("transcript_path"):
-        parent = Path(event["transcript_path"])
-        transcript = parent.with_suffix("") / "subagents" / ("agent-" + slug(event["agent_id"]) + ".jsonl")
+    transcript = worker_transcript(event)
     if transcript and Path(transcript).is_file():
         for line in Path(transcript).read_text(encoding="utf-8").splitlines():
             try:
@@ -148,11 +170,8 @@ def main():
         if not limits.get("enabled", True):
             return 0
         measured = dict(event)
-        if event.get("agent_transcript_path"):
-            measured["transcript_path"] = event["agent_transcript_path"]
-        elif event.get("transcript_path"):
-            parent = Path(event["transcript_path"])
-            measured["transcript_path"] = str(parent.with_suffix("") / "subagents" / ("agent-" + slug(agent) + ".jsonl"))
+        transcript = worker_transcript(event)
+        measured["transcript_path"] = str(transcript) if transcript else None
         used = context_tokens(measured)
         threshold = limits.get("threshold_tokens", 250000)
         if type(threshold) is not int or threshold <= 0:
@@ -161,14 +180,8 @@ def main():
             return 0
         name = re.sub(r"[^A-Za-z0-9_.-]", "_", str(event.get("session_id", "session")) + "-" + str(agent))
         arguments = ["handoff.write", name, "--reason", "Configured context threshold reached", "--agent", str(agent), "--role", str(role or "unknown"), "--remaining", "Converge on a safe boundary and return exact remaining scope", "--next", "Return continuation digest to coordinator"]
-        transcript = event.get("agent_transcript_path")
-        if not transcript and event.get("transcript_path"):
-            parent = Path(event["transcript_path"])
-            transcript = str(parent.with_suffix("") / "subagents" / ("agent-" + slug(agent) + ".jsonl"))
         if transcript:
-            if not isinstance(transcript, str):
-                raise ValueError("transcript path must be a string")
-            arguments.extend(["--transcript", transcript])
+            arguments.extend(["--transcript", str(transcript)])
         query(root, *arguments)
         inventory = roles()
         if role in inventory.get("REVIEW_ROLES", set()):

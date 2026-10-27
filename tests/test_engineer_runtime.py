@@ -15,7 +15,7 @@ class RuntimeCase(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
-        self.root = Path(self.temporary.name)
+        self.root = Path(self.temporary.name).resolve()
         self.env = {**os.environ, "ENGINEER_ROOT": str(self.root), "ENGINEER_HOST": "codex"}
         self.git("init", "-b", "main")
         self.git("config", "core.autocrlf", "false")
@@ -183,3 +183,28 @@ class PlanningReviewSafety(RuntimeCase):
         self.assertFalse(retired.exists())
         self.cli("planning.archive-recover", archived["recovery_id"], "--expect", recovery["recoveryDigest"], "--confirm")
         self.assertTrue(retired.exists())
+
+
+class NativeWindowsAliases(RuntimeCase):
+    @unittest.skipUnless(os.name == "nt", "Windows 8.3 path contract")
+    def test_archive_accepts_contained_short_path_and_refuses_outside(self):
+        import ctypes
+        def short_path(path):
+            buffer = ctypes.create_unicode_buffer(32768)
+            size = ctypes.windll.kernel32.GetShortPathNameW(str(path), buffer, len(buffer))
+            self.assertGreater(size, 0)
+            self.assertLess(size, len(buffer))
+            return Path(buffer.value)
+        retired = self.put(".planning/todos/completed/retired historical entry.md",
+                           "---\nstatus: completed\n---\nRetained historical completion.\n")
+        alias = short_path(retired)
+        if str(alias).casefold() == str(retired).casefold():
+            self.skipTest("8.3 aliases are disabled on the fixture volume")
+        preview = self.cli("planning.archive", "--paths", alias)
+        self.assertTrue(preview["dry_run"])
+        outside_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(outside_dir.cleanup)
+        outside = Path(outside_dir.name)/"outside historical entry.md"
+        outside.write_text("Preserve outside content", encoding="utf-8")
+        self.cli("planning.archive", "--paths", short_path(outside), status=1, raw=True)
+        self.assertEqual("Preserve outside content", outside.read_text(encoding="utf-8"))

@@ -33,7 +33,7 @@ The repository combines complete detailed authoring templates, procedures that c
 | Durable continuation | Preserve an interrupted assignment's exact goal, authority, revisions, commits, dirty paths, gates and next action | [worker handoff](../engineer/references/worker-handoff.md), `handoff.*` runtime verbs | A continuation resumes existing authority and cannot discard dirty work or fabricate a completed boundary |
 | Planning-record review and repair | Find drift and apply guarded structural corrections from current evidence | [clean-planning](../commands/clean-planning.md) and runtime planning operations | Validation is warn-only; repair requires current digest and approved exact paths |
 | Exact cleanup | Preview and then remove only owned, integrated work after fresh exact approval | [cleanup](../commands/cleanup.md), cleanup reference | A successful check, branch name or apparent PR is not integration evidence |
-| Advisory hooks | Warn about common workflow mistakes | [hook guide](../engineer/hooks/README.md) | Hooks are advisory, not a sandbox, permission gate or worker-stop proof |
+| Advisory hooks | Warn about common workflow mistakes | [hook guide](../hooks/README.md) | Hooks are advisory, not a sandbox, permission gate or worker-stop proof |
 | Host installation profiles | Install commands, workflows and agents for a supported host with discoverable skills | [install](../commands/install.md) | Existing settings stay authoritative; documented host tools are not guaranteed installed |
 
 ## What is executable, and what is guidance
@@ -44,7 +44,7 @@ The repository combines complete detailed authoring templates, procedures that c
 | `commands/` | User-facing routes that name the owning workflow and authority boundary | Ask in ordinary language or read the selected command entry |
 | `engineer/workflows/` | Procedures for loading context, dispatching roles, calling runtime operations and handling outcomes | Read the complete selected workflow before acting; the command is only a router |
 | `agents/` | Role methods, responsibilities, evidence contracts and write boundaries | Dispatch the exact role named in the workflow with resolved model/effort and bounded inputs |
-| `.agents/skills/` | Skills mirroring command routes and focused reusable methods | Select applicable skills and preserve their stated host and project boundaries |
+| `skills/` | Source skills mirroring command routes and focused reusable methods | Select applicable skills and preserve their stated host and project boundaries; installation maps them to the host's skill directory |
 | `engineer/templates/` | Complete authoring templates with teaching content and local runtime extensions | Read the [registry](../engineer/templates/README.md) and the selected template fully; preserve its fields, examples and consumer guidance |
 | Documented host/provider tools | Routes referenced by workflows for Git, PRs, checks and human interaction | Confirm the actual tool is available and report observed results; documentation alone does not establish installation or execution |
 
@@ -89,14 +89,18 @@ The repository keeps host-facing command and agent definitions at their stable p
 | Content | Codex installation | Claude installation |
 |---|---|---|
 | Root instructions | `AGENTS.md` | `CLAUDE.md` |
-| Rules and fact ownership | `.codex/RULES.md`, `.codex/truth-map.md` | `.claude/RULES.md`, `.claude/truth-map.md` |
+| Rules and fact ownership | `.codex/engineer/RULES.md`, `.codex/engineer/truth-map.md` | `.claude/engineer/RULES.md`, `.claude/engineer/truth-map.md` |
 | Agents | `.codex/agents/` | `.claude/agents/` |
 | Commands | `.codex/commands/` | `.claude/commands/` |
-| Workflows | `.codex/workflows/` | `.claude/workflows/` |
-| Guides, references and templates | `.codex/guides/`, `.codex/references/`, `.codex/templates/` | `.claude/guides/`, `.claude/references/`, `.claude/templates/` |
-| Runtime and hooks | `.codex/runtime/`, `.codex/hooks/` | `.claude/runtime/`, `.claude/hooks/` |
+| Workflows | `.codex/engineer/workflows/` | `.claude/engineer/workflows/` |
+| References and templates | `.codex/engineer/references/`, `.codex/engineer/templates/` | `.claude/engineer/references/`, `.claude/engineer/templates/` |
+| Runtime and hooks | `.codex/engineer/bin/`, `.codex/hooks/` | `.claude/engineer/bin/`, `.claude/hooks/` |
 | Skills, discovered directly | `.agents/skills/` | `.claude/skills/` |
 | Hook registration | `.codex/config.toml` | `.claude/settings.json` |
+
+The repository's `docs/` guides are authoring material and are not copied into
+host installations. Source skills live under `skills/`; the installer maps them
+to `.agents/skills/` for Codex and `.claude/skills/` for Claude.
 
 The runtime launcher resolves the supported installed layout. Do not assume that a provider CLI, hook, model or host feature is available merely because a guide describes how the workflow uses it.
 

@@ -1,6 +1,7 @@
 """Conservative RED evidence classification for supported report formats."""
 import json
 import re
+import subprocess
 import xml.etree.ElementTree as ET
 from . import config, plans
 from .core import Failure, read, root, run, safe_path
@@ -141,13 +142,44 @@ def red(args):
     matching = [item for item in failures if target in item]
     if len(matching) != 1:
         return invalid("no_target_test_failure", ["Target is missing or ambiguous"])
-    if record.get("testCommit") or record.get("implementationCommit"):
-        if not record.get("testCommit") or not record.get("implementationCommit"):
-            return invalid("invalid_record", ["Both test and implementation commits are required"])
-        ancestor = run(["git", "merge-base", "--is-ancestor", record["testCommit"], record["implementationCommit"]], root(), check=False)
-        if ancestor.returncode or record["testCommit"] == record["implementationCommit"]:
-            return invalid("invalid_record", ["RED test commit must precede implementation"])
-        changed = run(["git", "show", "--format=", "--name-only", record["testCommit"]], root()).stdout.splitlines()
-        if record["targetFile"] not in changed:
-            return invalid("invalid_record", ["Target test is absent from RED commit"])
-    return {"verdict": "RED_EVIDENCE_OK", "evidence": {"target": target, "tests": total, "report_errors": []}}, 0
+    test_commit = record.get("testCommit")
+    implementation_commit = record.get("implementationCommit")
+    if not isinstance(test_commit, str) or not re.fullmatch(r"[a-f0-9]{40,64}", test_commit):
+        return invalid("invalid_record", ["A full committed RED test revision is required"])
+    if implementation_commit is not None and (not isinstance(implementation_commit, str) or not re.fullmatch(r"[a-f0-9]{40,64}", implementation_commit)):
+        return invalid("invalid_record", ["Implementation revision must be a full commit ID"])
+    head_result = run(["git", "rev-parse", "HEAD"], root(), check=False)
+    head = head_result.stdout.strip()
+    if head_result.returncode:
+        return invalid("invalid_record", ["Current repository revision is unavailable"])
+    endpoint = implementation_commit or head
+    for earlier, later in ((test_commit, endpoint), (endpoint, head)):
+        if run(["git", "merge-base", "--is-ancestor", earlier, later], root(), check=False).returncode:
+            return invalid("invalid_record", ["RED and implementation commits must belong to current history"])
+    if implementation_commit == test_commit:
+        return invalid("invalid_record", ["RED test commit must precede implementation"])
+    changed = run(["git", "diff-tree", "--root", "--no-commit-id", "--name-only", "-z", "-r", test_commit], root(), check=False)
+    try:
+        test_path = safe_path(record["targetFile"])
+        relative = test_path.relative_to(root()).as_posix()
+        current_test = test_path.read_bytes()
+    except (Failure, ValueError, TypeError, OSError):
+        return invalid("invalid_record", ["Target test must be a readable repository file"])
+    if changed.returncode or relative not in changed.stdout.split("\0"):
+        return invalid("invalid_record", ["Target test is absent from RED commit"])
+    # Git stores normalized blobs, while a genuine Windows checkout can contain
+    # CRLF or a declared working-tree encoding. Use Git's built-in conversion,
+    # but never invoke a repository-supplied clean/process filter as evidence.
+    attributes = run(["git", "check-attr", "-z", "filter", "--", relative], root(), check=False)
+    fields = attributes.stdout.split("\0")
+    if attributes.returncode or len(fields) != 4 or fields[:2] != [relative, "filter"] or fields[3]:
+        return invalid("invalid_record", ["Target test filter attributes are unavailable"])
+    if fields[2] not in ("unspecified", "unset"):
+        return invalid("invalid_record", ["Target test uses an untrusted clean/process filter"])
+    committed_test = run(["git", "rev-parse", "--verify", test_commit+":"+relative], root(), check=False)
+    normalized_test = subprocess.run(["git", "hash-object", "--stdin", "--path="+relative],
+                                     cwd=root(), input=current_test, capture_output=True)
+    if committed_test.returncode or normalized_test.returncode or committed_test.stdout.strip().encode("ascii") != normalized_test.stdout.strip():
+        return invalid("invalid_record", ["Target test differs from its committed RED content"])
+    return {"verdict": "RED_EVIDENCE_OK", "evidence": {"target": target, "tests": total, "report_errors": [],
+            "testCommit": test_commit, "implementationCommit": implementation_commit, "checkedRevision": head}}, 0

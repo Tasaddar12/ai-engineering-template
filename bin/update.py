@@ -257,7 +257,11 @@ def apply_plan(plan, source, baseline=None):
         if digest(before) != entry["before_sha256"]:
             raise ValueError("stale installed bytes: " + entry["path"])
         candidate = base64.b64decode(entry["candidate_base64"], validate=True) if action == "write" else None
-        if action == "delete" or action == "write" and candidate != before:
+        repair_mode = (action in ("keep", "write") and classification == "upstream-managed"
+                       and not entry["conflict"] and installer.executable_drift(path))
+        if repair_mode and action == "keep":
+            candidate = before
+        if action == "delete" or action == "write" and candidate != before or repair_mode:
             changes.append((path, candidate))
             if before is not None:
                 originals[path] = before
