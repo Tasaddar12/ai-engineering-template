@@ -742,6 +742,15 @@ class Todos(RuntimeCase):
         self.assertIn("- First todo (general, major)", section)
         self.assertNotIn("None yet.", section)
 
+    def test_keyword_matching_respects_explicit_assignment_and_area_override(self):
+        self.run_verb("todo.add", "Foundation authentication", "--phase", "2")
+        explicit = self.run_verb("todo.add", "Unrelated title", "--phase", "01")
+        inferred = self.run_verb("todo.add", "Foundation hardening", "--files", "src/auth/key.py", "--area", "infra")
+        matches = self.run_verb("todo.match-phase", "1")["matches"]
+        self.assertEqual([explicit["file"], inferred["file"]], [item["path"] for item in matches])
+        self.assertTrue(matches[0]["assigned"])
+        self.assertEqual("infra", inferred["area"])
+
     def test_completing_a_todo_moves_it_out_of_pending(self):
         added = self.run_verb("todo.add", "Transient idea")
         name = Path(added["file"]).name
@@ -1924,6 +1933,9 @@ class InstallSeedContract(RuntimeCase):
         for asset, record in (("PROJECT.txt", "PROJECT.md"),
                               ("REQUIREMENTS.txt", "REQUIREMENTS.md")):
             self.install(assets / asset, record)
+        self.install(assets / "ROADMAP.txt", "ROADMAP.md")
+        # Installation starts without the phase artifacts created by RuntimeCase.
+        shutil.rmtree(self.directory / ".planning/phases")
         result = self.run_verb("planning.validate", "--skip", "codebase-freshness")
         self.assertEqual(result["status"], "clean", result["warnings"])
 

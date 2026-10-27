@@ -408,7 +408,7 @@ def patch_state(changes, heading="## Current Position"):
     path = planning()/"STATE.md"
     with planning_lock():
         text = read(path, "# Project State\n\n## Current Position\n\n")
-        pattern_heading = r"(?m)^"+re.escape(heading)+r"\s*$"
+        pattern_heading = r"(?m)^"+re.escape(heading)+r"[ \t]*$"
         match = re.search(pattern_heading, text)
         if not match:
             text += "\n"+heading+"\n\n"
@@ -436,7 +436,7 @@ def append_section(file, heading, line):
         text = read(file)
         if line in text.splitlines():
             return {"added": False, "duplicate": True}
-        pattern = rf"(?m)^{re.escape(heading)}\s*$"
+        pattern = rf"(?m)^{re.escape(heading)}[ \t]*$"
         match = re.search(pattern, text)
         if not match:
             text = text.rstrip()+"\n\n"+heading+"\n\n"+line+"\n"
@@ -449,7 +449,7 @@ def append_section(file, heading, line):
                 section = section.rstrip()+"\n"+line+"\n\n"
             else:
                 section = "\n\n"+line+"\n"+section.lstrip("\n")
-            text = text[:match.end()]+section+text[end:]
+            text = text[:match.end()]+section.rstrip()+"\n\n"+text[end:]
         if Path(file).name == "STATE.md" and heading in ("### Roadmap Evolution", "### Decisions"):
             section = re.search(r"(?ms)^"+re.escape(heading)+r"\s*\n(.*?)(?=^##|\Z)", text)
             bullets = re.findall(r"(?m)^- .+$", section[1]) if section else []
@@ -505,6 +505,10 @@ def state_action(args, action):
     if action in ("advance-plan", "update-progress"):
         view = state_view()
         phase = str(view.get("phase", "")).split(" ", 1)[0]
+        if not re.fullmatch(r"[0-9]+(?:\.[0-9]+)?", phase):
+            # An installed seed has no selected phase until onboarding/begin-phase.
+            progress = synchronize_progress()
+            return {"updated": True, "progress": progress, "selected_phase": None}
         info = find(phase)
         from .core import Args
         done = sum(item["complete"] for item in plan_index(Args([phase]))["plans"])
@@ -520,7 +524,7 @@ def state_action(args, action):
         path = planning()/"STATE.md"
         with planning_lock():
             content = read(path)
-            replacement = "### Pending Todos\n\n"+"\n".join("- "+item["title"] for item in todos["todos"])+"\n\n"
+            replacement = "### Pending Todos\n\n"+"\n".join("- "+item["title"]+" ("+item.get("area", "general")+", "+item.get("severity", "minor")+")" for item in todos["todos"])+"\n\n"
             pattern = r"(?ms)^### Pending Todos\s*\n.*?(?=^##|\Z)"
             content = re.sub(pattern, lambda _: replacement, content) if re.search(pattern, content) else content.rstrip()+"\n\n"+replacement
             write(path, content)
@@ -653,23 +657,39 @@ def todo(args, action):
         title = args.need()
         severity = args.get("severity", "minor")
         if severity not in ("minor", "major", "blocker"):
-            raise Failure("invalid-severity", str(severity), 2)
+            raise Failure("bad-severity", str(severity), 2)
         path = directory/"pending"/(now()[:10]+"-"+slug(title)+".md")
         with planning_lock():
             if path.exists():
                 raise Failure("todo-exists", str(path))
-            metadata = {"title": title, "area": args.get("area", "general"), "severity": severity,
+            files = args.all("files")
+            inferred_area = next((part for value in files for part in re.split(r"[/\\]", value)
+                                  if part in ("auth", "api", "ui", "database", "infra", "testing", "payments")), "general")
+            metadata = {"title": title, "area": args.get("area", inferred_area), "severity": severity,
                         "created": now(), "phase": args.get("phase"), "files": args.all("files")}
             body = "# "+title+"\n\n## Problem\n\n"+args.get("problem", args.get("description", ""))+"\n\n## Proposed Solution\n\n"+args.get("solution", "")+"\n"
             write(path, join_frontmatter(metadata, body))
         return {"created": True, "path": str(path), "file": str(path), **metadata}
     if action in ("list", "match-phase"):
         items = []
+        selected = roadmap_phase(args.arg(0, args.get("phase"))) if action == "match-phase" else None
+        keywords = set(re.findall(r"[a-z][a-z0-9]{2,}", (selected["name"]+" "+selected["body"]).lower())) if selected else set()
+        keywords -= {"the", "and", "for", "with", "phase", "plans", "plan", "requirements", "depends", "nothing", "first", "goal", "status"}
         for path in sorted((directory/"pending").glob("*.md")):
             metadata, body = split_frontmatter(read(path))
-            if action != "match-phase" or str(metadata.get("phase")) == str(args.arg(0, args.get("phase"))):
-                items.append({**metadata, "path": str(path), "body": body})
-        return {"todos": items, "count": len(items)}
+            item = {**metadata, "path": str(path), "body": body}
+            if selected:
+                explicit = metadata.get("phase")
+                assigned = explicit is not None and number(explicit) == selected["number"]
+                words = set(re.findall(r"[a-z][a-z0-9]{2,}", (str(metadata.get("title", ""))+" "+body).lower()))
+                reasons = sorted(words & keywords)
+                if not assigned and (explicit is not None or not reasons):
+                    continue
+                item.update({"reasons": reasons, "score": len(reasons)+(100 if assigned else 0), "assigned": assigned})
+            items.append(item)
+        if selected:
+            items.sort(key=lambda item: (-item["score"], item["path"]))
+        return {"todos": items, "count": len(items), **({"matches": items, "phase_name": selected["name"]} if selected else {})}
     if action == "complete":
         from .issues import todo_path, unresolved_attempt
         from .archive import guarded

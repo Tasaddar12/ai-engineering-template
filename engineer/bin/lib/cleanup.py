@@ -440,6 +440,8 @@ def cleanup_command(args, action):
     approved = load_json(path)
     if not approved or approved.get("consumed"):
         raise Failure("cleanup-preview-missing", "Create a fresh exact approval preview")
+    if not isinstance(approved, dict) or not isinstance(approved.get("nonce"), str) or not isinstance(approved.get("entries"), list):
+        raise Failure("cleanup-preview-corrupt", "Stored approval is missing its exact preview fields")
     payload = {"entries": approved.get("entries"), "backup_inventory": approved.get("backup_inventory"), "nonce": approved["nonce"]}
     expected = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
     if expected != token:

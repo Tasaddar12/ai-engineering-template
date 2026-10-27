@@ -360,7 +360,7 @@ passed as one shell argument. `--raw`, `--json`, and `--pick FIELD` are global.
 | `quick.list` | `[--status open|STATUS]` | `tasks[], quick_tasks[], count` |
 | `todo.add` | `TITLE [--area TEXT --severity minor|major|blocker --phase N --files PATH... --problem TEXT --solution TEXT --description TEXT]` | created todo path and metadata |
 | `todo.list` | none | `todos[], count` |
-| `todo.match-phase` | `N` | todos explicitly assigned to phase |
+| `todo.match-phase` | `N` | todos assigned to phase or matching its keywords, ranked with reasons |
 | `todo.complete` | `FILENAME_OR_PATH` | archived completed todo; published issues require stable closed readback and accepted UAT evidence |
 | `todo.issue-preview` | `FILENAME_OR_PATH --title TITLE --body-file FILE [--labels LABEL...]` | content-bound preview packet |
 | `todo.issue-publish`, `todo.issue-update` | same preview args plus `--preview-token TOKEN` | published/readback packet |
