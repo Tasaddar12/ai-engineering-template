@@ -68,6 +68,10 @@ Continue IDs after the highest existing phase register; preserve source aliases 
 
 Canonical risk identity is **repository + surface/control + failure mode/remediation scope**, not a newly invented ID scheme. A stable threat/finding ID locates a source occurrence; semantic deduplication determines whether occurrences describe the same full risk. Preserve every alias and source occurrence.
 
+### Matching evidence and provider authority
+
+Keep a stable canonical risk key and all aliases/occurrences across reruns. A closed match is reusable only when its semantic scope and matching resolution evidence cover the entire obligation; otherwise retain the reopening-authority blocker. Inspect uncertain creation against the exact reviewed intent before retrying. Runtime issue publication is GitHub-only; on another provider a verified authorized host tool must preserve the same complete template, matching, preview/readback and authority contract. If that route is unavailable, retain a Pending/publication blocker. Never invent a URL or change provider to bypass a closed unresolved identity.
+
 ### Deterministic planned-risk container lookup
 
 Before per-risk search, look up the exact repository/phase-scoped checklist container in both open and closed issues:

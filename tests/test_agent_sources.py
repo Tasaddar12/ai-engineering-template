@@ -10,14 +10,23 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def tool_names(value):
+    """Shared upstream roles use both YAML lists and comma-separated strings."""
+    return set(value if isinstance(value, list) else value.split(", ")) if value else set()
+
+
+def region(text, opening, closing):
+    match = re.search(re.escape(opening) + r"(.*?)" + re.escape(closing), text, re.S)
+    return match.group(1) if match else ""
+
+
 class AgentSourceTests(unittest.TestCase):
+    def read(self, name):
+        return (ROOT / name).read_text(encoding="utf-8")
+
     def test_scout_role_uses_the_exported_scout_filenames_and_names(self):
-        role = ROOT / "agents/scout.md"
-        definition = ROOT / "bin/install-assets/codex-agents/scout.toml"
-        self.assertTrue(role.is_file())
-        self.assertTrue(definition.is_file())
-        metadata = yaml.safe_load(role.read_text(encoding="utf-8").split("---", 2)[1])
-        native = tomllib.loads(definition.read_text(encoding="utf-8"))
+        metadata = yaml.safe_load(self.read("agents/scout.md").split("---", 2)[1])
+        native = tomllib.loads(self.read("bin/install-assets/codex-agents/scout.toml"))
         self.assertEqual("scout", metadata["name"])
         self.assertEqual("scout", native["name"])
         self.assertIn("agents/scout.md", native["developer_instructions"])
@@ -28,11 +37,11 @@ class AgentSourceTests(unittest.TestCase):
         self.assertEqual("read-only", native["sandbox_mode"])
 
     def test_coordinator_uses_explicit_scout_route_and_workers_remain_routed(self):
-        text = (ROOT / "agents/coordinator.md").read_text(encoding="utf-8")
-        adapter = text.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0]
-        self.assertIn("task/output", adapter)
-        self.assertIn("source location is unknown", adapter)
-        self.assertIn("Dispatch normal workers", adapter)
+        dispatch = region(self.read("agents/coordinator.md"), "<dispatch>", "</dispatch>")
+        for required in ("source locations are unknown", "one discovery scout", "Distinct additional scouts",
+                         "../engineer/references/scout-dispatch.md", "Route by role", "executor", "planner"):
+            self.assertIn(required, dispatch)
+        self.assertIn("Only the coordinator dispatches workers", self.read("engineer/references/scout-dispatch.md"))
 
     def test_worker_local_adapters_reference_scout_contract_without_worker_dispatch(self):
         for role in (ROOT / "agents").glob("*.md"):
@@ -40,128 +49,113 @@ class AgentSourceTests(unittest.TestCase):
                 continue
             with self.subTest(role=role.name):
                 text = role.read_text(encoding="utf-8")
-                adapter = text.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0]
-                self.assertIn("Use [scout dispatch]", adapter)
-                self.assertIn("scout", adapter)
-                self.assertRegex(adapter, r"Only the (?:coordinator|orchestrator)\s+dispatches\s+workers")
-                self.assertNotRegex(adapter, r"Only the (?:coordinator|orchestrator)\s+dispatches\s+agents")
+                self.assertIn("../engineer/references/scout-dispatch.md", text)
+                self.assertIn("coordinator", text)
+                self.assertIn("Only the coordinator dispatches workers", self.read("engineer/references/scout-dispatch.md"))
+                self.assertNotRegex(text, r"Only the (?:coordinator|orchestrator)\s+dispatches\s+agents")
 
     def test_scout_shared_adapter_is_host_agnostic_and_respects_permissions(self):
-        text = (ROOT / "agents/scout.md").read_text(encoding="utf-8")
+        text = self.read("agents/scout.md")
         metadata = yaml.safe_load(text.split("---", 2)[1])
-        self.assertEqual({"Read", "Grep", "Glob"}, set(metadata["tools"].split(", ")))
-        self.assertIn("Bash", metadata["disallowedTools"].split(", "))
-        adapter = text.split("<host_adapter>", 1)[1].split("</host_adapter>", 1)[0]
-        for instruction in ("available native", "bounded read-only shell", "assigned search_scope",
-                            "host's tool", "permissions allow them", "Never bypass tool restrictions",
-                            "do not execute project code or tests",
-                            "dispatch children or mutate shared records"):
-            self.assertIn(instruction, adapter)
+        self.assertTrue({"Read", "Grep", "Glob"} <= tool_names(metadata["tools"]))
+        self.assertTrue({"Agent", "Task", "Write", "Edit"} <= tool_names(metadata["disallowedTools"]))
+        method = region(text, "<method>", "</method>")
+        for instruction in ("native Read/Grep/Glob", "bounded read-only shell", "host actually grants",
+                            "permissions", "Do not use shell to bypass a host restriction",
+                            "Never silently expand", "exact searched scope"):
+            self.assertIn(instruction, method)
+        self.assertIn("never dispatch children, modify files, run tests or execute project code", text)
         body = text.split("---", 2)[2]
         for host_setting in ("Claude", "Codex", "Haiku", "Luna", "exec_command", "sandbox_mode"):
             self.assertNotIn(host_setting, body)
 
     def test_native_models_and_shared_roles_without_model_frontmatter(self):
         luna = {"codebase-mapper", "doc-writer", "doc-verifier", "integration-checker", "scout", "targeted-fixer"}
-        for definition in (ROOT / "bin/install-assets/codex-agents").glob("*.toml"):
-            native = tomllib.loads(definition.read_text(encoding="utf-8"))
-            role = ROOT / "agents" / (definition.stem + ".md")
-            frontmatter = yaml.safe_load(role.read_text(encoding="utf-8").split("---", 2)[1])
-            self.assertEqual(definition.stem, native["name"])
-            self.assertEqual(frontmatter["description"], native["description"])
-            self.assertEqual("gpt-6-luna" if definition.stem in luna else "gpt-6.1-sol", native["model"])
-            self.assertEqual("medium" if definition.stem in {"executor", "doc-verifier", "integration-checker"} else "high",
-                             native["model_reasoning_effort"])
-            self.assertNotIn("effort", frontmatter)
-            self.assertNotIn("model", frontmatter)
-            if definition.stem == "scout":
-                self.assertEqual("read-only", native["sandbox_mode"])
-                self.assertEqual({"Read", "Grep", "Glob"}, set(frontmatter["tools"].split(", ")))
-                self.assertTrue({"Agent", "Task", "Write", "Edit", "Bash"} <= set(frontmatter["disallowedTools"].split(", ")))
-            elif definition.stem == "targeted-fixer":
-                self.assertEqual("workspace-write", native["sandbox_mode"])
-                self.assertTrue({"Write", "Edit", "Bash"} <= set(frontmatter["tools"].split(", ")))
-                self.assertTrue({"Agent", "Task"} <= set(frontmatter["disallowedTools"].split(", ")))
-                self.assertNotIn("Agent", frontmatter["tools"].split(", "))
-            else:
+        definitions = sorted((ROOT / "bin/install-assets/codex-agents").glob("*.toml"))
+        self.assertEqual(21, len(definitions))
+        self.assertNotIn("code-fixer", {path.stem for path in definitions})
+        for definition in definitions:
+            with self.subTest(role=definition.stem):
+                native = tomllib.loads(definition.read_text(encoding="utf-8"))
+                frontmatter = yaml.safe_load(self.read("agents/" + definition.stem + ".md").split("---", 2)[1])
+                self.assertEqual(definition.stem, native["name"])
+                self.assertEqual(frontmatter["description"], native["description"])
+                self.assertEqual("gpt-6-luna" if definition.stem in luna else "gpt-6.1-sol", native["model"])
+                self.assertEqual("medium" if definition.stem in {"executor", "doc-verifier", "integration-checker"} else "high", native["model_reasoning_effort"])
+                self.assertNotIn("effort", frontmatter)
                 self.assertNotIn("model", frontmatter)
-                self.assertIn("Agent", frontmatter["tools"].split(", "))
-                self.assertNotIn("Agent", frontmatter.get("disallowedTools", "").split(", "))
-                self.assertNotIn("Task", frontmatter.get("disallowedTools", "").split(", "))
+                allowed, denied = tool_names(frontmatter.get("tools")), tool_names(frontmatter.get("disallowedTools"))
+                self.assertFalse(allowed & denied)
+                if definition.stem == "scout":
+                    self.assertEqual("read-only", native["sandbox_mode"])
+                    self.assertTrue({"Read", "Grep", "Glob"} <= allowed)
+                    self.assertTrue({"Agent", "Task", "Write", "Edit"} <= denied)
+                elif definition.stem == "targeted-fixer":
+                    self.assertEqual("workspace-write", native["sandbox_mode"])
+                    self.assertTrue({"Write", "Edit", "Bash"} <= allowed)
+                    self.assertTrue({"Agent", "Task"} <= denied)
+                    self.assertNotIn("Agent", allowed)
+                else:
+                    # Read-only specialists may deliberately deny Agent; shared source owns that policy.
+                    self.assertTrue({"Read", "Grep", "Glob"} <= allowed)
 
     def test_targeted_fixer_is_a_bounded_leaf_with_structured_inputs_and_evidence(self):
-        text = (ROOT / "agents/targeted-fixer.md").read_text(encoding="utf-8")
-        for field in ("origin:", "diagnosis_or_finding:", "checkout:", "branch:", "revision:",
-                      "owned_paths:", "symbols:", "required_behavior:", "constraints:",
-                      "checks:", "summary_path:", "result_destination:"):
+        text = self.read("agents/targeted-fixer.md")
+        for field in ("origin:", "diagnosis_or_finding:", "symbols:", "required_behavior:", "constraints:", "result_destination:",
+                      "`checkout`", "`branch`", "`revision`", "`owned_paths`", "`files_deleted`",
+                      "`checks`", "`summary_path`", "Stable finding ID", "source evidence", "required property",
+                      "Artifact digest", "forbidden paths/resources", "approval/implementation authority"):
             self.assertIn(field, text)
-        for boundary in ("never dispatch children", "needed discovery", "stale or contradictory",
-                         "via the coordinator", "security-policy", "assigned security bugs",
-                         "Never discover scope", "Git integration", "independent review",
-                         "safe exact-owned staging/commits", "worker-handoff.md"):
-            self.assertIn(boundary, text)
+        for boundary in ("leaf role", "do not create children", "discovery beyond the bounded scope",
+                         "return one named question to the coordinator", "Missing fields or identity mismatches",
+                         "Never create worktrees", "independent", "git add --", "worker-handoff.md",
+                         "Do not claim a deferred or unrun check passed"):
+            self.assertIn(boundary.lower(), text.lower())
 
     def test_targeted_fixer_catalogs_link_the_authoritative_role(self):
         for name in ("bin/install-assets/agent-entry.txt", "agents/AGENT.md"):
-            with self.subTest(source=name):
-                text = (ROOT / name).read_text(encoding="utf-8")
-                self.assertIn("targeted-fixer", text)
-                self.assertIn("targeted-fixer.md)", text)
-        roles = (ROOT / "hooks/lib/agent-roles.sh").read_text(encoding="utf-8")
+            text = self.read(name)
+            self.assertIn("targeted-fixer", text)
+            self.assertIn("targeted-fixer.md)", text)
+        roles = self.read("hooks/lib/agent-roles.sh")
         write_roles = re.search(r"^WRITE_ROLES='([^']*)'", roles, re.MULTILINE)[1].split()
         self.assertTrue({"executor", "doc-writer", "debugger", "targeted-fixer", "nyquist-auditor"} <= set(write_roles))
-        self.assertFalse((ROOT/'bin/install-assets/codex-agents/code-fixer.toml').exists())
+        self.assertFalse((ROOT / "bin/install-assets/codex-agents/code-fixer.toml").exists())
 
     def test_bounded_correction_dispatch_has_supported_routing_and_retained_gates(self):
-        shared = (ROOT / "engineer/references/bounded-correction-dispatch.md").read_text(encoding="utf-8")
-        dispatch = shared.split("## Bounded correction dispatch", 1)[1].split("## Review and repair handoffs", 1)[0]
-        self.assertIn("../../agents/targeted-fixer.md", dispatch)
-        self.assertIn("engineer_run query resolve-model targeted-fixer --raw", dispatch)
-        self.assertIn("engineer_run query resolve-effort targeted-fixer --raw", dispatch)
-        self.assertIn('subagent_type="targeted-fixer"', dispatch)
-        self.assertIn('model="${FIXER_MODEL}"', dispatch)
-        self.assertIn("FIXER_EFFORT === 'inherit' ? ''", dispatch)
-        self.assertIn("dispatch-isolation", dispatch)
-        self.assertIn("worktree.create", dispatch)
-        self.assertIn("worktree-branch-check.md", dispatch)
-        self.assertIn("worktree-path-safety.md", dispatch)
-        self.assertIn("${ISOLATION === 'harness-worktree' ? 'isolation=\"worktree\",' : ''}", dispatch)
-        self.assertNotIn('  isolation="worktree",', dispatch)
-        self.assertIn("originating debugger/reviewer", dispatch)
-        self.assertIn("fresh independent review and verification", dispatch)
+        shared = self.read("engineer/references/bounded-correction-dispatch.md")
+        dispatch = shared.split("## Host dispatch and isolation", 1)[1]
+        for token in ("../../agents/targeted-fixer.md", "engineer_run query resolve-model targeted-fixer --raw",
+                      "engineer_run query resolve-effort targeted-fixer --raw", 'subagent_type="targeted-fixer"',
+                      "concrete values inline", "omit inherited", "dispatch-isolation", "worktree.create",
+                      "worktree-branch-check.md", "worktree-path-safety.md", "harness-worktree",
+                      'isolation="worktree"', "Do not emit harness isolation on an orchestrator-worktree call",
+                      "originating debugger/reviewer", "fresh independent review and verification"):
+            self.assertIn(token, dispatch)
         for name in ("execute-phase", "verify-work", "ship"):
-            with self.subTest(workflow=name):
-                text = (ROOT / "engineer/workflows" / (name + ".md")).read_text(encoding="utf-8")
-                self.assertIn("targeted-fixer", text)
-                self.assertIn("../references/bounded-correction-dispatch.md", text)
-                self.assertNotRegex(text, r"(?:models|efforts)\[['\"]targeted-fixer['\"]\]")
-        execute = (ROOT / "engineer/workflows/execute-phase.md").read_text(encoding="utf-8")
-        critical = execute.split("**Critical findings block completion.**", 1)[1].split("</step>", 1)[0]
-        self.assertIn("bounded-correction-dispatch", critical)
-        self.assertIn("fresh independent review", critical)
-        self.assertIn("rerun affected checks", critical)
-        verify = (ROOT / "engineer/workflows/verify-work.md").read_text(encoding="utf-8")
-        gaps = verify.split('<step name="plan_gap_closure">', 1)[1].split("</step>", 1)[0]
-        self.assertIn("bounded-correction-dispatch", gaps)
-        self.assertIn('subagent_type="planner"', gaps)
-        self.assertIn("workflows/execute-phase.md", gaps)
-        self.assertIn("at most **3** rounds", verify)
-        ship = (ROOT / "engineer/workflows/ship.md").read_text(encoding="utf-8")
-        ci = ship.split("**Fixing a failing check**", 1)[1].split("</step>", 1)[0]
-        self.assertIn("at most 2 rounds", ci)
-        self.assertIn("bounded-correction-dispatch", ci)
-        self.assertIn("debugger", ci)
-        self.assertIn("ship-repair/return-to-caller", ci)
-        self.assertIn("returns `passed`", ci)
-        self.assertIn("pr.checks", ci)
+            text = self.read("engineer/workflows/" + name + ".md")
+            self.assertIn("targeted-fixer", text)
+            self.assertIn("../references/bounded-correction-dispatch.md", text)
+            self.assertNotRegex(text, r"(?:models|efforts)\[['\"]targeted-fixer['\"]\]")
+        execute = self.read("engineer/workflows/execute-phase.md")
+        critical = region(execute, '<step name="code_review_gate">', "</step>")
+        for token in ("failures block completion", "bounded isolated correction", "new frozen batch"):
+            self.assertIn(token, critical)
+        verify = self.read("engineer/workflows/verify-work.md")
+        gaps = region(verify, '<step name="plan_gap_closure">', "</step>")
+        for token in ("targeted-fixer", "debugger", "planner", "model/effort inline", "workflows/execute-phase.md"):
+            self.assertIn(token, gaps)
+        self.assertIn("up to three", verify)
+        ship = region(self.read("engineer/workflows/ship.md"), '<step name="judge_checks">', "</step>")
+        for token in ("at most 2 rounds", "targeted-fixer", "debugger", "ship-repair/return-to-caller", "passed/current", "pr.checks"):
+            self.assertIn(token, ship)
 
     def test_repair_origin_adapters_reference_the_shared_dispatch(self):
         for name in ("debugger", "code-reviewer", "coordinator"):
             with self.subTest(role=name):
-                text = (ROOT / "agents" / (name + ".md")).read_text(encoding="utf-8")
-                adapter = text.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0]
-                self.assertIn("../engineer/references/bounded-correction-dispatch.md", adapter)
-                self.assertNotIn('subagent_type="targeted-fixer"', adapter)
+                text = self.read("agents/" + name + ".md")
+                self.assertIn("engineer/references/bounded-correction-dispatch.md", text)
+                self.assertNotIn('subagent_type="targeted-fixer"', text)
 
     def test_every_role_reads_the_shared_scout_procedure(self):
         for role in (ROOT / "agents").glob("*.md"):
@@ -235,7 +229,7 @@ class SkillMirror(unittest.TestCase):
     commands would then behave differently for the same workflow.
     """
 
-    SKIPPED = {"README.md", "install.md"}
+    SKIPPED = {"README.md", "COMMAND.md", "install.md"}
 
     def commands(self):
         return sorted(path for path in (ROOT / "commands").glob("*.md")

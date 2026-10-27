@@ -50,7 +50,7 @@ The coordinator owns worker lifecycle, integration, shared-record mutations and 
 
 Unknown source location calls for one discovery scout with a named question, scoped search and cited packet. Additional scouts require separately named questions and distinct outputs. Scouts and targeted-fixer are leaves and cannot create children. Other roles may request only workflow-permitted named packets; they must not recreate the coordinator's worker tree.
 
-Use a fresh code-reviewer for independent implementation review. The author may self-check claims but cannot supply its own independent review. Plan-checker evaluates plan outcomes and dependencies; verifier evaluates delivered behavior. Doc-verifier inspects claims without executing the documented commands. Integration-checker traces real boundaries; grep counts do not prove flow.
+Use a fresh code-reviewer for every source-changing phase and its independent implementation review. The author may self-check claims but cannot supply its own independent review. Plan-checker evaluates plan outcomes and dependencies; verifier evaluates delivered behavior. Doc-verifier inspects claims without executing the documented commands. Integration-checker traces real boundaries; grep counts do not prove flow.
 
 A bounded correction carries a stable finding ID, its authority and required property. The fix hint is advisory: any permitted smaller repair satisfying the property is acceptable. The coordinator applies [bounded correction dispatch](../engineer/references/bounded-correction-dispatch.md) and chooses targeted-fixer when scope is already known.
 

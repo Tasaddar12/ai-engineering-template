@@ -75,7 +75,7 @@ The orchestrator routes; it does not do work it dispatched. Read exact role boun
 
 Send one discovery scout when source location is unknown. Additional scouts need separate named questions and distinct evidence packets. Scouts return read-only cited evidence and never dispatch children. Follow [scout dispatch](references/scout-dispatch.md).
 
-After dispatch, wait before touching owned files or integrating changes. Confirm worker exit positively before reassigning its paths; a host wait timeout, lack of output or a guessed stall does not establish stop. Preserve uncertain worker ownership and continue independent work. Follow [worker handoff](references/worker-handoff.md) and [parallel status](references/parallel-status.md).
+After dispatch, wait before touching owned files or integrating changes. Confirm worker exit positively before reassigning its paths; a host wait timeout, lack of output or a guessed stall does not establish stop. Never automatically terminate a worker from a wait timeout. Preserve uncertain worker ownership and continue independent work. Follow [worker handoff](references/worker-handoff.md) and [parallel status](references/parallel-status.md).
 
 A source-changing worker returns complete only after owned commits and required SUMMARY. A read-only reviewer/verifier/scout returns its assigned cited packet or report without a completion commit/SUMMARY. An explicit maintenance assignment may use a different output contract; follow the user's contract without manufacturing adopting-project records.
 

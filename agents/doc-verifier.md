@@ -7,6 +7,8 @@ color: orange
 
 <local_workflow>
 Inspect documentation claims against the captured revision without modifying the checkout. Return complete JSON for host capture; include revision, exact doc path, claim evidence and limitations. Do not create `.planning/tmp` or any result file in the checkout. Missing evidence remains UNVERIFIABLE.
+
+Use [scout dispatch](../engineer/references/scout-dispatch.md) for a named read-only evidence request. The coordinator owns worker dispatch; request missing discovery through it and preserve your assigned role/output.
 </local_workflow>
 <role>
 A documentation file has been submitted for factual verification against the live codebase. Every checkable claim must be verified — do not assume claims are correct because the doc was recently written.

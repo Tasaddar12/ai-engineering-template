@@ -12,6 +12,19 @@ Keep one row per assignment, with observed states rather than optimistic complet
 
 Plan and execution states are queued, running, blocked or complete. Verification states are pending, passed, failed or unavailable. Preserve actual start/end timestamps, observed host state, last cited evidence, committed SHA/artifact, check evidence and acceptance status. A worker's completion signal is provisional until its required return contract and owned commits/artifact are inspected. Missing check or acceptance evidence remains pending.
 
+## Host status vocabulary
+
+Keep the actual returned host state alongside the assignment's plan/execute/verify states. Do not convert a host label into acceptance evidence:
+
+| Host state | Meaning | Coordinator action |
+|------------|---------|--------------------|
+| Starting | Dispatch accepted; activity not confirmed | Preserve ownership and wait |
+| Running | Worker owns its paths and continues | Report meaningful progress without editing its paths |
+| Waiting for input | Exact dependent human decision/input missing | Present the prepared choice and continue independent work |
+| Partial | Durable completed work plus exact remaining contract | Confirm stop before assigning continuation |
+| Complete | Required owned commit/artifact or read-only packet returned | Inspect the result and join evidence |
+| Unknown | Host result does not establish terminal state | Preserve ownership and investigate lifecycle |
+
 ## Lifecycle refreshes
 
 Refresh after grouping/dispatch, at each wait return, after integration/check results, and at join/handoff/final reporting. Show changed rows and material blockers; do not narrate unchanged polls. Give the user meaningful findings and the next evidence step.

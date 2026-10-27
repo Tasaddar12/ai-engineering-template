@@ -27,6 +27,10 @@ For every exact dispatch role run `engineer_run query resolve-model ROLE --raw` 
 <authority>
 Before execution, require the user's explicit instruction to implement this exact phase, recorded with its scope in CONTEXT. Discussion, design approval, planning, readiness, a previous phase's instruction or an unattended mode do not supply that authority. When the current user instruction explicitly authorizes this phase, the coordinator records that actual instruction and scope in CONTEXT and proceeds without asking again. If authority is absent, report the concrete missing instruction and do not implement. Never continue automatically into another phase.
 </authority>
+Read [bounded correction dispatch](../references/bounded-correction-dispatch.md) before assigning source repair.
+<context_handoff>
+The coordinator must never stop because a context threshold was reached. Workers converge at a safe committed boundary and return their exact continuation packet; the coordinator persists goals, authority, base/head, completed/remaining scope, dirty paths, pending gates and confirmed lifecycle state, then resumes the authorized bounded continuation in a fresh isolated checkout. Keep orchestration and the execute → verify → authorized ship chain in this session. A threshold does not create a human checkpoint or a request to type another command. Preserve active ownership until actual worker stop is confirmed.
+</context_handoff>
 <process>
 Every execution exit passes through `review_phase_issues` and reports complete, blocked, deferred and human-decision items accurately. An early blocker does not authorize skipping issue reconciliation or claiming the phase shipped.
 <step name="parse_args">

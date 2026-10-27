@@ -1,7 +1,7 @@
 # Project planning and management
 
 This directory stores project-specific records. The reusable agent machinery lives
-in [`.ai`](../.ai/README.md); full authoring templates live in [`.ai/templates`](../.ai/templates/README.md).
+in [`engineer/`](../engineer/workflows/WORKFLOW.md); full authoring templates live in [`engineer/templates/`](../engineer/templates/TEMPLATE.md).
 Preserve existing project records. Onboarding completes missing context from
 actual source, documentation and user intent.
 
@@ -28,9 +28,9 @@ Everything the runtime records is a tracked project record, so a fresh clone
 inherits the full picture. The only untracked artifact is `.planning/.lock`,
 which serializes concurrent writers for the duration of a single write.
 
-`phase_run query planning.validate` reports where these records have drifted from
+`engineer_run query planning.validate` reports where these records have drifted from
 their templates. It is warn-only — `/progress`, `/verify-work` and
 `/complete-milestone` run it and present the findings without blocking on them.
 
-Start with [onboarding](../.ai/commands/onboard.md), then use the
-[workflow guide](../.ai/guides/PHASE-WORKFLOW.md) and [feature reference](../.ai/guides/WORKFLOW-FEATURES.md).
+Start with [onboarding](../commands/onboard.md), then use the
+[workflow guide](../docs/PHASE-WORKFLOW.md) and [feature reference](../docs/WORKFLOW-FEATURES.md).

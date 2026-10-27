@@ -21,6 +21,10 @@ Use verifier, integration-checker, doc-verifier, code-reviewer, applicable ui-au
 <model_selection>
 Resolve every exact role's model and effort inline with engineer_run query resolve-model and resolve-effort. Omit each inherited value. Do not substitute an author for an independent reviewer or let a read-only specialist modify source or shared records.
 </model_selection>
+Read [bounded correction dispatch](../references/bounded-correction-dispatch.md) before assigning source repair.
+<context_handoff>
+The coordinator must never stop because a context threshold was reached. Workers converge at a safe committed boundary and return their exact continuation packet; the coordinator persists goals, authority, base/head, completed/remaining scope, dirty paths, pending gates and confirmed lifecycle state, then resumes the authorized bounded continuation in a fresh isolated checkout. Keep orchestration and the execute → verify → authorized ship chain in this session. A threshold does not create a human checkpoint or a request to type another command. Preserve active ownership until actual worker stop is confirmed.
+</context_handoff>
 <process>
 <step name="initialize">
 Require a phase identifier. Record whether this invocation came from an active ship repair and must return to that caller. Read and execute engineer/workflows/_runtime-launcher.snippet.sh; run `engineer_run query phase.locate "${PHASE_NUMBER}"`. Require found=true and consistent session identity, quote and enter its worktree, then run `engineer_run query init.verify-work "${PHASE_NUMBER}"`. Require phase_found and at least one summary. Read actual phase goal/requirements, phase_dir, plan_records, artifact_files, grouped artifacts, state, models/efforts and checks_configured. Resolve context_window and optional policies with explicit config-get queries; do not assume omitted bundle fields exist.

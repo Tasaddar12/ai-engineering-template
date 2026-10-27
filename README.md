@@ -164,9 +164,14 @@ default. Cleanup needs separate authorization.
 
 ## Validation
 
+Install the test-only dependencies before running validation. PyYAML is an independent fixture oracle for the tests; the installed runtime uses only the Python standard library.
+
 ```text
+python -m pip install -r tests/requirements.txt
 python -m unittest discover -s tests -v
 ```
+
+Install those same test dependencies before using the isolated parallel test runner.
 
 `tests/test_phase_runtime.py` and `tests/test_engineer_runtime.py` drive the runtime as subprocesses against real
 temporary Git repositories, so it exercises the contract the workflows depend on

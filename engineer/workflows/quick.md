@@ -17,6 +17,7 @@ Resolve the exact role with engineer_run query resolve-model and resolve-effort 
 <scope_guardrail>
 Require a single concrete outcome. A new independent capability is outside this task: record it in the required SUMMARY Deferred section, without creating a todo or expanding acceptance. A phase-sized change needs a separately scoped phase decision. A quick request authorizes implementing its named outcome; it does not authorize phase implementation or an unrelated merge.
 </scope_guardrail>
+Independent read-only evidence assignments may inspect the same frozen revision concurrently when their inputs do not depend on another result. Join every assigned result before accepting evidence or starting correction. Required source-changing workers remain outside a frozen batch.
 <process>
 <step name="parse_arguments">
 Parse `list`, `status <slug>`, or `resume <slug>`, otherwise a new description. Accept only --validate and --text for implementation. Read and execute engineer/workflows/_runtime-launcher.snippet.sh, then run `engineer_run query init.quick "${DESCRIPTION}"`, adding --validate when supplied. Require initialized project records and available exact roles; role resolution failures stop dispatch. If records are missing, report `/new-project` or `/onboard` as the required setup. Apply text_mode and response_language only to rendering.
@@ -34,6 +35,8 @@ For new work run `engineer_run query quick.create "${DESCRIPTION}"` inside the s
 Capture PLAN_INPUT_REVISION from the actual session HEAD. Dispatch planner with inline resolved model/effort, exact quick goal, current source paths, user constraints, runtime quick ID/path, full phase-prompt template, applicable skills and complete acceptance. Require a short task set because scope is bounded, not abbreviated task contracts: every task still needs read_first, concrete action, meaningful automated/fails_when verification, ownership, deletions, resources, threats and documentation obligations. Give the worker's actual isolation identity and handoff context. Require committed plan output with PLANNING COMPLETE/PARTIAL markers and a precise blocked return if the scope is wrong. ORCHESTRATOR RULE: wait for confirmed stop before touching or integrating the planner's owned paths.
 </step>
 <step name="reconcile_plan_threats">
+Follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking) for every applicable planned or unplanned risk; use the complete procedure and preserve Pending dependencies.
+
 Read and execute the complete _canonical-threat-tracking.md with the real quick ID and quick.threat-* route. Preserve its full Security risk schema, explicit match review, deterministic quick checklist, standalone unplanned risks, actual provider-rendered anchors and independent audit. Never fabricate a phase ID.
 
 Read the full plan's threats and requirement/acceptance links. Preserve stable canonical threat identities and existing issue URLs; do not renumber or duplicate a threat to make a check pass. A missing mitigation or human decision blocks only dependent execution and is named in the report.
@@ -62,6 +65,8 @@ Constraints: execute only the recorded planned tasks; preserve acceptance and ex
 After dispatch, wait without touching its owned paths. Confirm stop, then inspect the actual committed SUMMARY status, branch/base and owned commits. A terminal message alone does not complete the task. Merge complete owned work with `worktree.merge-wave --phase "quick-${QUICK_ID}"`; cleanup-wave runs only after current clean merge ancestry exists. Preserve failed/blocked worktrees. A rejected isolated run recovers only in a fresh narrowly scoped isolated checkout; primary-checkout execution is never a default recovery.
 </step>
 <step name="reconcile_summary_threats">
+Follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking) for every applicable planned or unplanned risk; use the complete procedure and preserve Pending dependencies.
+
 Re-run the complete kind-aware threat procedure for changed findings/evidence, preserving stable quick risk identities and the original PLAN register. Use quick.threat-audit ID before quick readiness when execution is permitted; a deferred or failed audit remains a real blocker.
 
 Compare the complete SUMMARY threats with the approved plan and canonical tracker. Every unresolved finding needs a stable issue relationship and resolved items need evidence/reason. Reconcile publication under the complete canonical issue template and content-bound preview/readback contract. Never invent a URL or weaken the accepted mitigation to close an item.

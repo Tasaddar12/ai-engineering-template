@@ -47,6 +47,42 @@ class WorkflowNavigationTests(unittest.TestCase):
             self.assertIn(instruction, body)
         self.assertIn("Do not perform duplicate searches", " ".join(body.split()))
 
+    def test_thinking_partner_keeps_full_selected_activation_and_nonactivation_method(self):
+        text = (ROOT / "engineer/workflows/discuss-phase/modes/default.md").read_text(encoding="utf-8")
+        body = text.split("**Thinking partner (conditional):**", 1)[1].split("**Scope creep handling:**", 1)[0]
+        duties = {
+            "opt in": ("features.thinking_partner", "config.yaml", "default false", "when disabled"),
+            "keyword signals": ('"or"', '"versus"', '"vs"', '"tradeoff"', '"trade-off"', '"tradeoffs"',
+                                '"on one hand"', '"on the other hand"', '"pros and cons"',
+                                '"not sure between"', '"torn between"'),
+            "structural signals": ("two or more competing options", '"which is better"',
+                                   '"what would you recommend"', "reverses a previous decision"),
+            "nonactivation": ("already made a clear choice", "rhetorical or trivial", "tabs or spaces",
+                              "simple yes/no", "explicitly asks to move on", "does not override these exclusions"),
+            "analysis choice": ("[Yes, analyze]", "[No, decision made]", "three-to-five-bullet",
+                                "each approach optimizes", "each sacrifices", "PROJECT.md goals",
+                                "recommendation with reasons", "declines, preserve their decision",
+                                "Return to the normal discussion loop"),
+        }
+        def errors(value):
+            return [label for label, cues in duties.items() if not all(cue in value for cue in cues)]
+        self.assertEqual([], errors(body))
+        for label, cues in duties.items():
+            for cue in cues:
+                with self.subTest(duty=label, cue=cue):
+                    # Every selected signal/exclusion must survive; unrelated prose cannot cover its loss.
+                    self.assertIn(label, errors(body.replace(cue, "Removed")))
+
+    def test_feature_response_language_rules_are_inline_and_cover_all_user_prose(self):
+        for name in ("audit-fix", "audit-uat", "fast", "quick-batch", "code-review", "code-review-fix"):
+            with self.subTest(workflow=name):
+                text = (ROOT / "engineer/workflows" / (name + ".md")).read_text(encoding="utf-8")
+                for required in ("config-get response_language --raw", "narration between tool calls",
+                                 "status updates", "progress notes", "questions", "reported findings",
+                                 "Preserve code, paths", "machine-readable keys", "protocol markers verbatim"):
+                    self.assertIn(required, text)
+                self.assertNotIn("@engineer/references/response-language-directive.md", text)
+
     def test_phase_handoff_producers_and_post_merge_reconciliation_are_wired(self):
         execute = (ROOT / "engineer/workflows/execute-phase.md").read_text(encoding="utf-8")
         ship = (ROOT / "engineer/workflows/ship.md").read_text(encoding="utf-8")
@@ -63,13 +99,14 @@ class WorkflowNavigationTests(unittest.TestCase):
         self.assertIn("same-execution fixed-work exemption", wave_tracking)
         self.assertNotIn("query todo.complete", execute)
         self.assertNotIn('step name="close_phase_todos"', execute)
-        self.assertLess(ship.index("Require `merged: true`"), ship.index("query phase.reconcile-todos"))
+        self.assertLess(ship.index("Require provider-confirmed merged state"), ship.index("query phase.reconcile-todos"))
         self.assertIn("reconciliation-only", ship)
         self.assertIn("no repeated issue", execute)
         self.assertNotIn("Publish only when the user authorized it", git)
         for verb in ("phase.issue-declare", "phase.issue-preview", "phase.issue-publish", "phase.issue-update", "phase.handoff", "phase.reconcile-todos"):
             self.assertIn(verb, runtime)
-        self.assertIn("Direct", runtime)
+        self.assertIn("--preview-token", runtime)
+        self.assertIn("--expect-digest", runtime)
         self.assertIn("warn-only", runtime)
 
     def test_literal_link_examples_do_not_hide_real_navigation(self):

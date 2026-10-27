@@ -25,6 +25,24 @@ Require all of the following before mutation:
 - Stable finding ID, source evidence and the required property.
 - Artifact digest and reviewed source revision; any fix_hint is advisory.
 
+Use the complete structured correction input; the coordinator supplies actual values rather than these explanatory placeholders:
+
+```yaml
+origin: [owning debugger/reviewer/workflow and stable finding ID]
+diagnosis_or_finding: [cited demonstrated failure at the reviewed revision]
+checkout: [absolute isolated root]
+branch: [exact assigned branch]
+revision: [expected full starting SHA]
+owned_paths: []
+files_deleted: []
+symbols: [] # exact affected entry points, interfaces or named not applicable reason
+required_behavior: [observable required property, preserving approved acceptance]
+constraints: [] # authority, forbidden paths/resources, locked decisions and user check order
+checks: [] # grounded argv, working directory and expected result
+summary_path: [assigned complete committed repair record]
+result_destination: [coordinator/owning caller and required return packet]
+```
+
 Missing fields or identity mismatches return blocked with the exact discrepancy. Read-only investigation may continue where the supplied scope supports it. Never create worktrees, switch branches, merge or change the expected revision to hide a mismatch.
 </assignment>
 
@@ -58,3 +76,5 @@ At 60% context consumption or 250,000 tokens, converge at a safe committed bound
 <return>
 Return status, finding IDs resolved and unresolved, base branch/revision, commit hashes, summary_path, actual check outcomes and remaining evidence. Complete means owned repairs and SUMMARY are committed and the required property is supported; do not claim a deferred or unrun check passed.
 </return>
+
+Use [scout dispatch](../engineer/references/scout-dispatch.md) for a named read-only evidence request. The coordinator owns worker dispatch; request missing discovery through it and preserve your assigned role/output.

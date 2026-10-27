@@ -39,24 +39,24 @@ class UnattendedFlow(unittest.TestCase):
         text = read(WORKFLOWS / "execute-phase.md")
         self.assertNotIn("Next Up", step(text, "completion"))
         hand_off = step(text, "run_verify_work")
-        self.assertIn("`verify-work` skill", hand_off)
-        self.assertIn("/verify-work {phase_number}", hand_off)
+        self.assertIn("read and execute", hand_off)
+        self.assertIn("engineer/workflows/verify-work.md", hand_off)
         steps = re.findall(r'<step name="([a-z_]+)">', text)
         self.assertEqual("run_verify_work", steps[-1], "the hand-off must be the last step")
         self.assertNotIn("verify_phase_goal", steps)
-        self.assertNotIn("workflows/verify-work.md", text)
+        self.assertIn("same phase/session", hand_off)
 
     def test_a_partial_execution_continues_without_asking(self):
         gate = step(read(WORKFLOWS / "execute-phase.md"), "safe_resume_gate")
         self.assertNotIn("AskUserQuestion", gate)
-        self.assertIn("do not ask", gate)
+        self.assertIn("run only plans lacking valid complete summary evidence", gate)
 
     def test_verification_continues_into_shipping(self):
         text = read(WORKFLOWS / "verify-work.md")
         ready = step(text, "present_ready")
-        self.assertIn("`ship` skill", ready)
+        self.assertIn("invoke the ship skill/workflow", ready)
         self.assertNotIn("Next Up", ready)
-        self.assertNotIn("workflows/ship.md", text)
+        self.assertIn("active ship repair return to its caller", ready)
 
     def test_ship_is_described_as_merging_on_instruction(self):
         for path in (ROOT / "commands" / "ship.md", ROOT / "skills" / "ship" / "SKILL.md",
@@ -69,7 +69,8 @@ class UnattendedFlow(unittest.TestCase):
 
     def test_shipping_waits_for_checks_itself(self):
         checks = step(read(WORKFLOWS / "ship.md"), "judge_checks")
-        self.assertIn('pr.checks "${SESSION_BRANCH}" --wait', checks)
+        self.assertIn('pr.checks "${SESSION_BRANCH}" --timeout 240', checks)
+        self.assertIn("up to 12 calls", checks)
         self.assertIn("debugger", checks)
 
     def test_the_rules_route_every_issue_without_stopping(self):
@@ -78,8 +79,8 @@ class UnattendedFlow(unittest.TestCase):
                             re.MULTILINE | re.DOTALL)
         self.assertIsNotNone(section, "RULES.md has no 'Issues found while working' section")
         body = section.group(1)
-        for route in ("**In scope**", "**Out of scope**", "**Needs a human**",
-                      "Never stop an authorized run to ask", "Never create todos"):
+        for route in ("**In scope:**", "**Out of scope:**", "**Needs a human:**",
+                      "block only dependent actions and continue", "Do not create todos"):
             self.assertIn(route, body)
         self.assertNotIn("engineer_run query todo.add", body)
 
@@ -88,7 +89,7 @@ class UnattendedFlow(unittest.TestCase):
         verify = read(WORKFLOWS / "verify-work.md")
         for name, text in (("checkpoint_handling", step(execute, "checkpoint_handling")),
                            ("plan_gap_closure", step(verify, "plan_gap_closure")),
-                           ("revision_loop", step(verify, "revision_loop")),
+                           ("revision_loop", step(verify, "bounded_reverification")),
                            ("handle_result", step(verify, "handle_result")),
                            ("check_existing_verification",
                             step(verify, "check_existing_verification"))):

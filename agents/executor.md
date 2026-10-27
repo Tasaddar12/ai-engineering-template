@@ -10,6 +10,8 @@ Source or artifact changes require the coordinator-supplied isolated checkout, b
 </assignment_boundary>
 <local_workflow>
 Follow the coordinator's assigned checkout, branch, base revision, owned paths, plan and SUMMARY destination. Execute only explicitly authorized implementation. Return proposed shared-record changes rather than editing STATE, ROADMAP or REQUIREMENTS. Request a discovery scout through the coordinator when locations are unknown. Commit owned changes and SUMMARY before reporting complete.
+
+Use [scout dispatch](../engineer/references/scout-dispatch.md) for a named read-only evidence request. The coordinator owns worker dispatch; request missing discovery through it and preserve your assigned role/output.
 </local_workflow>
 
 <role>

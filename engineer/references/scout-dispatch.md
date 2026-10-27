@@ -61,18 +61,19 @@ Complete means the assigned evidence question is answered, not that implementati
 Use the `scout_assignment` envelope for this payload.
 
 ```yaml
-id: [stable packet identity]
-kind: discovery # discovery | specialized
-task_class: DISCOVERY
-repository: [exact repository/checkout]
-revision: [full captured SHA]
-question: [one bounded question]
-inputs: []
-requested_fields: []
-search_scope: []
-allowed_evidence: []
-missing_test_cases_requested: false
-constraints: []
+scout_assignment:
+  id: [stable packet identity]
+  kind: discovery # discovery | specialized
+  task_class: DISCOVERY
+  repository: [exact repository/checkout]
+  revision: [full captured SHA]
+  question: [one bounded question]
+  inputs: []
+  requested_fields: []
+  search_scope: []
+  allowed_evidence: []
+  missing_test_cases_requested: false
+  constraints: []
 ```
 
 Allowed task_class values are DISCOVERY, FACT_EXTRACTION, REVIEW_INVENTORY, DOC_CLAIM_COMPARE, INTEGRATION_MAP, TEST_RESULT_SUMMARY, FAILURE_FACTS, DOC_TRANSFORM_PROPOSAL and CODE_TRANSFORM_PROPOSAL. Pick the requested class; do not convert it to broad discovery.
@@ -82,17 +83,18 @@ Allowed task_class values are DISCOVERY, FACT_EXTRACTION, REVIEW_INVENTORY, DOC_
 Return the `scout_result` envelope with this payload.
 
 ```yaml
-id: [same assignment identity]
-task_class: [same class]
-revision: [inspected full SHA]
-status: complete # complete | incomplete | blocked
-answer: [bounded answer]
-field_results: {} # Every requested field, with evidence or explicit missing reason
-evidence: [] # See evidence item shape below
-search_scope: []
-uncertainty: []
-unresolved_questions: []
-missing_test_cases: []
+scout_result:
+  id: [same assignment identity]
+  task_class: [same class]
+  revision: [inspected full SHA]
+  status: complete # complete | incomplete | blocked
+  answer: [bounded answer]
+  field_results: {} # Every requested field, with evidence or explicit missing reason
+  evidence: [] # See evidence item shape below
+  search_scope: []
+  uncertainty: []
+  unresolved_questions: []
+  missing_test_cases: []
 ```
 
 Each evidence item is `{claim, citation, excerpt}`. Cite exact path:line or supplied input IDs/lines. Absence claims state searched terms and scope. `missing_test_cases` proposes gaps only when requested; it does not claim execution.
