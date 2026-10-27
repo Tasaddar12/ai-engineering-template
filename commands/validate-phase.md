@@ -28,7 +28,7 @@ Output: coordinator-owned VALIDATION.md, isolated committed tests/fixtures and r
 </objective>
 
 <execution_context>
-@engineer/workflows/validate-phase.md
+@~/.claude/engineer/workflows/validate-phase.md
 </execution_context>
 
 <context>

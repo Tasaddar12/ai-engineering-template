@@ -79,12 +79,9 @@ Spawn agents by their exact name (`researcher`, `phase-preparer`, `phase-checker
 `phase_run query resolve-model <agent>` and the effort with
 `phase_run query resolve-effort <agent>`, and pass both inline on the dispatch
 call — shared role files carry neither as frontmatter (Claude exports default to
-scout/targeted-fixer `haiku`, coder `sonnet`, and phase-preparer `opus`/`medium`; only preparer exports effort), and a resolved `inherit` means
+scout/code-fixer `haiku`, coder `sonnet`, and phase-preparer `opus`/`medium`; only preparer exports effort), and a resolved `inherit` means
 omit that argument. Never fall back to a generic agent type.
 
-Use [scout dispatch](.ai/references/scout-dispatch.md) for the authoritative
-task/output routing table. Send one discovery scout when source location is
-unknown; send additional scouts only for separately named questions and distinct
 evidence outputs. The coordinator owns worker lifecycle, integration, shared
 records and publication. Scouts return cited read-only evidence and never
 dispatch children.

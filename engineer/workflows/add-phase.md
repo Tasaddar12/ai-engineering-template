@@ -3,9 +3,9 @@
 Add a titled phase at the end of the current milestone. Let the runtime allocate its number, create its directory, and maintain every roadmap section and traceability field. Creating a phase never authorizes implementation.
 </purpose>
 <required_reading>
-@engineer/RULES.md
-@engineer/truth-map.md
-@engineer/references/template-contract.md
+@~/.claude/engineer/RULES.md
+@~/.claude/engineer/truth-map.md
+@~/.claude/engineer/references/template-contract.md
 </required_reading>
 <process>
 <step name="parse_arguments">

@@ -3,10 +3,10 @@
 Gather the next concrete goal, confirm requirement scope and allocate a continuous runtime-owned phase sequence. Preserve prior milestone evidence and project identity. Creating the milestone does not authorize phase implementation.
 </purpose>
 <required_reading>
-@engineer/RULES.md
-@engineer/references/questioning.md
-@engineer/templates/requirements.md
-@engineer/references/template-contract.md
+@~/.claude/engineer/RULES.md
+@~/.claude/engineer/references/questioning.md
+@~/.claude/engineer/templates/requirements.md
+@~/.claude/engineer/references/template-contract.md
 </required_reading>
 <model_selection>
 Use phase-researcher or codebase-mapper only for actual evidence needs. Resolve exact role model/effort inline and omit inherit. Isolate artifact-writing workers, wait for confirmed stop and integrate committed complete evidence before using it.
