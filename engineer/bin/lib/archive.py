@@ -147,6 +147,24 @@ def historical_phase_evidence(directory):
     committed = git("show", "HEAD:"+name)
     if committed.returncode or committed.stdout != report.read_bytes():
         return False
+    # Establish when these exact report bytes entered history. A new report
+    # cannot borrow an old digest after development has already moved on; an
+    # actual historical report remains valid when source evolves afterwards.
+    history = git("log", "--format=%H", "--", name)
+    if history.returncode:
+        return False
+    witness = None
+    for commit in reversed(history.stdout.decode("ascii").splitlines()):
+        candidate = git("show", commit+":"+name)
+        if candidate.returncode == 0 and candidate.stdout == committed.stdout:
+            witness = commit
+            break
+    if not witness or git("merge-base", "--is-ancestor", revision, witness).returncode:
+        return False
+    changed = git("diff", "--name-only", "-z", revision, witness)
+    allowed = {name, ".planning/STATE.md", ".planning/ROADMAP.md", ".planning/REQUIREMENTS.md"}
+    if changed.returncode or any(item.decode("utf-8") not in allowed for item in changed.stdout.split(b"\0") if item):
+        return False
     relative = directory.relative_to(root()).as_posix()
     inventory = git("ls-tree", "-r", "--name-only", "-z", revision, "--", relative)
     if inventory.returncode:

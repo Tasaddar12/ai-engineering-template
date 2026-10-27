@@ -272,6 +272,16 @@ class PlanningArchive(unittest.TestCase):
         self.commit("Fixture forged bound report")
         self.assertFalse(archive.historical_phase_evidence(self.root/".planning/phases/01-foundation"))
 
+    def test_new_report_cannot_borrow_valid_old_digest_after_source_changes(self):
+        path = ".planning/phases/01-foundation/01-VERIFICATION.md"
+        self.write("foundation.txt", "Development already moved beyond the verified revision.\n")
+        self.commit("Fixture intervening development")
+        self.write(path, self.read(path)+"\nA newly asserted verdict after source changed.\n")
+        self.commit("Fixture new stale verdict with borrowed old digest")
+        before = self.snapshot()
+        self.assertEqual("archive-evidence-required", self.cli("planning.archive", "phase", "1", ok=False)["code"])
+        self.assertEqual(before, self.snapshot())
+
     def test_active_phase_denied_even_with_legacy_evidence(self):
         self.write(".planning/legacy.md", "---\narchive_kind: phase\narchive_id: 02-feature\narchive_status: complete\narchive_reason: Reviewed legacy completion evidence.\n---\n")
         before = self.snapshot()
