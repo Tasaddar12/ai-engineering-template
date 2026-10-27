@@ -11,6 +11,11 @@ def identity():
         hostname, path = match.groups()
     else:
         parsed = urlparse(value)
+        try:
+            if parsed.port is not None or parsed.username or parsed.password or parsed.query or parsed.fragment:
+                raise ValueError("Decorated origin")
+        except ValueError as exc:
+            raise Failure("unsupported-origin", "Origin must identify one canonical repository without URL decorations") from exc
         hostname, path = parsed.hostname, parsed.path.strip("/").removesuffix(".git")
     if not hostname or not re.fullmatch(r"[^/]+/[^/]+", path):
         raise Failure("unsupported-origin", "Provider operations require an origin repository URL")

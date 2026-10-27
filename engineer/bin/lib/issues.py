@@ -13,6 +13,9 @@ def todo_path(value):
     path = Path(value)
     if not path.is_absolute() and len(path.parts) == 1:
         path = records.planning()/"todos/pending"/path
+    from .cleanup import aliased_path
+    if aliased_path(path):
+        raise Failure("aliased-issue-source", "Symlink and junction source paths are preserved")
     path = safe_path(path)
     if not path.is_relative_to(records.planning()/"todos/pending") or not path.is_file():
         raise Failure("todo-not-found", str(path))
@@ -102,9 +105,13 @@ def publication(args, action, family="todo"):
         source = todo_path(args.need())
     else:
         directory = records.phase_dir(args.need())
+        from .cleanup import aliased_path
+        if aliased_path(directory/args.need(1)):
+            raise Failure("aliased-issue-source", "Symlink and junction source paths are preserved")
         source = safe_path(directory/args.need(1))
         if source.parent != directory or not source.is_file():
             raise Failure("finding-record-not-found", str(source))
+    initial_source = digest([source])
     metadata, content = split_frontmatter(read(source))
     finding = None
     if family == "phase":
@@ -121,7 +128,13 @@ def publication(args, action, family="todo"):
     if safe_path(args.get("body-file")) == source:
         raise Failure("private-source-body-refused", "Prepare the reviewed public issue body separately from its source")
     variant = args.get("variant")
+    declared_variant = (finding or metadata).get("variant", metadata.get("issue_variant"))
+    if declared_variant and declared_variant != variant:
+        raise Failure("issue-variant-conflict", "Reviewed variant differs from the declared issue kind")
     template = validate(title, body, variant)
+    source_snapshot = digest([source, template])
+    if digest([source]) != initial_source:
+        raise Failure("issue-source-drift", "Source changed during content preparation")
     origin = repository.identity()
     identity = family+":"+str(source.relative_to(root())).replace("\\", "/")+":"+str(args.arg(2, ""))
     provenance = "engineer-issue:"+hashlib.sha256((origin["slug"]+":"+identity).encode()).hexdigest()
@@ -154,7 +167,9 @@ def publication(args, action, family="todo"):
         if candidate.get("number") != repository.require_url(str(candidate.get("url", "")), "issues") or str(candidate.get("state", "")).upper() not in ("OPEN", "CLOSED"):
             raise Failure("issue-candidate-invalid", "Canonical candidate identity or state is unavailable")
     candidate_snapshot = [{key: candidate.get(key) for key in ("url", "number", "title", "body", "state", "identity_match")} for candidate in matches]
-    snapshot = {"source": str(source), "source_digest": digest([source, template]), "title": title, "body": body,
+    if digest([source, template]) != source_snapshot:
+        raise Failure("issue-source-drift", "Source changed during provider discovery")
+    snapshot = {"source": str(source), "source_digest": source_snapshot, "title": title, "body": body,
                 "labels": args.all("labels"), "family": family, "finding": args.arg(2), "origin": origin,
                 "provenance": provenance, "existing_issue": selection, "no_match": args.has("no-match"), "variant": variant,
                 "candidates": candidate_snapshot}
@@ -171,6 +186,8 @@ def publication(args, action, family="todo"):
         raise Failure("issue-match-exists", "The no-match declaration conflicts with canonical issue search", candidates=matches)
     if action == "preview":
         with planning_lock():
+            if digest([source, template]) != source_snapshot:
+                raise Failure("issue-source-drift", "Source changed before preview persistence")
             prior = load_json(preview)
             if not prior:
                 write_json(preview, {**snapshot, "created": now(), "used": False})
@@ -241,6 +258,8 @@ def publication(args, action, family="todo"):
         raise Failure("issue-readback-mismatch", "Provider state is unavailable", url=url)
     if issue.get("number") != repository.require_url(str(url), "issues"):
         raise Failure("issue-readback-mismatch", "Provider number does not match canonical URL", url=url)
+    if reused and reused.get("identity_match") in ("reviewed-existing", "semantic") and any(issue.get(key) != reused.get(key) for key in ("url", "number", "title", "body", "state")):
+        raise Failure("issue-readback-mismatch", "Selected existing issue changed after review", url=url)
     with planning_lock():
         if repository.identity() != origin or digest([source, template]) != snapshot["source_digest"]:
             raise Failure("issue-source-drift", "Issue published but source changed; reconcile the returned URL", url=url)
@@ -252,9 +271,25 @@ def publication(args, action, family="todo"):
             matches[0].update({"issue_url": url, "url": url, "published": now()})
         else:
             metadata["issue_url"] = url
+            metadata["issue_variant"] = variant
             metadata["issue_published"] = now()
         write(source, join_frontmatter(metadata, content))
         saved.update({"used": True, "url": url})
         write_json(preview, saved)
     return {"published": True, "url": url, "issue": issue, "source": str(source), "reused": bool(reused),
             "disposition": disposition, "requires_reconciliation": bool(reused and str(issue.get("state", "")).upper() == "CLOSED")}
+
+
+def unresolved_attempt(source):
+    """Read-only retirement gate for a source whose provider outcome is unknown."""
+    metadata, _ = split_frontmatter(read(source))
+    if metadata.get("issue_url", metadata.get("issueURL", metadata.get("issue"))):
+        return False
+    legacy = metadata.get("issuePublication")
+    if isinstance(legacy, dict) and legacy:
+        return True
+    for path in (records.planning()/"issue-previews").glob("*.json"):
+        attempt = load_json(path, {})
+        if attempt.get("source") == str(Path(source).resolve()) and attempt.get("used") and not attempt.get("url"):
+            return True
+    return False
