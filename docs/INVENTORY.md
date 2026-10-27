@@ -8,7 +8,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 |---|---|---:|---:|
 | `agents/AGENT.md` | reconciled | 129 | 0 |
 | `agents/code-fixer.md` | reconciled | 770 | 66 |
-| `agents/code-reviewer.md` | reconciled | 358 | 0 |
+| `agents/code-reviewer.md` | reconciled | 403 | 0 |
 | `agents/codebase-mapper.md` | reconciled | 854 | 2 |
 | `agents/coordinator.md` | local-only | 142 | 1 |
 | `agents/debug-session-manager.md` | reconciled | 421 | 50 |
@@ -66,7 +66,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `commands/capture.md` | reconciled | 30 | 0 |
 | `commands/clean-planning.md` | local-only | 15 | 0 |
 | `commands/cleanup.md` | reconciled | 23 | 0 |
-| `commands/code-review.md` | reconciled | 73 | 0 |
+| `commands/code-review.md` | reconciled | 49 | 0 |
 | `commands/complete-milestone.md` | reconciled | 21 | 0 |
 | `commands/debug.md` | reconciled | 57 | 1 |
 | `commands/discuss-phase.md` | reconciled | 34 | 0 |
@@ -311,9 +311,9 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `engineer/workflows/check-todos.md` | reconciled | 52 | 0 |
 | `engineer/workflows/clean-planning.md` | local-only | 42 | 0 |
 | `engineer/workflows/cleanup.md` | reconciled | 27 | 0 |
-| `engineer/workflows/code-review-fix.md` | reconciled | 675 | 13 |
-| `engineer/workflows/code-review.md` | reconciled | 1061 | 115 |
-| `engineer/workflows/code-review/steps/dispatch-fix.md` | reconciled | 40 | 0 |
+| `engineer/workflows/code-review-fix.md` | reconciled | 265 | 0 |
+| `engineer/workflows/code-review.md` | reconciled | 271 | 0 |
+| `engineer/workflows/code-review/steps/dispatch-fix.md` | reconciled | 19 | 0 |
 | `engineer/workflows/complete-milestone.md` | reconciled | 169 | 0 |
 | `engineer/workflows/debug.md` | reconciled | 296 | 60 |
 | `engineer/workflows/discuss-phase.md` | reconciled | 295 | 0 |
