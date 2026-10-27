@@ -48,7 +48,7 @@ Do not send an alias as a host-native role name. Do not substitute a generic age
 
 The coordinator owns worker lifecycle, integration, shared-record mutations and publication. After dispatching work, it waits before touching that worker's owned paths or integrating its commits. A timeout is not proof that a worker has stopped; reassignment requires confirmed exit.
 
-Unknown source location calls for one discovery scout with a named question, scoped search and cited packet. Additional scouts require separately named questions and distinct outputs. Scouts and targeted-fixer are leaves and cannot create children. Other roles may request only workflow-permitted named packets; they must not recreate the coordinator's worker tree.
+Unknown source location calls for one discovery scout with a named question, scoped search and cited packet. Additional scouts require separately named questions and distinct outputs. Scouts and targeted-fixer are leaves and cannot create children. Other supported non-scout roles may dispatch only workflow-permitted named read-only scout packets when the host supports the exact scout registration and has capacity; otherwise return the full scout_request through the coordinator. They must not recreate the coordinator's worker tree or dispatch generic/source-changing children.
 
 Use a fresh code-reviewer for every source-changing phase and its independent implementation review. The author may self-check claims but cannot supply its own independent review. Plan-checker evaluates plan outcomes and dependencies; verifier evaluates delivered behavior. Doc-verifier inspects claims without executing the documented commands. Integration-checker traces real boundaries; grep counts do not prove flow.
 
@@ -111,12 +111,14 @@ Only the installer export for planner supplies its default medium effort. Defaul
 
 ### Codex
 
-Use Codex native agent dispatch with the exact role method and resolved model/effort arguments. The runtime owns the supported concrete model names and validates the current host policy. Do not hardcode a model alias into shared instructions or silently swap providers.
+The installer owns generated Codex native TOML role registrations and their model policy; shared Markdown is the method source, not the native registration. Use Codex native agent dispatch with the exact installed role registration and resolved model/effort arguments. The runtime owns the supported concrete model names and validates the current host policy. Do not hardcode a model alias into shared instructions or silently swap providers.
 
 | Role group | Codex resolution policy |
 |---|---|
-| scout | Fixed scout resolution from runtime policy |
-| targeted-fixer | Fixed targeted-fixer resolution from runtime policy |
+| scout | Fixed Luna default from curated runtime/installer policy |
+| targeted-fixer | Fixed Luna default from curated runtime/installer policy |
+| codebase-mapper | Curated Luna default unless a supported project override applies |
+| doc-writer | Curated Luna default unless a supported project override applies |
 | executor | Project agents.executor override, then runtime profile/default |
 | planner | Project agents.planner override, then runtime profile/default |
 | phase-researcher | Project agents.phase-researcher override, then runtime profile/default |

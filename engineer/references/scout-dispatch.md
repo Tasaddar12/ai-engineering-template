@@ -134,19 +134,40 @@ Dispatch scout for requested inventories, fact extraction, classification, struc
 
 ## Direct nested requests
 
-Only the coordinator dispatches workers. A workflow-permitted specialist may request a separately named scout packet through the coordinator; scouts and targeted-fixer remain leaves. If the specialist lacks a supported scout interface, or the coordinator cannot dispatch either supported host route, return this request and continue independent work:
+The coordinator dispatches normal workers. A workflow-permitted non-scout specialist may dispatch only named read-only scout packets when the current host exposes a supported exact scout registration and actual free capacity. It may not dispatch source writers, generic agents or nested reviewer trees. Scouts and targeted-fixer remain leaves. Resolve each scout model AND effort inline; omit inherited parameters. If direct scout dispatch is unsupported or capacity is unavailable, return the complete fallback request below and continue independent owning work. Do not substitute self-extraction for a required packet:
 
 ```yaml
 scout_request:
   parent_assignment_id: [owning assignment]
-  task_class: [one supported class]
+  repository: [exact assigned checkout]
   revision: [full inspected SHA]
-  question: [exact missing claim]
-  requested_fields: []
-  inputs: []
-  search_scope: []
-  constraints: []
-  resume_with: [exact field/result needed by parent]
+  reason: [unsupported direct host route or actual exhausted capacity]
+  stage: [owning workflow step and completed progress]
+  assignments:
+    - id: [stable packet identity]
+      kind: specialized
+      task_class: [one supported class]
+      repository: [same assigned checkout]
+      revision: [same inspected SHA]
+      question: [exact missing claim]
+      inputs: []
+      requested_fields: []
+      search_scope: []
+      allowed_evidence: []
+      missing_test_cases_requested: false
+      constraints: [read-only, no project execution, no children]
+  resume_with: [exact named field/result and first remaining owning action]
 ```
 
 Never replace a missing route with an unapproved generic role. A request does not allow the worker to mutate shared records or recreate the coordinator's worker tree.
+
+## Capacity, joining and continuation
+
+1. Count every dispatched active or starting worker and every accepted queued dispatch against host capacity. An unstarted queued handle is still an owned assignment; do not dispatch beyond available slots because output is quiet. Limit fan-out by configured capacity and actual open host slots, whichever is smaller.
+2. Record the parent assignment, packet ID, actual handle, source revision, dispatch/start timestamps and expected consumer before waiting. Preserve exact native handles; invented output-file arguments and unsupported SDK status methods are not fallback mechanisms.
+3. Wait using bounded native observations. Keep partial/blocked packets and fields already answered. A timeout is not stop, completion or permission to repeat extraction. Apply the observed-state protocol in parallel-status.md.
+4. Join ALL required scout packets and any other active specialists before integration, source repair or accepting a joined verdict. Confirm actual terminal stop before reassignment. Read-only workers at the same revision may run concurrently; they do not authorize a concurrent writer.
+5. If citations conflict, first compare their revision, path, scope and quoted surrounding logic. Request one targeted extraction for the exact disputed field if needed; give both citations. The domain owner then resolves interpretation against the actual contract. Do not decide by majority, newest prose or another broad scan. Preserve unresolved contradictions as evidence gaps.
+6. Resume the owning role at the recorded first remaining action using the returned per-field evidence. Keep its completed review/implementation progress and assigned output contract; do not restart the original task or claim an untouched remainder complete. Missing packets remain explicit missing evidence. A partial packet can support only the fields actually established.
+
+Worked lifecycle: executor E at revision R needs the definition and error result of one unknown validation helper. E sends packet S with those two requested fields and continues an independent owned edit. S returns a definition citation but lacks the error branch; E requests one bounded S follow-up limited to that branch. E joins the final packet before changing the dependent caller, verifies the cited interface while making the owning implementation decision, and reports the actual remaining checks. If the host has no supported scout registration, E returns the complete scout_request to its coordinator and pauses only that caller edit. It neither invents a generic child nor quietly performs the assigned fact-extraction packet itself.
