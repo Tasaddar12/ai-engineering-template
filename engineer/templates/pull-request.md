@@ -1,67 +1,76 @@
 # Pull request template
 
-Use [Git workflow](../references/git-workflow.md). Prepare the complete description before publication; update it after every delivered slice.
+Read [Git workflow](../references/git-workflow.md) before creating or editing. The coordinator prepares a complete exact body file, validates it and verifies actual provider readback. Open a draft on the first authorized push and keep it current after every slice.
+
+## File Template
 
 ```markdown
-## Problem and result
+## Goal
 
-[Concrete trigger and before/after behavior. Explain why the change is needed and what the final implementation delivers.]
-
-## Scope
-
-- Phase / plan or maintenance assignment: [IDs and source]
-- Base and head revisions: [actual SHAs]
-- Included outcomes: [bounded list]
-- Remaining / explicitly deferred work: [items and authority, or none]
+[Concrete problem, trigger and resulting behavior for a reviewer without conversation context.]
 
 ## Changes
 
-[Reviewer-relevant implementation and ownership boundaries. Link significant decisions and optional ADR rationale.]
+[Final implementation and why it satisfies the bounded goal; link owning decisions and affected contracts.]
 
-## Validation
+## Requirements or Issues
 
-| Revision | Command argv / review | Observed result | Evidence |
-|----------|-----------------------|-----------------|----------|
-| [SHA] | [exact command] | [passed / failed / not run / not configured] | [receipt / report] |
+[Actual requirement IDs and canonical issues. Omit this section when none exist. Distinguish neutral references from closing references.]
 
-[State why any required validation remains pending and the exact next step. Never infer a pass from source inspection.]
+## Verification
 
-## Acceptance and documentation
+| Revision status | SHA |
+|-----------------|-----|
+| Candidate | [full current candidate SHA] |
+| Tested | [full actually tested SHA, or Not run] |
 
-- Acceptance: [evidence and required human decision / pending]
-- Documentation: [updated paths and verification / not applicable reason]
-- Verification report: [current report and covered digest / pending]
+| Exact command | Result | Evidence URL |
+|---------------|--------|--------------|
+| [One exact command/argv per row] | [observed pass/fail/not run/not configured] | [actual evidence URL matching tested SHA, or Pending reason] |
 
-## Issues and threats
+[Required human acceptance, independent audits, source/currentness limitations and user test ordering.]
 
-[Canonical issue links and stable finding/threat IDs with disposition. Use closing keywords only for work actually resolved by this PR.]
+## Known gaps
 
-## Risks and recovery
+[Remaining scope, failed/missing checks, pending human decisions and explicit authorized deferrals; use None only when supported.]
 
-[Material limitations, migration/deployment implications and exact rollback/recovery approach.]
+## Risks or rollback
+
+[Material behavior/deployment/migration risks and a practical concrete rollback/recovery action, with its limits.]
+
+| PLAN / Threat ID | Canonical issue | Outcome | Git state | Evidence |
+|------------------|-----------------|---------|-----------|----------|
+| [exact source / stable ID] | [verified URL] | [unresolved / mitigated / accepted / deferred] | [actual commit/integration state] | [actual evidence at tested revision] |
+
+[If no threats: None identified, with the exact inspected scope and evidence; do not use an empty unsupported assurance.]
 
 ## Stack
 
-[Parent PR / branch and dependency order, or none. Keep stacked bases current without merging without the user's instruction.]
+- stackParent: [actual parent PR/branch]
+- Target: [actual target branch]
+- DependsOn: [actual prerequisite PRs]
+- OwnChangeBoundary: [this PR's exact delta and exclusions]
+
+[Include Stack only when an actual stack exists.]
 ```
 
-## Authoring rules
+## Authoring and consumer contract
 
-- Describe the final implementation for a reviewer who has not read the conversation.
-- Use exact evidence from the tested revision; label checks deferred or not run honestly.
-- Keep meaningful failures, warnings, remaining scope and required human acceptance visible.
-- Preserve canonical issue and threat relationships. Avoid duplicate issues and unsupported close claims.
-- Use the body file directly; do not encode real newlines as literal backslash sequences.
-- Validate required sections before provider mutation, then read back the title, body, base, branch and draft state.
-- Open a draft on the first authorized push. Keep it current after each slice.
-- Ready/merge require current verification and required provider checks; merging additionally requires the user's explicit instruction.
+- Describe the final problem/result and implementation. Rewrite title/body when final scope changes; omit abandoned conversational history unless it explains a material tradeoff.
+- Preserve required Goal, Changes, Verification, Known gaps and Risks or rollback. Requirements or Issues is optional when none; Stack is conditional on a real stack.
+- Candidate and Tested SHA are distinct. Never imply checks cover later source without valid matching evidence. Keep one row per exact command, actual result and a usable evidence URL matching Tested SHA.
+- Label pending/deferred checks honestly. If the user orders every stacked draft PR before checks, keep every draft's validation pending until that final batch.
+- Preserve practical rollback and every threat's canonical relationship, lifecycle outcome, Git state and actual evidence. A merged commit or closed issue does not itself establish mitigation or human acceptance.
+- Record known gaps and required human decisions. An accepted/deferred risk is not a passed obligation or closure authority.
+- Validate the complete description before provider mutation, then read back title/body/base/head/draft state. An uncertain provider outcome requires inspection before retry.
+- Ready/merge require current passed verification, required provider checks and independent issue-link audit. Merge additionally requires the user's explicit instruction.
 
-## Good and bad validation
+## Good and bad evidence
 
-Bad: "Tests pass." This omits the revision, command and evidence.
+Good: Candidate and Tested show actual SHAs; each exact argv row records observed status and the evidence URL tied to Tested. Human visual acceptance stays pending until the real response.
 
-Good: "At [SHA], [exact argv] exited 0; receipt [path] covers [inputs]. Human acceptance for the visual flow remains pending."
+Bad: "Tests pass", unsupported "No risks", an inaccessible guessed evidence URL, or a timestamp substituted for the tested revision.
 
-Bad: "No tests needed" when the assignment explicitly requires tests.
+Good: a real stack names stackParent, Target, DependsOn and OwnChangeBoundary, allowing a reviewer to distinguish this PR's delta from prerequisites.
 
-Good: "Not run yet: the user requires all check execution after every stacked draft PR exists. This PR remains draft pending that final validation batch."
+Bad: add a Stack section to an unstacked PR or imply this PR independently delivers its parent's changes.

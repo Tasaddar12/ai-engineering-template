@@ -118,9 +118,9 @@ Output: [What artifacts will be created]
 </tasks>
 
 <threat_model>
-| Threat ID | Boundary / abuse case | Mitigation | Evidence | Canonical issue |
-|-----------|-----------------------|------------|----------|-----------------|
-| T-{phase}-01 | [untrusted input crossing a trust boundary] | [owned task] | [behavioral check] | Pending: [reason issue cannot yet be created] |
+| Threat ID | Category | Component | Severity | Disposition | Mitigation Plan |
+|-----------|----------|-----------|----------|-------------|-----------------|
+| T-{phase}-NN | [STRIDE/category] | [actual surface] | [assessment] | [mitigate / accept / defer / transfer with authority] | [mitigation and verified canonical reference, or Pending: reason; owner; next action] |
 </threat_model>
 
 Follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
