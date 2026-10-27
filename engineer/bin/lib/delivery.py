@@ -1,7 +1,9 @@
 """Validated draft pull requests and explicit merge authorization."""
 import json
+import os
 from pathlib import Path
 import re
+import subprocess
 import tempfile
 import time
 from . import config, gitops, models, verification, repository
@@ -10,8 +12,10 @@ from .core import Args, Failure, read, root, run, safe_path
 PR_FIELDS = "number,url,state,isDraft,headRefName,baseRefName,statusCheckRollup,mergeable,title,body"
 
 
-def gh(args, check=True):
-    return run(["gh", *args, "--repo", repository.identity()["slug"]], root(), check=check)
+def gh(args, check=True, timeout=60):
+    environment = {**os.environ, "GH_PROMPT_DISABLED": "1", "GIT_TERMINAL_PROMPT": "0"}
+    return run(["gh", *args, "--repo", repository.identity()["slug"]], root(), check=check,
+               timeout=timeout, env=environment, stdin=subprocess.DEVNULL)
 
 
 def view(branch):
@@ -44,9 +48,14 @@ def validate_body(body):
     if not body.strip():
         raise Failure("invalid-pr-body", "Pull request body cannot be empty")
     template = read(models.NAMESPACE/"engineer/templates/pull-request.md")
-    if not template:
-        raise Failure("pr-template-missing", "Install engineer/templates/pull-request.md before publishing")
-    required = re.findall(r"(?m)^##\s+(.+)$", template)
+    # Source checkouts can run before authoring templates are installed. These
+    # are publication fields, not the headings of the template's instructions.
+    required = ["Goal", "Changes", "Verification", "Known gaps", "Risks or rollback", "Stack"]
+    if template:
+        section = re.search(r"(?ms)^## File Template\s*\n+```(?:markdown)?\s*\n(.*?)^```", template)
+        if section:
+            required = [heading for heading in re.findall(r"(?m)^##\s+(.+)$", section[1])
+                        if heading != "Requirements or Issues"]
     missing = [heading for heading in required if not re.search(r"(?m)^##\s+"+re.escape(heading)+r"\s*$", body)]
     if missing:
         raise Failure("invalid-pr-body", "Missing template sections", missing=missing)
@@ -59,7 +68,7 @@ def command(args, action):
     if not branch:
         raise Failure("detached-head", "Delivery requires a named branch")
     if action == "sync":
-        run(["git", "fetch", "--prune", "origin"], root())
+        run(["git", "fetch", "--prune", "origin"], root(), timeout=60)
         return {"synced": True, "branch": branch}
     if action == "status":
         return view(branch) or {"exists": False, "branch": branch}
@@ -103,7 +112,8 @@ def command(args, action):
         raise Failure("unknown-delivery-action", action, 2)
     if run(["git", "status", "--porcelain"], root()).stdout:
         raise Failure("dirty-tree", "Commit changes before publishing")
-    base = args.get("base", config.lookup(config.load(), "git.base_branch", "main"))
+    existing = view(branch)
+    base = args.get("base", existing["baseRefName"] if existing else config.lookup(config.load(), "git.base_branch", "main"))
     run(["git", "rev-parse", base+"^{commit}"], root())
     title = args.get("title", run(["git", "log", "-1", "--format=%s"], root()).stdout.strip())
     body = read(safe_path(args.get("body-file"))) if args.has("body-file") else str(args.get("body", ""))
@@ -111,11 +121,11 @@ def command(args, action):
     if args.has("phase"):
         from .phase_issues import audit_pr
         audit_pr(args.get("phase"), body)
-    existing = view(branch)
     with tempfile.TemporaryDirectory(prefix="engineer-pr-") as temporary:
         body_path = Path(temporary)/"body.md"
         body_path.write_text(body, encoding="utf-8")
-        run(["git", "push", "--set-upstream", "origin", branch], root())
+        run(["git", "push", "--set-upstream", "origin", branch], root(), timeout=60,
+            env={**os.environ, "GIT_TERMINAL_PROMPT": "0"}, stdin=subprocess.DEVNULL)
         if existing:
             gh(["pr", "edit", str(existing["number"]), "--base", base, "--title", title, "--body-file", str(body_path)])
         else:

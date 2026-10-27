@@ -15,6 +15,14 @@ MUTATIONS = {
 
 
 def mutates(verb):
+    if verb.startswith(("pipeline.", "manager.")):
+        return verb.split(".", 1)[1] not in ("status", "init", "dashboard")
+    if verb.startswith("idea."):
+        return verb.split(".", 1)[1] not in ("list", "get", "match")
+    if verb == "seed-enrich":
+        return True
+    if verb.startswith("issue."):
+        return verb.split(".", 1)[1] in ("capture", "finding", "close", "reopen", "link")
     if verb in MUTATIONS:
         return True
     if verb.startswith(("session.", "worktree.", "pr.")):
