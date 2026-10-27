@@ -26,8 +26,8 @@ Output: {phase_num}-UAT.md tracking all test results. If issues found: diagnosed
 </objective>
 
 <execution_context>
-@engineer/workflows/verify-work.md
-@engineer/templates/UAT.md
+@~/.claude/engineer/workflows/verify-work.md
+@~/.claude/engineer/templates/UAT.md
 </execution_context>
 
 <context>

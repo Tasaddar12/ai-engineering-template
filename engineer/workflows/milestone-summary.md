@@ -1,4 +1,4 @@
-@engineer/references/response-language-directive.md
+@~/.claude/engineer/references/response-language-directive.md
 
 # Milestone Summary Workflow
 

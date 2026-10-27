@@ -36,8 +36,8 @@ Create executable phase prompts (PLAN.md files) for a roadmap phase with integra
 </objective>
 
 <execution_context>
-@engineer/workflows/plan-phase.md
-@engineer/references/ui-brand.md
+@~/.claude/engineer/workflows/plan-phase.md
+@~/.claude/engineer/references/ui-brand.md
 </execution_context>
 
 <context>

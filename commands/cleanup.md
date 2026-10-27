@@ -16,7 +16,7 @@ Use when `.planning/phases/` has accumulated directories from past milestones.
 </objective>
 
 <execution_context>
-@engineer/workflows/cleanup.md
+@~/.claude/engineer/workflows/cleanup.md
 </execution_context>
 
 <process>

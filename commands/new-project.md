@@ -36,11 +36,11 @@ Initialize a new project through unified flow: questioning → research (optiona
 </objective>
 
 <execution_context>
-@engineer/workflows/new-project.md
-@engineer/references/questioning.md
-@engineer/references/ui-brand.md
-@engineer/templates/project.md
-@engineer/templates/requirements.md
+@~/.claude/engineer/workflows/new-project.md
+@~/.claude/engineer/references/questioning.md
+@~/.claude/engineer/references/ui-brand.md
+@~/.claude/engineer/templates/project.md
+@~/.claude/engineer/templates/requirements.md
 </execution_context>
 
 <process>

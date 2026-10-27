@@ -143,7 +143,6 @@ passed as one shell argument. `--raw`, `--json`, and `--pick FIELD` are global.
 | `project-instruction-file` | `[claude|codex]` | host instruction filename |
 | `generate-claude-md` | `[--output PATH]` | `written, path`; preserves unmanaged content |
 | `resolve-agent` | `ROLE [--host claude|codex]` | name/agent/model/effort/host/inherit/effort_inherit/model_source/effort_source/native_file; raw prints name; absent role fails |
-| `resolve-model`, `resolve-effort` | `ROLE [--host claude|codex]` | named value/source/inherit/host/agent; raw prints scalar; fixed scout/fixer policy applies |
 | `agent-skills` | `ROLE` | ready-to-inject `<agent_skills>` block |
 | `agent.classify-failure` | `-- RETURN_BODY...` | `kind, classification, retryable, wait_hint` |
 | `dispatch-isolation` | `[--phase N --plan P]` | `worktree`; unavailable Git isolation fails |
@@ -312,10 +311,10 @@ All `init.*` results include these keys:
 Role maps cover executor, planner, verifier, phase-researcher, plan-checker,
 code-reviewer, code-fixer, doc-writer, doc-verifier, integration-checker,
 security-auditor, nyquist-auditor, ui-researcher, ui-checker, ui-auditor, scout,
-targeted-fixer, and codebase-mapper. A missing required role fails explicitly.
+code-fixer, and codebase-mapper. A missing required role fails explicitly.
 Codex reads native TOML model/effort definitions from
 `bin/install-assets/codex-agents` in source, or the installed `.codex/agents`.
-Claude reads `agents.<final-role>` configuration. Scout and targeted-fixer have
+Claude reads `agents.<final-role>` configuration. Scout and code-fixer have
 fixed Codex `gpt-6-luna`/`high` and Claude `haiku`/`inherit` policies.
 
 `init.phase-op`, `init.plan-phase`, `init.execute-phase`, `init.verify-work`,

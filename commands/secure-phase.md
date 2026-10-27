@@ -28,7 +28,7 @@ Output: updated SECURITY.md.
 </objective>
 
 <execution_context>
-@engineer/workflows/secure-phase.md
+@~/.claude/engineer/workflows/secure-phase.md
 </execution_context>
 
 <context>
