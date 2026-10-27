@@ -13,12 +13,12 @@ def quick_dir(identifier):
     candidates = list((records.planning()/"quick").glob("*/QUICK.md"))
     matches = [path for path in candidates if path.parent.name == requested]
     if not matches and re.fullmatch(r"[0-9]+", requested):
-        matches = [path for path in candidates if path.parent.name.split("-")[0] == requested.zfill(3)]
+        matches = [path for path in candidates if not re.match(r"^[0-9]{6}-[0-9]{3}-", path.parent.name) and path.parent.name.split("-")[0] == requested.zfill(3)]
     if len(matches) != 1:
         raise Failure("quick-not-found", str(identifier))
     metadata, _ = split_frontmatter(read(matches[0]))
     identity = str(metadata.get("id", ""))
-    if identity != matches[0].parent.name and identity.zfill(3) != matches[0].parent.name.split("-")[0]:
+    if identity != matches[0].parent.name and (re.match(r"^[0-9]{6}-[0-9]{3}-", matches[0].parent.name) or identity.zfill(3) != matches[0].parent.name.split("-")[0]):
         raise Failure("quick-identity-mismatch", "QUICK.md identity disagrees with its directory")
     return matches[0].parent
 

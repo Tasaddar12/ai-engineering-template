@@ -76,7 +76,7 @@ def check(args, kind):
             verify = task["verify"]
             automated = re.findall(r"<automated\b[^>]*>(.*?)</automated>", verify, re.S)
             command = "\n".join(value.strip() for value in automated) if automated else verify
-            if kind == "failure-directions" and automated:
+            if kind == "failure-directions" and (automated or "<fails_when" in verify):
                 rows = failing_directions(verify)
                 for row in rows:
                     entry = {"plan": str(path), "task": index, **row}

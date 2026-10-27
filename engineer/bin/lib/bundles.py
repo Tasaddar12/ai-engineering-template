@@ -183,20 +183,29 @@ def init(args, kind):
                 command = automated[1].strip() if automated else command
                 if command:
                     commands.append({"phase": prior.name.split("-")[0], "plan": plan.stem.removesuffix("-PLAN"), "task": task["name"], "command": command})
-        if commands:
+        observed = []
+        for summary in sorted(prior.glob("*-SUMMARY.md")):
+            relative = summary.relative_to(root()).as_posix()
+            if run(["git", "ls-files", "--error-unmatch", "--", relative], root(), check=False).returncode or run(["git", "status", "--porcelain", "--", relative], root()).stdout:
+                continue
+            metadata, body = split_frontmatter(read(summary))
+            if metadata.get("status") != "complete":
+                continue
+            entries = list(metadata.get("checks_run", [])) if isinstance(metadata.get("checks_run", []), list) else []
+            checks = re.search(r"(?ms)^## Checks\s*\n(.*?)(?=^## |\Z)", body)
+            if checks:
+                for line in checks[1].splitlines():
+                    cells = [cell.strip().strip("` ") for cell in line.strip().strip("|").split("|")]
+                    if len(cells) == 4 and re.fullmatch(r"[a-f0-9]{40,64}", cells[0]) and cells[2].strip("* ").casefold() in ("pass", "passed"):
+                        entries.append({"revision": cells[0], "command": cells[1], "status": "passed", "output_evidence": cells[3]})
+            for evidence in entries:
+                if isinstance(evidence, dict) and evidence.get("status") in ("pass", "passed") and evidence.get("command") and evidence.get("revision"):
+                    revision = str(evidence["revision"])
+                    if re.fullmatch(r"[a-f0-9]{40,64}", revision) and run(["git", "merge-base", "--is-ancestor", revision, "HEAD"], root(), check=False).returncode == 0:
+                        observed.append({"phase": prior.name.split("-")[0], "plan": summary.stem.removesuffix("-SUMMARY"), "command": evidence["command"], "revision": revision, "evidence": relative})
+        if commands or observed:
             packet["prior_verify_candidates"] = commands
-            for summary in sorted(prior.glob("*-SUMMARY.md")):
-                relative = summary.relative_to(root()).as_posix()
-                if run(["git", "ls-files", "--error-unmatch", "--", relative], root(), check=False).returncode or run(["git", "status", "--porcelain", "--", relative], root()).stdout:
-                    continue
-                metadata, _ = split_frontmatter(read(summary))
-                if metadata.get("status") != "complete":
-                    continue
-                for evidence in metadata.get("checks_run", []):
-                    if isinstance(evidence, dict) and evidence.get("status") in ("pass", "passed") and evidence.get("command") and evidence.get("revision"):
-                        revision = str(evidence["revision"])
-                        if run(["git", "merge-base", "--is-ancestor", revision, "HEAD"], root(), check=False).returncode == 0:
-                            packet["prior_verify_commands"].append({"phase": prior.name.split("-")[0], "plan": summary.stem.removesuffix("-SUMMARY"), "command": evidence["command"], "revision": revision, "evidence": relative})
+            packet["prior_verify_commands"] = observed
             break
     threats = {}
     for plan in index["plans"]:
@@ -205,12 +214,14 @@ def init(args, kind):
         declared = threat_model.get("threats", []) if isinstance(threat_model, dict) else threat_model if isinstance(threat_model, list) else []
         identifiers = {str(item["id"]) for item in declared if isinstance(item, dict) and "id" in item}
         identifiers.update(re.findall(r'<threat\b[^>]*\bid=["\']([^"\']+)', body))
-        table = re.search(r"(?ms)^\|\s*Threat ID\s*\|\s*Category\s*\|\s*Component\s*\|\s*Severity\s*\|\s*Disposition\s*\|\s*Mitigation Plan\s*\|\s*\n((?:\|[^\n]*\n?)*)", body)
-        if table:
+        tables = re.finditer(r"(?ms)^\|\s*Threat ID\s*\|\s*Category\s*\|\s*Component\s*\|\s*Severity\s*\|\s*Disposition\s*\|\s*Mitigation Plan\s*\|\s*\n((?:\|[^\n]*\n?)*)", body)
+        for table in tables:
             for row in table[1].splitlines():
                 cells = [cell.strip() for cell in row.strip().strip("|").split("|")]
                 if len(cells) == 6 and not re.fullmatch(r":?-+:?", cells[0]):
                     identifier = cells[0].strip("` ")
+                    stable = re.search(r"\bT-[A-Za-z0-9.-]+", identifier)
+                    identifier = stable[0] if stable else identifier
                     if identifier and not identifier.startswith("["):
                         identifiers.add(identifier)
         for identifier in identifiers:

@@ -72,7 +72,7 @@ class SessionCase(unittest.TestCase):
                          + completed.stderr)
         if completed.returncode:
             failure = json.loads(completed.stderr.splitlines()[-1])
-            payload = {"ok": False, "code": failure["error"], "error": json.dumps(failure)}
+            payload = {**failure, "ok": False, "code": failure["error"], "error": json.dumps(failure)}
         else:
             payload = {"ok": True, **json.loads(completed.stdout)}
         if expect_ok:

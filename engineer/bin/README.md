@@ -519,7 +519,7 @@ worktree mode; no supported setting disables isolation.
 | `context_path`, `research_path`, `verification_path`, `validation_path`, `ui_spec_path`, `security_path`, `review_path`, `reviews_path`, `uat_path` | absolute existing path or null |
 | `prior_context` | prior phase SUMMARY path/content packets |
 | `prior_verify_candidates` | unexecuted commands proposed by the nearest prior PLAN, with phase/plan/task/command |
-| `prior_verify_commands` | committed complete SUMMARY `checks_run` entries with passing status, command, ancestor revision and evidence path; independent of context window |
+| `prior_verify_commands` | committed complete SUMMARY `checks_run` entries or canonical Checks table rows with passing status, command, ancestor revision and evidence path; independent of context window |
 | `threat_id_duplicates`, `threat_id_duplicate_count` | declared threat IDs appearing in multiple plans and their plan IDs |
 | `granularity` | configured planning granularity, default standard |
 | `code_review`, `code_review_depth`, `code_review_depth_overrides` | configured review policy |

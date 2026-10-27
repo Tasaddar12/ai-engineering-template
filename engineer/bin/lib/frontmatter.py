@@ -80,6 +80,12 @@ def path_errors(path, metadata, schema):
         matching = tuple(map(int, identifier.split("."))) == tuple(map(int, expected.split(".")))
     except ValueError:
         matching = False
+    if kind == "quick":
+        # A date prefix is shared by many tasks. Bind the complete owner ID.
+        quick_meta, _ = split_frontmatter(read(path.parent/"QUICK.md"))
+        actual = str(quick_meta.get("id", parts[1] if re.match(r"^[0-9]{6}-[0-9]{3}-", parts[1]) else expected))
+        declared = str(metadata.get("quick", ""))
+        matching = declared == actual if not actual.isdigit() else declared.zfill(3) == actual.zfill(3)
     result = [] if matching and ("phase" if kind == "quick" else "quick") not in metadata else ["Record identity disagrees with its actual "+kind+" directory"]
     if kind == "phase" and schema in ("plan", "summary"):
         basename = path.name.removesuffix("-"+schema.upper()+".md")
