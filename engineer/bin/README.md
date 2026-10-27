@@ -14,6 +14,22 @@ use `merge-wave` and require a committed complete SUMMARY. The coordinator must
 confirm the worker host has stopped before either merge. Cleanup preserves
 unmerged resources and refuses dirty workers, moved HEADs and missing ancestry.
 
+`verification.run-checks` accepts argv arrays and check mappings (`argv`, `id`,
+`sources`, `environment`, `cwd`, `timeout`, `revision`, `reuse`, `independent`,
+`resources`). The `command` and `inputs` spellings remain accepted aliases.
+String commands are split into argv without invoking a shell. Independent
+checks use `verification.max_parallel`; ordinary checks and shared resources
+form barriers. The full batch joins before accepting evidence. Source bytes,
+source stat changes, configuration, selected environment and HEAD are frozen;
+input drift invalidates every result, including reused passes. Environment
+values appear only in a digest unless the check itself prints them. Receipts
+under locally ignored `.planning/verification-receipts/` contain checksummed
+results and unique complete logs; malformed receipts or changed logs rerun.
+Atomic publication is serialized across writers. `verification.check-status`
+returns only valid current fingerprints in the actual revision's ancestry.
+`verification.current` permits only report-only commits after the final batch;
+it inspects every intervening commit, catching source changes later reverted.
+
 Use Python 3.11 or newer. The runtime uses only the standard library. The POSIX
 shim selects a namespace virtual environment, a project virtual environment, or
 `python3` / `python` and executes the CLI in isolated mode.
