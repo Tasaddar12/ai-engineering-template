@@ -189,7 +189,7 @@ class InstallerTests(unittest.TestCase):
             self.target = self.base / host
             legacy = self.target / ".ai"
             legacy.mkdir(parents=True)
-            (legacy / "RULES.md").write_text("Custom legacy rules\n")
+            (legacy / "RULES.md").write_bytes(b"Custom legacy rules\n")
             result = self.install("--host", host, "--migrate-existing", "--no-hooks")
             self.assertEqual(0, result.returncode, result.stderr)
             manifest = json.loads((self.target / ("." + host) / "workflow-ownership.json").read_bytes())

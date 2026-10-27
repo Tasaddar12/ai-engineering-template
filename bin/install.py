@@ -18,6 +18,9 @@ import tomllib
 
 # Preview and migration imports must never write into the installed tree.
 sys.dont_write_bytecode = True
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8")
 
 PREFIXES = ("agents", "commands", "engineer", "hooks", "scripts", "skills", "bin")
 HOSTS = ("claude", "codex")
@@ -596,7 +599,7 @@ def fetch(source, revision, destination_root):
     if not revision:
         raise ValueError("a pinned --ref is required")
     subprocess.run(["git", "clone", "--quiet", "--no-checkout", "--config", "core.autocrlf=false", "--config", "core.eol=lf", "--", str(source), str(destination_root)], check=True, capture_output=True)
-    resolved = subprocess.run(["git", "rev-parse", "--verify", revision + "^{commit}"], cwd=destination_root, check=True, capture_output=True, text=True).stdout.strip()
+    resolved = subprocess.run(["git", "rev-parse", "--verify", revision + "^{commit}"], cwd=destination_root, check=True, capture_output=True, text=True, encoding="utf-8").stdout.strip()
     subprocess.run(["git", "checkout", "--quiet", "--detach", resolved], cwd=destination_root, check=True, capture_output=True)
     return resolved
 
@@ -630,7 +633,7 @@ def main(argv=None):
         ancestor = target
         while not ancestor.exists() and ancestor != ancestor.parent:
             ancestor = ancestor.parent
-        probe = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=ancestor, capture_output=True, text=True)
+        probe = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=ancestor, capture_output=True, text=True, encoding="utf-8")
         if probe.returncode == 0 and Path(probe.stdout.strip()).resolve() != target:
             raise ValueError("target is inside another repository; install at its root")
         with tempfile.TemporaryDirectory(prefix="engineer-install-") as temp:
