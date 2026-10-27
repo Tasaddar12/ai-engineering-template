@@ -207,7 +207,7 @@ fix_hint: "Use 8px or 12px instead"
 - shadcn not initialized and no manual design system declared
 - No registry section present (section omitted entirely)
 
-> Skip this dimension entirely if `workflow.ui_safety_gate` is explicitly set to `false` in `.planning/config.yaml`. If the key is absent, treat as enabled.
+> If `workflow.ui_safety_gate` is explicitly false in `.planning/config.yaml`, skip the registry assessment and return dimension 6 as `DISABLED` with the actual config citation and `ui_safety_gate: false` in evidence. Preserve its explicit policy record among the seven dimensions. Missing key means enabled; DISABLED is invalid for any other dimension or enabled policy. This opt-out cannot waive another required threat or human acceptance.
 
 **Example issues:**
 ```yaml

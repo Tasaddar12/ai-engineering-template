@@ -36,7 +36,7 @@ class UiGate(RuntimeCase):
         self.spec.write_text(self.spec_text(), encoding="utf-8")
         revision = self.commit_inputs("record design inputs")
         payload = {"metadata": self.METADATA, "body": self.BODY}
-        return {"role": "ui-checker", "verdict": "APPROVED", "phase": "01",
+        return {"ui_safety_gate": True, "role": "ui-checker", "verdict": "APPROVED", "phase": "01",
                 "spec_path": self.spec.relative_to(self.root).as_posix(),
                 "context_path": self.context.relative_to(self.root).as_posix(),
                 "reviewed_revision": revision,
@@ -184,3 +184,17 @@ class UiGate(RuntimeCase):
         evidence["context_path"] = ".planning/phases/02-other/02-CONTEXT.md"
         self.approve(evidence)
         self.assertIn("context_path", self.blocked()["reason"])
+
+    def test_disabled_registry_dimension_requires_actual_disabled_policy(self):
+        evidence = self.reviewed_contract()
+        evidence["dimensions"][5]["verdict"] = "DISABLED"
+        self.approve(evidence)
+        self.assertIn("blocking or missing", self.blocked()["reason"])
+
+    def test_explicit_safety_opt_out_keeps_seven_dimension_policy_record(self):
+        self.cli("config-set", "workflow.ui_safety_gate", "false")
+        evidence = self.reviewed_contract()
+        evidence["ui_safety_gate"] = False
+        evidence["dimensions"][5] = {"dimension": 6, "verdict": "DISABLED", "evidence": ".planning/config.yaml: workflow.ui_safety_gate is explicitly false"}
+        self.approve(evidence)
+        self.assertFalse(self.cli("check.ui-plan-gate", "1")["blocked"])

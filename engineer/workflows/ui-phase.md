@@ -416,6 +416,7 @@ mapping (replace every value from actual evidence; never manufacture a dispatch)
 ui_checker:
   role: ui-checker
   verdict: APPROVED
+  ui_safety_gate: true # actual resolved policy; absent config defaults true
   phase: "01" # actual canonical phase number, including decimal identity
   spec_path: .planning/phases/01-example/01-UI-SPEC.md # actual relative path
   context_path: .planning/phases/01-example/01-CONTEXT.md # actual relative path
@@ -433,6 +434,7 @@ ui_checker:
       verdict: PASS # PASS or FLAG, never BLOCK under APPROVED
       evidence: <actual cited contract observation>
     # Include EXACTLY one actual evidenced record for EACH dimension 1 through 7.
+    # Only dimension 6 may be DISABLED, and only under actual ui_safety_gate: false.
 ```
 
 For spec_digest, parse frontmatter and body with the runtime's safe subset. Hash

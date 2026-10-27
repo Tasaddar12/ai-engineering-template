@@ -43,7 +43,10 @@ def _blob(revision, path):
 def _evidence_error(evidence, phase, spec_path, context_path, spec, context, roadmap):
     if not isinstance(evidence, dict):
         return "Missing independent ui-checker evidence"
-    required = {"role": "ui-checker", "verdict": "APPROVED", "phase": phase,
+    safety = config.lookup(config.load(), "workflow.ui_safety_gate", True)
+    if type(safety) is not bool:
+        return "workflow.ui_safety_gate must be boolean"
+    required = {"ui_safety_gate": safety, "role": "ui-checker", "verdict": "APPROVED", "phase": phase,
                 "spec_path": spec_path, "context_path": context_path,
                 "spec_digest": contract_digest(spec), "context_digest": text_digest(context),
                 "roadmap_digest": text_digest(roadmap)}
@@ -68,7 +71,8 @@ def _evidence_error(evidence, phase, spec_path, context_path, spec, context, roa
         if type(identity) is not int or identity not in range(1, 8) or identity in seen:
             return "UI checker dimensions must have unique IDs 1 through 7"
         seen.add(identity)
-        if item.get("verdict") not in ("PASS", "FLAG"):
+        disabled_safety = identity == 6 and safety is False and item.get("verdict") == "DISABLED"
+        if item.get("verdict") not in ("PASS", "FLAG") and not disabled_safety:
             return "UI checker has a blocking or missing dimension verdict"
         if not isinstance(item.get("evidence"), str) or not item["evidence"].strip():
             return "UI checker dimensions require cited evidence"
