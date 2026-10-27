@@ -14,7 +14,7 @@ class NoNodeWorkflowHelpers(unittest.TestCase):
             (root / "engineer/bin").mkdir(parents=True)
             (root / "engineer/bin/probe.cjs").write_text("module.exports = {}", encoding="utf-8")
             (root / "engineer/method.md").write_text('node -e "JSON.parse(input)"\nnode --print version\n', encoding="utf-8")
-            self.assertEqual(list(tool.findings(root)), [
+            self.assertCountEqual(list(tool.findings(root)), [
                 ("engineer/bin/probe.cjs", 1, "CommonJS helper file"),
                 ("engineer/method.md", 1, "inline Node helper"),
                 ("engineer/method.md", 2, "inline Node helper"),

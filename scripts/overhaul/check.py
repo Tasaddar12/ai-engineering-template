@@ -1,10 +1,30 @@
 """Preview phase check commands; use --apply to execute the selected batch."""
 from pathlib import Path
+import os
 import re
+import shutil
 import subprocess
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import main_guard, parser, plan
+
+
+def bash_executable():
+    if os.name != "nt":
+        selected = shutil.which("bash")
+        if selected:
+            return selected
+        raise ValueError("Bash is required to execute phase check blocks")
+    # System32/bash.exe is a WSL launcher, not a shell for native Windows paths.
+    git = shutil.which("git")
+    roots = [Path(git).parent.parent] if git else []
+    roots.extend(Path(base) / "Git" for base in
+                 (os.environ.get("ProgramFiles"), os.environ.get("ProgramFiles(x86)")) if base)
+    for root in roots:
+        candidate = root / "usr/bin/bash.exe"
+        if candidate.is_file():
+            return str(candidate)
+    raise ValueError("Git Bash is required to execute native Windows phase checks")
 
 
 def check_blocks(text):
@@ -55,7 +75,7 @@ def main():
         if not args.apply:
             print(f"WOULD RUN [{phase}] {line}")
             continue
-        completed = subprocess.run(["bash", "-c", line], cwd=args.root)
+        completed = subprocess.run([bash_executable(), "-c", line], cwd=args.root)
         ok = completed.returncode == 0
         print(f"{'PASS' if ok else 'FAIL'} [{phase}] {line}", flush=True)
         failed |= not ok
