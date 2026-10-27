@@ -4,30 +4,30 @@ Read [the engineering rules](../engineer/RULES.md) and [agent adaptation](../eng
 
 ## Roles and evidence flow
 
-| Role | Dispatcher | Input â†’ result â†’ consumer |
+| Role | Dispatcher | Input → result → consumer |
 |---|---|---|
-| [Coordinator](coordinator.md) | Human's selected command/workflow | Authorized outcome and records â†’ assignments, joined evidence, shared-record updates and delivery â†’ human |
-| [Executor](executor.md) | execute-phase / quick coordinator | Assigned PLAN, isolated checkout and owned paths â†’ committed implementation plus SUMMARY â†’ coordinator |
-| [Planner](planner.md) | plan-phase / quick coordinator | Approved CONTEXT, requirements and research â†’ committed PLAN/VALIDATION and shared-record proposals â†’ coordinator and plan-checker |
-| [Plan checker](plan-checker.md) | plan-phase coordinator | Captured plans and authority evidence â†’ PLAN REVIEW, approved or needs-revision â†’ coordinator |
-| [Phase researcher](phase-researcher.md) | plan-phase / next coordinator | Bounded questions and repository scope â†’ committed RESEARCH, sources and unresolved choices â†’ planner via coordinator |
-| [Verifier](verifier.md) | verify-work / execute-phase coordinator | Captured revision, acceptance and receipts â†’ provisional goal-backward report â†’ coordinator for joined verdict |
-| [Code reviewer](code-reviewer.md) | execute-phase / code-review coordinator | Captured revision and explicit diff base â†’ complete review with stable findings â†’ coordinator for capture |
-| [Debugger](debugger.md) | next / verify-work coordinator | Symptom and scoped evidence â†’ demonstrated root cause and bounded correction proposal â†’ coordinator |
-| [Doc writer](doc-writer.md) | execute-phase / documentation coordinator | Assigned documentation paths and source interfaces â†’ committed documents and SUMMARY â†’ coordinator |
-| [Doc verifier](doc-verifier.md) | verification coordinator | Documentation and captured source revision â†’ complete claim JSON with FAIL/UNVERIFIABLE evidence â†’ coordinator |
-| [Integration checker](integration-checker.md) | verification coordinator | Component boundaries and acceptance â†’ traced success/error/empty paths and UNVERIFIED scope â†’ coordinator |
-| [Codebase mapper](codebase-mapper.md) | onboard / research coordinator | Validated source scope and owned map paths â†’ committed repository map â†’ coordinator |
-| [Scout](scout.md) | Coordinator or specifically permitted role | One named discovery question â†’ cited read-only evidence packet â†’ named consumer |
-| [Targeted fixer](targeted-fixer.md) | Bounded correction coordinator | Stable finding and required property, isolated assignment â†’ committed bounded repair and SUMMARY â†’ coordinator |
-| [UI researcher](ui-researcher.md) | ui-phase coordinator | Approved UI decisions and assigned output â†’ committed UI-SPEC â†’ coordinator and ui-checker |
-| [UI checker](ui-checker.md) | ui-phase coordinator | Captured UI-SPEC and CONTEXT â†’ evidenced read-only verdict â†’ coordinator |
-| [UI auditor](ui-auditor.md) | ui-review coordinator | Running UI, acceptance and optional external capture_dir â†’ returned UI-REVIEW and external captures â†’ coordinator |
-| [DOM verifier](dom-verifier.md) | verify-work coordinator | Running URL and live-DOM criteria â†’ returned DOM-VERIFY observations â†’ coordinator |
-| [Security auditor](security-auditor.md) | secure-phase coordinator | Threat register and captured implementation â†’ SECURED / OPEN_THREATS / ESCALATE evidence â†’ coordinator, which writes SECURITY |
-| [Nyquist auditor](nyquist-auditor.md) | Validation-gap coordinator | Assigned test gaps, test/fixture paths and optional VALIDATION path â†’ committed behavioral tests and SUMMARY â†’ coordinator |
-| [Pattern mapper](pattern-mapper.md) | plan-phase coordinator | Scoped pattern question and assigned artifact path â†’ committed PATTERNS â†’ planner via coordinator |
-| [Code fixer method](code-fixer.md) | Loaded by targeted-fixer for code-review --fix | Assigned review findings â†’ parsing, bounded repair and REVIEW-FIX method â†’ coordinator |
+| [Coordinator](coordinator.md) | Human's selected command/workflow | Authorized outcome and records → assignments, joined evidence, shared-record updates and delivery → human |
+| [Executor](executor.md) | execute-phase / quick coordinator | Assigned PLAN, isolated checkout and owned paths → committed implementation plus SUMMARY → coordinator |
+| [Planner](planner.md) | plan-phase / quick coordinator | Approved CONTEXT, requirements and research → committed PLAN/VALIDATION and shared-record proposals → coordinator and plan-checker |
+| [Plan checker](plan-checker.md) | plan-phase coordinator | Captured plans and authority evidence → PLAN REVIEW, approved or needs-revision → coordinator |
+| [Phase researcher](phase-researcher.md) | plan-phase / next coordinator | Bounded questions and repository scope → committed RESEARCH, sources and unresolved choices → planner via coordinator |
+| [Verifier](verifier.md) | verify-work / execute-phase coordinator | Captured revision, acceptance and receipts → provisional goal-backward report → coordinator for joined verdict |
+| [Code reviewer](code-reviewer.md) | execute-phase / code-review coordinator | Captured revision and explicit diff base → complete review with stable findings → coordinator for capture |
+| [Debugger](debugger.md) | next / verify-work coordinator | Symptom and scoped evidence → demonstrated root cause and bounded correction proposal → coordinator |
+| [Doc writer](doc-writer.md) | execute-phase / documentation coordinator | Assigned documentation paths and source interfaces → committed documents and SUMMARY → coordinator |
+| [Doc verifier](doc-verifier.md) | verification coordinator | Documentation and captured source revision → complete claim JSON with FAIL/UNVERIFIABLE evidence → coordinator |
+| [Integration checker](integration-checker.md) | verification coordinator | Component boundaries and acceptance → traced success/error/empty paths and UNVERIFIED scope → coordinator |
+| [Codebase mapper](codebase-mapper.md) | onboard / research coordinator | Validated source scope and owned map paths → committed repository map → coordinator |
+| [Scout](scout.md) | Coordinator or specifically permitted role | One named discovery question → cited read-only evidence packet → named consumer |
+| [Targeted fixer](targeted-fixer.md) | Bounded correction coordinator | Stable finding and required property, isolated assignment → committed bounded repair and SUMMARY → coordinator |
+| [UI researcher](ui-researcher.md) | ui-phase coordinator | Approved UI decisions and assigned output → committed UI-SPEC → coordinator and ui-checker |
+| [UI checker](ui-checker.md) | ui-phase coordinator | Captured UI-SPEC and CONTEXT → evidenced read-only verdict → coordinator |
+| [UI auditor](ui-auditor.md) | ui-review coordinator | Running UI, acceptance and optional external capture_dir → returned UI-REVIEW and external captures → coordinator |
+| [DOM verifier](dom-verifier.md) | verify-work coordinator | Running URL and live-DOM criteria → returned DOM-VERIFY observations → coordinator |
+| [Security auditor](security-auditor.md) | secure-phase coordinator | Threat register and captured implementation → SECURED / OPEN_THREATS / ESCALATE evidence → coordinator, which writes SECURITY |
+| [Nyquist auditor](nyquist-auditor.md) | Validation-gap coordinator | Assigned test gaps, test/fixture paths and optional VALIDATION path → committed behavioral tests and SUMMARY → coordinator |
+| [Pattern mapper](pattern-mapper.md) | plan-phase coordinator | Scoped pattern question and assigned artifact path → committed PATTERNS → planner via coordinator |
+| [Code fixer method](code-fixer.md) | Loaded by targeted-fixer for code-review --fix | Assigned review findings → parsing, bounded repair and REVIEW-FIX method → coordinator |
 
 Pattern-mapper is read-only for source inspection; its explicitly assigned evidence artifact is its sole write scope. Debugger is read-only unless an owned debug-record or source repair assignment supplies write authority. Code-fixer is method source rather than an extra dispatch identity: dispatch targeted-fixer for bounded review repairs.
 

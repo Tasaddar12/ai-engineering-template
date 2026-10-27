@@ -2,7 +2,7 @@
 
 The reusable authoring templates live under [`engineer/templates/`](../engineer/templates/). Read the full selected template, including its frontmatter, teaching text, detailed examples, counterexamples and consumer notes. This guide helps select and connect artifacts; it does not replace their instructions. Keep the adopting project's identity unfilled until onboarding.
 
-Source attribution and revision history live in [third-party notices](../THIRD-PARTY-NOTICES.md). The [agent catalog](../agents/README.md) supplies the assigned methods. The [truth map](../engineer/truth-map.md) identifies authoritative owners. Project decisions belong in project records, not copied guide text.
+Source attribution and revision history live in [third-party notices](../THIRD-PARTY-NOTICES.md). The [agent catalog](../agents/AGENT.md) supplies the assigned methods. The [truth map](../engineer/truth-map.md) identifies authoritative owners. Project decisions belong in project records, not copied guide text.
 
 ## Authoring sequence
 

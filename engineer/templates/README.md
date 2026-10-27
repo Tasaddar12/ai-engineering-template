@@ -13,30 +13,15 @@ These files live directly at `.planning/` — not inside phase subdirectories.
 | File | Template | Produced by | Purpose |
 |------|----------|-------------|---------|
 | `PROJECT.md` | `project.md` | `/onboard` | Project identity, goals, requirements summary |
-| `ROADMAP.md` | `roadmap.md` | `/new-milestone`, `/onboard` | Phase plan with milestones and progress tracking |
-| `STATE.md` | `state.md` | `/onboard`, `/health --repair` | Current session state, active phase, last activity |
-| `REQUIREMENTS.md` | `requirements.md` | `/new-milestone` | Functional requirements with traceability |
+| `ROADMAP.md` | `roadmap.md` | `/onboard`, `/phase`, `/new-milestone` | Phase plan with milestones and progress tracking |
+| `STATE.md` | `state.md` | `/onboard` and runtime session/phase operations | Current session state, active phase and derived position |
+| `REQUIREMENTS.md` | `requirements.md` | `/onboard` | Functional requirements with traceability |
 | `MILESTONES.md` | `milestone.md` | `/complete-milestone` | Log of completed milestones with accomplishments |
-| `BACKLOG.md` | *(inline)* | `/capture --backlog` | Pending ideas and deferred work |
-| `LEARNINGS.md` | *(inline)* | `/extract-learnings`, `/execute-phase` (gated: `features.global_learnings`) | Phase retrospective learnings for future plans |
-| `THREADS.md` | *(inline)* | `/thread` | Persistent discussion threads |
-| `config.yaml` | `config.yaml` | `/onboard`, `/health --repair` | Project-specific workflow configuration |
-| `AGENTS.md` | *(inline)* | `/profile` | Auto-assembled Claude Code context file |
-| `RETROSPECTIVE.md` | *(inline)* | `/complete-milestone` | Living milestone retrospective updated at each milestone close |
-| `WINDOWS.md` | *(none)* | broken-windows ledger (the Python runtime artifact registry) | Tracked known-broken items pending resolution (#3224) |
-| `STATE-ARCHIVE.md` | *(none)* | guarded state retirement operations | Pruned historical STATE.md entries |
-| `milestone.lock` | *(none)* | the Python runtime artifact registry | Persistent milestone (phase + session) claim, unlike the transient `STATE.md.lock`/`WAITING.json` (#3311) |
-| `state.json` | *(none)* | the Python runtime artifact registry | Machine-readable state contract published at step boundaries (#3227) |
-| `skill-manifest.json` | *(none)* | the installed skill manifest producer | Project-scoped skill manifest (#3964) |
-| `PATTERNS.md` | *(inline)* | `/extract-learnings` (graduation, `workflows/graduation.md`, `patterns` target) | Graduated cross-phase patterns -- distinct from the per-phase `NN-PATTERNS.md` below (#4282) |
+| `config.yaml` | `config.yaml` | `/onboard` and direct project configuration | Project-specific workflow configuration and verification commands |
 
-### Version-stamped artifacts (pattern: `vX.Y-*.md`)
-
-| Pattern | Produced by | Purpose |
-|---------|-------------|---------|
-| `vX.Y-MILESTONE-AUDIT.md` | `/audit-milestone` | Milestone audit report before archiving |
-
-These files are archived to `.planning/milestones/` by `/complete-milestone`. Finding them at the `.planning/` root after completion indicates the archive step was skipped.
+There is no version-stamped milestone-audit producer in the retained command
+catalog. Completed milestones are recorded through the `milestone.complete`
+runtime operation and the `MILESTONES.md` template above.
 
 ---
 
@@ -49,15 +34,13 @@ These files live inside a phase directory and are inspected by the current runti
 | `NN-MM-PLAN.md` | `phase-prompt.md` | `/plan-phase` | Executable implementation plan |
 | `NN-MM-SUMMARY.md` | `summary.md` | `/execute-phase` | Post-execution summary with learnings |
 | `NN-CONTEXT.md` | `context.md` | `/discuss-phase` | Scoped discussion decisions for the phase |
-| `NN-RESEARCH.md` | `research.md` | `/plan-phase`, `/plan-phase --research-phase <N>` | Technical research for the phase |
+| `NN-SPEC.md` | `spec.md` | `/spec-phase` | Approved phase behavior and acceptance contract |
+| `NN-RESEARCH.md` | `research.md` | `/plan-phase --research` or planning coordinator | Technical research for the phase |
 | `NN-VALIDATION.md` | `VALIDATION.md` | `/plan-phase` (Nyquist) | Validation architecture (Nyquist method) |
-| `NN-UAT.md` | `UAT.md` | `/validate-phase` | User acceptance test results |
+| `NN-UAT.md` | `UAT.md` | `/verify-work` and the coordinator | Human actions, observations and acceptance status |
 | `NN-PATTERNS.md` | *(inline)* | `/plan-phase` (pattern mapper) | Analog file mapping for the phase |
 | `NN-UI-SPEC.md` | `UI-SPEC.md` | `/ui-phase` | UI design contract |
 | `NN-SECURITY.md` | `SECURITY.md` | `/secure-phase` | Security threat model |
-| `NN-AI-SPEC.md` | *(none)* | `/ai-integration-phase` | AI integration spec with eval strategy |
-| `NN-DEBUG.md` | *(none)* | `/debug` | Debug session log |
-| `NN-REVIEWS.md` | *(inline)* | `/review` | Cross-AI review feedback |
 
 ---
 
@@ -69,25 +52,42 @@ Files archived by `/complete-milestone`. Archive manifests preserve their source
 |-------------|--------|
 | `vX.Y-ROADMAP.md` | Snapshot of ROADMAP.md at milestone close |
 | `vX.Y-REQUIREMENTS.md` | Snapshot of REQUIREMENTS.md at milestone close |
-| `vX.Y-MILESTONE-AUDIT.md` | Moved from `.planning/` root |
 | `vX.Y-phases/` | Archived phase directories (if `--archive-phases` used) |
 
 ---
 
+## Runtime-recognized frontmatter schemas
+
+The runtime currently recognizes four artifact schemas for frontmatter checks:
+
+| Schema | Filename suffix | Template | Required consumer contract |
+|--------|-----------------|----------|----------------------------|
+| `plan` | `-PLAN.md` | `phase-prompt.md` | Executable plan metadata, ownership and checks |
+| `summary` | `-SUMMARY.md` | `summary.md` | Worker result, status and reconciled outcomes |
+| `context` | `CONTEXT.md` | `context.md` | Discussion and issue references |
+| `verification` | `-VERIFICATION.md` | `verification-report.md` | Verification status and covered-input identity |
+
+Other rows in this registry are real workflow artifacts but do not imply a
+runtime frontmatter schema. Their templates and workflows remain the authority
+for required content.
+
 ## Adding a New Canonical Artifact
 
-When a new workflow produces a `.planning/` root file:
+When a new workflow produces a `.planning/` artifact:
 
-1. Register the artifact with the Python runtime artifact registry and its required schema
-2. Add a row to the **`.planning/` Root Artifacts** table above
-3. Add the template to `engineer/templates/` if one exists
+1. Identify the actual producer and every consumer from the workflow and runtime source. Confirm the artifact's path, naming rule, lifecycle and authoritative owner; do not infer these from an old registry row or a filename.
+2. Decide whether runtime-owned structure or a gate needs a frontmatter schema. If so, add and document the schema with its real consumers. Otherwise, document the owning workflow and template without claiming parser support.
+3. Add a row to the **`.planning/` Root Artifacts** table or the appropriate phase, milestone, additional-record or quick-record table. State the real producer and purpose, preserving the distinction between canonical tracked artifacts and optional authored records.
+4. Add a complete template to `engineer/templates/` when authors need reusable fields, examples and consumer guidance. Update every workflow that reads or creates the artifact, then reconcile the table against those sources.
 
 ## Additional current records
 
 | Path | Template | Producer | Purpose |
 |------|----------|----------|---------|
 | `NN-DISCUSSION-LOG.md` | `discussion-log.md` | discuss-phase | Incremental audit trail |
-| `NN-VERIFICATION.md` | `verification-report.md` | verify-work | Goal and evidence verdict |
+| `NN-REVIEW.md` | *(review report contract in `code-reviewer.md`)* | code-review / execute-phase | Fresh source review findings at a captured revision |
+| `NN-REVIEW-DISPOSITION.md` | *(runtime disposition contract)* | execute-phase review-disposition | Durable disposition of review findings across review passes |
+| `NN-UI-REVIEW.md` | *(returned report captured by coordinator)* | `/ui-review` or verify-work | Visual audit evidence and findings |
 | `.continue-here.md` | `continue-here.md` | handoff | Continuation context |
 | `.planning/specs/SPEC-*.md` | `CURRENT-SPEC.md` | spec-phase | Approved behavior contract |
 | `.planning/decisions/ADR-*.md` | `ADR.md` | coordinator | Optional rationale linked from PROJECT Key Decisions |
@@ -98,7 +98,9 @@ When a new workflow produces a `.planning/` root file:
 
 | Path | Template | Producer | Purpose |
 |------|----------|----------|---------|
-| `.planning/quick/NNN-slug/NNN-VERIFICATION.md` | `verification-report.md` adapted with quick identity | quick coordinator | Genuine quick evidence; quick: NNN, status, covered_files, fingerprint, revision, issue_refs |
+| `.planning/quick/YYMMDD-NNN-slug/QUICK.md` | *(runtime-owned record)* | `quick.create` / `/quick` | Genuine bounded quick-task identity, scope and lifecycle |
+| `.planning/quick/YYMMDD-NNN-slug/YYMMDD-NNN-slug-VERIFICATION.md` | `verification-report.md` adapted with quick identity | quick coordinator | Genuine quick evidence; quick identity, status, covered_files, fingerprint, revision and issue_refs |
+| `.planning/quick/batches/{batch-id}.json` | *(runtime-owned manifest)* | `quick-batch.create` / `/quick-batch` | Batch task identities, dependencies and lifecycle state |
 
 Quick verification uses --quick ID on status/resolve-file/fingerprint/current and ready/merge gates. Never invent a phase identifier.
 
