@@ -33,6 +33,12 @@ def integrity(args, strict=False):
         errors.extend(findings())
         from .state_diagnostics import findings as state_findings
         errors.extend(state_findings())
+        if "codebase-freshness" not in args.all("skip") and not re.search(r"(?i)unfilled adoption skeleton.*CHANGEME", read(records.planning()/"PROJECT.md")):
+            from .codebase import command
+            for item in command(type(args)([]), "status")["maps"]:
+                if item["state"] != "fresh":
+                    errors.append({"check": "codebase-freshness", "record": item["name"],
+                                   "error": "Codebase map is missing" if item["state"] == "missing" else str(item["commits_since"])+" commits have touched source since this map was written"})
     errors = [{"check": "record-consistency", "message": item.get("error", "Planning record drift"), **item} for item in errors]
     packet = {"valid": not errors, "status": "warnings" if errors else "clean", "strict": strict,
               "warnings": errors, "errors": errors if strict else [], "checked": len(paths)}
