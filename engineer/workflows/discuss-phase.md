@@ -26,11 +26,8 @@ this file under the discuss-phase byte budget (32000 bytes, #717; mirrors the ag
 | `--power` in $ARGUMENTS | `workflows/discuss-phase/modes/power.md` (then exit standard flow) |
 | `--all` in $ARGUMENTS | `workflows/discuss-phase/modes/all.md` overlay |
 | `--auto` in $ARGUMENTS | `workflows/discuss-phase/modes/auto.md` + `workflows/discuss-phase/modes/chain.md` (auto-advance) |
-| `--chain` in $ARGUMENTS | `workflows/discuss-phase/modes/default.md` + `workflows/discuss-phase/modes/chain.md` |
 | `--text` in $ARGUMENTS or `workflow.text_mode: true` | `workflows/discuss-phase/modes/text.md` overlay |
-| `--batch` in $ARGUMENTS | `workflows/discuss-phase/modes/batch.md` overlay |
 | ADVISOR_MODE = true (USER-PROFILE.md exists) | `workflows/discuss-phase/modes/advisor.md` |
-| no flags above | `workflows/discuss-phase/modes/default.md` |
 | in `write_context` step | `workflows/discuss-phase/templates/context.md` |
 | in `git_commit` step | `workflows/discuss-phase/templates/discussion-log.md` |
 | writing checkpoints | `workflows/discuss-phase/templates/checkpoint.json` |
@@ -190,9 +187,7 @@ fi
   - `--auto` → Read `workflows/discuss-phase/modes/auto.md` before `check_existing` (it overrides several steps).
   - `--chain` → Read `workflows/discuss-phase/modes/chain.md` before `auto_advance`.
   - `--text` (or `workflow.text_mode: true`) → Read `workflows/discuss-phase/modes/text.md` before any AskUserQuestion call.
-  - `--batch` → Read `workflows/discuss-phase/modes/batch.md` before `discuss_areas`.
   - `ADVISOR_MODE = true` → Read `workflows/discuss-phase/modes/advisor.md` before `analyze_phase` (it changes the discussion flow and adds an `advisor_research` substep).
-  - No flags → Read `workflows/discuss-phase/modes/default.md` before `discuss_areas`.
 
 **If `phase_found` is true:** Continue to `check_blocking_antipatterns`.
 </step>
@@ -393,15 +388,13 @@ Continue to `discuss_areas` with selected areas (or to `advisor_research` per `m
 </step>
 
 <step name="discuss_areas">
-Discussion behavior is defined by the active mode file(s):
+Use the native discussion method in `<discussion_analysis>` before each question.
 
 - **Advisor mode (ADVISOR_MODE = true):** follow `workflows/discuss-phase/modes/advisor.md` — research-backed comparison tables, table-first selection.
 - **--auto:** follow `workflows/discuss-phase/modes/auto.md` — Claude picks recommended option for every question; no AskUserQuestion. Single-pass cap enforced.
-- **Default (no flags):** follow `workflows/discuss-phase/modes/default.md` — 4 single-question turns per area, then check whether to continue.
 
 Overlays (combine with the active mode):
 - `--text` → `workflows/discuss-phase/modes/text.md` (replace AskUserQuestion with plain-text numbered lists)
-- `--batch` → `workflows/discuss-phase/modes/batch.md` (group 2–5 questions per turn)
 
 
 All modes preserve the universal rules below.
