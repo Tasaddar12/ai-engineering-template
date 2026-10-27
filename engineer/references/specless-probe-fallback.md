@@ -123,7 +123,7 @@ this in-prompt. Full two-stage protocol, canon-referral rule, and status×verifi
 **flagged-unverified with NO wired-check descriptor**. NEVER write `check_kind` / `check_target` /
 `check_rule` / `check_violation_fixture` / `check_clean_fixture` — there is no human to wire/verify a
 check, and a descriptor-less item is what keeps it fail-closed (it disposes
-`{status:'unverified', flagged:true}` downstream via the reused `dispositionForProhibition`). **Never
+an explicit flagged/unverified result downstream under the Python prohibition projection/proof contract). **Never
 auto-dismiss**; never fabricate a check path. Surface any `unresolved` prohibition as a flagged
 assumption — never a silent drop.
 
@@ -137,8 +137,7 @@ changes (the fallback report, not the SPEC):
   marker (NOT prose; #1110/#1278), which abstains → `human_needed` at verify time when unconfirmed
   (#1154); every `unresolved`/`unclassified` row → an explicit flagged assumption (never a silent drop).
 - **Prohibitions →** every kept prohibition → the `must_haves.prohibitions:` sibling block (NOT
-  `truths`, ADR-550 D3) via the single `projectProhibitions` serializer (Hyrum — no second
-  serializer), authored **descriptor-less** (no `check_*` scalar) so each disposes flagged-unverified.
+  `truths`, ADR-550 D3) via `engineer_run query spec.prohibition-project INPUT.json`. Preserve the complete selected item and its descriptor when one exists. A missing descriptor is an explicit unverified gap; test-tier green requires `spec.prohibition-proof DESCRIPTOR.json --subject REALPATH` with both distinct violation and clean controls and a real passing subject, not a fabricated check. Respect deferred execution and keep proof pending until authorized.
 - **Section-level precedence:** a SPEC-supplied section is never re-run or overwritten — exactly one
   producer per section.
 - **No-silent-drop equality:** for each section, (# probe-surfaced items) == (# authored into

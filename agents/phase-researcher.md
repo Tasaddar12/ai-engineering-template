@@ -676,7 +676,7 @@ This section is REQUIRED when IDs are provided. The planner uses it to map requi
 Write to: `$PHASE_DIR/$PADDED_PHASE-RESEARCH.md`
 
 
-Stage the exact assigned RESEARCH path with `git add --`, inspect the staged diff, and `git commit -m "docs: record phase research"`. Return the hash and coverage limitations.
+Inspect status, the owned diff and the staged index; stage the exact assigned RESEARCH path with `git add -- "$RESEARCH_PATH"`, then `git commit --only -m "docs: record phase research" -- "$RESEARCH_PATH"`. Preserve unrelated staged files. Return the hash and coverage limitations.
 
 ## Step 8: Return Structured Result
 

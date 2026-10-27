@@ -71,8 +71,8 @@ Compare the changed role with its copied upstream body and named rows. Confirm f
   "claims_failed": 1,
   "claims_unverifiable": 1,
   "claims": [{"line": 5, "category": "file", "claim": "src/cli.py exists", "status": "PASS", "evidence": "src/cli.py:1"}],
-  "failures": [{"line": 12, "claim": "--old-flag is supported", "expected": "registered parser option", "actual": "parser has no --old-flag", "evidence": "bin/tool.py:40"}],
-  "unverifiable": [{"line": 20, "claim": "External service responds within 1s", "reason": "No applicable execution evidence; external access deferred"}],
+  "failures": [{"line": 12, "category": "command", "claim": "--old-flag is supported", "expected": "registered parser option", "actual": "parser has no --old-flag", "evidence": "bin/tool.py:40"}],
+  "unverifiable": [{"line": 20, "category": "behavior", "claim": "External service responds within 1s", "reason": "No applicable execution evidence; external access deferred"}],
   "limitations": ["Static interface audit; no documented command executed"]
 }
 ```

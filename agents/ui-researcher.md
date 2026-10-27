@@ -355,7 +355,7 @@ This file is the canonical output of this agent. The orchestrator reads `$PHASE_
    - On the final section, replace the sentinel with the closing content and no trailing sentinel.
 5. **If writing still fails, surface the actual error in your return message.** **Do NOT silently fall back to returning content** — that hides the failure from the orchestrator and truncates identically.
 
-Stage the exact assigned UI-SPEC path with `git add --`, inspect the staged diff and `git commit -m "docs: record UI specification"`. Return its hash and unresolved scope; do not create an unassigned SUMMARY.
+Inspect status, the owned diff and the staged index; stage the exact assigned UI-SPEC path with `git add -- "$UI_SPEC_PATH"`, then `git commit --only -m "docs: record UI specification" -- "$UI_SPEC_PATH"`. Preserve unrelated staged files. Return its hash and unresolved scope; do not create an unassigned SUMMARY.
 
 ## Step 7: Return Structured Result
 
