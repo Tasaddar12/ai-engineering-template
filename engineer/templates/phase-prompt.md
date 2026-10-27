@@ -50,7 +50,7 @@ Output: [What artifacts will be created]
 </objective>
 
 <execution_context>
-@engineer/workflows/execute-plan.md
+@engineer/workflows/execute-phase.md
 @engineer/templates/summary.md
 [If plan contains checkpoint tasks (type="checkpoint:*"), add:]
 @engineer/references/checkpoints.md
@@ -412,7 +412,7 @@ Output: Working dashboard component.
 </objective>
 
 <execution_context>
-@engineer/workflows/execute-plan.md
+@engineer/workflows/execute-phase.md
 @engineer/templates/summary.md
 @engineer/references/checkpoints.md
 </execution_context>

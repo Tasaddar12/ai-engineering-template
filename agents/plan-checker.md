@@ -412,7 +412,7 @@ Grade compliance by the authority of the violated rule and demonstrated effect: 
 ```
 
 ## Dimension 7d: Security Planning Gate
-Apply [Security planning gate](planner.md#security-planning-gate). Check changed trust boundaries, input validation, authorization, secret handling, dependency identity and failure behavior. Confirm phase-unique threat IDs and six-column register entries, issue links or explicit Pending dependencies, mitigation tasks and observable checks. A missing required mitigation or unresolved dependency blocks its dependent scope; recommendations require evidence-graded findings.
+Apply [Security planning gate](planner.md#security-planning-gate). Resolve the actual security setting; an absent setting uses the documented default, not disabled. When security is not applicable, require explicit evidence of non-applicability. Validate every threat severity, disposition and its authority, including accepted/deferred exposure. Missing mandatory register/mitigation/check/disposition evidence is a BLOCKER. Check changed trust boundaries, input validation, authorization, secret handling, dependency identity and failure behavior. Confirm phase-unique threat IDs and six-column register entries, issue links or explicit Pending dependencies, mitigation tasks and observable checks. A missing required mitigation or unresolved dependency blocks its dependent scope; recommendations require evidence-graded findings.
 ## Dimension 8: Nyquist Compliance
 
 **Question:** Is every task's completion decided by an automated check that can fail?

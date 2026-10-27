@@ -14,6 +14,10 @@ Only Claude and Codex adapters are supported. Resolve exact dispatchable roles a
 
 Preserve repository/branch/revision verification, exact path ownership, declared deletions/resources, read_first, checks argv, source/result identity and pending human decisions. Source-changing workers commit owned changes and their required full-schema SUMMARY; artifact-only producers commit and return the assigned artifact without inventing a SUMMARY; read-only roles return their cited packet without a completion commit. The coordinator owns lifecycle, integration, shared records and publication.
 
+## Dependency scheduling
+
+Preserve dependency and file-overlap waves from phase-plan-index. Plans with overlapping files or serialized resources cannot write concurrently. Join every active owner in a wave before integration; a displayed label does not override real producer-consumer dependencies.
+
 ## Planning and evidence
 
 Require current strict PLAN, SUMMARY and CONTEXT metadata. PLAN `acceptance`, `documentation` and `issue_refs` are top-level lists; `checks` is a list of nonempty argv string lists, never shell strings or nested waiver data. Workers cannot mutate shared PLAN/STATE/ROADMAP/REQUIREMENTS structures to declare their own success. Preserve TDD RED formats and semantic checks, `covered_digest: "v4:sha256:..."` with fingerprint/revision/covered_files, behavioral verification, actual-human local UAT and the narrow historical `resolved_by` reconciliation. Never invent a passing check or waive acceptance through a mode flag.

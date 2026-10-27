@@ -542,7 +542,7 @@ Record unresolved work, deferred items and context limits in SUMMARY Remaining f
 ```
 
 Omit section if nothing found.
-Follow @engineer/references/canonical-threat-tracking.md. Record each assigned threat ID and evidence in SUMMARY Threat Outcomes; put requested register changes in Pending requests. Do not edit a shared PLAN threat register.
+Follow @engineer/workflows/_canonical-threat-tracking.md. Record each assigned threat ID and evidence in SUMMARY Threat Outcomes; put requested register changes in Pending requests. Do not edit a shared PLAN threat register.
 </summary_creation>
 
 <self_check>

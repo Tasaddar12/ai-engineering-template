@@ -63,11 +63,15 @@ There is no third value and no opt-out. Unknown, empty or failed resolution stop
 Run `engineer_run query state.begin-phase "${PHASE_NUMBER}"` only after session, authority and isolation guards pass. Read the phase goal and success criteria; they remain the acceptance source.
 </step>
 <step name="discover_and_group_plans">
+Refresh the assignment table and observed lifecycle under [parallel status](../references/parallel-status.md); preserve bounded observations and confirmed-stop ownership.
+
 Read `engineer_run query phase-plan-index "${PHASE_NUMBER}"`. Preserve declared dependency waves, then move any plans with overlapping files_modified, files_deleted or conflicting shared resources into later waves. Treat a dependency cycle as a planning defect and stop those plans. Read `engineer/workflows/execute-phase/steps/ready-wave-gate.md`; skip named blocked plans and incomplete predecessors. Recompute readiness after an integrated predecessor completes, never dispatch a plan over missing predecessor evidence. Respect the selected plan or wave filter without treating filtered-out work as done. For --wave N, read partial-wave.md before dispatch: select only that effective wave after dependency/overlap/resource grouping, require every predecessor delivered and integrated, and never pull another wave in to make the selection runnable.
 
 Report an assignment table with plan ID, wave, exact owner, paths/deletions, branch, worker state and blocker. Refresh the parallel-status display at dispatch, observation and join. When every selected plan has a complete summary, continue to aggregate_results; blocked, waiting or filtered remaining work appears explicitly in the closing report.
 </step>
 <step name="execute_waves">
+Refresh the assignment table and observed lifecycle under [parallel status](../references/parallel-status.md); preserve bounded observations and confirmed-stop ownership.
+
 Dispatch a wave's independent executor calls in one message unless sequential mode or a single plan applies. Before any coordinator Git operation, enforce the retained cwd-drift guard below and require the exact session root.
 
 **Orchestrator cwd-drift guard (FIRST ACTION at execute_waves entry — #48):**
@@ -182,12 +186,18 @@ Return complete or blocked, exact commit(s), SUMMARY path, work root/branch/base
 Resolve choices within the user's delegated discretion from approved context and code evidence, recording consequential outcomes with state.add-decision. An unresolved locked decision, credential, irreversible approval or human acceptance blocks only its dependent plan. Record the exact required human action in the closing report; do not auto-approve it. Re-dispatch approved continuation work only in a fresh isolated checkout after confirmed worker stop.
 </step>
 <step name="run_checks">
+Refresh the assignment table and observed lifecycle under [parallel status](../references/parallel-status.md); preserve bounded observations and confirmed-stop ownership.
+
 Run `engineer_run query verification.run-checks` against the integrated session revision when execution is permitted. Reuse only passing receipts whose declared inputs and fingerprints remain current. A user-deferred test remains pending and blocks any verdict requiring it; do not run it or fabricate a receipt. Join all configured results. A failed or timed-out check blocks dependent integration/completion and routes to bounded targeted-fixer/executor correction, or debugger for an unknown cause. After repair, rerun only invalidated/required checks on the new revision and rejoin their actual results.
 </step>
 <step name="track_integrated_slice">
+Run review_phase_issues before the draft write, including every unresolved canonical issue URL. On normal completion, deferral, blocked/halted work or early termination, reconcile all available committed producer records before returning; missing publication remains a concrete blocker. The same-execution fixed-work exemption applies only to ordinary findings actually resolved with evidence and no remaining obligation; it creates no repeated issue for that exact resolved scope. It never waives planned/unplanned threat tracking or human acceptance.
+
 When publication is authorized, push the session branch with upstream tracking and no force, then run `engineer_run query pr.open "${SESSION_BRANCH}" --title "${TITLE}" --body-file "${BODY_FILE}" --phase "${PHASE_NUMBER}"`. Build the complete current canonical PR template, validate issue links, and read back provider state under engineer/references/git-workflow.md. Open a draft on the first push and refresh its full title/body after every meaningful integrated slice. Do not publish when the user explicitly withheld delivery.
 </step>
 <step name="aggregate_results">
+Reconcile every PLAN/SUMMARY through [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking) and the complete _canonical-threat-tracking.md procedure. The canonical default for each new planned risk, including accepted/deferred exposure, is a stable checklist entry unless an existing full-scope tracker already remains canonical. Keep canonical trackers linked; standalone tracking is required for a distinct unplanned risk without one. Preserve each PLAN register and separately report outcome evidence. Include every remaining finding and human dependency in the closing report.
+
 After all waves:
 
 ```markdown
@@ -216,9 +226,13 @@ After all waves:
 
 Reconcile threats in every PLAN/SUMMARY against stable canonical threat identities. List uncovered phase requirements as gaps. Report all still-open findings, deferred work and human-decision blockers explicitly. Do not create todos. If `--wave` was selected, read partial-wave.md and report remaining waves without claiming the phase complete. Set PARTIAL_EXECUTION when any phase plan remains unfinished. Continue required review/issue reconciliation and accurate progress/session records, then RETURN before run_verify_work, full phase completion or shipping when PARTIAL_EXECUTION is true.
 <step name="code_review_gate">
+Require the independent [issue-link audit](../references/git-workflow.md#issue-link-audit) for the exact source and provider snapshot.
+
 Capture one frozen revision after integration and dispatch read-only code-reviewer plus configured verification.run-checks concurrently. Give the reviewer complete goal, CONTEXT, plans, summaries, source diff and locked decisions; resolve model/effort inline. Wait for every result before accepting evidence or repairing source. Critical correctness, security and acceptance failures block completion; INFO stays advisory. Route demonstrated in-scope failures through bounded isolated correction and run a new frozen batch after source changes. `--no-review` skips only an explicitly optional review; it cannot waive required acceptance, security or configured checks.
 </step>
 <step name="review_phase_issues">
+Require the independent [issue-link audit](../references/git-workflow.md#issue-link-audit) for the exact source and provider snapshot.
+
 Read and execute the complete engineer/workflows/_canonical-threat-tracking.md procedure for planned and unplanned phase risks. Preserve each PLAN register, deterministic checklist identity, explicit match review, full Security risk variant, actual provider-rendered anchors and independent audit. Never default to a standalone issue for every planned risk.
 
 For each complete/blocked SUMMARY and REVIEW artifact, call `engineer_run query phase.issue-declare "${PHASE_NUMBER}" "${ARTIFACT}"`. Reconcile its full issue_refs snapshot. Update declarations only with `--entries-file "${ENTRIES_FILE}" --expect-digest "${SNAPSHOT_DIGEST}"`. Every unresolved item needs a canonical issue URL; every resolved item needs evidence and reason. Preserve stable threat identities and avoid duplicate issues.

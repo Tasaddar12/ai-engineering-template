@@ -58,6 +58,8 @@ Complete means the assigned evidence question is answered, not that implementati
 
 ## Required structured assignment
 
+Use the `scout_assignment` envelope for this payload.
+
 ```yaml
 id: [stable packet identity]
 kind: discovery # discovery | specialized
@@ -76,6 +78,8 @@ constraints: []
 Allowed task_class values are DISCOVERY, FACT_EXTRACTION, REVIEW_INVENTORY, DOC_CLAIM_COMPARE, INTEGRATION_MAP, TEST_RESULT_SUMMARY, FAILURE_FACTS, DOC_TRANSFORM_PROPOSAL and CODE_TRANSFORM_PROPOSAL. Pick the requested class; do not convert it to broad discovery.
 
 ## Required structured result
+
+Return the `scout_result` envelope with this payload.
 
 ```yaml
 id: [same assignment identity]
@@ -100,3 +104,47 @@ The coordinator validates every requested field and exact revision. Give one bou
 ## Owner distinctions
 
 Scouts extract, map and propose transformations. The executor/coder owns actual edits; reviewers own correctness findings; doc-verifiers compare document claims; integration-checkers validate flows; deterministic runtime receipts establish actual check execution. A scout's generic summary never substitutes for per-field evidence or an owner's verification contract.
+
+## Routing known inputs and evidence reuse
+
+Dispatch scout for requested inventories, fact extraction, classification, structured summaries and transformation proposals even when input paths are known, including coordinator work. Batch compatible fields into one packet. Directly inspect already-known source when making an owning implementation/review decision; runtime and Git metadata reads are also direct. This is task routing, not a requirement to delegate every read. Reuse matching evidence before dispatching another scout. Do not perform duplicate searches for a claim already answered at the same revision and scope.
+
+| task_class | Bounded output | Consumer |
+|---|---|---|
+| DISCOVERY | Source definition, entry point and consumer chain | Assigning coordinator |
+| FACT_EXTRACTION | Each requested value with source citation | Owning role |
+| REVIEW_INVENTORY | Scoped changed surfaces and review inputs | Independent reviewer |
+| DOC_CLAIM_COMPARE | Each document claim and source correspondence | Doc verifier |
+| INTEGRATION_MAP | Required boundary/connection map | Integration checker |
+| TEST_RESULT_SUMMARY | Actual supplied execution results, no new test run | Coordinator/verifier |
+| FAILURE_FACTS | Actual errors, affected scope and unknowns | Debugger |
+| DOC_TRANSFORM_PROPOSAL | Grounded proposed wording, no writes | Document owner |
+| CODE_TRANSFORM_PROPOSAL | Grounded proposed transformation, no writes | Executor/fixer |
+
+## Dispatch procedure
+
+1. Classify the named unresolved claim and required output with the routing table. Send one discovery scout for unknown locations; do not dispatch a second scout when one result answers all compatible fields.
+2. Reuse evidence only when question, revision, search scope and supplied inputs match. Give the scout the exact structured assignment, expected fields, supplied input identifiers, prohibited actions and named result consumer.
+3. Resolve model and effort inline for the exact scout role. Omit inherited settings. The coordinator dispatches normal workers separately; a scout packet never creates implementation authority.
+4. Independent read-only packets may run concurrently at the same frozen revision. Keep configured `verification.run-checks` execution separate from scout summaries; scouts cannot run project code or tests.
+5. Validate every returned field, its citation and exact input revision. Allow one bounded follow-up for missing fields. If still missing, block only the dependent claim and continue independent work; do not treat missing evidence as a successful packet.
+6. Join packets with their owning reviewer/verifier. A source-changing phase always gets a separate fresh code-reviewer. Documentation changes require doc-verifier; acceptance spanning component boundaries requires integration-checker. These are procedure requirements, not runtime enforcement or substitutes for configured checks.
+
+## Direct nested requests
+
+Only the coordinator dispatches workers. A workflow-permitted specialist may request a separately named scout packet through the coordinator; scouts and targeted-fixer remain leaves. If the specialist lacks a supported scout interface, or the coordinator cannot dispatch either supported host route, return this request and continue independent work:
+
+```yaml
+scout_request:
+  parent_assignment_id: [owning assignment]
+  task_class: [one supported class]
+  revision: [full inspected SHA]
+  question: [exact missing claim]
+  requested_fields: []
+  inputs: []
+  search_scope: []
+  constraints: []
+  resume_with: [exact field/result needed by parent]
+```
+
+Never replace a missing route with an unapproved generic role. A request does not allow the worker to mutate shared records or recreate the coordinator's worker tree.

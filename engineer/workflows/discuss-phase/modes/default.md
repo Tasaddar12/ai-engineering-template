@@ -96,8 +96,16 @@ These user-referenced docs are often MORE important than ROADMAP.md refs because
 - If user picks "Other" to provide freeform input (e.g., "let me describe it", "something else", or an open-ended reply), ask your follow-up as plain text — NOT another AskUserQuestion. Wait for them to type at the normal prompt, then reflect their input back and confirm before resuming AskUserQuestion or the next numbered batch.
 
 **Thinking partner (conditional):**
-If `features.thinking_partner` is enabled in config, check the user's answer for concrete tradeoff signals: competing goals, an acknowledged cost, incompatible constraints, or uncertainty between alternatives.
-If tradeoff detected:
+Read `features.thinking_partner` from `.planning/config.yaml` or the init context. This is opt-in (default false); when disabled, continue the normal discussion without analysis offers.
+
+When enabled, inspect each answer for these concrete competing-priority signals before asking the next question:
+
+- Keyword signals: "or", "versus" or "vs" connecting two approaches; "tradeoff", "trade-off" or "tradeoffs"; "on one hand" / "on the other hand"; "pros and cons"; "not sure between" / "torn between".
+- Structural signals: the user lists two or more competing options, asks "which is better" or "what would you recommend", or reverses a previous decision ("actually, maybe we should...").
+
+Do not activate when the user has already made a clear choice, the "or" is rhetorical or trivial (for example "tabs or spaces" follows project convention), the question is a simple yes/no, or the user explicitly asks to move on. A keyword alone does not override these exclusions.
+
+For an eligible signal, pause the normal question flow and offer:
 
 ```text
 I notice competing priorities here — {option_A} optimizes for {goal_A} while {option_B} optimizes for {goal_B}.
@@ -106,7 +114,7 @@ Want me to think through the tradeoffs before we lock this in?
 [Yes, analyze] / [No, decision made]
 ```
 
-If yes: provide 3-5 bullet analysis (what each optimizes/sacrifices, alignment with PROJECT.md goals, recommendation). Then return to normal flow.
+If the user accepts, give a brief three-to-five-bullet analysis covering what each approach optimizes, what each sacrifices, which fits the stated PROJECT.md goals, and a recommendation with reasons. If the user declines, preserve their decision without adding analysis. Return to the normal discussion loop after either outcome. Keep the analysis inline and skippable; it does not open a separate research session or grant implementation authority.
 
 **Scope creep handling:**
 If user mentions something outside the phase domain:

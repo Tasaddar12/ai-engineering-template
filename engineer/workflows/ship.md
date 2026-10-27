@@ -23,6 +23,8 @@ Parse an optional phase and `--draft`, `--review`, `--no-push`, `--no-merge`. Ca
 Use the locator's matching open session only. Never session.open here or fall back to the current branch. Capture SESSION_WORKTREE, SESSION_BRANCH and SESSION_BASE from the actual session. Stop on a missing/ambiguous/mismatched session; a branch with similar spelling is not the delivery target.
 </step>
 <step name="preflight_checks">
+Apply the independent [issue-link audit](../references/git-workflow.md#issue-link-audit); refresh_issue_link_audit must join before accepting readiness or merge.
+
 Read and execute the complete engineer/workflows/_canonical-threat-tracking.md procedure for planned and unplanned phase risks. Preserve each PLAN register, deterministic checklist identity, explicit match review, full Security risk variant, actual provider-rendered anchors and independent audit. Never default to a standalone issue for every planned risk.
 
 1. Run `engineer_run query phase.handoff "${PHASE_NUMBER}"` and require ready=true. Reconcile complete summaries, canonical threat IDs, resolved evidence/reasons and every unresolved canonical issue URL. Inspect the complete independent issue-link audit; a prose assertion that links exist is insufficient.
@@ -47,14 +49,22 @@ Require the canonical passed/current report, check receipts and issue handoff to
 With --no-push, skip every remote write and report the prepared local result, keeping the session open. Otherwise push the exact SESSION_BRANCH with upstream tracking, never force. A rejected push requires inspecting remote divergence and preserving both histories; do not reset remote work. The runtime pr.open also verifies and pushes its clean branch; use its provider result as the publication owner.
 </step>
 <step name="generate_pr_body">
+Reconcile [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking) under the complete _canonical-threat-tracking.md procedure, preserving stable planned entries, standalone unplanned scope and closure authority.
+
+Apply the independent [issue-link audit](../references/git-workflow.md#issue-link-audit); refresh_issue_link_audit must join before accepting readiness or merge.
+
 Read engineer/templates/pull-request.md in full and populate its complete File Template. Preserve every required section and hidden validation marker. Lead with the concrete problem and resulting behavior; document actual implementation, full requirement coverage, tests executed or pending, risks and material limitations. Read authoritative requirements from the init requirements_path and phase requirement IDs; do not invent a requirements.list verb.
 
 Use the canonical issue relationships and provider-confirmed URLs, distinguishing resolved items from pending human acceptance. Compare the exact body links with the independent audit snapshot. Include Record health from planning.validate only when the check was actually run; otherwise state it is pending. Write the exact multiline body to a file. Do not generate a shortened replacement template or interpolate public body text into a shell command.
 </step>
 <step name="create_pr">
-Unless --no-push applies, run `engineer_run query pr.open "${SESSION_BRANCH}" --phase "${PHASE_NUMBER}" --title "${PR_TITLE}" --body-file "${PR_BODY_FILE}"`, adding --base only for the selected intended base. pr.open always creates a draft and updates the existing PR rather than duplicating it; no --draft runtime flag is required. The user-facing --draft flag means keep it draft. Read back the published title, complete body, base, repository, head SHA and URL. If any field differs from the reviewed material, reconcile the exact drift before accepting publication. Attach the created PR to this chat through the host's supported artifact tool when available.
+Apply the independent [issue-link audit](../references/git-workflow.md#issue-link-audit); refresh_issue_link_audit must join before accepting readiness or merge.
+
+Unless --no-push applies, run `engineer_run query pr.open "${SESSION_BRANCH}" --phase "${PHASE_NUMBER}" --title "${PR_TITLE}" --body-file "${PR_BODY_FILE}"`, adding --base only for the selected intended base. pr.open always creates a draft and updates the existing PR rather than duplicating it; no --draft runtime flag is required. The user-facing --draft flag means keep it draft. Read back the published title, complete body, base, repository, head SHA and URL. If any field differs from the reviewed material, reconcile the exact drift before accepting publication. Recheck the actual head/body and linked issue states after publication, refreshing the independent audit when its snapshot differs. Attach the created PR to this chat through the host's supported artifact tool when available.
 </step>
 <step name="refresh_issue_link_audit">
+Apply the independent [issue-link audit](../references/git-workflow.md#issue-link-audit); refresh_issue_link_audit must join before accepting readiness or merge.
+
 Dispatch a fresh non-author verifier at the current source revision with inline model/effort. Give the provider-read PR head SHA, full published body, canonical URL/link snapshot, phase findings, complete verification report and provider identity. Require independent readback of issue state, exact finding correspondence, threat identity, resolved evidence, PR head/body agreement and required human acceptance. The audit must identify source revision, PR head, body digest/link snapshot, provider repository and its verdict. Join it before merge/readiness. A changed body, head or linked issue invalidates the prior audit; author the canonical updated report through the coordinator and refresh as needed.
 </step>
 <step name="judge_checks">
@@ -71,6 +81,10 @@ Run `engineer_run query pr.checks "${SESSION_BRANCH}" --timeout 240` up to 12 ca
 Permit at most 2 rounds of CI repair. A known bounded in-scope defect goes to an isolated targeted-fixer; an unknown cause goes to debugger. After integrating a committed repair, run verify-work in ship-repair/return-to-caller mode against a new frozen revision. Require passed/current evidence and a fresh issue-link audit, then push without force and read provider state again. Re-run `engineer_run query pr.checks "${SESSION_BRANCH}" --timeout 240` on the new actual head. Reaching the repair cap never authorizes merge or weakens acceptance. If user testing is deferred, do not trigger tests here; keep their required outcome pending.
 </step>
 <step name="merge_and_close">
+Reconcile [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking) under the complete _canonical-threat-tracking.md procedure, preserving stable planned entries, standalone unplanned scope and closure authority.
+
+Apply the independent [issue-link audit](../references/git-workflow.md#issue-link-audit); refresh_issue_link_audit must join before accepting readiness or merge.
+
 Skip remote merge on --no-push, --no-merge, --draft, any failed/pending gate, or absent explicit merge authorization. Preserve the open PR/session and report why. When no authorization exists, show the exact PR URL, head/base and current green evidence and ask for that concrete merge once; never ask again for authorization already supplied in the session. Silence, a generic workflow-complete message or a mode flag is not merge permission.
 
 With explicit instruction for this exact current PR and all gates current, run `engineer_run query pr.ready "${SESSION_BRANCH}" --phase "${PHASE_NUMBER}"` when required, then `engineer_run query pr.merge "${SESSION_BRANCH}" --phase "${PHASE_NUMBER}" --confirm`. Read back merged state, merged head/base and provider URL. A failed or uncertain response requires provider inspection before retry; do not claim a merge from command text alone.

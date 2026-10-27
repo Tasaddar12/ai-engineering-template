@@ -115,7 +115,7 @@ Cleanup needs merge evidence, ordinarily the branch's commits being ancestors of
 
 ## Interruption and recovery
 
-On interruption preserve committed slices, dirty paths, exact process state, missing evidence and pending human decisions. Use the durable handoff contract. Resume from current source and existing authorization after checking revision drift; do not restart completed work or silently drop remaining scope.
+On interruption preserve committed slices, dirty paths, exact process state, missing evidence and pending human decisions. A host wait timeout does not establish exit. Before inspecting dirty files, integrating or reassigning worker paths, obtain positive host confirmation that the owner stopped or completed; preserve uncertain ownership otherwise. Follow [confirmed stop](#orchestration-and-handoffs) and [worker handoff](references/worker-handoff.md), including continuation limits and the first remaining action. Use the durable handoff contract. Resume from current source and existing authorization after checking revision drift; do not restart completed work or silently drop remaining scope.
 
 The only bookkeeping compensation exception is the exact guarded coordinator-created unpushed bookkeeping-only commit described in [verification evidence](references/verification-evidence.md#compensating-a-failed-final-verification). It never authorizes discarding source, user changes or pushed history.
 

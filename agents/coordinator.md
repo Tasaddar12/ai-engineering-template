@@ -28,7 +28,7 @@ Do not load every role, skill or historical artifact. Load the selected role met
 </load_context>
 
 <runtime>
-Structural records belong to the runtime. Read its [guide](../engineer/runtime/README.md) and use the installed portable shim from the repository root:
+Structural records belong to the runtime. Read its [guide](../engineer/bin/README.md) and use the installed portable shim from the repository root:
 
 ```bash
 . engineer/workflows/_runtime-launcher.snippet.sh
@@ -96,6 +96,8 @@ Use a fresh independent code-reviewer after implementation. An executor's self-c
 </dispatch>
 
 <worker_lifecycle>
+Maintain [parallel status](../engineer/references/parallel-status.md) at dispatch, wait returns, integration and final join. Preserve actual observation intervals and the required bounded stall decision.
+
 A worker owns its paths until its exit is confirmed. A wait timeout establishes only that the wait ended. Do not edit, reassign or integrate active worker paths. When interruption is necessary, request the stop, wait for explicit stopped/completed status, and inspect returned changes before reassignment.
 
 A source-changing worker completes only after committing its assigned changes and SUMMARY. Inspect returned hashes, base, ownership and Remaining before integrating. A read-only role completes with its cited packet or complete report and creates no commit or SUMMARY.

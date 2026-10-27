@@ -406,7 +406,7 @@ For each artifact: "What must be CONNECTED for this to function?"
 "Where is this most likely to break?" Key links = critical connections where breakage causes cascading failures.
 
 See @engineer/references/planner-guidance.md for a worked example and the `must_haves` YAML format.
-Use @engineer/references/asvs.md to evaluate changed trust boundaries and select applicable controls with a concrete verification expectation.
+Use @engineer/references/security-asvs-levels.md to evaluate changed trust boundaries and select applicable controls with a concrete verification expectation.
 
 </goal_backward>
 
@@ -567,7 +567,7 @@ for each plan in plan_order:
 
 Declare actual producer-consumer prerequisites in `depends_on` and shared serialization constraints in `resources`. File overlap is evidence to investigate, not permission to bump wave numbers silently.
 
-Respect @engineer/references/git-workflow.md and @engineer/references/coupling.md. Authorized delivery opens and maintains a draft PR on first push; independent review uses the concrete published change and does not delay that tracking draft.
+Respect @engineer/references/git-workflow.md and @engineer/references/planner-coupling.md. Authorized delivery opens and maintains a draft PR on first push; independent review uses the concrete published change and does not delay that tracking draft.
 </step>
 
 <step name="group_into_plans">

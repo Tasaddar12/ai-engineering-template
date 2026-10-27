@@ -1,6 +1,6 @@
 # Planning record and template contract
 
-This document owns record integrity and producer/consumer boundaries. The complete [artifact registry](../templates/README.md) and individual templates own complete authoring shapes, methods and examples; this contract does not replace them. Read the [runtime API](../bin/README.md) for supported argv and returned fields.
+This document owns record integrity and producer/consumer boundaries. The complete [artifact registry](../templates/TEMPLATE.md) and individual templates own complete authoring shapes, methods and examples; this contract does not replace them. Read the [runtime API](../bin/README.md) for supported argv and returned fields.
 
 ## Planning-record integrity
 
@@ -53,6 +53,10 @@ Tasks preserve `name`, `files`, `read_first`, `action`, `verify` and `done`. Act
 Each PLAN retains its complete six-column threat register: Threat ID, Category, Component, Severity, Disposition, Mitigation Plan. Preserve phase-unique IDs, aliases/occurrences, canonical references and Pending dependencies. See [canonical threat tracking](git-workflow.md#canonical-threat-tracking).
 
 Update PLANs only under the assigned planning/correction ownership. Workers executing code do not rewrite shared plans to declare success. A plan-ready state does not authorize implementation.
+
+### Risk-routing destinations
+
+The mandatory default for new planned risks, including accepted/deferred exposure without an existing full-scope tracker, is the deterministic planned checklist entry. Preserve each owning PLAN register and link its assessment/mitigation. Existing full-scope canonical trackers remain canonical; distinct unplanned risks require standalone tracking or an existing full-scope tracker. Never fabricate provider anchors or use a missing link as secured evidence. Follow [canonical threat tracking](git-workflow.md#canonical-threat-tracking) and the complete [procedure](../workflows/_canonical-threat-tracking.md).
 
 ## SUMMARY
 

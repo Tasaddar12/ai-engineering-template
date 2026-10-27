@@ -25,7 +25,9 @@ Output: coordinator captures {phase_num}-UI-REVIEW.md after joined read-only evi
 
 <execution_context>
 @engineer/workflows/ui-review.md
-@engineer/references/ui-brand.md
+@engineer/templates/UI-SPEC.md
+@agents/ui-auditor.md
+@agents/dom-verifier.md
 </execution_context>
 
 <context>

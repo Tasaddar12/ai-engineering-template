@@ -3,7 +3,9 @@ Audit Nyquist validation gaps for a completed phase. Generate missing tests. Upd
 </purpose>
 
 <required_reading>
-@engineer/references/ui-brand.md
+@engineer/references/nyquist-compliance.md
+@engineer/templates/VALIDATION.md
+@agents/nyquist-auditor.md
 </required_reading>
 
 <available_agent_types>
