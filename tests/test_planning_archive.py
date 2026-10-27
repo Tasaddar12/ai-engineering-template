@@ -14,6 +14,7 @@ RUNTIME = ROOT / "engineer/bin/engineer.py"
 sys.path.insert(0, str(RUNTIME.parent))
 from lib import archive
 from lib.core import Args, Failure as VerbError
+from lib.text import join_frontmatter, split_frontmatter
 
 ROADMAP = """# Roadmap
 
@@ -93,11 +94,30 @@ class PlanningArchive(unittest.TestCase):
         self.write(".planning/STATE.md", STATE)
         self.write(".planning/PROJECT.md", "# Test project\n")
         self.write(".planning/config.yaml", "verification:\n  commands: []\n")
-        self.write(".planning/phases/01-foundation/01-01-PLAN.md", "---\nphase: 01-foundation\n---\n# Plan\n")
-        self.write(".planning/phases/01-foundation/01-01-SUMMARY.md", "---\nstatus: complete\n---\n# Summary\n\n## Accomplishments\n\nBuilt and checked foundation.\n")
-        self.write(".planning/phases/01-foundation/01-VERIFICATION.md", "---\nstatus: passed\nrevision: abcdef\n---\n# Verified\n")
+        identity = {"phase": "01-foundation", "plan": "01"}
+        plan = {**identity, "type": "execute", "wave": 1, "depends_on": [],
+                "files_modified": ["foundation.txt"], "files_deleted": [], "resources": [],
+                "autonomous": True, "must_haves": {"truths": [], "artifacts": [], "key_links": []},
+                "requirements": ["REQ-01"], "acceptance": [], "documentation": [], "checks": [], "issue_refs": []}
+        summary = {**identity, "status": "complete", "requirements-completed": ["REQ-01"],
+                   "acceptance": [], "documentation": [], "issue_refs": []}
+        self.write("foundation.txt", "The verified foundation output.\n")
+        self.write(".planning/phases/01-foundation/01-01-PLAN.md", join_frontmatter(plan, "# Plan\n"))
+        self.write(".planning/phases/01-foundation/01-01-SUMMARY.md", join_frontmatter(summary, "# Summary\n\n## Accomplishments\n\nBuilt and checked foundation.\n"))
         self.write(".planning/phases/01-foundation/01-CONTEXT.md", "# Context\n\n## Decisions\n\nFoundation is shared.\n")
         self.write(".planning/phases/02-feature/02-01-PLAN.md", "---\ndepends_on: [01-01]\n---\n# Plan\n")
+        self.commit("Fixture implementation and completed phase records")
+        self.cli("verification.fingerprint", "1")
+        report = ".planning/phases/01-foundation/01-VERIFICATION.md"
+        metadata, _ = split_frontmatter(self.read(report))
+        metadata["status"] = "passed"
+        self.write(report, join_frontmatter(metadata, "# Verification\n\nConfirmed the foundation acceptance cases against the recorded implementation.\n"))
+        self.commit("Fixture historical v4 verification")
+
+    def commit(self, message):
+        subprocess.run(["git", "add", "--", "."], cwd=self.root, check=True, capture_output=True)
+        subprocess.run(["git", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.test",
+                        "commit", "-qm", message], cwd=self.root, check=True, capture_output=True)
 
     def write(self, path, text):
         path = self.root / path
@@ -210,6 +230,44 @@ class PlanningArchive(unittest.TestCase):
         result = self.cli("planning.archive", "phase", "1", "--apply", ok=False)
         self.assertEqual(result["code"], "archive-evidence-required")
         self.assertEqual(before, self.snapshot())
+
+    def test_shallow_passed_report_is_not_historical_evidence(self):
+        self.write(".planning/phases/01-foundation/01-VERIFICATION.md", "---\nstatus: passed\n---\nClaimed success with no revision or digest.\n")
+        self.commit("Fixture shallow report")
+        before = self.snapshot()
+        denied = self.cli("planning.archive", "phase", "1", ok=False)
+        self.assertEqual("archive-evidence-required", denied["code"])
+        self.assertEqual(before, self.snapshot())
+
+    def test_historical_verification_survives_later_source_changes_without_shipping_waiver(self):
+        self.write("foundation.txt", "Later implementation changed the covered source.\n")
+        self.commit("Fixture later source change")
+        self.assertTrue(archive.historical_phase_evidence(self.root/".planning/phases/01-foundation"))
+        from lib import verification
+        self.assertFalse(verification.current_evidence("1")["current"])
+        self.assertEqual("preview", self.cli("planning.archive", "phase", "1")["state"])
+
+    def test_modified_phase_records_cannot_borrow_old_verification(self):
+        for suffix in ("PLAN", "SUMMARY"):
+            with self.subTest(suffix=suffix):
+                path = ".planning/phases/01-foundation/01-01-"+suffix+".md"
+                original = self.read(path)
+                self.write(path, original+"\nA changed phase outcome.\n")
+                before = self.snapshot()
+                self.assertEqual("archive-evidence-required", self.cli("planning.archive", "phase", "1", ok=False)["code"])
+                self.assertEqual(before, self.snapshot())
+                self.write(path, original)
+
+    def test_forged_digest_and_uncommitted_report_do_not_establish_history(self):
+        path = ".planning/phases/01-foundation/01-VERIFICATION.md"
+        original = self.read(path)
+        metadata, body = split_frontmatter(original)
+        metadata["fingerprint"] = "0"*64
+        metadata["covered_digest"] = "v4:sha256:"+"0"*64
+        self.write(path, join_frontmatter(metadata, body))
+        self.assertFalse(archive.historical_phase_evidence(self.root/".planning/phases/01-foundation"))
+        self.commit("Fixture forged bound report")
+        self.assertFalse(archive.historical_phase_evidence(self.root/".planning/phases/01-foundation"))
 
     def test_active_phase_denied_even_with_legacy_evidence(self):
         self.write(".planning/legacy.md", "---\narchive_kind: phase\narchive_id: 02-feature\narchive_status: complete\narchive_reason: Reviewed legacy completion evidence.\n---\n")

@@ -190,8 +190,8 @@ def _retired(path):
     if relative.parts[:2] == ("todos", "completed"):
         return True
     if path.is_dir():
-        reports = list(path.glob("*-VERIFICATION.md"))
-        return bool(reports) and all(split_frontmatter(read(p))[0].get("status") == "passed" for p in reports)
+        from .archive import historical_phase_evidence
+        return historical_phase_evidence(path)
     metadata, _ = split_frontmatter(read(path))
     return metadata.get("status") in ("retired", "superseded", "closed", "complete", "passed")
 
@@ -200,7 +200,7 @@ def selected(args):
     values = args.all("paths") or args.all("path")
     if not values:
         raise Failure("missing-archive-selection", "Select exact planning records with --paths", 2)
-    paths = [safe_path(value) for value in values]
+    paths = [guarded(value) for value in values]
     base = records.planning()
     for path in paths:
         if not path.is_relative_to(base) or path == base or not path.exists() or path.name in ("STATE.md", "PROJECT.md", "ROADMAP.md", "REQUIREMENTS.md", "config.yaml") or "archive" in path.relative_to(base).parts:

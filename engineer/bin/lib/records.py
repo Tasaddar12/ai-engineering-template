@@ -671,10 +671,13 @@ def todo(args, action):
                 items.append({**metadata, "path": str(path), "body": body})
         return {"todos": items, "count": len(items)}
     if action == "complete":
-        value = Path(args.need())
-        path = safe_path(directory/"pending"/value) if len(value.parts) == 1 and not value.is_absolute() else safe_path(value)
-        if not path.is_relative_to(directory/"pending"):
+        from .issues import todo_path, unresolved_attempt
+        from .archive import guarded
+        path = todo_path(args.need())
+        if path.parent != directory/"pending":
             raise Failure("invalid-todo", "Only pending todo records can be completed")
+        if unresolved_attempt(path):
+            raise Failure("todo-publication-unresolved", "Reconcile the attempted issue publication before retiring this todo")
         metadata, body = split_frontmatter(read(path))
         from .core import digest
         snapshot = digest([path])
@@ -690,10 +693,12 @@ def todo(args, action):
                 raise Failure("todo-issue-open", "Close the linked issue before retiring this todo")
             if re.search(r"human acceptance|Status:\s*(?:PENDING|ACCEPTED)|\bUAT\b", issue.get("body", ""), re.I) and not accepted_human(issue.get("body", "")):
                 raise Failure("human-acceptance-pending", "UAT retirement requires accepted human evidence")
-        destination = directory/"completed"/path.name
+        destination = guarded(directory/"completed"/path.name)
         with planning_lock():
             if digest([path]) != snapshot:
                 raise Failure("todo-source-drift", "Todo changed during provider readback")
+            if unresolved_attempt(path):
+                raise Failure("todo-publication-unresolved", "Issue publication changed during retirement")
             if destination.exists():
                 raise Failure("todo-exists", str(destination))
             destination.parent.mkdir(parents=True, exist_ok=True)
