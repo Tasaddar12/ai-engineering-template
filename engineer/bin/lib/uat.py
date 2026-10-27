@@ -144,7 +144,7 @@ def session_status(path):
                                   or (acceptance and acceptance[1] in line)
                                   or not re.search(r"\b(?:test|action)\s*\d+\b|\b[A-Z]+-\d+\b", line) for line in retest_lines)
             if requires_retest:
-                retests = [action for action in actions if action["status"] in ("pass", "passed") and re.search(r"\bre-?test\b", action["name"]+" "+action["body"], re.I)
+                retests = [action for action in actions if not action["id"].startswith("check-") and action["status"] in ("pass", "passed") and re.search(r"\bre-?test\b", action["name"]+" "+action["body"], re.I)
                            and re.search(r"\b(?:test|action)\s*"+re.escape(item["id"])+r"\b", action["name"]+" "+action["body"], re.I)]
                 if not retests:
                     blockers.append({**item, "reason": "Acceptance checklist requires a recorded human retest pass for this historical action"})
@@ -200,27 +200,25 @@ def passed(args):
 
 
 def current_check_evidence(check):
-    """A status label is insufficient: bind a committed receipt and its inputs."""
+    """Resolve native receipts against today's command/configuration/input digest."""
     try:
         reference = safe_path(check["ref"])
         if not reference.is_file():
             return False
-        revision = check.get("revision")
+        from .core import load_json
+        packet = load_json(reference)
+        result = packet["receipt"]["result"]
+        _, configured = verification.configured_checks()
+        matching = [item for item in configured if item["id"] == result["name"]]
+        if len(matching) != 1:
+            return False
         head = run(["git", "rev-parse", "HEAD"], root()).stdout.strip()
-        if revision != head:
+        actual = verification.read_receipt(reference, verification.check_fingerprint(matching[0]), head)
+        if not actual:
             return False
-        relative = reference.relative_to(root()).as_posix()
-        if run(["git", "ls-files", "--error-unmatch", "--", relative], root(), check=False).returncode:
-            return False
-        if run(["git", "status", "--porcelain", "--", relative], root()).stdout:
-            return False
-        inputs = check.get("inputs")
-        if not isinstance(inputs, list) or not inputs or not check.get("input_digest"):
-            return False
-        from .core import digest
-        paths = [safe_path(value) for value in inputs]
-        return all(value.is_file() for value in paths) and digest(paths, root()) == check["input_digest"]
-    except (Failure, ValueError, TypeError):
+        claimed_revision = check.get("revision")
+        return not claimed_revision or claimed_revision == actual["tested_revision"]
+    except (Failure, ValueError, TypeError, KeyError, OSError):
         return False
 
 

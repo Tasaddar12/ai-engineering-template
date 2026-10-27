@@ -23,6 +23,7 @@ class PreservationCase(unittest.TestCase):
         self.environment.start()
         self.addCleanup(self.environment.stop)
         self.git("init", "-b", "main")
+        self.git("config", "core.autocrlf", "false")
         self.git("config", "user.name", "Preservation Test")
         self.git("config", "user.email", "test@example.invalid")
         self.git("remote", "add", "origin", "https://github.com/example/preservation.git")
@@ -283,7 +284,7 @@ fake
     def test_uncertain_create_recovers_once_and_preview_cannot_reset_consumption(self):
         argv = self.prepare_issue()+["--no-match"]
         self.remote, self.creates, self.timeout = [], 0, True
-        with patch.object(delivery, "gh", side_effect=self.provider), patch.object(issues, "provider_inventory", side_effect=lambda: self.remote):
+        with patch.object(delivery, "gh", side_effect=self.provider), patch.object(issues, "provider_inventory", side_effect=lambda: {"issues": self.remote, "pulls": []}):
             preview = issues.publication(Args(argv), "preview")
             result = issues.publication(Args(argv+["--preview-token", preview["previewToken"]]), "publish")
         self.assertEqual(1, self.creates)
@@ -294,7 +295,7 @@ fake
         argv = self.prepare_issue()
         self.remote = [{"url": "https://github.com/example/preservation/issues/7", "number": 7, "title": "Fix boundary", "body": read(self.body), "state": "CLOSED", "labels": []}]
         self.creates, self.timeout = 0, False
-        with patch.object(delivery, "gh", side_effect=self.provider), patch.object(issues, "provider_inventory", side_effect=lambda: self.remote):
+        with patch.object(delivery, "gh", side_effect=self.provider), patch.object(issues, "provider_inventory", side_effect=lambda: {"issues": self.remote, "pulls": []}):
             with self.assertRaises(Failure):
                 issues.publication(Args(argv+["--no-match"]), "preview")
             selected = argv+["--existing-issue", "7"]
@@ -354,7 +355,7 @@ class QuickVerification(PreservationCase):
         self.commit("quick verification")
         self.assertEqual("passed", verification.status(Args(["--quick", quick["id"]]))["status"])
         self.assertTrue(verification.current_evidence(quick=quick["id"])["current"])
-        pr = {"number": 1, "url": "https://github.com/example/preservation/pull/1", "headRefOid": "0"*40, "body": ""}
+        pr = {"number": 1, "url": "https://github.com/example/preservation/pull/1", "headRefOid": "0"*40, "state": "OPEN", "headRefName": "codex/quick", "body": ""}
         with patch.object(delivery, "view", return_value=pr):
             with self.assertRaises(Failure) as caught:
                 delivery.verified_delivery(Args(["--quick", quick["id"]]), "codex/quick")
@@ -484,10 +485,10 @@ class CanonicalSecurityTracking(PreservationCase):
         with patch.object(security_tracking, "issue_search", side_effect=search), patch.object(security_tracking, "query", return_value=[]):
             packet = security_tracking.command(Args([quick["id"], "--entries-file", str(self.entries)]), "review", "quick")
         self.assertTrue(packet["ready"])
-        self.assertEqual("001", packet["quick"])
-        self.assertEqual("quick:001", packet["scope"]["key"])
+        self.assertEqual(quick["id"], packet["quick"])
+        self.assertEqual("quick:"+quick["id"], packet["scope"]["key"])
         self.assertNotIn("phase", packet)
-        self.assertEqual(('"chore(security): quick 001 security checklist"', "quick-security-checklist"), searches[0])
+        self.assertEqual(('"chore(security): quick '+quick["id"]+' security checklist"', "quick-security-checklist"), searches[0])
 
     def test_unavailable_or_duplicate_container_lookup_never_creates(self):
         args = self.prepare_risk()

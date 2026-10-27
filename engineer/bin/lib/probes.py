@@ -368,7 +368,7 @@ def prohibition_proof(args):
                         _test_evidence(report, report_format))
             observation.update(evidence)
         except (ValueError, TypeError, OSError, ET.ParseError) as exc:
-            fail(f"{stage}: malformed or unavailable report: {exc}")
+            fail(f"{stage}: malformed or unavailable report; non-vacuous execution could not be established: {exc}")
         if kind == "test-command":
             if evidence["asserted"] <= 0:
                 fail(f"{stage}: no non-vacuous executed tests")

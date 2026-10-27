@@ -90,6 +90,7 @@ class PlanningArchive(unittest.TestCase):
         environment.start()
         self.addCleanup(environment.stop)
         subprocess.run(["git", "init", "-q", str(self.root)], check=True, capture_output=True)
+        subprocess.run(["git", "config", "core.autocrlf", "false"], cwd=self.root, check=True, capture_output=True)
         self.write(".planning/ROADMAP.md", ROADMAP)
         self.write(".planning/STATE.md", STATE)
         self.write(".planning/PROJECT.md", "# Test project\n")

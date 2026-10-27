@@ -141,6 +141,7 @@ class RuntimeCase(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.directory, ignore_errors=True)
         self.git("init", "-q", ".")
         self.git("config", "user.email", "runtime@example.test")
+        self.git("config", "core.autocrlf", "false")
         self.git("config", "user.name", "Runtime Test")
         planning = self.directory / ".planning"
         planning.mkdir()
@@ -532,7 +533,8 @@ class PlanRegistration(RuntimeCase):
         before = self.run_verb("state.get")
         self.run_verb("roadmap.set-plans", "2", "--plans", "02-01: Existing", "02-02: New")
         after = self.run_verb("state.get")
-        self.assertEqual(before["position"], after["position"])
+        self.assertEqual({key: value for key, value in before["position"].items() if key != "Progress"}, {key: value for key, value in after["position"].items() if key != "Progress"})
+        self.assertEqual(after["progress"]["percent"], int(after["position"]["Progress"].rsplit(" ", 1)[1].rstrip("%")))
         self.assertEqual(before["status"], after["status"])
         self.assertEqual(after["progress"]["total_plans"], 4)
 
@@ -543,7 +545,8 @@ class PlanRegistration(RuntimeCase):
         before = self.run_verb("state.get")
         self.run_verb("roadmap.set-plans", "2", "--plans", "02-01: Existing", "02-02: Follow-up")
         after = self.run_verb("state.get")
-        self.assertEqual(before["position"], after["position"])
+        self.assertEqual({key: value for key, value in before["position"].items() if key != "Progress"}, {key: value for key, value in after["position"].items() if key != "Progress"})
+        self.assertEqual(after["progress"]["percent"], int(after["position"]["Progress"].rsplit(" ", 1)[1].rstrip("%")))
         self.assertEqual(before["status"], after["status"])
         self.assertIn("- [ ] **Phase 2: Features**", self.read(".planning/ROADMAP.md"))
 
@@ -590,7 +593,7 @@ class PlanRegistration(RuntimeCase):
         self.assertNotIn("01-02:", roadmap)
         self.assertIn("| 1. Foundation | 1/1 | Complete | " + date.today().isoformat(), roadmap)
         state = self.run_verb("state.get")
-        self.assertEqual(state["position"], dict(position, Plan="1 of 1 in current phase", Status="Complete"))
+        self.assertEqual(state["position"], dict(position, Plan="1 of 1 in current phase", Status="Complete", Progress="[█████░░░░░] 50%"))
         self.assertEqual(state["progress"], {"total_phases": 2, "completed_phases": 1,
                                             "total_plans": 2, "completed_plans": 1, "percent": 50})
         self.assertEqual(result["progress"], state["progress"])
@@ -722,9 +725,9 @@ class Todos(RuntimeCase):
                                "--files", "src/auth/keys.ts:44")
         self.assertEqual(result["area"], "auth")
         content = self.read(result["file"])
-        self.assertIn("title: Rotate service account keys", content)
-        self.assertIn("severity: minor", content)
-        self.assertIn("  - src/auth/keys.ts:44", content)
+        self.assertIn('title: "Rotate service account keys"', content)
+        self.assertIn('severity: "minor"', content)
+        self.assertIn('files: ["src/auth/keys.ts:44"]', content)
         self.assertIn("## Problem", content)
 
     def test_invalid_severity_is_rejected(self):

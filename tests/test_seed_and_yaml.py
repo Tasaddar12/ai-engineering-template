@@ -30,7 +30,7 @@ class SeedRoadmapPreservation(RuntimeCase):
     def test_full_copied_instructional_seed_is_not_five_real_phases(self):
         seed = (SOURCE/"engineer/templates/roadmap.md").read_text(encoding="utf-8")
         self.assert_seed(seed)
-        saved = (self.root/".planning/ROADMAP.md").read_text()
+        saved = (self.root/".planning/ROADMAP.md").read_text(encoding="utf-8")
         self.assertTrue(saved.startswith(seed.rstrip()), "adding a real phase rewrote the copied instructional source")
 
     def test_unfilled_initial_roadmap_example_is_not_real_project_scope(self):

@@ -200,6 +200,13 @@ def locate(args):
     directory = phase_in(root(), identifier)
     if directory:
         return {"found": True, "phase_found": True, "source": "current-checkout", "padded_phase": identifier, "worktree": str(root()), "branch": run(["git", "branch", "--show-current"], root()).stdout.strip(), "phase_dir": str(directory), "session": None}
+    from .archive import catalog, guarded
+    archived = [entry for entry in catalog() if entry["kind"] == "phase" and phase_identity(entry["id"]) == identifier]
+    if len(archived) > 1:
+        raise Failure("phase-ambiguous", "Multiple archived phase identities")
+    if archived:
+        directory = guarded(archived[0]["archived_path"])
+        return {"found": True, "phase_found": True, "archived": True, "source": "archive", "padded_phase": identifier, "worktree": str(root()), "branch": run(["git", "branch", "--show-current"], root()).stdout.strip(), "phase_dir": str(directory), "session": None}
     candidates = []
     for item in worktrees.list_worktrees():
         target = Path(item["path"])

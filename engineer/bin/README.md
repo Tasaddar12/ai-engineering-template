@@ -519,7 +519,7 @@ worktree mode; no supported setting disables isolation.
 | `context_path`, `research_path`, `verification_path`, `validation_path`, `ui_spec_path`, `security_path`, `review_path`, `reviews_path`, `uat_path` | absolute existing path or null |
 | `prior_context` | prior phase SUMMARY path/content packets |
 | `prior_verify_candidates` | unexecuted commands proposed by the nearest prior PLAN, with phase/plan/task/command |
-| `prior_verify_commands` | committed complete SUMMARY checks_run entries with passing status, command and ancestor revision; nearest prior phase's verify commands, each with phase/plan/task/command; independent of context window |
+| `prior_verify_commands` | committed complete SUMMARY `checks_run` entries with passing status, command, ancestor revision and evidence path; independent of context window |
 | `threat_id_duplicates`, `threat_id_duplicate_count` | declared threat IDs appearing in multiple plans and their plan IDs |
 | `granularity` | configured planning granularity, default standard |
 | `code_review`, `code_review_depth`, `code_review_depth_overrides` | configured review policy |
@@ -607,3 +607,19 @@ issue-link audit must read it back before readiness. `phase.handoff` and PR
 readiness enforce those target checks. Structural validation proves shape only:
 it does not prove safe content, semantic matches, human acceptance, or mitigation
 correctness. A checked entry, accepted risk, or merge never authorizes closure.
+
+
+`uat.classify-coverage` never treats an empty coverage array as automated coverage.
+Each automated verification entry must reference a native check receipt through
+`ref`. The runtime validates its checksum, passing result, ancestor tested revision,
+current configured argv/environment/input fingerprint and captured log hashes.
+A supplied `revision` must match the receipt's tested revision. A prose status or
+an existing file alone does not establish current execution evidence.
+`check.verify-command-paths` and `check.verify-failure-directions` return
+`commands`, `findings`, `valid` and `readError`; each command row carries `status`,
+`severity` and `reason`. Warning rows remain advisory. Failing-direction bindings
+are the first `<fails_when>` after the nearest preceding `<automated>` within
+one task. Checkpoint option validation proves structure and never human approval.
+`run-with-timeout` forwards both child streams live to stderr and emits exactly
+one JSON result on stdout. An actual timeout stops its owned process tree and
+returns exit 124 with captured output retained in that result.
