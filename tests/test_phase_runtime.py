@@ -1844,12 +1844,12 @@ class RequirementTraceability(RuntimeCase):
         before = [item["check"] for item
                   in self.run_verb("planning.validate", "--skip",
                                    "codebase-freshness")["warnings"]]
-        self.assertIn("requirements-traceability", before)
+        self.assertIn("requirement-completion", before)
         self.run_verb("requirements.close-phase", "1")
         after = [item["check"] for item
                  in self.run_verb("planning.validate", "--skip",
                                   "codebase-freshness")["warnings"]]
-        self.assertNotIn("requirements-traceability", after)
+        self.assertNotIn("requirement-completion", after)
 
 
 class InstallSeedContract(RuntimeCase):

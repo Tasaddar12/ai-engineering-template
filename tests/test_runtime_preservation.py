@@ -157,7 +157,9 @@ class RecordPreservation(PreservationCase):
         self.assertEqual(quick["id"], packet["open_quick"][0]["id"])
         self.assertEqual(todo["title"], packet["pending_todos"][0]["title"])
         self.assertEqual(config.DEFAULTS["context_window"], packet["context_window"])
-        self.assertEqual("01", packet["incomplete_phase"]["number"])
+        self.assertIsNone(packet["incomplete_phase"])
+        self.assertEqual("01", packet["next_phase"]["number"])
+        self.assertFalse(packet["next_phase"]["complete"])
 
 
 class HandoffAndFreshness(PreservationCase):
