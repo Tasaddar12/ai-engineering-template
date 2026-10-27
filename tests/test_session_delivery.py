@@ -518,13 +518,15 @@ class SessionClose(SessionCase):
     def test_closing_an_unknown_branch_is_an_expected_failure(self):
         failed = self.run_verb("session.close", "phase-nope-000000000",
                                expect_ok=False)
-        self.assertEqual(failed["code"], "no-session")
+        self.assertEqual(failed["code"], "session-not-found")
 
-    def test_force_closes_unmerged_work_when_explicitly_asked(self):
+    def test_force_does_not_override_unmerged_resource_preservation(self):
         session = self.open_and_commit()
         result = self.run_verb("session.close", session["branch"], "--force")
-        self.assertTrue(result["closed"])
-        self.assertTrue(result["forced"])
+        self.assertFalse(result["closed"])
+        self.assertTrue(result["preserved"])
+        self.assertEqual(result["reason"], "session-not-integrated")
+        self.assertTrue(Path(session["worktree"]).is_dir())
 
 
 class OpeningPullRequests(unittest.TestCase):

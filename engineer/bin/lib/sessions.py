@@ -87,11 +87,12 @@ def session_command(args, action):
         actual = run(["git", "branch", "--show-current"], target).stdout.strip()
         if actual != branch:
             raise Failure("session-identity-drift", actual)
-        if run(["git", "status", "--porcelain"], target).stdout:
-            raise Failure("dirty-session", str(target))
         head = run(["git", "rev-parse", "HEAD"], target).stdout.strip()
+        evidence = {"evidence": "ancestry", "merged": False, "head": head}
+        if run(["git", "status", "--porcelain", "--untracked-files=all", "--ignored=matching"], target).stdout:
+            return {"closed": False, "preserved": True, "reason": "dirty-session", "evidence": evidence}
         if run(["git", "merge-base", "--is-ancestor", head, "HEAD"], root(), check=False).returncode:
-            raise Failure("session-not-integrated", "Integrate session changes before closing")
+            return {"closed": False, "preserved": True, "reason": "session-not-integrated", "evidence": evidence}
         reference = "refs/heads/"+branch
         if run(["git", "symbolic-ref", "-q", reference], root(), check=False).returncode == 0:
             raise Failure("symbolic-session-branch", branch)
@@ -101,7 +102,7 @@ def session_command(args, action):
         run(["git", "update-ref", "--no-deref", "-d", reference, head], root())
         entry.update({"status": "closed", "closed": now()})
         write_json(path, data)
-        return {"closed": True, **entry}
+        return {"closed": True, "evidence": {**evidence, "merged": True}, **entry}
     kind, label = args.need(), args.need(1)
     if kind not in ("phase", "quick", "milestone", "onboard"):
         raise Failure("invalid-session-kind", kind, 2)
@@ -127,6 +128,9 @@ def session_command(args, action):
         return {**entry, "reused": True}
     common = path.parent.parent
     primary = common.parent if common.name == ".git" else root()
+    base_branch = str(args.get("base", config.lookup(config.load(), "git.base_branch", "main")))
+    if run(["git", "rev-parse", "--verify", base_branch+"^{commit}"], root(), check=False).returncode:
+        base_branch = run(["git", "branch", "--show-current"], primary).stdout.strip()
     base = run(["git", "rev-parse", args.get("base", "HEAD")+"^{commit}"], root()).stdout.strip()
     if action == "adopt":
         if root() == primary:
@@ -140,6 +144,7 @@ def session_command(args, action):
         registered({"worktree": str(target), "branch": branch})
         if kind == "phase" and not phase_in(target, label):
             raise Failure("phase-not-found", label)
+        base = run(["git", "merge-base", "HEAD", base_branch], root()).stdout.strip()
     else:
         branch = config.lookup(config.load(), "worktree.branch_prefix", "codex/")+kind+"-"+label
         target = primary/str(config.lookup(config.load(), "worktree.directory", ".worktrees"))/slug(branch)
@@ -153,7 +158,8 @@ def session_command(args, action):
             raise Failure("session-path-exists", str(target))
         run(["git", "worktree", "add", "-b", branch, str(target), base], primary)
     entry = {"kind": kind, "label": label, "branch": branch, "worktree": str(target), "base": base,
-             "status": "open", "created": now(), "adopted": action == "adopt"}
+             "base_branch": base_branch, "status": "open", "created": now(), "created_at": now(),
+             "adopted": action == "adopt", "synced": None, "pr": None}
     data["sessions"].append(entry)
     write_json(path, data)
     return {**entry, "reused": False}
