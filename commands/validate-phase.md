@@ -24,7 +24,7 @@ Audit Nyquist validation coverage for a completed phase. Three states:
 - (B) No VALIDATION.md, SUMMARY.md exists — reconstruct from artifacts
 - (C) Phase not executed — exit with guidance
 
-Output: updated VALIDATION.md + generated test files.
+Output: coordinator-owned VALIDATION.md, isolated committed tests/fixtures and requirement-level actual/pending evidence. Automatic writing precedes any frozen verification batch and requires recorded implementation authority. Default Nyquist policy is on; disabled/skipped/deferred evidence is never compliant.
 </objective>
 
 <execution_context>

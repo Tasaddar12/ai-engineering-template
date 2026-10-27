@@ -9,7 +9,7 @@ allowed-tools:
   - Glob
   - Grep
   - AskUserQuestion
-requires: [discuss-phase, execute-phase, phase, plan-phase]
+requires: [discuss-phase, phase]
 ---
 
 <arguments>$ARGUMENTS</arguments>
@@ -21,7 +21,7 @@ Clarify phase requirements through structured Socratic questioning with quantita
 
 **Position in workflow:** `spec-phase → discuss-phase → plan-phase → execute-phase → verify`
 
-**How it works:** 1. Load phase context (PROJECT.md, REQUIREMENTS.md, ROADMAP.md, STATE.md) 2. Run Socratic interview loop (up to 6 rounds, rotating perspectives) 4. Score ambiguity across 4 weighted dimensions after each round 5. Gate: ambiguity ≤ 0.20 AND all dimensions meet minimums → write SPEC.md 6. Commit SPEC.md — discuss-phase picks it up automatically on next run
+**How it works:** 1. Load phase context (PROJECT.md, REQUIREMENTS.md, ROADMAP.md, STATE.md) 2. Run Socratic interview loop (up to 6 rounds, rotating perspectives) 4. Score ambiguity across 4 weighted dimensions after each round 5. Gate: ambiguity ≤ 0.20 AND all dimensions meet minimums → run edge and prohibition probes, then write SPEC.md (explicit write-with-gaps choices retain flagged assumptions) 6. Commit SPEC.md — discuss-phase picks it up automatically on next run
 
 **Output:** `{phase_dir}/{padded_phase}-SPEC.md` — falsifiable requirements that lock "what/why" before discuss-phase handles "how"
 </objective>
@@ -35,10 +35,10 @@ Clarify phase requirements through structured Socratic questioning with quantita
 Phase number: the `<arguments>` block (required)
 
 **Flags:**
-- `--auto` — Skip interactive questions; Claude selects recommended defaults and writes SPEC.md
-- `--text` — Use plain-text numbered lists instead of TUI menus (required for `/rc` remote sessions)
+- `--auto` — Skip interactive questions; the active Claude or Codex host selects defensible recommended defaults and writes SPEC.md
+- `--text` — Use plain-text numbered lists instead of TUI menus
 
-Context files are resolved in-workflow using `init phase-op`.
+Context files are resolved in-workflow using `phase.locate` and `init.phase-op`.
 </context>
 
 <process>
@@ -53,5 +53,5 @@ Execute end-to-end.
 - Gate passed: ambiguity ≤ 0.20 AND all dimension minimums met
 - SPEC.md written with falsifiable requirements, explicit boundaries, and acceptance criteria
 - SPEC.md committed atomically
-- User knows they can now run /discuss-phase which will load SPEC.md automatically
+- Closing report states that discuss-phase loads SPEC.md; no automatic discuss/plan/implementation chain
 </success_criteria>

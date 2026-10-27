@@ -9,60 +9,22 @@ Cross-phase audit of all UAT and verification files. Finds every outstanding ite
 <step name="initialize">
 Run the CLI audit:
 
+Read and execute engineer/workflows/_runtime-launcher.snippet.sh; run the read-only source:
+
 ```bash
-_engineer_identity_ok() {
-  [ -f "$1" ] || return 1
-  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
-}
-_engineer_select() {
-  for _engineer_candidate do
-    if _engineer_identity_ok "$_engineer_candidate"; then
-      ENGINEER_RUN="$_engineer_candidate"
-      return 0
-    fi
-  done
-  return 1
-}
-if [ -n "${ENGINEER_RUN:-}" ]; then
-  _engineer_identity_ok "$ENGINEER_RUN" || {
-    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
-    exit 1
-  }
-else
-  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
-  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
-  _engineer_select \
-    "$_engineer_root/engineer/bin/engineer_run" \
-    "$_engineer_runtime_root/engineer/bin/engineer_run" \
-    "$_engineer_root/.claude/engineer/bin/engineer_run" \
-    "$_engineer_root/.codex/engineer/bin/engineer_run" \
-    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
-    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
-    "$_engineer_path_candidate" || {
-    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
-    exit 1
-  }
-fi
-export ENGINEER_RUN
-engineer_run() {
-  sh "$ENGINEER_RUN" "$@"
-}
-if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
-  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
-fi
-AUDIT=$(engineer_run query audit-uat --raw)
+AUDIT=$(engineer_run query audit-uat)
 ```
 
-Parse JSON for `results` array and `summary` object.
+Parse the actual `{items, count}` output, not an invented results/summary envelope. Each item retains stable id, status, file, phase or quick identity, name/body/reason as supplied. Independently inventory active and archived UAT/VERIFICATION paths under `.planning/phases/`, `.planning/quick/` and `.planning/milestones/` using read-only Glob/Read. The runtime's active-session packet alone does not prove archived coverage. Count every discovered source, parse its Tests/action/checklist/Human acceptance sections, retain unparsed blocks, and merge by source path plus stable item ID. Do not equate absence from runtime output with acceptance.
+
+Build the report-local `results` and `summary` views from that cited inventory: total_items, total_files, phase_count and parse_gap_files. They are authored evidence, not runtime stdout fields. Cite unsupported/malformed files and exact blocks so they remain visible even alongside valid pending items.
 
 If `summary.total_items` is 0 AND `summary.parse_gap_files` is 0:
 ```
 ## All Clear
 
 No outstanding UAT or verification items found across all phases.
-All tests are passing, resolved, or diagnosed with fix plans.
+No outstanding items were found in the completely examined scope. This audit does not attest that unexecuted tests passed or that a diagnosis/fix plan grants human acceptance.
 ```
 Stop here.
 
@@ -124,7 +86,7 @@ Present the audit report:
 | 1 | {phase} | {test_name} | {category} | {expected} |
 ...
 
-### Stale (can be closed) ({count})
+### Stale candidates (require scope reconciliation) ({count})
 
 | # | Phase | Test | Why Stale |
 |---|-------|------|-----------|
@@ -133,16 +95,18 @@ Present the audit report:
 
 ---
 
-## Recommended Actions
+## Open tracking and decisions
 
-1. **Close stale items:** `/verify-work {phase}` — mark stale tests as resolved
-2. **Run active tests:** Human UAT test plan below
-3. **When prerequisites met:** Retest blocked items with `/verify-work {phase}`
+For each unresolved item, report its canonical issue URL (or Pending reconciliation), actual blocker, owner, next action and evidence. Source removal or rewriting is evidence for scope reconciliation, never permission to close an acceptance item. A resolved_by PLAN/SUMMARY must be real, committed, executed, identity-matching and carry specific gap-resolution evidence plus resolved_at. Preserve the historical failed result and any required human retest; diagnosis alone never resolves it. Final human acceptance separately requires actual ACCEPTED status, accepted_by, accepted_at and decision.
+
+This command is read-only: do not edit UAT, mark stale items resolved, publish/close issues or execute tests. Route concrete bounded defects to the authorized correction caller; return human obligations as the runnable script below.
 ```
 </step>
 
 <step name="test_plan">
-Generate a human UAT test plan for "Testable Now" + "active" items only:
+Read the complete engineer/templates/UAT.md and the full UAT variant of engineer/templates/issue.md. Render the human script for "Testable Now" + "active" items using their actual acceptance contract. Preserve stable action IDs, setup/fixtures, exact action, expected observation, evidence to retain, reset/cleanup, accepted/failed/blocked reply and final Human acceptance fields. Group compatible actions together, but never combine away independent required outcomes. Report prerequisites for blocked actions separately.
+
+The example below supplements the canonical script; it does not replace mandatory template fields:
 
 Group by what can be tested together (same screen, same feature, same prerequisite):
 
