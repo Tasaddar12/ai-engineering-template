@@ -19,6 +19,39 @@ Template for `.planning/phases/XX-name/{phase_num}-UAT.md` — persistent UAT se
 
 ---
 
+### Prepare the delivered entry point and evidence
+
+Copy only the File Template into a phase session. Fill the visible placeholders at their stated size and remove unused fields and authoring prompts. Do not put hidden comments or authoring rationale into the delivered human protocol. The [UAT issue variant](issue.md#uat) is the canonical provider body; its saved-issue readback and publication-repair duties still apply.
+
+Start with one exact accessible delivered URL, including the full path and required trailing slash, or a directly runnable supplied launcher. Verify that it opens the selected build and expected startup screen. A homepage, package name or guessed route is insufficient. For a Windows launcher, give the actual sequence: `Win+R`, paste the full prepared path, then press `Enter`; identify the startup screen the human should see. The maintainer selects the source and build before handoff, rather than asking the human to choose.
+
+Use two to four observable outcomes, each mapped to approved acceptance IDs and numbered actions. Every action names the actual visible screen, button, field or object, exact click/key sequence and concrete safe fixture values. Give each action its own visible expected result. Inspect labels and key behavior against the delivered UI before publication. An unavailable function or unverified entry point is BLOCKED with its missing prerequisite, and dependent actions remain unresolved. Do not edit the protocol to hide a genuine product failure.
+
+### Keep maintainer preparation separate from human acceptance
+
+The AI/maintainer selects and prepares the build, credentials or test session, data and extracted packages; records hashes, versions and provenance; runs technical checks; gathers evidence; and prepares bundles. Never assign those engineering preparation tasks to the human reviewer.
+
+Link one separate, accessible maintainer-owned record containing:
+
+| Preparation fact | Required record |
+|---|---|
+| Build identity | Exact build/version and full source commit |
+| Artifacts | Actual artifact hashes, versions and prepared bundle reference |
+| Environment | Relevant platform, configuration and actual ready/blocked state |
+| Access and fixtures | Prepared safe session/data references, without publishing secrets |
+| UI inspection | Evidence for the delivered entry point, controls, labels and key behavior |
+| Technical checks | Exact executed commands, results, revision and limitations |
+
+The human need not read or compare this preparation record. A successful maintainer check supplies preparation evidence, never the human's acceptance. Keep `PENDING HUMAN acceptance` until the actual decision is recorded. Silence, skips and source inspection do not imply PASS.
+
+### Use a linked-test index without duplicate reporting
+
+When tests need an index, provide a numbered run order with descriptive linked test names and exact opening actions, not bare issue numbers. Use the same UAT issue variant for a provider index, preserving its headings, order, step table and Human acceptance fields. Each row's Actual outcome / evidence directs reporting to the linked test.
+
+Replace the standalone reply sentence with: "Record action results only in each linked test; no separate index-row replies." Record each reply once in that test. The index decision/evidence references actual linked-test decisions, with no second acceptance action at the index. Verify saved test links and launch instructions after provider readback, repair authoring/publication errors, and recover uncertain creation by exact intent before retrying.
+
+For each action within a test, request `N PASS`, `N FAIL <short observation>`, or `N BLOCKED <reason>`. Preserve the actual human response. Technical diagnosis can append evidence while status remains partial; it cannot manufacture a response or replace required retesting.
+
 ## File Template
 
 ```markdown
@@ -29,6 +62,12 @@ source: ["XX-01-SUMMARY.md"] # One or more existing SUMMARY paths
 started: [ISO timestamp]
 updated: [ISO timestamp]
 ---
+
+## Delivered build and preparation
+
+Entry point: [Exact verified delivered URL or full supplied launcher plus keys]
+Build: [Selected build/version and full source commit]
+Maintainer record: [Accessible separate preparation/provenance/check/bundle record]
 
 ## Current Test
 

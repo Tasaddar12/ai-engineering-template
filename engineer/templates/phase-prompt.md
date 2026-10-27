@@ -178,11 +178,6 @@ After completion, create `.planning/phases/XX-name/{phase}-{plan}-SUMMARY.md`
 
 ---
 
-| `acceptance` | Yes | Explicit acceptance obligations, including required human judgment. |
-| `documentation` | Yes | Documentation deliverables and verification. |
-| `checks` | Yes | Lists of argv lists, for example `[["python", "-m", "unittest"]]`. |
-| `issue_refs` | Yes | Canonical issues or an explicit Pending reason. |
-
 ## Parallel vs Sequential
 
 <parallel_examples>
