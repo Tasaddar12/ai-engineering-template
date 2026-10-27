@@ -19,7 +19,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `agents/executor.md` | reconciled | 607 | 0 |
 | `agents/integration-checker.md` | reconciled | 472 | 0 |
 | `agents/nyquist-auditor.md` | reconciled | 210 | 0 |
-| `agents/pattern-mapper.md` | reconciled | 344 | 3 |
+| `agents/pattern-mapper.md` | reconciled | 378 | 3 |
 | `agents/phase-researcher.md` | reconciled | 773 | 3 |
 | `agents/plan-checker.md` | reconciled | 851 | 0 |
 | `agents/planner.md` | reconciled | 765 | 4 |
@@ -362,7 +362,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `engineer/workflows/new-project/steps/codebase-map-offer.md` | reconciled | 7 | 0 |
 | `engineer/workflows/next.md` | reconciled | 40 | 0 |
 | `engineer/workflows/onboard.md` | reconciled | 280 | 4 |
-| `engineer/workflows/plan-phase.md` | reconciled | 218 | 0 |
+| `engineer/workflows/plan-phase.md` | reconciled | 243 | 0 |
 | `engineer/workflows/plan-phase/steps/closed-phase-gate.md` | reconciled | 7 | 0 |
 | `engineer/workflows/plan-phase/steps/stall-detection-helpers.md` | reconciled | 217 | 0 |
 | `engineer/workflows/plan-phase/steps/windows-troubleshooting.md` | reconciled | 23 | 0 |
