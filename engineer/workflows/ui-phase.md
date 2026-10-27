@@ -374,14 +374,11 @@ coverage sound.
 **Backstop** (→ `resolved`, verification: backstop; a held-out/visual UI-state test) / **Defer** (→ `unresolved`). An `unclassified` row is
 a manual-review nudge, not a hard block. Text mode (`workflow.text_mode` / `--text`) → numbered lists.
 
-**Kind-confirmation under `--auto`.** The propose-then-confirm step above is an AskUserQuestion, so
-under `--auto` it follows the spec-phase 5.5 convention (replace AskUserQuestion with the agent's
-recommended choice): the agent re-reads each element's prose and authors the `elements` override (the
-union of the detected kinds + any kind it identifies as missed) instead of prompting — so `--auto`
-recall rests on the agent's kind-identification, not the heuristic cue-match alone. This matters because
-The resolution floor below covers detected categories only: it resolves the *detected* categories and cannot
-recover a kind that was never surfaced, so recall is fixed HERE, at kind-confirmation, before
-resolution runs.
+**Kind-confirmation under `--auto`.** Within locked decisions and delegated
+discretion, the agent re-reads each surface and authors the union of proposed and
+missed kinds without a routine prompt. Recall depends on this explicit review,
+not a single heuristic cue. The resolution floor covers detected categories only;
+it cannot recover a kind that never entered the table.
 
 **`--auto` mode (two layers).** The agent-judged table applies this resolution floor: every applicable
 consideration auto-resolves with `verification: backstop` (carrying the taxonomy question as its
@@ -404,19 +401,58 @@ STATE coverage and REFERENCES those rows rather than restating the copy (de-dup)
 
 ## 10. Final checker and coordinator approval
 
-The consideration section is part of the contract. If it changed after review,
-obtain fresh checker evidence against the complete final content. After ALL
-artifact writers/checkers have stopped, the coordinator writes the Checker
-Sign-Off, `status: approved` and reviewed timestamp only from complete APPROVED
-read-only evidence. Retain reviewed revision, input/spec identity, dimension
-citations, unresolved/backstop obligations and provenance; status alone is not
-proof. A semantic content change invalidates prior approval. Run
-`engineer_run query check.ui-plan-gate N` only when checks are permitted. Inspect
-its actual blocked/required/reason result; if the installed gate lacks needed
-scope/approval-evidence validation, report that concrete dependency instead of
-claiming it supplied those protections. Pending gate execution blocks a claimed
-checked planning gate, not independent authorized design authoring.
+The consideration section and COMPLETE body, including Checker Sign-Off, are part
+of the contract. Finish them, integrate and commit the candidate contract BEFORE
+capturing the final checker's reviewed_revision. If a preliminary checker suggests
+sign-off changes, apply and commit those before a fresh final read-only checker.
+Only after ALL artifact writers/checkers stop does the coordinator persist its
+actual complete evidence in frontmatter, set status: approved and reviewed_at.
+Never change contract body or other metadata under an approval-only exception.
 
+The existing `check.ui-plan-gate N` verb consumes this `ui_checker` frontmatter
+mapping (replace every value from actual evidence; never manufacture a dispatch):
+
+```yaml
+ui_checker:
+  role: ui-checker
+  verdict: APPROVED
+  phase: "01" # actual canonical phase number, including decimal identity
+  spec_path: .planning/phases/01-example/01-UI-SPEC.md # actual relative path
+  context_path: .planning/phases/01-example/01-CONTEXT.md # actual relative path
+  reviewed_revision: <actual full captured Git SHA>
+  spec_digest: <actual canonical contract SHA-256>
+  context_digest: <actual CONTEXT text SHA-256>
+  roadmap_digest: <actual ROADMAP text SHA-256>
+  checker_id: <actual independent checker dispatch identity>
+  author_id: <actual researcher dispatch identity, distinct from checker>
+  session: <actual phase-session identity>
+  reviewed_at: <actual review timestamp>
+  unexamined: [] # only when every assigned dimension/input was examined
+  dimensions:
+    - dimension: 1
+      verdict: PASS # PASS or FLAG, never BLOCK under APPROVED
+      evidence: <actual cited contract observation>
+    # Include EXACTLY one actual evidenced record for EACH dimension 1 through 7.
+```
+
+For spec_digest, parse frontmatter and body with the runtime's safe subset. Hash
+UTF-8 `json.dumps({"metadata": filtered_metadata, "body": complete_body},
+sort_keys=True, ensure_ascii=False, separators=(",", ":"))`, excluding ONLY
+frontmatter status, approved, reviewed_at and ui_checker. Hash CONTEXT/ROADMAP
+UTF-8 decoded text with LF newlines, as core.read does. All other metadata and the
+complete contract body bind. These fields preserve machine-checkable source
+identity; genuine reviewer identity and design decisions still require their
+actual dispatch/CONTEXT evidence, not self-authored assertions.
+
+Commit only that exact spec's approval metadata. Run
+`engineer_run query check.ui-plan-gate N` only when checks are permitted, before
+planner dispatch. The gate rejects missing/mismatched input evidence, incomplete
+or blocking dimensions, dirty inputs, nonancestor revisions, merges and EVERY
+intervening commit changing anything except that exact spec's approval metadata.
+A changed-and-restored contract/source still invalidates approval. Observe its
+actual blocked/required/reason; pending gate execution remains pending. Record a
+concrete runtime-version limitation instead of claiming absent protections. No
+status/checkbox alone proves design approval or human implementation authority.
 
 ## 11. Commit and durable decisions
 

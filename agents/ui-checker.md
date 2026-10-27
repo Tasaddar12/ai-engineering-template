@@ -215,7 +215,7 @@ dimension: 6
 severity: BLOCK
 required_property: "Every third-party registry entry records evidence of actual vetting"
 description: "Third-party registry 'magic-ui' listed with Safety Gate 'shadcn view + diff required' — this is intent, not evidence of actual vetting"
-fix_hint: "Re-run ui-phase to trigger the registry vetting gate, or manually run 'npx shadcn view {block} --registry {url}' and record results"
+fix_hint: "Re-run ui-phase to trigger the registry vetting gate, or inspect the already installed block through an available read-only tool and record actual results"
 ```
 ```yaml
 dimension: 6
@@ -317,10 +317,15 @@ and the fix_hint labelled as a non-binding example}
 
 If APPROVED: return the proposed sign-off and timestamp as evidence; do not
 write them. Only the coordinator records approval after all results join. Include
-`reviewed_revision`, `spec_digest` (SHA-256 of the contract excluding frontmatter
-and the final Checker Sign-Off section), `context_digest` (SHA-256 of exact CONTEXT
-bytes), `roadmap_digest` (SHA-256 of exact ROADMAP bytes), and the seven evidenced
-dimension verdicts. Return full root/branch/base/phase/session/input identities,
+`reviewed_revision` (full actual Git revision) and the exact `ui_checker` evidence
+mapping documented in ui-phase Step 10: role/verdict/phase, exact relative
+spec_path/context_path, actual distinct checker_id/author_id, session/reviewed_at,
+unexamined and all seven dimension records. `spec_digest` hashes canonical compact
+sorted-key UTF-8 JSON `{metadata,body}`; metadata excludes ONLY status, approved,
+reviewed_at and ui_checker, while the COMPLETE body and ALL other metadata bind.
+`context_digest` and `roadmap_digest` hash UTF-8 decoded text with LF line endings
+(the runtime read convention). Never exclude a sign-off section or design choices
+from the digest. Return the seven evidenced dimension verdicts. Return full root/branch/base/phase/session/input identities,
 authority/check-order constraints, source citations, examined/unexamined scope,
 unresolved/backstop obligations and any missing evidence. No children, provider
 writes, prompts or check execution contrary to the assigned user order. A status
