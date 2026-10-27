@@ -1,125 +1,15 @@
-@engineer/references/response-language-directive.md
-
-# Milestone Summary Workflow
-
-Generate a comprehensive, human-friendly project summary from completed milestone artifacts.
-Designed for team onboarding — a new contributor can read the output and understand the entire project.
-
----
-
-## Step 1: Resolve Version
-
-```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
-$ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-VERSION="$GSD_ARGS"
-```
-
-If `$ARGUMENTS` is empty:
-1. Check `.planning/STATE.md` for current milestone version
-2. Check `.planning/milestones/` for the latest archived version
-3. If neither found, check if `.planning/ROADMAP.md` exists (project may be mid-milestone)
-4. If nothing found: error "No milestone found. Run /new-project or /new-milestone first."
-
-Set `VERSION` to the resolved version (e.g., "1.0").
-
-## Step 2: Locate Artifacts
-
-Determine whether the milestone is **archived** or **current**:
-
-**Archived milestone** (`.planning/milestones/v{VERSION}-ROADMAP.md` exists):
-```
-ROADMAP_PATH=".planning/milestones/v${VERSION}-ROADMAP.md"
-REQUIREMENTS_PATH=".planning/milestones/v${VERSION}-REQUIREMENTS.md"
-AUDIT_PATH=".planning/milestones/v${VERSION}-MILESTONE-AUDIT.md"
-```
-
-**Current/in-progress milestone** (no archive yet):
-```
-ROADMAP_PATH=".planning/ROADMAP.md"
-REQUIREMENTS_PATH=".planning/REQUIREMENTS.md"
-AUDIT_PATH=".planning/v${VERSION}-MILESTONE-AUDIT.md"
-```
-
-Note: The audit file moves to `.planning/milestones/` on archive (per `complete-milestone` workflow). Check both locations as a fallback.
-
-**Always available:**
-```
-PROJECT_PATH=".planning/PROJECT.md"
-RETRO_PATH=".planning/RETROSPECTIVE.md"
-STATE_PATH=".planning/STATE.md"
-```
-
-Read all files that exist. Missing files are fine — the summary adapts to what's available.
-
-## Step 3: Discover Phase Artifacts
-
-Find all phase directories:
-
-```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
-$ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-_engineer_identity_ok() {
-  [ -f "$1" ] || return 1
-  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
-}
-_engineer_select() {
-  for _engineer_candidate do
-    if _engineer_identity_ok "$_engineer_candidate"; then
-      ENGINEER_RUN="$_engineer_candidate"
-      return 0
-    fi
-  done
-  return 1
-}
-if [ -n "${ENGINEER_RUN:-}" ]; then
-  _engineer_identity_ok "$ENGINEER_RUN" || {
-    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
-    exit 1
-  }
-else
-  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
-  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
-  _engineer_select \
-    "$_engineer_root/engineer/bin/engineer_run" \
-    "$_engineer_runtime_root/engineer/bin/engineer_run" \
-    "$_engineer_root/.claude/engineer/bin/engineer_run" \
-    "$_engineer_root/.codex/engineer/bin/engineer_run" \
-    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
-    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
-    "$_engineer_path_candidate" || {
-    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
-    exit 1
-  }
-fi
-export ENGINEER_RUN
-engineer_run() {
-  sh "$ENGINEER_RUN" "$@"
-}
-if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
-  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
-fi
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-engineer_run query init.progress ${GSD_WS:+--ws=${GSD_WS##* }}
-```
-
-This returns phase metadata. For each phase in the milestone scope:
-
-- Read `{phase_dir}/{padded}-SUMMARY.md` if it exists — extract `one_liner`, `accomplishments`, `decisions`
-- Read `{phase_dir}/{padded}-VERIFICATION.md` if it exists — extract status, gaps, deferred items
-- Read `{phase_dir}/{padded}-CONTEXT.md` if it exists — extract key decisions from `<decisions>` section
-- Read `{phase_dir}/{padded}-RESEARCH.md` if it exists — note what was researched
-
-Track which phases have which artifacts.
-
-**If no phase directories exist** (empty milestone or pre-build state): skip to Step 5 and generate a minimal summary noting "No phases have been executed yet." Do not error — the summary should still capture PROJECT.md and ROADMAP.md content.
-
+<!-- workflow: milestone-summary; read-only unless --write -->
+<purpose>
+Explain an actual milestone for onboarding or review from complete committed evidence. Present the document in the response by default. Write and commit only when --write was explicitly supplied; never mutate STATE.
+</purpose>
+<process>
+<step name="resolve_version">
+Read and execute engineer/workflows/_runtime-launcher.snippet.sh. Run milestone.list; use the explicit target, otherwise the active milestone, otherwise the newest actually shipped milestone. If none exists, report /new-milestone as the missing setup. Never guess an archive path from a version-shaped string.
+</step>
+<step name="locate_artifacts">
+Run init.complete-milestone and resolve its actual target milestone_phases membership. Read PROJECT and REQUIREMENTS, each target phase's CONTEXT/complete SUMMARY/VERIFICATION, relevant UAT and milestone narrative. Use bounded relevant reads and source references for implementation details; do not load unrelated records or replace evidence with roadmap headings alone. An unavailable target membership is a report limitation, not an invented phase list.
+</step>
+<step name="gather_statistics">
 ## Step 4: Gather Git Statistics
 
 Try each method in order until one succeeds:
@@ -156,9 +46,10 @@ Extract (when available):
 - Timeline (start date → end date)
 - Contributors (from git log authors)
 
-## Step 5: Generate Summary Document
 
-Write to `.planning/reports/MILESTONE_SUMMARY-v${VERSION}.md`:
+</step>
+<step name="generate_document">
+Keep the complete seven-section format and examples below. Distinguish delivered, in-progress, planned, deferred and unverified outcomes. Cite actual paths and revisions; do not claim a test or acceptance passed from narrative alone. Known Gaps is explicit even when it states none were found. Default output is the response; the path in the template applies only to --write.
 
 ```markdown
 # Milestone v{VERSION} — Project Summary
@@ -204,9 +95,9 @@ Present as a bulleted list of decisions with brief rationale:
 {Aggregate from all CONTEXT.md <decisions> sections}
 {Each decision with: ID, description, phase, rationale}
 
-## 6. Tech Debt & Deferred Items
+## 6. Tech Debt, Deferred Items & Known Gaps
 
-{From VERIFICATION.md files: gaps found, anti-patterns noted}
+{From VERIFICATION.md files: actual gaps and anti-patterns; explicitly state Known Gaps even when none remain}
 {From RETROSPECTIVE.md: lessons learned, what to improve}
 {From CONTEXT.md <deferred> sections: ideas parked for later}
 
@@ -229,48 +120,18 @@ Present as a bulleted list of decisions with brief rationale:
 - **Contributors:** {list}
 ```
 
-## Step 6: Write and Commit
 
-**Overwrite guard:** If `.planning/reports/MILESTONE_SUMMARY-v${VERSION}.md` already exists, ask the user:
-> "A milestone summary for v{VERSION} already exists. Overwrite it, or view the existing one?"
-If "view": display existing file and skip to Step 8 (interactive mode). If "overwrite": proceed.
-
-Create the reports directory if needed:
-```bash
-mkdir -p .planning/reports
-```
-
-Write the summary, then commit:
-```bash
-engineer_run query commit "docs(v${VERSION}): generate milestone summary for onboarding" --files \
-  ".planning/reports/MILESTONE_SUMMARY-v${VERSION}.md"
-```
-
-## Step 7: Present Summary
-
-Display the full summary document inline.
-
-## Step 8: Offer Interactive Mode
-
-After presenting the summary:
-
-> "Summary written to `.planning/reports/MILESTONE_SUMMARY-v{VERSION}.md`.
->
-> I have full context from the build artifacts. Want to ask anything about the project?
-> Architecture decisions, specific phases, requirements, tech debt — ask away."
-
-If the user asks questions:
-- Answer from the artifacts already loaded (CONTEXT.md, SUMMARY.md, VERIFICATION.md, etc.)
-- Reference specific files and decisions
-- Stay grounded in what was actually built (not speculation)
-
-If the user is done:
-- Suggest next steps: `/new-milestone`, `/progress`, or sharing the summary with the team
-
-## Step 9: Update STATE.md
-
-```bash
-engineer_run query state.record-session \
-  --stopped-at "Milestone v${VERSION} summary generated" \
-  --resume-file ".planning/reports/MILESTONE_SUMMARY-v${VERSION}.md"
-```
+</step>
+<step name="write_and_commit">
+Only when --write is explicit, write the full document to `.planning/reports/MILESTONE_SUMMARY-v${VERSION}.md`. If that exact file already exists, ask overwrite or view; view preserves it and returns its complete existing contents. Commit only that report through engineer_run query commit after an authorized overwrite/new write. Without --write, do not create directories, files, commits or STATE continuity entries.
+</step>
+<step name="present">
+Present the full requested explanation and its factual limitations, or its exact path/commit when written. Keep the relevant Q&A offer: answer questions about an actual phase, decision or entry point from the evidence. Do not recommend unrelated workflow commands or imply a written report when only a response was requested.
+</step>
+</process>
+<anti_patterns>
+No roadmap-only account, fabricated verification, hidden known gaps, unrequested report write, or STATE mutation.
+</anti_patterns>
+<success_criteria>
+The complete seven-section explanation is supported by actual milestone evidence and explicit known gaps; output remained read-only unless --write was supplied and its exact overwrite/commit scope was authorized.
+</success_criteria>
