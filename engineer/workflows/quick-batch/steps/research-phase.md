@@ -3,56 +3,12 @@
 Skip this step entirely if NOT `$RESEARCH_MODE`.
 
 Dispatched BEFORE planning, for every not-yet-researched item in the batch —
-row 16 of the design's behavior table. Research is not worktree-isolated (it
-only writes `${item_dir}/${quick_id}-RESEARCH.md`, never touches git), so the
-`isolation == none` concurrency cap (row 6) does NOT apply here (row 12) —
-compute concurrency with `mutating=false`:
+row 16 of the design's behavior table. Research returns a read-only evidence packet for coordinator persistence, or writes its assigned artifact in an isolated owned checkout. It never writes shared records. Compute concurrency with mutating=false, still bounded by actual host slots:
 
 ```bash
-_engineer_identity_ok() {
-  [ -f "$1" ] || return 1
-  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
-}
-_engineer_select() {
-  for _engineer_candidate do
-    if _engineer_identity_ok "$_engineer_candidate"; then
-      ENGINEER_RUN="$_engineer_candidate"
-      return 0
-    fi
-  done
-  return 1
-}
-if [ -n "${ENGINEER_RUN:-}" ]; then
-  _engineer_identity_ok "$ENGINEER_RUN" || {
-    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
-    exit 1
-  }
-else
-  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
-  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
-  _engineer_select \
-    "$_engineer_root/engineer/bin/engineer_run" \
-    "$_engineer_runtime_root/engineer/bin/engineer_run" \
-    "$_engineer_root/.claude/engineer/bin/engineer_run" \
-    "$_engineer_root/.codex/engineer/bin/engineer_run" \
-    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
-    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
-    "$_engineer_path_candidate" || {
-    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
-    exit 1
-  }
-fi
-export ENGINEER_RUN
-engineer_run() {
-  sh "$ENGINEER_RUN" "$@"
-}
-if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
-  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
-fi
-QB_RESEARCH_CONC_JSON=$(engineer_run quick-batch effective-concurrency --jobs "$JOBS" --task-count "$ITEM_COUNT" --capacity "$CAPACITY" --isolation "$ISOLATION" --raw)
-RESEARCH_CONCURRENCY=$(printf '%s' "$QB_RESEARCH_CONC_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(String(j.concurrency))}catch{process.stdout.write("1")}})')
+source engineer/workflows/_runtime-launcher.snippet.sh
+QB_RESEARCH_CONC_JSON=$(engineer_run query quick-batch.effective-concurrency --jobs "$JOBS" --task-count "$ITEM_COUNT" --capacity "$CAPACITY" --isolation "$ISOLATION" --raw)
+RESEARCH_CONCURRENCY=$(printf '%s' "$QB_RESEARCH_CONC_JSON" | python -I -c "import json,sys; j=json.load(sys.stdin); print(str(j['concurrency']))")
 ```
 
 For each item in `$BATCH_MANIFEST_JSON.items` whose
@@ -61,9 +17,7 @@ For each item in `$BATCH_MANIFEST_JSON.items` whose
 way every step does —
 
 ```bash
-SLUG=$(engineer_run query generate-slug "$description" --raw)
-ITEM_DIR="${quick_dir}/${quick_id}-${SLUG}"
-mkdir -p "$ITEM_DIR"
+# ITEM_DIR comes from the runtime item directory. Coordinator persists returned evidence there.
 ```
 
 Display banner:

@@ -24,23 +24,13 @@ Store as `$TASK`.
 </step>
 
 <step name="scope_check">
-**Before doing anything, verify this is actually trivial.**
+Before editing, name one bounded outcome, at most three exact file paths, explicit deletions (none by default), shared resources, and a concrete observable done criterion. A typo, config value, missing import or ignore entry can qualify; new dependencies, architecture changes and research do not. The explicit human /fast request authorizes only that outcome. Another workflow must not invoke fast as a phase implementation shortcut.
 
-A task is trivial if it can be completed in:
-- ≤ 3 file edits
-- ≤ 1 minute of work
-- No new dependencies or architecture changes
-- No research needed
+If scope exceeds this lane, automatically continue the already authorized outcome through the complete /quick workflow, or the authorized phase discussion/planning procedure when phase-sized. Preserve the user's implementation scope; phase implementation still requires an explicit instruction for that phase. Do not ask for a routine proceed menu. A locked decision or actual human acceptance requirement blocks only dependent work. If scope grows after edits, preserve the session and changes and continue the bounded quick procedure there, without resetting or staging unrelated work.
+</step>
 
-If the task seems non-trivial (multi-file refactor, new feature, needs research),
-say:
-
-```
-This looks like it needs planning. Use /quick instead:
-  /quick "{task description}"
-```
-
-And stop.
+<step name="open_session">
+Read and execute engineer/workflows/_runtime-launcher.snippet.sh. Inspect session.status; reuse only this task's matching real isolated quick session. Otherwise run `engineer_run query session.open quick "${TASK_LABEL}"`. Quote and enter its returned worktree and capture SESSION_BRANCH, SESSION_WORKTREE and base. Verify the actual root/branch equals that session and differs from the primary/shared checkout. A failed isolation operation stops implementation; never edit inline in the primary checkout. Run `engineer_run query quick.create "${TASK}"` inside the session, retaining QUICK_ID and the returned directory/path. No phase is invented.
 </step>
 
 <step name="execute_inline">
@@ -48,91 +38,25 @@ Do the work directly:
 
 1. Read the relevant file(s)
 2. Make the change(s)
-3. Verify the change works (run existing tests if applicable, or do a quick sanity check)
+3. Verify the concrete done criterion with applicable existing checks only when execution is permitted. Honor explicit deferred-check instructions; record pending evidence and withhold any verdict requiring it.
 
 **No PLAN.md.** Just do it.
 </step>
 
 <step name="commit">
-Commit the change atomically:
-
-```bash
-_engineer_identity_ok() {
-  [ -f "$1" ] || return 1
-  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
-}
-_engineer_select() {
-  for _engineer_candidate do
-    if _engineer_identity_ok "$_engineer_candidate"; then
-      ENGINEER_RUN="$_engineer_candidate"
-      return 0
-    fi
-  done
-  return 1
-}
-if [ -n "${ENGINEER_RUN:-}" ]; then
-  _engineer_identity_ok "$ENGINEER_RUN" || {
-    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
-    exit 1
-  }
-else
-  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
-  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
-  _engineer_select \
-    "$_engineer_root/engineer/bin/engineer_run" \
-    "$_engineer_runtime_root/engineer/bin/engineer_run" \
-    "$_engineer_root/.claude/engineer/bin/engineer_run" \
-    "$_engineer_root/.codex/engineer/bin/engineer_run" \
-    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
-    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
-    "$_engineer_path_candidate" || {
-    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
-    exit 1
-  }
-fi
-export ENGINEER_RUN
-engineer_run() {
-  sh "$ENGINEER_RUN" "$@"
-}
-if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
-  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
-fi
-# fast writes no planning artifacts (its own guardrails forbid PLAN.md/SUMMARY.md); .planning/
-# is excluded from staging ONLY when commit_docs is false — otherwise this path is
-# byte-identical to an unconditional `git add -A`, unchanged from before #3585.
-COMMIT_DOCS=$(engineer_run query config-get commit_docs --raw 2>/dev/null || echo "true")
-if [ "$COMMIT_DOCS" = "false" ]; then
-  git add -A -- ':!.planning'
-else
-  git add -A
-fi
-git commit -m "fix: {concise description of what changed}"
-```
-
-Use conventional commit format: `fix:`, `feat:`, `docs:`, `chore:`, `refactor:` as appropriate.
+Inspect the exact changed paths against the bounded scope and explicit deletion list. Preserve unrelated dirt. Commit only those paths with `engineer_run query commit "fix: ${CONCISE_OUTCOME}" --files "${OWNED_FILE_1}" "${OWNED_FILE_2}"` (omit unused placeholders). Use fix/feat/docs/chore/refactor as appropriate. Read the actual commit hash; a failed commit remains blocked, never reported complete. Never stage the whole tree.
 </step>
 
 <step name="log_to_state">
-If `.planning/STATE.md` exists and has a "Quick Tasks Completed" table, append a row
-that matches the existing table's schema via the schema-backed `engineer_run
-quick-tasks-append` helper (`markdown-table.cjs`'s `appendQuickTaskRow`; #2133,
-ADR-2143 §3/§7). If no table exists, skip silently. If the table's schema is
-unrecognized, the helper fails loud (non-zero exit) instead of silently guessing
-a column count — this replaces the prior inline `awk NF-2` arithmetic that was
-the root cause of #2133.
+After the concrete done criterion is met, run `engineer_run query quick.update "${QUICK_ID}" --status complete --commit "${SOURCE_COMMIT}"`, then state.record-session with the actual stopped-at result and quick record path. Commit the exact QUICK directory and changed STATE path through `engineer_run query commit`. The runtime owns these records; do not append or migrate tables by hand. User-deferred checks remain pending and never become a verification pass.
+</step>
 
-```bash
-# Detect whether STATE.md has a Quick Tasks Completed table
-if grep -q "Quick Tasks Completed" .planning/STATE.md 2>/dev/null; then
-  # #3730: bring a legacy pre-registry table onto the canonical schema BEFORE
-  # appending — silent no-op when already canonical, so this runs harmlessly
-  # on every fast task and migrates exactly once, on the first.
-  engineer_run quick-tasks-migrate || true
-  engineer_run quick-tasks-append --task "$TASK" || echo "⚠ fast.md log_to_state: could not append Quick Tasks row (see message above); continuing."
-fi
-```
+<step name="deliver_session">
+When delivery is authorized, push the exact session branch without force. Build and validate the full canonical PR template under engineer/references/git-workflow.md, then `engineer_run query pr.open "${SESSION_BRANCH}" --title "${TITLE}" --body-file "${BODY_FILE}"` and read back the provider result. Open a draft on the first push and refresh it after each meaningful slice. Observe `pr.checks "${SESSION_BRANCH}" --timeout N` with a bounded timeout; pending/failed checks remain pending/failed. A timeout never proves completion.
+
+Fast creates no PLAN or SUMMARY and dispatches no agents. This alone supplies no independent verification. Leave the draft open unless actual independent quick evidence already exists: resolve the report with `verification.resolve-file --quick ID`, read `verification.status --quick ID`, and require current `verification.fingerprint --quick ID` and `verification.current --quick ID`. Its canonical report must include quick, status, covered_files, fingerprint, revision, issue_refs and v4 covered_digest. Use the real quick.threat-* APIs and canonical planned checklist/human-UAT rules for any findings. Never substitute a fake phase or self-authored passed report. Only current passing evidence can support `pr.ready BRANCH --quick ID`; merge additionally requires the user's explicit merge instruction and `pr.merge BRANCH --quick ID --confirm`.
+
+After provider-confirmed merge, pr.sync reads remote state; session.close BRANCH must run from another clean checkout whose HEAD contains the session head. Preserve dirty, active, unintegrated or blocked worktrees. No forced cleanup.
 </step>
 
 <step name="done">
@@ -144,7 +68,7 @@ Report completion:
    Files: {list of changed files}
 ```
 
-No next-step suggestions. No workflow routing. Just done.
+Report the PR state and pending checks or blockers accurately. No unrelated next-task menu.
 </step>
 
 </process>
@@ -153,13 +77,14 @@ No next-step suggestions. No workflow routing. Just done.
 - NEVER spawn a Task/subagent — this runs inline
 - NEVER create PLAN.md or SUMMARY.md files
 - NEVER run research or plan-checking
-- If the task takes more than 3 file edits, STOP and redirect to /quick
-- If you're unsure how to implement it, STOP and redirect to /quick
+- If scope grows beyond three edits, preserve work and continue the authorized outcome through /quick.
+- If research is needed, preserve the session and route to the complete /quick method.
 </guardrails>
 
 <success_criteria>
 - [ ] Task completed in current context (no subagents)
 - [ ] Atomic git commit with conventional message
-- [ ] STATE.md updated if it exists
-- [ ] Total operation under 2 minutes wall time
+- [ ] Runtime quick record and session evidence updated; exact artifacts committed
+- [ ] Edited only in the real isolated quick session; authorized draft PR tracked
+- [ ] Concrete done criterion and actual validation/delivery state reported; timing is an estimate, never a bypass
 </success_criteria>

@@ -14,70 +14,20 @@ in wave 0 before any signal exists).
 
 1. From `$BATCH_MANIFEST_JSON`, find the LOWEST `wave` value among items that
    are `status == "pending"` AND whose `${item_dir}/${quick_id}-PLAN.md` does
-   not yet exist on disk (derive `$item_dir` via `generate-slug` on each
-   item's `description`, same as every other step). Call this `$CUR_WAVE`.
+   not yet exist on disk (read `$item_dir` from that item's runtime-returned `directory`). Call this `$CUR_WAVE`.
    If no such item exists, the loop is done — continue to Step 5.
 
 2. Collect every item at `$CUR_WAVE` matching that condition — this is the
    current layer, `$LAYER_ITEMS`.
 
-3. **Capability gate** (mirrors `/quick`'s own):
-   ```bash
-_engineer_identity_ok() {
-  [ -f "$1" ] || return 1
-  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
-}
-_engineer_select() {
-  for _engineer_candidate do
-    if _engineer_identity_ok "$_engineer_candidate"; then
-      ENGINEER_RUN="$_engineer_candidate"
-      return 0
-    fi
-  done
-  return 1
-}
-if [ -n "${ENGINEER_RUN:-}" ]; then
-  _engineer_identity_ok "$ENGINEER_RUN" || {
-    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
-    exit 1
-  }
-else
-  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
-  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
-  _engineer_select \
-    "$_engineer_root/engineer/bin/engineer_run" \
-    "$_engineer_runtime_root/engineer/bin/engineer_run" \
-    "$_engineer_root/.claude/engineer/bin/engineer_run" \
-    "$_engineer_root/.codex/engineer/bin/engineer_run" \
-    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
-    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
-    "$_engineer_path_candidate" || {
-    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
-    exit 1
-  }
-fi
-export ENGINEER_RUN
-engineer_run() {
-  sh "$ENGINEER_RUN" "$@"
-}
-if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
-  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
-fi
-   PLAN_PRE_HOOKS_JSON=$(engineer_run loop render-hooks plan:pre --raw)
-   ```
-   In registry order, inject only active entries with `kind == "contribution"`
-   and `into == "planner"` into each planner prompt below, using
-   `fragment.inline` verbatim plus resolved `configValues`. Reuse this
-   snapshot for the whole layer.
+3. Load the exact planner's applicable skills and complete quick-batch planning contract. No unsupported hook helper is invoked.
 
 4. **Concurrency.** Planning is not worktree-isolated — compute with
    `mutating=false` (row 12's rule applies to any non-mutating wave, not just
    research):
    ```bash
-   QB_PLAN_CONC_JSON=$(engineer_run quick-batch effective-concurrency --jobs "$JOBS" --task-count "${#LAYER_ITEMS[@]}" --capacity "$CAPACITY" --isolation "$ISOLATION" --raw)
-   PLAN_CONCURRENCY=$(printf '%s' "$QB_PLAN_CONC_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(String(j.concurrency))}catch{process.stdout.write("1")}})')
+   QB_PLAN_CONC_JSON=$(engineer_run query quick-batch.effective-concurrency --jobs "$JOBS" --task-count "${#LAYER_ITEMS[@]}" --capacity "$CAPACITY" --isolation "$ISOLATION" --raw)
+   PLAN_CONCURRENCY=$(printf '%s' "$QB_PLAN_CONC_JSON" | python -I -c "import json,sys; j=json.load(sys.stdin); print(str(j['concurrency']))")
    ```
 
 5. **Dispatch one `Agent()` per message, `run_in_background: true`, up to
@@ -134,7 +84,6 @@ fi
 
    ${AGENT_SKILLS_PLANNER}
 
-   {For each active entry in `PLAN_PRE_HOOKS_JSON` where `kind == \"contribution\"` and `into == \"planner\"` (in array order): inject the entry's `fragment.inline` verbatim here, plus its resolved `configValues` when the entry carries them. If none, omit this block.}
 
    </planning_context>
 
@@ -146,9 +95,8 @@ fi
      never invent one, never reference a task from a different batch.
    - ALWAYS emit `files_modified` frontmatter (array of repo-relative paths
      this plan will touch) — required regardless of `--validate`.
-   - If this plan will delete any file, ALSO emit `files_deleted` frontmatter
-     naming exactly those paths (used at merge time; an undeclared deletion
-     blocks the merge).
+   - ALWAYS emit files_deleted and resources arrays. Deletions name exact paths; no implicit deletion authority is inferred from files_modified. Resources name ports, databases, accounts and caches that cannot run concurrently. Paths must be exact files or prefixes ending /, with no whole-repository scope, traversal or globs.
+   - Every task retains full read_first, action, meaningful verification/fails_when, done criteria, threats, acceptance and documentation contracts; 1-3 tasks does not abbreviate those fields.
    ${VALIDATE_MODE ? '- MUST also generate `must_haves` frontmatter (truths, artifacts, key_links)' : ''}
    </constraints>
 
@@ -183,17 +131,18 @@ fi
    `engineer_run query frontmatter.get "${item_dir}/${quick_id}-PLAN.md" depends_on`
    and `... files_modified`, then:
    ```bash
-   QB_UPDATE_JSON=$(engineer_run quick-batch update --batch "$BATCH_ID" --updates "$LAYER_UPDATES_JSON" --raw)
+   QB_UPDATE_JSON=$(engineer_run query quick-batch.update --batch "$BATCH_ID" --updates "$LAYER_UPDATES_JSON" --raw)
    ```
-   `$LAYER_UPDATES_JSON` is a JSON array of `{quickId, dependsOn, plannedFiles}`
+   `$LAYER_UPDATES_JSON` is a JSON array of `{quickId, dependsOn, plannedFiles, filesDeleted, resources, status: "planned", expectDigest}`
    objects, one per item planned this round. **If this call fails** (an
    unknown dependency reference, or a cycle a planner's declared `depends_on`
    introduced): the update did NOT persist — report the CLI's error, mark the
-   offending item(s) `failed` via a corrective `quick-batch update` with an
-   empty `dependsOn` for those items instead (never leave the batch
-   unrecoverable), and continue.
+   offending item(s) `failed` via a corrective `quick-batch update` with
+   the original valid dependency snapshot preserved (never erase a genuine prerequisite to make a scheduler pass), and continue independent entries. The whole candidate is validated before persistence; rejected updates leave bytes unchanged.
 
    Refresh `$BATCH_MANIFEST_JSON` from `$QB_UPDATE_JSON.manifest` before the
    next loop iteration — wave numbers may have changed (row 22-23).
 
 Continue to Step 6 once the loop above finds no more unplanned pending items.
+
+Persist paths from the runtime directory rather than re-deriving slugs. Hash the exact committed PLAN and carry planDigest; any changed plan invalidates dispatch and prior evidence. Persist files_deleted/resources along with files_modified and depends_on; actual overlapping directory/file ownership and resource conflicts always force later waves regardless of declared wave. Resolve role model/effort inline before the retained Agent examples; replace each example model with the resolved value and add effort, omitting inherit. Planning/research source artifacts are written in isolated owned checkouts and integrated only after confirmed stop, or returned as read-only packets for coordinator persistence; never let parallel leaves write shared records.
