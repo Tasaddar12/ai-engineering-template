@@ -1,10 +1,7 @@
 <step name="automated_ui_verification">
 **Automated UI Verification (when Playwright-MCP is available)**
 
-Before UAT, check whether Playwright/Puppeteer MCP tools are available. UI-phase
-activation itself (`ui_phase_active`) is already resolved at init time — this
-section is only reached when that fact is `true` (see the `state:ui-phase-active`
-gate above), so re-deriving it here would be redundant.
+Before human acceptance, run this fragment only when the actual phase has a UI-SPEC. Check whether a configured browser tool is available and permitted for this task; do not assume a bundle activation field.
 
 ```bash
 UI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-UI-SPEC.md 2>/dev/null | head -1)
@@ -19,12 +16,10 @@ For each UI checkpoint listed in the phase's UI-SPEC.md (or inferred from SUMMAR
 2. Use `mcp__playwright__screenshot` to capture a screenshot.
 3. Compare the screenshot visually against the spec's stated requirements
    (dimensions, color, layout, spacing).
-4. Automatically mark checkpoints as **passed** or **needs review** based on the
-   visual comparison — no manual question required for items that clearly match.
+4. Record automated observation evidence as **observed**, **failed**, or **BLOCKED**. Automated comparison never supplies a required human acceptance decision.
 5. Flag items that require human judgment (subjective aesthetics, content accuracy)
-   and present only those as manual UAT questions.
+   and include them in the concrete human acceptance script with `PENDING HUMAN acceptance`.
 
-<!-- gsd:live-dom-families -->
 **If `workflow.live_dom_uat` is enabled AND a Chrome-family browser MCP responds
 (`mcp__chrome-devtools__*` or `mcp__claude-in-chrome__*`):**
 
@@ -83,13 +78,11 @@ a Chrome-family browser MCP configured for entirely unrelated work; it must not 
 here unless the operator opted in. This key is default-off.
 
 If the browser profile is already locked (`The browser is already running for …`), report
-those checkpoints as **could not look**, not as **needs review**, and name `--isolated` in
+those checkpoints as **BLOCKED** with the actual tool error, and name `--isolated` in
 the summary — that flag lives on the operator's own MCP-server registration, not on anything
 this workflow passes.
-<!-- /live-dom-families -->
 
-If automated verification is not available, fall back to the standard manual
-checkpoint questions defined in this workflow unchanged. This step is entirely
+If automated verification is not available, fall back to the concrete human acceptance script from `prepare_human_acceptance`; preserve PENDING HUMAN acceptance. This step is entirely
 conditional: if no browser MCP is configured — or `workflow.live_dom_uat` is off and only a
 Chrome-family server is present — behavior is unchanged from today.
 
