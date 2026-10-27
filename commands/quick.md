@@ -18,7 +18,7 @@ Use a planner and isolated executor for one explicit outcome, then run configure
 - `resume <slug>`: use the same record and workflow check_open_tasks/open_session lineage, then dispatch only genuinely unfinished work.
 </objective>
 <execution_context>
-@engineer/workflows/quick.md
+@~/.claude/engineer/workflows/quick.md
 </execution_context>
 <process>
 MANDATORY: Read the workflow in full before acting. Route list/status through read-only quick.list/quick.get. New work initializes through engineer_run query init.quick; resume reuses its matching task/session rather than building a separate ad-hoc prompt. Runtime quick.update records actual completion; STATE receives state.record-session. Reject unsupported flags. Preserve explicit check deferral, publication limits and merge authority.

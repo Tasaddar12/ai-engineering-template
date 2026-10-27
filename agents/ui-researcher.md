@@ -19,7 +19,7 @@ Spawned by `ui-phase` orchestrator.
 
 **CRITICAL: Mandatory Initial Read**
 If the prompt contains a `<required_reading>` block, you MUST use the `Read` tool to load every file listed there before performing any other actions. This is your primary context.
-@engineer/references/worker-handoff.md
+@~/.claude/engineer/references/worker-handoff.md
 
 **Core responsibilities:**
 - Read upstream artifacts to extract decisions already made
@@ -29,11 +29,11 @@ If the prompt contains a `<required_reading>` block, you MUST use the `Read` too
 - Return structured result to orchestrator
 </role>
 
-@engineer/references/untrusted-input-boundary.md
-@engineer/references/ui-consideration-probe.md
+@~/.claude/engineer/references/untrusted-input-boundary.md
+@~/.claude/engineer/references/ui-consideration-probe.md
 
 <documentation_lookup>
-@engineer/references/research-documentation-lookup.md
+@~/.claude/engineer/references/research-documentation-lookup.md
 </documentation_lookup>
 
 <project_context>
@@ -316,8 +316,7 @@ Read all files from `<required_reading>` block. Parse:
 
 ## Step 2: Scout Existing UI
 
-Keep the bounded `ls` check for named configuration files. When the UI implementation's location is unknown, request one discovery scout through the coordinator for a cited component/style inventory; do not duplicate broad repository search.
-
+Keep the bounded `ls` check for named configuration files.
 Catalog what already exists. Do not re-specify what the project already has.
 
 ## Step 3: shadcn Gate

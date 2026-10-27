@@ -6,20 +6,20 @@ Implement the explicitly authorized phase through isolated dependency waves, the
 The coordinator routes and integrates; each executor reads its full plan and owns only its assigned paths. Shared state, roadmap, requirements, issues and delivery remain coordinator-owned. A timeout does not prove worker exit.
 </core_principle>
 <required_reading>
-@engineer/RULES.md
-@engineer/references/worker-handoff.md
-@engineer/references/worktree-sessions.md
-@engineer/references/parallel-status.md
-@engineer/references/git-workflow.md
-@engineer/references/verification-evidence.md
+@~/.claude/engineer/RULES.md
+@~/.claude/engineer/references/worker-handoff.md
+@~/.claude/engineer/references/worktree-sessions.md
+@~/.claude/engineer/references/parallel-status.md
+@~/.claude/engineer/references/git-workflow.md
+@~/.claude/engineer/references/verification-evidence.md
 </required_reading>
 <isolation_reading>
-@engineer/references/worktree-branch-check.md
-@engineer/references/worktree-path-safety.md
-@engineer/workflows/execute-phase/steps/worktree-recovery-policy.md
+@~/.claude/engineer/references/worktree-branch-check.md
+@~/.claude/engineer/references/worktree-path-safety.md
+@~/.claude/engineer/workflows/execute-phase/steps/worktree-recovery-policy.md
 </isolation_reading>
 <available_agent_types>
-Use exact roles executor, code-reviewer, doc-writer, verifier, debugger, targeted-fixer; resolve any routed executor type through the runtime. Do not fall back to a generic agent.
+Use exact roles executor, code-reviewer, doc-writer, verifier, debugger, code-fixer; resolve any routed executor type through the runtime. Do not fall back to a generic agent.
 </available_agent_types>
 <model_selection>
 For every exact dispatch role run `engineer_run query resolve-model ROLE --raw` and `engineer_run query resolve-effort ROLE --raw`. Pass resolved model and effort inline, omitting each field whose value is `inherit`. Resolve values again for a routed role or continuation. Empty values never become an explicit model parameter.
@@ -182,7 +182,7 @@ Return complete or blocked, exact commit(s), SUMMARY path, work root/branch/base
 Resolve choices within the user's delegated discretion from approved context and code evidence, recording consequential outcomes with state.add-decision. An unresolved locked decision, credential, irreversible approval or human acceptance blocks only its dependent plan. Record the exact required human action in the closing report; do not auto-approve it. Re-dispatch approved continuation work only in a fresh isolated checkout after confirmed worker stop.
 </step>
 <step name="run_checks">
-Run `engineer_run query verification.run-checks` against the integrated session revision when execution is permitted. Reuse only passing receipts whose declared inputs and fingerprints remain current. A user-deferred test remains pending and blocks any verdict requiring it; do not run it or fabricate a receipt. Join all configured results. A failed or timed-out check blocks dependent integration/completion and routes to bounded targeted-fixer/executor correction, or debugger for an unknown cause. After repair, rerun only invalidated/required checks on the new revision and rejoin their actual results.
+Run `engineer_run query verification.run-checks` against the integrated session revision when execution is permitted. Reuse only passing receipts whose declared inputs and fingerprints remain current. A user-deferred test remains pending and blocks any verdict requiring it; do not run it or fabricate a receipt. Join all configured results. A failed or timed-out check blocks dependent integration/completion and routes to bounded code-fixer/executor correction, or debugger for an unknown cause. After repair, rerun only invalidated/required checks on the new revision and rejoin their actual results.
 </step>
 <step name="track_integrated_slice">
 When publication is authorized, push the session branch with upstream tracking and no force, then run `engineer_run query pr.open "${SESSION_BRANCH}" --title "${TITLE}" --body-file "${BODY_FILE}" --phase "${PHASE_NUMBER}"`. Build the complete current canonical PR template, validate issue links, and read back provider state under engineer/references/git-workflow.md. Open a draft on the first push and refresh its full title/body after every meaningful integrated slice. Do not publish when the user explicitly withheld delivery.

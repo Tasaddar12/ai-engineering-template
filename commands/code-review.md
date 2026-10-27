@@ -30,7 +30,7 @@ coordinator captures it and authors durable REVIEW.md on the owning session.
   deep additionally traces call chains, contracts, error propagation and state.
 - --fix authorizes Critical and Warning repairs; --all includes Info; --auto
   permits at most three repair passes. Both imply --fix. Each grounded finding
-  gets one isolated targeted-fixer assignment per pass, its own repair commit
+  gets one isolated code-fixer assignment per pass, its own repair commit
   and required repair SUMMARY. code-fixer supplies methods only.
 
 Output includes exact scope/base/head, full report, counts and limitations; repair
@@ -39,7 +39,7 @@ implementation, provider-write or merge authority.
 </objective>
 
 <execution_context>
-@engineer/workflows/code-review.md
+@~/.claude/engineer/workflows/code-review.md
 </execution_context>
 
 <process>
