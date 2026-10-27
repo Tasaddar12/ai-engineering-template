@@ -43,99 +43,8 @@ def seed_source(directory):
 
 
 class UpdateTests(unittest.TestCase):
+    """Retained update protections expressed through explicit reviewed plans."""
     host = "codex"
-
-    def test_scout_metadata_export_is_host_specific_and_update_is_idempotent(self):
-        path = self.namespace + "/agents/scout.md"
-        self.write(path, b'---\nname: scout\nmodel: wrong\neffort: max\n---\nOld adapter.\n')
-        changes, backups, _ = self.plan()
-        self.assertIn(self.target / path, backups)
-        self.apply(changes)
-        exported = self.read(path).decode("utf-8")
-        metadata = yaml.safe_load(exported.split("---", 2)[1])
-        if self.host == "claude":
-            self.assertEqual("haiku", metadata["model"])
-        else:
-            self.assertNotIn("model", metadata)
-        self.assertNotIn("effort", metadata)
-        shared = (self.source / "agents/scout.md").read_bytes()
-        expected = installer.render_asset(".ai/agents/scout.md", shared, self.host)
-        self.assertEqual(expected, self.read(path))
-        self.assertEqual([], self.plan()[0])
-
-    def test_worker_defaults_update_preserves_config_and_is_idempotent(self):
-        config = b"agents:\n  executor:\n    model: opus\n    effort: max\n"
-        self.write(".planning/config.yaml", config)
-        for name in ("executor", "planner"):
-            self.write(self.namespace + "/agents/" + name + ".md",
-                       ("---\nname: " + name + "\nmodel: wrong\neffort: max\n---\nOld body.\n").encode())
-        changes, backups, _ = self.plan()
-        self.apply(changes)
-        for name, model, effort in (("executor", "sonnet", None), ("planner", "opus", "medium")):
-            path = self.namespace + "/agents/" + name + ".md"
-            self.assertIn(self.target / path, backups)
-            exported = self.read(path).decode()
-            metadata = yaml.safe_load(exported.split("---", 2)[1])
-            self.assertEqual(model if self.host == "claude" else None, metadata.get("model"))
-            self.assertEqual(effort if self.host == "claude" else None, metadata.get("effort"))
-            shared = (self.source / "agents" / (name + ".md")).read_bytes()
-            self.assertEqual(installer.render_asset(".ai/agents/" + name + ".md", shared, self.host), self.read(path))
-        self.assertEqual(config, self.read(".planning/config.yaml"))
-        self.assertEqual([], self.plan()[0])
-
-    def test_targeted_fixer_export_and_native_update_are_idempotent(self):
-        path = self.namespace + "/agents/targeted-fixer.md"
-        old = b'---\nname: targeted-fixer\nmodel: wrong\neffort: max\n---\nOld adapter.\n'
-        self.write(path, old)
-        changes, backups, _ = self.plan()
-        self.assertIn(self.target / path, backups)
-        self.apply(changes)
-        shared = (self.source / "agents/targeted-fixer.md").read_bytes()
-        self.assertEqual(installer.render_asset(".ai/agents/targeted-fixer.md", shared, self.host), self.read(path))
-        metadata = yaml.safe_load(self.read(path).decode().split("---", 2)[1])
-        self.assertTrue({"Agent", "Task"} <= set(metadata["disallowedTools"].split(", ")))
-        self.assertEqual("haiku" if self.host == "claude" else None, metadata.get("model"))
-        self.assertNotIn("effort", metadata)
-        if self.host == "codex":
-            native_path = ".codex/agents/targeted-fixer.toml"
-            native = (self.source / "bin/install-assets/codex-agents/targeted-fixer.toml").read_bytes()
-            self.assertEqual(installer.render_asset(".ai/install-assets/codex-agents/targeted-fixer.toml", native, self.host), self.read(native_path))
-        self.assertEqual([], self.plan()[0])
-
-    def test_update_payload_excludes_source_only_maintenance_history(self):
-        self.assertTrue((self.source / ".ai/maintenance/agent-scout-SUMMARY.md").is_file())
-        self.assertFalse(any(name.startswith(self.namespace + "/maintenance/") for name in self.installed))
-        changes, _, _ = self.plan()
-        self.assertFalse(any(path.relative_to(self.target).as_posix().startswith(self.namespace + "/maintenance/")
-                             for path, _ in changes))
-
-    def test_no_hooks_update_canonicalizes_codex_settings_and_preserves_hooks(self):
-        if self.host != "codex":
-            self.skipTest("Codex project setting")
-        original = (b'\xef\xbb\xbf# custom\r\nmodel = "keep"\r\n[agents]\r\n'
-                    b'max_threads = 4 # retained comment\r\n'
-                    b'max_concurrent_threads_per_session = 5\r\n[hooks]\r\nStop = []\r\n')
-        path = self.write(".codex/config.toml", original)
-        changes, backups, _ = legacy_update.plan_update(self.source, self.target, "codex", False, installer)
-        self.assertIn(path, backups)
-        self.apply(changes)
-        content = path.read_bytes()
-        self.assertTrue(content.startswith(b'\xef\xbb\xbf# custom\r\nmodel = "keep"\r\n'))
-        self.assertIn(b'[hooks]\r\nStop = []\r\n', content)
-        settings = installer.tomllib.loads(content.decode("utf-8-sig"))
-        self.assertEqual(12, settings["agents"]["max_concurrent_threads_per_session"])
-        self.assertNotIn("max_threads", settings["agents"])
-        self.assertEqual([], legacy_update.plan_update(self.source, self.target, "codex", False, installer)[0])
-
-    def test_no_hooks_update_invalid_codex_settings_are_preflight_only(self):
-        if self.host != "codex":
-            self.skipTest("Codex project setting")
-        self.write(".codex/config.toml", b'agents = {max_threads = 4}\n')
-        before = {p.relative_to(self.target): p.read_bytes() for p in self.target.rglob("*") if p.is_file()}
-        with self.assertRaisesRegex(ValueError, "inline agents.*nothing was installed"):
-            legacy_update.plan_update(self.source, self.target, "codex", False, installer)
-        after = {p.relative_to(self.target): p.read_bytes() for p in self.target.rglob("*") if p.is_file()}
-        self.assertEqual(before, after)
 
     @classmethod
     def setUpClass(cls):
@@ -148,17 +57,13 @@ class UpdateTests(unittest.TestCase):
         cls.source_temp.cleanup()
 
     def setUp(self):
-        temporary = tempfile.TemporaryDirectory(prefix="update-target-")
-        self.addCleanup(temporary.cleanup)
-        self.target = Path(temporary.name)
+        self.temporary = tempfile.TemporaryDirectory(prefix="update-target-")
+        self.addCleanup(self.temporary.cleanup)
+        self.target = Path(self.temporary.name)
         self.namespace = "." + self.host
-        # An installed project at the current revision, which the tests then age
-        # by editing files back to an "older" state.
         self.installed = installer.payload(self.source, self.host, True)
-        for name, content in self.installed.items():
-            self.write(name, content)
-        self.write(".gitignore", installer.IGNORE_BLOCK.replace(
-            ".ai-venv", self.namespace + "-venv").encode())
+        installer.write_changes(self.target, [(self.target / name, data) for name, data in self.installed.items()])
+        legacy_update.record_install(self.target, self.host, str(self.source), "baseline", self.installed)
 
     def write(self, name, content):
         path = self.target / name
@@ -166,272 +71,252 @@ class UpdateTests(unittest.TestCase):
         path.write_bytes(content)
         return path
 
-    def entry(self):
-        return "CLAUDE.md" if self.host == "claude" else "AGENTS.md"
-
-    def plan(self, prune=False, previous=None):
-        return legacy_update.plan_update(self.source, self.target, self.host, True,
-                                  installer, prune=prune, previous=previous)
-
-    def apply(self, changes):
-        for path, content in changes:
-            if content is None:
-                path.rmdir() if path.is_dir() else path.unlink()
-            else:
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_bytes(content)
-
     def read(self, name):
         return (self.target / name).read_bytes()
 
-    # --- the project's own material -----------------------------------------
+    def entry_name(self):
+        return "CLAUDE.md" if self.host == "claude" else "AGENTS.md"
+
+    def plan(self, hooks=True):
+        return legacy_update.build_plan(self.source, self.target, self.host, hooks,
+                                        str(self.source), "candidate", self.source)
+
+    def row(self, plan, name):
+        return next(row for row in plan["entries"] if row["path"] == name)
+
+    def snapshot(self):
+        return {p.relative_to(self.target).as_posix(): p.read_bytes()
+                for p in self.target.rglob("*") if p.is_file()}
+
+    def apply(self, plan):
+        return legacy_update.apply_plan(plan, self.source, self.source)
+
+    def approve_replacement(self, plan, name):
+        self.assertTrue(self.row(plan, name)["conflict"])
+        plan["resolutions"][name] = {"action": "write", "classification": "upstream-managed"}
+
+    def test_scout_metadata_export_is_host_specific_and_update_is_idempotent(self):
+        self.review_role("scout")
+
+    def test_targeted_fixer_export_and_native_update_are_idempotent(self):
+        self.review_role("targeted-fixer")
+        if self.host == "codex":
+            native = installer.tomllib.loads(self.read(".codex/agents/targeted-fixer.toml").decode())
+            self.assertEqual("gpt-6-luna", native["model"])
+            self.assertEqual("high", native["model_reasoning_effort"])
+            self.assertIn(self.read(".codex/agents/targeted-fixer.md").decode(), native["developer_instructions"])
+
+    def review_role(self, name):
+        path = self.namespace + "/agents/" + name + ".md"
+        old = ("---\nname: " + name + "\nmodel: wrong\neffort: max\n---\nCustom old body.\n").encode()
+        self.write(path, old)
+        before = self.snapshot()
+        plan = self.plan()
+        with self.assertRaisesRegex(ValueError, "Unresolved conflict"):
+            self.apply(plan)
+        self.assertEqual(before, self.snapshot())
+        self.approve_replacement(plan, path)
+        self.apply(plan)
+        expected = installer.render_asset("agents/" + name + ".md", (self.source / "agents" / (name + ".md")).read_bytes(), self.host)
+        self.assertEqual(expected, self.read(path))
+        saved = list((self.target / ".workflow-backups").glob("*/files/" + path))
+        self.assertEqual([old], [p.read_bytes() for p in saved])
+        self.assertEqual([], self.apply(self.plan()))
+
+    def test_worker_defaults_update_preserves_config_and_is_idempotent(self):
+        config = self.read(".planning/config.yaml") + b"\nproject_model: custom\n"
+        self.write(".planning/config.yaml", config)
+        for name in ("executor", "planner"):
+            self.review_role(name)
+        self.assertEqual(config, self.read(".planning/config.yaml"))
+
+    def test_update_payload_excludes_source_only_maintenance_history(self):
+        source_history = self.source / ".ai/maintenance/never-install.md"
+        source_history.parent.mkdir(parents=True, exist_ok=True)
+        source_history.write_bytes(b"source-only history")
+        self.assertFalse(any("maintenance/" in row["path"] for row in self.plan()["entries"]))
+
+    def test_no_hooks_update_canonicalizes_codex_settings_and_preserves_hooks(self):
+        if self.host != "codex":
+            self.skipTest("Codex project setting")
+        original = (b'\xef\xbb\xbf# custom\r\nmodel = "keep"\r\n[agents]\r\n'
+                    b'max_threads = 4 # retained comment\r\nmax_concurrent_threads_per_session = 5\r\n'
+                    b'[hooks]\r\nStop = []\r\n')
+        self.write(".codex/config.toml", original)
+        self.apply(self.plan(hooks=False))
+        content = self.read(".codex/config.toml")
+        self.assertTrue(content.startswith(b'\xef\xbb\xbf# custom\r\nmodel = "keep"\r\n'))
+        self.assertIn(b'[hooks]\r\nStop = []\r\n', content)
+        settings = installer.tomllib.loads(content.decode("utf-8-sig"))
+        self.assertEqual(12, settings["agents"]["max_concurrent_threads_per_session"])
+        self.assertNotIn("max_threads", settings["agents"])
+        self.assertEqual([], self.apply(self.plan(hooks=False)))
+
+    def test_no_hooks_update_invalid_codex_settings_are_preflight_only(self):
+        if self.host != "codex":
+            self.skipTest("Codex project setting")
+        self.write(".codex/config.toml", b'agents = {max_threads = 4}\n')
+        before = self.snapshot()
+        with self.assertRaisesRegex(ValueError, "inline agents"):
+            self.plan(hooks=False)
+        self.assertEqual(before, self.snapshot())
 
     def test_project_records_are_never_rewritten(self):
-        """Intent, history and configuration outrank any template revision."""
-        records = {
-            ".planning/PROJECT.md": b"# Real customer identity\n",
-            ".planning/REQUIREMENTS.md": b"- the actual requirements\n",
-            ".planning/ROADMAP.md": b"- the actual roadmap\n",
-            ".planning/STATE.md": b"phase: 7\n",
-            ".planning/config.yaml": b"context_window: 999999\nverification:\n  commands: [[npm, test]]\n",
-        }
-        for name, content in records.items():
-            self.write(name, content)
-        evidence = self.write(".planning/phases/04-x/04-01-SUMMARY.md", b"shipped\n")
-        changes, backups, _ = self.plan()
-        self.apply(changes)
-        for name, content in records.items():
-            self.assertEqual(content, self.read(name), name)
-        self.assertEqual(b"shipped\n", evidence.read_bytes())
-        for path in backups:
-            self.assertNotIn(".planning/", path.relative_to(self.target).as_posix())
+        records = {".planning/" + name + ".md": ("Authored " + name + "\r\n").encode()
+                   for name in ("PROJECT", "REQUIREMENTS", "ROADMAP", "STATE")}
+        records[".planning/phases/04-x/04-01-SUMMARY.md"] = b"shipped evidence\r\n"
+        for name, data in records.items():
+            self.write(name, data)
+        self.apply(self.plan())
+        for name, data in records.items():
+            self.assertEqual(data, self.read(name))
 
-    def test_an_aged_shipped_file_is_refreshed(self):
-        rules = self.namespace + "/RULES.md"
-        self.write(rules, b"# an older revision of the rules\n")
-        changes, backups, notes = self.plan()
-        self.apply(changes)
-        self.assertEqual(self.installed[rules], self.read(rules))
-        self.assertIn(self.target / rules, backups)
-        self.assertTrue(any("Refresh" in note for note in notes))
+    def test_an_aged_shipped_file_is_refreshed_only_after_review(self):
+        self.review_role("executor")
 
     def test_an_update_adds_only_the_ignore_rules_a_project_lacks(self):
-        """Handoff records must stay out of commits in projects installed before
-        `.planning/handoffs/` was a rule, without duplicating the rules they have."""
-        older = ("\n# AI engineering workflow (local only)\n" + self.namespace + "-venv/\n"
-                 ".workflow-backups/\n__pycache__/\n*.pyc\n").encode()
+        older = b"# local rules\nprivate/\n.workflow-backups/\n"
         self.write(".gitignore", older)
-        changes, backups, _ = self.plan()
-        self.apply(changes)
-        lines = self.read(".gitignore").decode("utf-8").splitlines()
+        self.apply(self.plan())
+        lines = self.read(".gitignore").decode().splitlines()
         self.assertTrue(self.read(".gitignore").startswith(older))
-        self.assertEqual(1, lines.count(".planning/handoffs/"))
         self.assertEqual(1, lines.count(".workflow-backups/"))
-        self.assertEqual(1, lines.count("# AI engineering workflow (local only)"))
-        self.assertIn(self.target / ".gitignore", backups)
+        self.assertEqual(1, lines.count(".planning/handoffs/"))
 
     def test_a_second_update_changes_nothing(self):
-        self.write(self.namespace + "/RULES.md", b"# older\n")
-        self.apply(self.plan()[0])
-        changes, backups, _ = self.plan()
-        self.assertEqual([], changes)
-        self.assertEqual([], backups)
-
-    # --- files that are merged rather than replaced --------------------------
+        self.apply(self.plan())
+        before = self.snapshot()
+        self.assertEqual([], self.apply(self.plan()))
+        self.assertEqual(before, self.snapshot())
 
     def test_entry_file_swaps_only_the_managed_block(self):
-        managed = self.installed[self.entry()]
-        self.write(self.entry(), b"# House style\nkeep this\n\n"
-                   + installer.AGENT_MARKER.encode() + b"\nan older block\n"
-                   + installer.AGENT_END.encode() + b"\n\n## Footer\nkeep this too\n")
-        self.apply(self.plan()[0])
-        rebuilt = self.read(self.entry())
-        self.assertIn(b"# House style", rebuilt)
-        self.assertIn(b"## Footer", rebuilt)
-        self.assertNotIn(b"an older block", rebuilt)
-        self.assertIn(managed.strip(), rebuilt)
+        name = self.entry_name()
+        prefix, suffix = b"House style\r\n", b"Footer\r\n"
+        self.write(name, prefix + self.read(name) + suffix)
+        self.apply(self.plan())
+        rebuilt = self.read(name)
+        self.assertTrue(rebuilt.startswith(prefix))
+        self.assertTrue(rebuilt.endswith(suffix))
         self.assertEqual(1, rebuilt.count(installer.AGENT_MARKER.encode()))
         self.assertEqual(1, rebuilt.count(installer.AGENT_END.encode()))
 
     def test_an_ambiguous_managed_block_stops_the_update(self):
-        marker = installer.AGENT_MARKER.encode()
-        end = installer.AGENT_END.encode()
-        self.write(self.entry(), marker + b"\na\n" + end + b"\n" + marker + b"\nb\n" + end + b"\n")
-        with self.assertRaises(ValueError) as caught:
+        name = self.entry_name()
+        self.write(name, self.read(name) * 2)
+        before = self.snapshot()
+        with self.assertRaisesRegex(ValueError, "ambiguous"):
             self.plan()
-        self.assertIn("Ambiguous", str(caught.exception))
+        self.assertEqual(before, self.snapshot())
 
     def test_user_hooks_in_host_settings_survive(self):
-        settings = ".codex/config.toml" if self.host == "codex" else ".claude/settings.json"
-        if self.host == "codex":
-            current = (b'[[hooks.PreToolUse]]\nmatcher = "MyTool"\n'
-                       b'[[hooks.PreToolUse.hooks]]\ntype = "command"\n'
-                       b'command = "my-own-hook"\n')
-        else:
-            current = (b'{\n  "hooks": {\n    "PreToolUse": [\n      {\n'
-                       b'        "matcher": "MyTool",\n        "hooks": [\n'
-                       b'          {"type": "command", "command": "my-own-hook"}\n'
-                       b'        ]\n      }\n    ]\n  }\n}\n')
-        self.write(settings, current)
-        self.apply(self.plan()[0])
-        merged = self.read(settings)
-        self.assertIn(b"my-own-hook", merged)
-        self.assertIn(b"worktree-guard.sh", merged)
+        user = {"matcher": "MyTool", "hooks": [{"type": "command", "command": "my-own-hook"}]}
+        events = installer.hook_settings(self.host)["hooks"]
+        events["PreToolUse"].append(user)
+        name = self.namespace + ("/config.toml" if self.host == "codex" else "/settings.json")
+        self.write(name, installer.hooks_toml(events) if self.host == "codex" else installer.json_bytes({"hooks": events}))
+        self.apply(self.plan())
+        self.assertIn(b"my-own-hook", self.read(name))
+        self.assertIn(b"worktree-path-guard.py", self.read(name))
 
-    def settings_name(self):
-        return ".codex/config.toml" if self.host == "codex" else ".claude/settings.json"
-
-    def aged_settings(self, user_hook):
-        """Host settings as an older revision wrote them, beside a user hook."""
+    def test_an_aged_managed_hook_registration_is_replaced(self):
         events = installer.hook_settings(self.host)["hooks"]
         for groups in events.values():
             for group in groups:
-                handler = group["hooks"][0]
-                if "commandWindows" in handler:
-                    handler["commandWindows"] = handler["commandWindows"].replace(
-                        "; exit $LASTEXITCODE", "")
-                else:
-                    handler["timeout"] = 5
-        events.setdefault("PreToolUse", []).insert(0, user_hook)
-        if self.host == "codex":
-            return (b"# project settings\nmodel = \"x\"\n\n"
-                    + installer.hooks_toml(events))
-        return installer.json_bytes({"model": "x", "hooks": events})
-
-    def test_an_aged_managed_hook_registration_is_replaced(self):
-        user_hook = {"matcher": "MyTool",
-                     "hooks": [{"type": "command", "command": "my-own-hook"}]}
-        settings = self.settings_name()
-        self.write(settings, self.aged_settings(user_hook))
-        changes, backups, _ = self.plan()
-        self.assertIn(self.target / settings, backups)
-        self.apply(changes)
-        merged = self.read(settings)
-        parsed = (installer.tomllib.loads(merged.decode()) if self.host == "codex"
-                  else installer.json.loads(merged))
-        self.assertEqual("x", parsed["model"])
-        expected = installer.hook_settings(self.host)["hooks"]
-        for event, groups in expected.items():
-            present = [group for group in parsed["hooks"][event] if group != user_hook]
-            self.assertEqual(groups, present, event)
-        self.assertIn(user_hook, parsed["hooks"]["PreToolUse"])
-        if self.host == "codex":
-            self.assertTrue(merged.startswith(b"# project settings\n"))
-        self.assertNotIn(self.target / settings,
-                         [path for path, _ in self.plan()[0]])
+                group["hooks"][0]["timeout"] = 5
+        name = self.namespace + ("/config.toml" if self.host == "codex" else "/settings.json")
+        old = installer.hooks_toml(events) if self.host == "codex" else installer.json_bytes({"hooks": events})
+        self.write(name, old)
+        self.apply(self.plan())
+        parsed = installer.tomllib.loads(self.read(name).decode()) if self.host == "codex" else installer.json.loads(self.read(name))
+        self.assertEqual(installer.hook_settings(self.host)["hooks"], parsed["hooks"])
+        self.assertTrue(any(p.read_bytes() == old for p in (self.target / ".workflow-backups").glob("*/files/" + name)))
 
     def test_a_managed_registration_sharing_a_group_with_a_user_hook_stops(self):
         events = installer.hook_settings(self.host)["hooks"]
-        group = events["PostToolUse"][0]
-        group["hooks"][0]["timeout"] = 5
-        group["hooks"].append({"type": "command", "command": "my-own-hook"})
-        content = (installer.hooks_toml(events) if self.host == "codex"
-                   else installer.json_bytes({"hooks": events}))
-        self.write(self.settings_name(), content)
-        with self.assertRaises(ValueError) as caught:
+        events["PostToolUse"][0]["hooks"].append({"type": "command", "command": "my-own-hook"})
+        name = self.namespace + ("/config.toml" if self.host == "codex" else "/settings.json")
+        self.write(name, installer.hooks_toml(events) if self.host == "codex" else installer.json_bytes({"hooks": events}))
+        before = self.snapshot()
+        with self.assertRaisesRegex(ValueError, "shares a group"):
             self.plan()
-        self.assertIn("differs", str(caught.exception))
-
-    # --- files this revision no longer ships ---------------------------------
+        self.assertEqual(before, self.snapshot())
 
     def test_an_unshipped_file_is_reported_and_kept(self):
-        mine = self.write(self.namespace + "/commands/my-own.md", b"mine\n")
-        changes, backups, notes = self.plan()
-        self.apply(changes)
-        self.assertTrue(mine.is_file())
-        self.assertNotIn(mine, backups)
-        self.assertTrue(any("my-own.md" in note for note in notes), notes)
-        self.assertTrue(any("--prune" in note for note in notes), notes)
+        name = self.namespace + "/commands/my-own.md"
+        self.write(name, b"mine\n")
+        plan = self.plan()
+        self.assertEqual("project", self.row(plan, name)["classification"])
+        self.apply(plan)
+        self.assertEqual(b"mine\n", self.read(name))
 
-    def test_prune_removes_it_after_backing_it_up(self):
-        mine = self.write(self.namespace + "/commands/my-own.md", b"mine\n")
-        changes, backups, notes = self.plan(prune=True)
-        self.assertIn(mine, backups)
-        self.apply(changes)
-        self.assertFalse(mine.exists())
-        self.assertTrue(any("Prune" in note for note in notes), notes)
+    def test_reviewed_retirement_removes_only_owned_file_after_backup(self):
+        name = self.namespace + "/commands/retired.md"
+        self.write(name, b"retired\n")
+        manifest_path = legacy_update.manifest_path(self.target, self.host)
+        manifest = legacy_update.load_manifest(self.target, self.host)
+        manifest["files"][name] = {"classification": "upstream-managed", "installed_sha256": installer.digest(b"retired\n"), "upstream_sha256": installer.digest(b"retired\n")}
+        manifest_path.write_bytes(installer.json_bytes(manifest))
+        plan = self.plan()
+        before = self.snapshot()
+        with self.assertRaisesRegex(ValueError, "Unresolved conflict"):
+            self.apply(plan)
+        self.assertEqual(before, self.snapshot())
+        plan["resolutions"][name] = {"action": "delete", "classification": "upstream-managed"}
+        self.apply(plan)
+        self.assertFalse((self.target / name).exists())
+        self.assertEqual([b"retired\n"], [p.read_bytes() for p in (self.target / ".workflow-backups").glob("*/files/" + name)])
 
     def test_incidental_files_are_never_orphaned_or_pruned(self):
-        """Build artefacts and per-machine settings were not installed by us."""
-        noise = [
-            self.write(self.namespace + "/runtime/lib/__pycache__/config.cpython-313.pyc", b"\x00"),
-            self.write(self.namespace + "/settings.local.json", b"{}\n"),
-        ]
-        changes, backups, notes = self.plan(prune=True)
-        self.apply(changes)
-        for path in noise:
-            self.assertTrue(path.is_file(), path)
-            self.assertNotIn(path, backups)
-        self.assertFalse(any("settings.local" in note or "__pycache__" in note
-                             for note in notes), notes)
-
-    # --- telling a local edit from an upstream change ------------------------
+        names = [self.namespace + "/engineer/bin/lib/__pycache__/config.cpython-313.pyc", self.namespace + "/settings.local.json"]
+        for name in names:
+            self.write(name, b"incidental")
+        plan = self.plan()
+        self.assertTrue(set(names).isdisjoint(row["path"] for row in plan["entries"]))
+        self.apply(plan)
+        for name in names:
+            self.assertEqual(b"incidental", self.read(name))
 
     def test_a_baseline_names_the_customization_it_replaces(self):
-        with tempfile.TemporaryDirectory(prefix="update-previous-") as previous_dir:
-            previous = Path(previous_dir)
-            seed_source(previous)
-            # Upstream changed RULES.md between the two revisions; the project
-            # changed an agent role. Only the second is a local edit.
-            rules = self.namespace + "/RULES.md"
-            baseline = installer.payload(previous, self.host, True)
-            self.write(rules, baseline[rules] + b"\n<!-- upstream moved on -->\n")
-            (previous / "engineer/RULES.md").write_bytes(
-                (previous / "engineer/RULES.md").read_bytes() + b"\n<!-- upstream moved on -->\n")
-            subprocess.run(["git", "add", "."], cwd=previous, check=True,
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        name = self.namespace + "/agents/executor.md"
+        self.write(name, self.read(name) + b"Local rule\n")
+        plan = self.plan()
+        self.assertEqual("customized", self.row(plan, name)["classification"])
+        self.assertEqual("upstream-managed", self.row(plan, self.namespace + "/engineer/RULES.md")["classification"])
 
-            role = self.namespace + "/agents/executor.md"
-            self.write(role, self.installed[role] + b"\nMY LOCAL RULE\n")
-
-            _, _, notes = self.plan(previous=previous)
-            review = [note for note in notes if note.startswith("REVIEW")]
-            self.assertEqual(1, len(review), notes)
-            self.assertIn("executor.md", review[0])
-            self.assertNotIn("RULES.md", review[0])
-
-    def test_without_a_baseline_the_report_says_it_cannot_tell(self):
-        self.write(self.namespace + "/agents/executor.md", b"# local\n")
-        _, _, notes = self.plan()
-        self.assertTrue(any("--from-ref" in note for note in notes), notes)
-
-    # --- refusals ------------------------------------------------------------
+    def test_without_ownership_equal_bytes_are_unproven(self):
+        legacy_update.manifest_path(self.target, self.host).unlink()
+        row = self.row(self.plan(), self.namespace + "/agents/executor.md")
+        self.assertEqual("unproven", row["classification"])
+        self.assertEqual("unchanged", row["comparison"])
 
     def test_update_requires_an_existing_installation(self):
-        shutil.rmtree(self.target / self.namespace)
-        with self.assertRaises(ValueError) as caught:
+        (self.target / self.namespace / "engineer/bin/engineer.py").unlink()
+        with self.assertRaisesRegex(ValueError, "existing installation"):
             self.plan()
-        self.assertIn("requires an existing " + self.namespace, str(caught.exception))
 
     def test_a_legacy_ai_tree_must_be_migrated_first(self):
-        self.write(".ai/runtime/phase.py", b"# legacy\n")
-        with self.assertRaises(ValueError) as caught:
+        self.write(".ai/runtime/phase.py", b"legacy")
+        with self.assertRaisesRegex(ValueError, "migrate"):
             self.plan()
-        self.assertIn("--migrate-existing", str(caught.exception))
 
     def test_a_second_host_stops_the_update(self):
         other = ".claude" if self.host == "codex" else ".codex"
-        self.write(other + "/runtime/phase.py", b"# the other host\n")
-        with self.assertRaises(ValueError) as caught:
+        self.write(other + "/engineer/bin/engineer.py", b"second host")
+        with self.assertRaisesRegex(ValueError, "second host"):
             self.plan()
-        self.assertIn("reconcile dual cores", str(caught.exception))
 
     def test_a_link_in_the_installed_tree_is_refused(self):
         link = self.target / self.namespace / "linked"
         try:
             link.symlink_to(self.target, target_is_directory=True)
-        except (OSError, NotImplementedError):
-            self.skipTest("symlink creation is not permitted here")
-        with self.assertRaises(ValueError) as caught:
+        except OSError:
+            self.skipTest("symlink creation unavailable")
+        with self.assertRaisesRegex(ValueError, "linked path"):
             self.plan()
-        self.assertIn("Refusing linked path", str(caught.exception))
 
 
 class ClaudeUpdateTests(UpdateTests):
-    """The same contract, on the host whose entry file and skill root differ."""
     host = "claude"
-
-
 
 
 """Offline Git fixtures for reviewed workflow updates and ownership provenance."""
@@ -483,7 +368,7 @@ class ReviewedUpdates(unittest.TestCase):
         rules.write_bytes(rules.read_bytes() + b"\nPinned upstream fixture addition.\n")
         (cls.source / ".planning").mkdir(exist_ok=True)
         (cls.source / ".planning/config.yaml").write_text("fixture: true\n", encoding="utf-8")
-        optional = cls.source / ".planning/config.yaml"
+        optional = cls.source / "engineer/templates/config.yaml"
         optional.write_bytes(optional.read_bytes() + b"\nnew_optional: example\n")
         git("add", ".", cwd=cls.source)
         git("-c", "user.name=Fixture", "-c", "user.email=test@example.invalid", "commit", "--quiet", "-m", "upstream change", cwd=cls.source)
@@ -542,7 +427,7 @@ class ReviewedUpdates(unittest.TestCase):
         self.assertIn(".codex/engineer/RULES.md", changed)
         parsed = tomllib.loads(settings.read_text())
         self.assertEqual(parsed["model"], "project-model")
-        self.assertEqual(parsed["agents"]["max_concurrent_threads_per_session"], 4)
+        self.assertEqual(parsed["agents"]["max_concurrent_threads_per_session"], 12)
         self.assertTrue(parsed["hooks"])
         self.assertEqual((self.target / "code.py").read_text(), "user code\n")
         self.assertEqual((self.target / ".planning/phases/plan.md").read_text(), "user plan\n")
@@ -597,7 +482,7 @@ class ReviewedUpdates(unittest.TestCase):
                 plan = update.build_plan(self.source, target, host, False, str(self.source),
                                          self.second, self.baseline)
                 self.assertTrue(self.entry(plan, entry_name)["conflict"])
-                plan["resolutions"][entry_name] = {"action": "keep", "classification": "generated"}
+                plan["resolutions"][entry_name] = {"action": "keep", "classification": "customized"}
                 update.apply_plan(plan, self.source, self.baseline)
                 self.assertEqual(entry_path.read_bytes(), preserved)
                 record = update.load_manifest(target, host)["files"][entry_name]
@@ -605,14 +490,14 @@ class ReviewedUpdates(unittest.TestCase):
                 for candidate, revision, baseline in ((self.source, self.second, self.source),
                                                       (later, third, self.source)):
                     repeated = update.build_plan(candidate, target, host, False, str(candidate),
-                                                 revision, baseline, str(self.source))
+                                                 revision, baseline)
                     # Recording kept installed bytes must not prove upstream ownership.
                     self.assertTrue(self.entry(repeated, entry_name)["conflict"])
                     before = entry_path.read_bytes()
                     with self.assertRaisesRegex(ValueError, "Unresolved conflict"):
                         update.apply_plan(repeated, candidate, baseline)
                     self.assertEqual(entry_path.read_bytes(), before)
-                    repeated["resolutions"][entry_name] = {"action": "keep", "classification": "generated"}
+                    repeated["resolutions"][entry_name] = {"action": "keep", "classification": "customized"}
                     update.apply_plan(repeated, candidate, baseline)
                     self.assertEqual(entry_path.read_bytes(), preserved)
                 # Even after provenance advances, another update still requires review.
@@ -628,7 +513,7 @@ class ReviewedUpdates(unittest.TestCase):
                 prefix, suffix = b"Project guidance before.\n", b"Project guidance after.\n"
                 entry_path.write_bytes(prefix + entry_path.read_bytes() + suffix)
                 plan = update.build_plan(later, target, host, False, str(later), third,
-                                         self.baseline, str(self.source))
+                                         self.baseline)
                 self.assertIsNone(self.entry(plan, entry_name)["conflict"])
                 update.apply_plan(plan, later, self.baseline)
                 content = entry_path.read_bytes()
@@ -643,7 +528,7 @@ class ReviewedUpdates(unittest.TestCase):
         config = self.target / ".planning/config.yaml"
         old = {"workflow": {"auto_advance": True}, "agents": {"executor": {"model": "custom"}},
                "handoff": {"context_tokens": 30000}, "verification": {"commands": [["python", "check.py"]]}}
-        config.write_text(yaml.safe_dump(old))
+        config.write_text("workflow:\n  auto_advance: true\nagents:\n  executor:\n    model: custom\nhandoff:\n  context_tokens: 30000\nverification:\n  commands: [[python, check.py]]\n")
         plan = self.plan()
         row = self.entry(plan, ".planning/config.yaml")
         self.assertIn("workflow.isolation", row["required_config"])
@@ -679,7 +564,7 @@ class ReviewedUpdates(unittest.TestCase):
             update.apply_plan(plan, self.source, self.baseline)
         for entry in plan["entries"]:
             if entry["classification"] == "unproven":
-                plan["resolutions"][entry["path"]] = {"action": entry["action"], "classification": "upstream-managed"}
+                plan["resolutions"][entry["path"]] = {"action": "write" if entry["conflict"] else entry["action"], "classification": "upstream-managed"}
         update.apply_plan(plan, self.source, self.baseline)
         self.assertIn(b"Pinned upstream fixture addition", (self.target / ".codex/engineer/RULES.md").read_bytes())
 
@@ -722,6 +607,23 @@ class ReviewedUpdates(unittest.TestCase):
             update.apply_plan(plan, self.source, self.baseline)
         self.assertEqual(before, self.snapshot())
 
+    def test_invalid_resolution_schema_and_backup_parent_fail_before_any_write(self):
+        for resolution in ([], {"action": "force"}, {"action": "write", "candidate_base64": "dGFtcGVyZWQ="}):
+            with self.subTest(resolution=resolution):
+                plan = self.plan()
+                plan["resolutions"][".codex/engineer/RULES.md"] = resolution
+                before = self.snapshot()
+                with self.assertRaises(ValueError):
+                    update.apply_plan(plan, self.source, self.baseline)
+                self.assertEqual(before, self.snapshot())
+        obstruction = self.target / ".workflow-backups"
+        obstruction.write_bytes(b"project-owned file")
+        plan = self.plan()
+        before = self.snapshot()
+        with self.assertRaisesRegex(ValueError, "file used as parent"):
+            update.apply_plan(plan, self.source, self.baseline)
+        self.assertEqual(before, self.snapshot())
+
     def test_project_additions_are_preserved_and_not_pruned(self):
         path = self.target / ".codex/local-command.md"
         path.write_text("project addition")
@@ -741,7 +643,7 @@ class ReviewedUpdates(unittest.TestCase):
             self.plan()
 
     def test_link_destination_rejected(self):
-        with patch.object(installer, "safe_path", side_effect=ValueError("Refusing linked path")):
+        with patch.object(installer, "destination", side_effect=ValueError("Refusing linked path")):
             with self.assertRaisesRegex(ValueError, "linked"):
                 self.plan()
 
@@ -768,7 +670,7 @@ class ReviewedUpdates(unittest.TestCase):
         target.mkdir()
         incoming = installer.payload(self.baseline, "codex", False)
         path = target / ".codex/engineer/RULES.md"
-        path.parent.mkdir()
+        path.parent.mkdir(parents=True)
         path.write_bytes(incoming[".codex/engineer/RULES.md"])
         result = subprocess.run([sys.executable, str(ROOT / "bin/install.py"), "--source", str(self.source),
                                  "--ref", self.first, "--target", str(target), "--skip-deps", "--no-hooks"], capture_output=True)

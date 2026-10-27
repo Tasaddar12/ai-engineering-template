@@ -260,21 +260,22 @@ class ReviewedLineEndings(unittest.TestCase):
         self.assertEqual(1, len(backup))
         self.assertEqual(b"retired\n", backup[0].read_bytes())
 
-    def test_legacy_skip_and_substantive_refresh_use_strict_helper(self):
+    def test_line_ending_and_substantive_edits_both_require_review(self):
         self.install()
         name = ".codex/engineer/workflows/newlines.md"
-        for current, skipped in ((b"first\r\nsecond\n", True),
-                                 (b"\x00first\r\nsecond\n", False),
-                                 (b"\xfffirst\r\nsecond\n", False),
-                                 (b"first\r\nsecond\r", False)):
+        for current, comparison in ((b"first\r\nsecond\n", "line-ending-only"),
+                                    (b"\x00first\r\nsecond\n", "substantive"),
+                                    (b"\xfffirst\r\nsecond\n", "substantive"),
+                                    (b"first\r\nsecond\r", "substantive")):
             self.write(name, current)
-            changes, backups, notes = legacy.plan_update(
-                self.source, self.target, "codex", False, installer, previous=self.baseline)
-            self.assertEqual(skipped, self.target / name not in dict(changes))
-            if skipped:
-                self.assertTrue(any("Line-ending-only" in note and name in note for note in notes))
-            else:
-                self.assertIn(self.target / name, backups)
+            plan = self.plan()
+            row = self.row(plan, name)
+            self.assertEqual(comparison, row["comparison"])
+            self.assertEqual("customized", row["classification"])
+            self.assert_refused_without_mutation(plan, "Unresolved conflict")
+            reviewed = self.resolve(plan)
+            update.apply_plan(reviewed, self.source, self.baseline)
+            self.assertEqual(current, (self.target / name).read_bytes())
 
     def test_normalized_equality_does_not_prove_missing_or_invalid_ownership(self):
         self.install()
@@ -372,16 +373,16 @@ class ReviewedLineEndings(unittest.TestCase):
                     preserved[f".planning/{name}.md"] = f"# Authored {name}\r\nKeep bytes.\n".encode()
                 for name in ("PLAN", "SUMMARY", "CONTEXT"):
                     preserved[f".planning/phases/01-project/01-{name}.md"] = b"authored\r\nmixed\n"
-                preserved[root + "/rules/project-local.md"] = b"custom rule\r\n"
+                preserved[root + "/engineer/rules/project-local.md"] = b"custom rule\r\n"
                 preserved[".workflow-backups/prior/keep.bin"] = b"\x00\xffkeep\r\n"
                 config = (self.target / ".planning/config.yaml").read_bytes()
                 preserved[".planning/config.yaml"] = config + b"\nproject_value: authoritative\r\n"
                 for name, content in preserved.items():
                     self.write(name, content)
-                original_rules = (self.target / root / "RULES.md").read_bytes()
+                original_rules = (self.target / root / "engineer/RULES.md").read_bytes()
                 original_rules = original_rules.replace(b"\r\n", b"\n").replace(b"\n", b"\r\n") + b"local\n"
-                self.write(root + "/RULES.md", original_rules)
-                self.write(root + "/workflows/newlines.md", b"first\r\nsecond\n")
+                self.write(root + "/engineer/RULES.md", original_rules)
+                self.write(root + "/engineer/workflows/newlines.md", b"first\r\nsecond\n")
                 saved = Path(self.temporary.name) / (host + "-review.json")
                 result = self.cli(entry, "--target", self.target, "--source", self.source,
                                   "--ref", self.second, "--host", host, "--no-hooks", "--plan", saved)
@@ -389,7 +390,7 @@ class ReviewedLineEndings(unittest.TestCase):
                 plan = self.resolve(json.loads(saved.read_bytes()), replace_rules=True)
                 for name, content in self.lf_assets.items():
                     candidate = content + b"# reviewed LF update\n"
-                    row = self.row(plan, root + "/" + name)
+                    row = self.row(plan, root + "/" + (name if name.startswith("hooks/") else "engineer/" + name))
                     self.assertEqual(candidate, base64.b64decode(row["candidate_base64"]))
                     self.assertNotIn(b"\r", candidate)
                     self.assertEqual(update.digest(candidate), row["candidate_sha256"])
@@ -401,9 +402,9 @@ class ReviewedLineEndings(unittest.TestCase):
                 for mutation in ("comparison", "candidate_base64", "resolution"):
                     forged = copy.deepcopy(plan)
                     if mutation == "resolution":
-                        forged["resolutions"][root + "/RULES.md"]["action"] = "keep"
+                        forged["resolutions"][root + "/engineer/RULES.md"]["action"] = "keep"
                     else:
-                        self.row(forged, root + "/RULES.md")[mutation] = "tampered"
+                        self.row(forged, root + "/engineer/RULES.md")[mutation] = "tampered"
                     variants.append(installer.json_bytes(forged))
                 before = self.snapshot()
                 for raw in variants:
@@ -415,11 +416,11 @@ class ReviewedLineEndings(unittest.TestCase):
                 saved.write_bytes(reviewed_raw)
                 applied = self.cli(entry, "--apply", saved, "--reviewed-plan-sha256", reviewed_hash)
                 self.assertEqual(0, applied.returncode, applied.stderr)
-                self.assertIn(root + "/RULES.md", json.loads(applied.stdout)["changed"])
+                self.assertIn(root + "/engineer/RULES.md", json.loads(applied.stdout)["changed"])
                 for name, content in preserved.items():
                     self.assertEqual(content, (self.target / name).read_bytes(), name)
-                self.assertEqual(b"retired\n", (self.target / root / "workflows/retired.md").read_bytes())
-                backups = list((self.target / ".workflow-backups").glob("*/files/" + root + "/RULES.md"))
+                self.assertEqual(b"retired\n", (self.target / root / "engineer/workflows/retired.md").read_bytes())
+                backups = list((self.target / ".workflow-backups").glob("*/files/" + root + "/engineer/RULES.md"))
                 self.assertEqual(1, len(backups))
                 self.assertEqual(original_rules, backups[0].read_bytes())
                 manifest = update.load_manifest(self.target, host)
@@ -429,8 +430,8 @@ class ReviewedLineEndings(unittest.TestCase):
                     self.assertEqual(update.digest((self.target / name).read_bytes()), record["installed_sha256"])
                 for name, content in self.lf_assets.items():
                     candidate = content + b"# reviewed LF update\n"
-                    self.assertEqual(candidate, (self.target / root / name).read_bytes())
-                    self.assertEqual(update.digest(candidate), manifest["files"][root + "/" + name]["installed_sha256"])
+                    self.assertEqual(candidate, (self.target / root / (name if name.startswith("hooks/") else "engineer/" + name)).read_bytes())
+                    self.assertEqual(update.digest(candidate), manifest["files"][root + "/" + (name if name.startswith("hooks/") else "engineer/" + name)]["installed_sha256"])
                 self.assertNotEqual(plan["manifest_sha256"], update.digest(
                     (self.target / root / "workflow-ownership.json").read_bytes()))
                 after_apply = self.snapshot()

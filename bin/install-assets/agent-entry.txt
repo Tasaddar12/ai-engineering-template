@@ -1,1 +1,1 @@
-Read the installed engineer/RULES.md, selected command and agents/AGENT.md. The workflow owns procedure; the coordinator owns shared records. Phase implementation requires explicit user authorization.
+Read engineer/RULES.md, .planning/PROJECT.md, .planning/STATE.md, the selected command under commands/ and the assigned role under agents/. Native command skills live under .agents/skills/. The workflow owns procedure; the coordinator owns shared records through engineer_run query. Phase implementation requires explicit user authorization.

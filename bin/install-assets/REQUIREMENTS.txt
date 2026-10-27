@@ -49,10 +49,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| [REQ-01] | Phase 1 | Pending |
-| [REQ-02] | Phase 1 | Pending |
-| [REQ-03] | Phase 1 | Pending |
-| [REQ-04] | Phase 1 | Pending |
+| [REQ-01] | Phase [N] | Pending |
+| [REQ-02] | Phase [N] | Pending |
+| [REQ-03] | Phase [N] | Pending |
+| [REQ-04] | Phase [N] | Pending |
 | [REQ-ID] | Phase [N] | Pending |
 
 **Coverage:**

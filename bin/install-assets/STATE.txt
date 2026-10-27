@@ -1,5 +1,5 @@
 ---
-gsd_state_version: '1.0'  # placeholder; runtime updates this on the first state operation
+workflow_state_version: '1.0'  # Derived by state runtime operations
 status: planning
 progress:
   total_phases: 0
@@ -8,7 +8,6 @@ progress:
   completed_plans: 0
   percent: 0
 ---
-<!-- STATE-MD-SCHEMA:END:frontmatter -->
 
 # Project State
 
@@ -28,25 +27,6 @@ Last activity: [YYYY-MM-DD] — [What happened]
 
 Progress: [░░░░░░░░░░] 0%
 
-## Performance Metrics
-
-**Velocity:**
-- Total plans completed: [N]
-- Average duration: [X] min
-- Total execution time: [X.X] hours
-
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| - | - | - | - |
-
-**Recent Trend:**
-- Last 5 plans: [durations]
-- Trend: [Improving / Stable / Degrading]
-
-*Updated after each plan completion*
-
 ## Accumulated Context
 
 ### Decisions
@@ -63,9 +43,13 @@ Recent decisions affecting current work:
 
 None yet.
 
+### Roadmap Evolution
+
+[Runtime-recorded phase changes]
+
 ### Blockers/Concerns
 
-[Issues that affect future work]
+[Active blockers; clear resolved entries with `state.clear-blocker`]
 
 None yet.
 
