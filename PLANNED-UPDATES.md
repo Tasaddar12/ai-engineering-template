@@ -58,7 +58,7 @@ runtime driven from bash.
 | No dangling upstream plumbing | `grep -rn "gsd_run\|gsd-core\|/gsd:" agents commands engineer` returns nothing. |
 | Our behavior preserved | The unattended execute → verify → ship chain, mandatory worktree isolation, phase authority, receipts, frozen-revision verification, issue/PR automation and exact-approval cleanup all work as on `main`. `python -m unittest discover -s tests` passes. |
 | New features working | `/secure-phase`, `/validate-phase`, `/add-tests`, `/audit-uat`, `/audit-fix`, `/spec-phase`, `/code-review --fix`, `/ui-phase`, `/ui-review`, `/fast`, `/quick-batch` run on the Python runtime with this project's rules. |
-| Traceable | Every commit names the row IDs it completes (`Rows: R-AG-01, R-AG-02`). `scripts/overhaul/progress.py` reports what is left. |
+| Traceable | Every commit names the row IDs it completes (`Rows: R-AG-01, R-AG-02`). `scripts/progress.py` reports what is left. |
 
 ## 2. Ground rules
 
@@ -69,7 +69,7 @@ runtime driven from bash.
 - Do not carry anything listed in [section 8](#8-known-local-defects-not-to-carry-over).
 - Python 3.11+, standard library only. Run repository scripts with `python -I`. Shell glue is POSIX `sh`/bash. No Node, npm or npx.
 - Agent-facing text (rules, workflows, commands, agents, references, hook messages): write direct imperatives with exact commands. Keep rationale in commit messages and in this document.
-- After each phase, run its `check` block (section 5) with `python -I scripts/overhaul/check.py --phase <N>`. A phase is done when every check passes.
+- After each phase, run its `check` block (section 5) with `python -I scripts/check.py --phase <N>`. A phase is done when every check passes.
 
 ## 3. Target layout and naming
 
@@ -98,13 +98,13 @@ runtime driven from bash.
 | `scripts/cleanup.py` | Exact-approval cleanup CLI | `.ai/hooks/cleanup.py` |
 | `bin/install.py`, `bin/update.py`, `bin/migrate.py` | Install, pinned update, migration | `.ai/install.py`, `.ai/update.py` + `.ai/install_update.py`, `.ai/install_migration.py` |
 | `skills/<name>/SKILL.md` | Skill mirror of commands | `.agents/skills/` |
-| `scripts/overhaul/` | Overhaul tooling (section 6) | New |
-| `docs/INVENTORY.md` | Generated inventory of every workflow file | `scripts/overhaul/inventory.py` |
+| `scripts/` | Overhaul tooling (section 6) | New |
+| `docs/INVENTORY.md` | Generated inventory of every workflow file | `scripts/inventory.py` |
 | `.planning/` | Project records only (PROJECT, STATE, ROADMAP, REQUIREMENTS, config.yaml, phases, quick, todos) | Unchanged |
 
 ### 3.2 Mechanical renames
 
-Apply with `scripts/overhaul/rename.py` (section 6). Never hand-apply these across many files.
+Apply with `scripts/rename.py` (section 6). Never hand-apply these across many files.
 
 | Find | Replace | Scope |
 |---|---|---|
@@ -197,25 +197,25 @@ Each row says what changes, why, and where you feel the benefit. "Source" points
 
 ## 5. Work phases
 
-Each phase is one branch and one PR. Rows are in sections 10 to 14. The `check` block is what `scripts/overhaul/check.py` runs.
+Each phase is one branch and one PR. Rows are in sections 10 to 14. The `check` block is what `scripts/check.py` runs.
 
 ### Phase 0: Tooling
 
-- Write the scripts in section 6 under `scripts/overhaul/`, with unit tests in `tests/test_overhaul_scripts.py`.
+- Write the scripts in section 6 under `scripts/`, with unit tests in `tests/test_overhaul_scripts.py`.
 - Generate `docs/INVENTORY.md`.
 
 ```check
-python -I scripts/overhaul/inventory.py --check
+python -I scripts/inventory.py --check
 python -m unittest tests.test_overhaul_scripts
 ```
 
 ### Phase 1: Delete Batch A
 
-- Run `python -I scripts/overhaul/delete_batch.py --batch A` (dry run), review, then add `--apply`.
+- Run `python -I scripts/delete_batch.py --batch A` (dry run), review, then add `--apply`.
 - Commit: `chore(overhaul): delete unused upstream files (batch A)`.
 
 ```check
-python -I scripts/overhaul/delete_batch.py --batch A --verify
+python -I scripts/delete_batch.py --batch A --verify
 ```
 
 ### Phase 2: Runtime, hooks, installer (rows R-RT, V, C)
@@ -229,38 +229,38 @@ python -I scripts/overhaul/delete_batch.py --batch A --verify
 ```check
 sh engineer/bin/engineer_run verbs >/dev/null
 python -m unittest discover -s tests
-python -I scripts/overhaul/verbs.py --report
+python -I scripts/verbs.py --report
 ```
 
 ### Phase 3: Mechanical renames
 
-- Run `python -I scripts/overhaul/rename.py` (dry run), review the per-file counts, then `--apply`.
+- Run `python -I scripts/rename.py` (dry run), review the per-file counts, then `--apply`.
 - Rename agent files per [3.3](#33-role-names) with `git mv`.
 
 ```check
 ! grep -rn "gsd_run\|gsd-tools\|~/.claude/gsd-core\|/gsd:" agents commands engineer
-python -I scripts/overhaul/links.py
+python -I scripts/links.py
 ```
 
 ### Phase 4: Agents (rows R-AG)
 
 ```check
-python -I scripts/overhaul/progress.py --prefix R-AG --require-done
+python -I scripts/progress.py --prefix R-AG --require-done
 ! grep -rln "gsd_run\|mandatory-initial-read\|agent-skills-bootstrap" agents
 ```
 
 ### Phase 5: Commands and workflows (rows R-WF)
 
 ```check
-python -I scripts/overhaul/progress.py --prefix R-WF --require-done
+python -I scripts/progress.py --prefix R-WF --require-done
 python -m unittest tests.test_unattended_flow tests.test_workflow_links
 ```
 
 ### Phase 6: References, templates, rules, config (rows R-RF, R-TP, R-RL), then Batch B
 
 ```check
-python -I scripts/overhaul/progress.py --prefix R-RF --prefix R-TP --prefix R-RL --require-done
-python -I scripts/overhaul/delete_batch.py --batch B --verify
+python -I scripts/progress.py --prefix R-RF --prefix R-TP --prefix R-RL --require-done
+python -I scripts/delete_batch.py --batch B --verify
 python -m unittest discover -s tests
 ```
 
@@ -271,7 +271,7 @@ python -m unittest discover -s tests
 - Delete the call sites of DROP verbs as their rows say.
 
 ```check
-python -I scripts/overhaul/verbs.py --fail-on-unknown
+python -I scripts/verbs.py --fail-on-unknown
 ! grep -rnE "node (-e|-p|-c)|\.cjs" agents commands engineer
 python -m unittest discover -s tests
 ```
@@ -290,7 +290,7 @@ python -m unittest discover -s tests
 For each feature workflow, apply the local conventions listed in its R-WF rows: authority gate, `engineer_run query dispatch-isolation`, `resolve-model`/`resolve-effort` inline, report-only auditors, issue routing, no next-step prompts.
 
 ```check
-python -I scripts/overhaul/verbs.py --fail-on-unknown
+python -I scripts/verbs.py --fail-on-unknown
 python -m unittest discover -s tests
 ```
 
@@ -308,7 +308,7 @@ python -m unittest discover -s tests
 
 ## 6. Automation scripts to write
 
-All under `scripts/overhaul/`, Python 3.11+, standard library only, run with `python -I`. Every script defaults to a dry run and prints what it would do; `--apply` changes files. Add a test module per script.
+All under `scripts/`, Python 3.11+, standard library only, run with `python -I`. Every script defaults to a dry run and prints what it would do; `--apply` changes files. Add a test module per script.
 
 | Script | Purpose | Inputs | Output / behavior |
 |---|---|---|---|
@@ -325,7 +325,7 @@ All under `scripts/overhaul/`, Python 3.11+, standard library only, run with `py
 ## 7. Working a row with AI assistance
 
 1. Create the phase worktree: `git worktree add .worktrees/overhaul-p<N> -b overhaul-p<N> origin/manual-override`.
-2. Pick one target file. Collect its rows: `python -I scripts/overhaul/anchor.py R-WF-07` (repeat per row).
+2. Pick one target file. Collect its rows: `python -I scripts/anchor.py R-WF-07` (repeat per row).
 3. Give the assistant this prompt, filled in:
 
    ```text
@@ -333,12 +333,12 @@ All under `scripts/overhaul/`, Python 3.11+, standard library only, run with `py
    exactly as their Instruction column says. Process rows bottom-up by GSD line.
    Copy local text from the cited ranges at commit 9443672, then apply the renames
    in section 3.2. Do not carry anything in section 8. Do not change other files.
-   Run: python -I scripts/overhaul/check.py --phase <N>
+   Run: python -I scripts/check.py --phase <N>
    Commit with the trailer line: Rows: <IDs>
    ```
 
 4. Review the diff against the anchors. Push and update the draft PR.
-5. Run `python -I scripts/overhaul/progress.py --prefix <prefix>` to see what is left.
+5. Run `python -I scripts/progress.py --prefix <prefix>` to see what is left.
 
 To do a row by hand, follow the same steps without the prompt: open both anchors, edit, run the check, and commit with the `Rows:` trailer.
 

@@ -17,7 +17,7 @@ class CheckTests(unittest.TestCase):
             tool.selected_checks(text, ["99"])
 
     def test_core_workflow_check_defers_feature_rows(self):
-        text = "### Phase 5: Workflows\n```check\npython -I scripts/overhaul/progress.py --prefix R-WF --require-done\n```\n"
+        text = "### Phase 5: Workflows\n```check\npython -I scripts/progress.py --prefix R-WF --require-done\n```\n"
         self.assertTrue(tool.selected_checks(text, ["5"])[0][1].endswith("--stage core"))
 
     def test_checks_require_apply_and_bash_handles_inversion(self):

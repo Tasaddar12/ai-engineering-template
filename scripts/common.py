@@ -8,7 +8,7 @@ from pathlib import Path, PurePosixPath
 import re
 import subprocess
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 BASELINE = "9443672"
 TREE_ROOTS = ("agents", "commands", "engineer", "hooks", "bin", "skills")
 FORBIDDEN = {".ai", ".planning", ".git", ".worktrees"}

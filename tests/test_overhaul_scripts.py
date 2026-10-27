@@ -4,7 +4,7 @@ from pathlib import Path
 import sys
 import unittest
 
-TOOL_DIR = Path(__file__).resolve().parents[1] / "scripts" / "overhaul"
+TOOL_DIR = Path(__file__).resolve().parents[1] / "scripts"
 
 
 def load_tool(name):

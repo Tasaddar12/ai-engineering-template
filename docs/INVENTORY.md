@@ -2,7 +2,7 @@
 
 Anchor baseline: `9443672`. Origins compare Git blob content with the downloaded upstream copy at `1eb6c97` after structural path mapping.
 
-Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with `--check`.
+Regenerate with `python -I scripts/inventory.py --apply`; compare with `--check`.
 
 | File | Origin | Lines | Remaining gsd references |
 |---|---|---:|---:|
@@ -117,7 +117,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `commands/verify-work.md` | upstream | 44 | 4 |
 | `commands/workspace.md` | upstream | 57 | 10 |
 | `commands/workstreams.md` | upstream | 71 | 15 |
-| `docs/INVENTORY.md` | local-only | 496 | 18 |
+| `docs/INVENTORY.md` | local-only | 497 | 18 |
 | `docs/prompts.md` | upstream | 200 | 0 |
 | `engineer/bin/engineer_run` | upstream | 0 | 0 |
 | `engineer/references/REFERENCE.md` | upstream | 0 | 0 |
@@ -256,8 +256,9 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `engineer/references/worktree-path-safety.md` | upstream | 498 | 10 |
 | `engineer/templates/AI-SPEC.md` | upstream | 270 | 6 |
 | `engineer/templates/DEBUG.md` | upstream | 208 | 9 |
+| `engineer/templates/README.md` | upstream | 83 | 39 |
 | `engineer/templates/SECURITY.md` | upstream | 63 | 0 |
-| `engineer/templates/TEMPLATE.md` | upstream | 83 | 39 |
+| `engineer/templates/TEMPLATE.md` | reconciled | 0 | 0 |
 | `engineer/templates/UAT.md` | upstream | 306 | 5 |
 | `engineer/templates/UI-SPEC.md` | upstream | 147 | 3 |
 | `engineer/templates/VALIDATION.md` | upstream | 78 | 1 |
@@ -483,14 +484,14 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `engineer/workflows/verify-work/steps/mvp-uat-framing.md` | upstream | 27 | 69 |
 | `hooks/worktree-path-guard.py` | upstream | 0 | 0 |
 | `scripts/SCRIPT.py` | upstream | 0 | 0 |
-| `scripts/overhaul/anchor.py` | local-only | 65 | 1 |
-| `scripts/overhaul/check.py` | local-only | 66 | 0 |
-| `scripts/overhaul/common.py` | local-only | 142 | 0 |
-| `scripts/overhaul/delete_batch.py` | local-only | 42 | 0 |
-| `scripts/overhaul/inventory.py` | local-only | 71 | 3 |
-| `scripts/overhaul/links.py` | local-only | 65 | 0 |
-| `scripts/overhaul/manifest.json` | local-only | 259 | 35 |
-| `scripts/overhaul/progress.py` | local-only | 38 | 0 |
-| `scripts/overhaul/rename.py` | local-only | 74 | 12 |
-| `scripts/overhaul/verbs.py` | local-only | 72 | 0 |
+| `scripts/anchor.py` | local-only | 65 | 1 |
+| `scripts/check.py` | local-only | 66 | 0 |
+| `scripts/common.py` | local-only | 142 | 0 |
+| `scripts/delete_batch.py` | local-only | 42 | 0 |
+| `scripts/inventory.py` | local-only | 71 | 3 |
+| `scripts/links.py` | local-only | 65 | 0 |
+| `scripts/manifest.json` | local-only | 259 | 35 |
+| `scripts/progress.py` | local-only | 38 | 0 |
+| `scripts/rename.py` | local-only | 74 | 12 |
+| `scripts/verbs.py` | local-only | 72 | 0 |
 | `skills/SKILL/SKILL.md` | upstream | 0 | 0 |
