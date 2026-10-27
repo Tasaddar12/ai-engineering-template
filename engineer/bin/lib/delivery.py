@@ -21,7 +21,9 @@ def view(branch):
             return None
         raise Failure("provider-query-failed", result.stderr.strip())
     packet = json.loads(result.stdout)
-    repository.require_url(packet["url"], "pull")
+    number = repository.require_url(packet["url"], "pull")
+    if packet.get("number") != number:
+        raise Failure("pr-identity-mismatch", "Provider number differs from canonical URL")
     if packet.get("headRefName") != branch:
         raise Failure("pr-head-mismatch", "Provider returned a different branch")
     return packet
@@ -33,6 +35,8 @@ def classify_checks(checks):
         name = item.get("name", item.get("context", "check"))
         state = str(item.get("conclusion") or item.get("state") or item.get("status") or "PENDING").upper()
         if state in ("FAILURE", "FAILED", "ERROR", "CANCELLED", "TIMED_OUT", "ACTION_REQUIRED"):
+            failed.append(name)
+        elif item.get("conclusion") and state not in ("SUCCESS", "SUCCESSFUL", "NEUTRAL", "SKIPPED"):
             failed.append(name)
         elif state not in ("SUCCESS", "SUCCESSFUL", "NEUTRAL", "SKIPPED"):
             pending.append(name)
@@ -90,6 +94,11 @@ def command(args, action):
     if not branch:
         raise Failure("detached-head", "Delivery requires a named branch")
     if action == "sync":
+        if run(["git", "remote", "get-url", "origin"], root(), check=False).returncode:
+            base = gitops.base_branch(Args([]))
+            if run(["git", "rev-parse", "--verify", base+"^{commit}"], root(), check=False).returncode:
+                base = branch
+            return {"synced": False, "branch": branch, "reason": "No origin remote is configured", "base": base}
         run(["git", "fetch", "--prune", "origin"], root())
         return {"synced": True, "branch": branch}
     if action == "status":
@@ -109,18 +118,20 @@ def command(args, action):
             raise Failure("merge-not-authorized", "Merging requires explicit --confirm")
         pr = verified_delivery(args, branch)
         verdict = classify_checks(pr.get("statusCheckRollup", []))
-        if verdict["status"] not in ("passed", "none") or pr.get("mergeable") == "CONFLICTING":
+        if verdict["status"] not in ("passed", "none") or pr.get("mergeable") == "CONFLICTING" or pr.get("isDraft") is True:
             raise Failure("merge-blocked", "Checks or merge conflicts block merging", checks=verdict)
         gh(["pr", "merge", str(pr["number"]), "--squash"])
         final = view(branch)
-        if not final or final.get("url") != pr["url"] or final.get("headRefOid") != pr["headRefOid"] or final.get("state") != "MERGED" or not final.get("mergedAt"):
+        stable_fields = ("number", "url", "headRefName", "headRefOid", "baseRefName", "title", "body", "isDraft")
+        if not final or any(final.get(key) != pr.get(key) for key in stable_fields) or final.get("state") != "MERGED" or not final.get("mergedAt"):
             raise Failure("pr-merge-uncertain", "Merge command has no matching merged provider readback; inspect before retrying")
         return {"merged": True, "url": pr["url"], "head": pr["headRefOid"], "merged_at": final["mergedAt"]}
     if action == "ready":
         reviewed = verified_delivery(args, branch)
         gh(["pr", "ready", branch])
         final = view(branch)
-        if not final or final.get("url") != reviewed["url"] or final.get("headRefOid") != reviewed["headRefOid"] or final.get("isDraft") or final.get("state") != "OPEN":
+        stable_fields = ("number", "url", "headRefName", "headRefOid", "baseRefName", "title", "body")
+        if not final or any(final.get(key) != reviewed.get(key) for key in stable_fields) or final.get("isDraft") is not False or final.get("state") != "OPEN":
             raise Failure("pr-ready-uncertain", "Ready command has no matching provider readback")
         return {"ready": True, "branch": branch}
     if action != "open":
@@ -136,10 +147,15 @@ def command(args, action):
         raise Failure("pr-not-open", "A closed pull request cannot be overwritten")
     base = args.get("base", existing.get("baseRefName") if existing else config.lookup(config.load(), "git.base_branch", "main"))
     run(["git", "rev-parse", base+"^{commit}"], root())
-    title = args.get("title", run(["git", "log", "-1", "--format=%s"], root()).stdout.strip())
-    body = read(safe_path(args.get("body-file"))) if args.has("body-file") else str(args.get("body", ""))
+    title = args.get("title", existing.get("title") if existing else run(["git", "log", "-1", "--format=%s"], root()).stdout.strip())
+    body = read(safe_path(args.get("body-file"))) if args.has("body-file") else str(args.get("body", existing.get("body", "") if existing else ""))
     validate_body(body)
     origin = repository.identity()
+    changed = existing is None or any(args.has(key) for key in ("base", "title", "body", "body-file"))
+    if existing and not changed:
+        if existing.get("headRefOid") != revision:
+            raise Failure("pr-readback-mismatch", "Existing PR does not match the current checkout revision")
+        return {**existing, "created": False, "updated": False}
     if args.has("phase") or args.has("quick"):
         from .phase_issues import audit_pr
         audit_pr(args.get("phase"), body, args.get("quick"))
@@ -150,7 +166,14 @@ def command(args, action):
         if repository.identity() != origin or run(["git", "rev-parse", "HEAD"], root()).stdout.strip() != revision or run(["git", "status", "--porcelain"], root()).stdout:
             raise Failure("pr-publication-drift", "Reviewed checkout or origin changed before provider publication")
         if existing:
-            gh(["pr", "edit", str(existing["number"]), "--base", base, "--title", title, "--body-file", str(body_path)])
+            edit = ["pr", "edit", str(existing["number"])]
+            if args.has("base"):
+                edit += ["--base", base]
+            if args.has("title"):
+                edit += ["--title", title]
+            if args.has("body") or args.has("body-file"):
+                edit += ["--body-file", str(body_path)]
+            gh(edit)
         else:
             gh(["pr", "create", "--draft", "--head", branch, "--base", base, "--title", title, "--body-file", str(body_path)])
     result = view(branch)
@@ -158,4 +181,4 @@ def command(args, action):
         raise Failure("pr-readback-mismatch", "Published PR failed readback validation")
     if result.get("headRefName") != branch or result.get("headRefOid") != revision or result.get("state") != "OPEN" or result.get("isDraft") != (existing.get("isDraft") if existing else True):
         raise Failure("pr-readback-mismatch", "Provider head/draft state differs from the reviewed publication")
-    return {**result, "created": existing is None}
+    return {**result, "created": existing is None, "updated": existing is not None}

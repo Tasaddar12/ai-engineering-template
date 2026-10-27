@@ -2,6 +2,7 @@
 from pathlib import Path
 import contextlib
 import os
+import re
 import time
 from . import config, records, worktrees
 from .core import Failure, load_json, now, root, run, slug, write_json
@@ -46,11 +47,13 @@ def registered(entry):
     if target.is_symlink() or not target.is_dir() or hasattr(target, "is_junction") and target.is_junction():
         raise Failure("missing-session-worktree", str(target))
     matching = [item for item in worktrees.list_worktrees() if Path(item["path"]).resolve() == target.resolve()]
-    if len(matching) != 1 or matching[0]["branch"] != entry["branch"]:
-        raise Failure("session-identity-drift", "Recorded path and branch must match a registered Git worktree", entry=entry)
+    if len(matching) != 1:
+        raise Failure("unregistered-session-worktree", "Recorded path must match one registered Git worktree", entry=entry)
+    if matching[0]["branch"] != entry["branch"]:
+        raise Failure("session-branch-mismatch", "Recorded branch differs from registered branch", entry=entry, actual_branch=matching[0]["branch"])
     actual = run(["git", "branch", "--show-current"], target).stdout.strip()
     if actual != entry["branch"]:
-        raise Failure("session-identity-drift", actual)
+        raise Failure("session-branch-mismatch", actual)
     return target.resolve()
 
 
@@ -59,7 +62,15 @@ def phase_in(target, identifier):
     candidates = [path for path in directory.iterdir() if path.is_dir() and path.name[0:1].isdigit() and phase_identity(path.name) == identifier] if directory.is_dir() else []
     if len(candidates) > 1:
         raise Failure("ambiguous-phase-directory", identifier)
-    return candidates[0] if candidates else None
+    if not candidates:
+        return None
+    # A name alone is not a phase record. An explicitly authored roadmap entry
+    # or a phase artifact supplies evidence in the selected checkout.
+    from .core import read
+    headings = re.findall(r"(?m)^#{2,4}\s+Phase\s+(\d+(?:\.\d+)?)\s*:", read(target/".planning/ROADMAP.md"))
+    evidenced = any(phase_identity(label) == identifier for label in headings)
+    evidenced = evidenced or any(path.is_file() and path.name.endswith(("-CONTEXT.md", "-PLAN.md", "-SPEC.md", "-VERIFICATION.md")) for path in candidates[0].iterdir())
+    return candidates[0] if evidenced else None
 
 
 def command(args, action):
@@ -99,7 +110,13 @@ def session_command(args, action):
         if run(["git", "rev-parse", reference], root()).stdout.strip() != head:
             raise Failure("session-head-drift", branch)
         run(["git", "worktree", "remove", str(target)], root())
+        if target.exists() or any(Path(item["path"]).resolve() == target for item in worktrees.list_worktrees()):
+            raise Failure("session-close-uncertain", "Checkout removal lacks absent-path readback")
+        if run(["git", "symbolic-ref", "-q", reference], root(), check=False).returncode == 0 or run(["git", "rev-parse", reference], root()).stdout.strip() != head:
+            raise Failure("session-head-drift", "Session branch changed after checkout removal")
         run(["git", "update-ref", "--no-deref", "-d", reference, head], root())
+        if run(["git", "show-ref", "--verify", "--quiet", reference], root(), check=False).returncode == 0 or run(["git", "symbolic-ref", "-q", reference], root(), check=False).returncode == 0:
+            raise Failure("session-close-uncertain", "Branch removal lacks absent-ref readback")
         entry.update({"status": "closed", "closed": now()})
         write_json(path, data)
         return {"closed": True, "evidence": {**evidence, "merged": True}, **entry}
@@ -134,10 +151,10 @@ def session_command(args, action):
     base = run(["git", "rev-parse", args.get("base", "HEAD")+"^{commit}"], root()).stdout.strip()
     if action == "adopt":
         if root() == primary:
-            raise Failure("primary-session-refused", "Adopt an isolated worktree")
+            raise Failure("session-adopt-not-linked", "Adopt an isolated worktree")
         branch = run(["git", "branch", "--show-current"], root()).stdout.strip()
         if not branch:
-            raise Failure("detached-session", "Adoption requires a named branch")
+            raise Failure("session-adopt-detached", "Adoption requires a named branch")
         target = root()
         if branch in config.lookup(config.load(), "git.protected_branches", ["main", "master"]):
             raise Failure("protected-branch", "Adopt a non-protected isolated branch")
@@ -176,11 +193,11 @@ def locate(args):
         target = registered(entry)
         directory = phase_in(target, identifier)
         if not directory:
-            raise Failure("phase-not-found", f"Phase session exists but its phase directory is absent: {identifier}")
-        return {"found": True, "source": "session", "padded_phase": identifier, "worktree": str(target), "branch": entry["branch"], "session": entry, "phase_dir": str(directory)}
+            raise Failure("session-phase-missing", f"Phase session exists but its phase directory is absent: {identifier}")
+        return {"found": True, "phase_found": True, "source": "session", "padded_phase": identifier, "worktree": str(target), "branch": entry["branch"], "session": entry, "phase_dir": str(directory)}
     directory = phase_in(root(), identifier)
     if directory:
-        return {"found": True, "source": "current-checkout", "padded_phase": identifier, "worktree": str(root()), "branch": run(["git", "branch", "--show-current"], root()).stdout.strip(), "phase_dir": str(directory), "session": None}
+        return {"found": True, "phase_found": True, "source": "current-checkout", "padded_phase": identifier, "worktree": str(root()), "branch": run(["git", "branch", "--show-current"], root()).stdout.strip(), "phase_dir": str(directory), "session": None}
     candidates = []
     for item in worktrees.list_worktrees():
         target = Path(item["path"])
@@ -188,7 +205,7 @@ def locate(args):
             continue
         directory = phase_in(target, identifier)
         if directory:
-            candidates.append({"found": True, "source": "registered-worktree", "padded_phase": identifier, "worktree": str(target.resolve()), "branch": item["branch"], "phase_dir": str(directory), "session": None})
+            candidates.append({"found": True, "phase_found": True, "source": "registered-worktree", "padded_phase": identifier, "worktree": str(target.resolve()), "branch": item["branch"], "phase_dir": str(directory), "session": None})
     if len(candidates) > 1:
         raise Failure("ambiguous-phase-worktree", "Multiple registered checkouts contain this phase", candidates=candidates)
-    return candidates[0] if candidates else {"found": False, "source": None, "padded_phase": identifier, "worktree": None, "session": None}
+    return candidates[0] if candidates else {"found": False, "phase_found": False, "source": "none", "padded_phase": identifier, "worktree": None, "branch": None, "session": None}
