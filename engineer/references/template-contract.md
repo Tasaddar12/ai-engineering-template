@@ -41,10 +41,10 @@ Read full templates before creating records. Preserve all required sections; exp
 | resources | stable identity list | Shared external mutable resources serialize dispatch |
 | autonomous | boolean | Does not waive any required human decision |
 | requirements | requirement ID list | Approved obligations covered by this plan; quick mode follows its assigned contract |
-| acceptance | list | Explicit observable acceptance, including mandatory human judgment |
-| documentation | list | Required reader-facing artifacts and evidence, or explicit applicability |
-| checks | list of argv lists | Exact required checks, no shell strings or fabricated commands |
-| issue_refs | list | Canonical source/finding relationships or concrete Pending reasons |
+| acceptance | top-level list | Explicit observable acceptance, including mandatory human judgment |
+| documentation | top-level list | Required reader-facing artifacts and evidence, or explicit applicability |
+| checks | list of nonempty argv string lists | Exact required checks, no shell strings or fabricated commands |
+| issue_refs | top-level list | Canonical source/finding relationships or concrete Pending reasons |
 | must_haves | mapping | truths, artifacts and key_links; preserve backstop/prohibition schema when used |
 | user_setup | list when applicable | Real unavailable prerequisite, not a request for automatable manual work |
 
@@ -60,7 +60,7 @@ Update PLANs only under the assigned planning/correction ownership. Workers exec
 **Producer:** executor after committing the owned slice.
 **Consumers:** coordinator, verifier, planning dependency readers and runtime handoff/merge operations.
 
-Required current metadata: phase, plan, status, requirements-completed, acceptance, documentation and issue_refs. Record only requirement IDs actually completed by delivered behavior and evidence; never copy every planned ID automatically. Preserve dependency/provided interfaces, key files, relevant decisions and actual metrics when used by consumers.
+Required current metadata: phase, plan, status, requirements-completed, acceptance, documentation and issue_refs. The acceptance, documentation and issue_refs values are top-level lists. Record only requirement IDs actually completed by delivered behavior and evidence; never copy every planned ID automatically. Preserve dependency/provided interfaces, key files, relevant decisions and actual metrics when used by consumers.
 
 | Section | Required content |
 |---------|------------------|
@@ -75,11 +75,11 @@ Required current metadata: phase, plan, status, requirements-completed, acceptan
 
 Coverage is per delivered outcome with stable id, description, optional requirement, verification entries and explicit human_judgment; rationale is required when human judgment is true. Each verification entry preserves kind/ref/status from an actual result. Automated classification requires non-empty passing evidence with matching revision/input coverage. It never waives required UAT or final acceptance. Missing/malformed/legacy coverage requires coordinator/verifier classification rather than an automatic pass.
 
-A source worker reports complete only with owned commits and required SUMMARY. A maintenance instruction can explicitly assign a non-SUMMARY result; do not manufacture adopting-project records against that instruction. Read-only roles return their assigned packet/report without a completion commit or SUMMARY.
+A source-changing worker reports complete only with owned commits and the required full-schema SUMMARY. Artifact-only producers return and commit their assigned artifact without manufacturing a SUMMARY; read-only roles return their assigned packet/report without a completion commit or SUMMARY.
 
 ## CONTEXT and discussion log
 
-CONTEXT metadata includes phase, discussion and issue_refs. `discussion: pending` remains while decisions are unresolved; complete means the actual answers are captured. The body records the approved phase boundary, locked decisions, delegated discretion, open questions and the actual explicit implementation instruction with date/scope/limits. Ready-for-planning text does not supply execution authority.
+Current CONTEXT metadata requires phase identity, `discussion` (`pending` or `complete`) and top-level `issue_refs`. `discussion: pending` remains while decisions are unresolved; complete means the actual answers are captured. The body records the approved phase boundary, locked decisions, delegated discretion, open questions and the actual explicit implementation instruction with date/scope/limits. Ready-for-planning text does not supply execution authority.
 
 DISCUSSION-LOG preserves alternatives, actual answers, recommendation checks and rationale incrementally. It supports audit/dispute reconstruction; CONTEXT remains the implementation input. Consequential project decisions are recorded in PROJECT Key Decisions while deciding; an ADR supplies optional linked rationale only.
 
@@ -126,11 +126,13 @@ STATE is derived by state runtime operations and its guarded save/review contrac
 
 PROJECT Key Decisions is written with state.add-decision; optional ADR rationale links to it. REQUIREMENTS traceability changes use requirements operations. Narrative wording changes need approved intent and evidence; structural repair is not scope editing.
 
-## Integrity and parser limits
+## Integrity and validation boundaries
 
-The captured ce99abf frontmatter parser enforces a structural subset: PLAN phase/plan/type/wave/depends_on/files_modified/autonomous/must_haves, SUMMARY phase/plan/status and verification status plus phase-or-quick identity. Its task parser extracts name/type/tdd/files/read_first/action/verify/done and requires non-checkpoint files/action/verify/done. These subsets do not prove full required template metadata, task semantics, dependency correctness, safe source/provider links or actual acceptance.
+The current runtime validates strict PLAN metadata: phase, plan, type, wave, depends_on, files_modified, files_deleted, resources, autonomous, requirements, acceptance, documentation, checks, issue_refs and must_haves. Acceptance, documentation and issue_refs are top-level lists; `checks` is a list of nonempty argv string arrays. SUMMARY requires phase, plan, status, requirements-completed, acceptance, documentation and issue_refs. CONTEXT requires phase, discussion and issue_refs. Identity must match the artifact path and related phase records. These structural checks do not prove task semantics, behavioral correctness, actual human approval or safe provider links.
 
-Full-template requirements above remain mandatory even when a parser does not yet enforce every field. Currentness reads fingerprint/revision/covered_files, clean tree, ancestry and receipt state; the report also preserves v4 covered_digest and semantic evidence. Do not describe a parser success as proof of unimplemented validation breadth. Later parser additions must strengthen these exact obligations rather than weaken templates to match a subset.
+Verification reports preserve fingerprint, revision, covered_files and `covered_digest: "v4:sha256:..."`; currentness binds clean source, fingerprint, exact revision ancestry and valid check receipts. A matching digest proves content correspondence, not behavior. Validation enforces the current record contract; it does not grant authority, waive acceptance, or manufacture SUMMARYs for artifact-only roles.
+
+The supported YAML reader handles safe anchors, aliases and merge keys, including indentationless sequences. Do not describe all YAML anchors or merges as unsupported. YAML parsing and structural validation still do not validate every semantic relationship or establish human decisions.
 
 ## Update, review and retirement
 

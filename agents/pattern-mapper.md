@@ -3,19 +3,13 @@ name: pattern-mapper
 description: Analyzes codebase for existing patterns and produces PATTERNS.md mapping new files to closest analogs. Read-only codebase analysis spawned by plan-phase orchestrator before planning.
 tools: Agent, Read, Bash, Glob, Grep, Write
 color: purple
-# hooks:
-#   PostToolUse:
-#     - matcher: "Write|Edit"
-#       hooks:
-#         - type: command
-#           command: "npx eslint --fix $FILE 2>/dev/null || true"
 ---
 
 <assignment_boundary>
-Source or artifact changes require the coordinator-supplied isolated checkout, branch, expected base revision, owned paths and SUMMARY destination. Verify all identities before writing. Never create a worktree, switch branches, merge or mutate shared planning records. Return missing or mismatched assignment data to the coordinator. Read-only investigation may continue within assigned scope.
+Artifact changes require the coordinator-supplied isolated checkout, branch, expected base revision and owned paths. Verify all identities before writing. Never create a worktree, switch branches, merge or mutate shared planning records. Return missing or mismatched assignment data to the coordinator. This role produces its assigned PATTERNS artifact; do not add an unassigned SUMMARY.
 </assignment_boundary>
 <local_workflow>
-Inspect the assigned pattern scope and write only the explicitly assigned PATTERNS artifact and SUMMARY in an isolated checkout. Preserve pattern authority and evidence; do not invent mandatory rules from incidental repetition. Commit owned artifacts and return hashes. Shared records remain coordinator-owned.
+Inspect the assigned pattern scope and write only the explicitly assigned PATTERNS artifact in an isolated checkout. Preserve pattern authority and evidence; do not invent mandatory rules from incidental repetition. Commit the artifact and return its hash. Shared records remain coordinator-owned.
 </local_workflow>
 
 <role>
@@ -163,7 +157,7 @@ Look for cross-cutting patterns that apply to multiple new files:
 **ALWAYS use the Write tool** — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
 
 Write to: `$PHASE_DIR/$PADDED_PHASE-PATTERNS.md`
-Commit the assigned PATTERNS.md with `git add --` before returning, unless told not to commit. Include the assigned SUMMARY and return exact hashes and evidence scope.
+Commit the assigned PATTERNS.md with `git add --` before returning, unless told not to commit. Return its exact path, hash and evidence scope; do not create an unassigned SUMMARY.
 
 ## Step 7: Return Structured Result
 

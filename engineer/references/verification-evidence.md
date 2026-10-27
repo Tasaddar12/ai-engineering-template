@@ -29,24 +29,47 @@ Use `verification.check-status` to inspect current receipts. Use `verification.f
 
 Join verifier, code review, document verification, integration and security packets when applicable. Resolve every required finding or record the exact blocker. Counts, mode flags and repeated review cycles do not waive gates. A changed decision requires owning-record reconciliation, not an acceptance override.
 
-## Bookkeeping and final currentness
+## Final-report lifecycle
 
-The coordinator applies authorized structured bookkeeping after joining evidence. Distinguish preliminary phase status from final verification and shipping approval. Reconcile the final report against the resulting revision, then call currentness again before ready/ship. If bookkeeping changes covered inputs, generate valid affected evidence; do not claim the old report covers changed source.
+The verifier is read-only and returns an external report; the coordinator alone writes and commits the tracked phase report. The report's `revision` is the exact commit the verifier reviewed, never the later report-only commit.
+
+On the initial pass, start the provisional verifier, configured checks and applicable independent specialists together against one frozen revision. The provisional verifier receives no future results and cannot finalize status. Join the whole batch, then resume the verifier with check receipts/results and bounded specialist findings so it can reconcile shared evidence and inspect only gaps or conflicts.
+
+If that joined result provisionally passes, first require a clean worktree, including untracked files, and save `pre_bookkeeping_revision=$(git rev-parse HEAD)`. Apply the authorized success bookkeeping and commit only `.planning/ROADMAP.md`, `.planning/STATE.md`, and `.planning/REQUIREMENTS.md` together as one coordinator-created `bookkeeping_commit`. Do not include the verification report, source files, or user files. Capture that new HEAD and run the configured checks and final read-only verifier against this exact revision; the verifier reviews the actual bookkeeping diff and source/acceptance coverage. Wait for the complete final batch before persisting the report.
+
+If final reconciliation returns `gaps_found` or `human_needed`, follow the exact guarded compensation below. After successful compensation, record nonpass status with `state.record-session`, commit that STATE-only update, and run a new frozen read-only verifier/check batch at the compensated-status revision. Persist the final report alone after that batch joins, naming the exact revision it tested. Never repeat `phase.complete`, requirement closure, or success bookkeeping on the nonpass path.
+
+Persist the final report alone only after the final batch has joined. Do not replace the tested `revision` with the report-only commit's hash. A refresh-only verification does not repeat completion, requirement or session writes and does not invoke `/ship` again. A source repair invalidates applicable evidence and starts a new verification batch; it is not report-only publication.
+
+## Coordinator report currentness
+
+Use this rule for `/verify-work` report reuse and `/ship` preflight. Let `tested_revision` be the report's `revision`, `HEAD` the current session tip, and `report_path` the exact phase `NN-VERIFICATION.md` path returned by `verification.resolve-file`.
+
+1. Require a clean worktree, including untracked files. Dirty state means the delivered tree differs from the tested commit, so the report cannot be reused.
+2. If `tested_revision` equals `HEAD`, the report is current.
+3. Otherwise, require `tested_revision` to be an ancestor of `HEAD`.
+4. Enumerate every commit in `tested_revision..HEAD` in ancestry order. For every commit, run `git diff-tree --no-commit-id --name-only --no-renames -r -m "$commit"` and compare every output line with the exact `report_path`. Quote revision, commit and path values. Disable rename detection and compare merge commits against every parent. Every changed path in every commit must equal `report_path`; any source, config, planning or other path makes the report stale. This catches a source edit later reverted, which a final-tree comparison would miss.
+5. If ancestry is missing, any changed path differs, or the repository is dirty, require fresh verification. Never change the report's tested revision to make currentness pass.
+
+The equality case preserves the exact-revision fast path. The sole later-report exception is publication of the exact phase report path after the read-only verifier has finished; that publication cannot change the already tested product/source. This per-commit rule is also required at ship preflight. `verification.status` exposes report metadata but does not enforce currentness.
 
 ## Compensating a failed final verification
 
-A failed final gate does not authorize resetting history. The sole guarded compensation exception is a coordinator-created, bookkeeping-only commit from this same verification attempt.
+Success bookkeeping is provisional until the final verifier reviews the new revision. Before changing any success records, require a clean worktree confirmed with `git status --porcelain --untracked-files=all` and save `pre_bookkeeping_revision=$(git rev-parse HEAD)`. Save the exact coordinator-created bookkeeping commit SHA as `bookkeeping_commit`.
 
-1. Identify its exact SHA and immediate parent, recording both before any compensation.
-2. Confirm it is current HEAD, unpushed, created by this coordinator, and contains only the exact runtime-owned bookkeeping paths from the attempted success reconciliation.
-3. Confirm all workers stopped, the worktree/index are clean, no unrelated user/source changes or extra commits exist, and no other session owns those paths.
-4. Preserve the failed report and evidence outside the compensation set. If any condition is uncertain, do not compensate; report the blocker and retain the history.
-5. Compare `git diff-tree --no-commit-id --name-only -r "$BOOKKEEPING_COMMIT"` with the exact bookkeeping path list captured before the commit. Verify HEAD equals that SHA, its sole parent equals BOOKKEEPING_PARENT, the clean index/worktree match it, and no remote branch contains the commit. Do not infer an approved set from its subject.
-6. With every guard established, run `git reset --soft "$BOOKKEEPING_PARENT"`, then `git restore --source="$BOOKKEEPING_PARENT" --staged --worktree -- "${BOOKKEEPING_PATHS[@]}"` using only the exact captured bookkeeping paths. The first command preserves content/index; the second compensates only those structures. Never use hard reset, broad restore, a computed unreviewed path list or pushed-history rewrite.
-7. Confirm the retained source/report/evidence remain intact and the resulting revision equals the captured parent. If an operation is rejected or its outcome is uncertain, preserve state and report it; do not repeat destructive recovery blindly.
-8. Re-establish a clean captured revision and record that final verification failed. Preserve the gaps; do not issue a success or shipping claim.
+If final reconciliation returns `gaps_found` or `human_needed`, compensate only when every guard below passes:
 
-This exception is not a general reset/revert permission and never substitutes for human authorization required by the actual host.
+1. `git status --porcelain --untracked-files=all` is empty.
+2. `git rev-parse HEAD` equals the saved `bookkeeping_commit`.
+3. `git rev-parse "${bookkeeping_commit}^"` equals `pre_bookkeeping_revision`.
+4. `bookkeeping_commit` is an ordinary single-parent commit.
+5. `git diff-tree --no-commit-id --name-only --no-renames -r "$bookkeeping_commit"` returns a nonempty set, and every path is one of exactly `.planning/ROADMAP.md`, `.planning/STATE.md`, or `.planning/REQUIREMENTS.md`.
+
+When every guard passes, run `git revert --no-edit "$bookkeeping_commit"`. Never use soft/hard reset, restore planning files by hand, force-move refs, or revert source/worker commits. If a guard fails, preserve all work and retain the nonpass result. If the revert conflicts, abort only that revert and preserve the original bookkeeping commit. If the tree is not clean after successful compensation, stop without overwriting it.
+
+After successful compensation, use the runtime `state.record-session` operation to record the nonpass status and commit only `.planning/STATE.md`. Then capture that compensated-status revision and run a new frozen read-only verifier/check batch there. The final report uses the last tested revision and status, and is persisted alone only after the batch joins. Do not call `phase.complete` or repeat requirement closure/success bookkeeping on this path.
+
+This `git revert` is the sole narrow exception to runtime-only structural authoring. It may reverse only the exact guarded coordinator-created bookkeeping-only commit from this attempt. It does not authorize manual planning edits or reverting worker/source commits.
 
 ## Quick verification
 
@@ -54,6 +77,6 @@ Use `verification.status --quick ID`, `verification.resolve-file --quick ID`, `v
 
 ## Historical gap reconciliation and final human evidence
 
-A historical `result: issue` may stop blocking only through the preserved resolved-gap path: valid stable gap_id, resolved_by and resolved_at; an executed resolving PLAN; a complete matching committed SUMMARY with specific evidence for that gap; and final actual Human acceptance of the covered build. Every remaining required current action must pass. Skipped, not-testable, blocked and pending required actions remain blocking.
+A historical `result: issue` may stop blocking only through the preserved resolved-gap path: valid stable `gap_id`, `resolved_by` and `resolved_at`; an executed resolving PLAN; a complete matching committed SUMMARY with specific evidence for that gap; and final actual Human acceptance of the covered build. Every remaining required current action must pass. Skipped, not-testable, blocked and pending required actions remain blocking.
 
 If explicit human retest is required, record that actual retest pass; never assume it from a SUMMARY. Diagnosis, a relabeled status, a checked item or a resolving commit alone is insufficient. This narrow historical effective-resolution path preserves the original issue evidence and does not manufacture final human acceptance.

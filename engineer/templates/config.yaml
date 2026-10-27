@@ -7,7 +7,8 @@ workflow:
   text_mode: false
   auto_advance: false
   discuss_mode: discuss
-  isolation: worktree
+  # auto resolves only to harness-worktree or orchestrator-worktree; isolation cannot be disabled.
+  isolation: auto
   human_verify_mode: end-of-phase
   code_review: true
   code_review_depth: standard
@@ -54,6 +55,7 @@ codebase:
 # Resolve final-role model and effort with engineer_run query resolve-model / resolve-effort.
 # Claude reads overrides here; Codex uses native installed TOML definitions.
 # Fixed scout and targeted-fixer policies cannot be overridden by project configuration.
+# Code-fixer is method source; targeted-fixer is the dispatchable bounded-repair role.
 agents: {}
 verification:
   # CHANGEME: configure actual project checks during onboarding. No invented test commands.

@@ -17,17 +17,17 @@ Read [the engineering rules](../engineer/RULES.md) and [agent adaptation](../eng
 | [Doc writer](doc-writer.md) | execute-phase / documentation coordinator | Assigned documentation paths and source interfaces → committed documents and SUMMARY → coordinator |
 | [Doc verifier](doc-verifier.md) | verification coordinator | Documentation and captured source revision → complete claim JSON with FAIL/UNVERIFIABLE evidence → coordinator |
 | [Integration checker](integration-checker.md) | verification coordinator | Component boundaries and acceptance → traced success/error/empty paths and UNVERIFIED scope → coordinator |
-| [Codebase mapper](codebase-mapper.md) | onboard / research coordinator | Validated source scope and owned map paths → committed repository map and SUMMARY → coordinator |
+| [Codebase mapper](codebase-mapper.md) | onboard / research coordinator | Validated source scope and owned map paths → committed repository map → coordinator |
 | [Scout](scout.md) | Coordinator or specifically permitted role | One named discovery question → cited read-only evidence packet → named consumer |
 | [Targeted fixer](targeted-fixer.md) | Bounded correction coordinator | Stable finding and required property, isolated assignment → committed bounded repair and SUMMARY → coordinator |
-| [UI researcher](ui-researcher.md) | ui-phase coordinator | Approved UI decisions and assigned output → committed UI-SPEC and SUMMARY → coordinator and ui-checker |
+| [UI researcher](ui-researcher.md) | ui-phase coordinator | Approved UI decisions and assigned output → committed UI-SPEC → coordinator and ui-checker |
 | [UI checker](ui-checker.md) | ui-phase coordinator | Captured UI-SPEC and CONTEXT → evidenced read-only verdict → coordinator |
 | [UI auditor](ui-auditor.md) | ui-review coordinator | Running UI, acceptance and optional external capture_dir → returned UI-REVIEW and external captures → coordinator |
 | [DOM verifier](dom-verifier.md) | verify-work coordinator | Running URL and live-DOM criteria → returned DOM-VERIFY observations → coordinator |
 | [Security auditor](security-auditor.md) | secure-phase coordinator | Threat register and captured implementation → SECURED / OPEN_THREATS / ESCALATE evidence → coordinator, which writes SECURITY |
 | [Nyquist auditor](nyquist-auditor.md) | Validation-gap coordinator | Assigned test gaps, test/fixture paths and optional VALIDATION path → committed behavioral tests and SUMMARY → coordinator |
-| [Pattern mapper](pattern-mapper.md) | plan-phase coordinator | Scoped pattern question and assigned artifact path → committed PATTERNS and SUMMARY → planner via coordinator |
-| [Code fixer method](code-fixer.md) | code-review --fix coordinator | Assigned review findings → parsing, bounded repair and REVIEW-FIX method used by targeted-fixer → coordinator |
+| [Pattern mapper](pattern-mapper.md) | plan-phase coordinator | Scoped pattern question and assigned artifact path → committed PATTERNS → planner via coordinator |
+| [Code fixer method](code-fixer.md) | Loaded by targeted-fixer for code-review --fix | Assigned review findings → parsing, bounded repair and REVIEW-FIX method → coordinator |
 
 Pattern-mapper is read-only for source inspection; its explicitly assigned evidence artifact is its sole write scope. Debugger is read-only unless an owned debug-record or source repair assignment supplies write authority. Code-fixer is method source rather than an extra dispatch identity: dispatch targeted-fixer for bounded review repairs.
 
@@ -76,18 +76,18 @@ Each tool shell is independent. Source the portable launcher in the same shell c
 
 Pass the resolved model and effort directly in the native dispatch call. If a resolution is `inherit`, omit that parameter so the parent's configured value applies. Do not write it into a shared role file or assume a particular model from the role's description.
 
-Every source-changing assignment includes:
+Every assignment that writes includes:
 
 - Absolute isolated checkout root, exact branch and expected starting revision.
 - Required reading, approved outcome, acceptance IDs and excluded scope.
-- Exact owned source/artifact paths and assigned SUMMARY path.
+- Exact owned paths; source-changing assignments also name the required SUMMARY path. Artifact-only roles return their assigned artifact without manufacturing a SUMMARY.
 - Dependency interfaces and resources requiring serialization.
 - Grounded checks, working directory, expected outcome and any authorized execution ordering.
 - Required return fields, consumer and continuation/handoff contract.
 
 A worker verifies root, branch and HEAD before mutation. It never creates its own worktree, switches branches or merges. Missing or mismatched assignment data returns the exact discrepancy; it does not authorize reconstructing the assignment. All shared STATE, ROADMAP, REQUIREMENTS, decisions, todo, quick-task and milestone structures remain coordinator-owned and runtime-written.
 
-Source-changing workers commit owned changes and their assigned SUMMARY before returning complete. Use exact-path staging and preserve unrelated dirty files. Return status, base identity, commit hashes, summary path, actual checks and Remaining. A partial artifact writer preserves useful committed work and states uncovered scope instead of claiming completion.
+Source-changing workers commit owned changes and their assigned SUMMARY before returning complete. Use exact-path staging and preserve unrelated dirty files. Return status, base identity, commit hashes, summary path, actual checks and Remaining. Artifact-only producers commit and return their assigned artifact; they do not create an unassigned SUMMARY. A partial artifact writer preserves useful committed work and states uncovered scope instead of claiming completion.
 
 Read-only scouts and specialists return their complete cited packet or report with captured revision and examined scope. They write no commit or SUMMARY. A coordinator-assigned external capture path is permitted only for the explicitly assigned report or browser evidence; it must resolve outside the checkout.
 

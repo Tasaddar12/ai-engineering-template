@@ -32,6 +32,8 @@ Read the complete [template-use contract](../engineer/templates/TEMPLATE.md) and
 
 A quick task has its own record and .planning/quick/NNN-slug/NNN-VERIFICATION.md with quick: NNN. Do not fabricate a phase ID for verification/publication gates.
 
+Current PLAN metadata includes phase/plan/type/wave, dependency and owned-path lists, resources, autonomous, requirements, top-level acceptance/documentation/issue_refs lists, a list of nonempty argv-string-list checks, and must_haves. SUMMARY carries its required phase/plan/status/requirements-completed fields plus top-level acceptance, documentation and issue_refs lists. CONTEXT carries phase, discussion and issue_refs. Verification metadata retains `covered_digest: "v4:sha256:..."`, fingerprint, exact tested revision and covered_files; these bind evidence but do not prove behavior or grant authority. See the [template contract](../engineer/references/template-contract.md) for complete schemas and semantics.
+
 ## Specifications and rationale
 
 Use CURRENT-SPEC for .planning/specs/SPEC-*.md when required. An approved specification does not grant implementation authority. PROJECT Key Decisions owns the choice; .planning/decisions/ADR-*.md provides optional linked rationale. Preserve history in Git and Key Decisions.
@@ -42,6 +44,6 @@ Read the complete templates and [Git workflow](../engineer/references/git-workfl
 
 ## Completion and repair
 
-A SUMMARY reports delivered evidence rather than automatically completing planned requirements. Verification does not pass human acceptance by inspection. resolved_by requires an executed plan with matching SUMMARY and does not fabricate acceptance.
+A SUMMARY reports delivered evidence rather than automatically completing planned requirements. Local UAT completion requires every required action to pass and the actual human's final acceptance; technical preparation, source inspection, issue closure and silence cannot supply it. A historical `resolved_by`/`resolved_at` can reconcile an issue only with a stable gap ID, executed resolving PLAN, complete matching committed SUMMARY with specific evidence, and final actual Human acceptance of the covered build. Preserve the original issue and require the actual retest when one is explicitly required.
 
 Use planning.review, planning.repair with its current digest, and explicit-path archive operations. Do not strike through history or hand-edit runtime tables. Read [phase artifacts](../engineer/references/phase-artifacts.md) for producer/consumer boundaries.

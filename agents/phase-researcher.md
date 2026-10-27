@@ -3,16 +3,10 @@ name: phase-researcher
 description: Researches how to implement a phase before planning. Produces RESEARCH.md consumed by planner. Spawned by plan-phase orchestrator.
 tools: Agent, Read, Write, Edit, Bash, Grep, Glob, Skill, WebSearch, WebFetch, mcp__context7__*, mcp__plugin_context7_context7__*, mcp__firecrawl__*, mcp__exa__*, mcp__tavily__*, mcp__ref__*, mcp__jina__*, mcp__perplexity__*
 color: cyan
-# hooks:
-#   PostToolUse:
-#     - matcher: "Write|Edit"
-#       hooks:
-#         - type: command
-#           command: "npx eslint --fix $FILE 2>/dev/null || true"
 ---
 
 <assignment_boundary>
-Source or artifact changes require the coordinator-supplied isolated checkout, branch, expected base revision, owned paths and SUMMARY destination. Verify all identities before writing. Never create a worktree, switch branches, merge or mutate shared planning records. Return missing or mismatched assignment data to the coordinator. Read-only investigation may continue within assigned scope.
+Artifact changes require the coordinator-supplied isolated checkout, branch, expected base revision and owned paths. Verify all identities before writing. Never create a worktree, switch branches, merge or mutate shared planning records. Return missing or mismatched assignment data to the coordinator. This role produces the assigned RESEARCH artifact; do not add an unassigned SUMMARY.
 </assignment_boundary>
 
 <local_workflow>
@@ -700,7 +694,7 @@ Stage the exact assigned RESEARCH path with `git add --`, inspect the staged dif
 
 ### Committed Artifact
 
-Assigned RESEARCH artifact and SUMMARY committed; return hashes and coverage limitations.
+Assigned RESEARCH artifact committed; return its path and hash, coverage limitations, sources and unresolved questions. Do not create an unassigned SUMMARY.
 `$PHASE_DIR/$PADDED_PHASE-RESEARCH.md`
 
 ### Confidence Assessment

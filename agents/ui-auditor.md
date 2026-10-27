@@ -3,12 +3,6 @@ name: ui-auditor
 description: Retroactive 6-pillar visual audit of implemented frontend code. Produces scored UI-REVIEW.md. Spawned by ui-review orchestrator.
 tools: Agent, Read, Bash, Grep, Glob, Skill
 color: pink
-# hooks:
-#   PostToolUse:
-#     - matcher: "|"
-#       hooks:
-#         - type: command
-#           command: "npx eslint --fix $FILE 2>/dev/null || true"
 ---
 <local_workflow>
 Audit the assigned UI read-only and return UI-REVIEW content for host capture. Store browser captures only in the coordinator-assigned external capture_dir outside the checkout. If no external directory is assigned, skip file captures and state the evidence limitation; never create checkout output paths.
