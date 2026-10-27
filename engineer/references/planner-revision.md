@@ -7,7 +7,10 @@ Triggered when orchestrator provides `<revision_context>` with checker issues. N
 ### Step 1: Load Existing Plans
 
 ```bash
-cat .planning/phases/$PHASE-*/$PHASE-*-PLAN.md
+# Use the exact correction-packet paths, never a broad phase glob.
+for plan_path in "${CORRECTION_PLAN_PATHS[@]}"; do
+  cat -- "$plan_path"
+done
 ```
 
 Read only the plans, findings and supporting source named in the revision packet; preserve their input revision and digest. Build the bounded mental model from those current artifacts.
@@ -97,7 +100,12 @@ Read the correction packet's affected rechecks. Rerun checks whose command/confi
 ### Step 6: Commit
 
 ```bash
-engineer_run query commit "fix($PHASE): revise plans based on checker feedback" --files .planning/phases/$PHASE-*/$PHASE-*-PLAN.md
+git status --porcelain --untracked-files=all
+git diff -- "${CORRECTION_PLAN_PATHS[@]}"
+git diff --cached --name-only
+# Reject out-of-scope index entries; stage only verified correction paths.
+git add -- "${CORRECTION_PLAN_PATHS[@]}"
+git commit --only -m "fix($PHASE): revise assigned plan findings" -- "${CORRECTION_PLAN_PATHS[@]}"
 ```
 
 ### Step 7: Return Revision Summary

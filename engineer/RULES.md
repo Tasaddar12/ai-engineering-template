@@ -7,7 +7,7 @@ This repository is a reusable workflow template. Keep the adopting project's ide
 ```text
 commands/                 user-facing workflow entry
   -> engineer/workflows/  procedure, routing and gates
-     -> engineer/bin/engineer_run query VERB
+     -> engineer/bin/engineer_run query <verb>
                           structured record mutations and deterministic operations
 agents/                   bounded specialist roles and return contracts
 engineer/references/      reusable methods and evidence contracts

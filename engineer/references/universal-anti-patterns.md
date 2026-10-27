@@ -53,7 +53,7 @@ Reference: `engineer/references/questioning.md` for the full anti-pattern list.
 ## GSD-Specific Rules
 
 24. Do not infer approval from unattended or automatic mode. Read supported YAML configuration, preserve recorded authority and use checkpoint rules for missing choices.
-25. Use `engineer_run query VERB ARGS` for supported runtime operations. `config-get` fails on a missing key unless an explicit `--default VALUE` is supplied. Invalid YAML fails; never report a silent successful fallback.
+25. Use `engineer_run query <verb> ARGS` for supported runtime operations. `config-get` fails on a missing key unless an explicit `--default VALUE` is supplied. Invalid YAML fails; never report a silent successful fallback.
 26. PLAN filenames use `{padded_phase}-{NN}-PLAN.md`, with quoted plan identifiers and complete acceptance/documentation/checks argv/issue_refs contracts.
 27. Commit the owned completed slice and required SUMMARY before reporting completion. Preserve pending tests and human acceptance; the coordinator owns shared records, integration and publication.
 
