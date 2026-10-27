@@ -308,26 +308,33 @@ def capture(args, action):
     local.pos, local.opts = list(args.pos), dict(args.opts)
     title = args.need()
     capture_inputs = {key: args.opts[key] for key in sorted(args.opts)
-                      if key not in {"publish", "execution-authorized", "preview-token", "reuse-url", "raw", "json"}}
+                      if key not in {"publish", "execution-authorized", "preview-token", "reuse-url", "source", "raw", "json"}}
     if args.has("body-file"):
         capture_inputs["body-file"] = read(safe_path(args.get("body-file")))
     fingerprint = hashlib.sha256(json.dumps({"title": title, "action": action, "inputs": capture_inputs}, sort_keys=True).encode()).hexdigest()
-    try:
-        record = records.todo(local, "add")
-        with planning_lock():
-            path = Path(record["path"])
-            metadata, content = split_frontmatter(read(path))
-            metadata["issue_capture_fingerprint"] = fingerprint
-            write(path, join_frontmatter(metadata, content))
-            record.update(metadata)
-    except Failure as exc:
-        if exc.code != "todo-exists":
-            raise
-        path = records.planning()/"todos/pending"/(now()[:10]+"-"+slug(title)+".md")
+    if args.has("source"):
+        path = todo_path(args.get("source"))
         metadata, content = split_frontmatter(read(path))
         if metadata.get("title") != title or metadata.get("issue_capture_fingerprint") != fingerprint:
-            raise Failure("capture-conflict", "Existing capture differs; select its exact todo record")
+            raise Failure("capture-conflict", "The pinned source differs from the original capture inputs")
         record = {"created": False, "path": str(path), **metadata}
+    else:
+        try:
+            record = records.todo(local, "add")
+            with planning_lock():
+                path = Path(record["path"])
+                metadata, content = split_frontmatter(read(path))
+                metadata["issue_capture_fingerprint"] = fingerprint
+                write(path, join_frontmatter(metadata, content))
+                record.update(metadata)
+        except Failure as exc:
+            if exc.code != "todo-exists":
+                raise
+            path = records.planning()/"todos/pending"/(now()[:10]+"-"+slug(title)+".md")
+            metadata, content = split_frontmatter(read(path))
+            if metadata.get("title") != title or metadata.get("issue_capture_fingerprint") != fingerprint:
+                raise Failure("capture-conflict", "Existing capture differs; select its exact todo record")
+            record = {"created": False, "path": str(path), **metadata}
     if not (enabled(args, "publish") or enabled(args, "execution-authorized")):
         return {"captured": True, "published": False, "todo": record}
     existing = record.get("issue_url") or record.get("issue")

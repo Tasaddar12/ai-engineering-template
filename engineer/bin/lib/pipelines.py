@@ -630,6 +630,9 @@ def _publish(directory, data, args):
 
 def _track_failure(task, data):
     from . import issues
+    confirmed = task.get("issue", {})
+    if confirmed.get("url") and (confirmed.get("published") or confirmed.get("linked")):
+        return
     attempt = task["attempts"][-1] if task["attempts"] else {}
     title = "Pipeline " + data["id"] + ": " + task["id"] + " execution issue"
     values = [title, "--problem", str(task.get("reason", attempt.get("error", task["status"]))),
@@ -641,14 +644,20 @@ def _track_failure(task, data):
               "--publish"]
     try:
         with issues.budget(max(0, data["budget_seconds"]-data["spent_seconds"])):
-            task["issue"] = issues.command(Args(values), "finding")
+            request = task.get("issue_request")
+            if request is None:
+                original = values[:-1]  # First capture is local; no provider call before the intent is durable.
+                local = issues.command(Args(original), "finding")
+                request = {"values": original, "source": local["todo"]["path"], "created": now()}
+                task["issue_request"] = request
+                _save(_directory(data["id"]), data)
+            task["issue"] = issues.command(Args([*request["values"], "--source", request["source"], "--publish"]), "finding")
     except Exception as exc:
         task["issue"] = {"status": "pending", "error": str(exc)}
 
 
 def _execute(directory, data, args):
     host, argv = _host(args, data)
-    _recover(directory, data)
     if (directory / "cancel.json").exists():
         data["status"] = "cancelled"
         _save(directory, data)
@@ -738,10 +747,10 @@ def command(args, action):
         raise Failure("unknown-pipeline-action", action, 2)
     with _ownership(directory):
         directory, data = _load(identifier)
+        _recover(directory, data)
         if args.has("budget-seconds") and action in ("run", "resume"):
             data["budget_seconds"] = data["spent_seconds"]+_number(args.get("budget-seconds"), "budget-seconds", 28800, 1, 604800)
         if action == "retry":
-            _recover(directory, data)
             task = next((t for t in data["tasks"] if t["id"] == args.get("task")), None)
             if not task or task["status"] not in ("failed", "blocked", "interrupted"):
                 raise Failure("pipeline-retry", "Select a failed, blocked or interrupted --task", 2)
