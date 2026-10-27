@@ -29,9 +29,7 @@ exists, after which the verifier reliably enforces it.
 
 The technique is adversarial elicitation, not deterministic computation. Unlike the edge
 taxonomy (a closed eight categories a classifier can apply), the recall stage is inherently
-model-driven: it asks an open question and reads prose. There is **no compiled
-separate executable prohibition engine** — the recall stage is an LLM prose pass, and only the
-schema/projection layer is real code (ADR-550 Decision 7b). Building a deterministic
+model-driven: it asks an open question and reads prose. There is **no deterministic recall engine** — the recall stage is an LLM prose pass. The Python runtime implements schema/projection and three-stage configured-check proof; those operations do not infer missing intent (ADR-550 Decision 7b). Building a deterministic
 recall adapter would be the scope-creep the maintainer flags.
 
 ## Inputs

@@ -122,6 +122,7 @@ Inspect exact documented paths and source definitions. Count every evaluated cla
 
 Use the exact JSON shape below; return every required key even for missing files or an empty claim set.
 
+</verification_process>
 <output_format>
 Return JSON with this complete shape:
 

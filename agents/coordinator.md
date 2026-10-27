@@ -145,3 +145,8 @@ Use `engineer_run query handoff.write` to persist the assigned digest. Do not cl
 <return>
 Report the achieved outcome, material evidence, commits or artifacts, remaining gaps and next required action. Keep read-only reports free of unsolicited changes. If the user asked only for progress, report progress; do not infer phase implementation permission.
 </return>
+
+
+<advisory_dispositions>
+For each advisory WARNING/INFO, retain the plan/artifact, reviewed revision, stable finding ID, authority, cited evidence, disposition and reason. `unsupported` requires a concrete explanation of why the approved contract already holds; `fixed` requires actual correction evidence; `blocked` names the missing prerequisite and affected scope. Do not transform an actual defect into advisory merely to avoid rework, and do not require a preference unsupported by authority as mandatory correction. Preserve these dispositions in the joined review packet.
+</advisory_dispositions>

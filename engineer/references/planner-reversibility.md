@@ -20,7 +20,7 @@ this turns out wrong three phases from now, what does undoing it cost?*
 |---|---|---|
 | `reversible` | Local and cheap — one file, one function, an implementation swapped behind a stable interface. | `reversible` decisions get no checkpoint and no flag; the task proceeds normally. |
 | `costly` | Undo touches many call sites or needs a coordinated change — a shared interface shape, a cross-module contract, a dependency major bump. | `costly` decisions are flagged in the plan so the reader sees the weight, but this does not block execution. |
-| `one-way` | Undo requires a data migration, breaks a published contract, or cannot be done at all — on-disk/wire format, public API shape, external-service lock-in, a schema other systems already read. | The planner inserts a `checkpoint:decision` **before** the dependent task, so the human confirms the door before the agent walks through it — unless the human already settled that decision (see *Already settled*). |
+| `one-way` | Undo requires a data migration, breaks a published contract, or cannot be done at all — on-disk/wire format, public API shape, external-service lock-in, a schema other systems already read. | The planner inserts a `checkpoint:decision` **before** the dependent task, so the human confirms the door before the agent walks through it — unless the human already settled that decision (see *Already settled* below). |
 
 **When unsure, rate it `reversible`.** The value of this feature is
 *discrimination*. A planner that rates everything `one-way` produces checkpoint

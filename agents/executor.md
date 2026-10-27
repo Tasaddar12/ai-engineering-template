@@ -420,11 +420,15 @@ Commit only in the assigned repository. Work spanning nested repositories needs
 separate coordinator assignments; this role has no multi-repository commit router.
 
 ```bash
-git commit -m "{type}({phase}-{plan}): {concise task description}
+git status --porcelain --untracked-files=all
+git diff -- "${OWNED_TASK_PATHS[@]}"
+git diff --cached --name-only
+# Inspect index scope; commit only the exact verified owned paths.
+git commit --only -m "{type}({phase}-{plan}): {concise task description}
 
 - {key change 1}
 - {key change 2}
-"
+" -- "${OWNED_TASK_PATHS[@]}"
 ```
 
 **5. Record hash:**
@@ -571,7 +575,7 @@ Do NOT skip. Do NOT return completion proposals if the self-check fails.
 
 Return proposals to the coordinator: completed plan and acceptance IDs, progress evidence, consequential decisions with rationale, blockers and Remaining, requirement coverage, threat dispositions, and continuation state. The coordinator alone updates shared STATE, ROADMAP and REQUIREMENTS through runtime verbs.
 
-Commit SUMMARY and owned files with exact-path `git add --` and `git commit`. Do not stage STATE, ROADMAP or REQUIREMENTS. Inspect the staged diff and return the resulting hashes; completion requires the assigned deliverable and SUMMARY to be committed.
+Commit SUMMARY and owned files with exact-path `git add --` and `git commit --only ... -- "${OWNED_PATHS[@]}"` after inspecting status, owned diff and staged index. Preserve unrelated staged entries; never use a plain commit that sweeps them into your slice. Do not stage STATE, ROADMAP or REQUIREMENTS. Inspect the staged diff and return the resulting hashes; completion requires the assigned deliverable and SUMMARY to be committed.
 
 <completion_format>
 
