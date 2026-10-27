@@ -75,6 +75,7 @@ def roadmap_phases():
                          (match[2].strip() == "Critical Fix (INSERTED)" and fields.get("goal", "").startswith("["))):
             continue
         result.append({"number": number(match.group(1)), "name": match.group(2).strip(),
+                       "milestone": next(iter(re.findall(r"(?m)^###\s+(v\d[^\n]*)$", structure[:match.start()])[::-1]), None) if structure[match.start():].startswith("#### ") else None,
                        "goal": fields.get("goal", ""), "depends_on": fields.get("depends_on", ""),
                        "requirements": re.findall(r"\b[A-Z]+-\d+\b", fields.get("requirements", "")),
                        "mode": fields.get("mode", "standard"), "body": body,
@@ -96,15 +97,27 @@ def sync_roadmap():
     text = read(path)
     structure = roadmap_structure(text)
     items = roadmap_phases()
+    history = {}
+    for line in text.splitlines():
+        cells = [cell.strip() for cell in line.strip().strip('|').split('|')]
+        match = re.match(r"^(\d+(?:\.\d+)?)\.\s", cells[0]) if cells else None
+        if match and len(cells) in (4, 5):
+            history[number(match[1])] = cells[-2:]
+    grouped = any(phase.get("milestone") for phase in items)
     overview, rows = [], []
     for phase in items:
         done = len(re.findall(r"(?m)^- \[x\]\s*\d", phase["body"]))
         total = len(re.findall(r"(?m)^- \[[ x]\]\s*\d", phase["body"]))
         complete = phase_completed(phase)
         status = "Complete" if complete else "In progress" if done else "Not started"
-        identifier = phase["number"]
+        previous_status, previous_date = history.get(phase["number"], (None, None))
+        if complete and previous_status == "Shipped":
+            status = "Shipped"
+        completed_date = previous_date if complete and previous_date not in (None, "", "-") else now()[:10] if complete else "-"
+        identifier = str(int(phase["number"])) if "." not in phase["number"] else phase["number"]
         overview.append(f"- [{'x' if complete else ' '}] **Phase {identifier}: {phase['name']}** - {phase['goal']}")
-        rows.append(f"| {identifier}. {phase['name']} | {done}/{total} | {status} | {now()[:10] if complete else '-'} |")
+        milestone_cell = (phase.get("milestone") or "-")+" | " if grouped else ""
+        rows.append(f"| {identifier}. {phase['name']} | {milestone_cell}{done}/{total} | {status} | {completed_date} |")
     existing = re.search(r"(?m)^- \[[ x]\]\s*\*\*Phase\s+\d[^\n]*(?:\n- \[[ x]\]\s*\*\*Phase\s+\d[^\n]*)*", structure)
     block = "\n".join(overview)
     if existing:
@@ -116,7 +129,8 @@ def sync_roadmap():
     progress = re.search(r"(?m)^## Progress\s*$", roadmap_structure(text))
     if progress:
         tail = text[progress.end():]
-        table = "| Phase | Plans Complete | Status | Completed |\n|-------|----------------|--------|-----------|\n"+"\n".join(rows)
+        table = ("| Phase | Milestone | Plans Complete | Status | Completed |\n|-------|-----------|----------------|--------|-----------|\n" if grouped else
+                 "| Phase | Plans Complete | Status | Completed |\n|-------|----------------|--------|-----------|\n")+"\n".join(rows)
         existing_table = re.search(r"(?m)^\| Phase \|[^\n]*(?:\n\|[^\n]*)*", tail)
         if existing_table:
             # Refresh derived rows, but retain authored rows sharing the table.
@@ -148,6 +162,9 @@ def roadmap_analyze(args=None):
 
 
 def phase_completed(phase):
+    checked = re.findall(r"(?m)^- \[([ x])\]\s*"+re.escape(phase["number"])+r"-[0-9]{2}\s*:", phase["body"])
+    if checked:
+        return all(value == "x" for value in checked)
     if re.search(r"(?mi)^\*\*Status(?::\*\*|\*\*:)\s*(?:Complete|Completed|Shipped)\s*$", phase["body"]):
         return True
     label = r"0*"+str(int(phase["number"].split(".")[0]))+(r"\."+phase["number"].split(".")[1] if "." in phase["number"] else "")
@@ -245,7 +262,7 @@ def phase_change(args, action):
                     line = f"**{label}:** {value}"
                     block = re.sub(pattern, lambda _: line, block) if re.search(pattern, block) else block.rstrip()+"\n"+line+"\n\n"
         elif action == "complete":
-            block = re.sub(r"(?m)^(- \[) (\].*)", r"\1x\2", block)
+            block = re.sub(r"(?m)^(- \[) (\]\s*"+re.escape(phase["number"])+r"-[0-9]{2}\s*:.*)", r"\1x\2", block)
             if "**Status:**" in block:
                 block = re.sub(r"(?m)^\*\*Status:\*\*.*", "**Status:** Complete", block)
             else:
@@ -255,9 +272,16 @@ def phase_change(args, action):
             if args.has("summary") and len(args.all("summary")) != 1:
                 raise Failure("bad-plan", "Provide one explicit single-line summary")
             block, registered = rewrite(block, phase["number"], args.all("plans"), args.get("summary"))
+            # The checklist owns completion after registration. Clear terminal
+            # metadata when newly registered work reopens the phase.
+            if re.search(r"(?m)^- \[ \]\s*"+re.escape(phase["number"])+r"-[0-9]{2}\s*:", block):
+                block = re.sub(r"(?mi)^\*\*Status(?::\*\*|\*\*:)\s*(?:Complete|Completed|Shipped)\s*$", "**Status:** In progress", block)
         write(path, before+block+after)
         sync_roadmap()
+        progress = synchronize_progress(phase["number"])
         return {"updated": True, "phase": phase["number"], "action": action,
+                "progress": progress,
+                **({"plans_completed": len(re.findall(r"(?m)^- \[x\]\s*\d", block))} if action == "complete" else {}),
                 **({"plans": registered} if action == "set-plans" else {})}
 
 
@@ -368,7 +392,19 @@ def state_action(args, action):
     if action == "update":
         return patch_state({args.need(): args.need(1)})
     if action == "begin-phase":
-        return patch_state({"Phase": args.need(), "Status": args.get("status", "Executing"), "Last Activity": now()})
+        phase = roadmap_phase(args.need())
+        rows = re.findall(r"(?m)^- \[[ x]\]\s*\d", phase["body"])
+        identifier = str(int(phase["number"])) if "." not in phase["number"] else phase["number"]
+        result = patch_state({"Phase": f"{identifier} of {len(roadmap_phases())} ({phase['name']})",
+                              "Plan": f"1 of {len(rows)} in current phase",
+                              "Status": args.get("status", "Executing"), "Last activity": now()})
+        path = planning()/"STATE.md"
+        with planning_lock():
+            content = read(path)
+            content = re.sub(r"(?m)^(\*\*Current focus:\*\*).*$", lambda match: match[1]+" "+phase["name"], content)
+            write(path, content)
+            synchronize_progress()
+        return result
     if action == "record-session":
         result = patch_state({"Last session": now(), "Stopped at": args.get("stopped-at", ""), "Resume file": args.get("resume-file", "None")}, "## Session Continuity")
         if args.has("status"):
@@ -422,17 +458,44 @@ def state_action(args, action):
 
 
 def derived_progress():
-    from .core import Args
     progress = roadmap_analyze()
-    completed = 0
-    for phase in progress["phases"]:
-        try:
-            completed += sum(item["complete"] for item in plan_index(Args([phase["number"]]))["plans"])
-        except Failure:
-            pass
+    completed = sum(len(re.findall(r"(?m)^- \[x\]\s*\d", phase["body"])) for phase in progress["phases"])
+    total = sum(len(re.findall(r"(?m)^- \[[ x]\]\s*\d", phase["body"])) for phase in progress["phases"])
     return {"total_phases": progress["phase_count"], "completed_phases": progress["completed_phases"],
-            "total_plans": sum(p.get("plan_count", 0) for p in progress["phases"]),
-            "completed_plans": completed, "percent": progress["percent"]}
+            "total_plans": total, "completed_plans": completed,
+            "percent": round(100*completed/total) if total else 0}
+
+
+def synchronize_progress(selected=None):
+    """Derive counters without treating report presence as completed work."""
+    path = planning()/"STATE.md"
+    progress = derived_progress()
+    if not path.is_file():
+        return progress
+    metadata, body = split_frontmatter(read(path))
+    match = re.search(r"(?m)^Phase:\s*(\d+(?:\.\d+)?)\b", body)
+    if selected is not None and match and number(match[1]) == number(selected):
+        phase = roadmap_phase(selected)
+        rows = re.findall(r"(?m)^- \[([ x])\]\s*\d+(?:\.\d+)?-[0-9]{2}\s*:", phase["body"])
+        status_match = re.search(r"(?m)^Status:\s*(.*)$", body)
+        status = status_match[1] if status_match else "Planning"
+        if rows and all(value == "x" for value in rows):
+            status = "Shipped" if status == "Shipped" else "Complete"
+        elif status.lower() in ("complete", "completed", "shipped", "phase complete"):
+            status = "In progress"
+        plan_match = re.search(r"(?m)^Plan:\s*(\d+)\b", body)
+        ordinal = min(int(plan_match[1]) if plan_match else 1, len(rows))
+        if status == "In progress":
+            ordinal = min(rows.count("x")+1, len(rows))
+        body = re.sub(r"(?m)^Plan:.*$", f"Plan: {ordinal} of {len(rows)} in current phase", body)
+        body = re.sub(r"(?m)^Status:.*$", lambda _: "Status: "+status, body)
+        metadata["status"] = "executing" if status == "In progress" else status.lower().replace(" ", "_")
+    metadata["progress"] = progress
+    percent = progress["percent"]
+    filled = round(percent/10)
+    body = re.sub(r"(?m)^Progress:.*$", lambda _: "Progress: ["+"█"*filled+"░"*(10-filled)+f"] {percent}%", body)
+    write(path, join_frontmatter(metadata, body))
+    return progress
 
 
 def quick_create(description):

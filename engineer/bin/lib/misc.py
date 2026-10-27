@@ -72,6 +72,7 @@ def instruction_file(args):
     name = next((line.lstrip("# ") for line in project.splitlines() if line.startswith("# ")), "Project")
     block = "<!-- engineer:managed:start -->\n# "+name+"\n\n"+template.strip()+"\n<!-- engineer:managed:end -->"
     with planning_lock():
+        split_frontmatter(read(records.planning()/"STATE.md"))
         content = read(path)
         pattern = r"(?s)<!-- engineer:managed:start -->.*?<!-- engineer:managed:end -->"
         content = re.sub(pattern, lambda _: block, content) if re.search(pattern, content) else content.rstrip()+"\n\n"+block+"\n"
@@ -106,12 +107,13 @@ def roadmap_progress(args):
     with planning_lock():
         content = read(path)
         pattern = r"(?m)^(- \[)[ x](\]\s*"+re.escape(identifier)+r"(?:-PLAN\.md)?\b.*)$"
-        content, count = re.subn(pattern, r"\1x\2", content)
+        content, count = re.subn(pattern, lambda match: match[1]+(" " if args.has("undo") else "x")+match[2], content)
         if not count:
             raise Failure("plan-not-in-roadmap", identifier)
         write(path, content)
         records.sync_roadmap()
-    return {"updated": True, "plan": identifier}
+        progress = records.synchronize_progress(identifier.rsplit("-", 1)[0])
+    return {"updated": True, "plan": identifier, "progress": progress}
 
 
 def complete_phase(args):
