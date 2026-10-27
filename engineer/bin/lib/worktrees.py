@@ -32,6 +32,8 @@ def artifact_assignment(role, files, deletions=()):
                 "planner": ("PLAN", "VALIDATION"), "ui-researcher": ("UI-SPEC",)}
     if deletions or not files or len(files) != len(set(files)):
         raise Failure("invalid-artifact-assignment", "Declare exact unique outputs without deletions")
+    if role in ("pattern-mapper", "phase-researcher", "ui-researcher") and len(files) != 1:
+        raise Failure("invalid-artifact-assignment", "This role owns exactly one preparation artifact")
     normalized = []
     for value in files:
         path = safe_path(value)
@@ -123,6 +125,8 @@ def command(args, action):
                     raise Failure("worker-not-isolated", str(target))
                 if run(["git", "merge-base", "--is-ancestor", revision, "HEAD"], target, check=False).returncode:
                     raise Failure("worker-base-drift", identifier)
+                if assignment and (run(["git", "rev-parse", "HEAD"], target).stdout.strip() != revision or run(["git", "status", "--porcelain"], target).stdout):
+                    raise Failure("late-artifact-classification", "Classify the clean artifact worker at its base before dispatch")
             entry = {"plan": identifier, "path": str(target), "branch": branch, "base": revision,
                      "files": args.all("files"), "deletions": args.all("deletions"), "created": now(), "merged": False}
             if assignment:
@@ -176,6 +180,12 @@ def command(args, action):
                                 raise Failure("invalid-artifact", file)
                             if "phase" in metadata and str(metadata["phase"]).split("-", 1)[0] != output.parent.name.split("-")[0]:
                                 raise Failure("artifact-identity-mismatch", file)
+                            if file.endswith("-PLAN.md"):
+                                from . import frontmatter
+                                errors = frontmatter.errors(metadata, "plan")
+                                ordinal = output.name.removesuffix("-PLAN.md").rsplit("-", 1)[-1]
+                                if errors or str(metadata.get("plan", "")).zfill(2) != ordinal:
+                                    raise Failure("invalid-artifact-schema", file, errors=errors)
                     forbidden = []
                     for status, file in changed:
                         if status.startswith("D") and file not in entry["deletions"]:

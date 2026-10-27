@@ -79,18 +79,24 @@ def audit_pr(phase, body, quick=None):
         url = item.get("url", item.get("issue_url"))
         if not url:
             continue
+        number = repository.require_url(str(url), "issues")
+        issue = json.loads(delivery.gh(["issue", "view", str(url), "--json", "url,number,state,body"]).stdout)
+        repeated = json.loads(delivery.gh(["issue", "view", str(url), "--json", "url,number,state,body"]).stdout)
+        if issue != repeated or issue.get("url") != url or issue.get("number") != number or str(issue.get("state", "")).upper() not in ("OPEN", "CLOSED"):
+            failures.append({"id": item["id"], "reason": "Declared issue lacks stable canonical provider readback"})
         relationship = item.get("relationship", "followup")
+        origin = repository.identity()
+        reference = r"(?:"+re.escape(url)+r"|"+re.escape(origin["owner"]+"/"+origin["repository"])+r"#"+str(number)+r"|#"+str(number)+r")(?!\d)"
+        closing = re.search(r"(?im)\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+"+reference, body)
         if relationship in ("closes", "close", "fixes", "resolving") and (item.get("state") not in ("resolved", "fixed") or not item.get("evidence")):
             failures.append({"id": item["id"], "reason": "Unresolved, accepted or deferred findings cannot authorize issue closure"})
         if url not in body:
             failures.append({"id": item["id"], "reason": "Declared issue URL missing from PR body"})
-        elif relationship == "followup" and re.search(r"(?im)\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+"+re.escape(url), body):
+        elif relationship == "followup" and closing:
             failures.append({"id": item["id"], "reason": "Follow-up issue must not be closed by this PR"})
-        elif relationship in ("closes", "close", "fixes", "resolving") and not re.search(r"(?im)\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+"+re.escape(url), body):
+        elif relationship in ("closes", "close", "fixes", "resolving") and not closing:
             failures.append({"id": item["id"], "reason": "Closing relationship is missing"})
         if relationship in ("closes", "close", "fixes", "resolving") and str(item.get("variant", "")).upper() == "UAT":
-            repository.require_url(str(url), "issues")
-            issue = json.loads(delivery.gh(["issue", "view", str(url), "--json", "url,state,body"]).stdout)
             if not accepted_human(issue.get("body", "")):
                 failures.append({"id": item["id"], "reason": "UAT requires explicit accepted human evidence"})
     if failures:

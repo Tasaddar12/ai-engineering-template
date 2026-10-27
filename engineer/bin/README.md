@@ -30,6 +30,17 @@ returns only valid current fingerprints in the actual revision's ancestry.
 `verification.current` permits only report-only commits after the final batch;
 it inspects every intervening commit, catching source changes later reverted.
 
+PR ready/merge audit the current open PR body and current verified head. Ready
+requires matching non-draft readback; merge requires matching head, MERGED state
+and mergedAt readback. A completed check without an accepted conclusion remains
+pending. Open publishes only the active reviewed branch, rechecks origin, HEAD
+and cleanliness after pushing, and requires exact provider head/body/base/draft
+readback. Canonical provider URLs reject userinfo, ports, queries and fragments.
+Issue-link audit reads each declared canonical issue twice and checks identity,
+state stability and full or shorthand closing relationships. Structural shape
+and these provider checks do not replace the workflow's independent semantic
+review, content safety review or actual human UAT evidence.
+
 Use Python 3.11 or newer. The runtime uses only the standard library. The POSIX
 shim selects a namespace virtual environment, a project virtual environment, or
 `python3` / `python` and executes the CLI in isolated mode.

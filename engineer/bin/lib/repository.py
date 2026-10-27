@@ -23,6 +23,6 @@ def require_url(value, kind):
     expected = identity()
     parsed = urlparse(value)
     match = re.fullmatch(r"/([^/]+)/([^/]+)/"+kind+r"/(\d+)", parsed.path)
-    if parsed.scheme != "https" or not match or parsed.hostname != expected["hostname"] or (match[1], match[2]) != (expected["owner"], expected["repository"]):
+    if parsed.scheme != "https" or parsed.username or parsed.password or parsed.port or parsed.query or parsed.fragment or not match or parsed.hostname != expected["hostname"] or (match[1], match[2]) != (expected["owner"], expected["repository"]):
         raise Failure("provider-repository-mismatch", "Provider URL does not match origin", url=value)
     return int(match[3])
