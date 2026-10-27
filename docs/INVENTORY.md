@@ -445,8 +445,8 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `skills/secure-phase/SKILL.md` | local-only | 40 | 0 |
 | `skills/ship/SKILL.md` | local-only | 35 | 0 |
 | `skills/spec-phase/SKILL.md` | local-only | 57 | 0 |
-| `skills/ui-phase/SKILL.md` | local-only | 40 | 0 |
-| `skills/ui-review/SKILL.md` | local-only | 38 | 0 |
+| `skills/ui-phase/SKILL.md` | local-only | 42 | 0 |
+| `skills/ui-review/SKILL.md` | local-only | 40 | 0 |
 | `skills/update/SKILL.md` | local-only | 23 | 0 |
 | `skills/validate-phase/SKILL.md` | local-only | 41 | 0 |
 | `skills/verify-work/SKILL.md` | local-only | 33 | 0 |
