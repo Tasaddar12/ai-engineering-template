@@ -1,14 +1,30 @@
 """Origin-bound GitHub lifecycle, reviewed publication and durable reconciliation."""
+from contextlib import contextmanager
+from contextvars import ContextVar
 import hashlib
 import json
 from pathlib import Path
 import re
 import tempfile
+import time
 from . import delivery, issue_format, models, records, repository
 from .core import Args, Failure, digest, load_json, now, planning_lock, read, safe_path, slug, write, write_json
 from .text import join_frontmatter, split_frontmatter
 
 FIELDS = "number,url,title,body,state,labels"
+_deadline = ContextVar("issue_provider_deadline", default=None)
+
+
+@contextmanager
+def budget(seconds):
+    """Bound all provider calls in this context; nesting cannot extend a budget."""
+    deadline = time.monotonic()+float(seconds)
+    current = _deadline.get()
+    token = _deadline.set(min(current, deadline) if current is not None else deadline)
+    try:
+        yield
+    finally:
+        _deadline.reset(token)
 
 
 def enabled(args, key):
@@ -59,9 +75,15 @@ def validate(title, body, variant=None):
 
 
 def provider(argv, origin):
+    deadline = _deadline.get()
+    if deadline is not None and deadline <= time.monotonic():
+        raise Failure("issue-budget-exhausted", "Issue provider time budget exhausted")
     if repository.identity() != origin:
         raise Failure("issue-origin-drift", "Repository origin changed during issue operation")
-    return delivery.gh(argv)
+    remaining = min(60, deadline-time.monotonic()) if deadline is not None else 60
+    if remaining <= 0:
+        raise Failure("issue-budget-exhausted", "Issue provider time budget exhausted")
+    return delivery.gh(argv, timeout=remaining)
 
 
 def issue_get(value, origin):
@@ -321,10 +343,24 @@ def capture(args, action):
         issue = issue_get(args.get("reuse-url"), repository.identity())
         link_record(publication_args, "todo", issue["url"], digest([Path(record["path"])]))
         return {"captured": True, "published": False, "linked": True, "todo": record, "issue": issue, "url": issue["url"]}
+    # An uncertain create can already appear in search. Resume its exact durable
+    # intent first, without querying candidates or allowing another create.
+    identity = {"origin": repository.identity(),
+                "source": str(Path(record["path"]).relative_to(records.planning())),
+                "family": "todo", "finding": None}
+    intent_key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
+    intent = load_json(records.planning()/"issue-intents"/(intent_key+".json"))
+    if intent:
+        if any(intent.get(key) != value for key, value in identity.items()) or not intent.get("token"):
+            raise Failure("issue-intent-conflict", "Stored capture intent does not match its source and origin")
+        publication_args.opts["preview-token"] = [intent["token"]]
+        return {"captured": True, "todo": record, **publication(publication_args, "publish")}
     preview = publication(publication_args, "preview")
     # Pipeline authorization replaces a repeated human prompt, not deduplication:
     # matching candidates require a caller-selected canonical reuse/link action.
-    if preview["candidates"]["issues"] or preview["candidates"]["source_context"]["issues"] or preview["candidates"]["possibly_truncated"]:
+    context = preview["candidates"]
+    if (context["issues"] or context["pull_requests"] or context["source_context"]["issues"]
+            or context["source_context"]["pull_requests"] or context["possibly_truncated"]):
         return {"captured": True, "published": False, "needs_reconciliation": True, "todo": record, **preview}
     publication_args.opts["preview-token"] = [preview["preview_token"]]
     return {"captured": True, "todo": record, **publication(publication_args, "publish")}
