@@ -15,7 +15,8 @@ def command(args, action):
     path = store()
     data = load_json(path, {"sessions": []})
     if action == "status":
-        return {"sessions": data["sessions"], "count": len(data["sessions"])}
+        opened = [{**s, "exists": Path(s["worktree"]).is_dir()} for s in data["sessions"] if s.get("status") != "closed"]
+        return {"sessions": data["sessions"], "count": len(data["sessions"]), "open": opened, "open_count": len(opened)}
     if action == "close":
         branch = args.need()
         matching = [s for s in data["sessions"] if s["branch"] == branch and s.get("status") != "closed"]
@@ -39,7 +40,7 @@ def command(args, action):
         write_json(path, data)
         return {"closed": True, **entry}
     kind, label = args.need(), args.need(1)
-    if kind not in ("phase", "quick", "milestone"):
+    if kind not in ("phase", "quick", "milestone", "onboard"):
         raise Failure("invalid-session-kind", kind, 2)
     label = records.number(label) if kind == "phase" else slug(label)
     matching = [s for s in data["sessions"] if s["kind"] == kind and s["label"] == label and s.get("status") != "closed"]
@@ -63,6 +64,12 @@ def command(args, action):
     else:
         branch = config.lookup(config.load(), "worktree.branch_prefix", "codex/")+kind+"-"+label
         target = primary/str(config.lookup(config.load(), "worktree.directory", ".worktrees"))/slug(branch)
+        target = target.resolve()
+        if not target.is_relative_to(primary.resolve()) or target == primary.resolve():
+            raise Failure("unsafe-session-path", str(target))
+        ignored = run(["git", "check-ignore", "--quiet", "--", str(target)], primary, check=False)
+        if ignored.returncode:
+            raise Failure("root-not-ignored", "Ignore the configured worktree root before creating sessions")
         if target.exists():
             raise Failure("session-path-exists", str(target))
         run(["git", "worktree", "add", "-b", branch, str(target), base], primary)

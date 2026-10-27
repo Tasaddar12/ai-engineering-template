@@ -10,6 +10,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import bundles, config, decisions, frontmatter, gitops, misc, models, packages
 from lib import plans, probes, quick_batch, records, scope, tdd, uat, verification, verify, worktrees
 from lib import sessions, delivery, handoff, codebase
+from lib import issues, cleanup
+from lib import phase_issues
 from lib.core import Args, Failure, pick, raw, root, slug
 
 IDENTITY = {"packageName": "engineer-runtime", "contract": "2.0"}
@@ -48,16 +50,20 @@ def registry():
         "generate-claude-md": misc.instruction_file, "planning.validate": lambda a: misc.integrity(a, False),
         "planning.integrity": lambda a: misc.integrity(a, True), "planning.archive": misc.archive,
         "progress.bar": misc.progress_bar,
+        "phase.handoff": phase_issues.handoff, "phase.issue-declare": phase_issues.declare,
+        "phase.reconcile-todos": phase_issues.reconcile_todos,
+        "verification.current": lambda a: verification.current_evidence(a.need()),
     }
     for action in ("add", "insert", "edit", "remove", "complete"):
         verbs["phase."+action] = lambda a, action=action: records.phase_change(a, action)
-    for action in ("update", "begin-phase", "record-session", "add-roadmap-evolution", "add-decision", "add-blocker", "resolve-blocker"):
+    verbs["phase.complete"] = misc.complete_phase
+    for action in ("update", "begin-phase", "record-session", "add-roadmap-evolution", "add-decision", "add-blocker", "resolve-blocker", "advance-plan", "update-progress", "record-metric", "sync-todos"):
         verbs["state."+action] = lambda a, action=action: records.state_action(a, action)
     for action in ("get", "set", "validate"):
         verbs["frontmatter."+action] = lambda a, action=action: frontmatter.command(a, action)
     for action in ("artifacts", "commits", "key-links"):
         verbs["verify."+action] = lambda a, action=action: verify.command(a, action)
-    for action in ("create", "update", "get"):
+    for action in ("create", "update", "get", "list"):
         verbs["quick."+action] = lambda a, action=action: records.quick(a, action)
     for action in ("add", "list", "match-phase", "complete"):
         verbs["todo."+action] = lambda a, action=action: records.todo(a, action)
@@ -77,6 +83,11 @@ def registry():
         verbs["handoff."+action] = lambda a, action=action: handoff.command(a, action)
     for action in ("status", "record"):
         verbs["codebase."+action] = lambda a, action=action: codebase.command(a, action)
+    for action in ("preview", "publish", "update"):
+        verbs["todo.issue-"+action] = lambda a, action=action: issues.publication(a, action, "todo")
+        verbs["phase.issue-"+action] = lambda a, action=action: issues.publication(a, action, "phase")
+    for action in ("preview", "apply"):
+        verbs["cleanup."+action] = lambda a, action=action: cleanup.command(a, action)
     for kind in ("code-review", "complete-milestone", "execute-phase", "new-milestone", "new-project", "onboard", "phase-op", "plan-phase", "progress", "quick", "quick-batch", "todos", "verify-work", "ship"):
         verbs["init."+kind] = lambda a, kind=kind: bundles.init(a, kind)
     return verbs

@@ -19,6 +19,8 @@ def evaluation(args):
     commits, files = [], set()
     for line in log.splitlines():
         revision, subject = line.split("\0", 1)
+        if args.has("milestone-bound") and re.search(r"\b(?:milestone|release)\b.*\bv\d|\bmilestone\.create\b", subject, re.I):
+            break
         if phase:
             scoped = re.search(r"\((0*"+re.escape(phase)+r")(?:-(\d+))?\)", subject)
             broad = re.search(r"\bphase[ -]+0*"+re.escape(phase)+r"\b", subject, re.I)

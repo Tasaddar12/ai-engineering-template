@@ -27,11 +27,17 @@ def agents_dir():
 def resolve_agent(name):
     aliases = {"coder": "executor", "phase-preparer": "planner", "phase-checker": "plan-checker", "researcher": "phase-researcher", "gsd-executor": "executor"}
     name = aliases.get(name, name.removeprefix("gsd-"))
-    return name if (agents_dir()/(name+".md")).exists() else "executor"
+    if not (agents_dir()/(name+".md")).is_file():
+        raise Failure("agent-not-found", f"Required agent role is missing: {name}")
+    return name
 
 
 def resolve(name, kind):
     role = resolve_agent(name)
+    if role in ("scout", "targeted-fixer"):
+        if resolve_host() == "codex":
+            return "high" if kind == "effort" else "gpt-6-luna"
+        return "inherit" if kind == "effort" else "haiku"
     entry = config.lookup(config.load(), "agents."+role, {})
     if isinstance(entry, str):
         entry = {"model": entry}

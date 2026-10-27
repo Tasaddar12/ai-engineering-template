@@ -28,11 +28,10 @@ def status(args):
             "next_action": action, "next_command": command}
 
 
-def fingerprint(args):
-    directory = records.phase_dir(args.arg(0, args.get("phase")))
+def phase_fingerprint(directory, extra=()):
     report = resolve_file(directory)
     paths = list(directory.glob("*-PLAN.md"))+list(directory.glob("*-SUMMARY.md"))
-    covered = args.all("files") + args.all("covered-files")
+    covered = list(extra)
     for path in list(paths):
         metadata, _ = split_frontmatter(read(path))
         covered.extend(metadata.get("files_modified", []))
@@ -40,10 +39,52 @@ def fingerprint(args):
             if isinstance(artifact, dict) and artifact.get("path"):
                 covered.append(artifact["path"])
     paths.extend(safe_path(p) for p in covered)
-    value = digest([p for p in paths if p != report], root())
+    return digest([p for p in paths if p != report], root())
+
+
+def current_evidence(value):
+    directory = records.phase_dir(value)
+    report = resolve_file(directory)
+    metadata, body = split_frontmatter(read(report))
+    head = run(["git", "rev-parse", "HEAD"], root()).stdout.strip()
+    recorded = metadata.get("fingerprint")
+    covered = metadata.get("covered_files", [])
+    expected = phase_fingerprint(directory, covered)
+    reasons = []
+    if metadata.get("status") != "passed":
+        reasons.append("verification has not passed")
+    if not recorded or recorded != expected:
+        reasons.append("verification fingerprint is absent or stale")
+    revision = metadata.get("revision", metadata.get("verified_revision"))
+    if not revision or run(["git", "merge-base", "--is-ancestor", str(revision), head], root(), check=False).returncode:
+        reasons.append("verified revision is absent or outside current history")
+    if revision and revision != head:
+        changed = run(["git", "diff", "--name-only", str(revision), head], root(), check=False)
+        allowed = {str(report.relative_to(root())).replace("\\", "/"), ".planning/STATE.md", ".planning/ROADMAP.md", ".planning/REQUIREMENTS.md"}
+        if changed.returncode or any(path not in allowed for path in changed.stdout.splitlines()):
+            reasons.append("source changed since the frozen verification revision")
+    if run(["git", "status", "--porcelain"], root()).stdout:
+        reasons.append("working tree is dirty")
+    settings = config.lookup(config.load(), "verification.commands", [])
+    if settings:
+        receipt_status = check_status(None)
+        names = {check.get("id", check.get("name", str(i+1))) for i, check in enumerate(settings)}
+        passed = {r["name"] for r in receipt_status["receipts"] if r["status"] == "passed"}
+        if not names.issubset(passed):
+            reasons.append("configured checks lack passing receipts at current HEAD")
+    return {"current": not reasons, "reasons": reasons, "revision": head, "verified_revision": revision, "fingerprint": expected}
+
+
+def fingerprint(args):
+    directory = records.phase_dir(args.arg(0, args.get("phase")))
+    report = resolve_file(directory)
+    covered = args.all("files") + args.all("covered-files")
+    value = phase_fingerprint(directory, covered)
     with planning_lock():
         metadata, body = split_frontmatter(read(report))
         metadata["fingerprint"] = value
+        metadata["covered_files"] = covered
+        metadata["revision"] = run(["git", "rev-parse", "HEAD"], root()).stdout.strip()
         metadata.setdefault("phase", directory.name.split("-")[0])
         write(report, join_frontmatter(metadata, body))
     return {"fingerprint": value, "path": str(report)}
@@ -67,15 +108,23 @@ def append_audit(args):
     return {"appended": True, "path": str(path)}
 
 
+def check_fingerprint(check):
+    import hashlib
+    if check.get("inputs"):
+        inputs = [safe_path(path) for path in check["inputs"]]
+    else:
+        tracked = run(["git", "ls-files", "--cached", "--others", "--exclude-standard"], root()).stdout.splitlines()
+        inputs = [safe_path(path) for path in tracked if not path.startswith(".planning/")]
+    key = digest(inputs)+":"+json.dumps(check, sort_keys=True)
+    return hashlib.sha256(key.encode()).hexdigest()
+
+
 def run_checks(args):
     configured = config.lookup(config.load(), "verification.commands", [])
     if not isinstance(configured, list):
         raise Failure("invalid-checks", "verification.commands must be a list", 2)
     selected = args.all("checks")
     revision = run(["git", "rev-parse", "HEAD"], root()).stdout.strip()
-    dirty = run(["git", "status", "--porcelain", "--untracked-files=all"], root()).stdout
-    content_files = [root()/line[3:] for line in dirty.splitlines() if len(line) > 3 and not line[3:].startswith(".planning/")]
-    dirty_digest = digest(content_files)
     receipts = records.planning()/"verification/receipts"
     results = []
     for index, check in enumerate(configured):
@@ -84,13 +133,11 @@ def run_checks(args):
         name = check.get("id", check.get("name", str(index+1)))
         if selected and name not in selected:
             continue
-        inputs = [safe_path(p) for p in check.get("inputs", [])]
-        key = digest(inputs) + ":" + json.dumps(check, sort_keys=True) + ":" + revision + ":" + dirty_digest
-        import hashlib
-        fingerprint_value = hashlib.sha256(key.encode()).hexdigest()
+        fingerprint_value = check_fingerprint(check)
         receipt_path = receipts/(fingerprint_value+".json")
         receipt = load_json(receipt_path)
-        if receipt and receipt.get("status") == "passed" and not args.has("force"):
+        receipt_ancestor = receipt and run(["git", "merge-base", "--is-ancestor", receipt["revision"], revision], root(), check=False).returncode == 0
+        if receipt and receipt_ancestor and receipt.get("status") == "passed" and not args.has("force"):
             results.append({**receipt, "reused": True})
             continue
         started = now()
@@ -102,6 +149,8 @@ def run_checks(args):
         after = run(["git", "rev-parse", "HEAD"], root()).stdout.strip()
         if revision != after:
             raise Failure("revision-drift", "HEAD changed while running verification checks")
+        if check_fingerprint(check) != fingerprint_value:
+            raise Failure("verification-input-drift", "Check inputs changed during the frozen verification run", check=name)
         receipt = {"name": name, "argv": check["argv"], "revision": revision, "fingerprint": fingerprint_value,
                    "started": started, "finished": now(), "exit_code": code, "stdout": stdout,
                    "stderr": stderr, "status": "passed" if code == 0 else "failed", "reused": False}
@@ -115,8 +164,12 @@ def run_checks(args):
 def check_status(args):
     revision = run(["git", "rev-parse", "HEAD"], root()).stdout.strip()
     receipts = []
+    configured = config.lookup(config.load(), "verification.commands", [])
+    expected = {check_fingerprint(check) for check in configured}
     for path in (records.planning()/"verification/receipts").glob("*.json"):
         item = load_json(path)
-        if item.get("revision") == revision:
+        ancestor = run(["git", "merge-base", "--is-ancestor", item["revision"], revision], root(), check=False).returncode == 0
+        if ancestor and item.get("fingerprint") in expected:
             receipts.append(item)
-    return {"revision": revision, "receipts": receipts, "passed": bool(receipts) and all(r["status"] == "passed" for r in receipts)}
+    passing = {r["fingerprint"] for r in receipts if r["status"] == "passed"}
+    return {"revision": revision, "receipts": receipts, "passed": expected.issubset(passing)}

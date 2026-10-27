@@ -4,14 +4,14 @@ from pathlib import Path
 import re
 import tempfile
 import time
-from . import config, gitops, models, verification
+from . import config, gitops, models, verification, repository
 from .core import Args, Failure, read, root, run, safe_path
 
 PR_FIELDS = "number,url,state,isDraft,headRefName,baseRefName,statusCheckRollup,mergeable,title,body"
 
 
 def gh(args, check=True):
-    return run(["gh", *args], root(), check=check)
+    return run(["gh", *args, "--repo", repository.identity()["slug"]], root(), check=check)
 
 
 def view(branch):
@@ -20,7 +20,11 @@ def view(branch):
         if "no pull requests found" in result.stderr.lower():
             return None
         raise Failure("provider-query-failed", result.stderr.strip())
-    return json.loads(result.stdout)
+    packet = json.loads(result.stdout)
+    repository.require_url(packet["url"], "pull")
+    if packet.get("headRefName") != branch:
+        raise Failure("pr-head-mismatch", "Provider returned a different branch")
+    return packet
 
 
 def classify_checks(checks):
@@ -40,6 +44,8 @@ def validate_body(body):
     if not body.strip():
         raise Failure("invalid-pr-body", "Pull request body cannot be empty")
     template = read(models.NAMESPACE/"engineer/templates/pull-request.md")
+    if not template:
+        raise Failure("pr-template-missing", "Install engineer/templates/pull-request.md before publishing")
     required = re.findall(r"(?m)^##\s+(.+)$", template)
     missing = [heading for heading in required if not re.search(r"(?m)^##\s+"+re.escape(heading)+r"\s*$", body)]
     if missing:
@@ -73,6 +79,9 @@ def command(args, action):
         phase = args.get("phase")
         if not phase or verification.status(Args([phase]))["status"] != "passed":
             raise Failure("phase-unverified", "Passed phase verification is required")
+        evidence = verification.current_evidence(phase)
+        if not evidence["current"]:
+            raise Failure("verification-stale", "Current frozen verification evidence is required", evidence=evidence)
         pr = view(branch)
         if not pr:
             raise Failure("pr-not-found", branch)
@@ -85,6 +94,9 @@ def command(args, action):
         phase = args.get("phase")
         if not phase or verification.status(Args([phase]))["status"] != "passed":
             raise Failure("phase-unverified", "Passed phase verification is required")
+        evidence = verification.current_evidence(phase)
+        if not evidence["current"]:
+            raise Failure("verification-stale", "Current frozen verification evidence is required", evidence=evidence)
         gh(["pr", "ready", branch])
         return {"ready": True, "branch": branch}
     if action != "open":
@@ -96,6 +108,9 @@ def command(args, action):
     title = args.get("title", run(["git", "log", "-1", "--format=%s"], root()).stdout.strip())
     body = read(safe_path(args.get("body-file"))) if args.has("body-file") else str(args.get("body", ""))
     validate_body(body)
+    if args.has("phase"):
+        from .phase_issues import audit_pr
+        audit_pr(args.get("phase"), body)
     existing = view(branch)
     with tempfile.TemporaryDirectory(prefix="engineer-pr-") as temporary:
         body_path = Path(temporary)/"body.md"

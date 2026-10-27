@@ -103,6 +103,25 @@ def roadmap_progress(args):
     return {"updated": True, "plan": identifier}
 
 
+def complete_phase(args):
+    from . import phase_issues, verification
+    packet = phase_issues.handoff(args)
+    if not packet["ready"]:
+        raise Failure("phase-issues", "Complete worker summaries and reconcile findings first", errors=packet["errors"])
+    if verification.status(args)["status"] != "passed":
+        raise Failure("phase-unverified", "Passed verification is required before phase completion")
+    result = records.phase_change(args, "complete")
+    view = records.state_view()
+    current = str(view.get("phase", "")).split(" ", 1)[0]
+    try:
+        matching = records.number(current) == records.number(args.need())
+    except ValueError:
+        matching = False
+    if matching:
+        records.patch_state({"Status": "Phase complete", "Last Activity": now()})
+    return result
+
+
 def archive(args):
     import shutil
     label = args.arg(0, args.get("milestone", records.milestone_name()))

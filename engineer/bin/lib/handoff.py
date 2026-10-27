@@ -8,10 +8,11 @@ from .core import Failure, load_json, now, planning_lock, read, root, run, write
 def limits(args=None):
     settings = config.load()
     window = int(settings.get("context_window", 200000))
-    percent = float(config.lookup(settings, "handoff.threshold_percent", 75))
-    ceiling = int(config.lookup(settings, "handoff.token_ceiling", 150000))
+    percent = float(config.lookup(settings, "handoff.context_percent", config.lookup(settings, "handoff.threshold_percent", 60)))
+    ceiling = int(config.lookup(settings, "handoff.context_tokens", config.lookup(settings, "handoff.token_ceiling", 250000)))
     return {"enabled": config.lookup(settings, "handoff.enabled", True), "context_window": window,
-            "threshold_percent": percent, "token_ceiling": ceiling, "threshold_tokens": min(int(window*percent/100), ceiling)}
+            "threshold_percent": percent, "token_ceiling": ceiling, "context_percent": percent, "context_tokens": ceiling,
+            "binding": "percent" if window*percent/100 <= ceiling else "ceiling", "threshold_tokens": min(int(window*percent/100), ceiling)}
 
 
 def path_for(identifier):

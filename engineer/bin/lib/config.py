@@ -23,7 +23,7 @@ DEFAULTS = {
     "planner": {"stall_detection_enabled": True, "stall_detect_interval_minutes": 5, "stall_threshold_minutes": 10},
     "quick_batch": {"capacity": 3},
     "worktree": {"directory": ".worktrees", "branch_prefix": "codex/"},
-    "handoff": {"enabled": True, "threshold_percent": 75, "token_ceiling": 150000},
+    "handoff": {"enabled": True, "context_percent": 60, "context_tokens": 250000},
     "codebase": {"max_age_commits": 20},
     "agents": {},
     "verification": {"commands": []},

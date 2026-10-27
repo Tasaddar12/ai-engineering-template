@@ -53,15 +53,19 @@ def roadmap_phases():
     matches = list(re.finditer(r"(?m)^#{2,4}\s+Phase\s+(\d+(?:\.\d+)?)\s*:\s*(.+)$", text))
     result = []
     for i, match in enumerate(matches):
-        body = text[match.end():matches[i+1].start() if i+1 < len(matches) else len(text)]
+        limit = matches[i+1].start() if i+1 < len(matches) else len(text)
+        boundary = re.search(r"(?m)^#{1,2}\s+", text[match.end():limit])
+        if boundary:
+            limit = match.end()+boundary.start()
+        body = text[match.end():limit]
         fields = {}
-        for label, value in re.findall(r"(?mi)^\*\*([^*]+):\*\*\s*(.*)$", body):
+        for label, value in re.findall(r"(?mi)^\*\*([^*:]+)(?::\*\*|\*\*:)\s*(.*)$", body):
             fields[slug(label).replace("-", "_")] = value.strip()
         result.append({"number": number(match.group(1)), "name": match.group(2).strip(),
                        "goal": fields.get("goal", ""), "depends_on": fields.get("depends_on", ""),
                        "requirements": re.findall(r"\b[A-Z]+-\d+\b", fields.get("requirements", "")),
                        "mode": fields.get("mode", "standard"), "body": body,
-                       "start": match.start(), "end": matches[i+1].start() if i+1 < len(matches) else len(text)})
+                       "start": match.start(), "end": limit})
     return result
 
 
@@ -131,9 +135,11 @@ def phase_change(args, action):
                 insertion = roadmap_phase(args.need())["end"]
                 text = text[:insertion]+block+text[insertion:]
             else:
-                text = text.rstrip()+"\n\n"+block
+                progress = re.search(r"(?m)^## Progress\s*$", text)
+                text = text[:progress.start()].rstrip()+"\n\n"+block+text[progress.start():] if progress else text.rstrip()+"\n\n"+block
             write(path, text)
-            return {"added": True, "phase": identifier, "directory": str(directory)}
+            return {"added": True, "phase": identifier, "phase_number": str(int(identifier.split('.')[0])) + ('.'+identifier.split('.')[1] if '.' in identifier else ''),
+                    "padded": identifier, "slug": slug(description), "directory": str(directory)}
         phase = roadmap_phase(args.need())
         before, block, after = text[:phase["start"]], text[phase["start"]:phase["end"]], text[phase["end"]:]
         if action == "remove":
@@ -145,15 +151,29 @@ def phase_change(args, action):
                 raise Failure("archive-exists", str(archive))
             archive.parent.mkdir(parents=True, exist_ok=True)
             shutil.move(str(directory), str(archive))
-            write(path, before+after)
-            return {"removed": True, "phase": phase["number"], "archive": str(archive)}
+            content = before+after
+            label = r"0*"+str(int(phase["number"].split(".")[0]))+(r"\."+phase["number"].split(".")[1] if "." in phase["number"] else "")
+            content = re.sub(r"(?m)^- \[[ x]\]\s*\*\*Phase\s+"+label+r":.*\n?", "", content)
+            content = re.sub(r"(?m)^\|\s*"+label+r"\.\s*[^\n]+\n?", "", content)
+            renamed = []
+            if "." not in phase["number"]:
+                from . import numbering
+                removed = int(phase["number"])
+                renamed = numbering.records(root(), removed)
+                content = numbering.references(content, removed)
+                for record in ("REQUIREMENTS.md", "STATE.md"):
+                    record_path = planning()/record
+                    if record_path.exists():
+                        write(record_path, numbering.references(read(record_path), removed))
+            write(path, content)
+            return {"removed": True, "phase": phase["number"], "archive": str(archive), "renumbered": renamed}
         if action == "edit":
             if args.has("name"):
                 block = re.sub(r"(^#{2,4}\s+Phase\s+[^:]+:).+", lambda m: m[1]+" "+str(args.get("name")), block, count=1)
             for option, label in (("goal", "Goal"), ("depends-on", "Depends on"), ("requirements", "Requirements")):
                 if args.has(option):
                     value = ", ".join(args.all(option))
-                    pattern = rf"(?m)^\*\*{label}:\*\*.*$"
+                    pattern = rf"(?mi)^\*\*{label}(?::\*\*|\*\*:).*$"
                     line = f"**{label}:** {value}"
                     block = re.sub(pattern, lambda _: line, block) if re.search(pattern, block) else block.rstrip()+"\n"+line+"\n\n"
         elif action == "complete":
@@ -164,8 +184,19 @@ def phase_change(args, action):
                 block = block.rstrip()+"\n**Status:** Complete\n\n"
         elif action == "set-plans":
             ids = args.all("plans")
-            replacement = f"**Plans:** {len(ids)} plans\n"+"\n".join(f"- [ ] {value}-PLAN.md" for value in ids)
-            block = re.sub(r"(?m)^\*\*Plans:\*\*.*(?:\n- \[[ x]\].*)*", lambda _: replacement, block)
+            parsed = []
+            for value in ids:
+                plan_id, _, title = value.partition(":")
+                plan_id = plan_id.strip().removesuffix("-PLAN.md")
+                if not re.fullmatch(re.escape(phase["number"])+r"-\d+", plan_id):
+                    raise Failure("invalid-plan-id", value)
+                parsed.append((plan_id, title.strip()))
+            if len({identifier for identifier, _ in parsed}) != len(parsed):
+                raise Failure("duplicate-plan-id", "Plan identifiers must be unique")
+            checked = set(re.findall(r"(?m)^- \[x\]\s*(\d+(?:\.\d+)?-\d+)", block))
+            replacement = f"**Plans:** {len(parsed)} plans\n\nPlans:\n"+"\n".join(f"- [{'x' if identifier in checked else ' '}] {identifier}: {title}" for identifier, title in parsed)
+            pattern = r"(?m)^\*\*Plans(?::\*\*|\*\*:).*?(?=\n(?:\*\*|#{1,3} )|\Z)"
+            block = re.sub(pattern, lambda _: replacement+"\n", block, flags=re.S) if re.search(pattern, block, re.S) else block.rstrip()+"\n"+replacement+"\n\n"
         write(path, before+block+after)
         return {"updated": True, "phase": phase["number"], "action": action}
 
@@ -186,11 +217,18 @@ def plan_index(args):
 def state_view(args=None):
     text = read(planning()/"STATE.md")
     metadata, _ = split_frontmatter(text)
-    fields = {slug(k).replace("-", "_"): v.strip() for k, v in re.findall(r"(?m)^\*\*([^*]+):\*\*\s*(.*)$", text)}
-    fields.update(metadata)
+    position_match = re.search(r"(?ms)^## Current Position\s*\n(.*?)(?=^## |\Z)", text)
+    section = position_match[1] if position_match else text
+    position = {k.strip(): v.strip() for k, v in re.findall(r"(?m)^(?:\*\*)?([^*\n:]+?)(?::\*\*|\*\*:|:)\s*(.*)$", section)}
+    fields = {slug(k).replace("-", "_"): v for k, v in position.items()}
+    fields = {**metadata, **fields}
     fields["milestone"] = milestone_name()
     fields["exists"] = bool(text)
     fields["content"] = text
+    fields["position"] = position
+    for heading, key in (("Blockers/Concerns", "blockers"), ("Decisions", "decisions"), ("Pending Todos", "pending_todos")):
+        match = re.search(r"(?ms)^### "+re.escape(heading)+r"\s*\n(.*?)(?=^##|\Z)", text)
+        fields[key] = re.findall(r"(?m)^- (.+)$", match[1]) if match else []
     if args and args.pos:
         value = config.lookup(fields, args.need(), None)
         if value is None:
@@ -211,8 +249,8 @@ def patch_state(changes):
         limit = match.end()+end.start() if end else len(text)
         section = text[match.end():limit]
         for key, value in changes.items():
-            pattern = rf"(?mi)^\*\*{re.escape(key)}:\*\*.*$"
-            line = f"**{key}:** {value}"
+            pattern = rf"(?mi)^(?:\*\*)?{re.escape(key)}(?::\*\*|\*\*:|:).*$"
+            line = f"{key}: {value}"
             section = re.sub(pattern, lambda _: line, section) if re.search(pattern, section) else section.rstrip()+"\n"+line+"\n"
         write(path, text[:match.end()]+section.rstrip()+"\n\n"+text[limit:])
     return {"updated": True, "matched_fields": list(changes), "fields": changes}
@@ -247,6 +285,26 @@ def state_action(args, action):
         return patch_state({"Phase": args.need(), "Status": args.get("status", "Executing"), "Last Activity": now()})
     if action == "record-session":
         return patch_state({"Stopped At": args.get("stopped-at", ""), "Resume File": args.get("resume-file", ""), "Status": args.get("status", "paused"), "Last Activity": now()})
+    if action in ("advance-plan", "update-progress"):
+        view = state_view()
+        phase = str(view.get("phase", "")).split(" ", 1)[0]
+        info = find(phase)
+        done = info["summary_count"]
+        total = info["plan_count"]
+        return patch_state({"Plan": f"{min(done+1, total)} of {total}", "Status": "Phase complete" if total and done >= total else "In progress", "Progress": f"{round(100*done/total) if total else 0}%"})
+    if action == "record-metric":
+        return append_section(planning()/"STATE.md", "## Performance Metrics", f"| {args.get('phase', '')} | {args.get('plan', '')} | {args.get('duration', '')} | {args.get('tasks', '')} | {args.get('files', '')} |")
+    if action == "sync-todos":
+        from .core import Args
+        todos = todo(Args([]), "list")
+        path = planning()/"STATE.md"
+        with planning_lock():
+            content = read(path)
+            replacement = "### Pending Todos\n\n"+"\n".join("- "+item["title"] for item in todos["todos"])+"\n\n"
+            pattern = r"(?ms)^### Pending Todos\s*\n.*?(?=^##|\Z)"
+            content = re.sub(pattern, lambda _: replacement, content) if re.search(pattern, content) else content.rstrip()+"\n\n"+replacement
+            write(path, content)
+        return {"synced": todos["count"]}
     sections = {"add-roadmap-evolution": "### Roadmap Evolution", "add-blocker": "### Blockers/Concerns", "add-decision": "### Decisions"}
     if action == "add-decision":
         decision = args.arg(0, args.get("decision", ""))
@@ -282,6 +340,17 @@ def quick_create(description):
 
 
 def quick(args, action):
+    if action == "list":
+        items = []
+        for path in sorted((planning()/"quick").glob("*/QUICK.md")):
+            metadata, _ = split_frontmatter(read(path))
+            requested = args.get("status")
+            if requested == "open" and metadata.get("status") in ("complete", "passed", "closed"):
+                continue
+            if requested and requested != "open" and metadata.get("status") != requested:
+                continue
+            items.append({**metadata, "path": str(path), "directory": str(path.parent)})
+        return {"tasks": items, "quick_tasks": items, "count": len(items)}
     with planning_lock():
         if action == "create":
             return quick_create(args.need())
@@ -303,13 +372,18 @@ def todo(args, action):
     directory = planning()/"todos"
     if action == "add":
         title = args.need()
+        severity = args.get("severity", "minor")
+        if severity not in ("minor", "major", "blocker"):
+            raise Failure("invalid-severity", str(severity), 2)
         path = directory/"pending"/(now()[:10]+"-"+slug(title)+".md")
         with planning_lock():
             if path.exists():
                 raise Failure("todo-exists", str(path))
-            metadata = {"title": title, "area": args.get("area", "general"), "created": now(), "phase": args.get("phase")}
-            write(path, join_frontmatter(metadata, "# "+title+"\n\n"+args.get("description", "")+"\n"))
-        return {"created": True, "path": str(path), **metadata}
+            metadata = {"title": title, "area": args.get("area", "general"), "severity": severity,
+                        "created": now(), "phase": args.get("phase"), "files": args.all("files")}
+            body = "# "+title+"\n\n## Problem\n\n"+args.get("problem", args.get("description", ""))+"\n\n## Proposed Solution\n\n"+args.get("solution", "")+"\n"
+            write(path, join_frontmatter(metadata, body))
+        return {"created": True, "path": str(path), "file": str(path), **metadata}
     if action in ("list", "match-phase"):
         items = []
         for path in sorted((directory/"pending").glob("*.md")):
@@ -318,11 +392,29 @@ def todo(args, action):
                 items.append({**metadata, "path": str(path), "body": body})
         return {"todos": items, "count": len(items)}
     if action == "complete":
-        path = safe_path(args.need())
+        value = Path(args.need())
+        path = safe_path(directory/"pending"/value) if len(value.parts) == 1 and not value.is_absolute() else safe_path(value)
         if not path.is_relative_to(directory/"pending"):
             raise Failure("invalid-todo", "Only pending todo records can be completed")
+        metadata, body = split_frontmatter(read(path))
+        from .core import digest
+        snapshot = digest([path])
+        issue_url = metadata.get("issue_url", metadata.get("issueURL", metadata.get("issue")))
+        if issue_url:
+            from .delivery import gh
+            from .phase_issues import accepted_human
+            from .repository import require_url
+            require_url(str(issue_url), "issues")
+            issue = json.loads(gh(["issue", "view", str(issue_url), "--json", "url,state,body"]).stdout)
+            final = json.loads(gh(["issue", "view", str(issue_url), "--json", "url,state,body"]).stdout)
+            if issue != final or str(issue.get("state", "")).upper() != "CLOSED" or issue.get("url") != issue_url:
+                raise Failure("todo-issue-open", "Close the linked issue before retiring this todo")
+            if re.search(r"human acceptance|Status:\s*(?:PENDING|ACCEPTED)|\bUAT\b", issue.get("body", ""), re.I) and not accepted_human(issue.get("body", "")):
+                raise Failure("human-acceptance-pending", "UAT retirement requires accepted human evidence")
         destination = directory/"completed"/path.name
         with planning_lock():
+            if digest([path]) != snapshot:
+                raise Failure("todo-source-drift", "Todo changed during provider readback")
             if destination.exists():
                 raise Failure("todo-exists", str(destination))
             destination.parent.mkdir(parents=True, exist_ok=True)
@@ -333,7 +425,7 @@ def todo(args, action):
 
 def requirements(args, action):
     path = planning()/"REQUIREMENTS.md"
-    ids = args.pos
+    ids = [value for item in args.pos for value in re.split(r"[,\s]+", item.strip("[]")) if value]
     with planning_lock():
         text = read(path)
         matched = []

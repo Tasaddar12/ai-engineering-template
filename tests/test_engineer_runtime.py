@@ -90,3 +90,55 @@ class RecordBehavior(RuntimeCase):
         self.assertEqual(1, self.cli("todo.match-phase", "1")["count"])
         self.cli("todo.complete", todo["path"])
         self.assertEqual(0, self.cli("todo.list")["count"])
+
+
+class IsolationSafety(RuntimeCase):
+    def prepare_isolation(self):
+        self.put(".gitignore", ".worktrees/\n")
+        self.git("add", ".gitignore")
+        self.git("commit", "-m", "chore: ignore worktrees")
+
+    def test_session_refuses_unignored_root_and_reuses_owned_checkout(self):
+        self.cli("session.open", "quick", "repair", status=1, raw=True)
+        self.prepare_isolation()
+        first = self.cli("session.open", "quick", "repair")
+        second = self.cli("session.open", "quick", "repair")
+        self.assertFalse(first["reused"])
+        self.assertTrue(second["reused"])
+        self.assertEqual(first["worktree"], second["worktree"])
+        self.assertEqual(1, self.cli("session.status")["open_count"])
+
+    def test_cleanup_requires_exact_preview_and_revalidates_dirty_resources(self):
+        self.prepare_isolation()
+        session = self.cli("session.open", "quick", "repair")
+        preview = self.cli("cleanup.preview")
+        self.assertEqual(1, preview["count"])
+        self.cli("cleanup.apply", "--approval-token", preview["approval_token"], status=1, raw=True)
+        target = Path(session["worktree"])
+        (target/"untracked.txt").write_text("keep", encoding="utf-8")
+        self.cli("cleanup.apply", "--approval-token", preview["approval_token"], "--confirm", status=1, raw=True)
+        self.assertTrue(target.exists())
+        (target/"untracked.txt").unlink()
+        self.assertEqual(1, self.cli("cleanup.apply", "--approval-token", preview["approval_token"], "--confirm")["count"])
+        self.assertFalse(target.exists())
+        self.cli("cleanup.apply", "--approval-token", preview["approval_token"], "--confirm", status=1, raw=True)
+
+    def test_worker_undeclared_deletion_blocks_integration(self):
+        self.prepare_isolation()
+        worker = self.cli("worktree.create", "01-01", "--phase", "1", "--base", "HEAD", "--files", "src/app.py")
+        target = Path(worker["path"])
+        summary = target/".planning/phases/01-behavior/01-01-SUMMARY.md"
+        summary.parent.mkdir(parents=True)
+        summary.write_text('---\nphase: "01"\nplan: "01"\nstatus: complete\nissue_refs: []\n---\nDelivered\n', encoding="utf-8")
+        (target/"README.md").unlink()
+        self.git("-C", str(target), "add", "--all")
+        self.git("-C", str(target), "commit", "-m", "feat(01-01): unexpected deletion")
+        self.cli("worktree.merge-wave", "--phase", "1", status=1, raw=True)
+        self.assertTrue((self.root/"README.md").exists())
+        self.assertTrue(target.exists())
+
+    def test_merge_requires_confirmation_and_fresh_evidence_before_provider(self):
+        directory = Path(self.phase())
+        (directory/"01-VERIFICATION.md").write_text('---\nphase: "01"\nstatus: passed\n---\nUnbound evidence\n', encoding="utf-8")
+        self.cli("pr.merge", "worker", "--phase", "1", status=1, raw=True)
+        self.cli("pr.merge", "worker", "--phase", "1", "--confirm", status=1, raw=True)

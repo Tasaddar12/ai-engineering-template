@@ -1,6 +1,8 @@
 from pathlib import Path
 import sys
 import unittest.mock
+import subprocess
+import json
 try:
     from .test_engineer_runtime import RuntimeCase, SOURCE
 except ImportError:
@@ -53,3 +55,62 @@ class MiscVerbs(RuntimeCase):
         self.cli("frontmatter.set", path, "--field", "wave", "--value", "wrong")
         self.assertFalse(self.cli("planning.integrity", status=1)["valid"])
         self.assertFalse(self.cli("planning.validate")["valid"])
+
+
+ISSUE_DRIVER = r'''
+import json, os, sys
+from pathlib import Path
+from types import SimpleNamespace
+sys.path.insert(0, sys.argv[1])
+from lib import models, delivery
+import engineer
+models.NAMESPACE = Path(os.environ["ENGINEER_ROOT"])/"namespace"
+state_path = Path(os.environ["ENGINEER_ROOT"])/"provider.json"
+def gh(argv, check=True):
+    state = json.loads(state_path.read_text()) if state_path.exists() else {"creates": 0}
+    if argv[:2] == ["issue", "create"]:
+        state["creates"] += 1
+        state["issue"] = {"url":"https://github.com/example/project/issues/1", "state":"OPEN",
+            "title":argv[argv.index("--title")+1],
+            "body":Path(argv[argv.index("--body-file")+1]).read_text(encoding="utf-8")}
+        state_path.write_text(json.dumps(state))
+        return SimpleNamespace(stdout=state["issue"]["url"]+"\n", stderr="", returncode=0)
+    if argv[:2] == ["issue", "view"]:
+        return SimpleNamespace(stdout=json.dumps(state["issue"]), stderr="", returncode=0)
+    raise RuntimeError("Unexpected provider operation: "+repr(argv))
+delivery.gh = gh
+raise SystemExit(engineer.main(["query", *sys.argv[2:]]))
+'''
+
+
+class IssuePublicationSafety(RuntimeCase):
+    def setUp(self):
+        super().setUp()
+        self.git("remote", "add", "origin", "https://github.com/example/project.git")
+        self.put("namespace/engineer/templates/issue.md", "# Issue\n## Problem\n## Validation\n")
+        self.todo = self.put(".planning/todos/pending/issue.md", "---\ntitle: Private finding\n---\nPrivate implementation evidence\n")
+        self.public = self.put("public.md", "## Problem\nObserved public problem\n## Validation\nReproduce the public behavior\n")
+
+    def issue_cli(self, *args, status=0):
+        process = subprocess.run([sys.executable, "-I", "-c", ISSUE_DRIVER, str(SOURCE/"engineer/bin"), *map(str, args)], cwd=self.root, env=self.env, text=True, capture_output=True)
+        self.assertEqual(status, process.returncode, process.stderr or process.stdout)
+        return json.loads(process.stdout) if process.stdout.strip() else None
+
+    def test_preview_binds_public_body_and_readback_preserves_private_record(self):
+        options = ["issue.md", "--title", "Public reviewed title", "--body-file", self.public]
+        preview = self.issue_cli("todo.issue-preview", *options)
+        published = self.issue_cli("todo.issue-publish", *options, "--preview-token", preview["previewToken"])
+        self.assertTrue(published["published"])
+        self.assertIn("Private implementation evidence", self.todo.read_text(encoding="utf-8"))
+        state = json.loads((self.root/"provider.json").read_text(encoding="utf-8"))
+        self.assertNotIn("Private", state["issue"]["body"])
+        self.assertEqual(1, state["creates"])
+        self.issue_cli("todo.issue-publish", *options, "--preview-token", preview["previewToken"], status=1)
+        self.assertEqual(1, json.loads((self.root/"provider.json").read_text())["creates"])
+
+    def test_source_or_public_body_drift_refuses_provider_call(self):
+        options = ["issue.md", "--title", "Public reviewed title", "--body-file", self.public]
+        preview = self.issue_cli("todo.issue-preview", *options)
+        self.public.write_text(self.public.read_text()+"\nChanged evidence\n", encoding="utf-8")
+        self.issue_cli("todo.issue-publish", *options, "--preview-token", preview["previewToken"], status=1)
+        self.assertFalse((self.root/"provider.json").exists())

@@ -36,3 +36,25 @@ class TddChecks(RuntimeCase):
         self.cli("config-set", "workflow.tdd_mode", "true")
         self.assertTrue(self.cli("phase.tdd-applicable", path)["applicable"])
         self.assertFalse(self.cli("task.is-behavior-adding", '{"files":["docs/guide.md"],"action":"Document existing behavior"}')["is_behavior_adding"])
+
+    def test_zero_tests_nonzero_without_failure_and_tap(self):
+        path = self.evidence(output="Ran 0 tests in 0.1s\nFAILED (failures=0)\n")
+        self.assertEqual("INVALID_RED:zero_tests_discovered", self.cli("check.tdd-red-evidence", path, "--raw", status=1, raw=True))
+        path = self.evidence(output="Ran 1 test in 0.1s\nFAILED (failures=0)\n")
+        self.assertEqual("INVALID_RED:nonzero_exit_without_test_failure", self.cli("check.tdd-red-evidence", path, "--raw", status=1, raw=True))
+        path = self.evidence(output="TAP version 13\nnot ok 1 - rejects invalid input\n1..1\n", targetTest="rejects invalid input")
+        self.assertEqual("RED_EVIDENCE_OK", self.cli("check.tdd-red-evidence", path, "--raw", raw=True))
+
+    def test_red_commit_must_precede_implementation(self):
+        self.put("tests/test_app.py", "# failing behavior test\n")
+        self.git("add", "tests/test_app.py")
+        self.git("commit", "-m", "test(01-01): RED")
+        red = self.git("rev-parse", "HEAD")
+        self.put("src/app.py", "def app(): return 2\n")
+        self.git("add", "src/app.py")
+        self.git("commit", "-m", "feat(01-01): GREEN")
+        green = self.git("rev-parse", "HEAD")
+        path = self.evidence(testCommit=red, implementationCommit=green)
+        self.assertEqual("RED_EVIDENCE_OK", self.cli("check.tdd-red-evidence", path, "--raw", raw=True))
+        path = self.evidence(testCommit=green, implementationCommit=red)
+        self.cli("check.tdd-red-evidence", path, status=1, raw=True)

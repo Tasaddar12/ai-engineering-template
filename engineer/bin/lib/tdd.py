@@ -75,7 +75,30 @@ def red(args):
         results = re.findall(r"(?m)^(not ok|ok)\s+\d+\s*(?:-\s*)?(.+)$", output)
         if len(results) != total:
             return invalid("invalid_record", ["TAP plan/result mismatch"])
-        failures = [[name.strip()] for status, name in results if status == "not ok" and not re.search(r"#\s*(?:SKIP|TODO)\b", name, re.I)]
+        # Nested TAP suite summaries are not assertion evidence. Preserve leaf
+        # failures and accept either exact emitted name or qualified subtest path.
+        names = []
+        all_results = list(re.finditer(r"(?m)^(\s*)(not ok|ok)\s+\d+\s*(?:-\s*)?(.+)$", output))
+        subtests = list(re.finditer(r"(?m)^(\s*)# Subtest:\s*(.+)$", output))
+        for index, match in enumerate(all_results):
+            end = all_results[index+1].start() if index+1 < len(all_results) else len(output)
+            diagnostic = output[match.end():end]
+            name = match[3].strip()
+            if match[2] != "not ok" or re.search(r"#\s*(?:SKIP|TODO)\b", name, re.I):
+                continue
+            if re.search(r"subtestsFailed|type:\s*['\"]?suite", diagnostic):
+                continue
+            parents = {}
+            for declaration in subtests:
+                if declaration.start() >= match.start():
+                    break
+                indentation = len(declaration[1])
+                if indentation < len(match[1]):
+                    parents[indentation] = declaration[2].strip()
+                    parents = {level: text for level, text in parents.items() if level <= indentation}
+            qualified = " > ".join([parents[level] for level in sorted(parents)]+[name])
+            names.append([name, qualified])
+        failures = names
     elif re.search(r"Ran \d+ tests? in", output):
         total = int(re.search(r"Ran (\d+) tests? in", output)[1])
         summary = re.search(r"FAILED \(([^)]+)\)", output)
@@ -85,14 +108,24 @@ def red(args):
         expected = sum(int(x) for x in re.findall(r"(?:failures|errors)=(\d+)", summary[1])) if summary else 0
         if not summary or len(headers) != expected:
             return invalid("invalid_record", ["unittest counters do not match failure headers"])
-        failures = [[method, cls+"."+method if cls and not cls.endswith(method) else cls] for _, method, cls in headers]
+        failures = [list(item) for item in dict.fromkeys((method, cls+"."+method if cls and not cls.endswith(method) else cls) for _, method, cls in headers)]
     elif "--- FAIL:" in output or re.search(r"(?m)^FAIL\s+\S+", output):
         packages = re.findall(r"(?m)^FAIL\s+(\S+)(?:\s+[\d.]+s)?\s*$", output)
         failed_names = re.findall(r"(?m)^\s*--- FAIL: (\S+) \(", output)
         if not packages:
             return invalid("invalid_record", ["Missing go package summary"])
         total = max(len(failed_names), 1)
-        failures = [[name, packages[0]+"."+name] for name in failed_names]
+        pending = []
+        for line in output.splitlines():
+            failed = re.match(r"\s*--- FAIL: (\S+) \(", line)
+            if failed:
+                pending.append(failed[1])
+            package = re.match(r"^FAIL\s+(\S+)(?:\s+[\d.]+s)?\s*$", line)
+            if package:
+                failures.extend([name, package[1]+"."+name] for name in pending)
+                pending = []
+        if pending:
+            return invalid("invalid_record", ["Missing package summary for failed tests"])
     elif re.search(r"Test run with \d+ tests?", output):
         total = int(re.search(r"Test run with (\d+) tests?", output)[1])
         results = re.findall(r'(?:Test "([^"]+)"|Test (\S+\(\))) (passed|failed|skipped|cancelled)', output)
