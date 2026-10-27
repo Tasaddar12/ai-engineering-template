@@ -74,6 +74,14 @@ def worker_delta(entry, target, head):
 
 
 def command(args, action):
+    if action in ("list", "health"):
+        return worktree_command(args, action)
+    from .sessions import shared_lock
+    with shared_lock():
+        return worktree_command(args, action)
+
+
+def worktree_command(args, action):
     if action == "list":
         items = list_worktrees()
         return {"worktrees": items, "count": len(items)}
