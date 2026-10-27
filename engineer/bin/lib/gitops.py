@@ -8,6 +8,8 @@ def commit_paths(message, files, removed=()):
         raise Failure("invalid-commit", "Commit requires a message and exact file paths", 2)
     base = root()
     paths = [safe_path(path).relative_to(base).as_posix() for path in [*files, *removed]]
+    if not config.lookup(config.load(), "commit_docs", True) and all(path.startswith(".planning/") for path in paths):
+        return {"committed": False, "reason": "commit_docs is false"}
     staged = run(["git", "diff", "--cached", "--name-only", "-z"], base).stdout.split("\0")
     # Inspect the prospective bytes before git add can replace an existing index
     # entry. Unrelated staged records remain safety inputs but never enter this
