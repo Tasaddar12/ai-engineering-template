@@ -1,4 +1,8 @@
-"""Report broken local Markdown links and literal @path includes."""
+"""Check navigable Markdown and canonical source @includes, not code examples.
+
+Literal reusable-source includes remain checked inside prompt examples. Scoped
+npm package names and adopting-project output paths are not reusable inputs.
+"""
 from pathlib import Path
 import re
 import sys
@@ -9,12 +13,35 @@ from common import files, main_guard, parser, read_text
 MARKDOWN = re.compile(r'!?\[[^\]\n]*\]\(\s*(<[^>]+>|[^\s)]+)(?:\s+["\'][^\n]*?["\'])?\s*\)')
 REFERENCE = re.compile(r'^\s*\[[^\]]+\]:\s*(<[^>]+>|\S+)', re.MULTILINE)
 INCLUDE = re.compile(r'(?<![\w/])@((?:~?/|\.{1,2}/)?[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.*{}$<>:-]+)+)')
+SOURCE_ROOTS = {"agents", "commands", "engineer", "skills", "docs", "hooks", "bin"}
+
+
+def navigation_text(text):
+    """Mask illustrative code while retaining offsets for actual navigation."""
+    result, fence = [], None
+    for line in text.splitlines(keepends=True):
+        marker = re.match(r'^\s{0,3}(`{3,}|~{3,})', line)
+        if fence is None and marker:
+            fence = marker[1]
+            result.append(re.sub(r'[^\r\n]', ' ', line))
+        elif fence is not None:
+            result.append(re.sub(r'[^\r\n]', ' ', line))
+            if marker and marker[1][0] == fence[0] and len(marker[1]) >= len(fence) and not line[marker.end():].strip():
+                fence = None
+        else:
+            result.append(line)
+    return re.sub(r'(`+)([^`\n]*?)\1', lambda m: ' ' * len(m[0]), ''.join(result))
 
 
 def targets(text):
     for pattern, include in ((MARKDOWN, False), (REFERENCE, False), (INCLUDE, True)):
-        for match in pattern.finditer(text):
+        # Canonical @includes inside authored prompt blocks remain real inputs;
+        # scoped npm names and illustrative project outputs are not includes.
+        scan = text if include else navigation_text(text)
+        for match in pattern.finditer(scan):
             target = match[1].strip("<>").rstrip(".,;:")
+            if include and not target.startswith(("/", "~/", "./", "../")) and target.split("/", 1)[0] not in SOURCE_ROOTS:
+                continue
             yield target, text.count("\n", 0, match.start()) + 1, include
 
 
@@ -30,8 +57,8 @@ def resolve_target(root, source, target, include=False):
     if name.startswith("/"):
         return False
     root = root.resolve()
-    candidates = [root / name] if include else [source.parent / name]
-    if name.split("/", 1)[0] in {"agents", "commands", "engineer", "skills", "docs", "hooks", "bin"}:
+    candidates = [root / name] if include and not name.startswith(("./", "../")) else [source.parent / name]
+    if name.split("/", 1)[0] in SOURCE_ROOTS:
         candidates.append(root / name)
     for candidate in candidates:
         resolved = candidate.resolve()

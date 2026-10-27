@@ -414,11 +414,11 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `scripts/overhaul/common.py` | local-only | 142 | 0 |
 | `scripts/overhaul/delete_batch.py` | local-only | 42 | 0 |
 | `scripts/overhaul/inventory.py` | local-only | 71 | 3 |
-| `scripts/overhaul/links.py` | local-only | 65 | 0 |
+| `scripts/overhaul/links.py` | local-only | 92 | 0 |
 | `scripts/overhaul/manifest.json` | local-only | 218 | 34 |
 | `scripts/overhaul/progress.py` | local-only | 38 | 0 |
 | `scripts/overhaul/rename.py` | local-only | 101 | 20 |
-| `scripts/overhaul/verbs.py` | local-only | 72 | 0 |
+| `scripts/overhaul/verbs.py` | local-only | 135 | 0 |
 | `skills/add-tests/SKILL.md` | local-only | 47 | 0 |
 | `skills/audit-fix/SKILL.md` | local-only | 38 | 0 |
 | `skills/audit-uat/SKILL.md` | local-only | 24 | 0 |

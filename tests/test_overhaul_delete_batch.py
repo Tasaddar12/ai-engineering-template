@@ -59,8 +59,25 @@ class DeleteBatchTests(unittest.TestCase):
             subprocess.run(["git", "init", "-q", directory], check=True)
             (root / "remove.md").write_text("copied upstream\n", encoding="utf-8")
             subprocess.run(["git", "-C", directory, "add", "remove.md"], check=True)
+            subprocess.run(["git", "-C", directory, "-c", "user.name=Overhaul Test", "-c", "user.email=test@example.invalid", "commit", "-q", "-m", "Copied upstream baseline"], check=True)
             self.assertEqual(tool.delete_paths(root, ["remove.md"]), 0)
             self.assertTrue((root / "remove.md").exists())
             self.assertEqual(tool.delete_paths(root, ["remove.md"], verify=True), 1)
             self.assertEqual(tool.delete_paths(root, ["remove.md"], apply=True), 0)
             self.assertEqual(tool.delete_paths(root, ["remove.md"], verify=True), 0)
+
+    def test_modified_and_newly_staged_content_is_preserved(self):
+        for staged in (False, True):
+            with self.subTest(staged=staged), tempfile.TemporaryDirectory() as directory, contextlib.redirect_stdout(io.StringIO()):
+                root = Path(directory)
+                subprocess.run(["git", "init", "-q", directory], check=True)
+                path = root / "remove.md"
+                path.write_text("committed\n", encoding="utf-8")
+                subprocess.run(["git", "-C", directory, "add", "remove.md"], check=True)
+                subprocess.run(["git", "-C", directory, "-c", "user.name=Overhaul Test", "-c", "user.email=test@example.invalid", "commit", "-q", "-m", "Baseline"], check=True)
+                path.write_text("unapproved modification\n", encoding="utf-8")
+                if staged:
+                    subprocess.run(["git", "-C", directory, "add", "remove.md"], check=True)
+                with self.assertRaises(subprocess.CalledProcessError):
+                    tool.delete_paths(root, ["remove.md"], apply=True)
+                self.assertEqual(path.read_text(encoding="utf-8"), "unapproved modification\n")
