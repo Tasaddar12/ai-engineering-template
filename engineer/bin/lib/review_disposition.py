@@ -268,6 +268,7 @@ def record(args):
         reports = [(path.name, read_regular(path, base)) for path in paths]
         result = reconcile(review, previous, reports)
         result.update({"advisory": True, "waiver": False, "path": str(target), "review_digest": digest,
+                       "review_present": review_path.is_file(),
                        "consumed_passes": [{"path": str(path), "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest()} for path, (_, text) in zip(paths, reports)]})
         if not result["rows"] and not result["unparsed"] and not target.exists():
             return {**result, "status": "skipped", "message": "No findings or prior ledger to reconcile."}
