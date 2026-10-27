@@ -2,7 +2,7 @@
 from pathlib import Path
 import json
 import re
-from . import config, records
+from . import config, models, records
 from .core import Failure, load_json, now, planning_lock, read, root, run, safe_path, slug, write_json
 from .text import split_frontmatter
 
@@ -134,6 +134,29 @@ def command(args, action):
 
 
 def isolation(args):
-    if run(["git", "rev-parse", "--is-inside-work-tree"], root(), check=False).returncode:
+    settings = config.load()
+    requested = args.get("force-isolation", config.lookup(settings, "workflow.isolation", "worktree"))
+    if requested not in ("worktree", "auto", "harness-worktree", "orchestrator-worktree"):
+        raise Failure("isolation-required", "Worker isolation cannot be disabled", requested=requested)
+    host = models.resolve_host()
+    # Claude exposes native Agent worktree isolation; Codex is pinned to an
+    # orchestrator-created checkout. Explicit incompatible requests fail closed.
+    native = host == "claude"
+    mode = "harness-worktree" if native and requested != "orchestrator-worktree" else "orchestrator-worktree"
+    if requested == "harness-worktree" and not native:
+        raise Failure("isolation-unavailable", "This host does not expose harness worktree isolation", host=host)
+    if run(["git", "rev-parse", "--is-inside-work-tree"], root(), check=False).stdout.strip() != "true":
         raise Failure("isolation-unavailable", "Git worktrees are required")
-    return "worktree"
+    if run(["git", "worktree", "list", "--porcelain"], root(), check=False).returncode:
+        raise Failure("isolation-unavailable", "Git worktree capability is unavailable")
+    directory = safe_path(config.lookup(settings, "worktree.directory", ".worktrees"))
+    if directory == root() or not directory.is_relative_to(root()):
+        raise Failure("unsafe-worktree-path", str(directory))
+    if run(["git", "check-ignore", "--quiet", "--", str(directory/"probe")], root(), check=False).returncode:
+        raise Failure("root-not-ignored", "Ignore the worker worktree root before dispatch")
+    return {"mode": mode, "isolation": mode, "host": host, "runtime": host, "requested": requested,
+            "harnessFlag": 'isolation="worktree"' if mode == "harness-worktree" else None,
+            "harness_arguments": {"isolation": "worktree"} if mode == "harness-worktree" else None,
+            "exec": None, "source": "config" if requested not in ("auto", "worktree") else "host",
+            "harness_worktree": mode == "harness-worktree", "worktree_root": str(directory),
+            "root_ignored": True, "phase": args.get("phase"), "plan": args.get("plan")}

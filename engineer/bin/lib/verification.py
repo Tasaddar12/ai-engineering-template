@@ -8,15 +8,22 @@ from .core import Failure, digest, load_json, now, planning_lock, read, root, ru
 from .text import join_frontmatter, split_frontmatter
 
 
-def resolve_file(value):
-    directory = records.phase_dir(value)
+def quick_dir(identifier):
+    matches = list((records.planning()/"quick").glob(str(identifier).split("-")[0].zfill(3)+"-*/QUICK.md"))
+    if len(matches) != 1:
+        raise Failure("quick-not-found", str(identifier))
+    return matches[0].parent
+
+
+def resolve_file(value=None, quick=None):
+    directory = quick_dir(quick) if quick is not None else records.phase_dir(value)
     matches = sorted(directory.glob("*-VERIFICATION.md"))
     return matches[0] if matches else directory/(directory.name.split("-")[0]+"-VERIFICATION.md")
 
 
 def status(args):
     value = args.arg(0, args.get("phase"))
-    path = resolve_file(value)
+    path = resolve_file(value, args.get("quick"))
     metadata, body = split_frontmatter(read(path))
     state = metadata.get("status", "not_started")
     phase = path.parent.name.split("-")[0]
@@ -28,9 +35,11 @@ def status(args):
             "next_action": action, "next_command": command}
 
 
-def phase_fingerprint(directory, extra=()):
-    report = resolve_file(directory)
+def phase_fingerprint(directory, extra=(), quick=None):
+    report = resolve_file(directory, quick)
     paths = list(directory.glob("*-PLAN.md"))+list(directory.glob("*-SUMMARY.md"))
+    if quick is not None:
+        paths.extend(directory.glob("QUICK.md"))
     covered = list(extra)
     for path in list(paths):
         metadata, _ = split_frontmatter(read(path))
@@ -42,15 +51,19 @@ def phase_fingerprint(directory, extra=()):
     return digest([p for p in paths if p != report], root())
 
 
-def current_evidence(value):
-    directory = records.phase_dir(value)
-    report = resolve_file(directory)
+def current_evidence(value=None, quick=None):
+    directory = quick_dir(quick) if quick is not None else records.phase_dir(value)
+    report = resolve_file(directory, quick)
     metadata, body = split_frontmatter(read(report))
     head = run(["git", "rev-parse", "HEAD"], root()).stdout.strip()
     recorded = metadata.get("fingerprint")
     covered = metadata.get("covered_files", [])
-    expected = phase_fingerprint(directory, covered)
+    expected = phase_fingerprint(directory, covered, quick)
     reasons = []
+    if quick is not None and str(metadata.get("quick")) != directory.name.split("-")[0]:
+        reasons.append("verification quick identity does not match the requested task")
+    if quick is not None and not isinstance(metadata.get("issue_refs"), list):
+        reasons.append("quick verification lacks explicit issue declarations")
     if metadata.get("status") != "passed":
         reasons.append("verification has not passed")
     if not recorded or recorded != expected:
@@ -76,17 +89,20 @@ def current_evidence(value):
 
 
 def fingerprint(args):
-    directory = records.phase_dir(args.arg(0, args.get("phase")))
-    report = resolve_file(directory)
+    quick = args.get("quick")
+    directory = quick_dir(quick) if quick is not None else records.phase_dir(args.arg(0, args.get("phase")))
+    report = resolve_file(directory, quick)
     covered = args.all("files") + args.all("covered-files")
-    value = phase_fingerprint(directory, covered)
+    value = phase_fingerprint(directory, covered, quick)
     with planning_lock():
         metadata, body = split_frontmatter(read(report))
         metadata["fingerprint"] = value
         metadata.setdefault("status", "not_started")
         metadata["covered_files"] = covered
         metadata["revision"] = run(["git", "rev-parse", "HEAD"], root()).stdout.strip()
-        metadata.setdefault("phase", directory.name.split("-")[0])
+        metadata.setdefault("quick" if quick is not None else "phase", directory.name.split("-")[0])
+        if quick is not None:
+            metadata.setdefault("issue_refs", [])
         write(report, join_frontmatter(metadata, body))
     return {"fingerprint": value, "path": str(report)}
 
@@ -125,6 +141,9 @@ def run_checks(args):
     if not isinstance(configured, list):
         raise Failure("invalid-checks", "verification.commands must be a list", 2)
     selected = args.all("checks")
+    names = {check.get("id", check.get("name", str(index+1))) for index, check in enumerate(configured) if isinstance(check, dict)}
+    if set(selected)-names:
+        raise Failure("unknown-check", "Requested checks are not configured", checks=sorted(set(selected)-names))
     revision = run(["git", "rev-parse", "HEAD"], root()).stdout.strip()
     receipts = records.planning()/"verification/receipts"
     results = []

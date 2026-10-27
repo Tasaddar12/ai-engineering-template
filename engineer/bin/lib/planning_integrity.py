@@ -11,6 +11,7 @@ MUTATIONS = {
     "phase.issue-declare", "phase.issue-preview", "phase.issue-publish", "phase.issue-update", "phase.reconcile-todos",
     "todo.issue-preview", "todo.issue-publish", "todo.issue-update", "handoff.write", "handoff.consume",
     "quick-batch.create", "quick-batch.update", "quick-batch.complete",
+    "phase.threat-preview", "phase.threat-publish",
 }
 
 

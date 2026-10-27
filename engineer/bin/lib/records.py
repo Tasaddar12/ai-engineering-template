@@ -86,7 +86,7 @@ def sync_roadmap():
     for phase in items:
         done = len(re.findall(r"(?m)^- \[x\]\s*\d", phase["body"]))
         total = len(re.findall(r"(?m)^- \[[ x]\]\s*\d", phase["body"]))
-        complete = bool(re.search(r"(?mi)^\*\*Status(?::\*\*|\*\*:)\s*Complete\s*$", phase["body"]))
+        complete = phase_completed(phase)
         status = "Complete" if complete else "In progress" if done else "Not started"
         identifier = phase["number"]
         overview.append(f"- [{'x' if complete else ' '}] **Phase {identifier}: {phase['name']}** - {phase['goal']}")
@@ -118,12 +118,19 @@ def roadmap_analyze(args=None):
         except Failure:
             info = {"plan_count": 0, "summary_count": 0}
         phase.update(info)
-        phase["complete"] = bool(re.search(r"(?mi)^\*\*Status(?::\*\*|\*\*:)\s*Complete\s*$", phase["body"]))
+        phase["complete"] = phase_completed(phase)
         complete += int(phase["complete"])
         phase.pop("start", None)
         phase.pop("end", None)
     return {"phases": items, "phase_count": len(items), "completed_phases": complete,
             "percent": round(100*complete/len(items)) if items else 0, "milestone": milestone_name()}
+
+
+def phase_completed(phase):
+    if re.search(r"(?mi)^\*\*Status(?::\*\*|\*\*:)\s*(?:Complete|Completed|Shipped)\s*$", phase["body"]):
+        return True
+    label = r"0*"+str(int(phase["number"].split(".")[0]))+(r"\."+phase["number"].split(".")[1] if "." in phase["number"] else "")
+    return bool(re.search(r"(?mi)^- \[x\]\s*(?:\*\*)?Phase\s+"+label+r":", read(planning()/"ROADMAP.md")))
 
 
 def milestone_name():
@@ -189,15 +196,11 @@ def phase_change(args, action):
             content = re.sub(r"(?m)^- \[[ x]\]\s*\*\*Phase\s+"+label+r":.*\n?", "", content)
             content = re.sub(r"(?m)^\|\s*"+label+r"\.\s*[^\n]+\n?", "", content)
             renamed = []
-            if "." not in phase["number"]:
+            if "." not in phase["number"] and not args.has("no-renumber"):
                 from . import numbering
                 removed = int(phase["number"])
                 renamed = numbering.records(root(), removed)
-                content = numbering.references(content, removed)
-                for record in ("REQUIREMENTS.md", "STATE.md"):
-                    record_path = planning()/record
-                    if record_path.exists():
-                        write(record_path, numbering.references(read(record_path), removed))
+                content = numbering.references(numbering.remove_dependency(content, removed), removed)
             write(path, content)
             sync_roadmap()
             return {"removed": True, "phase": phase["number"], "archive": str(archive), "renumbered": renamed}
@@ -242,8 +245,10 @@ def plan_index(args):
     for name in info["plans"]:
         metadata, body = split_frontmatter(read(Path(info["phase_dir"])/name))
         identifier = name[:-8]
+        summary_path = Path(info["phase_dir"])/name.replace("-PLAN.md", "-SUMMARY.md")
+        summary = split_frontmatter(read(summary_path))[0] if summary_path.is_file() else {}
         entry = {"id": identifier, "path": str(Path(info["phase_dir"])/name), **metadata,
-                 "complete": name.replace("-PLAN.md", "-SUMMARY.md") in info["summaries"]}
+                 "complete": summary.get("status") == "complete"}
         entries.append(entry)
         waves.setdefault(str(metadata.get("wave", 1)), []).append(identifier)
     return {**info, "plans": entries, "waves": waves, "incomplete_plans": [p["id"] for p in entries if not p["complete"]]}
@@ -324,6 +329,20 @@ def append_section(file, heading, line):
 
 
 def state_action(args, action):
+    if action == "save":
+        if args.pos or any(key not in ("raw", "json", "pick") for key in args.opts):
+            raise Failure("derived-state-only", "state.save synchronizes derived fields; it accepts no replacement content", 2)
+        path = planning()/"STATE.md"
+        if not path.is_file():
+            raise Failure("state-not-found", str(path))
+        with planning_lock():
+            metadata, body = split_frontmatter(read(path))
+            metadata["progress"] = derived_progress()
+            position = state_view().get("status")
+            if position:
+                metadata["status"] = position
+            write(path, join_frontmatter(metadata, body))
+        return {"synced": True, "progress": metadata["progress"], "path": str(path)}
     if action == "update":
         return patch_state({args.need(): args.need(1)})
     if action == "begin-phase":
@@ -337,7 +356,8 @@ def state_action(args, action):
         view = state_view()
         phase = str(view.get("phase", "")).split(" ", 1)[0]
         info = find(phase)
-        done = info["summary_count"]
+        from .core import Args
+        done = sum(item["complete"] for item in plan_index(Args([phase]))["plans"])
         total = info["plan_count"]
         return patch_state({"Plan": f"{min(done+1, total)} of {total}", "Status": "Phase complete" if total and done >= total else "In progress", "Progress": f"{round(100*done/total) if total else 0}%"})
     if action == "record-metric":
@@ -359,7 +379,7 @@ def state_action(args, action):
     if action == "add-decision":
         decision = args.arg(0, args.get("decision", ""))
         rationale = args.get("rationale", "")
-        result = append_section(planning()/"PROJECT.md", "## Key Decisions", f"| {decision} | {rationale} | Pending |")
+        result = append_section(planning()/"PROJECT.md", "## Key Decisions", f"| {decision} | {rationale} | {args.get('outcome', 'Pending')} |")
         append_section(planning()/"STATE.md", "### Decisions", "- "+decision)
         return result
     if action in sections:
@@ -377,6 +397,20 @@ def state_action(args, action):
             write(path, "".join(line for line in lines if line not in removed))
         return {"resolved": len(removed), "archive": str(archive)}
     raise Failure("unsupported-action", action, 2)
+
+
+def derived_progress():
+    from .core import Args
+    progress = roadmap_analyze()
+    completed = 0
+    for phase in progress["phases"]:
+        try:
+            completed += sum(item["complete"] for item in plan_index(Args([phase["number"]]))["plans"])
+        except Failure:
+            pass
+    return {"total_phases": progress["phase_count"], "completed_phases": progress["completed_phases"],
+            "total_plans": sum(p.get("plan_count", 0) for p in progress["phases"]),
+            "completed_plans": completed, "percent": progress["percent"]}
 
 
 def quick_create(description):

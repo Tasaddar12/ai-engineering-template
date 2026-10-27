@@ -13,9 +13,18 @@ def artifacts(directory):
 
 
 def handoff(args):
-    directory = records.phase_dir(args.need())
+    if args.has("quick"):
+        from .verification import quick_dir
+        directory = quick_dir(args.get("quick"))
+    else:
+        directory = records.phase_dir(args.need())
     plans = list(directory.glob("*-PLAN.md"))
     errors, findings = [], []
+    from .security_tracking import audit_plan_links
+    try:
+        errors.extend(audit_plan_links(directory))
+    except Failure as exc:
+        errors.append({"reason": exc.message})
     for plan in plans:
         summary = plan.with_name(plan.name.replace("-PLAN.md", "-SUMMARY.md"))
         metadata, body = split_frontmatter(read(summary))
@@ -60,9 +69,9 @@ def declare(args):
     return {"updated": True, "entries": entries}
 
 
-def audit_pr(phase, body):
+def audit_pr(phase, body, quick=None):
     from .core import Args
-    packet = handoff(Args([str(phase)]))
+    packet = handoff(Args(["--quick", str(quick)]) if quick is not None else Args([str(phase)]))
     if not packet["ready"]:
         raise Failure("phase-issues", "Phase findings are not reconciled", errors=packet["errors"])
     failures = []
@@ -71,6 +80,8 @@ def audit_pr(phase, body):
         if not url:
             continue
         relationship = item.get("relationship", "followup")
+        if relationship in ("closes", "close", "fixes", "resolving") and (item.get("state") not in ("resolved", "fixed") or not item.get("evidence")):
+            failures.append({"id": item["id"], "reason": "Unresolved, accepted or deferred findings cannot authorize issue closure"})
         if url not in body:
             failures.append({"id": item["id"], "reason": "Declared issue URL missing from PR body"})
         elif relationship == "followup" and re.search(r"(?im)\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+"+re.escape(url), body):

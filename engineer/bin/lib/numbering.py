@@ -16,6 +16,15 @@ def shift_identifier(value, removed):
     return current+match[2]
 
 
+def remove_dependency(content, removed):
+    def replace(match):
+        value = re.sub(r"(?i)(?<![\w.])(?:Phase\s+)?0*"+re.escape(str(removed))+r"(?![\d.])", "", match[2])
+        value = re.sub(r"^[\s,;]+|[\s,;]+$", "", value)
+        value = re.sub(r"\s*[,;]\s*[,;]\s*", ", ", value)
+        return match[1]+(value or "Nothing")
+    return re.sub(r"(?mi)^(\*\*Depends on(?::\*\*|\*\*:)\s*)([^\n]*)$", replace, content)
+
+
 def records(root, removed):
     directory = root/".planning/phases"
     renamed = []
@@ -36,14 +45,21 @@ def records(root, removed):
             metadata, body = split_frontmatter(content)
             if "phase" in metadata:
                 metadata["phase"] = shift_identifier(metadata["phase"], removed)
-            if isinstance(metadata.get("depends_on"), list):
-                metadata["depends_on"] = [shift_identifier(value, removed) for value in metadata["depends_on"]]
-            if metadata:
-                write(artifact, join_frontmatter(metadata, body))
+            write(artifact, references(remove_dependency(join_frontmatter(metadata, body) if metadata else body, removed), removed))
             new_name = shift_identifier(artifact.name, removed)
             if new_name != artifact.name:
                 artifact.rename(artifact.with_name(new_name))
         renamed.append({"from": old, "to": new})
+    # References can occur in an earlier phase, PROJECT narrative or a todo.
+    # Archives remain historical evidence and must retain their original names.
+    for artifact in (root/".planning").rglob("*.md"):
+        parts = artifact.relative_to(root/".planning").parts
+        if any(part in ("archive", "milestones") for part in parts) or (parts and parts[0] == "phases" and len(parts) > 1 and any(parts[1].startswith(item["to"]+"-") for item in renamed)):
+            continue
+        content = read(artifact)
+        updated = references(remove_dependency(content, removed), removed)
+        if updated != content:
+            write(artifact, updated)
     return renamed
 
 
@@ -51,7 +67,10 @@ def references(content, removed):
     # Explicit phase labels and plan IDs are owned identifiers. Narrative numbers
     # without these markers are preserved.
     content = re.sub(r"(?i)\bPhase\s+(\d+(?:\.\d+)?)", lambda m: "Phase "+shift_identifier(m[1], removed), content)
-    content = re.sub(r"(?m)^(\d+(?:\.\d+)?-\d+)", lambda m: shift_identifier(m[1], removed), content)
-    content = re.sub(r"(?m)^(- \[[ x]\]\s*)(\d+(?:\.\d+)?-\d+)", lambda m: m[1]+shift_identifier(m[2], removed), content)
+    content = re.sub(r"(?mi)^((?:\*\*)?Phase(?::\*\*|\*\*:|:)\s*)(\d+(?:\.\d+)?)", lambda m: m[1]+shift_identifier(m[2], removed), content)
     content = re.sub(r"(?m)^(\|\s*)(\d+)([.\s])", lambda m: m[1]+shift_identifier(m[2], removed)+m[3], content)
+    content = re.sub(r"(?<![\w.-])(\d+(?:\.\d+)?-\d+)(?=-[A-Z][A-Z-]*\.md|\b)", lambda m: shift_identifier(m[1], removed), content)
+    content = re.sub(r"(?<![\w.-])(\d+(?:\.\d+)?)(?=-(?:CONTEXT|RESEARCH|VERIFICATION|VALIDATION|UI-SPEC|SECURITY|REVIEW|UAT)\.md)", lambda m: shift_identifier(m[1], removed), content)
+    content = re.sub(r"(?<=phases/)(\d+(?:\.\d+)?)(?=-)", lambda m: shift_identifier(m[1], removed), content)
+    content = re.sub(r"(?m)^(\*\*Depends on(?::\*\*|\*\*:)\s*)(\d+(?:\.\d+)?)(?=\s|,|$)", lambda m: m[1]+shift_identifier(m[2], removed), content)
     return content

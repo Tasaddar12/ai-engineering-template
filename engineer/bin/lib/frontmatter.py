@@ -6,7 +6,7 @@ SCHEMAS = {
     "plan": {"phase": (str, int), "plan": (str, int), "type": str, "wave": int,
              "depends_on": list, "files_modified": list, "autonomous": bool, "must_haves": dict},
     "summary": {"phase": (str, int), "plan": (str, int), "status": str},
-    "verification": {"phase": (str, int), "status": str},
+    "verification": {"status": str},
 }
 
 
@@ -14,6 +14,8 @@ def errors(metadata, schema):
     if schema not in SCHEMAS:
         raise Failure("unknown-schema", schema, 2)
     result = []
+    if schema == "verification" and not any(isinstance(metadata.get(key), (str, int)) and not isinstance(metadata.get(key), bool) for key in ("phase", "quick")):
+        result.append("Verification requires a phase or quick identifier")
     for key, kind in SCHEMAS[schema].items():
         if key not in metadata:
             result.append(f"Missing field: {key}")

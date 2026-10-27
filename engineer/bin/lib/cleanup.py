@@ -2,13 +2,14 @@
 from pathlib import Path
 import hashlib
 import json
-from . import gitops, records, worktrees
-from .core import Failure, load_json, now, root, run, safe_path, write_json
+from . import config, gitops, records, worktrees
+from .core import Failure, load_json, now, planning_lock, root, run, safe_path, write_json
 
 
 def snapshot():
     items = []
     active = root()
+    allowed_root = safe_path(config.lookup(config.load(), "worktree.directory", ".worktrees"))
     owned = set()
     for manifest in (records.planning()/"worktrees").glob("*.json"):
         for entry in load_json(manifest, {}).get("workers", []):
@@ -19,7 +20,7 @@ def snapshot():
             owned.add((str(Path(entry["worktree"]).resolve()), entry["branch"]))
     for item in worktrees.list_worktrees():
         target = Path(item["path"]).resolve()
-        if target == active or not target.is_relative_to(active) or not target.is_relative_to(active/".worktrees"):
+        if target == active or not target.is_relative_to(active) or not target.is_relative_to(allowed_root):
             continue
         if item.get("locked") or not item.get("branch"):
             continue
@@ -37,7 +38,10 @@ def command(args, action):
     if action == "preview":
         entries = snapshot()
         token = hashlib.sha256(json.dumps(entries, sort_keys=True).encode()).hexdigest()
-        write_json(store/(token+".json"), {"entries": entries, "created": now()})
+        with planning_lock():
+            prior = load_json(store/(token+".json"))
+            if not prior or not prior.get("consumed"):
+                write_json(store/(token+".json"), {"entries": entries, "created": now()})
         return {"approval_token": token, "entries": entries, "count": len(entries)}
     if not args.has("confirm"):
         raise Failure("cleanup-not-approved", "Cleanup requires the exact preview token and --confirm")
@@ -48,6 +52,15 @@ def command(args, action):
     approved = load_json(path)
     if not approved or approved.get("consumed"):
         raise Failure("cleanup-preview-missing", "Create a fresh exact approval preview")
+    expected = hashlib.sha256(json.dumps(approved.get("entries"), sort_keys=True).encode()).hexdigest()
+    if expected != token:
+        raise Failure("cleanup-preview-corrupt", "Stored entries no longer match exact approval")
+    with planning_lock():
+        current = load_json(path)
+        if current != approved:
+            raise Failure("cleanup-preview-drift", "Approval changed before consumption")
+        approved.update({"consumed": True, "started": now(), "removed": []})
+        write_json(path, approved)
     removed = []
     for entry in approved["entries"]:
         # Recompute the eligible resources before every deletion; earlier removals
@@ -61,6 +74,8 @@ def command(args, action):
             raise Failure("cleanup-branch-drift", entry["branch"], removed=removed)
         run(["git", "branch", "-d", entry["branch"]], root())
         removed.append(entry)
+        approved["removed"] = removed
+        write_json(path, approved)
     approved.update({"consumed": True, "completed": now()})
     write_json(path, approved)
     return {"removed": removed, "count": len(removed)}
