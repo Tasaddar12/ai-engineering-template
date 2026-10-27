@@ -17,6 +17,7 @@ class ScopeChecks(RuntimeCase):
         result = self.cli("check.evaluation-scope", "--phase", "1", "--plan", "1")
         self.assertEqual([first], [c["sha"] for c in result["commits"]])
         self.assertEqual(["src/a.py"], result["files"])
+        self.assertEqual([first], [c["sha"] for c in self.cli("check.evaluation-scope", "--plan", "01-01")["commits"]])
         result = self.cli("check.evaluation-scope", "--phase", "1", "--pathspec", "src/b.py")
         self.assertEqual(0, result["count"])
         result = self.cli("check.evaluation-scope", "--phase", "1", "--max-commits", "1")
