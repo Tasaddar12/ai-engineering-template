@@ -69,7 +69,7 @@ Fail-closed is the invariant: an undeclared, unknown, or unresolvable declaratio
 ## Resolve the harness flag (harness-worktree only)
 
 The flag is descriptor data — never hardcode `isolation="worktree"`, which is Claude Code's
-literal and wrong on any other harness-worktree host (Cursor declares the same capability).
+literal.
 
 ```bash
 HARNESS_FLAG=""
@@ -107,7 +107,7 @@ dispatch.** This is not optional bookkeeping — it is what keeps the dispatch l
 `query dispatch-isolation` writes the mode it resolved into a run-scoped sentinel
 (`.gsd/dispatch-isolation-sentinel.json`) as an unconditional side effect, and the shipped
 `PreToolUse` isolation guards read that sentinel at the instant of the dispatch call
-(`hooks/gsd-agent-isolation-guard.js`, `hooks/gsd-cursor-subagent-start.js`, shared reader
+(`hooks/gsd-agent-isolation-guard.js`, shared reader
 `hooks/lib/isolation-sentinel.js`, #3045). Every degrade in this file is decided **in shell**,
 where the resolver cannot see it. Degrade without re-recording and the sentinel still asserts
 `harness-worktree` while the dispatch correctly omits the harness flag — the guard reads that
