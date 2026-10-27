@@ -18,6 +18,11 @@ def shell_words(command, windows=False):
     index = 0
     while index < len(command):
         char = command[index]
+        if windows and char == "`" and quote != "'":
+            # PowerShell escape expansion can change quoting and manufacture
+            # apparent path arguments. Require an argv payload or message file
+            # rather than guess at a prospective commit's selection.
+            raise ValueError("unsupported native shell escape; use explicit argv or --file")
         if not windows and char == "\\" and index + 1 < len(command) and command[index + 1] == "\n":
             index += 2
             continue

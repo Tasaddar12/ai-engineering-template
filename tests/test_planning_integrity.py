@@ -254,6 +254,21 @@ class IntegrityTests(unittest.TestCase):
             with self.subTest(index_control=command):
                 self.assertEqual(self.hook(command).returncode, 0)
 
+    @unittest.skipUnless(os.name == 'nt', 'Native PowerShell parsing contract')
+    def test_native_escaped_quotes_cannot_hide_an_all_tracked_commit(self):
+        self.write(RECORD, VALID)
+        self.git('add', RECORD)
+        self.git('commit', '-qm', 'tracked valid record')
+        self.head = self.git('rev-parse', 'HEAD')
+        self.write(RECORD, INVALID)
+        before = self.git('ls-files', '--stage')
+        command = 'git commit -am"fix `"issue 87`""'
+        result = self.hook(command)
+        self.assertEqual(2, result.returncode, result.stderr)
+        self.assertIn('unsupported native shell escape', result.stderr)
+        self.assertEqual(self.head, self.git('rev-parse', 'HEAD'))
+        self.assertEqual(before, self.git('ls-files', '--stage'))
+
     def test_bash_commit_comments_and_literal_hash_arguments(self):
         self.write(RECORD, INVALID)
         self.git('add', RECORD)
