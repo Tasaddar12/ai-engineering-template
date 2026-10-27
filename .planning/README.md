@@ -7,7 +7,7 @@ actual source, documentation and user intent.
 
 | Location | Stores | Owner |
 |---|---|---|
-| `PROJECT.md` | Purpose, users, success and boundaries | Human intent, recorded during onboarding; Key Decisions by `project.add-decision` |
+| `PROJECT.md` | Purpose, users, success and boundaries | Human intent, recorded during onboarding; Key Decisions by `state.add-decision` |
 | `REQUIREMENTS.md` | Identified desired outcomes and traceability | Prose by the orchestrator; the Traceability Status column by `requirements.*` |
 | `ROADMAP.md` | Phase goals, order, plan checklists, milestones and progress | Runtime `phase.*`, `roadmap.*` and `milestone.*` verbs |
 | `STATE.md` | Position, decisions, blockers and session continuity | Runtime `state.*` verbs; counters derived from ROADMAP.md. A bounded digest, not an archive |
