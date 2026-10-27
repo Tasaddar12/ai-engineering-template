@@ -332,10 +332,10 @@ passed as one shell argument. `--raw`, `--json`, and `--pick FIELD` are global.
 | `cleanup.preview` | none | approval_token/entries/count |
 | `cleanup.apply` | `--approval-token TOKEN --confirm` | removed/count; any resource drift fails |
 | `handoff.limits` | none | enabled/context_window/context_percent/context_tokens/threshold_tokens/binding |
-| `handoff.write` | `ID --reason TEXT [--remaining TEXT --completed TEXT --phase N --plan P --agent ID --role ROLE --next TEXT --blockers TEXT --notes TEXT --digest TEXT --continuation TEXT --scope TEXT --requested-fields TEXT]` | durable continuation record; supplied digest/continuation/scope fields roundtrip verbatim; reason optional on existing record |
+| `handoff.write` | `ID --reason TEXT [--remaining TEXT... --completed TEXT --findings TEXT... --files-read PATH... --phase N --plan P --summary PATH --artifact PATH --transcript FILE --agent ID --role ROLE --next TEXT --next-action TEXT --blockers TEXT --notes TEXT --digest TEXT --continuation TEXT --scope TEXT --requested-fields TEXT]` | durable continuation record; reason optional on existing record; named fields merge, list fields retain every value, transcript attribution accepts only contained user-assigned paths |
 | `handoff.list` | none | unconsumed handoffs/count |
 | `handoff.read` | `ID` | record and continuation text |
-| `handoff.consume` | `ID` | consumes record into handoffs/consumed |
+| `handoff.consume` | `ID` | `consumed, id, plan`; atomically preserves the consumed audit record and removes it from the pending queue; consumed IDs cannot be rewritten |
 | `codebase.record` | `MAP... [--paths PATH...]` or `--maps MAP...` | records map revision and paths |
 | `codebase.status` | none | map freshness, commit age and changed files |
 | `planning.integrity`, `planning.validate` | `[--files PATH... --strict]` | schema and cross-record valid/warnings/errors/checked; validate warns by default, strict explicitly fails |

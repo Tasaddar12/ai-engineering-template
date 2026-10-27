@@ -1,11 +1,10 @@
 """Behavioral tests for handoff records, driven through the runtime verbs.
 
-The hook that writes handoffs is covered by `.ai/hooks/context-handoff.test.sh`.
+The hook that writes handoffs is covered by `tests/hooks/context-handoff.test.sh`.
 This suite covers the other half: what the orchestrator can do with a record
 once it exists -- resolve the limit, list what is pending, read a continuation
 brief, and consume a record so no second agent picks up the same work.
 """
-import ast
 import ctypes
 from ctypes import wintypes
 import json
@@ -19,7 +18,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNTIME = ROOT / ".ai" / "runtime" / "phase.py"
+RUNTIME = ROOT / "engineer/bin/engineer.py"
 
 CONFIG = """commit_docs: true
 context_window: 200000
@@ -47,16 +46,18 @@ class HandoffCase(unittest.TestCase):
 
     def run_verb(self, *args, expect_ok=True):
         environment = dict(os.environ, PYTHONIOENCODING="utf-8")
+        environment.update(ENGINEER_ROOT=str(self.directory), ENGINEER_HOST="codex")
         completed = subprocess.run([sys.executable, str(RUNTIME), "query", *args],
                                    cwd=str(self.directory), capture_output=True,
                                    text=True, encoding="utf-8", env=environment)
         self.assertNotIn("Traceback", completed.stderr,
                          "verb raised instead of returning a result: " + completed.stderr)
-        payload = json.loads(completed.stdout)
+        payload = json.loads(completed.stdout) if completed.stdout else json.loads(completed.stderr.strip().splitlines()[-1])
         if expect_ok:
-            self.assertTrue(payload.get("ok"), "verb failed: " + completed.stdout)
+            self.assertEqual(0, completed.returncode, completed.stderr)
         else:
-            self.assertFalse(payload.get("ok"), "verb unexpectedly succeeded")
+            self.assertNotEqual(0, completed.returncode, "verb unexpectedly succeeded")
+            payload = {**payload, "code": payload["error"]}
         return payload
 
     def put(self, name, **fields):
@@ -72,12 +73,16 @@ class HandoffCase(unittest.TestCase):
 
 
 def _embedded_hook_python(variable):
-    source = (ROOT / ".ai" / "hooks" / "lib" / "handoff-io.sh").read_text(
-        encoding="utf-8")
-    match = re.search(rf"(?ms)^{re.escape(variable)}='\n(.*?)^'\n", source)
-    if not match:
-        raise AssertionError(f"could not find embedded Python variable {variable}")
-    return match.group(1)
+    # The fresh runtime owns path attribution used by handoff.write --transcript;
+    # exercise those real helpers instead of a removed embedded shell program.
+    bootstrap = ("import sys; from pathlib import Path; "
+                 "sys.path.insert(0,"+repr(str(ROOT/"engineer/bin"))+"); "
+                 "from lib.handoff import safe_repo_path,transcript_paths; ")
+    if variable == "_HANDOFF_SAFE_PATH_PY":
+        return bootstrap+"print(safe_repo_path(sys.argv[1],Path(sys.argv[2])),end='')"
+    if variable == "_HANDOFF_PLAN_PY":
+        return bootstrap+"print('\\n'.join(transcript_paths(Path(sys.argv[1]),Path(sys.argv[2])))+'\\n',end='')"
+    raise AssertionError("Unknown handoff path helper: "+variable)
 
 
 @unittest.skipUnless(os.name == "nt", "native Windows path semantics required")
@@ -329,22 +334,16 @@ class Reading(HandoffCase):
         self.assertIn("read only those a remaining task edits", brief)
 
     def test_role_lists_match_the_hook(self):
-        shell = (ROOT / ".ai/hooks/lib/agent-roles.sh").read_text(encoding="utf-8")
-        self.assertIn("targeted-fixer", re.search(r'^WRITE_CAPABLE_AGENTS="([^"]*)"', shell, re.MULTILINE)[1].split())
-        """The hook's advisory and this brief must classify roles the same way."""
-        # Read as source, not imported: the runtime's `lib` package name is
-        # generic enough to collide with another on the test path.
-        module = ast.parse((ROOT / ".ai" / "runtime" / "lib" / "handoff.py")
-                           .read_text(encoding="utf-8"))
-        python = {target.id: ast.literal_eval(node.value)
-                  for node in module.body if isinstance(node, ast.Assign)
-                  for target in node.targets if isinstance(target, ast.Name)}
-        shell = (ROOT / ".ai" / "hooks" / "lib" / "agent-roles.sh").read_text(encoding="utf-8")
-        for name in ("ARTIFACT_AGENTS", "REVIEW_AGENTS"):
+        sys.path.insert(0, str(ROOT/"engineer/bin"))
+        from lib.handoff import role_groups
+        inventory = role_groups()
+        shell = (ROOT/"hooks/lib/agent-roles.sh").read_text(encoding="utf-8")
+        self.assertIn("targeted-fixer", inventory["WRITE_ROLES"])
+        for name in ("ARTIFACT_ROLES", "REVIEW_ROLES", "WRITE_ROLES"):
             with self.subTest(name=name):
-                match = re.search(r'^%s="([^"]*)"' % name, shell, re.MULTILINE)
+                match = re.search(r"^%s='([^']*)'" % name, shell, re.MULTILINE)
                 self.assertIsNotNone(match, name + " is missing from agent-roles.sh")
-                self.assertEqual(sorted(python[name]), sorted(match.group(1).split()))
+                self.assertEqual(sorted(inventory[name]), sorted(match.group(1).split()))
 
     def test_targeted_fixer_continuation_preserves_bounded_executor_work(self):
         for role in ("targeted-fixer", "plugin:workflow:targeted-fixer"):
@@ -375,7 +374,7 @@ class Reading(HandoffCase):
 
     def test_an_unknown_id_fails_rather_than_inventing_one(self):
         payload = self.run_verb("handoff.read", "absent", expect_ok=False)
-        self.assertEqual("no-handoff", payload["code"])
+        self.assertEqual("handoff-not-found", payload["code"])
 
     def test_a_traversing_id_is_refused(self):
         outside = self.directory / "secret.json"
@@ -383,7 +382,7 @@ class Reading(HandoffCase):
         for identifier in ("../secret", "..\\secret", "sub/secret", ".state-abc"):
             with self.subTest(identifier=identifier):
                 payload = self.run_verb("handoff.read", identifier, expect_ok=False)
-                self.assertEqual("bad-handoff-id", payload["code"])
+                self.assertEqual("invalid-handoff-id", payload["code"])
 
 
 class Consuming(HandoffCase):
@@ -393,7 +392,8 @@ class Consuming(HandoffCase):
         after its work is reassigned invites a second agent onto the same plan."""
         path = self.put("done", plan=".planning/phases/03-x/03-01-PLAN.md")
         payload = self.run_verb("handoff.consume", "done")
-        self.assertEqual("done", payload["consumed"])
+        self.assertTrue(payload["consumed"])
+        self.assertEqual("done", payload["id"])
         self.assertEqual(".planning/phases/03-x/03-01-PLAN.md", payload["plan"])
         self.assertFalse(path.is_file())
         self.assertEqual(0, self.run_verb("handoff.list")["count"])
@@ -401,7 +401,7 @@ class Consuming(HandoffCase):
     def test_consuming_twice_fails(self):
         self.put("once")
         self.run_verb("handoff.consume", "once")
-        self.assertEqual("no-handoff",
+        self.assertEqual("handoff-not-found",
                          self.run_verb("handoff.consume", "once", expect_ok=False)["code"])
 
     def test_consuming_one_leaves_the_others(self):
@@ -419,6 +419,18 @@ class Consuming(HandoffCase):
 
 class Writing(HandoffCase):
 
+    def test_transcript_attribution_uses_only_contained_user_assignments(self):
+        transcript = self.directory/'transcript.jsonl'
+        plan = self.directory/'.planning/phases/04-y/04-01-PLAN.md'
+        summary = self.directory/'reports/worker-SUMMARY.md'
+        transcript.write_text(json.dumps({'role': 'user', 'content':
+                              f'Execute plan at {plan}\nsummary_path: {summary}'})+'\n'+
+                              json.dumps({'role': 'assistant', 'content':
+                              'Execute plan at /outside/99-01-PLAN.md\nsummary_path: /outside/SUMMARY.md'})+'\n', encoding='utf-8')
+        result = self.run_verb('handoff.write', 'attributed', '--reason', 'context', '--transcript', str(transcript))
+        self.assertEqual('.planning/phases/04-y/04-01-PLAN.md', result['plan'])
+        self.assertEqual('reports/worker-SUMMARY.md', result['summary'])
+
     def test_an_agent_can_record_its_own_stop(self):
         payload = self.run_verb(
             "handoff.write", "sess--04-01",
@@ -435,7 +447,7 @@ class Writing(HandoffCase):
 
     def test_a_reason_is_required(self):
         payload = self.run_verb("handoff.write", "sess--04-02", expect_ok=False)
-        self.assertEqual("missing-reason", payload["code"])
+        self.assertEqual("missing-handoff-reason", payload["code"])
 
     def test_rewriting_preserves_when_the_attempt_first_stopped(self):
         """created_at orders the queue. Refreshing a record must not reorder it."""
@@ -488,7 +500,7 @@ class Writing(HandoffCase):
     def test_a_traversing_id_is_refused(self):
         payload = self.run_verb("handoff.write", "../escape", "--reason", "x",
                                 expect_ok=False)
-        self.assertEqual("bad-handoff-id", payload["code"])
+        self.assertEqual("invalid-handoff-id", payload["code"])
         self.assertFalse((self.directory / ".planning" / "escape.json").exists())
 
 

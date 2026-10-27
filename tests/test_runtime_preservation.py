@@ -167,7 +167,7 @@ class HandoffAndFreshness(PreservationCase):
         packet = handoff.command(Args(["verifier-1"]), "read")
         self.assertEqual(continuation, packet["continuation"])
         self.assertEqual(digest, packet["digest"])
-        self.assertEqual("Read only src/a.py", packet["remaining"])
+        self.assertEqual(["Read only src/a.py"], packet["remaining"])
         handoff.command(Args(["verifier-1"]), "consume")
         with self.assertRaises(Failure):
             handoff.command(Args(["verifier-1"]), "consume")

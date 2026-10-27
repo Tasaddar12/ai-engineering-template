@@ -360,10 +360,11 @@ class IntegrityTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_review_cr04_unexpected_inspection_error_uses_native_denial_exit(self):
-        bootstrap = ('import importlib.util,sys; '
+        bootstrap = ('import importlib.util,sys,pathlib; '
+                     'sys.path.insert(0,str(pathlib.Path(sys.argv[1]).parent)); '
                      's=importlib.util.spec_from_file_location("review_hook",sys.argv[1]); '
                      'm=importlib.util.module_from_spec(s); s.loader.exec_module(m); '
-                     'm.inspect=lambda *args: (_ for _ in ()).throw(RuntimeError("injected inspection failure")); '
+                     'm.snapshot=lambda *args: (_ for _ in ()).throw(RuntimeError("injected inspection failure")); '
                      'sys.exit(m.main())')
         result = subprocess.run([sys.executable, '-c', bootstrap, str(HOOK)], cwd=self.root,
                                 input=json.dumps({'tool_name': 'exec_command', 'tool_input': {'cmd': 'git commit -m fixture'}}),
