@@ -23,8 +23,7 @@ Clarify phase requirements through structured Socratic questioning with quantita
 
 **How it works:**
 1. Load phase context (PROJECT.md, REQUIREMENTS.md, ROADMAP.md, STATE.md)
-2. Scout the codebase — understand current state before asking questions
-3. Run Socratic interview loop (up to 6 rounds, rotating perspectives)
+2.3. Run Socratic interview loop (up to 6 rounds, rotating perspectives)
 4. Score ambiguity across 4 weighted dimensions after each round
 5. Gate: ambiguity ≤ 0.20 AND all dimensions meet minimums → write SPEC.md
 6. Commit SPEC.md — discuss-phase picks it up automatically on next run
@@ -33,8 +32,8 @@ Clarify phase requirements through structured Socratic questioning with quantita
 </objective>
 
 <execution_context>
-@engineer/workflows/spec-phase.md
-@engineer/templates/spec.md
+@~/.claude/engineer/workflows/spec-phase.md
+@~/.claude/engineer/templates/spec.md
 </execution_context>
 
 <context>

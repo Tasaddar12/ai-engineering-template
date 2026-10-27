@@ -1,5 +1,0 @@
-name = "targeted-fixer"
-description = "Engineering targeted-fixer role"
-model = "gpt-6-luna"
-model_reasoning_effort = "high"
-developer_instructions = "Read and follow the complete method at agents/targeted-fixer.md."

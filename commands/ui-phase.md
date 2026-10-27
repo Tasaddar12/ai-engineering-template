@@ -26,8 +26,8 @@ Flow: Validate → Research UI → Verify UI-SPEC → Done
 </objective>
 
 <execution_context>
-@engineer/workflows/ui-phase.md
-@engineer/references/ui-brand.md
+@~/.claude/engineer/workflows/ui-phase.md
+@~/.claude/engineer/references/ui-brand.md
 </execution_context>
 
 <context>

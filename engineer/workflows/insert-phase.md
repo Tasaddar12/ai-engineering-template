@@ -3,8 +3,8 @@
 Insert urgent work after an existing phase while preserving the numbering and content of existing phases. The runtime allocates the inserted identifier and records its dependencies.
 </purpose>
 <required_reading>
-@engineer/RULES.md
-@engineer/references/template-contract.md
+@~/.claude/engineer/RULES.md
+@~/.claude/engineer/references/template-contract.md
 </required_reading>
 <process>
 <step name="parse_arguments">
