@@ -201,7 +201,7 @@ passed as one shell argument. `--raw`, `--json`, and `--pick FIELD` are global.
 | `project-instruction-file` | `[claude|codex]` | host instruction filename |
 | `generate-claude-md` | `[--output PATH]` | `written, path`; preserves unmanaged content |
 | `resolve-agent` | `ROLE [--host claude|codex]` | name/agent/model/effort/host/inherit/effort_inherit/model_source/effort_source/native_file; raw prints name; absent role fails |
-| `agents.list` | none | actual dispatchable role files and separately identified method_sources; code-fixer is method-only |
+| `agents.list` | none | actual dispatchable role files and separately identified method_sources |
 | `agent-skills` | `ROLE` | ready-to-inject `<agent_skills>` block |
 | `agent.classify-failure` | `-- RETURN_BODY...` | `kind, classification, retryable, wait_hint` |
 | `dispatch-isolation` | `[--phase N --plan P --force-isolation MODE]` | mode/isolation/host/runtime/requested/source/harnessFlag/harness_arguments/exec/worktree_root/root_ignored; raw prints exactly `harness-worktree` or `orchestrator-worktree`; unavailable Git/ignored-root isolation fails |
