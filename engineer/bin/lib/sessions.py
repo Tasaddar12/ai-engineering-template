@@ -45,8 +45,13 @@ def command(args, action):
     label = records.number(label) if kind == "phase" else slug(label)
     matching = [s for s in data["sessions"] if s["kind"] == kind and s["label"] == label and s.get("status") != "closed"]
     if matching:
+        if len(matching) != 1:
+            raise Failure("ambiguous-session", "Multiple open sessions have the same kind and label")
         entry = matching[0]
         if Path(entry["worktree"]).is_dir():
+            actual = run(["git", "branch", "--show-current"], Path(entry["worktree"])).stdout.strip()
+            if actual != entry["branch"]:
+                raise Failure("session-identity-drift", actual)
             return {**entry, "reused": True}
         raise Failure("missing-session-worktree", entry["worktree"])
     common = path.parent.parent
@@ -78,3 +83,28 @@ def command(args, action):
     data["sessions"].append(entry)
     write_json(path, data)
     return {**entry, "reused": False}
+
+
+def locate(args):
+    identifier = records.number(args.need())
+    data = load_json(store(), {"sessions": []})
+    matches = [entry for entry in data["sessions"] if entry.get("kind") == "phase" and entry.get("status") != "closed" and records.number(entry["label"]) == identifier]
+    if len(matches) > 1:
+        raise Failure("ambiguous-phase-session", identifier)
+    if matches:
+        entry = matches[0]
+        target = Path(entry["worktree"]).resolve()
+        if not target.is_dir():
+            raise Failure("missing-session-worktree", str(target))
+        actual = run(["git", "branch", "--show-current"], target).stdout.strip()
+        if actual != entry["branch"]:
+            raise Failure("session-identity-drift", actual)
+        candidates = list((target/".planning/phases").glob(identifier+"-*"))
+        if len(candidates) != 1:
+            raise Failure("phase-not-found", f"Phase session exists but its phase directory is absent or ambiguous: {identifier}")
+        return {"found": True, "source": "session", "padded_phase": identifier, "worktree": str(target), "branch": actual, "session": entry, "phase_dir": str(candidates[0])}
+    try:
+        directory = records.phase_dir(identifier)
+        return {"found": True, "source": "current", "padded_phase": identifier, "worktree": str(root()), "branch": run(["git", "branch", "--show-current"], root()).stdout.strip(), "phase_dir": str(directory), "session": None}
+    except Failure:
+        return {"found": False, "source": None, "padded_phase": identifier, "worktree": None, "session": None}

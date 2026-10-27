@@ -142,3 +142,27 @@ class IsolationSafety(RuntimeCase):
         (directory/"01-VERIFICATION.md").write_text('---\nphase: "01"\nstatus: passed\n---\nUnbound evidence\n', encoding="utf-8")
         self.cli("pr.merge", "worker", "--phase", "1", status=1, raw=True)
         self.cli("pr.merge", "worker", "--phase", "1", "--confirm", status=1, raw=True)
+
+
+class PlanningReviewSafety(RuntimeCase):
+    def test_repair_requires_fresh_exact_snapshot(self):
+        self.put(".planning/STATE.md", "# Project State\n\n## Current Position\n\nPhase: 01\n")
+        preview = self.cli("planning.review")
+        self.assertTrue(preview["repairable"])
+        self.cli("planning.repair", "--apply", "--expect", "stale", status=1, raw=True)
+        self.assertEqual(preview["snapshotDigest"], self.cli("planning.review")["snapshotDigest"])
+        self.assertTrue(self.cli("planning.repair", "--apply", "--expect", preview["snapshotDigest"])["applied"])
+        self.assertIn("## Session Continuity", (self.root/".planning/STATE.md").read_text())
+
+    def test_exact_archive_previews_recover_without_overwriting(self):
+        retired = self.put(".planning/todos/completed/old.md", "Retired completed record\n")
+        preview = self.cli("planning.archive", "--paths", retired)
+        self.assertTrue(retired.exists())
+        self.cli("planning.archive", "--paths", retired, "--expect", "stale", "--confirm", status=1, raw=True)
+        archived = self.cli("planning.archive", "--paths", retired, "--expect", preview["snapshotDigest"], "--confirm")
+        self.assertFalse(retired.exists())
+        self.assertEqual(1, self.cli("planning.archives")["count"])
+        recovery = self.cli("planning.archive-recover", archived["id"])
+        self.assertFalse(retired.exists())
+        self.cli("planning.archive-recover", archived["id"], "--expect", recovery["recoveryDigest"], "--confirm")
+        self.assertTrue(retired.exists())

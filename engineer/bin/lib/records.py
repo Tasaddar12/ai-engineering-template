@@ -77,6 +77,38 @@ def roadmap_phase(value):
     raise Failure("phase-not-found", f"Phase absent from roadmap: {value}")
 
 
+def sync_roadmap():
+    """Refresh only the canonical overview checklist and progress table."""
+    path = planning()/"ROADMAP.md"
+    text = read(path)
+    items = roadmap_phases()
+    overview, rows = [], []
+    for phase in items:
+        done = len(re.findall(r"(?m)^- \[x\]\s*\d", phase["body"]))
+        total = len(re.findall(r"(?m)^- \[[ x]\]\s*\d", phase["body"]))
+        complete = bool(re.search(r"(?mi)^\*\*Status(?::\*\*|\*\*:)\s*Complete\s*$", phase["body"]))
+        status = "Complete" if complete else "In progress" if done else "Not started"
+        identifier = phase["number"]
+        overview.append(f"- [{'x' if complete else ' '}] **Phase {identifier}: {phase['name']}** - {phase['goal']}")
+        rows.append(f"| {identifier}. {phase['name']} | {done}/{total} | {status} | {now()[:10] if complete else '-'} |")
+    existing = re.search(r"(?m)^- \[[ x]\]\s*\*\*Phase\s+\d[^\n]*(?:\n- \[[ x]\]\s*\*\*Phase\s+\d[^\n]*)*", text)
+    block = "\n".join(overview)
+    if existing:
+        text = text[:existing.start()]+block+text[existing.end():]
+    else:
+        heading = re.search(r"(?m)^## Phases\s*$", text)
+        if heading:
+            text = text[:heading.end()]+"\n\n"+block+text[heading.end():]
+    progress = re.search(r"(?m)^## Progress\s*$", text)
+    if progress:
+        tail = text[progress.end():]
+        table = "| Phase | Plans Complete | Status | Completed |\n|-------|----------------|--------|-----------|\n"+"\n".join(rows)
+        existing_table = re.search(r"(?m)^\| Phase \|[^\n]*(?:\n\|[^\n]*)*", tail)
+        tail = tail[:existing_table.start()]+table+tail[existing_table.end():] if existing_table else tail.rstrip()+"\n\n"+table+"\n"
+        text = text[:progress.end()]+tail
+    write(path, text)
+
+
 def roadmap_analyze(args=None):
     items = roadmap_phases()
     complete = 0
@@ -86,7 +118,7 @@ def roadmap_analyze(args=None):
         except Failure:
             info = {"plan_count": 0, "summary_count": 0}
         phase.update(info)
-        phase["complete"] = bool(info["plan_count"] and info["summary_count"] >= info["plan_count"])
+        phase["complete"] = bool(re.search(r"(?mi)^\*\*Status(?::\*\*|\*\*:)\s*Complete\s*$", phase["body"]))
         complete += int(phase["complete"])
         phase.pop("start", None)
         phase.pop("end", None)
@@ -138,6 +170,7 @@ def phase_change(args, action):
                 progress = re.search(r"(?m)^## Progress\s*$", text)
                 text = text[:progress.start()].rstrip()+"\n\n"+block+text[progress.start():] if progress else text.rstrip()+"\n\n"+block
             write(path, text)
+            sync_roadmap()
             return {"added": True, "phase": identifier, "phase_number": str(int(identifier.split('.')[0])) + ('.'+identifier.split('.')[1] if '.' in identifier else ''),
                     "padded": identifier, "slug": slug(description), "directory": str(directory)}
         phase = roadmap_phase(args.need())
@@ -166,6 +199,7 @@ def phase_change(args, action):
                     if record_path.exists():
                         write(record_path, numbering.references(read(record_path), removed))
             write(path, content)
+            sync_roadmap()
             return {"removed": True, "phase": phase["number"], "archive": str(archive), "renumbered": renamed}
         if action == "edit":
             if args.has("name"):
@@ -198,6 +232,7 @@ def phase_change(args, action):
             pattern = r"(?m)^\*\*Plans(?::\*\*|\*\*:).*?(?=\n(?:\*\*|#{1,3} )|\Z)"
             block = re.sub(pattern, lambda _: replacement+"\n", block, flags=re.S) if re.search(pattern, block, re.S) else block.rstrip()+"\n"+replacement+"\n\n"
         write(path, before+block+after)
+        sync_roadmap()
         return {"updated": True, "phase": phase["number"], "action": action}
 
 
@@ -237,14 +272,15 @@ def state_view(args=None):
     return fields
 
 
-def patch_state(changes):
+def patch_state(changes, heading="## Current Position"):
     path = planning()/"STATE.md"
     with planning_lock():
         text = read(path, "# Project State\n\n## Current Position\n\n")
-        match = re.search(r"(?m)^## Current Position\s*$", text)
+        pattern_heading = r"(?m)^"+re.escape(heading)+r"\s*$"
+        match = re.search(pattern_heading, text)
         if not match:
-            text += "\n## Current Position\n\n"
-            match = re.search(r"(?m)^## Current Position\s*$", text)
+            text += "\n"+heading+"\n\n"
+            match = re.search(pattern_heading, text)
         end = re.search(r"(?m)^## ", text[match.end():])
         limit = match.end()+end.start() if end else len(text)
         section = text[match.end():limit]
@@ -274,6 +310,15 @@ def append_section(file, heading, line):
             text = text.rstrip()+"\n\n"+heading+"\n\n"+line+"\n"
         else:
             text = text[:match.end()]+"\n"+line+text[match.end():]
+        if Path(file).name == "STATE.md" and heading in ("### Roadmap Evolution", "### Decisions"):
+            section = re.search(r"(?ms)^"+re.escape(heading)+r"\s*\n(.*?)(?=^##|\Z)", text)
+            bullets = re.findall(r"(?m)^- .+$", section[1]) if section else []
+            if len(bullets) > 5:
+                retired = bullets[5:]
+                archive = planning()/"archive/state-history.md"
+                write(archive, read(archive).rstrip()+"\n\n"+heading+"\n"+"\n".join(retired)+"\n")
+                for retired_line in retired:
+                    text = text.replace(retired_line+"\n", "", 1)
         write(file, text)
     return {"added": True}
 
@@ -284,7 +329,10 @@ def state_action(args, action):
     if action == "begin-phase":
         return patch_state({"Phase": args.need(), "Status": args.get("status", "Executing"), "Last Activity": now()})
     if action == "record-session":
-        return patch_state({"Stopped At": args.get("stopped-at", ""), "Resume File": args.get("resume-file", ""), "Status": args.get("status", "paused"), "Last Activity": now()})
+        result = patch_state({"Last session": now(), "Stopped at": args.get("stopped-at", ""), "Resume file": args.get("resume-file", "None")}, "## Session Continuity")
+        if args.has("status"):
+            patch_state({"Status": args.get("status")})
+        return result
     if action in ("advance-plan", "update-progress"):
         view = state_view()
         phase = str(view.get("phase", "")).split(" ", 1)[0]
@@ -294,6 +342,8 @@ def state_action(args, action):
         return patch_state({"Plan": f"{min(done+1, total)} of {total}", "Status": "Phase complete" if total and done >= total else "In progress", "Progress": f"{round(100*done/total) if total else 0}%"})
     if action == "record-metric":
         return append_section(planning()/"STATE.md", "## Performance Metrics", f"| {args.get('phase', '')} | {args.get('plan', '')} | {args.get('duration', '')} | {args.get('tasks', '')} | {args.get('files', '')} |")
+    if action == "add-deferred":
+        return append_section(planning()/"STATE.md", "## Deferred Items", f"| {args.need()} | {args.need(1)} | {args.get('status', 'Deferred')} | {now()[:10]} | {args.get('milestone', milestone_name() or '')} |")
     if action == "sync-todos":
         from .core import Args
         todos = todo(Args([]), "list")
@@ -309,7 +359,9 @@ def state_action(args, action):
     if action == "add-decision":
         decision = args.arg(0, args.get("decision", ""))
         rationale = args.get("rationale", "")
-        return append_section(planning()/"PROJECT.md", "## Key Decisions", f"| {decision} | {rationale} | Pending |")
+        result = append_section(planning()/"PROJECT.md", "## Key Decisions", f"| {decision} | {rationale} | Pending |")
+        append_section(planning()/"STATE.md", "### Decisions", "- "+decision)
+        return result
     if action in sections:
         return append_section(planning()/"STATE.md", sections[action], "- "+args.need())
     if action == "resolve-blocker":

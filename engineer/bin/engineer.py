@@ -12,6 +12,8 @@ from lib import plans, probes, quick_batch, records, scope, tdd, uat, verificati
 from lib import sessions, delivery, handoff, codebase
 from lib import issues, cleanup
 from lib import phase_issues
+from lib import planning_review
+from lib import requirements
 from lib.core import Args, Failure, pick, raw, root, slug
 
 IDENTITY = {"packageName": "engineer-runtime", "contract": "2.0"}
@@ -22,8 +24,8 @@ def registry():
         "runtime-identity": lambda a: {**IDENTITY, "host": models.resolve_host(), "namespace": str(models.NAMESPACE), "python": sys.version.split()[0]},
         "config-get": config.get, "config-set": config.set_value, "config-new-project": config.new_project,
         "generate-slug": lambda a: slug(a.need()), "project-instruction-file": models.instruction,
-        "resolve-model": lambda a: models.resolve(a.need(), "model"), "resolve-effort": lambda a: models.resolve(a.need(), "effort"),
-        "resolve-agent": lambda a: models.resolve_agent(a.need()), "agent-skills": models.agent_skills,
+        "resolve-model": lambda a: models.resolution(a, "model"), "resolve-effort": lambda a: models.resolution(a, "effort"),
+        "resolve-agent": lambda a: models.resolution(a, "agent"), "agent-skills": models.agent_skills,
         "agent.classify-failure": models.classify, "commit": gitops.commit, "git.base-branch": gitops.base_branch,
         "dispatch-isolation": worktrees.isolation, "dispatch-capacity": quick_batch.capacity,
         "find-phase": lambda a: records.find(a.need()), "phases.list": records.phase_list,
@@ -48,16 +50,20 @@ def registry():
         "spec.edge-probe": probes.edge, "spec.section": probes.section, "summary-extract": misc.summary_extract,
         "package-legitimacy": packages.check, "run-with-timeout": misc.timeout,
         "generate-claude-md": misc.instruction_file, "planning.validate": lambda a: misc.integrity(a, False),
-        "planning.integrity": lambda a: misc.integrity(a, True), "planning.archive": misc.archive,
+        "planning.integrity": lambda a: misc.integrity(a, True),
+        "planning.archive": lambda a: planning_review.archive(a) if a.has("paths") or a.has("path") else misc.archive(a),
+        "planning.review": planning_review.review, "planning.repair": planning_review.repair,
+        "planning.archives": planning_review.archives, "planning.archive-recover": planning_review.recover,
         "progress.bar": misc.progress_bar,
         "phase.handoff": phase_issues.handoff, "phase.issue-declare": phase_issues.declare,
+        "phase.locate": sessions.locate,
         "phase.reconcile-todos": phase_issues.reconcile_todos,
         "verification.current": lambda a: verification.current_evidence(a.need()),
     }
     for action in ("add", "insert", "edit", "remove", "complete"):
         verbs["phase."+action] = lambda a, action=action: records.phase_change(a, action)
     verbs["phase.complete"] = misc.complete_phase
-    for action in ("update", "begin-phase", "record-session", "add-roadmap-evolution", "add-decision", "add-blocker", "resolve-blocker", "advance-plan", "update-progress", "record-metric", "sync-todos"):
+    for action in ("update", "begin-phase", "record-session", "add-roadmap-evolution", "add-decision", "add-blocker", "resolve-blocker", "advance-plan", "update-progress", "record-metric", "sync-todos", "add-deferred"):
         verbs["state."+action] = lambda a, action=action: records.state_action(a, action)
     for action in ("get", "set", "validate"):
         verbs["frontmatter."+action] = lambda a, action=action: frontmatter.command(a, action)
@@ -69,11 +75,14 @@ def registry():
         verbs["todo."+action] = lambda a, action=action: records.todo(a, action)
     for action in ("mark-complete", "complete", "reopen"):
         verbs["requirements."+action] = lambda a, action=action: records.requirements(a, "complete" if action != "reopen" else "reopen")
+    for action in ("set-status", "close-phase", "outstanding"):
+        verbs["requirements."+action] = lambda a, action=action: requirements.command(a, action)
+    verbs["state.clear-blocker"] = lambda a: records.state_action(a, "resolve-blocker")
     for action in ("cleanup-entry", "complete", "create", "effective-concurrency", "filter-executed", "merge-eligible", "merge-routing", "parse-args", "resume", "spawn-plan", "update", "verification-routing"):
         verbs["quick-batch."+action] = lambda a, action=action: quick_batch.command(a, action)
-    for action in ("create", "record-agent", "list", "merge-wave", "cleanup-wave", "reap-orphans"):
+    for action in ("create", "record-agent", "list", "merge-wave", "cleanup-wave", "reap-orphans", "health"):
         verbs["worktree."+action] = lambda a, action=action: worktrees.command(a, action)
-    for action in ("create", "complete"):
+    for action in ("create", "complete", "list"):
         verbs["milestone."+action] = lambda a, action=action: misc.milestone(a, action)
     for action in ("open", "adopt", "status", "close"):
         verbs["session."+action] = lambda a, action=action: sessions.command(a, action)
@@ -115,8 +124,8 @@ def main(argv=None):
         name += "."+values.pop(0)
     args = Args(values)
     try:
-        if name in ("help", "--help", "-h"):
-            result = {"usage": "engineer_run query <verb>", "verbs": sorted([*VERBS, "help"])}
+        if name in ("help", "verbs", "--help", "-h"):
+            result = {"usage": "engineer_run query <verb>", "verbs": sorted([*VERBS, "help", "verbs"])}
         elif name not in VERBS:
             raise Failure("unknown-verb", f"Unknown runtime verb: {name}", 2)
         else:

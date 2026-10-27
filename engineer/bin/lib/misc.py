@@ -100,6 +100,7 @@ def roadmap_progress(args):
         if not count:
             raise Failure("plan-not-in-roadmap", identifier)
         write(path, content)
+        records.sync_roadmap()
     return {"updated": True, "plan": identifier}
 
 
@@ -147,6 +148,12 @@ def archive(args):
 
 
 def milestone(args, action):
+    if action == "list":
+        roadmap = read(records.planning()/"ROADMAP.md")
+        shipped = read(records.planning()/"MILESTONES.md")
+        versions = list(dict.fromkeys(re.findall(r"\bv\d+(?:\.\d+)+[^\n]*", roadmap+"\n"+shipped)))
+        entries = [{"name": name, "version": name.split()[0], "status": "shipped" if name in shipped else "active"} for name in versions]
+        return {"milestones": entries, "count": len(entries), "active": records.milestone_name()}
     name = args.need()
     if action == "create":
         with planning_lock():

@@ -10,6 +10,19 @@ import re
 from .core import Failure
 
 
+def _unique_mapping(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise Failure("invalid-yaml", f"Duplicate key: {key}", 2)
+        result[key] = value
+    return result
+
+
+def _json(text):
+    return json.loads(text, object_pairs_hook=_unique_mapping)
+
+
 def _split(text, delimiter=","):
     parts, start, depth, quote, escape = [], 0, 0, None, False
     for i, char in enumerate(text):
@@ -60,12 +73,12 @@ def scalar(text):
         raise Failure("unsafe-yaml", "YAML tags, anchors and aliases are unsupported", 2)
     if text.startswith(("[", "{")):
         try:
-            return json.loads(text)
+            return _json(text)
         except ValueError:
             pass
     if text.startswith('"'):
         try:
-            return json.loads(text)
+            return _json(text)
         except ValueError as exc:
             raise Failure("invalid-yaml", str(exc), 2) from exc
     if text.startswith("'"):
@@ -122,7 +135,7 @@ def yaml_load(content):
         return {}
     if stripped.startswith(("{", "[")):
         try:
-            return json.loads(stripped)
+            return _json(stripped)
         except ValueError:
             return scalar(stripped)
     lines = content.splitlines()

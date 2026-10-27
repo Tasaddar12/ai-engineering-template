@@ -33,6 +33,18 @@ def command(args, action):
         # Prune only stale Git administrative records, never live files/branches.
         result = run(["git", "worktree", "prune", "--verbose"], root())
         return {"pruned": result.stdout.splitlines(), "diagnostic": result.stderr}
+    if action == "health":
+        directory = str(config.lookup(config.load(), "worktree.directory", ".worktrees"))
+        ignored = run(["git", "check-ignore", "--quiet", "--", directory+"/probe"], root(), check=False).returncode == 0
+        return {"root_ignored": ignored, "warnings": [] if ignored else ["Ignore the worktree root before dispatching workers"]}
+    if action == "merge-wave":
+        branch = run(["git", "branch", "--show-current"], root()).stdout.strip()
+        if branch in config.lookup(config.load(), "git.protected_branches", ["main", "master"]):
+            raise Failure("protected-branch", "Integrate workers on an isolated session branch")
+        dirty = run(["git", "status", "--porcelain", "--untracked-files=all"], root()).stdout.splitlines()
+        meaningful = [line for line in dirty if not line[3:].startswith((".planning/worktrees/", ".planning/.engineer.lock"))]
+        if meaningful:
+            raise Failure("dirty-tree", "Commit integration checkout changes before merging workers", files=meaningful)
     phase = args.get("phase", "session")
     path = manifest(phase)
     with planning_lock():
@@ -51,6 +63,8 @@ def command(args, action):
             if action == "create":
                 if target.exists():
                     raise Failure("worktree-path-exists", str(target))
+                if run(["git", "check-ignore", "--quiet", "--", str(target)], root(), check=False).returncode:
+                    raise Failure("root-not-ignored", "Ignore the worker worktree root before dispatch")
                 run(["git", "worktree", "add", "-b", branch, str(target), revision], root())
             else:
                 actual = run(["git", "branch", "--show-current"], target).stdout.strip()
@@ -60,11 +74,14 @@ def command(args, action):
                      "files": args.all("files"), "deletions": args.all("deletions"), "created": now(), "merged": False}
             data["workers"].append(entry)
             write_json(path, data)
-            return entry
+            return {**entry, "worktree": entry["path"]}
         if action in ("merge-wave", "cleanup-wave"):
             results = []
             for entry in data["workers"]:
                 if entry.get("cleaned"):
+                    continue
+                if action == "cleanup-wave" and not entry.get("merged"):
+                    results.append({**entry, "preserved": True, "reason": "worker is not recorded as integrated"})
                     continue
                 target = Path(entry["path"]).resolve()
                 if not target.is_relative_to(root()) or target == root():
@@ -108,7 +125,11 @@ def command(args, action):
                     entry["cleaned"] = True
                 results.append(entry.copy())
                 write_json(path, data)
-            return {"workers": results, "action": action}
+            return {"workers": results, "action": action,
+                    "merged": [item for item in results if item.get("merged") and not item.get("preserved")],
+                    "removed": [item for item in results if item.get("cleaned")],
+                    "preserved": [item for item in results if item.get("preserved")],
+                    "wave_clean": all(not item.get("preserved") for item in results)}
     raise Failure("unknown-worktree-action", action, 2)
 
 

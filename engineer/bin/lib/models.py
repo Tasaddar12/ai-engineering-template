@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 import re
+import tomllib
 from . import config
 from .core import Failure, read, root
 from .text import split_frontmatter
@@ -32,18 +33,62 @@ def resolve_agent(name):
     return name
 
 
-def resolve(name, kind):
+def resolve(name, kind, host=None):
     role = resolve_agent(name)
+    host = host or resolve_host()
+    if host not in ("claude", "codex"):
+        raise Failure("bad-host", host)
     if role in ("scout", "targeted-fixer"):
-        if resolve_host() == "codex":
+        if host == "codex":
             return "high" if kind == "effort" else "gpt-6-luna"
         return "inherit" if kind == "effort" else "haiku"
+    if host == "codex":
+        native = native_file(role)
+        if native.is_file():
+            try:
+                settings = tomllib.loads(read(native))
+            except tomllib.TOMLDecodeError as exc:
+                raise Failure("invalid-native-agent", str(exc)) from exc
+            value = settings.get("model_reasoning_effort" if kind == "effort" else "model", "inherit")
+            if kind == "effort":
+                validate_effort(value)
+            return value
+        return "inherit"
     entry = config.lookup(config.load(), "agents."+role, {})
     if isinstance(entry, str):
         entry = {"model": entry}
     if kind == "effort":
-        return entry.get("effort", "inherit")
+        value = entry.get("effort", "inherit")
+        validate_effort(value)
+        return value
     return entry.get("model", "inherit")
+
+
+def native_file(role):
+    return NAMESPACE/"agents"/(role+".toml") if NAMESPACE.name == ".codex" else NAMESPACE/"bin/install-assets/codex-agents"/(role+".toml")
+
+
+def validate_effort(value):
+    if value not in ("inherit", "none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"):
+        raise Failure("bad-effort", str(value))
+
+
+def resolution(args, kind):
+    name = resolve_agent(args.need())
+    host = args.get("host", resolve_host())
+    model, effort = resolve(name, "model", host), resolve(name, "effort", host)
+    fixed = name in ("scout", "targeted-fixer")
+    native = native_file(name)
+    settings = config.lookup(config.load(), "agents."+name, {})
+    source = name if fixed else "native-codex" if host == "codex" and native.is_file() else "config" if host == "claude" and settings else "default"
+    if args.has("raw"):
+        return name if kind == "agent" else effort if kind == "effort" else model
+    if kind == "agent":
+        return {"name": name, "agent": name, "model": model, "effort": effort, "host": host,
+                "inherit": model == "inherit", "effort_inherit": effort == "inherit", "model_source": source,
+                "effort_source": source, "native_file": str(native) if host == "codex" else None}
+    value = effort if kind == "effort" else model
+    return {kind: value, "source": source, "inherit": value == "inherit", "host": host, "agent": name}
 
 
 def classify(args):

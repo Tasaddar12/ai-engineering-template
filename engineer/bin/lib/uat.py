@@ -52,9 +52,34 @@ def passed(args):
 
 
 def classify(args):
-    path = safe_path(args.need())
+    path = safe_path(args.arg(0, args.get("summary", "")))
     metadata, body = split_frontmatter(read(path))
     buckets = {"automated": [], "human": [], "not-testable": []}
+    structured = metadata.get("coverage")
+    if isinstance(structured, list):
+        automatic, present, errors = [], [], []
+        for index, item in enumerate(structured):
+            valid = isinstance(item, dict) and isinstance(item.get("description"), str) and isinstance(item.get("human_judgment"), bool) and isinstance(item.get("verification"), list)
+            if not valid:
+                errors.append({"index": index, "reason": "validation_failed"})
+                present.append({"description": str(item), "reason": "validation_failed"})
+                continue
+            checks = item["verification"]
+            complete = checks and all(isinstance(check, dict) and check.get("status") in ("pass", "passed") and check.get("kind") in ("unit", "integration", "e2e", "automated_ui") and check.get("ref") for check in checks)
+            if item["human_judgment"]:
+                reason = "human_judgment"
+            elif not checks:
+                reason = "no_verification"
+            elif not complete:
+                reason = "verification_not_passing"
+            else:
+                automatic.append(item)
+                continue
+            present.append({**item, "reason": reason})
+        buckets["automated"], buckets["human"] = automatic, present
+        return {"mode": "coverage", "total": len(structured), "all_auto_covered": not present,
+                "auto_passed": automatic, "present": present, "errors": errors, "coverage": buckets,
+                **buckets, "count": len(structured)}
     deliverables = metadata.get("deliverables", metadata.get("must_haves", {}).get("truths", []))
     for item in deliverables:
         text = str(item)
@@ -67,21 +92,23 @@ def classify(args):
         else:
             kind = "automated"
         buckets[kind].append(item)
-    return {"coverage": buckets, **buckets, "count": len(deliverables)}
+    return {"mode": "legacy", "total": len(deliverables), "all_auto_covered": False, "auto_passed": [],
+            "present": buckets["human"], "errors": [] if structured is None else [{"reason": "malformed_block"}],
+            "coverage": buckets, **buckets, "count": len(deliverables)}
 
 
 def checkpoint(args):
-    path = safe_path(args.need())
+    path = safe_path(args.arg(0, args.get("file", "")))
     pending = [item for item in items(path) if item["status"] == "pending"]
     if not pending:
-        return {"complete": True, "checkpoint": None}
+        return "UAT session complete." if args.has("raw") else {"complete": True, "checkpoint": None}
     item = pending[0]
-    return {"complete": False, "test": item,
-            "checkpoint": f"## Test {item['id']}: {item['name']}\n\n{item['body']}\n\nReply passed or describe the failure."}
+    rendered = f"## Test {item['id']}: {item['name']}\n\n{item['body']}\n\nReply passed or describe the failure."
+    return rendered if args.has("raw") else {"complete": False, "test": item, "checkpoint": rendered}
 
 
 def complete(args):
-    path = safe_path(args.need())
+    path = safe_path(args.arg(0, args.get("file", "")))
     pending = [item for item in items(path) if item["status"] == "pending"]
     if pending:
         raise Failure("uat-pending", "Cannot complete a session with pending tests", items=pending)
