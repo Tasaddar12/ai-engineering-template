@@ -146,6 +146,10 @@ The validator reads only that variant's fenced body under the File Template
 catalog. `issue.validate --variant NAME --body-file FILE` provides the same
 structural check for separately authorized provider operations. UAT retains
 explicit human acceptance fields and the template's step-table headers.
+The installed catalog must contain all five canonical variants. Literal fenced,
+indented, commented and raw HTML blocks cannot supply required headings, UAT
+tables or acceptance fields. UAT rows retain the four canonical columns and
+consecutive step numbers, and each human acceptance field appears exactly once.
 Preview and publication accept explicit `--existing-issue
 URL|NUMBER` or `--no-match` dispositions, bound into the token. Publication requires
 one after canonical-match review. Searches include open and closed issues,

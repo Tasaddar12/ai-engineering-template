@@ -210,7 +210,9 @@ class IssueProvider(PreservationCase):
 - Decision: pending
 - Evidence: pending
 """
-        template.write_text(read(template)+"\n### UAT\n\n```markdown\n"+body+"```\n", encoding="utf-8")
+        import re
+        content = re.sub(r"(?ms)(^### UAT\n\n```markdown\n).*?^```", lambda match: match[1]+body+"```", read(template))
+        template.write_text(content, encoding="utf-8")
         issues.validate("Delivered acceptance", body, "UAT")
         with self.assertRaises(Failure):
             issues.validate("Delivered acceptance", body.replace("PENDING HUMAN acceptance", "ACCEPTED"), "UAT")
@@ -251,12 +253,13 @@ fake
         self.namespace = self.root/"namespace"
         template = self.namespace/"engineer/templates/issue.md"
         template.parent.mkdir(parents=True)
-        template.write_text("## File Template\n\n### Bug\n\n```markdown\n## Problem\n\n## Solution\n```\n", encoding="utf-8")
+        template.write_text(read(Path(__file__).resolve().parents[1]/"engineer/templates/issue.md"), encoding="utf-8")
         namespace_patch = patch.object(models, "NAMESPACE", self.namespace)
         namespace_patch.start()
         self.addCleanup(namespace_patch.stop)
         self.todo = records.todo(Args(["Fix boundary", "--problem", "The boundary fails"]), "add")
-        self.body = self.put("body.md", "## Problem\n\nThe boundary fails\n\n## Solution\n\nCheck the boundary\n")
+        body = issues.file_template(template, "Bug").replace("[What is failing and why it matters.]", "The boundary fails.")
+        self.body = self.put("body.md", body)
         return [self.todo["path"], "--title", "Fix boundary", "--variant", "Bug", "--body-file", str(self.body)]
 
     def provider(self, args, check=True):
@@ -447,7 +450,7 @@ class CanonicalSecurityTracking(PreservationCase):
         namespace = self.root/"namespace"
         template = namespace/"engineer/templates/issue.md"
         template.parent.mkdir(parents=True)
-        template.write_text("## Security concern\n", encoding="utf-8")
+        template.write_text(read(Path(__file__).resolve().parents[1]/"engineer/templates/issue.md"), encoding="utf-8")
         namespace_patch = patch.object(models, "NAMESPACE", namespace)
         namespace_patch.start()
         self.addCleanup(namespace_patch.stop)

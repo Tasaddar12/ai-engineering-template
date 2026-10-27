@@ -56,25 +56,11 @@ def validate(title, body, variant):
     if not title.strip() or not body.strip():
         raise Failure("invalid-issue", "Issue title and body must be nonempty")
     template = models.NAMESPACE/"engineer/templates/issue.md"
-    if not template.is_file():
-        raise Failure("issue-template-missing", "Install engineer/templates/issue.md before publishing")
-    selected = variant_template(template, variant)
-    headings = re.findall(r"(?m)^##\s+(.+)$", selected)
-    actual = re.findall(r"(?m)^##\s+(.+)$", body)
-    if actual != headings:
-        raise Failure("invalid-issue", "Issue sections must match the selected variant's headings and order", expected=headings, actual=actual)
+    from . import issue_format
+    issue_format.validate(body, variant, template)
     if variant == "UAT":
-        normalized = re.sub(r"(?m)^- (?=(?:Status|Reviewer|Date|Decision|Evidence):)", "", body.replace("**", ""))
-        for field in ("Status", "Reviewer", "Date", "Decision", "Evidence"):
-            if not re.search(r"(?mi)^"+field+r":\s*\S", normalized):
-                raise Failure("invalid-uat-issue", "UAT requires explicit human acceptance fields or Pending", field=field)
-        headers = re.findall(r"(?m)^\|[^\n]+\|\s*\n\|[ |:-]+\|", selected)
-        for header in headers:
-            if header.splitlines()[0] not in body:
-                raise Failure("invalid-uat-issue", "Preserve the canonical UAT step table header")
-            table = re.search(r"(?m)^"+re.escape(header.splitlines()[0])+r"\s*\n\|[ |:-]+\|\s*\n(\|[^\n]+\|)", body)
-            if not table or all(re.fullmatch(r"[-: ]*", cell) for cell in table[1].strip("|").split("|")):
-                raise Failure("invalid-uat-issue", "UAT step table requires actual step rows or explicit Pending evidence")
+        normalized = "\n".join(line.strip() for line in issue_format.visible_lines(body)).replace("**", "")
+        normalized = re.sub(r"(?m)^- (?=(?:Status|Reviewer|Date|Decision|Evidence):)", "", normalized)
         if re.search(r"(?mi)^Status:\s*ACCEPTED\s*$", normalized):
             from .phase_issues import accepted_human
             if not accepted_human(normalized):
