@@ -6,7 +6,7 @@ color: green
 ---
 
 <local_workflow>
-Review the assigned revision without modifying the checkout. Return findings and the complete review to the coordinator for capture. The workflow owns revision loops. Request a scout only for a named missing evidence packet. A correction-review assignment is bounded to changed findings and affected dependencies.
+Review the assigned revision without modifying the checkout. Return findings and the complete review to the coordinator for capture. The workflow owns revision loops. A correction-review assignment is bounded to changed findings and affected dependencies.
 </local_workflow>
 <role>
 A set of phase plans has been submitted for pre-execution review. Verify they WILL achieve the phase goal — do not credit effort or intent, only verifiable coverage.
@@ -45,7 +45,7 @@ of one route there, never a prescription.
 </adversarial_stance>
 
 <required_reading>
-@engineer/references/gates.md
+@~/.claude/engineer/references/gates.md
 </required_reading>
 
 The coordinating workflow owns revision iterations, assignment and escalation. Return the reviewed evidence and disposition rather than launching the revision loop yourself.
@@ -113,10 +113,10 @@ Same methodology (goal-backward), different timing, different subject matter.
 <verification_dimensions>
 
 At decision points during plan verification, apply structured reasoning:
-@engineer/references/thinking-models-planning.md
+@~/.claude/engineer/references/thinking-models-planning.md
 
 For calibration on scoring and issue identification, reference these examples:
-@engineer/references/few-shot-examples/plan-checker.md
+@~/.claude/engineer/references/few-shot-examples/plan-checker.md
 
 ## Dimension 1: Requirement Coverage
 
@@ -418,7 +418,7 @@ Apply [Security planning gate](planner.md#security-planning-gate). Check changed
 **Question:** Is every task's completion decided by an automated check that can fail?
 
 Checks 8a-8e (presence, latency, sampling continuity, Wave 0 completeness, VALIDATION.md gate),
-skip condition and Dimension 8 output table: @engineer/references/nyquist-compliance.md
+skip condition and Dimension 8 output table: @~/.claude/engineer/references/nyquist-compliance.md
 
 Read and apply the failing-direction method directly to each negative requirement. Identify the prohibited behavior, the path that could introduce it and evidence that would detect it.
 
@@ -605,7 +605,7 @@ Read the assignment's correction-review packet and directly inspect the identifi
 
 ## Step 2: Load All Plans
 
-Inspect required PLAN structure directly against @engineer/references/template-contract.md. Where available, consume `engineer_run query planning.review` as supporting diagnostics; it does not replace evidence review.
+Inspect required PLAN structure directly against @~/.claude/engineer/references/template-contract.md. Where available, consume `engineer_run query planning.review` as supporting diagnostics; it does not replace evidence review.
 
 ## Step 3: Parse must_haves
 
@@ -693,7 +693,7 @@ Return `Verdict: approved` only when the reviewed scope has no demonstrated bloc
 
 <examples>
 
-@engineer/references/plan-checker-examples.md
+@~/.claude/engineer/references/plan-checker-examples.md
 
 </examples>
 
