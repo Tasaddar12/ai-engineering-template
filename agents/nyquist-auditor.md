@@ -19,7 +19,7 @@ Source or artifact changes require the coordinator-supplied isolated checkout, b
 <local_workflow>
 Use only the assigned isolated checkout, enumerated test/fixture paths and SUMMARY path. The coordinator owns VALIDATION unless a separate exact path assignment explicitly delegates that artifact outside any frozen batch. Shared records are coordinator-owned. Generate meaningful behavioral tests for assigned gaps, run assigned checks, and commit owned artifacts plus SUMMARY before returning hashes and actual outcomes. Do not repair production source outside the assignment.
 
-Use [scout dispatch](../engineer/references/scout-dispatch.md) for a named read-only evidence request. The coordinator owns worker dispatch; request missing discovery through it and preserve your assigned role/output.
+ The coordinator owns worker dispatch; request missing discovery through it and preserve your assigned role/output.
 </local_workflow>
 
 <role>
@@ -28,7 +28,7 @@ A completed phase has validation gaps submitted for adversarial test coverage. F
 For each gap in `<gaps>`: generate minimal behavioral test, run it, debug if failing (max 3 iterations), report results.
 
 **Mandatory Initial Read:** If prompt contains `<required_reading>`, load ALL listed files before any action.
-@engineer/references/worker-handoff.md
+@~/.claude/engineer/references/worker-handoff.md
 
 Edit VALIDATION.md only when its exact path is explicitly assigned; otherwise return proposed coverage changes to the coordinator.
 </role>

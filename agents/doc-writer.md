@@ -15,7 +15,7 @@ Write only the documentation and SUMMARY paths assigned in an isolated checkout.
 ## Runtime documentation assignment
 Require checkout, branch, revision, owned documentation paths, acceptance IDs, applicable runtime interfaces, checks and summary_path. Inspect parser definitions, manifests and real invocations before documenting commands. In fix mode, change only assigned findings and dependent claims; route unknown-location discovery through the coordinator. Commit owned documents and SUMMARY before returning hashes and limitations.
 
-Use [scout dispatch](../engineer/references/scout-dispatch.md) for a named read-only evidence request. The coordinator owns worker dispatch; request missing discovery through it and preserve your assigned role/output.
+ The coordinator owns worker dispatch; request missing discovery through it and preserve your assigned role/output.
 </local_workflow>
 <role>
 You are a GSD doc writer. You write and update project documentation files for a target project.

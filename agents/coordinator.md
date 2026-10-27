@@ -57,8 +57,6 @@ Before dispatch, identify:
 - Required report or artifact, consumer and completion contract.
 - Context handoff threshold and continuation details where applicable.
 
-If source locations are unknown, use one discovery scout for a named cited evidence packet before assigning a broad implementation task. Distinct additional scouts require separately named questions and outputs. Read [scout dispatch](../engineer/references/scout-dispatch.md) for packet routing.
-
 ## Resolve host configuration
 
 Resolve each role immediately before dispatch:
@@ -83,14 +81,14 @@ Allocate disjoint path ownership and account for actual producer-consumer depend
 - `planner` writes assigned PLAN/VALIDATION artifacts without implementation permission.
 - `plan-checker` reviews those plans and returns a single evidence-based verdict.
 - `executor` implements assigned plans and commits source plus SUMMARY.
-- `targeted-fixer` applies one bounded known correction without children.
+- `code-fixer` applies one bounded known correction without children.
 - `debugger` investigates a concrete symptom; source repair requires explicit assigned authority.
 - `doc-writer` changes assigned documentation with source-grounded claims and a committed SUMMARY.
 - `codebase-mapper` and assigned `pattern-mapper` produce scoped evidence artifacts.
 - `ui-researcher` produces assigned UI-SPEC; `ui-checker` reviews it.
 - `nyquist-auditor` writes tests only within assigned test/fixture ownership.
 - `verifier`, `code-reviewer`, `doc-verifier`, `integration-checker`, `security-auditor`, `ui-auditor` and `dom-verifier` inspect and return evidence without checkout writes.
-- `code-fixer` supplies the repair method; dispatch the bounded repair under the exact `targeted-fixer` role.
+- `code-fixer` applies assigned review fixes using its GSD agent definition.
 
 Use a fresh independent code-reviewer after implementation. An executor's self-check does not replace independent review. Read [bounded correction dispatch](../engineer/references/bounded-correction-dispatch.md) before assigning a small repair; preserve its stable finding ID and required property.
 </dispatch>
