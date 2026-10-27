@@ -3,20 +3,20 @@
 Verify the actual phase goal using a single frozen-revision read-only batch and canonical human acceptance evidence. Reconcile every independent result before deciding. Ready, passed work continues to authorized ship in this same session; preserve real blockers and existing caller lineage without asking the user to issue routine handoff commands.
 </purpose>
 <required_reading>
-@engineer/RULES.md
-@engineer/references/universal-anti-patterns.md
-@engineer/references/honest-verifier.md
-@engineer/references/verifier-evidence-gate.md
-@engineer/references/verification-evidence.md
-@engineer/references/prohibition-probe.md
-@engineer/references/edge-probe.md
-@engineer/references/specless-probe-fallback.md
-@engineer/references/git-workflow.md
-@engineer/workflows/secure-phase.md
-@engineer/workflows/validate-phase.md
+@~/.claude/engineer/RULES.md
+@~/.claude/engineer/references/universal-anti-patterns.md
+@~/.claude/engineer/references/honest-verifier.md
+@~/.claude/engineer/references/verifier-evidence-gate.md
+@~/.claude/engineer/references/verification-evidence.md
+@~/.claude/engineer/references/prohibition-probe.md
+@~/.claude/engineer/references/edge-probe.md
+@~/.claude/engineer/references/specless-probe-fallback.md
+@~/.claude/engineer/references/git-workflow.md
+@~/.claude/engineer/workflows/secure-phase.md
+@~/.claude/engineer/workflows/validate-phase.md
 </required_reading>
 <available_agent_types>
-Use verifier, integration-checker, doc-verifier, code-reviewer and policy-enabled security-auditor for independent read-only evidence; nyquist-auditor only for isolated write preflight before freezing; planner, executor, debugger and targeted-fixer for separately isolated gap work.
+Use verifier, integration-checker, doc-verifier, code-reviewer and policy-enabled security-auditor for independent read-only evidence; nyquist-auditor only for isolated write preflight before freezing; planner, executor, debugger and code-fixer for separately isolated gap work.
 </available_agent_types>
 <model_selection>
 Resolve every exact role's model and effort inline with engineer_run query resolve-model and resolve-effort. Omit each inherited value. Do not substitute an author for an independent reviewer or let a read-only specialist modify source or shared records.
@@ -208,7 +208,7 @@ The coordinator alone performs authorized canonical matching/preview/publication
 passed requires every required check/evidence item, complete current enabled security evidence with zero blocking threats and no required_dependencies_pending, no unresolved required threat under either policy, and real required human acceptance. human_needed remains a shipping blocker; report the concrete script and acceptance evidence needed without asking whether to ignore it. gaps_found routes in-scope defects to bounded isolated correction; independent out-of-scope findings remain in the report. INFO does not become a required correction. An unusable verdict is retried once with the missing contract named, then reported blocked.
 </step>
 <step name="plan_gap_closure">
-Use targeted-fixer for a known bounded correction; debugger for unknown causes; planner for a genuine missing plan. Resolve model/effort inline and require mandatory worktree isolation, exact owned source/deletion scope, fixed acceptance and a correction packet with finding IDs/revision/evidence. Planner returns committed gap plans, not a changed acceptance target. Execute authorized gap plans through engineer/workflows/execute-phase.md in this same session, then re-enter verification. Never create todos from gaps or turn a repair into new phase scope.
+Use code-fixer for a known bounded correction; debugger for unknown causes; planner for a genuine missing plan. Resolve model/effort inline and require mandatory worktree isolation, exact owned source/deletion scope, fixed acceptance and a correction packet with finding IDs/revision/evidence. Planner returns committed gap plans, not a changed acceptance target. Execute authorized gap plans through engineer/workflows/execute-phase.md in this same session, then re-enter verification. Never create todos from gaps or turn a repair into new phase scope.
 </step>
 <step name="bounded_reverification">
 Permit up to three verify→authorized correction→re-verify rounds. Every source edit invalidates the prior provisional verdict and requires a new frozen batch. A round cap is not a waiver: preserve remaining gaps as blockers and report them without another routine proceed/ignore menu. Do not run a fresh full-phase execution solely because a verifier session ended abnormally.

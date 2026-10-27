@@ -1,4 +1,4 @@
-@engineer/references/response-language-directive.md
+@~/.claude/engineer/references/response-language-directive.md
 <purpose>
 Batch several `/quick`-shaped tasks together (#3676, epic #3344, ADR-1239
 "Quick-batch binding"). ONE coordinator (this workflow) owns every shared
@@ -119,7 +119,7 @@ Parse `$INIT` for: `planner_model`, `executor_model`, `checker_model`, `verifier
 
 <!-- #2517 model-omit-on-inherit -->
 
-> **Model omission (#2517).** Every `Agent()` dispatch below (planner, researcher, plan-checker, executor, verifier) MUST omit the `model` parameter entirely when the value it would carry (`planner_model`, `checker_model`, `executor_model`, `verifier_model`, `researcher_model`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes, where the installer writes `resolve_model_ids:"omit"`. Omitting it inherits the orchestrator's model. See @engineer/references/model-profile-resolution.md.
+> **Model omission (#2517).** Every `Agent()` dispatch below (planner, researcher, plan-checker, executor, verifier) MUST omit the `model` parameter entirely when the value it would carry (`planner_model`, `checker_model`, `executor_model`, `verifier_model`, `researcher_model`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes, where the installer writes `resolve_model_ids:"omit"`. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```bash
 STATE_PATH="${quick_dir%/quick}/STATE.md"
@@ -149,7 +149,7 @@ CAPACITY=$(engineer_run query dispatch-capacity --raw 2>/dev/null || echo 1)
 ```
 
 **Resolve isolation now (row 6, 20-22).** Read
-@engineer/references/dispatch-isolation-gate.md and run its `Resolve
+@~/.claude/engineer/references/dispatch-isolation-gate.md and run its `Resolve
 ISOLATION`, `Single-agent dispatch sites`, and `Resolve the harness flag`
 blocks in order; they set `ISOLATION`/`HARNESS_FLAG` via `query
 dispatch-isolation`. `ISOLATION` gates every worktree decision below —
