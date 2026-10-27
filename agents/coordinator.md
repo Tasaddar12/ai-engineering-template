@@ -57,6 +57,7 @@ Before dispatch, identify:
 - Required report or artifact, consumer and completion contract.
 - Context handoff threshold and continuation details where applicable.
 
+
 ## Resolve host configuration
 
 Resolve each role immediately before dispatch:
