@@ -11,9 +11,9 @@ Discuss every phase before planning. Record only actual questions, presented opt
 
 
 <required_reading>
-@engineer/references/domain-probes.md
-@engineer/references/gate-prompts.md
-@engineer/references/universal-anti-patterns.md
+@~/.claude/engineer/references/domain-probes.md
+@~/.claude/engineer/references/gate-prompts.md
+@~/.claude/engineer/references/universal-anti-patterns.md
 </required_reading>
 
 <progressive_disclosure>
@@ -169,7 +169,7 @@ Run `engineer_run query todo.match-phase "${PHASE_NUMBER}"` and inspect actual e
 <step name="scout_codebase">
 Lightweight scan of existing code to inform gray area identification (~10% context).
 
-Read `@engineer/references/scout-codebase.md` — it contains the phase-type→map selection table, single-read rule, no-maps fallback, and `<codebase_context>` output schema. Then execute:
+Read `@~/.claude/engineer/references/scout-codebase.md` — it contains the phase-type→map selection table, single-read rule, no-maps fallback, and `<codebase_context>` output schema. Then execute:
 1. `ls .planning/codebase/*.md` to find existing maps
 2. Select 2–3 maps via the reference's table; or grep fallback if none exist
 3. Build internal `<codebase_context>` per the reference's output schema

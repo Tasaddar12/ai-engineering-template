@@ -24,8 +24,8 @@ Output: {phase_num}-UI-REVIEW.md
 </objective>
 
 <execution_context>
-@engineer/workflows/ui-review.md
-@engineer/references/ui-brand.md
+@~/.claude/engineer/workflows/ui-review.md
+@~/.claude/engineer/references/ui-brand.md
 </execution_context>
 
 <context>

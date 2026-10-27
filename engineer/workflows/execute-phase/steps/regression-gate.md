@@ -52,5 +52,5 @@ Phase {X} execution may have broken functionality from prior phases.
 
 ```
 
-Route an in-scope regression to a bounded isolated executor or targeted-fixer, using debugger for an unknown cause. Join and integrate the committed repair, then rerun invalidated checks on a new frozen revision. A fix that changes locked acceptance is a human-decision blocker; preserve dependent work and name the required decision in the closing report. Never continue verification by waiving the demonstrated regression.
+Route an in-scope regression to a bounded isolated executor or code-fixer, using debugger for an unknown cause. Join and integrate the committed repair, then rerun invalidated checks on a new frozen revision. A fix that changes locked acceptance is a human-decision blocker; preserve dependent work and name the required decision in the closing report. Never continue verification by waiving the demonstrated regression.
 </step>
