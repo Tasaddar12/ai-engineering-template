@@ -26,7 +26,7 @@ insert:
 > filtered plan was skipped because `ready: false` (#4624 cross-reference; #4628 scope)** — the wave
 > is WAITING on incomplete predecessors, not finished: report "Phase waiting:
 > {plan ids} await incomplete predecessors {unresolved_dependencies} —
-> dispatch the ready wave, then re-run." → exit. Do not fall through to the
+> blocked for a person: list the waiting plans and incomplete predecessors in the closing report." → exit. Do not fall through to the
 > completion states; nothing here is a completion state. (The ready plans
 > themselves were already dispatched this run — the executor wave loop
 > dispatches every ready plan of the earliest ready wave onward.)

@@ -13,7 +13,7 @@ silently mark the wrong threat.
 Report the full `threat_id_duplicates` list verbatim — each ID with its claiming plan files:
 
 ```
-### GSD ► THREAT ID DUPLICATES — EXECUTION BLOCKED (#4683)
+### ► THREAT ID DUPLICATES — EXECUTION BLOCKED (#4683)
 
 {for each {id, plans}: "{id} — claimed by {plans.join(', ')}"}
 
@@ -26,3 +26,5 @@ Do not offer to execute anyway. The only forward paths are renumbering the colli
 or (if a plan was superseded after the check) re-running init so the stale plan drops out of the
 scan — superseded plans never hold IDs against their replacements (#2349).
 </step>
+
+Renumbering must preserve canonical threat-tracker identities under engineer/references/git-workflow.md#canonical-threat-tracking. Never replace an existing linked identity merely to make a uniqueness check pass.

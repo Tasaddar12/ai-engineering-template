@@ -62,7 +62,7 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
-# Default-on; opt out with: gsd config-set workflow.agent_hint_routing false
+# Default-on; opt out with: engineer_run query config-set workflow.agent_hint_routing false
 AGENT_HINT_ROUTING=$(engineer_run query config-get workflow.agent_hint_routing --raw 2>/dev/null || echo "true")
 
 EXECUTOR_TYPE="executor"
@@ -73,12 +73,6 @@ if [ "${AGENT_HINT_ROUTING:-true}" != "false" ]; then
   fi
 fi
 
-# #1689 v1 routes only the Agent()-based dispatch. On the orchestrator-worktree
-# backend (process-spawn; no subagent_type) a resolved hint cannot be honored
-# yet — surface it so a set hint is never silently ignored.
-if [ "${ISOLATION:-}" = "orchestrator-worktree" ] && [ -n "${PLAN_HINT:-}" ]; then
-  echo "note: plan ${plan_id} agent_hint='${PLAN_HINT}' resolved, but orchestrator-worktree dispatch does not route subagent types in this release — using the default executor." >&2
-fi
 ```
 
 `engineer_run query resolve-agent` consults the **active runtime's agent directory**
@@ -87,32 +81,8 @@ fi
 closed to `executor` when the named agent does not resolve or on any error,
 so a missing or misspelled hint never blocks dispatch.
 
-## Scope
+## Checkpoint handling
 
-Routing applies to the `Agent()`-based dispatch (harness-worktree and sequential
-modes). The `orchestrator-worktree` isolation backend spawns executors via a
-separate process path that has no `subagent_type` and is not routed in this
-release.
+Resolve decisions within delegated discretion from approved context and evidence, record consequential outcomes with state.add-decision, and continue only authorized work. A real human decision blocks dependent work and is named in the closing report. Never infer approval from an unattended mode. Confirm worker stop and continue a handoff only in a fresh isolated checkout.
 
-## Checkpoint gate rule (#3370)
-
-Loaded with the routing resolution so the orchestrator reads it immediately
-before composing each dispatch prompt, in every isolation mode.
-
-On `checkpoint:human-verify` / `checkpoint:decision` tasks, `gate="blocking"`
-(the default) is auto-approvable in auto-mode — that is the executor's own
-`<checkpoint_protocol>` (`agents/executor.md`), and `checkpoints.md` (the
-full gate table) is embedded in the dispatch `<execution_context>` verbatim.
-Only `gate="blocking-human"` always surfaces to a human, regardless of
-auto-mode. An unmet `<precondition>` checkpoint (executor step 0, `Blocked by:
-Precondition not met` — unmet `user_setup` step, missing env var, absent
-prior-phase artifact) reports `blocking-human` and therefore always surfaces
-to a human, in every mode (#3210): the missing prerequisite is a fact only a
-human can establish, not a verification step to rubber-stamp.
-
-When composing the `Agent()` prompt, do NOT add text refusing or overriding
-auto-approval for a `blocking` gate. Orchestrator-composed instructions that contradict the
-executor's protocol win the executor's attention, stall autonomous runs at the
-checkpoint, and defeat `_auto_chain_active`/auto-advance for the common case.
-Executor-side gate semantics are already complete; compose nothing about gates
-beyond what the template already embeds.
+Resolve the routed EXECUTOR_TYPE model and effort inline with engineer_run query resolve-model and resolve-effort. Omit inherit fields. Both isolation modes use native Agent dispatch and honor the same routed role.

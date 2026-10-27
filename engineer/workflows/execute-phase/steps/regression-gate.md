@@ -27,17 +27,10 @@ Write all unique test file paths to the handoff file, one path per line (#4915).
 `regression-gate-run.md` — the file is the hand-off. Replace the example lines with the real paths;
 write none when no test file was found:
 
-```bash
-# gsd-handoff:begin regression-files-write
-_GSD_HANDOFF="$( { git rev-parse --absolute-git-dir 2>/dev/null || echo "${TMPDIR:-/tmp}/gsd-$(pwd | cksum | cut -d' ' -f1)"; } )/handoff"; mkdir -p "$_GSD_HANDOFF"
-cat > "$_GSD_HANDOFF/regression-files" <<'GSD_REGRESSION_FILES'
-tests/test_example_one.py
-tests/test_example_two.py
-GSD_REGRESSION_FILES
-# gsd-handoff:end regression-files-write
-```
+Record the complete discovered prior-phase test-file list in the evidence packet passed to the configured check runner. Preserve origin phase IDs; do not use a mutable shared handoff file.
 
-**Step 3: Run regression tests (if any found)** — Read and execute `engineer/workflows/execute-phase/steps/regression-gate-run.md`. It resolves the project test command, normalizes it to a one-shot form (defeating vitest/jest watch mode via the shared `normalize-test-command` helper), runs it under `workflow.test_gate_timeout`, and aborts on timeout with a watch-mode hint (#1857). On `REGRESSION GATE ABORTED` (exit 124), HALT — do not proceed to verification.
+
+**Step 3: Run configured regression coverage** — Run `engineer_run query verification.run-checks "${PHASE_NUMBER}"` from the integrated phase session when execution is authorized. Configured checks include prior-phase suites; reuse only current passing input-bound receipts. A timeout or unavailable required runner halts dependent verification and preserves the complete diagnostic output. If execution is deferred by the user, report the required coverage as pending rather than running it or claiming it passed.
 
 **Step 4: Report results**
 
@@ -57,11 +50,7 @@ Phase {X} execution may have broken functionality from prior phases.
 |-----------|-------|--------|--------|
 | {file} | {origin_phase} | FAILED | {first_failure_line} |
 
-Options:
-1. Fix regressions before verification (recommended)
-2. Continue to verification anyway (regressions will compound)
-3. Abort phase — roll back and re-plan
 ```
 
-If `TEXT_MODE` is true, present as a plain-text numbered list and ask the user to type their choice number. Otherwise, use AskUserQuestion to present the options.
+Route an in-scope regression to a bounded isolated executor or targeted-fixer, using debugger for an unknown cause. Join and integrate the committed repair, then rerun invalidated checks on a new frozen revision. A fix that changes locked acceptance is a human-decision blocker; preserve dependent work and name the required decision in the closing report. Never continue verification by waiving the demonstrated regression.
 </step>
