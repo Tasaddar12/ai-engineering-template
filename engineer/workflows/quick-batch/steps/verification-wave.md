@@ -2,7 +2,7 @@
 
 Skip this step entirely if NOT `$VALIDATE_MODE`.
 
-For every item merged in Step 7 (status still `pending`, a real `commit` was
+For every item merged in Step 7 (status `merged`, a real `commit` was
 recorded by the merge) that has not yet been verified:
 
 Display banner:
@@ -35,7 +35,7 @@ DATA_END
 
 ${AGENT_SKILLS_VERIFIER}
 
-Check must_haves against the actual codebase. Create VERIFICATION.md at ${ITEM_DIR}/${quick_id}-VERIFICATION.md.",
+Check must_haves against the actual codebase. Return the complete canonical quick verification report for coordinator persistence at ${ITEM_DIR}/${quick_id}-VERIFICATION.md. Include quick, status, revision, covered_files, fingerprint, v4 covered_digest and explicit issue_refs. Resolve-file/fingerprint/current use --quick ${quick_id}; never fabricate a phase. Run only checks the user permits; pending checks prevent passed. Preserve the complete planned threat checklist and actual human-UAT policy; manual acceptance never auto-passes.",
   subagent_type="verifier",
   model="{verifier_model}",
   description="Verify ${quick_id}: ${description}"
@@ -47,50 +47,9 @@ Check must_haves against the actual codebase. Create VERIFICATION.md at ${ITEM_D
 Read status via the SAME canonical, total query `/quick` uses (never
 re-derive the status vocabulary inline):
 ```bash
-_engineer_identity_ok() {
-  [ -f "$1" ] || return 1
-  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
-}
-_engineer_select() {
-  for _engineer_candidate do
-    if _engineer_identity_ok "$_engineer_candidate"; then
-      ENGINEER_RUN="$_engineer_candidate"
-      return 0
-    fi
-  done
-  return 1
-}
-if [ -n "${ENGINEER_RUN:-}" ]; then
-  _engineer_identity_ok "$ENGINEER_RUN" || {
-    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
-    exit 1
-  }
-else
-  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
-  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
-  _engineer_select \
-    "$_engineer_root/engineer/bin/engineer_run" \
-    "$_engineer_runtime_root/engineer/bin/engineer_run" \
-    "$_engineer_root/.claude/engineer/bin/engineer_run" \
-    "$_engineer_root/.codex/engineer/bin/engineer_run" \
-    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
-    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
-    "$_engineer_path_candidate" || {
-    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
-    exit 1
-  }
-fi
-export ENGINEER_RUN
-engineer_run() {
-  sh "$ENGINEER_RUN" "$@"
-}
-if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
-  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
-fi
+source engineer/workflows/_runtime-launcher.snippet.sh
 VERIFY_ERROR=""  # reset per item — a prior item's refusal must not leak into this one
-STATUS=$(engineer_run query verification.status "${ITEM_DIR}" --pick status) || VERIFY_ERROR=1
+STATUS=$(engineer_run query verification.status --quick "${quick_id}" --pick status) || VERIFY_ERROR=1
 ```
 
 If `VERIFY_ERROR` is set, the owner refused the item's report (#5118 — a report `status` outside
@@ -99,17 +58,17 @@ that error as its `failureReason` and skip the routing call below for it — nev
 as a verdict, and never drop the item silently.
 
 **Route via `quick-batch verification-routing`** (wraps
-`routeVerificationOutcome`, `src/quick-batch-dispatch.cts` — the single
+`routeVerificationOutcome`, `engineer/bin/lib/quick_batch.py` — the single
 source of truth for this routing, never re-derived inline):
 ```bash
-QB_VERIFY_ROUTE_JSON=$(engineer_run quick-batch verification-routing --status "$STATUS" --raw)
+QB_VERIFY_ROUTE_JSON=$(engineer_run query quick-batch.verification-routing --status "$STATUS" --raw)
 ```
 
-| `action` | Meaning | What this step does |
+| `route` | Meaning | What this step does |
 |---|---|---|
-| `complete` | `STATUS == "passed"` | Proceed to Step 9 for this item — `quick-batch complete` is called there. |
-| `human_needed` | Verifier flagged manual review | **Terminal for this item.** Do NOT call `quick-batch complete` — no STATE row is appended (row 30). Display the items needing manual check; continue with the rest of the batch. |
-| `fail` | `STATUS == "gaps_found"` (or `missing`/`stale`/`unparseable`/`phase_dir_not_found` — anything the query could not resolve to a real answer) | Mark the item `failed` with the routing's `failureReason`. NO automatic gap-fix retry (v1 exclusion), NO rollback of the already-merged commit (row 31/34). Continue with the rest of the batch. |
+| `merge` | `STATUS == "passed"` | Proceed to Step 9 for this item — `quick-batch complete` is called there. |
+| `human` | Verifier flagged manual review | **Terminal for this item.** Do NOT call `quick-batch complete` — no STATE row is appended (row 30). Display the items needing manual check; continue with the rest of the batch. |
+| `fix` / `block` | `STATUS == "gaps_found"` (or `missing`/`stale`/`unparseable`/`phase_dir_not_found` — anything the query could not resolve to a real answer) | Mark the item `failed` with the routing's `failureReason`. NO automatic gap-fix retry (v1 exclusion), NO rollback of the already-merged commit (row 31/34). Continue with the rest of the batch. |
 
 An item this step marks `human_needed` or `failed` is NOT reverted — its
 worktree was already removed by the successful merge in Step 7 (verification
@@ -118,3 +77,5 @@ never reaches this step because the item never merged).
 
 Continue to Step 9 once every merged item has been verified (or explicitly
 routed to `human_needed`/`failed`).
+
+Before accepting passed, persist and commit the full report, then require verification.current --quick ID current=true and compare verification.fingerprint --quick ID with the covered_files-bound report. A stale/missing report blocks only dependent readiness. The verifier is read-only; the coordinator persists its report. Resolve verifier model/effort inline before dispatch, omitting inherit. Human-needed results remain open with concrete required human action and options; source work is preserved.

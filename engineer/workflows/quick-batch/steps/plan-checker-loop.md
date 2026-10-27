@@ -118,13 +118,12 @@ frontmatter current with the revised plan. Return what changed.
 **If the planner returns `## REVISION_CONFLICT`:** a conflict is not resolvable by re-running the
 same loop, so it must not consume this item's retry budget. Do NOT increment `iteration_count`
 and do NOT re-spawn the checker yet. Present the conflict table and its alternatives to the user
-and ask which to take: adopt a named alternative / override the named constraint and apply the
-hint / amend the constraint itself. Every option resolves the conflict. Accepting the plan with
+Resolve an alternative within delegated discretion with evidence; if changing a locked constraint requires the human, record only this entry blocked with named alternatives and a recommendation. Never override acceptance silently. Every option resolves the conflict. Accepting the plan with
 the blocker still open is NOT offered here — the blocking `required_property` still fails, and
 that choice belongs to the iteration-exhaustion escalation below, unchanged.
 
 A quick-batch item has no REVIEWS.md and no phase, so `workflow.plan_review_convergence` has
-nothing to arbitrate over here; the user is the only route. Re-spawn the planner with the chosen
+nothing to arbitrate over here; a locked human decision blocks only this entry. Re-spawn the planner with the actually authorized
 resolution, then re-evaluate its return from the top of this handler — do not fall through to the
 checker spawn below. A second conflict is still a conflict, not a revised plan.
 
@@ -137,12 +136,8 @@ iteration-exhaustion escalation below rather than re-spawning further.
 again for this item, increment `iteration_count`.
 
 **At iteration >= 2 with issues remaining (or a stalled conflict, above):** do NOT block the whole batch.
-Display the remaining issues for this item and offer: 1) force-proceed with
-this item as-is, 2) mark this item `failed` (`failure_reason`: "plan-checker
-issues unresolved after 2 iterations") and continue with the rest of the
-batch — one item's unresolved plan-check does not block unrelated items (row
-33).
+Mark only this entry failed/blocked with the exact remaining findings and continue independent items. A loop cap is never approval and no force-proceed option waives required acceptance.
 
-Once every item in the layer has passed (or been force-proceeded/failed),
+Once every item in the layer has passed (or been blocked/failed),
 return control to `planner-wave.md` step 8 (persist depends_on/files_modified,
 recompute waves).

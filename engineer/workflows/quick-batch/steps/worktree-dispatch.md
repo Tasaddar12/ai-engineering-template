@@ -1,70 +1,11 @@
 **Step 6: Worktree create + executor dispatch**
 
-This is the batch's MUTATING wave — worktree create/executor dispatch/merge
-are the operations `isolation == "none"` caps to concurrency 1 (row 6),
-unlike planning/research above.
+This is the batch's mutating wave. Require the previously resolved mandatory worktree mode. A stale fork base fails its worker's branch check and preserves the checkout; never execute on the primary/shared checkout.
 
-**Auto-degrade on stale fork base (row 38, mirrors `/quick`'s own #1941
-guard):**
+**Effective concurrency:** runtime capacity, actual host free slots, requested jobs and task count all bound fan-out.
 ```bash
-_engineer_identity_ok() {
-  [ -f "$1" ] || return 1
-  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
-}
-_engineer_select() {
-  for _engineer_candidate do
-    if _engineer_identity_ok "$_engineer_candidate"; then
-      ENGINEER_RUN="$_engineer_candidate"
-      return 0
-    fi
-  done
-  return 1
-}
-if [ -n "${ENGINEER_RUN:-}" ]; then
-  _engineer_identity_ok "$ENGINEER_RUN" || {
-    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
-    exit 1
-  }
-else
-  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
-  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
-  _engineer_select \
-    "$_engineer_root/engineer/bin/engineer_run" \
-    "$_engineer_runtime_root/engineer/bin/engineer_run" \
-    "$_engineer_root/.claude/engineer/bin/engineer_run" \
-    "$_engineer_root/.codex/engineer/bin/engineer_run" \
-    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
-    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
-    "$_engineer_path_candidate" || {
-    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
-    exit 1
-  }
-fi
-export ENGINEER_RUN
-engineer_run() {
-  sh "$ENGINEER_RUN" "$@"
-}
-if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
-  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
-fi
-if [ "$ISOLATION" = "harness-worktree" ] && [ "${USE_WORKTREES:-true}" != "false" ]; then
-  _QB_SHOULD_DEGRADE=$(engineer_run query worktree.base-check --mode "$ISOLATION" --pick shouldDegrade 2>/dev/null || true)
-  if [ "$_QB_SHOULD_DEGRADE" = "true" ]; then
-    echo "⚠ [#1941] Worktree fork base diverged — auto-degrading quick-batch to sequential mode." >&2
-    USE_WORKTREES=false
-    ISOLATION=none
-  fi
-fi
-engineer_run query dispatch-isolation --raw --force-isolation "$ISOLATION" >/dev/null 2>&1 || true
-```
-
-**Effective concurrency for this MUTATING wave** (`mutating` forces
-`isolation == none` to 1 regardless of `--jobs`/capacity — row 6):
-```bash
-QB_EXEC_CONC_JSON=$(engineer_run quick-batch effective-concurrency --jobs "$JOBS" --task-count "$ITEM_COUNT" --capacity "$CAPACITY" --isolation "$ISOLATION" --mutating --raw)
-EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(String(j.concurrency))}catch{process.stdout.write("1")}})')
+QB_EXEC_CONC_JSON=$(engineer_run query quick-batch.effective-concurrency --jobs "$JOBS" --task-count "$ITEM_COUNT" --capacity "$CAPACITY" --isolation "$ISOLATION" --mutating --raw)
+EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | python -I -c "import json,sys; j=json.load(sys.stdin); print(str(j['concurrency']))")
 ```
 
 **Dispatch rounds.** Repeat until no item is eligible-and-not-yet-dispatched
@@ -73,46 +14,18 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.
 1. Re-derive eligibility (also reconciles crash-window/blocked-propagation —
    safe to call repeatedly, idempotent when nothing changed):
    ```bash
-   QB_ELIG_JSON=$(engineer_run quick-batch resume --batch "$BATCH_ID" --raw)
+   QB_ELIG_JSON=$(engineer_run query quick-batch.resume --batch "$BATCH_ID" --raw)
    ```
    Parse `eligible` (quick ids ready to execute — every dependency already
    `complete`) and refresh `$BATCH_MANIFEST_JSON` from its `manifest`.
 
-   **Crash-window guard (mirrors `planner-wave.md`'s PLAN.md-existence
-   check one layer earlier — #3677):** `quick-batch resume`'s `eligible` is
-   purely status/dependency-derived; it does NOT know an item already
-   finished executing. A coordinator crash between this step returning
-   (executor committed, `SUMMARY.md` written) and Step 7's merge leaves
-   `BATCH.json` at `pending` with no STATE.md row yet (that row is written
-   only in Step 9) — so on `--resume`, such an item still comes back
-   `eligible` here. Before computing `spawn-plan`, determine which eligible
-   items already have `${item_dir}/${quick_id}-SUMMARY.md` on disk (same
-   `item_dir` derivation via `generate-slug` every other step uses), then
-   let the PURE `quick-batch filter-executed` verb
-   (`filterAlreadyExecuted`, `src/quick-batch-dispatch.cts`) decide which
-   ids are actually safe to spawn — never re-derive that split inline:
-   ```bash
-   EXECUTED_IDS_JSON="[]" # JSON array of quick_ids whose SUMMARY.md already exists on disk this round
-   QB_FILTER_JSON=$(engineer_run quick-batch filter-executed --eligible "$ELIGIBLE_IDS_JSON" --executed "$EXECUTED_IDS_JSON" --raw)
-   ```
-   Parse `spawnEligible` (safe to spawn this round) and `alreadyExecuted`
-   (diagnostic only — report these as "already executed, routing to merge"
-   rather than dispatching them). Replace `$ELIGIBLE_IDS_JSON` with
-   `spawnEligible` before continuing to backpressure below.
-
-   NEVER re-dispatch it into a second worktree for any id `filter-executed`
-   returns in `alreadyExecuted`. It is not lost: Step 7's own mergeable-wave
-   criterion
-   (`engineer/workflows/quick-batch/steps/merge-wave.md` Step 1) already
-   picks up any `pending` item with an on-disk `SUMMARY.md` that isn't yet
-   merged, independent of this eligible/spawn list — dropping it here only
-   prevents the duplicate dispatch, it does not remove it from the batch.
+   **Crash-window guard (#3677):** inspect resume.evidence and resume.reconcile. A SUMMARY file merely suppresses duplicate dispatch; it is not proof of success. Require committed complete SUMMARY, source commits, matching branch/base, clean worker tree and host-confirmed stop before moving it to executed or merge. Unknown/active assignments keep their ownership and count against capacity. Reconcile the durable dispatchedWorktree/dispatchedBranch/dispatchedBase triple; do not guess from a slug or abandoned process. Use quick-batch.filter-executed on IDs with reconciled execution evidence. Preserve partial/failed results and continue only genuinely eligible independent entries.
 
 2. **Backpressure.** Not every eligible item necessarily spawns this round —
    cap fan-out at `$EXEC_CONCURRENCY` minus current in-flight count (row
    27/39):
    ```bash
-   QB_SPAWN_JSON=$(engineer_run quick-batch spawn-plan --eligible "$ELIGIBLE_IDS_JSON" --capacity "$EXEC_CONCURRENCY" --in-flight "$IN_FLIGHT_COUNT" --raw)
+   QB_SPAWN_JSON=$(engineer_run query quick-batch.spawn-plan --eligible "$ELIGIBLE_IDS_JSON" --capacity "$EXEC_CONCURRENCY" --in-flight "$IN_FLIGHT_COUNT" --raw)
    ```
    Parse `spawn` (dispatch these now) and `pending` (leave `pending` in
    `BATCH.json` — already the case, no write needed; NEVER mark these
@@ -125,8 +38,7 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.
    For each item in `spawn`, in order:
 
    ```bash
-   SLUG=$(engineer_run query generate-slug "$description" --raw)
-   ITEM_DIR="${quick_dir}/${quick_id}-${SLUG}"
+   # ITEM_DIR is this item's runtime-returned directory; never reconstruct it.
    ```
 
    **`isolation == "harness-worktree"`:** one `Agent()` per message,
@@ -154,8 +66,8 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.
    <constraints>
    - Execute all tasks in the plan; commit each task atomically
    - Create summary at: ${ITEM_DIR}/${quick_id}-SUMMARY.md with `status: complete` in frontmatter
-   - NEVER invoke /quick or any other GSD command — you are a leaf, not a coordinator
-   - NEVER write .planning/quick-batches/${BATCH_ID}/BATCH.json
+   - NEVER invoke /quick or any other workflow command — you are a leaf, not a coordinator
+   - NEVER write .planning/quick/batches/${BATCH_ID}.json
    - Do NOT update STATE.md or ROADMAP.md — the orchestrator owns those writes after every item in this dispatch round completes (ADR-1239 single-writer invariant)
    - Do NOT commit docs artifacts (SUMMARY.md, STATE.md, PLAN.md) — the orchestrator commits them at completion
    </constraints>
@@ -171,26 +83,18 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.
    file, initialized `{"worktrees":[]}` before the first round — same shape
    `/quick`'s own `QUICK_WORKTREE_MANIFEST` uses).
 
-   **`isolation == "orchestrator-worktree"`:** GSD creates the worktree
-   (`engineer_run query worktree.create --manifest "$QUICK_BATCH_WORKTREE_MANIFEST" --agent-id ... --path ... --branch ... --base ... --files "$PLAN_FILES" --deletions "$PLAN_DELETIONS"`) then
-   process-spawns the executor via `dispatch-isolation --json --cwd-target
-   --prompt`, exactly as `engineer/workflows/execute-phase/steps/executor-isolation-dispatch.md`'s
-   "orchestrator-worktree" section
-   describes — reuse that mechanism verbatim, substituting this item's
-   `${quick_id}`/`${ITEM_DIR}`/`${quick_id}-PLAN.md` for its
-   `{plan_number}`/`{phase_dir}`/`{plan_file}` placeholders.
+   **`isolation == "orchestrator-worktree"`:** coordinator calls `engineer_run query worktree.create "${quick_id}" --phase "batch-${BATCH_ID}-wave-${CUR_WAVE}" --base "${EXPECTED_BASE}" --files "${PLAN_FILES[@]}" --deletions "${PLAN_DELETIONS[@]}"`. Read returned path/branch/base, then dispatch the exact executor through the native Claude/Codex Agent with the full project_root_pin bound to that path. No process-spawn helper is required.
 
-   **`isolation == "none"`:** no worktree. Dispatch the executor inline on the
-   primary checkout (same prompt, minus the worktree-only framing), one item
-   at a time — `EXEC_CONCURRENCY` is already forced to 1 in this mode.
+   **Harness registration:** dispatch with literal isolation="worktree" and the complete branch-check guard bound to EXPECTED_BASE. Register actual host metadata through `worktree.record-agent "${quick_id}" --phase "batch-${BATCH_ID}-wave-${CUR_WAVE}" --branch "${WORKER_BRANCH}" --path "${WORKER_PATH}" --base "${EXPECTED_BASE}" --files "${PLAN_FILES[@]}" --deletions "${PLAN_DELETIONS[@]}"`. Missing metadata blocks integration; never register the coordinator branch.
 
    **Durable worktree-recovery persistence (#3677 — `harness-worktree`/
-   `orchestrator-worktree` only, skip for `none`):** immediately after
+   `orchestrator-worktree`):** immediately after
    recording `{agent_id, worktree_path, branch, expected_base}` into the
    EPHEMERAL `$QUICK_BATCH_WORKTREE_MANIFEST` above, ALSO persist the same
    triple durably onto this item in `BATCH.json`:
    ```bash
-   engineer_run quick-batch update --batch "$BATCH_ID" --updates '[{"quickId":"'"$quick_id"'","dispatchedWorktree":"'"$worktree_path"'","dispatchedBranch":"'"$branch"'","dispatchedBase":"'"$expected_base"'"}]'
+   # Build UPDATES_JSON with a JSON serializer from exact runtime metadata, never shell interpolation.
+   engineer_run query quick-batch.update --batch "$BATCH_ID" --updates "$UPDATES_JSON"
    ```
    The ephemeral manifest is a per-process `mktemp` file (same shape
    `/quick`'s own `QUICK_WORKTREE_MANIFEST` uses) — it does NOT survive
@@ -199,12 +103,10 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.
    for any item the crash-window guard above correctly did NOT re-dispatch
    in the current process.
 
-   > **ORCHESTRATOR RULE — CODEX RUNTIME**: after each `Agent()` call above, wait for it to return before starting the next worktree create.
+   > **ORCHESTRATOR RULE — CODEX RUNTIME**: serialize worktree creation and registration, while already-created workers run concurrently up to bounded capacity. After dispatch wait before touching owned paths or integration. A timeout is never confirmed stop.
 
-4. **After every item dispatched this round returns:** verify
-   `${ITEM_DIR}/${quick_id}-SUMMARY.md` exists. If missing, the item stays
-   `pending`/its worktree preserved for diagnosis rather than guessing
-   completion — do not proceed to merge for it this round.
+4. **After host-confirmed stop for every item in this round:** inspect the committed complete SUMMARY and source commits in the actual worker checkout. Missing, partial or uncommitted evidence leaves the entry blocked with ownership and worktree preserved. Do not reset it to pending, reassign paths or merge it. Persist workerState stopped/exited/interrupted only from real host confirmation, then status executed with the actual source commit. A file's presence alone never proves completion.
 
-Continue to Step 7 once every eligible item has been dispatched (across
-however many rounds backpressure required) and returned.
+Continue to Step 7 after the selected current wave joins; integrate it before recomputing later eligibility. Capacity-pending entries remain pending, never failed.
+
+Before dispatch commit coordinator-owned plans/quick records at the captured EXPECTED_BASE, validate exact files/deletions/resources and reject submodule intersections. Persist status executing plus the durable worker triple and planDigest as one quick-batch.update transaction; unknown workers retain ownership until a confirmed stop. Join every worker in the current wave, execute merge-wave, selected verification and completion for that wave, then recompute resume eligibility before the next wave. Do not queue dependent waves before predecessor integration.

@@ -8,55 +8,14 @@ re-parse a task list or re-run `quick-batch create` on resume (row 9/16 of
 the design's behavior table).
 
 ```bash
-_engineer_identity_ok() {
-  [ -f "$1" ] || return 1
-  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
-}
-_engineer_select() {
-  for _engineer_candidate do
-    if _engineer_identity_ok "$_engineer_candidate"; then
-      ENGINEER_RUN="$_engineer_candidate"
-      return 0
-    fi
-  done
-  return 1
-}
-if [ -n "${ENGINEER_RUN:-}" ]; then
-  _engineer_identity_ok "$ENGINEER_RUN" || {
-    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
-    exit 1
-  }
-else
-  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
-  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
-  _engineer_select \
-    "$_engineer_root/engineer/bin/engineer_run" \
-    "$_engineer_runtime_root/engineer/bin/engineer_run" \
-    "$_engineer_root/.claude/engineer/bin/engineer_run" \
-    "$_engineer_root/.codex/engineer/bin/engineer_run" \
-    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
-    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
-    "$_engineer_path_candidate" || {
-    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
-    exit 1
-  }
-fi
-export ENGINEER_RUN
-engineer_run() {
-  sh "$ENGINEER_RUN" "$@"
-}
-if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
-  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
-fi
+source engineer/workflows/_runtime-launcher.snippet.sh
 CURRENT_BASE=$(git rev-parse HEAD)
-QB_RESUME_JSON=$(engineer_run quick-batch resume --batch "$RESUME_BATCH_ID" --current-base-revision "$CURRENT_BASE" --raw)
+QB_RESUME_JSON=$(engineer_run query quick-batch.resume --batch "$RESUME_BATCH_ID" --current-base-revision "$CURRENT_BASE" --raw)
 QB_RESUME_RC=$?
 if [[ "$QB_RESUME_JSON" == @file:* ]]; then QB_RESUME_JSON=$(cat "${QB_RESUME_JSON#@file:}"); fi
 ```
 
-**If `$QB_RESUME_RC` is non-zero:** the resume was refused closed — an unknown
+**If `$QB_RESUME_RC` is non-zero or base_compatible is false:** the resume was refused closed — an unknown
 batch id (row 18) or a diverged base revision (row 17, ADR-1239 "Base
 divergence"). Print the CLI's error message verbatim and STOP. Do not dispatch
 anything, do not create a new batch on the user's behalf.
@@ -69,7 +28,7 @@ document).
 
 ```bash
 BATCH_ID="$RESUME_BATCH_ID"
-BATCH_MANIFEST_JSON=$(printf '%s' "$QB_RESUME_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(JSON.stringify(j.manifest))}catch{process.stdout.write("")}})')
+BATCH_MANIFEST_JSON=$(printf '%s' "$QB_RESUME_JSON" | python -I -c "import json,sys; j=json.load(sys.stdin); print(json.dumps(j['manifest']))")
 ```
 
 Report to user:
@@ -85,6 +44,4 @@ no-op failure).
 
 Continue to Step 3 in `quick-batch.md` — the DAG-layer loop in `planner-wave.md`
 reads `$BATCH_MANIFEST_JSON`/`$BATCH_ID` exactly the same way whether this
-batch was just created or just resumed; it re-derives per-item progress from
-which artifacts already exist on disk (PLAN.md/SUMMARY.md/VERIFICATION.md),
-never from a separate "resume" code path.
+batch was just created or just resumed; it reconciles per-item artifact status, committed source revision, fingerprints, Git ancestry and actual host lifecycle. File presence suppresses duplicate dispatch but never proves success. In-flight/unknown entries retain ownership and consume slots. Preserve partial/failed work and inspect it only after host-confirmed stop. A descendant session head is reported as base drift but remains compatible; a divergent base blocks execution, never silently rebases or recreates the batch. Resume performs no implicit state transition or deletion.

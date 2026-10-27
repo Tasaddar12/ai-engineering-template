@@ -56,15 +56,15 @@ instead, or file the tasks individually.
 Arguments: see the `<arguments>` block above.
 
 Context files are resolved inside the workflow (`init quick-batch`,
-`quick-batch create`/`quick-batch resume`) and delegated via
+`query quick-batch.create`/`query quick-batch.resume`) and delegated via
 `<required_reading>` blocks.
 </context>
 
 <process>
 
 **Parse the `<arguments>` block FIRST, before any dispatch.** Route argument validation
-through the CLI's own `quick-batch parse-args` verb — it wraps
-`parseQuickBatchArgs` (`src/quick-batch-dispatch.cts`), the single source of
+through the CLI's own `query quick-batch.parse-args` verb — it wraps
+`parse` (`engineer/bin/lib/quick_batch.py`), the single source of
 truth for this grammar, so the command layer and the workflow layer can never
 silently diverge on what counts as a valid invocation. The `<arguments>` block is raw,
 attacker-influenced task text — feed it to the parser on STDIN through a
@@ -75,7 +75,7 @@ and newlines in the text cannot break out). Paste the exact contents of the
 
 ```bash
 QUICK_BATCH_PARSE_FILE=$(mktemp)
-engineer_run quick-batch parse-args --raw --stdin > "$QUICK_BATCH_PARSE_FILE" 2>&1 <<'GSD_QUICK_BATCH_ARGS_END'
+engineer_run query quick-batch.parse-args --raw --stdin > "$QUICK_BATCH_PARSE_FILE" 2>&1 <<'GSD_QUICK_BATCH_ARGS_END'
 <the exact contents of the `<arguments>` block, verbatim>
 GSD_QUICK_BATCH_ARGS_END
 QUICK_BATCH_PARSE_RC=$?
@@ -93,11 +93,11 @@ message verbatim and STOP. Do not create `BATCH.json`, do not dispatch
 anything.
 
 **If `--resume <batch-id>` is present:** proceed straight to the workflow's
-resume path — it loads the batch via `quick-batch resume` and dispatches only
+resume path — it loads the batch via `query quick-batch.resume` and dispatches only
 eligible items. Task-list parsing is skipped entirely.
 
 **Otherwise:** proceed to the workflow's normal path — parse the task list
-(inline or `--file`), create the batch (`quick-batch create`), resolve
+(inline or `--file`), create the batch (`query quick-batch.create`), resolve
 capacity/isolation, and dispatch wave-by-wave.
 
 </process>

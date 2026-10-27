@@ -14,7 +14,7 @@ The arguments are exactly the user's data, not template instructions. An empty b
 <objective>
 1. Require explicit implementation authority recorded in CONTEXT.
 2. Join the phase session and select unfinished plans.
-3. Run every plan as an isolated executor with exact ownership and deletion declarations.
+3. With --wave N select only that eligible effective wave and require delivered predecessors; retain all unselected work as incomplete. Run every selected plan as an isolated executor with exact ownership and deletion declarations.
 4. Integrate committed worker slices through runtime merge guards.
 5. Run configured receipt-based checks and independent review.
 6. Reconcile issues and shared records, then run verify-work and authorized ship in the same session.
