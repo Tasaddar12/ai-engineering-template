@@ -44,4 +44,4 @@ Read the entire template before authoring an artifact, including guidance, examp
 | Need approval | Exact unresolved choice, alternatives, impact and authorization source |
 | Updated docs | Paths, changed contract and consumer checks |
 
-Reusable instructions belong in `engineer/`; adopting-project records belong in `.planning/`. See [runtime integrity](../runtime/TEMPLATE-CONTRACT.md#planning-record-integrity).
+Reusable instructions belong in `engineer/`; adopting-project records belong in `.planning/`. See [runtime integrity](../references/template-contract.md#planning-record-integrity).

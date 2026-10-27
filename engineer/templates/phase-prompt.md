@@ -9,7 +9,7 @@ Template for `.planning/phases/XX-name/{phase}-{plan}-PLAN.md` - executable phas
 
 ---
 
-Planning records must satisfy [planning-record integrity](../runtime/TEMPLATE-CONTRACT.md#planning-record-integrity). Use runtime operations for runtime-owned structures.
+Planning records must satisfy [planning-record integrity](../references/template-contract.md#planning-record-integrity). Use runtime operations for runtime-owned structures.
 
 ## File Template
 
@@ -277,13 +277,13 @@ Wave 3 runs after Waves 1 and 2. Pauses at checkpoint, orchestrator presents to 
 **Plan sizing:**
 
 - the configured task cap per plan
-- ~50% context usage maximum
+- `estimate_scope` explains read/change/check cost as advisory evidence
 - Complex phases: Multiple focused plans, not one large plan
 
 **When to split:**
 
 - Different subsystems (auth vs API vs UI)
-- >3 tasks
+- Exceeds the configured task cap
 - Risk of context overflow
 - TDD candidates - separate plans
 
@@ -536,7 +536,7 @@ files_modified: [...]
 - Prefer vertical slices over horizontal layers
 - Only reference prior SUMMARYs when genuinely needed
 - Group checkpoints with related auto tasks in same plan
-- the configured task cap per plan, ~50% context max
+- the configured task cap per plan and one coherent independently verifiable outcome
 
 ---
 
