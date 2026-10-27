@@ -310,12 +310,11 @@ All `init.*` results include these keys:
 
 Role maps cover executor, planner, verifier, phase-researcher, plan-checker,
 code-reviewer, code-fixer, doc-writer, doc-verifier, integration-checker,
-security-auditor, nyquist-auditor, ui-researcher, ui-checker, ui-auditor, scout,
-code-fixer, and codebase-mapper. A missing required role fails explicitly.
+security-auditor, nyquist-auditor, ui-researcher, ui-checker, ui-auditor,
+and codebase-mapper. A missing required role fails explicitly.
 Codex reads native TOML model/effort definitions from
 `bin/install-assets/codex-agents` in source, or the installed `.codex/agents`.
-Claude reads `agents.<final-role>` configuration. Scout and code-fixer have
-fixed Codex `gpt-6-luna`/`high` and Claude `haiku`/`inherit` policies.
+Claude reads `agents.<final-role>` configuration.
 
 `init.phase-op`, `init.plan-phase`, `init.execute-phase`, `init.verify-work`,
 `init.ship`, and `init.code-review` add this shared phase packet:

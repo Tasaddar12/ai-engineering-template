@@ -7,7 +7,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | File | Origin | Lines | Remaining gsd references |
 |---|---|---:|---:|
 | `agents/AGENT.md` | reconciled | 129 | 0 |
-| `agents/code-fixer.md` | reconciled | 770 | 52 |
+| `agents/code-fixer.md` | reconciled | 770 | 66 |
 | `agents/code-reviewer.md` | reconciled | 358 | 0 |
 | `agents/codebase-mapper.md` | reconciled | 860 | 2 |
 | `agents/coordinator.md` | local-only | 141 | 1 |
@@ -98,7 +98,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `commands/verify-work.md` | reconciled | 44 | 0 |
 | `docs/INVENTORY.md` | local-only | 389 | 2 |
 | `docs/prompts.md` | upstream | 200 | 0 |
-| `engineer/bin/README.md` | local-only | 355 | 0 |
+| `engineer/bin/README.md` | local-only | 354 | 0 |
 | `engineer/bin/engineer.py` | local-only | 157 | 0 |
 | `engineer/bin/engineer_run` | reconciled | 24 | 0 |
 | `engineer/bin/lib/__init__.py` | local-only | 1 | 0 |
