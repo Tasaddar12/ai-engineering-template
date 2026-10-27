@@ -68,7 +68,9 @@ def command(args, action):
         return {"concurrency": value, "effective_concurrency": value}
     if action == "filter-executed":
         executed = set(json_array(args, "executed"))
-        return [item for item in json_array(args, "eligible") if item not in executed]
+        eligible = json_array(args, "eligible")
+        return {"spawnEligible": [item for item in eligible if item not in executed],
+                "alreadyExecuted": [item for item in eligible if item in executed]}
     if action == "merge-eligible":
         ready = set(json_array(args, "ready"))
         result = []
@@ -76,18 +78,19 @@ def command(args, action):
             if item not in ready:
                 break
             result.append(item)
-        return result
+        return {"mergeable": result}
     if action == "spawn-plan":
         inflight = args.json("in-flight", [])
         count = len(inflight) if isinstance(inflight, list) else int(inflight)
         available = max(0, int(args.get("capacity", capacity()))-count)
-        return {"spawn": json_array(args, "eligible")[:available], "available": available}
+        eligible = json_array(args, "eligible")
+        return {"spawn": eligible[:available], "pending": eligible[available:], "available": available}
     if action == "merge-routing":
         kind = args.get("kind")
         routes = {"merge_failed": "retry", "conflict": "block", "scope_violation": "block"}
         if kind not in routes:
             raise Failure("invalid-merge-kind", str(kind), 2)
-        return {"action": routes[kind], "message": str(args.get("detail", kind))}
+        return {"action": routes[kind], "message": str(args.get("detail", kind)), "preserveWorktree": True}
     if action == "verification-routing":
         status = args.get("status")
         routes = {"passed": "merge", "gaps_found": "fix", "failed": "fix", "human_needed": "human", "blocked": "block"}

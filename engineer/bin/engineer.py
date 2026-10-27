@@ -9,6 +9,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import bundles, config, decisions, frontmatter, gitops, misc, models, packages
 from lib import plans, probes, quick_batch, records, scope, tdd, uat, verification, verify, worktrees
+from lib import sessions, delivery, handoff, codebase
 from lib.core import Args, Failure, pick, raw, root, slug
 
 IDENTITY = {"packageName": "engineer-runtime", "contract": "2.0"}
@@ -68,6 +69,14 @@ def registry():
         verbs["worktree."+action] = lambda a, action=action: worktrees.command(a, action)
     for action in ("create", "complete"):
         verbs["milestone."+action] = lambda a, action=action: misc.milestone(a, action)
+    for action in ("open", "adopt", "status", "close"):
+        verbs["session."+action] = lambda a, action=action: sessions.command(a, action)
+    for action in ("open", "status", "checks", "ready", "merge", "sync"):
+        verbs["pr."+action] = lambda a, action=action: delivery.command(a, action)
+    for action in ("limits", "list", "write", "read", "consume"):
+        verbs["handoff."+action] = lambda a, action=action: handoff.command(a, action)
+    for action in ("status", "record"):
+        verbs["codebase."+action] = lambda a, action=action: codebase.command(a, action)
     for kind in ("code-review", "complete-milestone", "execute-phase", "new-milestone", "new-project", "onboard", "phase-op", "plan-phase", "progress", "quick", "quick-batch", "todos", "verify-work", "ship"):
         verbs["init."+kind] = lambda a, kind=kind: bundles.init(a, kind)
     return verbs

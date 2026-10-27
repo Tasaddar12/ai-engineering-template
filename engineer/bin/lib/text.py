@@ -58,6 +58,11 @@ def scalar(text):
         return None
     if text.startswith(("!", "&", "*")):
         raise Failure("unsafe-yaml", "YAML tags, anchors and aliases are unsupported", 2)
+    if text.startswith(("[", "{")):
+        try:
+            return json.loads(text)
+        except ValueError:
+            pass
     if text.startswith('"'):
         try:
             return json.loads(text)
