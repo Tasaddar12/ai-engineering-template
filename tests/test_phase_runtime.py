@@ -221,6 +221,26 @@ class RuntimeCase(unittest.TestCase):
 
 
 class PhaseCrud(RuntimeCase):
+    def test_decimal_aliases_resolve_one_canonical_phase(self):
+        self.run_verb("phase.insert", "1", "Inserted work")
+        for label in ("1.10", "01.1", "001.100"):
+            with self.subTest(label=label):
+                self.assertEqual("01.1", self.run_verb("roadmap.get-phase", label)["number"])
+                self.assertEqual("01.1", self.run_verb("find-phase", label)["number"])
+
+    def test_canonical_directory_alias_collision_is_rejected_without_mutation(self):
+        self.run_verb("phase.insert", "1", "Inserted work")
+        (self.directory/".planning/phases/001.100-duplicate").mkdir()
+        before = self.read(".planning/ROADMAP.md")
+        self.assertEqual("phase-ambiguous", self.run_verb("find-phase", "1.10", expect_ok=False)["code"])
+        self.assertEqual("phase-ambiguous", self.run_verb("phase.add", "Unrelated work", expect_ok=False)["code"])
+        self.assertEqual(before, self.read(".planning/ROADMAP.md"))
+
+    def test_decimal_insert_does_not_reuse_tenth_alias_of_first_insert(self):
+        labels = [self.run_verb("phase.insert", "1", "Inserted "+str(index))["padded"] for index in range(10)]
+        self.assertEqual(10, len(set(labels)))
+        self.assertEqual("01.91", labels[-1])
+
     def test_add_allocates_next_number_and_directory(self):
         result = self.run_verb("phase.add", "API key session hardening",
                                "--goal", "IDP-managed sessions")

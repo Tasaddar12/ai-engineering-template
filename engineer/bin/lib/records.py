@@ -1,6 +1,7 @@
 """Runtime-owned phase, roadmap, state, quick-task, and todo records."""
 from __future__ import annotations
 from pathlib import Path
+from decimal import Decimal
 import json
 import re
 import shutil
@@ -15,13 +16,17 @@ def planning():
 
 def number(value):
     text = str(value).split("-", 1)[0]
-    return ".".join(str(int(part)).zfill(2) if i == 0 else str(int(part)) for i, part in enumerate(text.split(".")))
+    if not re.fullmatch(r"[0-9]+(?:\.[0-9]+)?", text):
+        raise ValueError("Invalid phase identifier: "+str(value))
+    integer, separator, fraction = text.partition(".")
+    fraction = fraction.rstrip("0")
+    return str(int(integer)).zfill(2)+("."+fraction if separator and fraction else "")
 
 
 def phases():
     directory = planning()/"phases"
     return sorted([path for path in directory.iterdir() if path.is_dir() and re.match(r"^\d", path.name)],
-                  key=lambda p: tuple(int(x) for x in p.name.split("-")[0].split("."))) if directory.exists() else []
+                  key=lambda p: Decimal(p.name.split("-")[0])) if directory.exists() else []
 
 
 def phase_dir(value):
@@ -32,14 +37,15 @@ def phase_dir(value):
         target = number(value)
     except ValueError:
         target = None
-    for path in phases():
-        if number(path.name) == target or str(value) in (path.name, path.name.split("-", 1)[-1]):
-            return path
+    active = [path for path in phases() if number(path.name) == target or str(value) in (path.name, path.name.split("-", 1)[-1])]
     from .archive import catalog, guarded
     matches = [entry for entry in catalog() if entry["kind"] == "phase" and
                (number(entry["id"]) == target or str(value) in (entry["id"], entry["id"].split("-", 1)[-1]))]
-    if len(matches) == 1:
-        return guarded(matches[0]["archived_path"])
+    candidates = active+[guarded(entry["archived_path"]) for entry in matches]
+    if len(candidates) > 1:
+        raise Failure("phase-ambiguous", "Multiple records share the canonical phase identity")
+    if candidates:
+        return candidates[0]
     raise Failure("phase-not-found", f"Phase not found: {value}")
 
 
@@ -66,7 +72,7 @@ def find(value):
     archived = directory.is_relative_to(planning()/"archive")
     return {"found": True, "phase_found": True, "archived": archived, "status": "Complete" if archived else None,
             "directory": str(directory), "phase_dir": str(directory),
-            "number": directory.name.split("-")[0], "phase_number": directory.name.split("-")[0],
+            "number": number(directory.name), "phase_number": number(directory.name),
             "name": human_name, "artifacts": artifacts,
             "plans": plans, "summaries": summaries, "plan_count": len(plans), "plan_count_all": len(plans),
             "summary_count": len(summaries), "has_context": any(p.endswith("CONTEXT.md") for p in artifacts),
@@ -108,9 +114,11 @@ def roadmap_phases():
 
 def roadmap_phase(value):
     target = number(value)
-    for phase in roadmap_phases():
-        if phase["number"] == target:
-            return phase
+    matches = [phase for phase in roadmap_phases() if phase["number"] == target]
+    if len(matches) > 1:
+        raise Failure("phase-ambiguous", "Multiple roadmap phases share the canonical identity")
+    if matches:
+        return matches[0]
     raise Failure("phase-not-found", f"Phase absent from roadmap: {value}")
 
 
@@ -245,6 +253,10 @@ def phase_change(args, action):
                 raise Failure("invalid-state", "Current Position requires phase, plan and status before plan registration")
         text = read(path, "# Roadmap\n\n")
         existing = roadmap_phases()
+        identities = [phase["number"] for phase in existing]
+        directory_ids = [number(directory.name) for directory in phases()]
+        if len(set(identities)) != len(identities) or len(set(directory_ids)) != len(directory_ids):
+            raise Failure("phase-ambiguous", "Reconcile duplicate canonical phase identities before mutation")
         if action in ("add", "insert"):
             if action == "add":
                 from .archive import catalog
@@ -254,8 +266,12 @@ def phase_change(args, action):
             else:
                 after, description = number(args.need()), args.need(1)
                 roadmap_phase(after)
-                siblings = [int(p["number"].split(".")[1]) for p in existing if p["number"].startswith(after+".")]
-                identifier = after+"."+str(max(siblings, default=0)+1)
+                siblings = [p["number"].split(".")[1] for p in existing if p["number"].startswith(after+".")]
+                highest = max(siblings, key=lambda value: Decimal("0."+value)) if siblings else "0"
+                following = str(int(highest)+1).zfill(len(highest))
+                if len(following) > len(highest):
+                    following = highest+"1"
+                identifier = number(after+"."+following)
             directory = planning()/"phases"/(identifier+"-"+slug(description))
             if directory.exists():
                 raise Failure("phase-exists", f"Phase directory already exists: {directory}")
