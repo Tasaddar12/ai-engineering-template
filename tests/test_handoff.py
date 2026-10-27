@@ -210,7 +210,7 @@ class Limits(HandoffCase):
         payload = self.run_verb("handoff.limits")
         self.assertEqual(60, payload["context_percent"])
         self.assertEqual(250000, payload["context_tokens"])
-        self.assertEqual(120000, payload["threshold_tokens"])
+        self.assertEqual(250000, payload["threshold_tokens"])
 
     def test_a_project_can_lower_the_fire_point(self):
         self.set_config("context_window: 200000\n"
@@ -418,6 +418,75 @@ class Consuming(HandoffCase):
 
 
 class Writing(HandoffCase):
+
+    def hook_event(self, event):
+        process = subprocess.run([sys.executable, str(ROOT/'hooks/context-handoff.py')],
+                                 cwd=self.directory, input=json.dumps(event), capture_output=True, text=True,
+                                 env=dict(os.environ, ENGINEER_ROOT=str(self.directory), ENGINEER_HOST='codex'))
+        self.assertEqual(0, process.returncode, process.stderr)
+        return process
+
+    def test_direct_worker_transcript_supplies_usage_and_only_user_assignment(self):
+        transcript = self.directory/'worker-event.jsonl'
+        transcript.write_text('\n'.join(json.dumps(record) for record in [
+            {'role': 'user', 'content': 'plan_path: .planning/phases/04-y/04-01-PLAN.md'},
+            {'role': 'assistant', 'content': 'plan_path: false-PLAN.md', 'usage': {'input_tokens': 200000}},
+        ])+'\n', encoding='utf-8')
+        event = {'hook_event_name': 'PostToolUse', 'tool_name': 'exec_command',
+                 'cwd': str(self.directory), 'agent_id': 'worker1', 'agent_type': 'executor',
+                 'session_id': 'usage', 'tool_use_id': 'tool1', 'transcript_path': str(transcript)}
+        process = self.hook_event(event)
+        self.assertIn('hookSpecificOutput', json.loads(process.stdout))
+        packet = self.run_verb('handoff.read', 'usage-worker1')
+        self.assertEqual('.planning/phases/04-y/04-01-PLAN.md', packet['plan'])
+
+    def test_parent_stream_cannot_supply_worker_usage_or_assignment(self):
+        parent = self.directory/'parent.jsonl'
+        parent.write_text(json.dumps({'role': 'user', 'content': 'plan_path: false-PLAN.md',
+                                      'usage': {'input_tokens': 999999}})+'\n', encoding='utf-8')
+        event = {'hook_event_name': 'PostToolUse', 'tool_name': 'exec_command',
+                 'cwd': str(self.directory), 'agent_id': 'worker1', 'agent_type': 'executor',
+                 'session_id': 'parent', 'transcript_path': str(parent)}
+        self.assertEqual('', self.hook_event(event).stdout)
+        event['context_tokens'] = 200000
+        self.hook_event(event)
+        self.assertFalse(self.run_verb('handoff.read', 'parent-worker1').get('plan'))
+
+    def test_parent_derived_worker_stream_wins_over_coordinator_assignment(self):
+        parent = self.directory/'parent.jsonl'
+        parent.write_text(json.dumps({'role': 'user', 'content': 'plan_path: false-PLAN.md'})+'\n', encoding='utf-8')
+        worker = parent.with_suffix('')/'subagents/agent-worker1.jsonl'
+        worker.parent.mkdir(parents=True)
+        worker.write_text(json.dumps({'role': 'user', 'content': 'plan_path: .planning/phases/04-y/04-01-PLAN.md',
+                                      'usage': {'input_tokens': 200000}})+'\n', encoding='utf-8')
+        event = {'hook_event_name': 'PostToolUse', 'tool_name': 'exec_command',
+                 'cwd': str(self.directory), 'agent_id': 'worker1', 'agent_type': 'executor',
+                 'session_id': 'parent', 'transcript_path': str(parent)}
+        self.hook_event(event)
+        self.assertEqual('.planning/phases/04-y/04-01-PLAN.md',
+                         self.run_verb('handoff.read', 'parent-worker1')['plan'])
+
+    def test_subagent_stop_does_not_treat_parent_assignment_as_worker_assignment(self):
+        parent = self.directory/'coordinator.jsonl'
+        parent.write_text(json.dumps({'role': 'user', 'content': 'plan_path: false-PLAN.md'})+'\n', encoding='utf-8')
+        event = {'hook_event_name': 'SubagentStop', 'cwd': str(self.directory), 'agent_id': 'worker1',
+                 'agent_type': 'executor', 'session_id': 'stopped', 'transcript_path': str(parent)}
+        self.hook_event(event)
+        packet = self.run_verb('handoff.read', 'stopped-worker1')
+        self.assertFalse(packet.get('plan'))
+
+    def test_subagent_stop_uses_explicit_worker_stream_instead_of_parent(self):
+        parent = self.directory/'coordinator.jsonl'
+        parent.write_text(json.dumps({'role': 'user', 'content': 'plan_path: false-PLAN.md'})+'\n', encoding='utf-8')
+        worker = self.directory/'explicit-worker.jsonl'
+        worker.write_text(json.dumps({'role': 'user', 'content': 'plan_path: .planning/phases/04-y/04-01-PLAN.md'})+'\n', encoding='utf-8')
+        event = {'hook_event_name': 'SubagentStop', 'cwd': str(self.directory), 'agent_id': 'worker1',
+                 'agent_type': 'executor', 'session_id': 'stopped', 'transcript_path': str(parent),
+                 'agent_transcript_path': str(worker)}
+        self.hook_event(event)
+        packet = self.run_verb('handoff.read', 'stopped-worker1')
+        self.assertEqual('.planning/phases/04-y/04-01-PLAN.md', packet['plan'])
+
 
     def test_context_hook_records_real_transcript_plan_attribution(self):
         transcript = self.directory/'context-transcript.jsonl'
