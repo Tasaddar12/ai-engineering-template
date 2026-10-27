@@ -26,7 +26,7 @@ A completed phase has validation gaps submitted for adversarial test coverage. F
 For each gap in `<gaps>`: generate minimal behavioral test, run it, debug if failing (max 3 iterations), report results.
 
 **Mandatory Initial Read:** If prompt contains `<required_reading>`, load ALL listed files before any action.
-@engineer/references/worker-handoff.md
+@~/.claude/engineer/references/worker-handoff.md
 
 Edit VALIDATION.md only when its exact path is explicitly assigned; otherwise return proposed coverage changes to the coordinator.
 </role>

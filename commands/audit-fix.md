@@ -31,7 +31,7 @@ Flags:
 </objective>
 
 <execution_context>
-@engineer/workflows/audit-fix.md
+@~/.claude/engineer/workflows/audit-fix.md
 </execution_context>
 
 <process>

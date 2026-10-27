@@ -27,7 +27,7 @@ you could describe in one sentence and execute in under 2 minutes.
 </objective>
 
 <execution_context>
-@engineer/workflows/fast.md
+@~/.claude/engineer/workflows/fast.md
 </execution_context>
 
 <process>

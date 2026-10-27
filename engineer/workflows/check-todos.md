@@ -3,9 +3,9 @@
 List pending work with its actual severity and issue state, publish or link the selected item's canonical issue before routing it, and preserve pending status until demonstrated resolution.
 </purpose>
 <required_reading>
-@engineer/RULES.md
-@engineer/references/git-workflow.md
-@engineer/templates/issue.md
+@~/.claude/engineer/RULES.md
+@~/.claude/engineer/references/git-workflow.md
+@~/.claude/engineer/templates/issue.md
 </required_reading>
 <process>
 <step name="init_context">

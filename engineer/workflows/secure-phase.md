@@ -3,15 +3,15 @@ Verify threat mitigations for a completed phase. Confirm PLAN.md threat register
 </purpose>
 
 <required_reading>
-@engineer/RULES.md
-@engineer/references/ui-brand.md
-@engineer/references/worker-handoff.md
-@engineer/references/verification-evidence.md
-@engineer/references/security-asvs-levels.md
-@engineer/references/git-workflow.md
-@engineer/workflows/_canonical-threat-tracking.md
-@engineer/templates/SECURITY.md
-@engineer/templates/issue.md
+@~/.claude/engineer/RULES.md
+@~/.claude/engineer/references/ui-brand.md
+@~/.claude/engineer/references/worker-handoff.md
+@~/.claude/engineer/references/verification-evidence.md
+@~/.claude/engineer/references/security-asvs-levels.md
+@~/.claude/engineer/references/git-workflow.md
+@~/.claude/engineer/workflows/_canonical-threat-tracking.md
+@~/.claude/engineer/templates/SECURITY.md
+@~/.claude/engineer/templates/issue.md
 @agents/security-auditor.md
 </required_reading>
 
@@ -139,7 +139,7 @@ AUDITOR_EFFORT=$(engineer_run query resolve-effort security-auditor --raw)
 
 A failed resolution blocks dispatch; do not replace the independent auditor with the coordinator.
 
-> **Inherited host settings.** Omit `model` or `effort` entirely when its resolved value is `"inherit"` or empty; never pass a placeholder or an empty host parameter. Pass each actual non-inherited value inline on the native Claude/Codex dispatch. See @engineer/references/agent-adaptation.md.
+> **Inherited host settings.** Omit `model` or `effort` entirely when its resolved value is `"inherit"` or empty; never pass a placeholder or an empty host parameter. Pass each actual non-inherited value inline on the native Claude/Codex dispatch. See @~/.claude/engineer/references/agent-adaptation.md.
 
 ```
 Agent(
