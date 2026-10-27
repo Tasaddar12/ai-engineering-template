@@ -154,7 +154,7 @@ class IsolationSafety(RuntimeCase):
 
 class PlanningReviewSafety(RuntimeCase):
     def test_repair_requires_fresh_exact_snapshot(self):
-        self.put(".planning/STATE.md", "# Project State\n\n## Current Position\n\nPhase: 01\n")
+        self.put(".planning/STATE.md", "# Project State\n\n## Current Position\n\nPhase: 01\n\nLast session: 2026-01-01\nStopped at: Reviewed fixture\nResume file: None\n")
         preview = self.cli("planning.review")
         self.assertTrue(preview["repairable"])
         self.cli("planning.repair", "--apply", "--expect", "stale", status=1, raw=True)
@@ -170,7 +170,7 @@ class PlanningReviewSafety(RuntimeCase):
         archived = self.cli("planning.archive", "--paths", retired, "--expect", preview["snapshotDigest"], "--confirm")
         self.assertFalse(retired.exists())
         self.assertEqual(1, self.cli("planning.archives")["count"])
-        recovery = self.cli("planning.archive-recover", archived["id"])
+        recovery = self.cli("planning.archive-recover", archived["recovery_id"])
         self.assertFalse(retired.exists())
-        self.cli("planning.archive-recover", archived["id"], "--expect", recovery["recoveryDigest"], "--confirm")
+        self.cli("planning.archive-recover", archived["recovery_id"], "--expect", recovery["recoveryDigest"], "--confirm")
         self.assertTrue(retired.exists())

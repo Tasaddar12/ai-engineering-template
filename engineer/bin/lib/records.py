@@ -355,7 +355,7 @@ def phase_change(args, action):
             # The checklist owns completion after registration. Clear terminal
             # metadata when newly registered work reopens the phase.
             if re.search(r"(?m)^- \[ \]\s*"+re.escape(phase["number"])+r"-[0-9]{2}\s*:", block):
-                block = re.sub(r"(?mi)^\*\*Status(?::\*\*|\*\*:)\s*(?:Complete|Completed|Shipped)\s*$", "**Status:** In progress", block)
+                block = re.sub(r"(?mi)^\*\*Status(?::\*\*|\*\*:)[ \t]*(?:Complete|Completed|Shipped)[ \t]*$", "**Status:** In progress", block)
         write(path, before+block+after)
         sync_roadmap()
         progress = synchronize_progress(phase["number"])

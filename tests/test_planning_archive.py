@@ -104,7 +104,7 @@ class PlanningArchive(unittest.TestCase):
         self.write("foundation.txt", "The verified foundation output.\n")
         self.write(".planning/phases/01-foundation/01-01-PLAN.md", join_frontmatter(plan, "# Plan\n"))
         self.write(".planning/phases/01-foundation/01-01-SUMMARY.md", join_frontmatter(summary, "# Summary\n\n## Accomplishments\n\nBuilt and checked foundation.\n"))
-        self.write(".planning/phases/01-foundation/01-CONTEXT.md", "# Context\n\n## Decisions\n\nFoundation is shared.\n")
+        self.write(".planning/phases/01-foundation/01-CONTEXT.md", "---\nphase: 01-foundation\ndiscussion: complete\nissue_refs: []\n---\n# Context\n\n## Decisions\n\nFoundation is shared.\n")
         self.write(".planning/phases/02-feature/02-01-PLAN.md", "---\ndepends_on: [01-01]\n---\n# Plan\n")
         self.commit("Fixture implementation and completed phase records")
         self.seal_phase()
@@ -299,7 +299,7 @@ class PlanningArchive(unittest.TestCase):
         for suffix in ("PLAN", "SUMMARY"):
             text = self.read(".planning/phases/01-foundation/01-01-"+suffix+".md")
             self.write(".planning/phases/02-feature/02-01-"+suffix+".md", text.replace("01-foundation", "02-feature"))
-        selected = ["--paths", ".planning/phases/01-foundation", "--paths", ".planning/phases/02-feature"]
+        selected = ["--paths", ".planning/phases/01-foundation", ".planning/phases/02-feature"]
         # This regression isolates the transaction from the independently tested
         # historical evidence gate; both phases still have actual complete plans.
         with patch.object(archive, "historical_phase_evidence", return_value=True):

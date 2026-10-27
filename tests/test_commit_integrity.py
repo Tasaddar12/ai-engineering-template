@@ -143,7 +143,7 @@ class ProspectiveCommitIntegrity(RuntimeCase):
         process = subprocess.run([sys.executable, "-I", str(RUNTIME), "query", "planning.validate", "--strict"],
                                  cwd=self.root, env=self.env, capture_output=True, text=True)
         self.assertEqual(1, process.returncode)
-        self.assertTrue(json.loads(process.stdout)["errors"])
+        self.assertEqual("planning-validation", json.loads(process.stderr.strip().splitlines()[-1])["error"])
 
     def test_boolean_wave_duplicate_keys_and_unaccepted_human_closure_fail(self):
         variants = [PLAN.replace("wave: 1", "wave: true"),
