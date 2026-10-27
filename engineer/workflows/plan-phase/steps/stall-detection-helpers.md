@@ -1,217 +1,40 @@
-# Bounded Stall-Detection Helpers (#2650)
+# Bounded planner and checker observations
 
-`planner.stall_detection_enabled` controls the wait policy for the five scoped
-planner/plan-checker spawns. It defaults to `true`. In that default-on mode each
-spawn dispatches with `run_in_background=true`, records `TS=$(date +%s)`, and
-then repeatedly calls `engineer_stall_watch` until it returns something other than
-`waiting`/`active`. This mirrors the already-shipped `executor.stall_*`
-pattern (`execute-phase.md`, bug #3212, commit `e7942c21b`) but — unlike
-that prose-only surveillance, which cannot run during a *blocking* `Agent()`
-call — each `engineer_stall_watch` call is a real, bounded bash subprocess wait
-issued as its own tool call, so it returns control to the orchestrator on
-its own schedule regardless of whether the backgrounded agent's own
-completion notification ever arrives.
+This method applies to the initial planner, planner correction/partial continuation, initial plan-checker and checker continuation/correction review. The coordinator owns observation and recovery. It consumes actual native handles/results; there is no required SDK, `outputFile` parameter or fabricated artifact writer for a read-only checker.
 
-When the key is explicitly the JSON boolean `false`, each scoped call instead
-omits `run_in_background`, waits through the runtime-native ordinary Agent()
-completion mechanism, and consumes that real returned result. It never calls
-`engineer_stall_watch`, so there are no periodic shell sleeps. This is still a wait,
-not fire-and-forget. It deliberately gives up #2650's bounded automatic
-recovery: if the runtime loses the completion handoff, the user may need to
-interrupt and use the existing filesystem fallback. The completion markers and
-empty/truncated/unrecognized-return fallback remain unchanged.
+## Resolve the toggle and intervals
 
-**Binding `{outputFile}` (load-bearing, not optional):** every `engineer_stall_watch`
-call below takes `{outputFile}` as its second argument — a literal token the
-orchestrator must substitute with the REAL path from the immediately preceding
-`run_in_background=true` Agent() call's returned `async_launched` result,
-exactly as `docs-update.md:471` already does ("Read tool: file_path: `{outputFile
-from README agent result}`"). This is NOT a bash variable the snippet below
-assigns — there is nothing upstream that assigns one, so a bash variable
-reference here would silently stay empty forever. With `{outputFile}` correctly
-substituted, `[ -f "$output_file" ]` can find the real file and the
-`marker_received` path is reachable; left as a literal (or as an unbound bash
-variable), `marker_found` can never become `true` and every spawn silently
-falls back to the mtime-only path — for the plan-checker spawn specifically,
-that fallback is broken (see next paragraph), so binding this correctly there
-is not a nice-to-have.
-
-**Plan-checker's artifact glob needs the marker, not just mtimes:** the
-plan-checker spawn watches `*-PLAN.md` for freshness, but a checker that
-PASSES touches none of those files — no fresh mtime, ever, on a clean run.
-Without `{outputFile}` correctly bound to the real completion output, a
-healthy plan-checker that returns `## VERIFICATION PASSED` in two minutes
-would still be declared `stalled` once `planner.stall_threshold_minutes`
-elapses — reporting a succeeded agent as hung, which is worse than the
-original unbounded wait. The marker path (via `{outputFile}`) is the ONLY
-working completion signal for that spawn; the artifact glob is secondary
-there.
-
-**Single-cycle by design, not one long-lived loop:** `engineer_stall_watch` sleeps
-for exactly one `PLANNER_STALL_INTERVAL_MINUTES` and returns — it does NOT
-loop internally for the full `PLANNER_STALL_THRESHOLD_MINUTES`. A single Bash
-tool call blocking for `threshold + interval` minutes (up to 15 min at
-defaults) risks the *host tool's own* timeout killing the call before it ever
-prints a result — silently defeating the fix it exists to ship. Looping at
-the orchestrator-prose level instead means every cycle is a short (default 5
-min), real, bounded call that reliably hands control back — the outer
-threshold is enforced by `dispatch_ts` accumulating across calls, not by one
-call's own duration.
-
-**Never a wake-up call between cycles (#4079):** while the orchestrator waits
-between `engineer_stall_watch` cycles, it must NOT call `ScheduleWakeup` (or any
-host wake/sleep-scheduling tool, e.g. the `/loop` pacing surface) to
-literalize "I'll wait". The `engineer_stall_watch` bash call IS the wait mechanism;
-wake-up scheduling is never part of it, and a partial-args `ScheduleWakeup`
-call surfaces the host's red validation error (`prompt` is required when
-`stop` is not true). Just issue the next watch call (or let the blocking
-Agent() return) — nothing else.
-
-**Disclosed tradeoff:** the first cycle always sleeps a full
-`PLANNER_STALL_INTERVAL_MINUTES` before its first check, so a planner that
-completes in seconds is not observed by this path until that interval
-elapses (default 5 min) — slower than a plain blocking call's near-instant
-return on success. This is deliberate: it trades a bounded, at-most-one-
-interval delay on the (common) success path for eliminating the unbounded,
-possibly-indefinite hang on the (rare, previously unrecoverable) stall path
-this issue is about. `PLANNER_STALL_INTERVAL_MINUTES` is the knob for
-projects that want a tighter success-path latency at the cost of more
-config-get calls.
-
-This block is independent of, and never gated behind, the `query
-teams-status` / `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` guard used for the
-researcher spawn — the stall path applies on every runtime, teams-active or
-not (AC2). The toggle is resolved through the canonical `config-get` seam, so
-root/project/workstream selection stays with the Config Loader rather than a
-workflow-local JSON parser. Only the exact boolean result `false` disables;
-missing, malformed, string, numeric, or otherwise unrecognized values fail safe
-to `true`.
+In the same shell call, source the actual `_runtime-launcher.snippet.sh`, then read:
 
 ```bash
-_engineer_identity_ok() {
-  [ -f "$1" ] || return 1
-  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
-}
-_engineer_select() {
-  for _engineer_candidate do
-    if _engineer_identity_ok "$_engineer_candidate"; then
-      ENGINEER_RUN="$_engineer_candidate"
-      return 0
-    fi
-  done
-  return 1
-}
-if [ -n "${ENGINEER_RUN:-}" ]; then
-  _engineer_identity_ok "$ENGINEER_RUN" || {
-    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
-    exit 1
-  }
-else
-  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
-  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
-  _engineer_select \
-    "$_engineer_root/engineer/bin/engineer_run" \
-    "$_engineer_runtime_root/engineer/bin/engineer_run" \
-    "$_engineer_root/.claude/engineer/bin/engineer_run" \
-    "$_engineer_root/.codex/engineer/bin/engineer_run" \
-    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
-    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
-    "$_engineer_path_candidate" || {
-    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
-    exit 1
-  }
-fi
-export ENGINEER_RUN
-engineer_run() {
-  sh "$ENGINEER_RUN" "$@"
-}
-if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
-  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
-fi
-PLANNER_STALL_DETECTION_ENABLED=$(engineer_run query config-get planner.stall_detection_enabled --raw 2>/dev/null || echo "true")
-# Defense in depth for hand-edited config and old runtimes: only the exact
-# canonical false token may disable the default-on recovery policy.
-[ "$PLANNER_STALL_DETECTION_ENABLED" = "false" ] || PLANNER_STALL_DETECTION_ENABLED=true
-PLANNER_STALL_INTERVAL_MINUTES=$(engineer_run query config-get planner.stall_detect_interval_minutes --raw 2>/dev/null || echo "5")
-PLANNER_STALL_THRESHOLD_MINUTES=$(engineer_run query config-get planner.stall_threshold_minutes --raw 2>/dev/null || echo "10")
-# Both values are config-controlled (.planning/config.json, editable by any repo
-# contributor) and both flow into `$(( ))` arithmetic below. A non-numeric
-# value there is NOT a code-execution risk (empirically verified: bash's
-# arithmetic evaluator hard-errors on a `$(cmd)`-shaped operand instead of
-# invoking it — "syntax error: operand expected", command never runs) but IS
-# a reliability risk this fix cannot afford: a malformed config value would
-# abort the stall-watcher itself with a bash syntax error, silently defeating
-# the exact hang-recovery this issue is about. Reject anything that is not a
-# bare non-negative integer before it is ever used, so a bad config value
-# degrades to the safe default instead of crashing the watcher.
-[[ "$PLANNER_STALL_INTERVAL_MINUTES" =~ ^[0-9]+$ ]] || PLANNER_STALL_INTERVAL_MINUTES=5
-[[ "$PLANNER_STALL_THRESHOLD_MINUTES" =~ ^[0-9]+$ ]] || PLANNER_STALL_THRESHOLD_MINUTES=10
-
-# engineer_stall_should_recover — pure decision function, no IO, no sleeping. Given how
-# long the orchestrator has been waiting plus two liveness signals (a completion
-# marker found in the agent's output file, and fresh on-disk artifact activity),
-# decides whether to keep waiting, treat the wait as satisfied, or auto-surface the
-# existing accept/retry/stop recovery menu (9a/11a). Never kills or retries anything
-# itself — it only classifies. Re-validates both numeric args as bare non-negative
-# integers (defense in depth — safe to call with any input, not just the resolved
-# config globals above) before either ever reaches arithmetic expansion.
-engineer_stall_should_recover() {
-  local elapsed_seconds="$1" threshold_minutes="$2" marker_found="$3" artifact_fresh="$4"
-  [[ "$elapsed_seconds" =~ ^[0-9]+$ ]] || elapsed_seconds=0
-  [[ "$threshold_minutes" =~ ^[0-9]+$ ]] || threshold_minutes=10
-  local threshold_seconds=$(( threshold_minutes * 60 ))
-  if [ "$marker_found" = "true" ]; then
-    echo "marker_received"; return 0
-  fi
-  if [ "$artifact_fresh" = "true" ]; then
-    echo "active"; return 0
-  fi
-  if [ "$elapsed_seconds" -ge "$threshold_seconds" ]; then
-    echo "stalled"; return 0
-  fi
-  echo "waiting"; return 0
-}
-
-# engineer_stall_watch — ONE bounded, real (non-LLM-side) sleep-and-check cycle, not
-# a long-lived loop (see "Single-cycle by design" above — a single Bash tool
-# call spanning the full threshold risks the host tool's own timeout killing
-# it first). Sleeps exactly one PLANNER_STALL_INTERVAL_MINUTES, then checks for
-# a completion marker in $2 (the outputFile returned by the run_in_background
-# Agent() call) or fresh mtime activity under $3 (an artifact glob), against
-# elapsed time since $1 (an epoch-seconds dispatch_ts the CALLER records once,
-# before the first call, and passes unchanged on every repeat). Remaining args
-# are completion markers. Prints exactly one of: marker_received | active |
-# waiting | stalled. The caller repeats the call while the result is
-# waiting/active; any other result ends the wait.
-engineer_stall_watch() {
-  local dispatch_ts="$1" output_file="$2" artifact_glob="$3"; shift 3
-  local markers=("$@")
-  [[ "$dispatch_ts" =~ ^[0-9]+$ ]] || dispatch_ts=$(date +%s)
-  sleep "$(( PLANNER_STALL_INTERVAL_MINUTES * 60 ))"
-  local now elapsed marker_found artifact_fresh
-  now=$(date +%s)
-  elapsed=$(( now - dispatch_ts ))
-  marker_found="false"
-  if [ -f "$output_file" ]; then
-    for m in "${markers[@]}"; do
-      if grep -qF "$m" "$output_file" 2>/dev/null; then marker_found="true"; break; fi
-    done
-  fi
-  # -mmin -N ("modified less than N minutes ago"), not -newermt "@<epoch>":
-  # -newermt's "@<epoch>" shorthand is a GNU-date convenience the shipped
-  # BSD find(1) on macOS does NOT understand ("Can't parse date/time:
-  # @<epoch>", verified live) — with the 2>/dev/null below that failed
-  # silently and permanently degraded artifact_fresh to false on every
-  # macOS run. -mmin -N needs no epoch/date-string conversion at all and is
-  # supported identically by GNU find (Linux, Git-for-Windows' bundled
-  # findutils) and BSD find (macOS). $artifact_glob stays intentionally
-  # unquoted — the shell, not find, expands it into the matching file list.
-  artifact_fresh="false"
-  if [ -n "$(find $artifact_glob -mmin "-${PLANNER_STALL_INTERVAL_MINUTES}" 2>/dev/null)" ]; then
-    artifact_fresh="true"
-  fi
-  engineer_stall_should_recover "$elapsed" "$PLANNER_STALL_THRESHOLD_MINUTES" "$marker_found" "$artifact_fresh"
-}
+PLANNER_STALL_DETECTION_ENABLED=$(engineer_run query config-get planner.stall_detection_enabled --default true --raw)
+PLANNER_STALL_INTERVAL_MINUTES=$(engineer_run query config-get planner.stall_detect_interval_minutes --default 5 --raw)
+PLANNER_STALL_THRESHOLD_MINUTES=$(engineer_run query config-get planner.stall_threshold_minutes --default 10 --raw)
 ```
+
+Only literal boolean `false` disables observation; missing/malformed/string/numeric values use the safe enabled policy. Validate positive integer intervals before arithmetic; invalid values use the documented 5/10 minute defaults. Native waits must each be at most 60 seconds so the coordinator regains control and can communicate; shorter host limits win. The configured interval controls the scheduled observation/evaluation cadence, not one long shell sleep.
+
+Disabled means use the host's ordinary completion/join mechanism and consume the actual returned result. It never means fire-and-forget. If the host offers only blocking dispatch, record the dispatch-to-return interval and `intermediate observations unavailable`; do not pretend periodic inspection is possible or invent a background SDK.
+
+## Dispatch and record real identities
+
+For each of the five routes above, resolve the exact role's model AND effort, prepare supported isolation for writers and dispatch through the actual host interface. Record assignment ID, native returned handle, role, source/input revision, exact owned artifacts, dispatch time and last meaningful progress time. Preserve each resolution inline; omit inherited parameters.
+
+- Codex with collaboration tools: retain the returned canonical agent ID; observe through `collaboration.list_agents` and wait for mailbox/progress through `collaboration.wait_agent` with a timeout no greater than 60,000 ms. Match actual returned updates to that exact ID. Do not use application chat handles as subagent IDs.
+- Claude with an installed exact Agent role: use the host-supported background/completion route only when available, retaining its actual returned identity and reading its result through that host's advertised wait/result capability. If that capability is absent, use ordinary blocking Agent completion and record the observation limitation. Never require a result filename the API did not return.
+
+A returned output path may be read only when the host actually supplied it; it is optional evidence, not the lifecycle identity. A read-only checker normally changes no PLAN files, so stale artifact mtimes cannot classify it as hung.
+
+## One observation cycle
+
+1. Record `observation_started_at` immediately before the actual bounded native wait. Pass the actual handle/cursor when the tool supports it; a mailbox-wide wait is followed by matching exact worker identity.
+2. On return, record `observation_returned_at`, actual native state, new message/result cursor and only progress actually reported: committed head, artifact delta, meaningful tool/reasoning telemetry or a material state transition. Never split one wait into synthetic subintervals.
+3. Refresh the assignment table in parallel-status.md. New meaningful progress resets the last-progress time and quiet-interval count. First unchanged interval is `watch`; second unchanged interval is `stalled` requiring a cited coordinator decision. A real missing dependency is `blocked` with its exact owner. A stall flag is an observation, not exit or permission to interrupt.
+4. Until the configured no-progress threshold is reached, preserve ownership and continue bounded waits or independent work. At threshold, choose one bounded action with expected evidence: continue for a reason, obtain supported status, resolve the concrete dependency, or request an actual stop when necessary. Never send urgency/finalization nudges to a productive worker.
+5. Before examining dirty work, repairing, integrating or replacing the owner, require terminal result or positive stopped confirmation through the actual host interface. A timeout and quiet output never establish stop. Unknown stop status preserves the checkout and ownership.
+6. On a terminal return, validate the canonical result and full content before routing. Planner requires `## PLANNING COMPLETE`, `## PLANNING PARTIAL` or an actual `## CHECKPOINT REACHED`; complete requires its committed assigned plans. Checker requires `## PLAN REVIEW`, exactly `Verdict: approved | needs-revision`, stable classified findings and full assigned coverage. Legacy VERIFICATION PASSED / ISSUES FOUND and malformed/truncated replies are diagnostics, never approval.
+7. Join all required continuations and readers before accepting evidence or dispatching a writer. Preserve partial scope and use the full worker-handoff contract. Reconcile actual artifacts at the captured revision; do not restart completed planning or write a substitute checker report.
+
+## Worked observer trace
+
+Planner P at revision R returns native handle H at 10:00. The coordinator records H and waits at most 60 seconds per native call. A real commit C reported at 10:03 resets meaningful progress. Two unchanged observations at 10:08 and 10:13 produce watch then stalled, measured from C rather than dispatch. At the configured threshold the coordinator records a bounded status decision. If H reports it is validating, keep waiting; if H requires a concrete human choice, preserve C and block only its dependent work. A stop request does not release paths until H's stopped state is confirmed. A passing checker H2 can complete without touching PLAN mtimes; its canonical full returned review and terminal host state establish completion, followed by coverage/finding validation.

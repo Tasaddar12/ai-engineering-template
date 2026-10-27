@@ -2,6 +2,9 @@
 <purpose>
 Explain an actual milestone for onboarding or review from complete committed evidence. Present the document in the response by default. Write and commit only when --write was explicitly supplied; never mutate STATE.
 </purpose>
+<response_language>
+Read `engineer_run query config-get response_language --raw` through the sourced launcher. Apply the configured language to every user-facing prose surface: narration between tool calls, status updates, progress notes, findings, route explanations, headings and the final result. Preserve literal code, paths, identifiers, parser keys and canonical markers. Missing configuration uses the established conversation language; do not invent a language alias in an init bundle.
+</response_language>
 <process>
 <step name="resolve_version">
 Read and execute engineer/workflows/_runtime-launcher.snippet.sh. Run milestone.list; use the explicit target, otherwise the active milestone, otherwise the newest actually shipped milestone. If none exists, report /new-milestone as the missing setup. Never guess an archive path from a version-shaped string.

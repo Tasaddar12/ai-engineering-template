@@ -2,6 +2,9 @@
 <purpose>
 Determine the next logical authorized workflow from actual project evidence, announce it and carry it through. Progress reports; this command acts within authority.
 </purpose>
+<response_language>
+Read `engineer_run query config-get response_language --raw` through the sourced launcher. Apply the configured language to every user-facing prose surface: narration between tool calls, status updates, progress notes, findings, route explanations, headings and the final result. Preserve literal code, paths, identifiers, parser keys and canonical markers. Missing configuration uses the established conversation language; do not invent a language alias in an init bundle.
+</response_language>
 <process>
 <step name="detect_state">
 Read and execute engineer/workflows/_runtime-launcher.snippet.sh. Run `engineer_run query init.progress`. Require an actual roadmap and project records; if missing, report onboarding or phase creation as the concrete route rather than inventing project state. Read current phase records and pending continuation evidence, using actual runtime fields or explicit read-only queries rather than a separate state.json file.

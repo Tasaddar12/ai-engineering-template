@@ -512,13 +512,13 @@ Unresolved research blocks only the dependent scope whose necessary fact is miss
 issue:
   dimension: research_resolution
   severity: blocker
-  required_property: "RESEARCH.md carries no unresolved open question"
-  description: "RESEARCH.md has unresolved open questions"
+  required_property: "Task 2 has an established cache TTL prerequisite before selecting its expiration behavior"
+  description: "Task 2 chooses an expiration policy while its required cache TTL is still unresolved; unrelated Task 1 may proceed"
   file: "01-RESEARCH.md"
   unresolved_questions:
     - "Hash prefix — keep or change?"
     - "Cache TTL — what duration?"
-  fix_hint: "Resolve questions and mark section as '## Open Questions (RESOLVED)'"
+  fix_hint: "Establish the actual cache TTL through the decision owner, cite that resolution and revise only dependent Task 2; do not blanket-resolve unrelated questions"
 ```
 
 **Example — resolved (PASS):**
