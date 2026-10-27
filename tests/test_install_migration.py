@@ -322,10 +322,10 @@ class MigrationTests(unittest.TestCase):
                 before = self.snapshot()
                 changes, backups, notes = self.plan(host)
                 self.assertEqual(before, self.snapshot(), "preflight must be read-only")
-                recoverable = {path.relative_to(self.target).as_posix(): path.read_bytes() for path in backups}
+                recoverable = {path.resolve().relative_to(self.target.resolve()).as_posix(): path.read_bytes() for path in backups}
                 self.assertEqual(before[".ai/runtime/phase.py"], recoverable[".ai/runtime/phase.py"])
-                self.assertFalse(any(".git" in path.relative_to(self.target).parts for path in backups))
-                self.assertFalse(any(".worktrees" in path.relative_to(self.target).parts for path in backups))
+                self.assertFalse(any(".git" in path.resolve().relative_to(self.target.resolve()).parts for path in backups))
+                self.assertFalse(any(".worktrees" in path.resolve().relative_to(self.target.resolve()).parts for path in backups))
                 self.apply(changes)
                 namespace = "." + host
                 self.assertFalse((self.target / ".ai").exists())

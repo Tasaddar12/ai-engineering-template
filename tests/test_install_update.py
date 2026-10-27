@@ -6,6 +6,7 @@ did the project's own material survive the refresh?
 """
 
 import importlib.util
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -73,6 +74,19 @@ class UpdateTests(unittest.TestCase):
 
     def read(self, name):
         return (self.target / name).read_bytes()
+
+    @unittest.skipIf(os.name == "nt", "native POSIX permissions")
+    def test_reviewed_update_repairs_unchanged_launcher_execute_mode(self):
+        name = self.namespace + "/engineer/bin/engineer_run"
+        path = self.target / name
+        before = path.read_bytes()
+        path.chmod(0o640)
+        plan = self.plan()
+        self.assertFalse(self.row(plan, name)["conflict"])
+        self.assertIn(name, self.apply(plan))
+        self.assertEqual(before, path.read_bytes())
+        self.assertEqual(0o111, path.stat().st_mode & 0o111)
+        self.assertEqual([], self.apply(self.plan()))
 
     def entry_name(self):
         return "CLAUDE.md" if self.host == "claude" else "AGENTS.md"

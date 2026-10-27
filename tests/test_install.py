@@ -243,6 +243,25 @@ class InstallerTests(unittest.TestCase):
         return {p.relative_to(self.target).as_posix(): p.read_bytes()
                 for p in self.target.rglob("*") if p.is_file() and ".git" not in p.relative_to(self.target).parts}
 
+    @unittest.skipIf(os.name == "nt", "native POSIX executable permissions")
+    def test_fresh_installed_launcher_executes_directly_and_rerun_repairs_mode(self):
+        for host in ("codex", "claude"):
+            with self.subTest(host=host):
+                self.target = self.base / host
+                result = self.install("--host", host, "--no-hooks")
+                self.assertEqual(0, result.returncode, result.stderr)
+                launcher = self.target / ("." + host) / "engineer/bin/engineer_run"
+                identity = json.loads(command(str(launcher), "query", "runtime-identity", cwd=self.target))
+                self.assertEqual("engineer-runtime", identity["packageName"])
+                self.assertEqual(host, identity["host"])
+                before = launcher.read_bytes()
+                launcher.chmod(0o640)
+                result = self.install("--host", host, "--no-hooks")
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertEqual(before, launcher.read_bytes())
+                self.assertEqual(0o111, launcher.stat().st_mode & 0o111)
+                self.assertEqual(host, json.loads(command(str(launcher), "query", "runtime-identity", cwd=self.target))["host"])
+
     def test_registered_hooks_run_planning_integrity_from_installed_hosts(self):
         valid = '''---
 phase: 01-foundation
@@ -710,7 +729,7 @@ issue_refs: []
                 self.assertEqual("01", added["padded"])
                 created = Path(added["directory"])
                 created = created if created.is_absolute() else worktree / created
-                self.assertEqual(worktree / ".planning/phases/01-installed-runtime", created)
+                self.assertEqual((worktree / ".planning/phases/01-installed-runtime").resolve(), created.resolve())
                 self.assertTrue((worktree / added["directory"]).is_dir())
                 roadmap = (worktree / ".planning/ROADMAP.md").read_text(encoding="utf-8")
                 self.assertRegex(roadmap, r"### Phase 0?1: Installed runtime")
@@ -1105,6 +1124,41 @@ issue_refs: []
         self.assertNotEqual(0, result.returncode)
         self.assertIn("linked path", result.stderr)
         self.assertEqual([], list(outside.iterdir()))
+
+    def test_change_batch_rejects_outside_and_in_tree_links_before_any_write(self):
+        self.target.mkdir()
+        inside = self.target / "inside"
+        inside.mkdir()
+        link = self.target / "alias"
+        try:
+            link.symlink_to(inside, target_is_directory=True)
+        except OSError:
+            self.skipTest("Host does not permit creating symlinks")
+        for invalid in (self.base / "outside.txt", link / "new.txt"):
+            with self.subTest(path=str(invalid)):
+                with self.assertRaises(ValueError):
+                    installer.write_changes(self.target, [(self.target / "first.txt", b"first"), (invalid, b"bad")])
+                self.assertFalse((self.target / "first.txt").exists())
+                self.assertFalse((inside / "new.txt").exists())
+
+    @unittest.skipUnless(os.name == "nt", "Windows short-path aliases")
+    def test_write_changes_accepts_raw_short_alias_and_rejects_junction(self):
+        import ctypes
+        from ctypes import wintypes
+        self.target.mkdir()
+        get_short = ctypes.WinDLL("kernel32", use_last_error=True).GetShortPathNameW
+        get_short.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD]
+        get_short.restype = wintypes.DWORD
+        buffer = ctypes.create_unicode_buffer(32768)
+        self.assertGreater(get_short(str(self.target), buffer, len(buffer)), 0, ctypes.get_last_error())
+        raw = Path(buffer.value)
+        canonical = self.target.resolve()
+        installer.write_changes(canonical, [(raw / "nested/new.txt", b"alias accepted")])
+        self.assertEqual(b"alias accepted", (canonical / "nested/new.txt").read_bytes())
+        command("cmd", "/c", "mklink", "/J", str(raw / "alias"), str(canonical / "nested"))
+        with self.assertRaisesRegex(ValueError, "linked path"):
+            installer.write_changes(canonical, [(raw / "alias/blocked.txt", b"bad")])
+        self.assertFalse((canonical / "nested/blocked.txt").exists())
 
     def test_bad_ref_leaves_target_absent(self):
         result = self.install("--ref", "nonexistent-installer-test-ref")
