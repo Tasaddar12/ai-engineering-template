@@ -1,10 +1,10 @@
 ---
 workflow: code-review
-roles: [coordinator, code-reviewer, targeted-fixer, debugger]
+roles: [coordinator, code-reviewer, code-fixer, debugger]
 produces: [REVIEW.md, optional REVIEW-FIX.md]
 ---
 
-@engineer/references/response-language-directive.md
+@~/.claude/engineer/references/response-language-directive.md
 
 <purpose>
 Independently review exact submitted source for bugs, security and code quality.
