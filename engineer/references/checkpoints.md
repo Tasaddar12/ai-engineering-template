@@ -467,9 +467,9 @@ I'll verify: vercel whoami returns your account
 | -------- | ----------------------- | ------------------------------------------ |
 | Convex   | `convex env set`    | Secure provider/masked entry; never a secret value in argv |
 | Vercel   | `vercel env add`        | `vercel env add STRIPE_KEY production`     |
-| Railway  | `railway variables set` | `railway variables set API_KEY=value`      |
-| Fly      | `fly secrets set`       | `fly secrets set DATABASE_URL=...`         |
-| Supabase | `supabase secrets set`  | `supabase secrets set MY_SECRET=value`     |
+| Railway | Dashboard Variables / Shared Variables | Enter name/value directly in the provider dashboard; never pass the value as a CLI argument. [Official variable entry](https://docs.railway.com/variables) |
+| Fly | `fly secrets import` from protected stdin | Supply `NAME=VALUE` through a protected secret-manager pipe or restricted local file redirected into stdin, with shell tracing disabled. Never echo the value into the command text. [Official import interface](https://fly.io/docs/flyctl/secrets-import/) |
+| Supabase | Dashboard Edge Function Secrets | Enter Key and Value directly in the provider dashboard and Save; confirm only the named secret exists. [Official dashboard procedure](https://supabase.com/docs/guides/functions/secrets) |
 
 **Secret collection pattern:**
 
@@ -511,12 +511,29 @@ I'll verify: vercel whoami returns your account
 npm run dev &
 DEV_SERVER_PID=$!
 
-# Wait for ready (at most 30 attempts with a one-second bounded HTTP request)
-# Wait at most 30 seconds using the installed Python interpreter.
-for attempt in $(seq 1 30); do
-  if python -c 'import urllib.request; urllib.request.urlopen("http://localhost:3000",timeout=1)' 2>/dev/null; then break; fi
-  sleep 1
-done
+# A monotonic deadline includes request and sleep time; exhausting it exits nonzero.
+if ! python - <<'PY'
+import sys, time, urllib.request
+end = time.monotonic() + 30
+while time.monotonic() < end:
+    remaining = end - time.monotonic()
+    try:
+        with urllib.request.urlopen("http://localhost:3000", timeout=min(1, remaining)) as response:
+            if 200 <= response.status < 400:
+                sys.exit(0)
+    except Exception:
+        pass
+    remaining = end - time.monotonic()
+    if remaining > 0:
+        time.sleep(min(0.25, remaining))
+sys.exit("Readiness deadline exceeded; checkpoint environment is unavailable")
+PY
+then
+  # Preserve logs/PID/start identity. Do not present a ready checkpoint.
+  # Stop DEV_SERVER_PID only after revalidating its recorded creation identity
+  # and session ownership; an npm child tree may need the actual host lifecycle API.
+  exit 1
+fi
 ```
 
 **Port conflicts:** inspect ownership. Never kill by port alone. Select another port or stop only a process this session created and positively identified.

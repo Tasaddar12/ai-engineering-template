@@ -25,10 +25,14 @@ Types: `feat` new behavior, `fix` defect repair, `test` test-only RED, `refactor
 Commit a completed task immediately. Keep RED, GREEN and optional REFACTOR distinct when required by the assignment:
 
 ```sh
+git status --porcelain --untracked-files=all
+git diff -- src/tests/test_comments.py
+git diff --cached --name-only
+# Preserve unrelated index entries; --only binds this commit to exact owned paths.
 git add -- src/tests/test_comments.py
-git commit -m "test(07-02): capture missing immediate comment visibility" -m "Why: reproduce the observed stale list." -m "Changes: add the targeted failing assertion." -m "Verification: actual RED record and semantic assessment."
+git commit --only -m "test(07-02): capture missing immediate comment visibility" -m "Why: reproduce the observed stale list." -m "Changes: add the targeted failing assertion." -m "Verification: actual RED record and semantic assessment." -- src/tests/test_comments.py
 git add -- src/comments.py
-git commit -m "feat(07-02): refresh submitted comments" -m "Why: satisfy the captured behavior." -m "Changes: update the subscribed list after submission." -m "Verification: actual GREEN command, revision and result."
+git commit --only -m "feat(07-02): refresh submitted comments" -m "Why: satisfy the captured behavior." -m "Changes: update the subscribed list after submission." -m "Verification: actual GREEN command, revision and result." -- src/comments.py
 ```
 
 A commit prefix is not RED evidence; read [TDD](tdd.md) for format adapters, actual assertion failure and commit ancestry. Do not bypass hooks silently. If the user defers all check execution, preserve that order and label validation pending.

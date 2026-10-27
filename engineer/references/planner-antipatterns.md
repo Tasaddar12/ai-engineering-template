@@ -96,7 +96,7 @@ If a decision from CONTEXT.md says "display cost calculated from billing table i
 
 ## Comment-Text Discipline (HARD GATE)
 
-> Enforced at plan-write time by `verify.plan-structure` (the `validate_plan` step). Issue #429.
+> This is a required semantic reviewer gate. `verify.plan-structure` checks supported structure; it does not implement the negative-literal/action comparison. The planner and independent plan-checker must inspect that comparison and report the actual evidence. Issue #429.
 
 When an `<acceptance_criteria>` or `<verify>` block uses a **negative grep** — `grep -c 'LITERAL' file == 0`, meaning "this literal must NOT appear in the file" — that same `LITERAL` must not appear verbatim anywhere in an `<action>` body. Verbatim code blocks, JSDoc samples, head-comment references, and "what NOT to do" illustrations get echoed into the file the executor writes, so the executor's commit-time gate fails on the *comment text*, not on a real code regression. The work is correct; the gate output is semantically wrong; the executor wastes cycles and learns to distrust the gate.
 

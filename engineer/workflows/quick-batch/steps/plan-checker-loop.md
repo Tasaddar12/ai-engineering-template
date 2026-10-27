@@ -69,10 +69,7 @@ that require a ROADMAP phase goal.
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: after calling Agent() above, wait for it to return before continuing.
 
-**Handle checker return** (same INFO/WARNING/BLOCKER counting rule as
-`/quick`'s own loop — an entry with a missing/unrecognized severity
-counts as BLOCKER, fail closed; pure INFO entries are advisory only and never
-enter the revision loop):
+**Handle checker return:** BLOCKER binds an actual unmet obligation; INFO remains advisory. An entry with missing/unrecognized severity is unusable evidence requiring classification, never an implicit pass. Legacy WARNING must be classified by its actual authority and required property; a preference cannot become mandatory merely through its label.
 
 - Require canonical `## PLAN REVIEW` and exactly `Verdict: approved` or `Verdict: needs-revision`. A legacy sentinel, absent/malformed verdict, contradictory verdicts or incomplete assigned coverage is unusable review evidence and blocks this entry.
 - **approved with complete coverage and no BLOCKER:** proceed; INFO remains advisory. An all-INFO list without canonical approval is not approval.
