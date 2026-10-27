@@ -81,7 +81,7 @@ ls .planning/RETROSPECTIVE.md 2>/dev/null || true
 
 **If exists:** Read the file, append new milestone section before the "## Cross-Milestone Trends" section.
 
-**If doesn't exist:** Create from template at `engineer/templates/retrospective.md`.
+**If doesn't exist:** Create RETROSPECTIVE.md with its document title and the complete milestone section below. Preserve all six subsection contracts, actual evidence and explicit unavailable observations. Add Cross-Milestone Trends only when there is actual cross-milestone evidence; do not manufacture historical rows.
 
 **Gather retrospective data:**
 

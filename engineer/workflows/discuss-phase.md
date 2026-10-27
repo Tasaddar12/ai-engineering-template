@@ -91,7 +91,7 @@ Phase: "API documentation"       → Structure/navigation, Code examples depth, 
 <process>
 
 <step name="initialize">
-Require a phase identifier. Parse only `--all`, `--auto` and `--text`; reject unsupported options without silently changing their meaning. Read and execute `engineer/workflows/_runtime-launcher.snippet.sh`, then run `engineer_run query phase.locate "${PHASE_NUMBER}"`. Stop on a missing or inconsistent phase and report the missing record with `/progress` as the inspection route. Use the locator's quoted `worktree` path; never guess a directory from the phase name. Run `engineer_run query init.phase-op "${PHASE_NUMBER}"` there. Read `phase_found`, `phase_dir`, `expected_phase_dir`, `padded_phase`, `goal`, `text_mode`, `paths`, `artifacts` and `state`. Apply response_language to prose only. If `--auto` is present, load its mode before `check_existing`; `--all` selects all areas; text mode changes rendering, not authority.
+Require a phase identifier. Parse only `--all`, `--auto` and `--text`; reject unsupported options without silently changing their meaning. Read and execute `engineer/workflows/_runtime-launcher.snippet.sh`, then run `engineer_run query phase.locate "${PHASE_NUMBER}"`. Stop on a missing or inconsistent phase and report the missing record with `/progress` as the inspection route. Use the locator's quoted `worktree` path; never guess a directory from the phase name. Run `engineer_run query init.phase-op "${PHASE_NUMBER}"` there. Read `phase_found`, actual `phase_dir`, `padded_phase`, `goal`, `text_mode`, `artifact_files`, grouped `artifacts`, existing *_path fields and `state`. Apply response_language to prose only. If `--auto` is present, load its mode before `check_existing`; `--all` selects all areas; text mode changes rendering, not authority.
 </step>
 
 <step name="check_blocking_antipatterns" priority="first">
@@ -120,7 +120,7 @@ Run `engineer_run query session.status` and inspect the locator's session lineag
 </step>
 
 <step name="check_spec">
-Use `has_spec` and the SPEC entry in INIT `artifacts`; do not assume a `spec_path` field or glob a UI artifact as a requirements spec. When present, read that exact SPEC in full, count its numbered requirements, and preserve its boundaries, constraints and acceptance as locked requirements. Display the requirement count and discuss implementation decisions only. `*-UI-SPEC.md` is a separate UI contract. When absent, proceed without inventing locked requirements.
+Derive ordinary SPEC presence from actual artifact_files ending -SPEC.md and exclude -UI-SPEC.md. Use a computed SPEC entry only when the bundle actually emits it. Do not assume a spec_path field or confuse a UI artifact with the requirements spec. When present, read that exact SPEC in full, count its numbered requirements, and preserve its boundaries, constraints and acceptance as locked requirements. Display the requirement count and discuss implementation decisions only. `*-UI-SPEC.md` is a separate UI contract. When absent, proceed without inventing locked requirements.
 </step>
 
 <step name="check_existing">
@@ -163,19 +163,7 @@ Read PROJECT.md and REQUIREMENTS.md and use INIT `state` for current position an
 </step>
 
 <step name="cross_reference_todos">
-Check pending todos for matches with this phase's scope.
-
-```bash
-TODO_MATCHES=$(engineer_run query todo.match-phase "${PHASE_NUMBER}")
-```
-
-Parse JSON for: `todo_count`, `matches[]` (each with `file`, `title`, `area`, `score`, `reasons`).
-
-**If `todo_count` is 0 or `matches` is empty:** Skip silently.
-
-**If matches found:** Present each match (title, area, why it matched). AskUserQuestion (multiSelect) asking which to fold. Folded → `<folded_todos>` for CONTEXT.md `<decisions>`. Reviewed but not folded → `<reviewed_todos>` for CONTEXT.md `<deferred>`.
-
-**Auto mode (`--auto`):** Fold all todos with score >= 0.4 automatically. Log the selection.
+Run `engineer_run query todo.match-phase "${PHASE_NUMBER}"` and inspect actual explicitly assigned matches. Preserve exact file names, titles, areas and canonical issue relationships. If the runtime returns no matches, skip without inventing relevance scores. Present each actual match and ask which to fold; preserve Folded Todos filenames in CONTEXT decisions and Reviewed Todos in deferred context. In --auto mode, only explicit phase assignments or a genuinely emitted numeric score at least 0.4 may be folded automatically; log the actual evidence and selection. A missing score is not zero and not an inferred match. Keep every folded item pending until guarded post-merge reconciliation.
 </step>
 
 <step name="scout_codebase">
@@ -260,14 +248,7 @@ Create CONTEXT.md and DISCUSSION-LOG.md.
 
 DISCUSSION-LOG.md is required evidence of the actual discussion. Record every actual question, options, evidence, reply, follow-up and delegated choice. Never manufacture a user answer or a research result. Downstream phase-researcher and planner use CONTEXT.md; the log preserves the audit trail.
 
-**Find or create phase directory:**
-
-Use values from init: `phase_dir`, `expected_phase_dir`, `phase_slug`, `padded_phase`. If `phase_dir` is null:
-```bash
-mkdir -p "${expected_phase_dir}"
-```
-
-Set `phase_dir="${expected_phase_dir}"` after creation.
+**Resolve the actual phase directory:** Use phase_dir from the successful locator and phase packet. Require it to exist and belong to this phase/session. A missing directory is a blocker to resolve through phase management, not a guessed mkdir operation.
 
 **File location:** `${phase_dir}/${padded_phase}-CONTEXT.md`
 

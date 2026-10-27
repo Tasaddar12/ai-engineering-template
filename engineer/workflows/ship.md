@@ -23,6 +23,8 @@ Parse an optional phase and `--draft`, `--review`, `--no-push`, `--no-merge`. Ca
 Use the locator's matching open session only. Never session.open here or fall back to the current branch. Capture SESSION_WORKTREE, SESSION_BRANCH and SESSION_BASE from the actual session. Stop on a missing/ambiguous/mismatched session; a branch with similar spelling is not the delivery target.
 </step>
 <step name="preflight_checks">
+Read and execute the complete engineer/workflows/_canonical-threat-tracking.md procedure for planned and unplanned phase risks. Preserve each PLAN register, deterministic checklist identity, explicit match review, full Security risk variant, actual provider-rendered anchors and independent audit. Never default to a standalone issue for every planned risk.
+
 1. Run `engineer_run query phase.handoff "${PHASE_NUMBER}"` and require ready=true. Reconcile complete summaries, canonical threat IDs, resolved evidence/reasons and every unresolved canonical issue URL. Inspect the complete independent issue-link audit; a prose assertion that links exist is insufficient.
 2. Require `engineer_run query verification.status "${PHASE_NUMBER}"` to be passed and `verification.current` to be current. If stale because an authorized repair changed source, run verify-work in ship-repair/return-to-caller mode, then return here. Otherwise report the exact nonpassed/stale blocker; do not ask whether to ship anyway.
 3. Require a clean session worktree. Commit only already authorized phase-owned work with the appropriate complete templates; unrelated dirty work is a blocker, never a reason to stash or stage everything.

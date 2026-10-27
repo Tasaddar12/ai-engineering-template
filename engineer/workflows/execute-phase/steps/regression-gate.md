@@ -30,7 +30,7 @@ write none when no test file was found:
 Record the complete discovered prior-phase test-file list in the evidence packet passed to the configured check runner. Preserve origin phase IDs; do not use a mutable shared handoff file.
 
 
-**Step 3: Run configured regression coverage** — Run `engineer_run query verification.run-checks "${PHASE_NUMBER}"` from the integrated phase session when execution is authorized. Configured checks include prior-phase suites; reuse only current passing input-bound receipts. A timeout or unavailable required runner halts dependent verification and preserves the complete diagnostic output. If execution is deferred by the user, report the required coverage as pending rather than running it or claiming it passed.
+**Step 3: Run configured regression coverage** — Run `engineer_run query verification.run-checks` from the integrated phase session when execution is authorized. Configured checks include prior-phase suites; reuse only current passing input-bound receipts. A timeout or unavailable required runner halts dependent verification and preserves the complete diagnostic output. If execution is deferred by the user, report the required coverage as pending rather than running it or claiming it passed.
 
 **Step 4: Report results**
 

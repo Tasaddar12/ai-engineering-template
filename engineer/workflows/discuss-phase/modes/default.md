@@ -96,8 +96,8 @@ These user-referenced docs are often MORE important than ROADMAP.md refs because
 - If user picks "Other" to provide freeform input (e.g., "let me describe it", "something else", or an open-ended reply), ask your follow-up as plain text — NOT another AskUserQuestion. Wait for them to type at the normal prompt, then reflect their input back and confirm before resuming AskUserQuestion or the next numbered batch.
 
 **Thinking partner (conditional):**
-If `features.thinking_partner` is enabled in config, check the user's answer for tradeoff signals
-(see `engineer/references/thinking-partner.md` for signal list). If tradeoff detected:
+If `features.thinking_partner` is enabled in config, check the user's answer for concrete tradeoff signals: competing goals, an acknowledged cost, incompatible constraints, or uncertainty between alternatives.
+If tradeoff detected:
 
 ```text
 I notice competing priorities here — {option_A} optimizes for {goal_A} while {option_B} optimizes for {goal_B}.

@@ -69,7 +69,7 @@ EXECUTOR_TYPE="executor"
 if [ "${AGENT_HINT_ROUTING:-true}" != "false" ]; then
   PLAN_HINT=$(jq -r '.agent_hint // empty' <<<"$plan_json" 2>/dev/null | tr -d '"')
   if [ -n "$PLAN_HINT" ]; then
-    EXECUTOR_TYPE=$(engineer_run query resolve-agent --name "$PLAN_HINT" --raw 2>/dev/null || echo "executor")
+    EXECUTOR_TYPE=$(engineer_run query resolve-agent "$PLAN_HINT" --raw 2>/dev/null || echo "executor")
   fi
 fi
 

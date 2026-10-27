@@ -11,7 +11,7 @@ Add a titled phase at the end of the current milestone. Let the runtime allocate
 <step name="parse_arguments">
 Read the description from the user's arguments. Parse optional `--goal <text>` and `--requirements <ids>` separately; do not include flags in the title. Require a nonempty short description. Ask for the missing description before any write.
 
-Usage: `/phase "Add authentication" --goal "Users can sign in" --requirements AUTH-01,AUTH-02`.
+Usage: `/phase "Add authentication" --goal "Users can sign in" --requirements AUTH-01 AUTH-02`.
 Use the description as the goal only when no separate goal was supplied. Preserve requirement identifiers exactly; do not invent acceptance criteria from the title.
 </step>
 <step name="init_context">
