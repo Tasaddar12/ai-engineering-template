@@ -8,11 +8,11 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / ".ai/runtime"))
+sys.path.insert(0, str(ROOT / "engineer/bin"))
 from lib import issue_format
-from lib.results import VerbError
+from lib.core import Failure as VerbError
 
-TEMPLATE = ROOT / ".ai/templates/issue.md"
+TEMPLATE = ROOT / "engineer/templates/issue.md"
 
 
 def bodies():
@@ -65,18 +65,18 @@ class IssueFormat(unittest.TestCase):
     def test_installed_security_schema_owns_its_heading(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            runtime = root / ".codex/runtime"
-            shutil.copytree(ROOT / ".ai/runtime", runtime)
-            templates = root / ".codex/templates"
-            templates.mkdir()
+            runtime = root / ".codex/engineer/bin"
+            shutil.copytree(ROOT / "engineer/bin", runtime)
+            templates = root / ".codex/engineer/templates"
+            templates.mkdir(parents=True)
             source = TEMPLATE.read_text(encoding="utf-8")
             installed = source.replace("## Risk assessment and lifecycle", "## Installed risk assessment")
             (templates / "issue.md").write_text(installed, encoding="utf-8")
-            sibling = root / ".ai/templates"
+            sibling = root / "engineer/templates"
             sibling.mkdir(parents=True)
             (sibling / "issue.md").write_text(source, encoding="utf-8")
             draft = root / "body.md"
-            command = [sys.executable, str(runtime / "phase.py"), "query", "issue.validate",
+            command = [sys.executable, str(runtime / "engineer.py"), "query", "issue.validate",
                        "--variant", "Security risk", "--body-file", str(draft)]
             for body, code in ((bodies()["Security risk"], 1),
                                (bodies()["Security risk"].replace("## Risk assessment and lifecycle",
@@ -129,8 +129,9 @@ class IssueFormat(unittest.TestCase):
 
     def test_uat_header_columns_separator_and_numbered_rows(self):
         body = bodies()["UAT"]
+        separator = re.search(r"(?m)^\|[-|: ]+\|$", body)[0]
         for changed in (body.replace("| Step |", "| Case |"),
-                        body.replace("|---|---|---|---|", "|---|---|---|"),
+                        body.replace(separator, "|---|---|---|"),
                         body.replace("| 1 |", "| one |"),
                         body.replace("| 2 |", "| 3 |"),
                         body.replace("| 2 |", "| 1 |"),
@@ -203,7 +204,7 @@ class IssueFormat(unittest.TestCase):
             self.assert_invalid(body.replace(table, fake))
         for changed in (body.replace("Reviewer:", "Observer:"),
                         body + "\nReviewer: Duplicate",
-                        re.sub(r"^Date:.*$", "Date:", body, flags=re.M),
+                        re.sub(r"^(?:- )?Date:.*$", "Date:", body, flags=re.M),
                         body.replace("Status:", "    Status:")):
             self.assert_invalid(changed)
 
@@ -233,24 +234,24 @@ class IssueFormat(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             for namespace in (".codex", ".claude"):
-                runtime = root / namespace / "runtime"
-                shutil.copytree(ROOT / ".ai/runtime", runtime)
-                templates = root / namespace / "templates"
-                templates.mkdir()
+                runtime = root / namespace / "engineer/bin"
+                shutil.copytree(ROOT / "engineer/bin", runtime)
+                templates = root / namespace / "engineer/templates"
+                templates.mkdir(parents=True)
                 shutil.copyfile(TEMPLATE, templates / "issue.md")
-                sibling = root / ".ai/templates"
+                sibling = root / "engineer/templates"
                 sibling.mkdir(parents=True, exist_ok=True)
                 (sibling / "issue.md").write_text("malformed sibling", encoding="utf-8")
                 draft = root / "body.md"
                 draft.write_text(bodies()["Bug"], encoding="utf-8")
-                command = [sys.executable, str(runtime / "phase.py"), "query", "issue.validate",
+                command = [sys.executable, str(runtime / "engineer.py"), "query", "issue.validate",
                            "--variant", "Bug", "--body-file", str(draft)]
                 result = subprocess.run(command, cwd=root, capture_output=True, text=True)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 (templates / "issue.md").unlink()
                 result = subprocess.run(command, cwd=root, capture_output=True, text=True)
                 self.assertEqual(result.returncode, 1)
-                self.assertIn('"issue-schema"', result.stdout)
+                self.assertIn('"issue-schema"', result.stderr)
 
 
 if __name__ == "__main__":

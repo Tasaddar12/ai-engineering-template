@@ -40,27 +40,40 @@ def find(value):
     artifacts = sorted(path.name for path in directory.iterdir() if path.is_file())
     plans = [p for p in artifacts if p.endswith("-PLAN.md")]
     summaries = [p for p in artifacts if p.endswith("-SUMMARY.md")]
+    human_name = next((phase["name"] for phase in roadmap_phases()
+                       if phase["number"] == number(directory.name)), directory.name.split("-", 1)[-1])
     return {"found": True, "directory": str(directory), "phase_dir": str(directory),
             "number": directory.name.split("-")[0], "phase_number": directory.name.split("-")[0],
-            "name": directory.name.split("-", 1)[-1], "artifacts": artifacts,
+            "name": human_name, "artifacts": artifacts,
             "plans": plans, "summaries": summaries, "plan_count": len(plans), "plan_count_all": len(plans),
             "summary_count": len(summaries), "has_context": any(p.endswith("CONTEXT.md") for p in artifacts),
             "has_research": any(p.endswith("RESEARCH.md") for p in artifacts)}
 
 
+def roadmap_structure(text):
+    """Mask fenced instructional examples while keeping original byte offsets."""
+    return re.sub(r"(?ms)^(`{3,}|~{3,})[^\n]*\n.*?^\1[^\n]*(?:\n|$)",
+                  lambda match: re.sub(r"[^\n]", " ", match[0]), text)
+
+
 def roadmap_phases():
     text = read(planning()/"ROADMAP.md")
-    matches = list(re.finditer(r"(?m)^#{2,4}\s+Phase\s+(\d+(?:\.\d+)?)\s*:\s*(.+)$", text))
+    structure = roadmap_structure(text)
+    unfilled = bool(re.search(r"(?m)^# Roadmap(?:: \[Project Name\]| Template)\s*$", text))
+    matches = list(re.finditer(r"(?m)^#{2,4}\s+Phase\s+(\d+(?:\.\d+)?)\s*:\s*(.+)$", structure))
     result = []
     for i, match in enumerate(matches):
         limit = matches[i+1].start() if i+1 < len(matches) else len(text)
-        boundary = re.search(r"(?m)^#{1,2}\s+", text[match.end():limit])
+        boundary = re.search(r"(?m)^#{1,2}\s+", structure[match.end():limit])
         if boundary:
             limit = match.end()+boundary.start()
         body = text[match.end():limit]
         fields = {}
         for label, value in re.findall(r"(?mi)^\*\*([^*:]+)(?::\*\*|\*\*:)\s*(.*)$", body):
             fields[slug(label).replace("-", "_")] = value.strip()
+        if unfilled and (match[2].strip() == "[Name]" or
+                         (match[2].strip() == "Critical Fix (INSERTED)" and fields.get("goal", "").startswith("["))):
+            continue
         result.append({"number": number(match.group(1)), "name": match.group(2).strip(),
                        "goal": fields.get("goal", ""), "depends_on": fields.get("depends_on", ""),
                        "requirements": re.findall(r"\b[A-Z]+-\d+\b", fields.get("requirements", "")),
@@ -81,6 +94,7 @@ def sync_roadmap():
     """Refresh only the canonical overview checklist and progress table."""
     path = planning()/"ROADMAP.md"
     text = read(path)
+    structure = roadmap_structure(text)
     items = roadmap_phases()
     overview, rows = [], []
     for phase in items:
@@ -91,19 +105,26 @@ def sync_roadmap():
         identifier = phase["number"]
         overview.append(f"- [{'x' if complete else ' '}] **Phase {identifier}: {phase['name']}** - {phase['goal']}")
         rows.append(f"| {identifier}. {phase['name']} | {done}/{total} | {status} | {now()[:10] if complete else '-'} |")
-    existing = re.search(r"(?m)^- \[[ x]\]\s*\*\*Phase\s+\d[^\n]*(?:\n- \[[ x]\]\s*\*\*Phase\s+\d[^\n]*)*", text)
+    existing = re.search(r"(?m)^- \[[ x]\]\s*\*\*Phase\s+\d[^\n]*(?:\n- \[[ x]\]\s*\*\*Phase\s+\d[^\n]*)*", structure)
     block = "\n".join(overview)
     if existing:
         text = text[:existing.start()]+block+text[existing.end():]
     else:
-        heading = re.search(r"(?m)^## Phases\s*$", text)
+        heading = re.search(r"(?m)^## Phases\s*$", structure)
         if heading:
             text = text[:heading.end()]+"\n\n"+block+text[heading.end():]
-    progress = re.search(r"(?m)^## Progress\s*$", text)
+    progress = re.search(r"(?m)^## Progress\s*$", roadmap_structure(text))
     if progress:
         tail = text[progress.end():]
         table = "| Phase | Plans Complete | Status | Completed |\n|-------|----------------|--------|-----------|\n"+"\n".join(rows)
         existing_table = re.search(r"(?m)^\| Phase \|[^\n]*(?:\n\|[^\n]*)*", tail)
+        if existing_table:
+            # Refresh derived rows, but retain authored rows sharing the table.
+            # Treat numeric phase rows as derived even after a phase is removed.
+            authored = [line for line in existing_table[0].splitlines()[2:]
+                        if not re.match(r"^\|\s*\d+(?:\.\d+)*[. ]", line)]
+            if authored:
+                table += "\n"+"\n".join(authored)
         tail = tail[:existing_table.start()]+table+tail[existing_table.end():] if existing_table else tail.rstrip()+"\n\n"+table+"\n"
         text = text[:progress.end()]+tail
     write(path, text)
@@ -152,6 +173,16 @@ def phase_list(args):
 def phase_change(args, action):
     path = planning()/"ROADMAP.md"
     with planning_lock():
+        if action == "set-plans":
+            if not path.is_file():
+                raise Failure("no-roadmap", "ROADMAP.md is required before registering plans")
+            state_path = planning()/"STATE.md"
+            if not state_path.is_file():
+                raise Failure("missing-state", "STATE.md is required before registering plans")
+            _, state_body = split_frontmatter(read(state_path))
+            position = re.search(r"(?ms)^## Current Position\s*\n(.*?)(?=^## |\Z)", state_body)
+            if not position or any(not re.search(r"(?m)^"+field+r":\s*\S", position[1]) for field in ("Phase", "Plan", "Status")):
+                raise Failure("invalid-state", "Current Position requires phase, plan and status before plan registration")
         text = read(path, "# Roadmap\n\n")
         existing = roadmap_phases()
         if action in ("add", "insert"):
@@ -174,12 +205,12 @@ def phase_change(args, action):
                 insertion = roadmap_phase(args.need())["end"]
                 text = text[:insertion]+block+text[insertion:]
             else:
-                progress = re.search(r"(?m)^## Progress\s*$", text)
+                progress = re.search(r"(?m)^## Progress\s*$", roadmap_structure(text))
                 text = text[:progress.start()].rstrip()+"\n\n"+block+text[progress.start():] if progress else text.rstrip()+"\n\n"+block
             write(path, text)
             sync_roadmap()
             return {"added": True, "phase": identifier, "phase_number": str(int(identifier.split('.')[0])) + ('.'+identifier.split('.')[1] if '.' in identifier else ''),
-                    "padded": identifier, "slug": slug(description), "directory": str(directory)}
+                    "padded": identifier, "name": description, "slug": slug(description), "directory": str(directory)}
         phase = roadmap_phase(args.need())
         before, block, after = text[:phase["start"]], text[phase["start"]:phase["end"]], text[phase["end"]:]
         if action == "remove":
@@ -220,23 +251,14 @@ def phase_change(args, action):
             else:
                 block = block.rstrip()+"\n**Status:** Complete\n\n"
         elif action == "set-plans":
-            ids = args.all("plans")
-            parsed = []
-            for value in ids:
-                plan_id, _, title = value.partition(":")
-                plan_id = plan_id.strip().removesuffix("-PLAN.md")
-                if not re.fullmatch(re.escape(phase["number"])+r"-\d+", plan_id):
-                    raise Failure("invalid-plan-id", value)
-                parsed.append((plan_id, title.strip()))
-            if len({identifier for identifier, _ in parsed}) != len(parsed):
-                raise Failure("duplicate-plan-id", "Plan identifiers must be unique")
-            checked = set(re.findall(r"(?m)^- \[x\]\s*(\d+(?:\.\d+)?-\d+)", block))
-            replacement = f"**Plans:** {len(parsed)} plans\n\nPlans:\n"+"\n".join(f"- [{'x' if identifier in checked else ' '}] {identifier}: {title}" for identifier, title in parsed)
-            pattern = r"(?m)^\*\*Plans(?::\*\*|\*\*:).*?(?=\n(?:\*\*|#{1,3} )|\Z)"
-            block = re.sub(pattern, lambda _: replacement+"\n", block, flags=re.S) if re.search(pattern, block, re.S) else block.rstrip()+"\n"+replacement+"\n\n"
+            from .plan_registration import rewrite
+            if args.has("summary") and len(args.all("summary")) != 1:
+                raise Failure("bad-plan", "Provide one explicit single-line summary")
+            block, registered = rewrite(block, phase["number"], args.all("plans"), args.get("summary"))
         write(path, before+block+after)
         sync_roadmap()
-        return {"updated": True, "phase": phase["number"], "action": action}
+        return {"updated": True, "phase": phase["number"], "action": action,
+                **({"plans": registered} if action == "set-plans" else {})}
 
 
 def plan_index(args):

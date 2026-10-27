@@ -51,6 +51,8 @@ def registry():
         "phase.uat-passed": uat.passed, "audit-uat": uat.outstanding, "audit-open": uat.audit_open,
         "uat.classify-coverage": uat.classify, "uat.render-checkpoint": uat.checkpoint, "uat.complete-session": uat.complete,
         "spec.edge-probe": probes.edge, "spec.section": probes.section, "summary-extract": misc.summary_extract,
+        "spec.prohibition-project": lambda a: probes.prohibition_project(a),
+        "spec.prohibition-proof": lambda a: probes.prohibition_proof(a),
         "package-legitimacy": packages.check, "run-with-timeout": misc.timeout,
         "generate-claude-md": misc.instruction_file, "planning.validate": lambda a: misc.integrity(a, False),
         "planning.integrity": lambda a: misc.integrity(a, True),
@@ -130,6 +132,7 @@ def main(argv=None):
     if name in ("init", "check", "verify", "frontmatter", "quick-batch", "spec", "phase", "state", "roadmap", "worktree", "uat") and values and not values[0].startswith("-"):
         name += "."+values.pop(0)
     args = Args(values)
+    before = None
     try:
         before = planning_integrity.capture()
         if name in ("help", "verbs", "--help", "-h"):
@@ -154,6 +157,16 @@ def main(argv=None):
             print(raw(result) if args.has("raw") or args.has("pick") else json.dumps(result, ensure_ascii=False, indent=2))
         return status
     except Failure as exc:
+        # A multi-record mutation can fail after its first write. Preserve the
+        # original failure and still report integrity evidence for those bytes.
+        if before is not None:
+            try:
+                warnings = planning_integrity.finish(name, before, planning_integrity.capture())
+            except Failure as integrity_error:
+                warnings = [{"error": integrity_error.code, "message": integrity_error.message,
+                             **integrity_error.details}]
+            if warnings:
+                print(json.dumps({"warning": "planning-integrity", "findings": warnings}, ensure_ascii=False), file=sys.stderr)
         print(json.dumps({"error": exc.code, "message": exc.message, **exc.details}, ensure_ascii=False), file=sys.stderr)
         return exc.status
     except (ValueError, TypeError, OSError, KeyError) as exc:

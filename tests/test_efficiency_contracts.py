@@ -11,7 +11,7 @@ class EfficiencyContractTests(unittest.TestCase):
         return (ROOT / path).read_text(encoding="utf-8")
 
     def test_scout_dispatch_routes_required_work_and_keeps_cited_evidence(self):
-        dispatch = self.read(".ai/references/scout-dispatch.md")
+        dispatch = self.read("engineer/references/scout-dispatch.md")
         self.assertIn("one discovery scout", dispatch)
         self.assertIn("named unresolved claim", dispatch)
         self.assertIn("task_class:", dispatch)
@@ -22,7 +22,7 @@ class EfficiencyContractTests(unittest.TestCase):
         self.assertIn("revision: <inspected revision>", dispatch)
 
     def test_required_scout_scope_keeps_owner_reads_and_evidence_reuse(self):
-        contract = " ".join(self.read(".ai/references/scout-dispatch.md").split())
+        contract = " ".join(self.read("engineer/references/scout-dispatch.md").split())
         for instruction in ("Dispatch `scout` before unknown-location searches",
                             "requested inventories", "fact extraction", "classification",
                             "structured summaries", "transformation proposals",
@@ -34,50 +34,50 @@ class EfficiencyContractTests(unittest.TestCase):
             self.assertIn(instruction, contract)
 
     def test_role_adapters_use_shared_scout_route_without_forcing_fanout(self):
-        for path in (ROOT / ".ai/agents").glob("*.md"):
+        for path in (ROOT / "agents").glob("*.md"):
             if path.stem in {"README", "scout"}:
                 continue
             body = path.read_text(encoding="utf-8")
             adapter = body.split("</local_workflow>", 1)[0]
             self.assertIn("scout dispatch", adapter, path.name)
-        rules = self.read(".ai/RULES.md")
+        rules = self.read("engineer/RULES.md")
         self.assertIn("references/scout-dispatch.md", rules)
 
     def test_review_triggers_and_parallel_readonly_work_are_explicit(self):
-        readme = self.read(".ai/agents/README.md")
-        verifier = self.read(".ai/workflows/verify-work.md")
+        readme = self.read("agents/AGENT.md")
+        verifier = self.read("engineer/workflows/verify-work.md")
         self.assertIn("fresh code-reviewer for every source-changing phase", readme)
         self.assertIn("when documentation changed", verifier)
         self.assertIn("when acceptance covers a", verifier)
-        for path in (".ai/workflows/execute-phase.md", ".ai/workflows/plan-phase.md",
-                     ".ai/workflows/quick.md"):
+        for path in ("engineer/workflows/execute-phase.md", "engineer/workflows/plan-phase.md",
+                     "engineer/workflows/quick.md"):
             workflow = self.read(path)
             self.assertIn("Independent read-only", workflow, path)
             self.assertIn("same frozen revision", workflow, path)
-        scout = self.read(".ai/references/scout-dispatch.md")
+        scout = self.read("engineer/references/scout-dispatch.md")
         self.assertIn("one bounded follow-up", scout)
         self.assertIn("block only the dependent", scout)
         self.assertIn("question, revision, search scope and supplied", scout)
 
     def test_execute_keeps_dependency_waves_and_uses_receipts(self):
-        workflow = self.read(".ai/workflows/execute-phase.md")
-        adaptation = self.read(".ai/references/agent-adaptation.md")
+        workflow = self.read("engineer/workflows/execute-phase.md")
+        adaptation = self.read("engineer/references/agent-adaptation.md")
         self.assertIn("phase-plan-index", workflow)
         self.assertIn("Plans that declare overlapping `files_modified`", workflow)
         self.assertIn("successful receipts", workflow)
         self.assertIn("dependency and file-overlap waves", adaptation)
         self.assertNotIn("displayed waves do not impose a global barrier", adaptation)
-        for path in (".ai/agents/phase-checker.md",
-                     ".ai/references/methods/planner-chunked.md",
-                     ".ai/references/template-adaptation.md",
-                     ".ai/templates/phase-prompt.md"):
+        for path in ("agents/plan-checker.md",
+                     "engineer/references/methods/planner-chunked.md",
+                     "engineer/references/template-adaptation.md",
+                     "engineer/templates/phase-prompt.md"):
             self.assertNotIn("not a global barrier", self.read(path))
             self.assertNotIn("no global wave barrier", self.read(path))
 
     def test_verifier_joins_evidence_before_success_bookkeeping_and_final_report(self):
-        workflow = self.read(".ai/workflows/verify-work.md")
-        evidence = self.read(".ai/references/verification-evidence.md")
-        handoff = self.read(".ai/references/worker-handoff.md")
+        workflow = self.read("engineer/workflows/verify-work.md")
+        evidence = self.read("engineer/references/verification-evidence.md")
+        handoff = self.read("engineer/references/worker-handoff.md")
         workflow = " ".join(workflow.split())
         evidence = " ".join(evidence.split())
         self.assertIn("read-only evidence assignments", workflow)
@@ -97,8 +97,8 @@ class EfficiencyContractTests(unittest.TestCase):
         self.assertIn("report-only commit", handoff)
 
     def test_verifier_consumes_shared_evidence_and_limits_duplicate_inspection(self):
-        verifier = self.read(".ai/agents/verifier.md")
-        patterns = self.read(".ai/references/methods/verification-patterns.md")
+        verifier = self.read("agents/verifier.md")
+        patterns = self.read("engineer/references/methods/verification-patterns.md")
         verifier = " ".join(verifier.split())
         patterns = " ".join(patterns.split())
         self.assertIn("For each declared connection without applicable cited evidence", verifier)
@@ -111,7 +111,7 @@ class EfficiencyContractTests(unittest.TestCase):
         self.assertIn("every required artifact/link", patterns)
 
     def test_ship_consumes_receipts_and_shares_currentness_rule(self):
-        workflow = self.read(".ai/workflows/ship.md")
+        workflow = self.read("engineer/workflows/ship.md")
         workflow = " ".join(workflow.split())
         self.assertIn("valid successful receipt", workflow)
         self.assertIn("verification evidence", workflow)

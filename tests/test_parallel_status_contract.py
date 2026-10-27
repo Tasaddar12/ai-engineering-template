@@ -5,10 +5,10 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-REFERENCE = ".ai/references/parallel-status.md"
-WORKFLOW = ".ai/workflows/execute-phase.md"
-COORDINATOR = ".ai/agents/coordinator.md"
-RULES = ".ai/RULES.md"
+REFERENCE = "engineer/references/parallel-status.md"
+WORKFLOW = "engineer/workflows/execute-phase.md"
+COORDINATOR = "agents/coordinator.md"
+RULES = "engineer/RULES.md"
 ENTRY = "AGENTS.md"
 PATHS = (REFERENCE, WORKFLOW, COORDINATOR, RULES, ENTRY)
 COLUMNS = ("Assignment / PLAN", "Worker id", "Role", "Resolved model", "Plan state",
@@ -16,6 +16,7 @@ COLUMNS = ("Assignment / PLAN", "Worker id", "Role", "Resolved model", "Plan sta
            "Blocker", "PR/MR")
 HOOKS = ("discover_and_group_plans", "execute_waves", "integrate_wave", "run_checks")
 LINK = "../references/parallel-status.md"
+COORDINATOR_LINK = "../engineer/references/parallel-status.md"
 
 # Short semantic cues are scoped to the real heading/step, never pinned paragraphs.
 DUTIES = {
@@ -72,7 +73,7 @@ def contract_errors(root):
         if LINK not in steps(content[WORKFLOW]).get(name, ""):
             errors.append(name + ": hook")
     execution = re.search(r"<execution>(.*?)</execution>", content[COORDINATOR], re.S)
-    if not execution or LINK not in execution.group(1):
+    if not execution or COORDINATOR_LINK not in execution.group(1):
         errors.append("coordinator hook")
     rules = section(content[RULES], "Orchestration and handoffs")
     if not all(t in rules for t in ("timeout", "host confirms", "stop before reassigning",
@@ -84,7 +85,7 @@ def contract_errors(root):
                                        "host confirmation", "stopped", "continuation",
                                        "#orchestration-and-handoffs", "worker-handoff.md")):
         errors.append("recovery stop gate")
-    if ".ai/RULES.md#orchestration-and-handoffs" not in content[ENTRY]:
+    if "engineer/RULES.md#orchestration-and-handoffs" not in content[ENTRY]:
         errors.append("entry stop link")
     return errors
 
@@ -144,14 +145,14 @@ class ParallelStatusContract(unittest.TestCase):
                 path.write_text(text.replace(body, body.replace(LINK, "missing.md"), 1), encoding="utf-8")
                 self.assertIn(name + ": hook", contract_errors(root))
         root = self.fixture()
-        self.replace(root, COORDINATOR, LINK)
+        self.replace(root, COORDINATOR, COORDINATOR_LINK)
         self.assertIn("coordinator hook", contract_errors(root))
 
     def test_stop_rule_and_entry_link(self):
         for name, token, expected in (
             (RULES, "stop before reassigning", "canonical stop rule"),
             (RULES, "Never automatically", "canonical stop rule"),
-            (ENTRY, ".ai/RULES.md#orchestration-and-handoffs", "entry stop link"),
+            (ENTRY, "engineer/RULES.md#orchestration-and-handoffs", "entry stop link"),
         ):
             with self.subTest(token=token):
                 root = self.fixture()

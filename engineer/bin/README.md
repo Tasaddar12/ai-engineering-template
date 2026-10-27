@@ -35,8 +35,10 @@ engineer_run query frontmatter.validate path/to/PLAN.md --schema plan
 
 Configuration and frontmatter support safe YAML mappings, sequences, flow
 collections, quoted strings, booleans, nulls, numbers, comments, and block scalars.
-Leading-zero phase identifiers retain string types. Tags, aliases, anchors,
-merge keys and duplicate block mapping keys fail closed. Writes use UTF-8,
+Leading-zero phase identifiers retain string types. Mapping anchors and merges
+preserve explicit overrides and copy alias values within bounded structural
+limits. Tags, scalar anchors, forward/cyclic aliases and duplicate explicit
+mapping keys fail closed. Writes use UTF-8,
 atomic replacement, and a project planning lock; frontmatter writes retain the
 document body and key order.
 
@@ -52,6 +54,11 @@ Record owners include `phase.add/insert/edit/remove/complete`,
 `todo.add/list/match-phase/complete`. Removal archives phase artifacts.
 `planning.archive` requires an explicit milestone and `--confirm`; it moves the
 requested `--scope phases|quick` under `.planning/milestones`.
+Plan registration requires a usable STATE current position and exact padded phase
+IDs with two ASCII ordinal digits. It replaces only rows under one unambiguous
+`Plans:` label, retains completed identities and surrounding authored notes, and
+refuses malformed/orphan rows before writing either record. `--summary TEXT`
+sets the single-line plan-count description without replacing nearby prose.
 
 Plan and evidence gates include `verify.plan-structure`, `plan.task-structure`,
 `check.verify-command-paths`, `check.verify-failure-directions`,
@@ -122,6 +129,19 @@ preserves historical observations and synchronizes actual counters. Quick UAT is
 included in open audits and ready/merge gates without fabricating phase identity.
 `spec.edge-probe` reads requirement and resolution JSON files;
 `spec.section SPEC.md edges|prohibitions` extracts explicit sections.
+`spec.prohibition-project INPUT.json` projects already selected stable prohibition
+items from a flat JSON array or an object containing `items`; it returns `items`
+and `coverage`. Selection and semantic recall remain the workflow's job.
+`spec.prohibition-proof DESCRIPTOR.json --subject REAL_PATH [--timeout SECONDS]`
+runs actual violation, mandatory clean-control and real-subject checks. The
+descriptor supplies argv and flat `check_*` or canonical fields; supported report
+formats are `unittest` (default), `junit` (requires `reportFile`) and `eslint-json`
+(stdout or `reportFile`). Argv can use `{subject}`, `{target}` and `{report}`
+placeholders. Success returns `located`, `proved` and `valid` true,
+`disposition: green`, and `kind`, `target`, `rule`, `subject`, `observations`,
+`reason`. Unprovable input or controls fail with exit 2,
+`unprovable-prohibition`, `proved`/`valid` false and `disposition: flagged`,
+retaining actual observations and the reason.
 `quick-batch.*` persists items, computes bounded scheduling and deterministic merge
 prefixes, and refuses to complete batches with nonterminal items.
 
@@ -144,6 +164,10 @@ The validator reads only that variant's fenced body under the File Template
 catalog. `issue.validate --variant NAME --body-file FILE` provides the same
 structural check for separately authorized provider operations. UAT retains
 explicit human acceptance fields and the template's step-table headers.
+The installed catalog must contain all five canonical variants. Literal fenced,
+indented, commented and raw HTML blocks cannot supply required headings, UAT
+tables or acceptance fields. UAT rows retain the four canonical columns and
+consecutive step numbers, and each human acceptance field appears exactly once.
 Preview and publication accept explicit `--existing-issue
 URL|NUMBER` or `--no-match` dispositions, bound into the token. Publication requires
 one after canonical-match review. Searches include open and closed issues,
@@ -329,10 +353,12 @@ passed as one shell argument. `--raw`, `--json`, and `--pick FIELD` are global.
 | `cleanup.preview` | none | approval_token/entries/count |
 | `cleanup.apply` | `--approval-token TOKEN --confirm` | removed/count; any resource drift fails |
 | `handoff.limits` | none | enabled/context_window/context_percent/context_tokens/threshold_tokens/binding |
-| `handoff.write` | `ID --reason TEXT [--remaining TEXT --completed TEXT --phase N --plan P --agent ID --role ROLE --next TEXT --blockers TEXT --notes TEXT --digest TEXT --continuation TEXT --scope TEXT --requested-fields TEXT]` | durable continuation record; supplied digest/continuation/scope fields roundtrip verbatim; reason optional on existing record |
+| `handoff.write` | `ID --reason TEXT [--remaining TEXT... --completed TEXT --findings TEXT... --files-read PATH... --phase N --plan P --summary PATH --artifact PATH --transcript FILE --agent ID --role ROLE --next TEXT --next-action TEXT --blockers TEXT --notes TEXT --digest TEXT --continuation TEXT --scope TEXT --requested-fields TEXT]` | durable continuation record; reason optional on existing record; named fields merge, list fields retain every value, transcript attribution accepts only contained user-assigned paths |
 | `handoff.list` | none | unconsumed handoffs/count |
 | `handoff.read` | `ID` | record and continuation text |
-| `handoff.consume` | `ID` | consumes record into handoffs/consumed |
+| `handoff.consume` | `ID` | `consumed, id, plan`; atomically preserves the consumed audit record and removes it from the pending queue; consumed IDs cannot be rewritten |
+| `spec.prohibition-project` | `INPUT.json` | projects preselected stable rows; `items, coverage`; never supplies semantic recall |
+| `spec.prohibition-proof` | `DESCRIPTOR.json --subject REAL_PATH [--timeout SECONDS]` | actual violation/clean/real control observations; proved green or nonzero unprovable flagged disposition |
 | `codebase.record` | `MAP... [--paths PATH...]` or `--maps MAP...` | records map revision and paths |
 | `codebase.status` | none | map freshness, commit age and changed files |
 | `planning.integrity`, `planning.validate` | `[--files PATH... --strict]` | schema and cross-record valid/warnings/errors/checked; validate warns by default, strict explicitly fails |

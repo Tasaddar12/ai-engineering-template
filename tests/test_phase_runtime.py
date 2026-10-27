@@ -1,6 +1,6 @@
 """Behavioral tests for the phase runtime against real repositories.
 
-Every test drives `phase.py` the way a workflow does — as a subprocess emitting
+Every test drives `engineer.py` the way a workflow does — as a subprocess emitting
 JSON — so the tests exercise the contract the workflows depend on, not internals.
 """
 import json
@@ -14,7 +14,7 @@ from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNTIME = ROOT / ".ai" / "runtime" / "phase.py"
+RUNTIME = ROOT / "engineer/bin/engineer.py"
 
 ROADMAP = """# Roadmap: Test Project
 
@@ -71,9 +71,9 @@ progress:
 
 ## Current Position
 
-Phase: [X] of [Y] ([Phase name])
-Plan: [A] of [B] in current phase
-Status: [Ready to plan]
+Phase: 1 of 2 (Foundation)
+Plan: 1 of 2 in current phase
+Status: Planning
 Last activity: [YYYY-MM-DD] - [What happened]
 
 Progress: [__________] 0%
@@ -148,6 +148,8 @@ class RuntimeCase(unittest.TestCase):
         (planning / "STATE.md").write_text(STATE, encoding="utf-8", newline="\n")
         (planning / "config.yaml").write_text(CONFIG, encoding="utf-8", newline="\n")
         (planning / "PROJECT.md").write_text(PROJECT, encoding="utf-8", newline="\n")
+        (planning / "phases/01-foundation").mkdir(parents=True)
+        (planning / "phases/02-features").mkdir(parents=True)
         (planning / "REQUIREMENTS.md").write_text(
             "# Requirements\n\n- REQ-01: one\n- REQ-02: two\n- REQ-03: three\n",
             encoding="utf-8", newline="\n")
@@ -160,27 +162,59 @@ class RuntimeCase(unittest.TestCase):
 
     def run_verb(self, *args, expect_ok=True):
         """Invoke one runtime verb and return its parsed result."""
-        environment = dict(os.environ, PYTHONIOENCODING="utf-8")
+        environment = dict(os.environ, PYTHONIOENCODING="utf-8", ENGINEER_ROOT=str(self.directory), ENGINEER_HOST="claude")
         completed = subprocess.run([sys.executable, str(RUNTIME), "query", *args],
                                    cwd=str(self.directory), capture_output=True,
                                    text=True, encoding="utf-8", env=environment)
         self.assertNotIn("Traceback", completed.stderr,
                          "verb raised instead of returning a result: " + completed.stderr)
-        payload = json.loads(completed.stdout)
+        payload = json.loads(completed.stdout) if completed.stdout else json.loads(completed.stderr.strip().splitlines()[-1])
+        payload = payload if isinstance(payload, dict) else {"value": payload}
+        payload = {**payload, "ok": completed.returncode == 0}
+        if not completed.stdout:
+            payload["code"] = payload["error"]
         if expect_ok:
-            self.assertTrue(payload.get("ok"), "verb failed: " + completed.stdout)
+            self.assertEqual(0, completed.returncode, "verb failed: " + completed.stdout+completed.stderr)
         else:
-            self.assertFalse(payload.get("ok"), "verb unexpectedly succeeded")
+            self.assertNotEqual(0, completed.returncode, "verb unexpectedly succeeded")
         return payload
 
     def reviewed_summary(self, number):
-        """Explicit completion setup; run_verb never inserts declarations."""
+        """Explicit complete committed plans and current v4 fixture evidence."""
         root = self.directory / ".planning/phases"
         existing = sorted(root.glob(number.zfill(2) + "-*")) if root.exists() else []
         selected = existing[0] if existing else root / (number.zfill(2) + "-reviewed")
         selected.mkdir(parents=True, exist_ok=True)
-        (selected / (number.zfill(2) + "-01-SUMMARY.md")).write_text(
-            "---\nissue_refs: []\n---\nReviewed: no remaining problems.\n", encoding="utf-8")
+        phase = self.run_verb("roadmap.get-phase", number)
+        requirements = phase["requirements"]
+        if not requirements:
+            requirements = ["REQ-03"]
+            self.run_verb("phase.edit", number, "--requirements", *requirements)
+        import re
+        identifiers = re.findall(r"(?m)^- \[[ x]\]\s*(\d+(?:\.\d+)?-\d+):", phase["body"])
+        if not identifiers:
+            identifiers = [number.zfill(2)+"-01"]
+            self.run_verb("roadmap.set-plans", number, "--plans", identifiers[0]+": Reviewed fixture")
+        for identifier in identifiers:
+            identity = {"phase": selected.name, "plan": identifier.rsplit("-", 1)[1]}
+            plan = {**identity, "type": "execute", "wave": 1, "depends_on": [],
+                    "files_modified": [], "files_deleted": [], "resources": [], "autonomous": True,
+                    "requirements": requirements, "acceptance": [], "documentation": [], "checks": [],
+                    "issue_refs": [], "must_haves": {"truths": [], "artifacts": [], "key_links": []}}
+            summary = {**identity, "status": "complete", "requirements-completed": requirements,
+                       "acceptance": [], "documentation": [], "issue_refs": []}
+            for suffix, metadata in (("PLAN", plan), ("SUMMARY", summary)):
+                text = "---\n"+"\n".join(key+": "+json.dumps(value) for key, value in metadata.items())+"\n---\nReviewed: no remaining problems.\n"
+                (selected/(identifier+"-"+suffix+".md")).write_text(text, encoding="utf-8")
+        self.git("add", "--", ".planning")
+        committed = self.git("commit", "-m", "fixture: completed source records")
+        self.assertEqual(0, committed.returncode, committed.stderr)
+        report = self.run_verb("verification.fingerprint", number)["path"]
+        self.run_verb("frontmatter.set", report, "--field", "issue_refs", "--value", "[]")
+        self.run_verb("frontmatter.set", report, "--field", "status", "--value", "passed")
+        self.git("add", "--", report)
+        committed = self.git("commit", "-m", "fixture: current v4 verification")
+        self.assertEqual(0, committed.returncode, committed.stderr)
 
     def read(self, relative):
         return (self.directory / relative).read_text(encoding="utf-8")
@@ -466,7 +500,7 @@ class PlanRegistration(RuntimeCase):
     def test_invalid_state_is_preflighted_before_roadmap_changes(self):
         for content in ("", "# Unusable state\n", "---\n- wrong shape\n---\n" + STATE,
                         "---\ninvalid: [\n---\n" + STATE,
-                        STATE.replace("Plan: [A] of [B] in current phase", "")):
+                        STATE.replace("Plan: 1 of 2 in current phase", "")):
             with self.subTest(content=content):
                 self.write_record("STATE.md", content)
                 self.assert_rejected_unchanged("1", "--plans", "01-01: Changed")
@@ -878,7 +912,7 @@ class Bundles(RuntimeCase):
         self.assertEqual(bundle["phase_count"], 2)
         self.assertTrue(bundle["initialized"])
         self.assertFalse(bundle["checks_configured"])
-        self.assertEqual(Path(bundle["templates_dir"]), ROOT / ".ai/templates")
+        self.assertEqual(Path(bundle["templates_dir"]), ROOT / "engineer/templates")
 
     def test_unknown_bundle_reports_a_handled_failure(self):
         failure = self.run_verb("init.nonsense", expect_ok=False)
@@ -910,24 +944,24 @@ class CommitAndConfig(RuntimeCase):
 
     def test_generate_slug_is_stable(self):
         result = self.run_verb("generate-slug", "API Key Session hardening")
-        self.assertEqual(result["slug"], "api-key-session-hardening")
+        self.assertEqual(result["value"], "api-key-session-hardening")
 
 
 class Dispatch(RuntimeCase):
     def test_source_codex_resolution_reads_native_settings_instead_of_claude_yaml(self):
-        self.run_verb("config-set", "agents.coder.model", "opus")
-        self.run_verb("config-set", "agents.coder.effort", "max")
-        codex = self.run_verb("resolve-agent", "coder", "--host", "codex")
+        self.run_verb("config-set", "agents.executor.model", "opus")
+        self.run_verb("config-set", "agents.executor.effort", "max")
+        codex = self.run_verb("resolve-agent", "executor", "--host", "codex")
         self.assertEqual("gpt-6.1-sol", codex["model"])
         self.assertEqual("medium", codex["effort"])
         self.assertEqual("native-codex", codex["model_source"])
         self.assertIn("install-assets", codex["native_file"])
-        self.assertEqual("gpt-6.1-sol", self.run_verb("resolve-model", "coder", "--host", "codex")["model"])
-        self.assertEqual("medium", self.run_verb("resolve-effort", "coder", "--host", "codex")["effort"])
-        claude = self.run_verb("resolve-agent", "coder", "--host", "claude")
+        self.assertEqual("gpt-6.1-sol", self.run_verb("resolve-model", "executor", "--host", "codex")["model"])
+        self.assertEqual("medium", self.run_verb("resolve-effort", "executor", "--host", "codex")["effort"])
+        claude = self.run_verb("resolve-agent", "executor", "--host", "claude")
         self.assertEqual("opus", claude["model"])
         self.assertEqual("max", claude["effort"])
-        self.assertEqual(claude["model"], self.run_verb("resolve-model", "coder")["model"])
+        self.assertEqual(claude["model"], self.run_verb("resolve-model", "executor")["model"])
 
     def test_scout_resolution_is_fixed_for_both_hosts_despite_yaml_overrides(self):
         self.run_verb("config-set", "agents.scout.model", "wrong")
@@ -961,12 +995,12 @@ class Dispatch(RuntimeCase):
 
     def test_invalid_host_is_a_handled_resolution_failure(self):
         for verb in ("resolve-model", "resolve-effort", "resolve-agent"):
-            self.assertEqual("bad-host", self.run_verb(verb, "coder", "--host", "other",
+            self.assertEqual("bad-host", self.run_verb(verb, "executor", "--host", "other",
                                                       expect_ok=False)["code"])
 
     def test_identity_names_the_runtime(self):
         result = self.run_verb("runtime-identity")
-        self.assertEqual(result["packageName"], "ai-phase-runtime")
+        self.assertEqual(result["packageName"], "engineer-runtime")
 
     def test_unknown_verb_reports_a_handled_failure(self):
         failure = self.run_verb("no-such-verb", expect_ok=False)
@@ -974,33 +1008,33 @@ class Dispatch(RuntimeCase):
 
     def test_resolve_model_inherits_when_no_override_is_configured(self):
         """Agent files carry no model; the host chooses unless config overrides."""
-        result = self.run_verb("resolve-model", "coder")
+        result = self.run_verb("resolve-model", "executor")
         self.assertEqual(result["source"], "default")
         self.assertEqual(result["model"], "inherit")
         self.assertTrue(result["inherit"])
 
     def test_config_overrides_the_agent_model(self):
-        self.run_verb("config-set", "agents.coder.model", "opus")
-        result = self.run_verb("resolve-model", "coder")
+        self.run_verb("config-set", "agents.executor.model", "opus")
+        result = self.run_verb("resolve-model", "executor")
         self.assertEqual(result["model"], "opus")
         self.assertEqual(result["source"], "config")
         self.assertFalse(result["inherit"])
 
     def test_any_model_alias_is_accepted(self):
         """Model aliases are an open set — a new one must not need a patch here."""
-        self.run_verb("config-set", "agents.coder.model", "fable")
+        self.run_verb("config-set", "agents.executor.model", "fable")
         self.assertEqual(
-            self.run_verb("resolve-model", "coder")["model"], "fable")
+            self.run_verb("resolve-model", "executor")["model"], "fable")
 
     def test_resolve_effort_inherits_when_no_override_is_configured(self):
-        result = self.run_verb("resolve-effort", "coder")
+        result = self.run_verb("resolve-effort", "executor")
         self.assertEqual(result["source"], "default")
         self.assertEqual(result["effort"], "inherit")
         self.assertTrue(result["inherit"])
 
     def test_config_overrides_the_agent_effort(self):
-        self.run_verb("config-set", "agents.coder.effort", "xhigh")
-        result = self.run_verb("resolve-effort", "coder")
+        self.run_verb("config-set", "agents.executor.effort", "xhigh")
+        result = self.run_verb("resolve-effort", "executor")
         self.assertEqual(result["effort"], "xhigh")
         self.assertEqual(result["source"], "config")
         self.assertFalse(result["inherit"])
@@ -1015,23 +1049,23 @@ class Dispatch(RuntimeCase):
 
     def test_unknown_effort_fails_instead_of_reaching_the_host(self):
         """The effort scale is closed, so a typo is caught here, not at dispatch."""
-        self.run_verb("config-set", "agents.coder.effort", "extreme")
-        failure = self.run_verb("resolve-effort", "coder", expect_ok=False)
+        self.run_verb("config-set", "agents.executor.effort", "extreme")
+        failure = self.run_verb("resolve-effort", "executor", expect_ok=False)
         self.assertEqual(failure["code"], "bad-effort")
 
     def test_resolve_agent_carries_both_dials_and_no_turn_cap(self):
-        self.run_verb("config-set", "agents.coder.model", "sonnet")
-        self.run_verb("config-set", "agents.coder.effort", "high")
-        result = self.run_verb("resolve-agent", "coder")
+        self.run_verb("config-set", "agents.executor.model", "sonnet")
+        self.run_verb("config-set", "agents.executor.effort", "high")
+        result = self.run_verb("resolve-agent", "executor")
         self.assertEqual(result["model"], "sonnet")
         self.assertEqual(result["effort"], "high")
         self.assertEqual(result["effort_source"], "config")
         self.assertNotIn("max_turns", result)
 
     def test_init_bundles_carry_an_efforts_map_beside_models(self):
-        self.run_verb("config-set", "agents.coder.effort", "high")
+        self.run_verb("config-set", "agents.executor.effort", "high")
         bundle = self.run_verb("init.execute-phase", "1")
-        self.assertEqual(bundle["efforts"]["coder"], "high")
+        self.assertEqual(bundle["efforts"]["executor"], "high")
         self.assertEqual(bundle["efforts"]["code-reviewer"], "inherit")
         self.assertEqual(set(bundle["efforts"]), set(bundle["models"]))
 
@@ -1714,8 +1748,8 @@ class InstallSeedContract(RuntimeCase):
     nothing, for the whole life of the project until onboarding rewrites it.
     """
 
-    SEED = ROOT / ".ai" / "install-assets" / "STATE.txt"
-    TEMPLATE = ROOT / ".ai" / "templates" / "state.md"
+    SEED = ROOT / "bin/install-assets" / "STATE.txt"
+    TEMPLATE = ROOT / "engineer/templates" / "state.md"
 
     def install(self, asset, record):
         """Write one install asset into the fixture as its planning record."""
@@ -1781,7 +1815,7 @@ class InstallSeedContract(RuntimeCase):
 
     def test_a_freshly_installed_record_set_validates_clean(self):
         """What an adopting project sees on day one should not be drift."""
-        assets = ROOT / ".ai" / "install-assets"
+        assets = ROOT / "bin/install-assets"
         for asset, record in (("PROJECT.txt", "PROJECT.md"),
                               ("REQUIREMENTS.txt", "REQUIREMENTS.md")):
             self.install(assets / asset, record)
@@ -1790,7 +1824,7 @@ class InstallSeedContract(RuntimeCase):
 
     def test_a_decision_reaches_the_installed_project_record(self):
         """The seed's Key Decisions table has to exist for the log to be durable."""
-        self.install(ROOT / ".ai" / "install-assets" / "PROJECT.txt", "PROJECT.md")
+        self.install(ROOT / "bin/install-assets" / "PROJECT.txt", "PROJECT.md")
         result = self.run_verb("state.add-decision", "Use Postgres",
                                "--rationale", "Already operated in-house")
         self.assertIsNotNone(result["project_record"],

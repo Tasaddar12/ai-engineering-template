@@ -31,6 +31,22 @@ def errors(metadata, schema):
             result.append(f"Missing field: {key}")
         elif not isinstance(metadata[key], kind) or (kind is int and isinstance(metadata[key], bool)):
             result.append(f"Invalid type: {key}")
+    # A field belonging to another artifact kind is still typed when present;
+    # stray metadata cannot hide declarations from a later consumer.
+    list_fields = {key for fields in SCHEMAS.values() for key, kind in fields.items() if kind is list}
+    for key in list_fields - set(SCHEMAS[schema]):
+        if key in metadata and not isinstance(metadata[key], list):
+            result.append(f"Invalid type: {key}")
+    if "plan" in metadata and isinstance(metadata["plan"], bool):
+        result.append("Invalid type: plan")
+    if schema == "plan" and isinstance(metadata.get("wave"), int) and metadata["wave"] < 1:
+        result.append("wave must be a positive integer")
+    if isinstance(metadata.get("issue_refs"), list):
+        for index, entry in enumerate(metadata["issue_refs"]):
+            if not isinstance(entry, dict) or not isinstance(entry.get("id"), str) or not entry["id"].strip():
+                result.append(f"issue_refs[{index}] requires an identified finding mapping")
+            elif entry.get("state") == "pending-human" and entry.get("relationship", "followup") != "followup":
+                result.append(f"issue_refs[{index}] pending human acceptance requires followup")
     if schema == "context" and metadata.get("discussion") not in ("pending", "complete"):
         result.append("Discussion must be pending or complete; only actual captured answers establish completion")
     if schema == "plan" and isinstance(metadata.get("checks"), list):
