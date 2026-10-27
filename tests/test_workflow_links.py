@@ -74,7 +74,7 @@ class WorkflowNavigationTests(unittest.TestCase):
                     self.assertIn(label, errors(body.replace(cue, "Removed")))
 
     def test_feature_response_language_rules_are_inline_and_cover_all_user_prose(self):
-        for name in ("audit-fix", "audit-uat", "fast", "quick-batch", "code-review", "code-review-fix"):
+        for name in ("audit-fix", "audit-uat", "quick-batch", "code-review", "code-review-fix"):
             with self.subTest(workflow=name):
                 text = (ROOT / "engineer/workflows" / (name + ".md")).read_text(encoding="utf-8")
                 for required in ("config-get response_language --raw", "narration between tool calls",
@@ -82,6 +82,35 @@ class WorkflowNavigationTests(unittest.TestCase):
                                  "Preserve code, paths", "machine-readable keys", "protocol markers verbatim"):
                     self.assertIn(required, text)
                 self.assertNotIn("@engineer/references/response-language-directive.md", text)
+
+    def test_batch_review_and_worker_completion_have_no_legacy_shortcuts(self):
+        base = ROOT / "engineer/workflows/quick-batch/steps"
+        checker = (base / "plan-checker-loop.md").read_text(encoding="utf-8")
+        expected = checker.split("<expected_output>", 1)[1].split("</expected_output>", 1)[0]
+        self.assertIn("## PLAN REVIEW", expected)
+        self.assertIn("Verdict: approved | needs-revision", expected)
+        self.assertNotIn("## VERIFICATION PASSED", expected)
+        for condition in ("absent/malformed verdict", "contradictory verdicts", "incomplete assigned coverage",
+                          "all-INFO list without canonical approval", "retry cap never waives"):
+            self.assertIn(condition, checker)
+        dispatch = (base / "worktree-dispatch.md").read_text(encoding="utf-8")
+        for duty in ("MUST commit your owned source changes", "required complete SUMMARY.md",
+                     'effort="{resolved_executor_effort}"', 'isolation="worktree"', "worktree.record-agent"):
+            self.assertIn(duty, dispatch)
+        self.assertNotIn("{harnessFlag}", dispatch)
+        self.assertNotIn("Do NOT commit docs artifacts", dispatch)
+        verification = (base / "verification-wave.md").read_text(encoding="utf-8")
+        self.assertLess(verification.index("persist its full content verbatim"),
+                        verification.index("query verification.status"))
+
+    def test_next_and_summary_apply_response_language_to_full_prose(self):
+        for name in ("next", "milestone-summary"):
+            text = (ROOT / "engineer/workflows" / (name + ".md")).read_text(encoding="utf-8")
+            policy = text.split("<response_language>", 1)[1].split("</response_language>", 1)[0]
+            for surface in ("config-get response_language --raw", "narration between tool calls",
+                            "status updates", "progress notes", "findings", "final result",
+                            "Preserve literal code", "canonical markers"):
+                self.assertIn(surface, policy)
 
     def test_phase_handoff_producers_and_post_merge_reconciliation_are_wired(self):
         execute = (ROOT / "engineer/workflows/execute-phase.md").read_text(encoding="utf-8")

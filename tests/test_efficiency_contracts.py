@@ -30,7 +30,7 @@ class EfficiencyContractTests(unittest.TestCase):
                             "Directly inspect already-known source", "runtime and Git metadata",
                             "Reuse matching evidence before dispatching another scout",
                             "Batch compatible fields", "delegate every read",
-                            "coordinator cannot dispatch either", "block only the dependent claim"):
+                            "direct scout dispatch is unsupported", "block only the dependent claim"):
             self.assertIn(instruction, contract)
 
     def test_role_adapters_use_shared_scout_route_without_forcing_fanout(self):
