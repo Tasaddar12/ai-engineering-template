@@ -1,9 +1,6 @@
 # docs-update.md — deferred elaboration
 
-Read in full when `workflow.compact_content` is `false` (the default) — see
-`engineer/references/compact-content-gate.md` for the check and resolution rule this
-spine defers to. Each `§` below is the full text the spine condenses at the point it
-names.
+Read in full for the corresponding steps in `engineer/workflows/docs-update.md`.
 
 ## § 1 — sequential_generation
 

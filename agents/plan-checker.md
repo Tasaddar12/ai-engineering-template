@@ -726,7 +726,7 @@ issue:
 ## Step 1: Load Context
 
 Load phase operation context:
-@~/.claude/engineer/references/gsd-run-resolver.md
+@~/.claude/engineer/references/run-resolver.md
 
 ```bash
 INIT=$(engineer_run query init.phase-op "${PHASE_ARG}")

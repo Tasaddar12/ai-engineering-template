@@ -33,7 +33,6 @@ No Pass/Fail buttons. No severity questions. Just: "Here's what should happen. D
 
 <process>
 
-**Compact Content Gate.** Read and follow `engineer/references/compact-content-gate.md` now — it states the `workflow.compact_content` check and the resolution rule this spine defers to. When it directs a Read, read `engineer/workflows/verify-work/detail/elaboration.md` in full before continuing past this point; its content elaborates on the resume/reconcile steps and the full gap-closure sub-flow below.
 
 <step name="initialize" priority="first">
 If $ARGUMENTS contains a phase number, load context:
@@ -99,12 +98,6 @@ Parse JSON for: `planner_model`, `checker_model`, `commit_docs`, `phase_found`, 
 
 **If `response_language` is set:** All user-facing output of this workflow — narration between tool calls, status updates, progress notes, findings, questions, prompts, and explanations — MUST be presented in `{response_language}`. Technical terms, code, file paths, and subagent prompts stay in English — only user-facing output is translated.
 
-```bash
-# MVP mode detection via the centralized phase.mvp-mode resolver.
-# verify-work has no --mvp CLI flag (mode is inherited from the planned phase),
-# so we omit --cli-flag — the verb falls through roadmap → config → false.
-MVP_MODE=$(engineer_run query phase.mvp-mode "${phase_number}" ${GSD_WS:+--ws=${GSD_WS##* }} --pick active)
-```
 </step>
 
 <step name="verify_pre_hooks">
@@ -257,12 +250,6 @@ fi
 </step>
 
 <step name="extract_tests">
-<!-- gsd:section id="mvp-uat-framing" when="state:phase-mvp-mode" -->
-If `section_manifest` is `null` or `"mvp-uat-framing"` is in its `included` list: read and execute `engineer/workflows/verify-work/steps/mvp-uat-framing.md`. Otherwise skip — do not read the file.
-<!-- /section -->
-
-When `MVP_MODE=false` (mode is null, absent, or the phase has no `**Mode:**` line in ROADMAP.md), fall back to the standard UAT generation path — no behavioral change.
-
 **Coverage-aware deterministic classification (#1602).** Before deriving checkpoints from prose, classify each SUMMARY's structured `coverage:` block. For each `*-SUMMARY.md`:
 
 ```bash
@@ -655,7 +642,7 @@ Resolve whether the secure-phase step hook is enabled: an entry with `kind == "s
 If the secure-phase step hook is enabled AND `SECURITY_FILE` is empty, dispatch the registry-provided skill stem:
 
 ```
-Skill(skill="gsd-${ref.skill}", args="{phase}")
+Skill(skill="${ref.skill}", args="{phase}")
 ```
 
 After the skill returns, refresh `SECURITY_FILE`:

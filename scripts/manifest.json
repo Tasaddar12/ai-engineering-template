@@ -161,7 +161,17 @@
     "engineer/templates/summary.compact.md",
     "engineer/templates/user-profile.md",
     "engineer/templates/user-setup.compact.md",
-    "engineer/workflows/discuss-phase/modes/default.md"
+    "engineer/workflows/discuss-phase/modes/default.md",
+    "engineer/references/compact-content-gate.md",
+    "engineer/references/execute-mvp-tdd.md",
+    "engineer/references/gsd-run-resolver.md",
+    "engineer/references/ios-scaffold.md",
+    "engineer/references/planner-chunked.md",
+    "engineer/references/planner-load-graph-context.md",
+    "engineer/references/planner-mvp-mode.md",
+    "engineer/references/skeleton-template.md",
+    "engineer/references/user-story-template.md",
+    "engineer/references/verify-mvp-mode.md"
   ],
   "batch_b": [
     "engineer/references/agent-contracts.md",
