@@ -6,9 +6,13 @@ import stat
 import subprocess
 import sys
 
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8")
+
 
 def read_event():
-    value = json.load(sys.stdin)
+    value = json.loads(sys.stdin.buffer.read().decode("utf-8-sig")) if hasattr(sys.stdin, "buffer") else json.load(sys.stdin)
     return value if isinstance(value, dict) else {}
 
 
@@ -23,7 +27,7 @@ def reparse(path):
 
 def root_for(event):
     cwd = Path(event.get("cwd") or os.getcwd()).resolve()
-    result = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=cwd, capture_output=True, text=True, timeout=3)
+    result = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=cwd, capture_output=True, text=True, encoding="utf-8", timeout=3)
     return Path(result.stdout.strip()).resolve() if result.returncode == 0 else cwd
 
 
@@ -33,11 +37,12 @@ def runtime(root):
     return next((p for p in candidates if p.is_file()), None)
 
 
-def query(root, *args):
+def query(root, *args, snapshot=None):
     entry = runtime(root)
     if not entry:
         raise ValueError("engineering runtime unavailable")
     result = subprocess.run([sys.executable, str(entry), "query", *map(str, args)], cwd=root,
+                            env=dict(os.environ, **({"ENGINEER_ROOT": str(snapshot)} if snapshot else {})),
                             capture_output=True, text=True, encoding="utf-8", timeout=5)
     if result.returncode:
         raise ValueError(result.stderr.strip() or result.stdout.strip())
@@ -56,6 +61,10 @@ def roles():
             key, words = line.split("=", 1)
             result[key] = set(words.strip().strip("'\"").split())
     return result
+
+
+def role_name(value):
+    return value.rsplit(":", 1)[-1].strip() if isinstance(value, str) else "unknown"
 
 
 def safe_state(root, relative):
