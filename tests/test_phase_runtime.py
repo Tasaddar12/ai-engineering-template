@@ -811,12 +811,12 @@ class Bundles(RuntimeCase):
         self.assertEqual(bundle["padded_phase"], "01")
         self.assertEqual(bundle["phase_name"], "Foundation")
         self.assertFalse(bundle["has_context"])
-        self.assertEqual(bundle["expected_phase_dir"], ".planning/phases/01-foundation")
-        self.assertEqual(bundle["paths"]["roadmap"], ".planning/ROADMAP.md")
+        self.assertEqual(Path(bundle["expected_phase_dir"]), self.directory / ".planning/phases/01-foundation")
+        self.assertEqual(Path(bundle["paths"]["roadmap"]), self.directory / ".planning/ROADMAP.md")
 
     def test_plan_phase_bundle_tells_partial_research_from_finished(self):
         directory = self.directory / ".planning/phases/01-foundation"
-        directory.mkdir(parents=True)
+        directory.mkdir(parents=True, exist_ok=True)
         research = directory / "01-RESEARCH.md"
         bundle = self.run_verb("init.plan-phase", "1")
         self.assertFalse(bundle["has_research"])
@@ -842,7 +842,7 @@ class Bundles(RuntimeCase):
 
     def test_progress_bundle_flags_incomplete_execution(self):
         directory = self.directory / ".planning/phases/01-foundation"
-        directory.mkdir(parents=True)
+        directory.mkdir(parents=True, exist_ok=True)
         (directory / "01-01-PLAN.md").write_text("# plan\n", encoding="utf-8")
         bundle = self.run_verb("init.progress")
         self.assertEqual(bundle["incomplete_phase"], "1")
@@ -850,9 +850,8 @@ class Bundles(RuntimeCase):
 
     def test_progress_bundle_has_no_incomplete_phase_when_summaries_match(self):
         directory = self.directory / ".planning/phases/01-foundation"
-        directory.mkdir(parents=True)
-        (directory / "01-01-PLAN.md").write_text("# plan\n", encoding="utf-8")
-        (directory / "01-01-SUMMARY.md").write_text("# summary\n", encoding="utf-8")
+        directory.mkdir(parents=True, exist_ok=True)
+        self.reviewed_summary("01")
         bundle = self.run_verb("init.progress")
         self.assertIsNone(bundle["incomplete_phase"])
 
@@ -865,7 +864,7 @@ class Bundles(RuntimeCase):
 
     def test_plan_phase_bundle_carries_models_and_requirements(self):
         bundle = self.run_verb("init.plan-phase", "1")
-        self.assertIn("phase-preparer", bundle["models"])
+        self.assertIn("planner", bundle["models"])
         self.assertEqual(bundle["requirements"], ["REQ-01", "REQ-02"])
         self.assertEqual(bundle["project_requirements"],
                          ["REQ-01", "REQ-02", "REQ-03"])

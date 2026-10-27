@@ -372,7 +372,7 @@ def state_view(args=None):
     section = position_match[1] if position_match else text
     position = {k.strip(): v.strip() for k, v in re.findall(r"(?m)^(?:\*\*)?([^*\n:]+?)(?::\*\*|\*\*:|:)\s*(.*)$", section)}
     fields = {slug(k).replace("-", "_"): v for k, v in position.items()}
-    fields = {**metadata, **fields}
+    fields = {**fields, **metadata}
     fields["milestone"] = milestone_name()
     fields["exists"] = bool(text)
     fields["content"] = text
@@ -459,9 +459,9 @@ def state_action(args, action):
         with planning_lock():
             metadata, body = split_frontmatter(read(path))
             metadata["progress"] = derived_progress()
-            position = state_view().get("status")
+            position = state_view().get("position", {}).get("Status")
             if position:
-                metadata["status"] = position
+                metadata["status"] = "executing" if position == "In progress" else position.lower().replace(" ", "_")
             write(path, join_frontmatter(metadata, body))
         return {"synced": True, "progress": metadata["progress"], "path": str(path)}
     if action == "update":
