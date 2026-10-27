@@ -9,6 +9,7 @@ from .text import join_frontmatter, split_frontmatter
 
 
 def integrity(args, strict=False):
+    schema_only = strict
     strict = strict or args.has("strict")
     paths = [safe_path(p) for p in args.all("files")]
     if not paths:
@@ -24,8 +25,12 @@ def integrity(args, strict=False):
         except Failure as exc:
             findings = [exc.message]
         errors.extend({"path": str(path), "error": finding} for finding in findings)
-    from .planning_consistency import findings
-    errors.extend(findings())
+    # A prospective commit snapshot intentionally contains only selected records.
+    # Schema validation must not infer missing project records from that snapshot.
+    # Whole-project consistency belongs to the separate planning.validate verb.
+    if not schema_only:
+        from .planning_consistency import findings
+        errors.extend(findings())
     return {"valid": not errors, "warnings": errors, "errors": errors if strict else [], "checked": len(paths)}, int(bool(errors) and strict)
 
 

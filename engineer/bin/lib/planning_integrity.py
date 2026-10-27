@@ -1,7 +1,38 @@
 """Capture planning-record integrity around every runtime invocation."""
 from . import frontmatter, records
-from .core import Failure, digest, read
+from pathlib import Path
+from .core import Failure, digest, read, root
 from .text import split_frontmatter
+
+
+def record_kind(value):
+    """Recognize active planning artifacts, never similarly named source/docs."""
+    path = Path(value)
+    if path.is_absolute():
+        try:
+            path = path.relative_to(root())
+        except ValueError:
+            return None
+    parts = path.parts
+    if len(parts) != 4 or parts[:2] not in ((".planning", "phases"), (".planning", "quick")):
+        return None
+    return next((name for name in frontmatter.SCHEMAS
+                 if path.name.endswith("-"+name.upper()+".md")), None)
+
+
+def validate_record(value, content):
+    """Validate supplied prospective bytes without reading or changing the index."""
+    schema = record_kind(value)
+    if schema is None:
+        return None
+    try:
+        metadata, _ = split_frontmatter(content)
+        errors = frontmatter.errors(metadata, schema)+frontmatter.path_errors(root()/value, metadata, schema)
+    except Failure as exc:
+        errors = [exc.message]
+    if errors:
+        raise Failure("planning-integrity", "Malformed planning record: "+str(value), findings=errors)
+    return {"valid": True, "path": str(value), "schema": schema}
 
 MUTATIONS = {
     "config-set", "config-new-project", "commit", "generate-claude-md", "run-with-timeout",
