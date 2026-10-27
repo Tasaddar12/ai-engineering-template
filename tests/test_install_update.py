@@ -174,6 +174,7 @@ class UpdateTests(unittest.TestCase):
     def test_user_language_and_checkpoint_overrides_remain_byte_identical(self):
         config = self.read(".planning/config.yaml").replace(b"response_language: null", b"response_language: French")
         config = config.replace(b"human_verify_mode: end-of-phase", b"human_verify_mode: mid-flight")
+        config = config.replace(b"discuss_mode: discuss", b"discuss_mode: project-discussion")
         self.write(".planning/config.yaml", config)
         plan = self.plan()
         self.assertIsNone(self.row(plan, ".planning/config.yaml")["conflict"])

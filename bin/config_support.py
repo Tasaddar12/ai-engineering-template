@@ -11,7 +11,6 @@ REQUIRED = {"workflow.isolation": "auto", "handoff.enabled": True,
             "handoff.context_percent": 60, "handoff.context_tokens": 250000,
             "verification.commands": []}
 ENUMS = {"workflow.isolation": {"auto", "harness-worktree", "orchestrator-worktree"},
-         "workflow.discuss_mode": {"discuss", "assumptions"},
          "workflow.code_review_depth": {"standard", "deep", "quick"},
          "workflow.human_verify_mode": {"end-of-phase", "mid-flight"},
          "delivery.merge_method": {"merge", "squash", "rebase"}}
