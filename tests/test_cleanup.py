@@ -8,8 +8,12 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT/"engineer/bin"))
+from lib import cleanup as current_cleanup
+from lib.core import Args, Failure
 
 
 def git(cwd, *args):
@@ -521,6 +525,78 @@ class CleanupTests(unittest.TestCase):
         self.assertTrue(self.repair_ref_output("refs/heads/phase-z-other"))
         self.assertTrue((unowned / "valuable").is_file())
         self.assertTrue(backup.parent.is_dir())
+
+
+class CurrentCleanupGuards(unittest.TestCase):
+    """Current approval ABI against real Git, with offline disposition evidence."""
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        git(self.root, "init", "-q", "-b", "integration")
+        git(self.root, "config", "user.name", "Cleanup Fixture")
+        git(self.root, "config", "user.email", "cleanup@example.invalid")
+        (self.root/".gitignore").write_text(".worktrees/\n.planning/worktrees/\n.planning/cleanup/\n.generated/\n")
+        (self.root/"source").write_text("original\n")
+        git(self.root, "add", ".")
+        git(self.root, "commit", "-qm", "baseline")
+        self.head = git(self.root, "rev-parse", "HEAD")
+        self.tree = self.root/".worktrees/owned"
+        git(self.root, "worktree", "add", "-qb", "owned", str(self.tree))
+        self.manifest = self.root/".planning/worktrees/fixture.json"
+        self.manifest.parent.mkdir(parents=True)
+        self.owner = {"path": str(self.tree), "branch": "owned", "merged": True, "head": self.head, "integration_revision": self.head}
+        self.save_owner()
+        self.environment = patch.dict(os.environ, {"ENGINEER_ROOT": str(self.root)})
+        self.environment.start()
+        self.addCleanup(self.environment.stop)
+        self.provider = patch.object(current_cleanup, "provider_evidence", return_value={"offline": "closed"})
+        self.provider.start()
+        self.addCleanup(self.provider.stop)
+
+    def save_owner(self):
+        self.manifest.write_text(json.dumps({"workers": [self.owner]}))
+
+    def preview(self):
+        return current_cleanup.command(Args([]), "preview")
+
+    def apply(self, preview):
+        return current_cleanup.command(Args(["--approval-token", preview["approval_token"], "--confirm"]), "apply")
+
+    def test_exact_token_removes_only_integrated_owned_resource_once(self):
+        preview = self.preview()
+        self.assertEqual(preview["count"], 1)
+        self.assertEqual(self.apply(preview)["count"], 1)
+        self.assertFalse(self.tree.exists())
+        self.assertNotEqual(subprocess.run(["git", "show-ref", "--verify", "refs/heads/owned"], cwd=self.root, capture_output=True).returncode, 0)
+        with self.assertRaises(Failure):
+            self.apply(preview)
+
+    def test_changed_ownership_or_ignored_content_preserves_actual_files(self):
+        preview = self.preview()
+        self.owner["plan"] = "changed-owner"
+        self.save_owner()
+        with self.assertRaises(Failure):
+            self.apply(preview)
+        self.assertTrue(self.tree.exists())
+        (self.tree/".generated").mkdir()
+        (self.tree/".generated/valuable").write_text("keep")
+        self.assertEqual(self.preview()["count"], 0)
+
+    def test_symbolic_swap_never_deletes_referent(self):
+        preview = self.preview()
+        git(self.root, "branch", "valuable", self.head)
+        git(self.root, "symbolic-ref", "refs/heads/owned", "refs/heads/valuable")
+        with self.assertRaises(Failure):
+            self.apply(preview)
+        self.assertEqual(git(self.root, "rev-parse", "refs/heads/valuable"), self.head)
+        self.assertTrue(self.tree.exists())
+
+    def test_unmerged_manifest_never_becomes_eligible_from_shared_base(self):
+        self.owner["merged"] = False
+        self.save_owner()
+        self.assertEqual(self.preview()["count"], 0)
+        self.assertTrue(self.tree.exists())
 
 
 if __name__ == "__main__":

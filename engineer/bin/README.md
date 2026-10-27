@@ -41,6 +41,17 @@ state stability and full or shorthand closing relationships. Structural shape
 and these provider checks do not replace the workflow's independent semantic
 review, content safety review or actual human UAT evidence.
 
+Resource cleanup now binds exact owner records and provider dispositions into
+its approval snapshot, rejects raw symlinks/junctions and symbolic branch refs,
+and preserves ignored as well as untracked content. GitHub and GitLab cleanup
+lookups paginate conservatively; open, foreign, changed-head, unavailable or
+incomplete evidence preserves the resource. A worker with actual recorded local
+merge ancestry can be cleaned without an origin; an unmerged manifest cannot
+become eligible merely by sharing an ancestor. Apply uses the common Git resource
+lock, revalidates before each removal, confirms actual worktree disappearance,
+then rechecks provider/ownership/ancestry and deletes only the captured branch
+OID with `update-ref --no-deref`. Missing success readback is a failure.
+
 Use Python 3.11 or newer. The runtime uses only the standard library. The POSIX
 shim selects a namespace virtual environment, a project virtual environment, or
 `python3` / `python` and executes the CLI in isolated mode.
