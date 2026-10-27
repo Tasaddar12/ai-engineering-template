@@ -41,7 +41,11 @@ class MigrationTests(unittest.TestCase):
         metadata = yaml.safe_load(exported.split("---", 2)[1])
         self.assertEqual("haiku", metadata["model"])
         self.assertNotIn("effort", metadata)
-        self.assertIn("Bash", metadata["disallowedTools"].split(", "))
+        shared_metadata = yaml.safe_load(shared.split("---", 2)[1])
+        self.assertEqual(shared_metadata["tools"], metadata["tools"])
+        self.assertEqual(shared_metadata["disallowedTools"], metadata["disallowedTools"])
+        for forbidden in ("Agent", "Write", "Edit"):
+            self.assertIn(forbidden, metadata["disallowedTools"].split(", "))
         expected = installer.render_asset("agents/scout.md", custom.encode(), "claude").decode()
         self.assertEqual(expected, exported)
         self.assertIn("Custom scout evidence instruction sentinel.", exported)

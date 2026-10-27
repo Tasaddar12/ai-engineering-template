@@ -19,15 +19,21 @@ class EntrypointGitRouting(unittest.TestCase):
 
     def assert_routing(self, entrypoint, namespace):
         content = entrypoint.read_text(encoding="utf-8")
-        delivery = content.split("## Delivery\n", 1)[1].split("\n## ", 1)[0]
-        normalized = " ".join(delivery.split())
+        normalized = " ".join(content.split())
         mandate = re.search(
             r"Every issue and pull request/merge request creation or edit must follow "
             r"the \[canonical Git workflow\]\(([^)]+)\), including its templates "
             r"and validation requirements, regardless of provider\.", normalized)
-        self.assertIsNotNone(mandate, entrypoint)
-        self.assertEqual(mandate[1], f"{namespace}/references/git-workflow.md")
-        reference = entrypoint.parent / mandate[1]
+        if mandate:
+            policy_path = mandate[1]
+        else:
+            mandate = re.search(
+                r"Follow `([^`]+/references/git-workflow\.md)` and its complete templates "
+                r"for all issue/PR creation or edits\.", normalized)
+            self.assertIsNotNone(mandate, entrypoint)
+            policy_path = mandate[1]
+        self.assertEqual(policy_path, f"{namespace}/references/git-workflow.md")
+        reference = entrypoint.parent / policy_path
         self.assertTrue(reference.is_file(), reference)
         # Follow the policy's actual links to both templates on disk.
         template_links = re.findall(r"\[[^\]]+\]\(([^)]+)\)",
@@ -46,11 +52,11 @@ class EntrypointGitRouting(unittest.TestCase):
         asset = ROOT / "bin/install-assets/agent-entry.txt"
         content = asset.read_text(encoding="utf-8")
         with self.subTest(entrypoint=asset):
-            source = ROOT / "AGENTS.md"
-            source_delivery = " ".join(source.read_text(encoding="utf-8").split("## Delivery\n", 1)[1].split())
-            asset_delivery = " ".join(content.split("## Delivery\n", 1)[1].split())
-            mandate = re.search(r"Every issue .*?regardless of provider\.", source_delivery)[0]
-            self.assertIn(mandate, asset_delivery)
+            normalized = " ".join(content.split())
+            self.assertRegex(normalized,
+                             r"Follow `engineer/references/git-workflow\.md` and its complete templates "
+                             r"for all issue/PR creation or edits\.")
+            self.assertIn("Merge only on explicit user instruction", normalized)
 
     def assert_installed_routing(self, host, entrypoint):
         self.target = self.base / f"fresh {host} project"

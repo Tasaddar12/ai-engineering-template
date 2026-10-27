@@ -12,6 +12,9 @@ import subprocess
 import sys
 import tempfile
 
+# Loading helpers during a preview must not create installed bytecode caches.
+sys.dont_write_bytecode = True
+
 _spec = importlib.util.spec_from_file_location("engineer_installer_for_update", Path(__file__).with_name("install.py"))
 installer = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(installer)
@@ -65,7 +68,10 @@ def load_manifest(target, host):
 
 def record_install(target, host, source, revision, incoming, preexisting=()):
     existing = load_manifest(target, host)
-    files = {}
+    # A --no-hooks rerun omits registrations from its incoming payload; omission
+    # does not retire already installed ownership or replace its proven bytes.
+    files = dict(existing.get("files", {}))
+    same_source = existing.get("current") == {"source": str(source), "revision": revision}
     for name, upstream in incoming.items():
         if name.startswith(".planning/"):
             continue
@@ -74,6 +80,8 @@ def record_install(target, host, source, revision, incoming, preexisting=()):
             content = path.read_bytes()
             # A preexisting equal file is not evidence of installer ownership.
             prior = existing.get("files", {}).get(name)
+            if same_source and prior and prior.get("installed_sha256") == digest(content):
+                continue
             classification = prior.get("classification", "customized") if prior else "customized" if name in preexisting else "upstream-managed"
             if prior and prior.get("installed_sha256") != digest(content):
                 classification = "customized"

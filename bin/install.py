@@ -16,6 +16,9 @@ import tempfile
 import time
 import tomllib
 
+# Preview and migration imports must never write into the installed tree.
+sys.dont_write_bytecode = True
+
 PREFIXES = ("agents", "commands", "engineer", "hooks", "scripts", "skills", "bin")
 HOSTS = ("claude", "codex")
 AGENT_MARKER = "<!-- ai-engineering-template -->"
@@ -350,7 +353,7 @@ def merge_codex_config(original, incoming, label="config.toml"):
         if match and (group == "agents" or is_dotted):
             if not cap_done:
                 prefix = "agents." if is_dotted else ""
-                replace[i] = match[1] + prefix + "max_concurrent_threads_per_session = 12" + match[3] + ("\r\n" if line.endswith("\r\n") else "\n")
+                replace[i] = match[1] + prefix + "max_concurrent_threads_per_session = 12" + re.search(r"[ \t]*$", match[2])[0] + match[3] + ("\r\n" if line.endswith("\r\n") else "\n")
                 cap_done = True
             else:
                 remove.add(i)
@@ -366,11 +369,24 @@ def merge_codex_config(original, incoming, label="config.toml"):
             lines.insert(index, "max_concurrent_threads_per_session = 12" + newline)
             text = "".join(lines)
         else:
-            # A dotted declaration before all tables avoids reopening a parent table.
-            text = "agents.max_concurrent_threads_per_session = 12" + newline + text
+            statements = [(i, line) for i, line, inside in toml_lines(text) if not inside]
+            first_table = next((i for i, line in statements if re.match(r"\s*\[", line)), len(text.splitlines()))
+            root_dotted = any(i < first_table and re.match(r"\s*(?:agents|\"agents\"|'agents')\.", line)
+                              for i, line in statements)
+            if root_dotted:
+                lines = text.splitlines(keepends=True)
+                if first_table and not lines[first_table - 1].endswith(("\n", "\r")):
+                    lines[first_table - 1] += newline
+                lines.insert(first_table, "agents.max_concurrent_threads_per_session = 12" + newline)
+                text = "".join(lines)
+            else:
+                text += ("" if text.endswith("\n") or not text else newline) + "[agents]" + newline + "max_concurrent_threads_per_session = 12" + newline
     if "hooks" in desired:
         old_hooks = current.get("hooks", {})
         merged = merge_events(old_hooks, desired["hooks"])
+        if merged == old_hooks:
+            bom = b"\xef\xbb\xbf" if original.startswith(b"\xef\xbb\xbf") else b""
+            return bom + text.encode()
         removable = {}
         for event, groups in old_hooks.items():
             removable[event] = [g for g in groups if any(managed_command(h.get("command", "")) for h in g.get("hooks", []))]
@@ -378,7 +394,7 @@ def merge_codex_config(original, incoming, label="config.toml"):
         added = {event: [g for g in groups if g not in old_hooks.get(event, []) or g in desired["hooks"].get(event, [])]
                  for event, groups in merged.items()}
         if any(added.values()):
-            text = text.rstrip() + "\n\n" + hooks_toml(added).decode()
+            text = text + ("\n" if text.endswith("\n") else "\n\n") + hooks_toml(added).decode()
     tomllib.loads(text)
     bom = b"\xef\xbb\xbf" if original.startswith(b"\xef\xbb\xbf") else b""
     return bom + text.encode()
@@ -404,8 +420,10 @@ def merge_entry(original, incoming):
     if block:
         result = before.replace(block, new_block, 1)
     else:
-        result = before.rstrip() + "\n\n" + new_block + "\n"
-    return result.encode()
+        separator = "" if before.endswith("\n\n") else "\n" if before.endswith("\n") else "\n\n"
+        result = before + separator + new_block + "\n"
+    bom = b"\xef\xbb\xbf" if original.startswith(b"\xef\xbb\xbf") else b""
+    return bom + result.encode()
 
 
 def host_payload(host, hooks=True):
@@ -458,6 +476,8 @@ def payload(source, host, hooks=True):
     # A copied source can omit native skills or carry only its placeholder. Every
     # command still exports its complete method, never a shortened redirect.
     for command in sorted((source / "commands").glob("*.md")):
+        if command.name == "COMMAND.md":
+            continue  # The catalog is documentation, not a dispatchable skill.
         key = skill_root(host) + "/" + command.stem + "/SKILL.md"
         if key not in result:
             result[key] = render_asset("commands/" + command.name, command.read_bytes(), host)
@@ -486,7 +506,7 @@ def merge_file(name, before, candidate, host, hooks=True):
     if name == ".gitignore":
         text = utf8(before, name)
         missing = [line for line in candidate.decode().splitlines() if line and not line.startswith("#") and line not in text.splitlines()]
-        return before if not missing else (text.rstrip() + "\n" + "\n".join(missing) + "\n").encode()
+        return before if not missing else before + (b"" if before.endswith(b"\n") else b"\n") + ("\n".join(missing) + "\n").encode()
     if name == ".codex/config.toml":
         return merge_codex_config(before, candidate, name)
     if name == ".claude/settings.json":

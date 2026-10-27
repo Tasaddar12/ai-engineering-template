@@ -56,9 +56,9 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `bin/install-assets/codex-agents/ui-checker.toml` | local-only | 5 | 0 |
 | `bin/install-assets/codex-agents/ui-researcher.toml` | local-only | 5 | 0 |
 | `bin/install-assets/codex-agents/verifier.toml` | local-only | 5 | 0 |
-| `bin/install.py` | reconciled | 647 | 3 |
-| `bin/migrate.py` | reconciled | 251 | 1 |
-| `bin/update.py` | reconciled | 362 | 0 |
+| `bin/install.py` | reconciled | 667 | 3 |
+| `bin/migrate.py` | reconciled | 254 | 1 |
+| `bin/update.py` | reconciled | 370 | 0 |
 | `commands/COMMAND.md` | reconciled | 49 | 0 |
 | `commands/add-tests.md` | reconciled | 47 | 0 |
 | `commands/audit-fix.md` | reconciled | 38 | 0 |
@@ -400,7 +400,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `hooks/context-handoff.sh` | local-only | 3 | 0 |
 | `hooks/hook_common.py` | local-only | 77 | 0 |
 | `hooks/lib/agent-roles.sh` | local-only | 4 | 0 |
-| `hooks/planning-integrity.py` | local-only | 150 | 0 |
+| `hooks/planning-integrity.py` | local-only | 268 | 0 |
 | `hooks/planning-integrity.sh` | local-only | 3 | 0 |
 | `hooks/python-hook.sh` | local-only | 18 | 0 |
 | `hooks/worktree-location.py` | local-only | 42 | 0 |

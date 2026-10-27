@@ -57,6 +57,26 @@ class CodexConcurrencySettings(unittest.TestCase):
                             self.assertEqual(expected, merged)
                             self.assertEqual(merged, installer.merge_codex_config(merged, incoming, "project config"))
 
+    def test_matching_hook_registrations_preserve_original_layout(self):
+        for newline in (b"\n", b"\r\n"):
+            with self.subTest(newline=newline):
+                incoming = installer.host_payload("codex")[".codex/config.toml"]
+                original = b"\xef\xbb\xbf# User settings\n" + incoming
+                original = original.replace(b"\n", newline)
+                self.assertEqual(original, installer.merge_codex_config(original, incoming))
+
+    def test_append_preserves_bom_crlf_and_trailing_user_whitespace(self):
+        original = b"\xef\xbb\xbf# User instructions\r\nretain trailing spaces  \r\n\r\n"
+        incoming = (installer.AGENT_MARKER + "\nManaged instructions\n" + installer.AGENT_END + "\n").encode()
+        merged = installer.merge_entry(original, incoming)
+        self.assertTrue(merged.startswith(original))
+        self.assertEqual(merged, installer.merge_entry(merged, incoming))
+        ignore = b"\xef\xbb\xbf/build\r\n# Keep trailing spaces  \r\n\r\n"
+        merged_ignore = installer.merge_file(".gitignore", ignore, installer.IGNORE_BLOCK.encode(), "codex")
+        self.assertTrue(merged_ignore.startswith(ignore))
+        self.assertEqual(merged_ignore, installer.merge_file(".gitignore", merged_ignore,
+                                                          installer.IGNORE_BLOCK.encode(), "codex"))
+
     def test_hook_removal_ignores_embedded_multiline_table_examples(self):
         for delimiter in (b'"""', b"'''"):
             with self.subTest(delimiter=delimiter):
@@ -329,11 +349,13 @@ issue_refs: []
                 runtime = "." + host + "/engineer/bin/engineer.py"
                 identity = json.loads(command(sys.executable, runtime, "query",
                                               "runtime-identity", cwd=self.target))
-                self.assertTrue(identity["ok"])
+                self.assertEqual("2.0", identity["contract"])
+                self.assertEqual(host, identity["host"])
+                self.assertEqual((self.target / ("." + host)).resolve(), Path(identity["namespace"]).resolve())
                 self.assertEqual("engineer-runtime", identity["packageName"])
                 listed = json.loads(command(sys.executable, runtime, "query", "phases.list",
                                             cwd=self.target))
-                self.assertTrue(listed["ok"])
+                self.assertEqual(0, listed["count"])
                 self.assertEqual([], listed["phases"])
                 verbs = json.loads(command(sys.executable, runtime, "query", "help",
                                            cwd=self.target))["verbs"]
@@ -347,8 +369,8 @@ issue_refs: []
                                           cwd=self.target, text=True, encoding="utf-8", capture_output=True)
                 self.assertEqual(adoption.returncode, 1)
                 self.assertNotIn("Traceback", adoption.stderr)
-                self.assertEqual(json.loads(adoption.stdout)["code"], "phase-not-found")
-                self.assertFalse((self.target / ".git" / "ai-phase" / "sessions.json").exists())
+                self.assertEqual(json.loads(adoption.stderr.strip().splitlines()[-1])["error"], "phase-not-found")
+                self.assertFalse((self.target / ".git" / "engineer" / "sessions.json").exists())
                 self.assertEqual(before, self.snapshot())
                 # An expected failure is a result, not a traceback.
                 failed = subprocess.run([sys.executable, runtime, "query", "roadmap.get-phase", "9"],
@@ -356,7 +378,7 @@ issue_refs: []
                                         capture_output=True)
                 self.assertEqual(1, failed.returncode)
                 self.assertNotIn("Traceback", failed.stderr)
-                self.assertEqual("phase-not-found", json.loads(failed.stdout)["code"])
+                self.assertEqual("phase-not-found", json.loads(failed.stderr.strip().splitlines()[-1])["error"])
 
     def test_new_project_starts_runtime_and_omits_template_history(self):
         result = self.install()
@@ -394,7 +416,8 @@ issue_refs: []
         self.assertFalse((self.target / ".ai").exists())
         self.assertIn(".agents/skills/", (self.target / "AGENTS.md").read_text())
         guide = (self.target / ".codex/commands/install.md").read_text(encoding="utf-8")
-        self.assertIn("/main/bin/install.py", guide)
+        self.assertIn("/<PIN>/bin/install.py", guide)
+        self.assertIn("exact Git commit", guide)
         # Local-only workflow scratch stays out of the project's history.
         for ignored in (".workflow-backups/probe.txt",
                         ".planning/handoffs/sess--agent-a1.json"):
@@ -484,7 +507,7 @@ issue_refs: []
                 self.assertIn("<process>", full)
                 self.assertNotIn("Read and follow the complete skill at", full)
                 self.assertFalse((self.target / namespace / "roles").exists())
-                for workflow in ("execute-phase.md", "plan-phase.md", "onboard.md"):
+                for workflow in ("execute-phase.md", "plan-phase.md", "new-project.md"):
                     self.assertTrue((self.target / namespace / "engineer/workflows" / workflow).is_file(),
                                     workflow)
                 if host == "codex":
@@ -560,10 +583,16 @@ issue_refs: []
                 self.target = self.base / host
                 self.assertEqual(0, self.install("--host", host, "--no-hooks").returncode)
                 runtime = "." + host + "/engineer/bin/engineer.py"
-                for name, model, effort in (("executor", "sonnet", "high"), ("planner", "opus", "medium")):
+                for name, model, effort in (("executor", "sonnet", None), ("planner", "opus", "medium")):
                     default = json.loads(command(sys.executable, runtime, "query", "resolve-agent", name, cwd=self.target))
-                    self.assertEqual("gpt-6.1-sol" if host == "codex" else model, default["model"])
-                    self.assertEqual(("medium" if name == "executor" else "high") if host == "codex" else effort, default["effort"])
+                    self.assertEqual("gpt-6.1-sol" if host == "codex" else "inherit", default["model"])
+                    self.assertEqual(("medium" if name == "executor" else "high") if host == "codex" else "inherit", default["effort"])
+                    if host == "claude":
+                        # Empty project overrides defer to the native role file.
+                        method = self.target / ".claude/agents" / (name + ".md")
+                        native = yaml.safe_load(method.read_text().split("---", 2)[1])
+                        self.assertEqual(model, native["model"])
+                        self.assertEqual(effort, native.get("effort"))
                 config = self.target / ".planning/config.yaml"
                 config.write_text("agents:\n  executor:\n    model: opus\n    effort: max\n"
                                   "  planner:\n    model: sonnet\n    effort: low\n"
@@ -658,13 +687,26 @@ issue_refs: []
                 command("git", "add", ".", cwd=self.target)
                 command("git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
                         "commit", "--quiet", "-m", "Install workflow", cwd=self.target)
+                # A real worker request targeting the primary checkout must be
+                # refused by the runtime on either host, irrespective of hooks.
+                runtime = "." + host + "/engineer/bin/engineer.py"
+                before_workers = command("git", "worktree", "list", "--porcelain", cwd=self.target)
+                refused = subprocess.run([sys.executable, runtime, "query", "worktree.create",
+                                          "unsafe-worker", "--path", "."], cwd=self.target,
+                                         text=True, encoding="utf-8", capture_output=True)
+                self.assertEqual(1, refused.returncode, refused.stderr)
+                self.assertEqual("primary-worktree-refused",
+                                 json.loads(refused.stderr.strip().splitlines()[-1])["error"])
+                self.assertEqual(before_workers, command("git", "worktree", "list", "--porcelain",
+                                                          cwd=self.target))
+                self.assertFalse((self.target / ".planning/worktrees/session.json").exists())
                 worktree = self.target / ".worktrees/phase"
                 command("git", "worktree", "add", "-b", "codex/phase", str(worktree), cwd=self.target)
                 runtime = "." + host + "/engineer/bin/engineer.py"
                 added = json.loads(command(sys.executable, runtime, "query", "phase.add",
                                            "Installed runtime", "--goal", "Prove the install",
                                            cwd=worktree))
-                self.assertTrue(added["ok"])
+                self.assertTrue(added["added"])
                 self.assertEqual("01", added["padded"])
                 created = Path(added["directory"])
                 created = created if created.is_absolute() else worktree / created
@@ -993,7 +1035,13 @@ issue_refs: []
                     (source / "skills/SKILL").write_text("placeholder")
                 for host in ("codex", "claude"):
                     payload = installer.payload(source, host, False)
-                    for command_path in (source / "commands").glob("*.md"):
+                    commands = [path for path in (source / "commands").glob("*.md")
+                                if path.name != "COMMAND.md"]
+                    self.assertNotIn(installer.skill_root(host) + "/COMMAND/SKILL.md", payload)
+                    installed_skills = [name for name in payload if name.startswith(installer.skill_root(host) + "/")
+                                        and name.endswith("/SKILL.md")]
+                    self.assertEqual(len(commands), len(installed_skills))
+                    for command_path in commands:
                         name = installer.skill_root(host) + "/" + command_path.stem + "/SKILL.md"
                         self.assertEqual(installer.render_asset("commands/" + command_path.name,
                                                               command_path.read_bytes(), host), payload[name])

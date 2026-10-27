@@ -7,6 +7,9 @@ from pathlib import Path
 import re
 import sys
 
+# Loading helpers during a preview must not create installed bytecode caches.
+sys.dont_write_bytecode = True
+
 _spec = importlib.util.spec_from_file_location("engineer_installer_for_migration", Path(__file__).with_name("install.py"))
 installer = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(installer)
