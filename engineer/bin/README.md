@@ -124,6 +124,19 @@ preserves historical observations and synchronizes actual counters. Quick UAT is
 included in open audits and ready/merge gates without fabricating phase identity.
 `spec.edge-probe` reads requirement and resolution JSON files;
 `spec.section SPEC.md edges|prohibitions` extracts explicit sections.
+`spec.prohibition-project INPUT.json` projects already selected stable prohibition
+items from a flat JSON array or an object containing `items`; it returns `items`
+and `coverage`. Selection and semantic recall remain the workflow's job.
+`spec.prohibition-proof DESCRIPTOR.json --subject REAL_PATH [--timeout SECONDS]`
+runs actual violation, mandatory clean-control and real-subject checks. The
+descriptor supplies argv and flat `check_*` or canonical fields; supported report
+formats are `unittest` (default), `junit` (requires `reportFile`) and `eslint-json`
+(stdout or `reportFile`). Argv can use `{subject}`, `{target}` and `{report}`
+placeholders. Success returns `located`, `proved` and `valid` true,
+`disposition: green`, and `kind`, `target`, `rule`, `subject`, `observations`,
+`reason`. Unprovable input or controls fail with exit 2,
+`unprovable-prohibition`, `proved`/`valid` false and `disposition: flagged`,
+retaining actual observations and the reason.
 `quick-batch.*` persists items, computes bounded scheduling and deterministic merge
 prefixes, and refuses to complete batches with nonterminal items.
 
@@ -340,6 +353,8 @@ passed as one shell argument. `--raw`, `--json`, and `--pick FIELD` are global.
 | `handoff.list` | none | unconsumed handoffs/count |
 | `handoff.read` | `ID` | record and continuation text |
 | `handoff.consume` | `ID` | `consumed, id, plan`; atomically preserves the consumed audit record and removes it from the pending queue; consumed IDs cannot be rewritten |
+| `spec.prohibition-project` | `INPUT.json` | projects preselected stable rows; `items, coverage`; never supplies semantic recall |
+| `spec.prohibition-proof` | `DESCRIPTOR.json --subject REAL_PATH [--timeout SECONDS]` | actual violation/clean/real control observations; proved green or nonzero unprovable flagged disposition |
 | `codebase.record` | `MAP... [--paths PATH...]` or `--maps MAP...` | records map revision and paths |
 | `codebase.status` | none | map freshness, commit age and changed files |
 | `planning.integrity`, `planning.validate` | `[--files PATH... --strict]` | schema and cross-record valid/warnings/errors/checked; validate warns by default, strict explicitly fails |

@@ -51,6 +51,8 @@ def registry():
         "phase.uat-passed": uat.passed, "audit-uat": uat.outstanding, "audit-open": uat.audit_open,
         "uat.classify-coverage": uat.classify, "uat.render-checkpoint": uat.checkpoint, "uat.complete-session": uat.complete,
         "spec.edge-probe": probes.edge, "spec.section": probes.section, "summary-extract": misc.summary_extract,
+        "spec.prohibition-project": lambda a: probes.prohibition_project(a),
+        "spec.prohibition-proof": lambda a: probes.prohibition_proof(a),
         "package-legitimacy": packages.check, "run-with-timeout": misc.timeout,
         "generate-claude-md": misc.instruction_file, "planning.validate": lambda a: misc.integrity(a, False),
         "planning.integrity": lambda a: misc.integrity(a, True),
