@@ -314,7 +314,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `engineer/workflows/code-review/steps/dispatch-fix.md` | reconciled | 40 | 0 |
 | `engineer/workflows/complete-milestone.md` | reconciled | 169 | 0 |
 | `engineer/workflows/debug.md` | reconciled | 296 | 60 |
-| `engineer/workflows/discuss-phase.md` | reconciled | 291 | 0 |
+| `engineer/workflows/discuss-phase.md` | reconciled | 295 | 0 |
 | `engineer/workflows/discuss-phase/modes/all.md` | reconciled | 26 | 0 |
 | `engineer/workflows/discuss-phase/modes/auto.md` | reconciled | 44 | 0 |
 | `engineer/workflows/discuss-phase/modes/default.md` | reconciled | 142 | 0 |
