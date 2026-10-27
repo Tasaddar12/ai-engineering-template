@@ -8,15 +8,25 @@ from .core import Failure, digest, load_json, now, planning_lock, read, root, ru
 from .text import join_frontmatter, split_frontmatter
 
 
-def resolve_file(value):
-    directory = records.phase_dir(value)
+def quick_dir(identifier):
+    matches = list((records.planning()/"quick").glob(str(identifier).split("-")[0].zfill(3)+"-*/QUICK.md"))
+    if len(matches) != 1:
+        raise Failure("quick-not-found", str(identifier))
+    metadata, _ = split_frontmatter(read(matches[0]))
+    if str(metadata.get("id")).zfill(3) != matches[0].parent.name.split("-")[0]:
+        raise Failure("quick-identity-mismatch", "QUICK.md identity disagrees with its directory")
+    return matches[0].parent
+
+
+def resolve_file(value=None, quick=None):
+    directory = quick_dir(quick) if quick is not None else records.phase_dir(value)
     matches = sorted(directory.glob("*-VERIFICATION.md"))
     return matches[0] if matches else directory/(directory.name.split("-")[0]+"-VERIFICATION.md")
 
 
 def status(args):
     value = args.arg(0, args.get("phase"))
-    path = resolve_file(value)
+    path = resolve_file(value, args.get("quick"))
     metadata, body = split_frontmatter(read(path))
     state = metadata.get("status", "not_started")
     phase = path.parent.name.split("-")[0]
@@ -24,13 +34,20 @@ def status(args):
               "gaps_found": ("fix", "Close verification gaps", f"/plan-phase {phase} --gaps"),
               "human_needed": ("human", "Complete human verification", f"/verify-work {phase}")}
     route, action, command = routes.get(state, ("verify", "Verify phase goal", f"/verify-work {phase}"))
+    if args.has("quick"):
+        route, action, command = ({"passed": ("ship", "Publish verified quick task", f"engineer_run query pr.ready --quick {phase}"),
+                                   "gaps_found": ("fix", "Close quick verification gaps", None),
+                                   "human_needed": ("human", "Complete quick human verification", None)}
+                                  .get(state, ("verify", "Verify the quick task's recorded goal", None)))
     return {**metadata, "status": state, "path": str(path), "exists": path.exists(), "route": route,
             "next_action": action, "next_command": command}
 
 
-def phase_fingerprint(directory, extra=()):
-    report = resolve_file(directory)
+def phase_fingerprint(directory, extra=(), quick=None):
+    report = resolve_file(directory, quick)
     paths = list(directory.glob("*-PLAN.md"))+list(directory.glob("*-SUMMARY.md"))
+    if quick is not None:
+        paths.extend(directory.glob("QUICK.md"))
     covered = list(extra)
     for path in list(paths):
         metadata, _ = split_frontmatter(read(path))
@@ -42,19 +59,33 @@ def phase_fingerprint(directory, extra=()):
     return digest([p for p in paths if p != report], root())
 
 
-def current_evidence(value):
-    directory = records.phase_dir(value)
-    report = resolve_file(directory)
+def current_evidence(value=None, quick=None):
+    directory = quick_dir(quick) if quick is not None else records.phase_dir(value)
+    report = resolve_file(directory, quick)
     metadata, body = split_frontmatter(read(report))
     head = run(["git", "rev-parse", "HEAD"], root()).stdout.strip()
     recorded = metadata.get("fingerprint")
+    recorded_covered = metadata.get("covered_digest")
     covered = metadata.get("covered_files", [])
-    expected = phase_fingerprint(directory, covered)
+    expected = phase_fingerprint(directory, covered, quick)
     reasons = []
+    if quick is not None and str(metadata.get("quick")).zfill(3) != directory.name.split("-")[0]:
+        reasons.append("verification quick identity does not match the requested task")
+    if quick is None:
+        try:
+            matching = records.number(metadata.get("phase", "")) == records.number(directory.name)
+        except (ValueError, TypeError):
+            matching = False
+        if not matching:
+            reasons.append("verification phase identity does not match the requested phase")
+    if quick is not None and not isinstance(metadata.get("issue_refs"), list):
+        reasons.append("quick verification lacks explicit issue declarations")
     if metadata.get("status") != "passed":
         reasons.append("verification has not passed")
     if not recorded or recorded != expected:
         reasons.append("verification fingerprint is absent or stale")
+    if recorded_covered != "v4:sha256:"+expected:
+        reasons.append("v4 covered_digest is absent, malformed or stale")
     revision = metadata.get("revision", metadata.get("verified_revision"))
     if not revision or run(["git", "merge-base", "--is-ancestor", str(revision), head], root(), check=False).returncode:
         reasons.append("verified revision is absent or outside current history")
@@ -72,23 +103,28 @@ def current_evidence(value):
         passed = {r["name"] for r in receipt_status["receipts"] if r["status"] == "passed"}
         if not names.issubset(passed):
             reasons.append("configured checks lack passing receipts at current HEAD")
-    return {"current": not reasons, "reasons": reasons, "revision": head, "verified_revision": revision, "fingerprint": expected}
+    return {"current": not reasons, "reasons": reasons, "revision": head, "verified_revision": revision,
+            "fingerprint": expected, "covered_digest": "v4:sha256:"+expected, "recorded_covered_digest": recorded_covered}
 
 
 def fingerprint(args):
-    directory = records.phase_dir(args.arg(0, args.get("phase")))
-    report = resolve_file(directory)
+    quick = args.get("quick")
+    directory = quick_dir(quick) if quick is not None else records.phase_dir(args.arg(0, args.get("phase")))
+    report = resolve_file(directory, quick)
     covered = args.all("files") + args.all("covered-files")
-    value = phase_fingerprint(directory, covered)
+    value = phase_fingerprint(directory, covered, quick)
     with planning_lock():
         metadata, body = split_frontmatter(read(report))
         metadata["fingerprint"] = value
+        metadata["covered_digest"] = "v4:sha256:"+value
         metadata.setdefault("status", "not_started")
         metadata["covered_files"] = covered
         metadata["revision"] = run(["git", "rev-parse", "HEAD"], root()).stdout.strip()
-        metadata.setdefault("phase", directory.name.split("-")[0])
+        metadata.setdefault("quick" if quick is not None else "phase", directory.name.split("-")[0])
+        if quick is not None:
+            metadata.setdefault("issue_refs", [])
         write(report, join_frontmatter(metadata, body))
-    return {"fingerprint": value, "path": str(report)}
+    return {"fingerprint": value, "covered_digest": "v4:sha256:"+value, "path": str(report)}
 
 
 def append_audit(args):
@@ -125,6 +161,9 @@ def run_checks(args):
     if not isinstance(configured, list):
         raise Failure("invalid-checks", "verification.commands must be a list", 2)
     selected = args.all("checks")
+    names = {check.get("id", check.get("name", str(index+1))) for index, check in enumerate(configured) if isinstance(check, dict)}
+    if set(selected)-names:
+        raise Failure("unknown-check", "Requested checks are not configured", checks=sorted(set(selected)-names))
     revision = run(["git", "rev-parse", "HEAD"], root()).stdout.strip()
     receipts = records.planning()/"verification/receipts"
     results = []

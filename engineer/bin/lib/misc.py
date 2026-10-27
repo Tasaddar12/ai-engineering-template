@@ -9,6 +9,7 @@ from .text import join_frontmatter, split_frontmatter
 
 
 def integrity(args, strict=False):
+    strict = strict or args.has("strict")
     paths = [safe_path(p) for p in args.all("files")]
     if not paths:
         paths = list(records.planning().glob("phases/**/*.md"))+list(records.planning().glob("quick/**/*.md"))
@@ -19,10 +20,12 @@ def integrity(args, strict=False):
         schema = next((kind for kind in frontmatter.SCHEMAS if path.name.endswith("-"+kind.upper()+".md")), None)
         try:
             metadata, body = split_frontmatter(read(path))
-            findings = frontmatter.errors(metadata, schema) if schema else []
+            findings = frontmatter.errors(metadata, schema)+frontmatter.path_errors(path, metadata, schema) if schema else []
         except Failure as exc:
             findings = [exc.message]
         errors.extend({"path": str(path), "error": finding} for finding in findings)
+    from .planning_consistency import findings
+    errors.extend(findings())
     return {"valid": not errors, "warnings": errors, "errors": errors if strict else [], "checked": len(paths)}, int(bool(errors) and strict)
 
 
@@ -161,8 +164,9 @@ def milestone(args, action):
             existing = read(path)
             if name in existing:
                 raise Failure("milestone-exists", name)
-            write(path, existing.rstrip()+"\n\n## "+name+"\n\n")
-        return {"created": True, "milestone": name}
+            goal = str(args.get("goal", ""))
+            write(path, existing.rstrip()+"\n\n## "+name+"\n\n"+("**Goal:** "+goal+"\n\n" if goal else ""))
+        return {"created": True, "milestone": name, "goal": goal}
     if not args.has("confirm"):
         raise Failure("confirmation-required", "Milestone completion requires --confirm")
     progress = records.roadmap_analyze()

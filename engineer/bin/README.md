@@ -59,13 +59,29 @@ Plan and evidence gates include `verify.plan-structure`, `plan.task-structure`,
 `check.decision-coverage-verify`, `check.ui-plan-gate`, `verify.artifacts`,
 `verify.key-links`, `verify.commits`, and `check.tdd-red-evidence`.
 `planning.integrity` fails on malformed record frontmatter;
-`planning.validate` reports the same findings without blocking.
+`planning.validate` also checks roadmap/state/requirements/phase consistency,
+dependency ownership and active retirement markers, without blocking unless
+`--strict` is explicit. Structural repair previews include exact before/after
+content and a digest. Repair adds missing STATE sections and synchronizes only
+derived progress; it does not resolve author decisions or fabricate approval.
 
 Every invocation captures planning-file digests and schema findings before and
 after dispatch. Read-only verbs fail if planning content changed, and new schema
 corruption fails a mutation. Existing corruption is reported as a warning so a
 repair command can still operate. Frontmatter setters reject schema regressions
 before writing.
+
+Current PLAN metadata requires phase-or-quick identity, plan/type/wave,
+depends_on, files_modified/files_deleted/resources, autonomous, requirements,
+acceptance/documentation/checks/issue_refs lists and must_haves with
+truths/artifacts/key_links lists. Phase plans name their owning requirement IDs;
+genuine quick plans follow the assigned quick contract. `checks` is a list of
+nonempty argv string arrays, never shell command strings or arbitrary mappings.
+SUMMARY requires identity, plan, status, requirements-completed,
+acceptance/documentation/issue_refs lists. CONTEXT requires identity, discussion
+(`pending` or `complete`) and issue_refs. Identity must match actual record paths
+and phase PLAN/SUMMARY basenames. These checks do not fabricate approval or
+require SUMMARY artifacts from unrelated read-only/artifact-only roles.
 
 Configure verification commands as argv arrays:
 
@@ -84,11 +100,26 @@ all nonplanning Git-visible files form the input set. A passing receipt is reuse
 only when inputs match and its revision is in current history. Revision or input
 drift during a check fails the frozen run. `verification.fingerprint` hashes phase
 PLAN/SUMMARY records and covered sources while excluding the report itself.
+Fingerprinting also writes and returns `covered_digest: v4:sha256:<hex>` over the
+same canonical coverage. Currentness rejects absent, malformed, older-version or
+stale v4 coverage even when a raw fingerprint matches. `fingerprint`, `revision`
+and `covered_files` remain compatible fields; report schema validation checks v4.
 `verification.current` checks the report fingerprint, frozen revision, clean
 working tree, and current check receipts. `verification.append-audit` suppresses
 an identical last audit block.
 
 `phase.uat-passed`, `audit-uat`, `audit-open`, and `uat.*` expose acceptance work.
+Local UAT requires existing complete committed source SUMMARYs, every remaining
+required action/checklist outcome to pass, and actual Human acceptance fields
+`status: ACCEPTED`, `accepted_by`, `accepted_at`, and final `decision`. Skipped,
+not-testable, blocked, pending and unresolved actions remain blocking. Historical
+`result: issue` is preserved and distinguished as effectively resolved only when
+stable gap_id/resolved_by/resolved_at identify a real committed executed PLAN and
+complete matching SUMMARY with specific resolution evidence. An explicit human
+retest obligation requires its actual recorded pass. Diagnosis and status labels
+never supply human acceptance. `uat.complete-session` enforces these same gates,
+preserves historical observations and synchronizes actual counters. Quick UAT is
+included in open audits and ready/merge gates without fabricating phase identity.
 `spec.edge-probe` reads requirement and resolution JSON files;
 `spec.section SPEC.md edges|prohibitions` extracts explicit sections.
 `quick-batch.*` persists items, computes bounded scheduling and deterministic merge
@@ -100,11 +131,26 @@ an existing isolated checkout; `session.close` refuses dirty or unintegrated
 changes. Worker `worktree.create` records its base and owned files/deletions.
 `worktree.merge-wave` requires committed complete summaries, verifies scope and
 declared deletions, and integrates workers in recorded order.
+For `worktree.create`, `merge-wave` and `cleanup-wave`, `--phase` is a worker
+registry label, not a phase lookup or authority grant. `--phase quick-001` records
+workers for that actual quick session without creating a phase record.
 
 `todo.issue-preview` / `phase.issue-preview` validate issue templates and persist
 a content-bound token. Publication and update require `--preview-token`, consume
 the token before the provider call, and verify provider readback before linking
-the local record. An uncertain provider outcome requires inspection before retry.
+the local record. Preview/publication require `--variant` with exactly Bug,
+Enhancement, Decision required, Security risk, or UAT, and bind it into the token.
+The validator reads only that variant's fenced body under the File Template
+catalog. `issue.validate --variant NAME --body-file FILE` provides the same
+structural check for separately authorized provider operations. UAT retains
+explicit human acceptance fields and the template's step-table headers.
+Preview and publication accept explicit `--existing-issue
+URL|NUMBER` or `--no-match` dispositions, bound into the token. Publication requires
+one after canonical-match review. Searches include open and closed issues,
+semantic title/problem identity and stable source provenance. A reviewed closed
+match remains pending local reconciliation; publication never reopens or closes
+an issue. Uncertain creates recover only by unique provenance and exact content
+readback. Repeating preview cannot reset a consumed attempt.
 `phase.issue-declare` uses an expected digest to protect finding declarations.
 `phase.handoff` checks summaries and issue relationships.
 
@@ -112,13 +158,25 @@ the local record. An uncertain provider outcome requires inspection before retry
 updates its existing PR), and validates provider readback. `--base` supports
 stacked PRs. `pr.ready` and `pr.merge` require current verification evidence;
 merge additionally requires explicit `--confirm` after the human authorizes it.
+Both accept either `--phase N` or `--quick ID`, require the PR head to equal the
+verified checkout HEAD, and audit declared issue relationships. Quick evidence
+lives in `.planning/quick/NNN-slug/NNN-VERIFICATION.md`, with `quick: NNN`,
+`status`, `issue_refs`, `fingerprint`, `revision`, and `covered_files` frontmatter.
+Fingerprinting includes QUICK.md, task PLAN/SUMMARY files and covered sources;
+currentness uses the same frozen-revision and configured-check receipt rules as
+phase verification. Quick verification never invents a phase.
 `pr.checks` reads provider checks; `--timeout SECONDS` bounds waiting.
 
 `cleanup.preview` returns only recorded, clean, integrated resources and an exact
 approval token. `cleanup.apply --approval-token TOKEN --confirm` revalidates every
-resource immediately before removing it, then consumes the preview.
+resource immediately before removing it. The content-bound preview is consumed
+before deletion; partial progress is retained and cannot be silently replayed.
 `handoff.*` persists measured context continuation packets; `codebase.*` records
 map revisions and determines freshness from Git history and changed paths.
+When a recorded revision is unreachable after a squash, freshness uses the most
+recent actual Git commit touching that map. Missing map history stays stale;
+timestamps never stand in for evidence. The configured commit threshold and
+changed-path condition still apply.
 
 `run-with-timeout --timeout SECONDS -- COMMAND ARGS...` executes argv without a
 shell and returns 124 on timeout. `package-legitimacy --registry npm|pypi|crates`
@@ -143,9 +201,10 @@ passed as one shell argument. `--raw`, `--json`, and `--pick FIELD` are global.
 | `project-instruction-file` | `[claude|codex]` | host instruction filename |
 | `generate-claude-md` | `[--output PATH]` | `written, path`; preserves unmanaged content |
 | `resolve-agent` | `ROLE [--host claude|codex]` | name/agent/model/effort/host/inherit/effort_inherit/model_source/effort_source/native_file; raw prints name; absent role fails |
+| `agents.list` | none | actual dispatchable role files and separately identified method_sources |
 | `agent-skills` | `ROLE` | ready-to-inject `<agent_skills>` block |
 | `agent.classify-failure` | `-- RETURN_BODY...` | `kind, classification, retryable, wait_hint` |
-| `dispatch-isolation` | `[--phase N --plan P]` | `worktree`; unavailable Git isolation fails |
+| `dispatch-isolation` | `[--phase N --plan P --force-isolation MODE]` | mode/isolation/host/runtime/requested/source/harnessFlag/harness_arguments/exec/worktree_root/root_ignored; raw prints exactly `harness-worktree` or `orchestrator-worktree`; unavailable Git/ignored-root isolation fails |
 | `dispatch-capacity` | none | capacity integer, minimum 1 |
 | `commit` | `MESSAGE --files PATH... [--files-removed PATH...]` | `committed, commit, hash` or no-change reason |
 | `git.base-branch` | `[--is-protected BRANCH]` | base branch string or protected boolean |
@@ -156,7 +215,7 @@ passed as one shell argument. `--raw`, `--json`, and `--pick FIELD` are global.
 | `phase.add` | `DESCRIPTION [--goal TEXT --depends-on TEXT --requirements ID...]` | allocated phase and directory |
 | `phase.insert` | `AFTER DESCRIPTION [--goal TEXT --requirements ID...]` | allocated decimal phase and directory |
 | `phase.edit` | `N [--name TEXT --goal TEXT --depends-on TEXT --requirements ID...]` | `updated, phase, action` |
-| `phase.remove` | `N [--force]` | archived path and renumbered integer phases; nonempty phase requires force |
+| `phase.remove` | `N [--force --no-renumber]` | archived path and renumbered integer phases; no-renumber retains identifiers; nonempty phase requires force |
 | `phase.complete` | `N` | updated phase; complete summaries, issue handoff and passed verification required |
 | `phase.mvp-mode` | `N [--mvp]` | `active, source` |
 | `phase.tdd-applicable` | `PLAN_PATH` | `applicable, plan_tdd, enabled` |
@@ -175,7 +234,8 @@ passed as one shell argument. `--raw`, `--json`, and `--pick FIELD` are global.
 | `state.update` | `FIELD VALUE` | matched Current Position field |
 | `state.begin-phase` | `N [--status TEXT]` | Current Position update |
 | `state.record-session` | `[--stopped-at TEXT --resume-file PATH --status TEXT]` | continuity fields in state |
-| `state.add-decision` | `TEXT [--rationale TEXT]` | deduplicated PROJECT Key Decisions row |
+| `state.add-decision` | `TEXT [--rationale TEXT --outcome TEXT]` | deduplicated PROJECT Key Decisions row; outcome defaults Pending |
+| `state.save` | none | synchronizes derived STATE frontmatter progress/status from actual roadmap/artifacts and Current Position; refuses replacement content |
 | `state.add-roadmap-evolution`, `state.add-blocker` | `TEXT` | `added` or duplicate no-op |
 | `state.resolve-blocker` | `TEXT` | retired blocker count and archive path |
 | `state.clear-blocker` | `TEXT` | alias for resolve-blocker |
@@ -211,10 +271,10 @@ passed as one shell argument. `--raw`, `--json`, and `--pick FIELD` are global.
 | `check.tdd-red-evidence` | `RECORD.json` | verdict/evidence; raw verdict string; unreadable exits 69, rejected evidence exits 1 |
 | `task.is-behavior-adding` | `TASK_JSON` | `is_behavior_adding, reason` |
 | `user-story.validate` | `STORY` | `valid, errors[], slots` |
-| `verification.status` | `N_OR_DIRECTORY` | report metadata plus status/route/next_action/next_command |
-| `verification.resolve-file` | `N_OR_DIRECTORY` | report path |
-| `verification.fingerprint` | `N_OR_DIRECTORY [--files PATH... --covered-files PATH...]` | writes report fingerprint/revision, returns fingerprint/path |
-| `verification.current` | `N_OR_DIRECTORY` | `current, reasons[], revision, verified_revision, fingerprint` |
+| `verification.status` | `N_OR_DIRECTORY` or `--quick ID` | report metadata plus status/route/next_action/next_command |
+| `verification.resolve-file` | `N_OR_DIRECTORY` or `--quick ID` | report path |
+| `verification.fingerprint` | `N_OR_DIRECTORY` or `--quick ID`, plus `[--files PATH... --covered-files PATH...]` | writes report fingerprint/revision, returns fingerprint/path |
+| `verification.current` | `N_OR_DIRECTORY` or `--quick ID` | `current, reasons[], revision, verified_revision, fingerprint` |
 | `verification.append-audit` | `REPORT_PATH [--heading TEXT] --body TEXT` or `--file FILE` | `appended, path`; identical last block is no-op |
 | `verification.run-checks` | `[--checks ID... --force]` | status/passed/revision/check receipts; failed check exits 1 |
 | `verification.check-status` | none | current matching receipts and passed boolean |
@@ -263,26 +323,26 @@ passed as one shell argument. `--raw`, `--json`, and `--pick FIELD` are global.
 | `pr.open` | `[BRANCH] --title TITLE --body-file FILE [--base REF --phase N]` | read-back draft PR, created boolean; title can default to last subject |
 | `pr.status` | `[BRANCH]` | provider PR or exists=false |
 | `pr.checks` | `[BRANCH] [--timeout SECONDS]` | check status/count/failed/pending/url; pending/failed exits 1 |
-| `pr.ready` | `[BRANCH] --phase N` | ready boolean after current verification gate |
-| `pr.merge` | `[BRANCH] --phase N --confirm` | merged/url after current verification and provider checks |
+| `pr.ready` | `[BRANCH] --phase N` or `[BRANCH] --quick ID` | ready after current verification, PR-head revision and issue-link gates |
+| `pr.merge` | `[BRANCH] (--phase N or --quick ID) --confirm` | merged/url after current verification, matching PR revision, issue-link and provider checks |
 | `pr.sync` | none | fetch/prune origin result; does not merge branches |
 | `cleanup.preview` | none | approval_token/entries/count |
 | `cleanup.apply` | `--approval-token TOKEN --confirm` | removed/count; any resource drift fails |
 | `handoff.limits` | none | enabled/context_window/context_percent/context_tokens/threshold_tokens/binding |
-| `handoff.write` | `ID --reason TEXT [--remaining TEXT --completed TEXT --phase N --plan P --agent ID --role ROLE --next TEXT --blockers TEXT --notes TEXT]` | durable continuation record; reason optional on existing record |
+| `handoff.write` | `ID --reason TEXT [--remaining TEXT --completed TEXT --phase N --plan P --agent ID --role ROLE --next TEXT --blockers TEXT --notes TEXT --digest TEXT --continuation TEXT --scope TEXT --requested-fields TEXT]` | durable continuation record; supplied digest/continuation/scope fields roundtrip verbatim; reason optional on existing record |
 | `handoff.list` | none | unconsumed handoffs/count |
 | `handoff.read` | `ID` | record and continuation text |
 | `handoff.consume` | `ID` | consumes record into handoffs/consumed |
 | `codebase.record` | `MAP... [--paths PATH...]` or `--maps MAP...` | records map revision and paths |
 | `codebase.status` | none | map freshness, commit age and changed files |
-| `planning.integrity`, `planning.validate` | `[--files PATH...]` | valid/warnings/errors/checked; only integrity fails on corruption |
+| `planning.integrity`, `planning.validate` | `[--files PATH... --strict]` | schema and cross-record valid/warnings/errors/checked; validate warns by default, strict explicitly fails |
 | `planning.review` | none | snapshotDigest/digest/repairs/findings/checked/repairable/valid |
 | `planning.repair` | `[--apply --expect DIGEST]` | same preview plus applied/repaired; stale snapshot blocks |
 | `planning.archive` | `--paths PATH... [--expect DIGEST --confirm]` | exact retired-record preview, or archive manifest/id/path |
 | `planning.archive` | `MILESTONE --scope phases|quick --confirm` | outgoing milestone archive; destination collision blocks |
 | `planning.archives` | none | archives/count |
 | `planning.archive-recover` | `ARCHIVE_ID [--expect DIGEST --confirm]` | recovery preview recoveryDigest, or recovered manifest; target collision blocks |
-| `milestone.create` | `NAME` | created milestone |
+| `milestone.create` | `NAME [--goal TEXT]` | created milestone and persisted goal |
 | `milestone.list` | none | milestones/count/active |
 | `milestone.complete` | `NAME --confirm [--no-archive-phases]` | completed milestone; unverified phase blocks |
 
@@ -307,8 +367,14 @@ All `init.*` results include these keys:
 | `<role_with_underscores>_model`, `<role_with_underscores>_effort` | same per-role values as maps |
 | `researcher_model/effort`, `checker_model/effort`, `reviewer_model/effort`, `fixer_model/effort` | aliases for phase-researcher, plan-checker, code-reviewer, code-fixer |
 | `fix` | explicit `--fix` echo |
+| `paths` | core record/root/planning/template paths, plus phase path when found |
+| `context_window` | configured model context window |
+| `agents_installed`, `missing_agents` | actual required role-file availability; missing required model resolution fails explicitly |
+| `pending_todos`, `open_quick` | actual pending todos and nonterminal quick records |
+| `milestone_phases`, `incomplete_phase` | parsed roadmap phases and first incomplete phase or null |
 
-Role maps cover executor, planner, verifier, phase-researcher, plan-checker, code-reviewer, code-fixer, doc-writer, doc-verifier, integration-checker, security-auditor, nyquist-auditor, ui-researcher, ui-checker, ui-auditor, scout, code-fixer, and codebase-mapper. A missing required role fails explicitly. Codex reads native TOML model/effort definitions from `bin/install-assets/codex-agents` in source, or the installed `.codex/agents`. Claude reads `agents.<final-role>` configuration.
+Role maps cover executor, planner, verifier, phase-researcher, plan-checker, code-reviewer, doc-writer, doc-verifier, integration-checker, security-auditor, nyquist-auditor, ui-researcher, ui-checker, ui-auditor, scout, code-fixer, and codebase-mapper. A missing required role fails explicitly. Codex reads native TOML model/effort definitions from `bin/install-assets/codex-agents` in source, or the installed `.codex/agents`. Claude reads `agents.<final-role>` configuration. `code-fixer.md` remains readable method context and is never a dispatch role; direct resolution fails with agent-method-only. Compatibility code_fixer/fixer model/effort fields resolve code-fixer policy. The dispatch map omits the method-only name. Isolation defaults to `auto` and negotiates the host's supported worktree mode; no supported setting disables isolation.
+
 `init.phase-op`, `init.plan-phase`, `init.execute-phase`, `init.verify-work`,
 `init.ship`, and `init.code-review` add this shared phase packet:
 
@@ -334,6 +400,9 @@ Role maps cover executor, planner, verifier, phase-researcher, plan-checker, cod
 | `granularity` | configured planning granularity, default standard |
 | `code_review`, `code_review_depth`, `code_review_depth_overrides` | configured review policy |
 | `last_review_commit` | last commit touching the phase REVIEW file, or null |
+| `expected_phase_dir` | actual directory, or expected roadmap-derived directory when absent |
+| `has_spec`, `spec_path` | actual SPEC existence and path |
+| `research_partial` | true when actual RESEARCH frontmatter declares partial/incomplete/in_progress |
 
 When the requested phase is absent, initialization returns `phase_found:false`,
 `phase_dir:null`, the requested `phase_number`, empty plan/requirement arrays, and
@@ -345,3 +414,72 @@ use `phase.locate N` first, then invoke initialization from its returned worktre
 `init.quick-batch` adds quick_root/quick_dir/open_batches/capacity/isolation.
 `init.todos` adds todos/count. `init.progress` and `init.complete-milestone` add
 roadmap phases/counts/percent, progress_percent, and all_phases_verified.
+
+## Canonical security tracking
+
+| Verb | Arguments | Result |
+|---|---|---|
+| `phase.threat-review` | `N --entries-file FILE` | exact checklist lookup, risk/current+linked PR candidate evidence, pending reasons and ready boolean; read-only |
+| `phase.threat-preview` | `N --entries-file FILE --variant "Security risk"` | reviewed checklist/standalone bodies and source/template/origin/provider-bound previewToken; refuses Pending review |
+| `phase.threat-publish` | same plus `--preview-token TOKEN` | published container/standalone URLs and actual provider-rendered entry links; consumes before provider writes |
+| `phase.threat-audit` | `N` | ready/pending; checks each PLAN's declared issue/heading target by provider readback; Pending exits 1 |
+| `quick.threat-review/preview/publish/audit` | same arguments with real quick `ID` replacing phase `N` | same contracts in the actual quick directory; no phase record is fabricated |
+
+The entries file is a nonempty JSON array. Each entry supplies `key`,
+`heading`, `plan` (the phase-local PLAN filename), `threat_id`, boolean `planned`,
+`owner`, `scope_acceptance`, `assessment_uncertainty`, `lifecycle_outcome`,
+`next_action`, `revision_check_evidence`, `aliases_occurrences`, and `match_review`.
+The stable BODY heading is Entry identity; optional `id` retains an existing
+caller alias and never replaces the canonical risk key or source Threat ID.
+The stable canonical key includes repository, surface/control and failure
+mode/remediation scope; review evidence must establish that identity. A match
+review supplies `disposition: existing|no-match|pending`, cited `evidence`,
+`reviewed_issue_urls`, `reviewed_pr_urls`, and `url` for an existing canonical
+issue. Optional `heading_url` must match an actual rendered provider anchor.
+
+Every planned entry cites its own PLAN's six-column register:
+`Threat ID | Category | Component | Severity | Disposition | Mitigation Plan`.
+Registers stay in their PLANs; threat identities do not change during phase
+renumbering. Publication searches open and closed issues for the exact title
+`chore(security): phase {padded-phase-id} security checklist` with label
+`phase-security-checklist`. Multiple containers or unavailable lookup stay
+Pending. Existing actionable full-scope identities take precedence. An unresolved
+closed match or closed checklist requires independent reopening authority;
+these verbs never reopen or close issues.
+
+Quick tracking resolves the actual QUICK.md directory and padded ID. Its exact
+title is `chore(security): quick {quick-id} security checklist` and its dedicated
+label is `quick-security-checklist`. Preview identity binds scope kind, ID and
+actual directory, so a phase and quick task cannot share an approval accidentally.
+PLAN/SUMMARY/VERIFICATION frontmatter uses exactly one `phase` or `quick` identity.
+
+All new planned risks, including accepted and deferred risks, receive separate
+stable `###` entries under Risk assessment and lifecycle in the single checklist.
+The container uses the same eight-heading Security risk variant as standalone
+risks. Existing canonical issue identities
+are linked from their entries. Entry fields are Entry identity, Canonical risk
+key, Aliases / occurrences, PLAN / Threat ID, Owner, Scope / acceptance,
+Assessment / uncertainty, Lifecycle / outcome, Next action, Revision / check evidence,
+and Canonical reference. The PLAN remains the owner of severity and mitigation.
+Reruns preserve headings; a rename fails until references are repaired and read
+back. Returned URLs come from actual provider-rendered anchors, never a computed
+slug. Missing anchors leave references Pending.
+
+A new unplanned threat requires a standalone Security risk issue, or an existing
+full-scope match. Supply `standalone_body` with these exact ordered `##` headings:
+Security concern; Affected surface and behavior; Impact; Risk assessment and
+lifecycle; Safe evidence; Requested remediation; Scope and acceptance; Related
+links. The body carries the risk key, source aliases, severity rationale and
+uncertainty, owner, observed status, mitigation/safe next action, and matching
+resolution/check evidence or an explicit Pending dependency. A checklist-only
+entry cannot satisfy this route.
+
+Provider mutation is followed by exact content readback. An uncertain create is
+searched/read back by exact container identity or standalone title and full body;
+if it cannot be proven, the consumed attempt blocks retry. Partial published
+results stay in the durable preview record. After publication the coordinator
+updates each PLAN link from the returned actual target, and an independent
+issue-link audit must read it back before readiness. `phase.handoff` and PR
+readiness enforce those target checks. Structural validation proves shape only:
+it does not prove safe content, semantic matches, human acceptance, or mitigation
+correctness. A checked entry, accepted risk, or merge never authorizes closure.

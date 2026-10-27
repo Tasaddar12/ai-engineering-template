@@ -23,7 +23,7 @@ class Args:
     """Parse long options without shell interpolation; multi-value options stay lists."""
     FLAGS = {"raw", "json", "force", "confirm", "fix", "mvp", "mutating", "stdin",
              "commits-only", "uat-only", "require-verification", "discuss", "research",
-             "validate", "full", "no-archive-phases", "milestone-bound", "tdd", "dry-run"}
+             "validate", "full", "no-archive-phases", "no-renumber", "no-match", "strict", "apply", "milestone-bound", "tdd", "dry-run"}
 
     def __init__(self, values):
         self.pos, self.opts = [], {}

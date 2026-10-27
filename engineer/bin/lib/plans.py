@@ -31,7 +31,7 @@ def validate(args):
     if not path.is_file():
         raise Failure("file-not-found", str(path))
     metadata, body = split_frontmatter(read(path))
-    findings = frontmatter.errors(metadata, "plan")
+    findings = frontmatter.errors(metadata, "plan")+frontmatter.path_errors(path, metadata, "plan")
     parsed = tasks(body)
     if not parsed:
         findings.append("Plan has no tasks")

@@ -11,6 +11,8 @@ MUTATIONS = {
     "phase.issue-declare", "phase.issue-preview", "phase.issue-publish", "phase.issue-update", "phase.reconcile-todos",
     "todo.issue-preview", "todo.issue-publish", "todo.issue-update", "handoff.write", "handoff.consume",
     "quick-batch.create", "quick-batch.update", "quick-batch.complete",
+    "phase.threat-preview", "phase.threat-publish",
+    "quick.threat-preview", "quick.threat-publish",
 }
 
 
@@ -38,7 +40,7 @@ def capture():
             continue
         try:
             metadata, _ = split_frontmatter(read(path))
-            errors = frontmatter.errors(metadata, schema)
+            errors = frontmatter.errors(metadata, schema)+frontmatter.path_errors(path, metadata, schema)
         except Failure as exc:
             errors = [exc.message]
         findings.extend((str(path), error) for error in errors)

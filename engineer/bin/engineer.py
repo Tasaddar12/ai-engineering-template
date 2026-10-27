@@ -15,6 +15,7 @@ from lib import phase_issues
 from lib import planning_review
 from lib import requirements
 from lib import planning_integrity
+from lib import security_tracking
 from lib.core import Args, Failure, pick, raw, root, slug
 
 IDENTITY = {"packageName": "engineer-runtime", "contract": "2.0"}
@@ -27,6 +28,7 @@ def registry():
         "generate-slug": lambda a: slug(a.need()), "project-instruction-file": models.instruction,
         "resolve-model": lambda a: models.resolution(a, "model"), "resolve-effort": lambda a: models.resolution(a, "effort"),
         "resolve-agent": lambda a: models.resolution(a, "agent"), "agent-skills": models.agent_skills,
+        "agents.list": models.list_agents,
         "agent.classify-failure": models.classify, "commit": gitops.commit, "git.base-branch": gitops.base_branch,
         "dispatch-isolation": worktrees.isolation, "dispatch-capacity": quick_batch.capacity,
         "find-phase": lambda a: records.find(a.need()), "phases.list": records.phase_list,
@@ -43,7 +45,7 @@ def registry():
         "check.decision-coverage-plan": lambda a: decisions.coverage(a, "plan"),
         "check.decision-coverage-verify": lambda a: decisions.coverage(a, "verify"),
         "plan.task-structure": plans.structure, "verify.plan-structure": plans.validate,
-        "verification.status": verification.status, "verification.resolve-file": lambda a: str(verification.resolve_file(a.need())),
+        "verification.status": verification.status, "verification.resolve-file": lambda a: str(verification.resolve_file(a.arg(0, a.get("phase")), a.get("quick"))),
         "verification.fingerprint": verification.fingerprint, "verification.append-audit": verification.append_audit,
         "verification.run-checks": verification.run_checks, "verification.check-status": verification.check_status,
         "phase.uat-passed": uat.passed, "audit-uat": uat.outstanding, "audit-open": uat.audit_open,
@@ -57,14 +59,15 @@ def registry():
         "planning.archives": planning_review.archives, "planning.archive-recover": planning_review.recover,
         "progress.bar": misc.progress_bar,
         "phase.handoff": phase_issues.handoff, "phase.issue-declare": phase_issues.declare,
+        "issue.validate": issues.validate_command,
         "phase.locate": sessions.locate,
         "phase.reconcile-todos": phase_issues.reconcile_todos,
-        "verification.current": lambda a: verification.current_evidence(a.need()),
+        "verification.current": lambda a: verification.current_evidence(a.arg(0, a.get("phase")), a.get("quick")),
     }
     for action in ("add", "insert", "edit", "remove", "complete"):
         verbs["phase."+action] = lambda a, action=action: records.phase_change(a, action)
     verbs["phase.complete"] = misc.complete_phase
-    for action in ("update", "begin-phase", "record-session", "add-roadmap-evolution", "add-decision", "add-blocker", "resolve-blocker", "advance-plan", "update-progress", "record-metric", "sync-todos", "add-deferred"):
+    for action in ("save", "update", "begin-phase", "record-session", "add-roadmap-evolution", "add-decision", "add-blocker", "resolve-blocker", "advance-plan", "update-progress", "record-metric", "sync-todos", "add-deferred"):
         verbs["state."+action] = lambda a, action=action: records.state_action(a, action)
     for action in ("get", "set", "validate"):
         verbs["frontmatter."+action] = lambda a, action=action: frontmatter.command(a, action)
@@ -96,6 +99,9 @@ def registry():
     for action in ("preview", "publish", "update"):
         verbs["todo.issue-"+action] = lambda a, action=action: issues.publication(a, action, "todo")
         verbs["phase.issue-"+action] = lambda a, action=action: issues.publication(a, action, "phase")
+    for action in ("review", "preview", "publish", "audit"):
+        verbs["phase.threat-"+action] = lambda a, action=action: security_tracking.command(a, action)
+        verbs["quick.threat-"+action] = lambda a, action=action: security_tracking.command(a, action, "quick")
     for action in ("preview", "apply"):
         verbs["cleanup."+action] = lambda a, action=action: cleanup.command(a, action)
     for kind in ("code-review", "complete-milestone", "execute-phase", "new-milestone", "new-project", "onboard", "phase-op", "plan-phase", "progress", "quick", "quick-batch", "todos", "verify-work", "ship"):
@@ -140,7 +146,9 @@ def main(argv=None):
             result, status = result
         if args.has("pick") and status == 0:
             result = pick(result, str(args.get("pick")))
-        if name == "check.tdd-red-evidence" and args.has("raw"):
+        if name == "dispatch-isolation" and args.has("raw") and not args.has("pick"):
+            print(result["mode"])
+        elif name == "check.tdd-red-evidence" and args.has("raw"):
             print(result["verdict"])
         else:
             print(raw(result) if args.has("raw") or args.has("pick") else json.dumps(result, ensure_ascii=False, indent=2))

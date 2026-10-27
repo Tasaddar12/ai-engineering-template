@@ -6,7 +6,7 @@ import re
 import shutil
 from . import records
 from .core import Failure, digest, load_json, now, planning_lock, read, root, safe_path, write, write_json
-from .text import split_frontmatter
+from .text import join_frontmatter, split_frontmatter
 
 
 def inventory():
@@ -33,8 +33,16 @@ def review(args):
             if not re.search(r"(?m)^"+re.escape(heading)+r"\s*$", after):
                 marker = re.search(r"(?m)^## Accumulated Context\s*$", after)
                 after = after[:marker.end()]+"\n\n"+heading+"\n"+after[marker.end():]
+        try:
+            metadata, body = split_frontmatter(after)
+            derived = records.derived_progress()
+            if metadata.get("progress") != derived:
+                metadata["progress"] = derived
+                after = join_frontmatter(metadata, body)
+        except Failure:
+            pass  # Malformed author input requires an explicit human repair.
         if after != before:
-            repairs.append({"path": str(path), "reason": "Add absent canonical STATE sections without changing their contents", "before": before, "after": after})
+            repairs.append({"path": str(path), "reason": "Add absent STATE sections and synchronize derived progress, preserving author narrative", "before": before, "after": after})
     return {"snapshotDigest": snapshot, "digest": snapshot, "repairs": repairs, "findings": findings,
             "checked": len(paths), "repairable": bool(repairs), "valid": not findings}
 

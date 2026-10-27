@@ -8,6 +8,7 @@ from .core import Failure, read, root
 from .text import split_frontmatter
 
 NAMESPACE = Path(__file__).resolve().parents[3]
+METHOD_ONLY = {"code-fixer"}
 
 
 def resolve_host():
@@ -28,9 +29,22 @@ def agents_dir():
 def resolve_agent(name):
     aliases = {"coder": "executor", "phase-preparer": "planner", "phase-checker": "plan-checker", "researcher": "phase-researcher", "gsd-executor": "executor"}
     name = aliases.get(name, name.removeprefix("gsd-"))
+    if name in METHOD_ONLY:
+        raise Failure("agent-method-only", "Read code-fixer.md as method context; dispatch targeted-fixer for scoped fixes", agent=name)
     if not (agents_dir()/(name+".md")).is_file():
         raise Failure("agent-not-found", f"Required agent role is missing: {name}")
     return name
+
+
+def list_agents(args):
+    agents, methods = [], []
+    for path in sorted(agents_dir().glob("*.md")):
+        metadata, _ = split_frontmatter(read(path))
+        if path.stem in METHOD_ONLY:
+            methods.append({"name": path.stem, "path": str(path), "dispatchable": False})
+        elif metadata.get("name") and path.stem not in ("AGENT", "README"):
+            agents.append({"name": path.stem, "path": str(path), "dispatchable": True})
+    return {"agents": agents, "count": len(agents), "method_sources": methods}
 
 
 def resolve(name, kind, host=None):

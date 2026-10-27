@@ -1,7 +1,7 @@
 """Read-only workflow initialization packets from canonical records."""
 from pathlib import Path
 import re
-from . import config, models, records, verification, quick_batch
+from . import config, models, records, verification, quick_batch, worktrees
 from .core import Failure, load_json, read, root, run
 from .text import split_frontmatter
 
@@ -35,13 +35,26 @@ def init(args, kind):
     packet["templates_dir"] = str(Path(__file__).resolve().parents[2]/"templates")
     packet["initialized"] = all(packet[name+"_path"] for name in ("project", "requirements", "roadmap", "state"))
     packet["checks_configured"] = bool(settings["verification"]["commands"])
+    packet["context_window"] = settings["context_window"]
+    packet["paths"] = {name: packet[name+"_path"] for name in ("project", "state", "roadmap", "requirements")}
+    packet["paths"].update({"root": packet["root"], "planning": packet["planning_dir"], "templates": packet["templates_dir"]})
+    packet["pending_todos"] = records.todo(type(args)([]), "list")["todos"]
+    packet["open_quick"] = records.quick(type(args)(["--status", "open"]), "list")["tasks"]
+    progress = records.roadmap_analyze()
+    packet["milestone_phases"] = progress["phases"]
+    packet["incomplete_phase"] = next((phase for phase in progress["phases"] if not phase["complete"]), None)
     packet["models"], packet["efforts"] = {}, {}
-    for role in ("executor", "planner", "verifier", "phase-researcher", "plan-checker", "code-reviewer", "code-fixer", "doc-writer", "doc-verifier", "integration-checker", "security-auditor", "nyquist-auditor", "ui-researcher", "ui-checker", "ui-auditor", "scout", "targeted-fixer", "codebase-mapper"):
+    roles = ("executor", "planner", "verifier", "phase-researcher", "plan-checker", "code-reviewer", "doc-writer", "doc-verifier", "integration-checker", "security-auditor", "nyquist-auditor", "ui-researcher", "ui-checker", "ui-auditor", "scout", "targeted-fixer", "codebase-mapper")
+    packet["missing_agents"] = [role for role in roles if not (models.agents_dir()/(role+".md")).is_file()]
+    packet["agents_installed"] = not packet["missing_agents"]
+    for role in roles:
         key = role.replace("-", "_")
         packet[key+"_model"] = models.resolve(role, "model")
         packet[key+"_effort"] = models.resolve(role, "effort")
         packet["models"][role] = packet[key+"_model"]
         packet["efforts"][role] = packet[key+"_effort"]
+    packet["code_fixer_model"] = packet["targeted_fixer_model"]
+    packet["code_fixer_effort"] = packet["targeted_fixer_effort"]
     packet.update({"researcher_model": packet["phase_researcher_model"], "checker_model": packet["plan_checker_model"],
                    "reviewer_model": packet["code_reviewer_model"], "fixer_model": packet["code_fixer_model"]})
     packet.update({"researcher_effort": packet["phase_researcher_effort"], "checker_effort": packet["plan_checker_effort"],
@@ -51,7 +64,7 @@ def init(args, kind):
     if kind == "quick-batch":
         batches = [load_json(path) for path in (records.planning()/"quick/batches").glob("*.json")]
         return {**packet, "quick_root": str(records.planning()/"quick"), "quick_dir": str(records.planning()/"quick"),
-                "open_batches": [b for b in batches if b.get("status") != "complete"], "capacity": quick_batch.capacity(), "isolation": "worktree"}
+                "open_batches": [b for b in batches if b.get("status") != "complete"], "capacity": quick_batch.capacity(), "isolation": worktrees.isolation(args)["mode"]}
     if kind == "quick":
         return {**packet, "description": args.arg(0, ""), "quick_dir": str(records.planning()/"quick"),
                 **{flag: args.has(flag) for flag in ("discuss", "research", "validate", "full")}}
@@ -73,10 +86,25 @@ def init(args, kind):
     try:
         info = records.find(value)
     except (Failure, ValueError):
-        return {**packet, "phase_found": False, "phase_dir": None, "phase_number": value, "plans": [],
+        expected = None
+        try:
+            phase = records.roadmap_phase(value)
+            from .core import slug
+            expected = str(records.planning()/"phases"/(phase["number"]+"-"+slug(phase["name"])))
+        except (Failure, ValueError):
+            pass
+        return {**packet, "phase_found": False, "phase_dir": None, "expected_phase_dir": expected,
+                "has_spec": False, "spec_path": None, "research_partial": False, "phase_number": value, "plans": [],
                 "incomplete_plans": [], "plan_count": 0, "incomplete_count": 0, "phase_req_ids": []}
     packet.update(info)
     directory = Path(info["phase_dir"])
+    packet["expected_phase_dir"] = str(directory)
+    specs = list(directory.glob("*-SPEC.md"))
+    packet["has_spec"] = bool(specs)
+    packet["spec_path"] = str(specs[0]) if specs else None
+    research = list(directory.glob("*-RESEARCH.md"))
+    packet["research_partial"] = any(split_frontmatter(read(path))[0].get("status") in ("partial", "incomplete", "in_progress") for path in research)
+    packet["paths"]["phase"] = str(directory)
     packet["phase"] = info["number"]
     packet["padded_phase"] = info["number"]
     packet["phase_padded"] = info["number"]
