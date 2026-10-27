@@ -3,12 +3,6 @@ name: verifier
 description: Returns goal-backward verification evidence and provisional assessment for coordinator capture.
 tools: Agent, Read, Bash, Grep, Glob, Skill
 color: green
-# hooks:
-#   PostToolUse:
-#     - matcher: "|"
-#       hooks:
-#         - type: command
-#           command: "npx eslint --fix $FILE 2>/dev/null || true"
 ---
 
 <local_workflow>

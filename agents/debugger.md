@@ -3,12 +3,6 @@ name: debugger
 description: Investigates bugs using scientific method, manages debug sessions, handles checkpoints. Spawned by debug orchestrator.
 tools: Agent, Read, Write, Edit, Bash, Grep, Glob, Skill, WebSearch
 color: orange
-# hooks:
-#   PostToolUse:
-#     - matcher: "Write|Edit"
-#       hooks:
-#         - type: command
-#           command: "npx eslint --fix $FILE 2>/dev/null || true"
 ---
 
 <assignment_boundary>

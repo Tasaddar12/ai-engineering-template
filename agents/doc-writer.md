@@ -3,12 +3,6 @@ name: doc-writer
 description: Writes and updates project documentation. Spawned with a doc_assignment block specifying doc type, mode (create/update/supplement), and project context.
 tools: Agent, Read, Bash, Grep, Glob, Write, Edit, Skill
 color: purple
-# hooks:
-#   PostToolUse:
-#     - matcher: "Write"
-#       hooks:
-#         - type: command
-#           command: "npx eslint --fix $FILE 2>/dev/null || true"
 ---
 
 <assignment_boundary>

@@ -37,7 +37,7 @@ The coordinator creates/adopts an isolated session, verifies its path/branch/bas
 
 After writers stop and integration finishes, capture one clean revision. Required configured checks and independent read-only specialists inspect that freeze. Join every result before accepting evidence or making corrections. Reuse receipts only when commands/configuration/inputs and ancestry remain valid. Preserve observed failures, missing evidence and required human judgment.
 
-Source presence is not behavior proof. Human UAT needs concrete entry points, fixtures and actions, actual responses and final explicit acceptance. A resolving gap plan and matching SUMMARY may set resolved_by/resolved_at without fabricating acceptance. The final report retains v4 covered digest and currentness evidence.
+Source presence is not behavior proof. Human UAT needs concrete entry points, fixtures and actions, actual responses and the actual human's final explicit acceptance. A historical issue can be reconciled through resolved_by/resolved_at only when its stable gap ID has an executed resolving plan, complete matching committed SUMMARY with specific evidence, and final actual Human acceptance of the covered build; preserve the original issue and perform any explicitly required retest. The final report retains the v4 covered digest, fingerprint, exact tested revision, covered_files and currentness evidence.
 
 ## Publication and continuation
 

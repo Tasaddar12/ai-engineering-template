@@ -3,19 +3,13 @@ name: ui-researcher
 description: Produces UI-SPEC.md design contract for frontend phases. Reads upstream artifacts, detects design system state, asks only unanswered questions. Spawned by ui-phase orchestrator.
 tools: Agent, Read, Write, Edit, Bash, Grep, Glob, Skill, WebSearch, WebFetch, mcp__context7__*, mcp__plugin_context7_context7__*, mcp__firecrawl__*, mcp__exa__*, mcp__tavily__*, mcp__ref__*, mcp__jina__*
 color: purple
-# hooks:
-#   PostToolUse:
-#     - matcher: "Write|Edit"
-#       hooks:
-#         - type: command
-#           command: "npx eslint --fix $FILE 2>/dev/null || true"
 ---
 
 <assignment_boundary>
-Source or artifact changes require the coordinator-supplied isolated checkout, branch, expected base revision, owned paths and SUMMARY destination. Verify all identities before writing. Never create a worktree, switch branches, merge or mutate shared planning records. Return missing or mismatched assignment data to the coordinator. Read-only investigation may continue within assigned scope.
+Artifact changes require the coordinator-supplied isolated checkout, branch, expected base revision and owned paths. Verify all identities before writing. Never create a worktree, switch branches, merge or mutate shared planning records. Return missing or mismatched assignment data to the coordinator. This role produces the assigned UI-SPEC artifact; do not add an unassigned SUMMARY.
 </assignment_boundary>
 <local_workflow>
-Write only the assigned UI-SPEC artifact and SUMMARY in the supplied isolated checkout. CONTEXT owns approved decisions; return unresolved choices to the coordinator. Commit assigned artifacts and return hashes, coverage and source evidence.
+Write only the assigned UI-SPEC artifact in the supplied isolated checkout. CONTEXT owns approved decisions; return unresolved choices to the coordinator. Commit the artifact and return its hash, coverage and source evidence.
 </local_workflow>
 
 <role>
@@ -336,7 +330,7 @@ This file is the canonical output of this agent. The orchestrator reads `$PHASE_
    - On the final section, replace the sentinel with the closing content and no trailing sentinel.
 5. **If writing still fails, surface the actual error in your return message.** **Do NOT silently fall back to returning content** — that hides the failure from the orchestrator and truncates identically.
 
-Stage the exact assigned UI-SPEC and SUMMARY paths with `git add --`, inspect the staged diff and `git commit -m "docs: record UI specification"`. Return hashes and unresolved scope.
+Stage the exact assigned UI-SPEC path with `git add --`, inspect the staged diff and `git commit -m "docs: record UI specification"`. Return its hash and unresolved scope; do not create an unassigned SUMMARY.
 
 ## Step 7: Return Structured Result
 
@@ -362,7 +356,7 @@ At a context limit, commit a useful partial UI-SPEC, list uncovered sections and
 
 ### Committed Artifact
 
-Assigned UI-SPEC artifact and SUMMARY committed; return hashes and coverage limitations.
+Assigned UI-SPEC artifact committed; return its path and hash plus coverage limitations. Do not create an unassigned SUMMARY.
 `$PHASE_DIR/$PADDED_PHASE-UI-SPEC.md`
 
 ### Pre-Populated From

@@ -68,6 +68,8 @@ The managed host tree contains `agents/`, `commands/`, `engineer/bin/`, workflow
 
 The runtime entry point is `<target>/engineer/bin/engineer_run`. It resolves Python and invokes the pinned `engineer.py`; workflows load the shared runtime launcher and require identity `engineer-runtime`. Hook registration is managed by the installer. Do not manually duplicate registrations when a command appears unavailable.
 
+Install the complete copied `agents/code-fixer.md` as the `code-fixer` agent for the selected host.
+
 ## Existing installations and migration
 
 An older installation with a separate `.ai` directory, or a separate host `runtime/` directory, needs migration rather than a parallel copy. Preserve its manifest and customizations. Inspect the migration preview using the same source, pin, target and host flags:

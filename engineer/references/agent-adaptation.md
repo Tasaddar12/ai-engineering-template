@@ -8,15 +8,19 @@ Read `agents/README.md`, the assigned role, consuming workflow and required refe
 
 ## Supported hosts
 
-Only Claude and Codex adapters are supported. Resolve exact final roles and model/effort using runtime interfaces; omit inherited settings and pass resolved values inline on actual host dispatch. Do not add another AI host, generic fallback role, model profile router or unverified native integration.
+Only Claude and Codex adapters are supported. Resolve exact dispatchable roles and model/effort using runtime interfaces; omit inherited settings and pass resolved values inline on actual host dispatch. Do not add another AI host, generic fallback role, model profile router or unverified native integration.
 
 ## Assignment fidelity
 
-Preserve repository/branch/revision verification, exact path ownership, declared deletions/resources, read_first, checks argv, source/result identity and pending human decisions. A write worker commits owned changes and required summary; a read-only role returns its cited packet without a completion commit. The coordinator owns lifecycle, integration, shared records and publication.
+Preserve repository/branch/revision verification, exact path ownership, declared deletions/resources, read_first, checks argv, source/result identity and pending human decisions. Source-changing workers commit owned changes and their required full-schema SUMMARY; artifact-only producers commit and return the assigned artifact without inventing a SUMMARY; read-only roles return their cited packet without a completion commit. The coordinator owns lifecycle, integration, shared records and publication.
 
 ## Planning and evidence
 
-Require complete acceptance, documentation, checks and issue_refs metadata in current plans. Workers cannot mutate shared PLAN/STATE/ROADMAP/REQUIREMENTS structures to declare their own success. Preserve TDD RED formats and semantic checks, v4 digest, behavioral verification, human UAT and resolved_by history. Never invent a passing check or waive acceptance through a mode flag.
+Require current strict PLAN, SUMMARY and CONTEXT metadata. PLAN `acceptance`, `documentation` and `issue_refs` are top-level lists; `checks` is a list of nonempty argv string lists, never shell strings or nested waiver data. Workers cannot mutate shared PLAN/STATE/ROADMAP/REQUIREMENTS structures to declare their own success. Preserve TDD RED formats and semantic checks, `covered_digest: "v4:sha256:..."` with fingerprint/revision/covered_files, behavioral verification, actual-human local UAT and the narrow historical `resolved_by` reconciliation. Never invent a passing check or waive acceptance through a mode flag.
+
+## Host export and method source
+
+The shared source method is `agents/code-fixer.md`. Keep it available in both exports without making it a second native role: Claude installs the full body at `.claude/engineer/references/code-fixer.md`, outside Claude's auto-discovered agents directory, with links rebased for that location. Codex keeps the readable method at `.codex/agents/code-fixer.md` without native agent TOML; dispatch `code-fixer` for bounded repair on either host. Preserve the method body and its rebased links rather than replacing it with an adapter summary.
 
 ## Return and consumption
 

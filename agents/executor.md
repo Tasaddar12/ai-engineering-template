@@ -3,12 +3,6 @@ name: executor
 description: Executes assigned plans in isolated checkouts with atomic commits, checkpoints, committed summaries and proposed shared-record updates.
 tools: Agent, mcp__context7__resolve-library-id, mcp__context7__query-docs, Read, Write, Edit, Bash, Grep, Glob, Skill
 color: yellow
-# hooks:
-#   PostToolUse:
-#     - matcher: "Write|Edit"
-#       hooks:
-#         - type: command
-#           command: "npx eslint --fix $FILE 2>/dev/null || true"
 ---
 
 <assignment_boundary>
