@@ -1,13 +1,14 @@
 ---
 name: phase
 description: Multi-phase management — add, insert, remove, or edit phases in ROADMAP.md (roadmap phase CRUD)
-argument-hint: "[--insert | --remove | --edit] <phase-name-or-number>"
+argument-hint: "<description> [--goal <text>] [--requirements <ids>] | --insert <after-phase> <description> [--goal <text>] | --remove <phase> [--force] [--no-renumber] | --edit <phase> [--force]"
 allowed-tools:
   - Read
   - Write
   - Bash
   - Glob
   - Grep
+  - AskUserQuestion
 ---
 
 <arguments>$ARGUMENTS</arguments>
@@ -47,15 +48,19 @@ Arguments: see the `<arguments>` block above.
 
 Parse the first token of the `<arguments>` block:
 - If it is `--insert`: strip the flag, pass remainder (format: <after-phase-number> <description>) to insert-phase workflow
-- If it is `--remove`: strip the flag, pass remainder (phase number) to remove-phase workflow
+- If it is `--remove`: strip the flag, pass remainder (phase number and explicitly supplied `--force`/`--no-renumber`) to remove-phase workflow
 - If it is `--edit`: strip the flag, pass remainder (phase-number [--force]) to edit-phase workflow
-- Otherwise: pass all of the `<arguments>` block (phase description) to add-phase workflow
+- Otherwise: pass the description and separate `--goal`/`--requirements` values to add-phase workflow
 
-Roadmap and state are resolved in-workflow via `init phase-op` and targeted reads.
+Roadmap and state are resolved in-workflow via `engineer_run query init.phase-op` and targeted reads. Creating or editing a phase never grants implementation permission.
 </context>
 
 <process>
 1. Parse the leading flag (if any) from the `<arguments>` block.
-2. Load and execute the appropriate workflow end-to-end based on the routing table above.
+2. MANDATORY: Read the selected workflow in full before writing, then execute it end to end. Load only the selected workflow from the execution context.
 3. Preserve all validation gates from the target workflow.
 </process>
+
+<success_criteria>
+The correct operation ran through the runtime, its actual record changes were read back, destructive changes received exact confirmation, and the meaningful slice was committed. No plans or implementation were started by phase management.
+</success_criteria>
