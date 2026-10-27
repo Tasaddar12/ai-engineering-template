@@ -61,6 +61,12 @@ Plan and evidence gates include `verify.plan-structure`, `plan.task-structure`,
 `planning.integrity` fails on malformed record frontmatter;
 `planning.validate` reports the same findings without blocking.
 
+Every invocation captures planning-file digests and schema findings before and
+after dispatch. Read-only verbs fail if planning content changed, and new schema
+corruption fails a mutation. Existing corruption is reported as a warning so a
+repair command can still operate. Frontmatter setters reject schema regressions
+before writing.
+
 Configure verification commands as argv arrays:
 
 ```yaml

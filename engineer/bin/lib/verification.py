@@ -83,6 +83,7 @@ def fingerprint(args):
     with planning_lock():
         metadata, body = split_frontmatter(read(report))
         metadata["fingerprint"] = value
+        metadata.setdefault("status", "not_started")
         metadata["covered_files"] = covered
         metadata["revision"] = run(["git", "rev-parse", "HEAD"], root()).stdout.strip()
         metadata.setdefault("phase", directory.name.split("-")[0])

@@ -52,7 +52,7 @@ class MiscVerbs(RuntimeCase):
     def test_integrity_is_strict_and_validate_is_warning_only(self):
         directory = self.phase()
         path = self.plan(directory)
-        self.cli("frontmatter.set", path, "--field", "wave", "--value", "wrong")
+        path.write_text(path.read_text().replace("wave: 1", "wave: wrong"), encoding="utf-8")
         self.assertFalse(self.cli("planning.integrity", status=1)["valid"])
         self.assertFalse(self.cli("planning.validate")["valid"])
 

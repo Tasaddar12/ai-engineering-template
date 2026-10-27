@@ -17,7 +17,8 @@ class PlanChecks(RuntimeCase):
     def test_invalid_task_and_schema_report_errors(self):
         path = self.plan(self.phase(), "<task><name>Incomplete</name></task>")
         self.assertFalse(self.cli("verify.plan-structure", path, status=1)["valid"])
-        self.cli("frontmatter.set", path, "--field", "wave", "--value", "wrong")
+        self.cli("frontmatter.set", path, "--field", "wave", "--value", "wrong", status=1, raw=True)
+        path.write_text(path.read_text().replace("wave: 1", "wave: wrong"), encoding="utf-8")
         self.assertFalse(self.cli("frontmatter.validate", path, "--schema", "plan", status=1)["valid"])
 
     def test_frontmatter_write_cannot_escape_repository(self):

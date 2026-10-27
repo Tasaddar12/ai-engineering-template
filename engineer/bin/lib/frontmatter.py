@@ -35,10 +35,15 @@ def command(args, action):
         return {"valid": not findings, "errors": findings}, int(bool(findings))
     with planning_lock():
         metadata, body = split_frontmatter(read(path))
+        schema = next((name for name in SCHEMAS if path.name.endswith("-"+name.upper()+".md")), None)
+        previous_errors = set(errors(metadata, schema)) if schema else set()
         field = args.get("field", args.arg(1))
         if not field or not args.has("value"):
             raise Failure("missing-argument", "frontmatter.set requires --field and --value", 2)
         from .config import assign
         assign(metadata, field, scalar(str(args.get("value"))))
+        introduced = set(errors(metadata, schema))-previous_errors if schema else set()
+        if introduced:
+            raise Failure("invalid-frontmatter-update", "Field value violates the artifact schema", errors=sorted(introduced))
         write(path, join_frontmatter(metadata, body))
     return {"updated": True, "field": field, "path": str(path)}

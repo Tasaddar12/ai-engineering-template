@@ -14,6 +14,7 @@ from lib import issues, cleanup
 from lib import phase_issues
 from lib import planning_review
 from lib import requirements
+from lib import planning_integrity
 from lib.core import Args, Failure, pick, raw, root, slug
 
 IDENTITY = {"packageName": "engineer-runtime", "contract": "2.0"}
@@ -124,12 +125,16 @@ def main(argv=None):
         name += "."+values.pop(0)
     args = Args(values)
     try:
+        before = planning_integrity.capture()
         if name in ("help", "verbs", "--help", "-h"):
             result = {"usage": "engineer_run query <verb>", "verbs": sorted([*VERBS, "help", "verbs"])}
         elif name not in VERBS:
             raise Failure("unknown-verb", f"Unknown runtime verb: {name}", 2)
         else:
             result = VERBS[name](args)
+        warnings = planning_integrity.finish(name, before, planning_integrity.capture())
+        if warnings:
+            print(json.dumps({"warning": "planning-integrity", "findings": warnings}, ensure_ascii=False), file=sys.stderr)
         status = 0
         if isinstance(result, tuple) and len(result) == 2 and isinstance(result[1], int):
             result, status = result
