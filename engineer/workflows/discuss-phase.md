@@ -328,11 +328,7 @@ Parse JSON for: `todo_count`, `matches[]` (each with `file`, `title`, `area`, `s
 <step name="scout_codebase">
 Lightweight scan of existing code to inform gray area identification (~10% context).
 
-Read `@~/.claude/engineer/references/scout-codebase.md` — it contains the phase-type→map selection table, single-read rule, no-maps fallback, and `<codebase_context>` output schema. Then execute:
-1. `ls .planning/codebase/*.md` to find existing maps
-2. Select 2–3 maps via the reference's table; or grep fallback if none exist
-3. Build internal `<codebase_context>` per the reference's output schema
-</step>
+Read `@~/.claude/engineer/references/scout-codebase.md` — it contains the phase-type→map selection table, single-read rule, no-maps fallback, and `<codebase_context>` output schema. Then execute: 1. `ls .planning/codebase/*.md` to find existing maps 2. Select 2–3 maps via the reference's table; or grep fallback if none exist 3. Build internal `<codebase_context>` per the reference's output schema </step>
 
 <step name="dispatch_discuss_pre_hooks">
 ```bash
