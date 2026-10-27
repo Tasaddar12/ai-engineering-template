@@ -7,6 +7,9 @@ execution, and "re-run /ship when the checks settle". The procedures are prose
 a model follows, so the guard is on the prose itself.
 """
 import re
+import json
+import subprocess
+import sys
 import unittest
 from pathlib import Path
 
@@ -110,14 +113,15 @@ class UnattendedFlow(unittest.TestCase):
         self.assertIn("closing report", aggregate)
 
     def test_the_orchestrator_is_never_told_to_stop_at_the_limit(self):
-        hook = read(ROOT / "hooks" / "context-handoff.sh")
-        # The advisory an agent without identity receives -- the one the
-        # orchestrator used to obey -- not the comments explaining its history.
-        advisory = re.search(r'^unknown_stop="(.*?)"$', hook, re.MULTILINE | re.DOTALL)
-        self.assertIsNotNone(advisory, "unknown_stop advisory not found")
-        self.assertNotIn("dispatch nothing new", advisory.group(1))
-        self.assertNotIn("recommend continuing", advisory.group(1))
-        self.assertIn("does not apply to you", advisory.group(1))
+        for identity in ({}, {"agent_id": "foreground", "agent_type": "coordinator"}):
+            with self.subTest(identity=identity):
+                event = {"hook_event_name": "PostToolUse", "cwd": str(ROOT),
+                         "context_tokens": 1000000, **identity}
+                result = subprocess.run([sys.executable, str(ROOT / "hooks/context-handoff.py")],
+                                        input=json.dumps(event), cwd=ROOT, text=True,
+                                        encoding="utf-8", capture_output=True)
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertEqual("", result.stdout, "The foreground coordinator receives no stop instruction")
         for name in ("execute-phase", "verify-work"):
             with self.subTest(workflow=name):
                 self.assertIn("never stop because", read(WORKFLOWS / (name + ".md")).lower())
