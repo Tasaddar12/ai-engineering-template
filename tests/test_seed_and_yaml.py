@@ -49,6 +49,42 @@ class SeedRoadmapPreservation(RuntimeCase):
         self.assertEqual("Second human Label", self.cli("find-phase", "02")["name"])
 
 
+class PreservedProjectSettings(RuntimeCase):
+    def test_canonical_local_defaults_and_native_host_boundary(self):
+        self.put(".planning/config.yaml", "{}\n")
+        for key, value in (("context_window", 1000000), ("worktree.root", ".worktrees"),
+                           ("codebase.staleness.stack", 1), ("codebase.staleness.architecture", 15),
+                           ("verification.reuse", True), ("verification.max_parallel", 4),
+                           ("workflow.ui_safety_gate", True)):
+            with self.subTest(key=key):
+                self.assertEqual(value, self.cli("config-get", key))
+        for role, model, effort in (("executor", "sonnet", "high"),
+                                    ("planner", "opus", "medium"),
+                                    ("phase-researcher", "opus", "high")):
+            with self.subTest(role=role):
+                resolved = self.cli("resolve-agent", role, "--host", "claude")
+                self.assertEqual(model, resolved["model"])
+                self.assertEqual(effort, resolved["effort"])
+        self.assertEqual("gpt-6.1-sol", self.cli("resolve-model", "executor", "--host", "codex")["model"])
+
+    def test_legacy_project_role_and_worktree_keys_remain_effective_without_writes(self):
+        original = "agents:\n  coder:\n    model: opus\n    effort: max\nworktree:\n  root: owned-workers\n"
+        path = self.put(".planning/config.yaml", original)
+        resolved = self.cli("resolve-agent", "executor", "--host", "claude")
+        self.assertEqual(("opus", "max"), (resolved["model"], resolved["effort"]))
+        self.assertEqual("owned-workers", self.cli("config-get", "worktree.directory"))
+        self.assertEqual(original, path.read_text(encoding="utf-8"))
+        self.cli("config-set", "worktree.directory", "next-workers")
+        saved = yaml_load(path.read_text(encoding="utf-8"))
+        self.assertEqual("next-workers", saved["worktree"]["root"])
+        self.assertEqual("next-workers", saved["worktree"]["directory"])
+
+    def test_explicit_final_role_override_precedes_legacy_alias(self):
+        self.put(".planning/config.yaml", "agents:\n  coder: opus\n  executor:\n    model: sonnet\n    effort: low\n")
+        resolved = self.cli("resolve-agent", "coder", "--host", "claude")
+        self.assertEqual(("sonnet", "low"), (resolved["model"], resolved["effort"]))
+
+
 class YamlCompatibility(unittest.TestCase):
     def test_indentationless_nested_argv_sequences_and_mapping_siblings(self):
         text = """verification:

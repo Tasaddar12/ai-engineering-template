@@ -585,10 +585,10 @@ issue_refs: []
                 runtime = "." + host + "/engineer/bin/engineer.py"
                 for name, model, effort in (("executor", "sonnet", None), ("planner", "opus", "medium")):
                     default = json.loads(command(sys.executable, runtime, "query", "resolve-agent", name, cwd=self.target))
-                    self.assertEqual("gpt-6.1-sol" if host == "codex" else "inherit", default["model"])
-                    self.assertEqual(("medium" if name == "executor" else "high") if host == "codex" else "inherit", default["effort"])
+                    self.assertEqual("gpt-6.1-sol" if host == "codex" else model, default["model"])
+                    self.assertEqual(("medium" if name == "executor" else "high") if host == "codex" else ("high" if name == "executor" else "medium"), default["effort"])
                     if host == "claude":
-                        # Empty project overrides defer to the native role file.
+                        # Native defaults remain independent of explicit project choices.
                         method = self.target / ".claude/agents" / (name + ".md")
                         native = yaml.safe_load(method.read_text(encoding="utf-8").split("---", 2)[1])
                         self.assertEqual(model, native["model"])

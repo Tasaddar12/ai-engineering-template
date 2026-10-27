@@ -2,13 +2,15 @@
 # Initialize during onboarding. Keep reusable templates free of adopting-project identity.
 commit_docs: true
 response_language: null
-context_window: 200000
+# Set this to the actual model window; the independent absolute handoff cap still applies.
+context_window: 1000000
 workflow:
   text_mode: false
   auto_advance: false
   discuss_mode: discuss
   # auto resolves only to harness-worktree or orchestrator-worktree; isolation cannot be disabled.
   isolation: auto
+  agent_hint_routing: true
   human_verify_mode: end-of-phase
   code_review: true
   code_review_depth: standard
@@ -23,6 +25,8 @@ workflow:
   specless_probe_fallback: true
   ui_interaction_capture: false
   ui_phase: auto
+  # Only explicit false disables the registry-safety dimension; disabled is not passed.
+  ui_safety_gate: true
   nyquist_validation: true
   tdd_mode: false
   research: true
@@ -48,15 +52,50 @@ handoff:
   context_tokens: 250000
 codebase:
   max_age_commits: 20
-  # Map-specific preservation policy; verify current runtime support before relying on overrides.
+  # Map-specific preservation policy.
   staleness:
     architecture: 15
     stack: 1
 # Resolve final-role model and effort with engineer_run query resolve-model / resolve-effort.
-# Claude reads overrides here; Codex uses native installed TOML definitions.
+# Preserved project-level Claude choices, with final role names. Codex uses native
+# installed TOML instead of these YAML choices. Native Claude frontmatter still
+# applies when an effective value is explicitly inherit.
 # Fixed scout and targeted-fixer policies cannot be overridden by project configuration.
 # Code-fixer is method source; targeted-fixer is the dispatchable bounded-repair role.
-agents: {}
+agents:
+  executor:
+    model: sonnet
+    effort: high
+  debugger:
+    model: sonnet
+    effort: high
+  doc-writer:
+    model: sonnet
+    effort: high
+  planner:
+    model: opus
+    effort: medium
+  codebase-mapper:
+    model: sonnet
+    effort: high
+  phase-researcher:
+    model: opus
+    effort: high
+  code-reviewer:
+    model: opus
+    effort: high
+  verifier:
+    model: opus
+    effort: high
+  plan-checker:
+    model: opus
+    effort: high
+  doc-verifier:
+    model: sonnet
+    effort: medium
+  integration-checker:
+    model: sonnet
+    effort: medium
 verification:
   # CHANGEME: configure actual project checks during onboarding. No invented test commands.
   commands: []
@@ -66,9 +105,8 @@ verification:
   #     argv: ["python", "-m", "unittest", "discover", "-s", "tests"]
   #     timeout: 300
   #     inputs: ["src/app.py", "tests/test_app.py"]
-  # Preserve requested policy values; confirm consuming implementation before changing them.
   reuse: true
-  max_parallel: 3
+  max_parallel: 4
 git:
   base_branch: main
   protected_branches: [main, master]
