@@ -36,7 +36,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `bin/install-assets/REQUIREMENTS.txt` | local-only | 65 | 0 |
 | `bin/install-assets/ROADMAP.txt` | local-only | 96 | 0 |
 | `bin/install-assets/STATE.txt` | local-only | 68 | 0 |
-| `bin/install-assets/agent-entry.txt` | local-only | 143 | 0 |
+| `bin/install-assets/agent-entry.txt` | local-only | 140 | 0 |
 | `bin/install-assets/codex-agents/code-reviewer.toml` | local-only | 5 | 0 |
 | `bin/install-assets/codex-agents/codebase-mapper.toml` | local-only | 5 | 2 |
 | `bin/install-assets/codex-agents/coordinator.toml` | local-only | 5 | 1 |
@@ -317,7 +317,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `engineer/workflows/code-review/steps/dispatch-fix.md` | reconciled | 19 | 0 |
 | `engineer/workflows/complete-milestone.md` | reconciled | 169 | 0 |
 | `engineer/workflows/debug.md` | reconciled | 296 | 60 |
-| `engineer/workflows/discuss-phase.md` | reconciled | 291 | 0 |
+| `engineer/workflows/discuss-phase.md` | reconciled | 295 | 0 |
 | `engineer/workflows/discuss-phase/modes/all.md` | reconciled | 26 | 0 |
 | `engineer/workflows/discuss-phase/modes/auto.md` | reconciled | 44 | 0 |
 | `engineer/workflows/discuss-phase/modes/default.md` | reconciled | 150 | 0 |
