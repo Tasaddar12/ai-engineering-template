@@ -8,7 +8,6 @@ import tempfile
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 
-import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "engineer/bin/engineer.py"
@@ -89,7 +88,7 @@ class ReceiptTests(unittest.TestCase):
         return [sys.executable, "check.py", name, mode, *args]
 
     def configure(self, commands, **options):
-        self.write(".planning/config.yaml", yaml.safe_dump({"verification": dict(commands=commands, **options)}))
+        self.write(".planning/config.yaml", json.dumps({"verification": dict(commands=commands, **options)}))
 
     def run_checks(self, environment=None, ok=True):
         env = dict(os.environ, PYTHONIOENCODING="utf-8")
