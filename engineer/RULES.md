@@ -130,6 +130,6 @@ Reusable rules belong under [rules](rules/README.md), with exact scope, authorit
 
 ## Complete template use
 
-Read each complete template before authoring its artifact, including frontmatter, guidance, detailed examples and consumer contracts. Preserve required sections and explain not applicable sections explicitly. Do not replace methods with summaries, copy a compact variant or omit fields to fit a context budget. Follow [template use](templates/TEMPLATE.md).
+Read each complete template before authoring its artifact, including frontmatter, guidance, detailed examples and consumer contracts. Preserve required sections and explain not applicable sections explicitly. Do not replace methods with summaries, copy a compact variant or omit fields to fit a context budget. Follow [template use](templates/README.md).
 
 Current PLAN records require acceptance, documentation, checks as argv lists and issue_refs; SUMMARY records report only requirements actually completed by delivered evidence. Read [the runtime template contract](references/template-contract.md) for runtime-owned record sections and integrity boundaries. Keep adopting identity blank in reusable templates. Use `.planning/` for project records; `engineer/` for reusable rules, workflows, templates and tooling.
