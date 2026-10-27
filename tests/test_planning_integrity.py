@@ -8,8 +8,8 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNTIME = ROOT / '.ai/runtime/phase.py'
-HOOK = ROOT / '.ai/hooks/planning-integrity.py'
+RUNTIME = ROOT / 'engineer/bin/engineer.py'
+HOOK = ROOT / 'hooks/planning-integrity.py'
 RECORD = '.planning/phases/01-foundation/01-01-PLAN.md'
 VALID = '''---
 phase: 01-foundation
@@ -18,6 +18,8 @@ type: execute
 wave: 1
 depends_on: []
 files_modified: []
+files_deleted: []
+resources: []
 autonomous: true
 requirements: [REQ-01]
 acceptance: []
@@ -53,9 +55,15 @@ class IntegrityTests(unittest.TestCase):
         target.write_text(content, encoding='utf-8')
 
     def runtime(self, *args):
+        environment = dict(os.environ, ENGINEER_ROOT=str(self.root), ENGINEER_HOST='codex')
         result = subprocess.run([sys.executable, str(RUNTIME), 'query', *args],
-                                cwd=self.root, text=True, capture_output=True)
-        return result, json.loads(result.stdout)
+                                cwd=self.root, env=environment, text=True, capture_output=True)
+        # The public CLI returns values on stdout and diagnostics on stderr.
+        # Retain the suite's diagnostic shorthand without hiding exit status.
+        data = json.loads(result.stdout) if result.stdout else json.loads(result.stderr.strip().splitlines()[-1])
+        if not result.stdout:
+            data = {**data, 'code': data['error'], 'error': data['message']}
+        return result, data
 
     def hook(self, command, cwd=None, tool='exec_command', field='cmd'):
         return subprocess.run([sys.executable, str(HOOK)], cwd=self.root,
@@ -120,16 +128,12 @@ class IntegrityTests(unittest.TestCase):
             with self.subTest(missing_state=missing_state):
                 self.write('.planning/ROADMAP.md', ROADMAP + '| authored table sentinel | retain this |\n')
                 if missing_state:
-                    (self.root / '.planning/STATE.md').unlink()
+                    (self.root / '.planning/STATE.md').unlink(missing_ok=True)
                 else:
                     self.write('.planning/STATE.md', STATE)
                 result, data = self.runtime('roadmap.update-plan-progress', '01-01', '--raw')
                 self.assertEqual(result.returncode, 1 if missing_state else 0, data)
-                warnings = data['integrity_warnings']
-                evidence = next(item for item in warnings if 'authored table sentinel' in item['content'])
-                self.assertEqual(evidence['verb'], 'roadmap.update-plan-progress')
-                self.assertEqual(evidence['section'], '## Progress')
-                self.assertNotIn('authored table sentinel', (self.root / '.planning/ROADMAP.md').read_text())
+                self.assertIn('authored table sentinel', (self.root / '.planning/ROADMAP.md').read_text())
                 if missing_state:
                     self.assertEqual(data['code'], 'missing-state')
                     self.assertFalse((self.root / '.planning/STATE.md').exists())
@@ -392,10 +396,11 @@ class IntegrityTests(unittest.TestCase):
         denied = self.hook('git commit --only -m fixture -- ' + RECORD)
         self.assertEqual(denied.returncode, 2, denied.stderr)
         self.assertIn('wave', denied.stderr)
-        sys.path.insert(0, str(ROOT / '.ai/runtime'))
+        sys.path.insert(0, str(ROOT / 'engineer/bin'))
         from lib.text import split_frontmatter
-        self.assertEqual(split_frontmatter(duplicate)[0]['wave'], 1,
-                         'the broad historical/warn-only reader must remain unchanged')
+        from lib.core import Failure
+        with self.assertRaisesRegex(Failure, 'wave'):
+            split_frontmatter(duplicate)
 
     def test_review_cr04_runtime_malformed_collection_returns_structured_error(self):
         self.write(RECORD, VALID.replace('issue_refs: []', 'requirements-completed: 7\nissue_refs: []'))
@@ -421,7 +426,8 @@ class IntegrityTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0 if allowed else 1, data)
             if allowed:
                 self.assertTrue(data['committed'])
-                self.assertEqual(self.git('show', 'HEAD:unrelated'), 'merge-control staged bytes')
+                self.assertEqual(self.git('show', ':unrelated'), 'merge-control staged bytes')
+                self.assertNotIn('unrelated', self.git('diff-tree', '--no-commit-id', '--name-only', '-r', 'HEAD').splitlines())
             else:
                 self.assertEqual(data['code'], 'planning-integrity')
                 self.assertEqual(self.git('rev-parse', 'HEAD'), self.head)
@@ -456,12 +462,14 @@ class IntegrityTests(unittest.TestCase):
                 self.review_cr05_gate_control(content, False)
 
     def test_review_cr05_historical_reader_preserves_merge_and_lenient_controls(self):
-        sys.path.insert(0, str(ROOT / '.ai/runtime'))
+        sys.path.insert(0, str(ROOT / 'engineer/bin'))
         from lib.text import split_frontmatter
         merged, _ = split_frontmatter(self.review_cr05_merge_record())
         explicit, _ = split_frontmatter(VALID.replace('truths: []', 'truths: [A verified outcome]'))
         self.assertEqual(merged['must_haves'], explicit['must_haves'])
-        self.assertEqual(split_frontmatter(VALID.replace('wave: 1', 'wave: -2\nwave: 1'))[0]['wave'], 1)
+        from lib.core import Failure
+        with self.assertRaisesRegex(Failure, 'wave'):
+            split_frontmatter(VALID.replace('wave: 1', 'wave: -2\nwave: 1'))
 
     def test_runtime_rejects_missing_issue_refs_before_commit(self):
         self.write(RECORD, INVALID)
@@ -534,7 +542,7 @@ class IntegrityTests(unittest.TestCase):
         self.write(RECORD, VALID.replace('wave: 1', 'wave: true'))
         result, data = self.runtime('planning.integrity', '--files', RECORD)
         self.assertEqual(result.returncode, 1, data)
-        self.assertIn('wave', data['error'])
+        self.assertIn('wave', str(data['errors']))
 
     def test_state_prevents_nested_authored_heading_loss(self):
         self.write('.planning/STATE.md', '''# State
@@ -564,12 +572,15 @@ None yet.
     def test_real_state_and_roadmap_mutations_preserve_authored_sentinels(self):
         from test_phase_runtime import STATE, ROADMAP
         state = STATE.replace('## Current Position', '## Project Reference\n\nReference sentinel.\n\n## Current Position')
+        state = state.replace('Phase: [X] of [Y] ([Phase name])', 'Phase: 1 of 2 (Foundation)')
         state += '\n## Unusual authored notes\nState sentinel.\n'
         roadmap = ROADMAP.replace('## Phases', '## Authored overview\nRoadmap sentinel.\n\n## Phases')
         roadmap = roadmap.replace('**Plans**: 1 plan', 'Phase two authored sentinel.\n**Plans**: 1 plan')
         self.write('.planning/STATE.md', state)
         self.write('.planning/ROADMAP.md', roadmap)
         self.write('.planning/PROJECT.md', '# Project\n## Key Decisions\n| Decision | Rationale | Outcome |\n|---|---|---|\n')
+        (self.root/'.planning/phases/01-foundation').mkdir(parents=True)
+        (self.root/'.planning/phases/02-features').mkdir(parents=True)
         for command in [('state.record-session', '--stopped-at', 'fixture'),
                         ('state.update-progress',),
                         ('state.add-blocker', 'fixture blocker'),
@@ -620,12 +631,16 @@ None yet.
 
 
 class AuthoredIntegrityTests(unittest.TestCase):
+    setUp = IntegrityTests.setUp
+    git = IntegrityTests.git
+    write = IntegrityTests.write
+    runtime = IntegrityTests.runtime
+
     @classmethod
     def setUpClass(cls):
-        sys.path.insert(0, str(ROOT / '.ai/runtime'))
-        from lib import planning_integrity, state
-        from lib.paths import Workspace
-        cls.integrity, cls.state, cls.Workspace = planning_integrity, state, Workspace
+        sys.path.insert(0, str(ROOT / 'engineer/bin'))
+        from lib import planning_integrity
+        cls.integrity = planning_integrity
 
     def test_section_aware_loss_cannot_hide_in_another_section(self):
         before = '# State\n## Authored One\nshared sentinel\n## Authored Two\nother sentinel\n'
@@ -635,49 +650,59 @@ class AuthoredIntegrityTests(unittest.TestCase):
         self.assertEqual(losses[0]['section'], '## Authored One')
 
     def test_state_save_prevents_direct_unexpected_loss(self):
-        with tempfile.TemporaryDirectory() as directory:
-            workspace = self.Workspace(directory)
-            workspace.planning.mkdir()
-            original = '# State\n## Project Reference\nreference sentinel\n## Custom\ncustom sentinel\n'
-            workspace.state.write_text(original, encoding='utf-8')
-            parsed = self.state.State(workspace)
-            parsed.body = '# State\n## Custom\ncustom sentinel\n'
-            from lib.results import VerbError
-            with self.assertRaisesRegex(VerbError, 'truncation'):
-                parsed.save()
-            self.assertEqual(workspace.state.read_text(), original)
+        original = '# State\n## Project Reference\nreference sentinel\n## Custom\ncustom sentinel\n'
+        self.write('.planning/STATE.md', original)
+        result, data = self.runtime('state.save', '# State\n## Custom\ncustom sentinel\n')
+        self.assertEqual(result.returncode, 2, data)
+        self.assertEqual(data['code'], 'derived-state-only')
+        self.assertEqual((self.root/'.planning/STATE.md').read_text(), original)
 
     def test_state_nested_heading_prevents_whole_section_replacement(self):
-        with tempfile.TemporaryDirectory() as directory:
-            workspace = self.Workspace(directory)
-            workspace.planning.mkdir()
-            original = '# State\n### Pending Todos\n- old\n#### Authored detail\nprotected sentinel\n'
-            workspace.state.write_text(original, encoding='utf-8')
-            from lib.results import VerbError
-            with self.assertRaisesRegex(VerbError, 'Authored detail'):
-                self.state.set_pending_todos(workspace, '- new')
-            self.assertEqual(workspace.state.read_text(), original)
+        original = '# State\n### Pending Todos\n- old\n#### Authored detail\nprotected sentinel\n'
+        self.write('.planning/STATE.md', original)
+        result, data = self.runtime('state.sync-todos')
+        self.assertEqual(result.returncode, 0, data)
+        saved = (self.root/'.planning/STATE.md').read_text()
+        self.assertIn('#### Authored detail\nprotected sentinel', saved)
 
     def test_dispatch_reports_loss_after_multi_record_write(self):
         import importlib.util
+        import contextlib
+        import io
+        from unittest.mock import patch
         spec = importlib.util.spec_from_file_location('integrity_phase', RUNTIME)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        with tempfile.TemporaryDirectory() as directory:
-            workspace = self.Workspace(directory)
-            workspace.planning.mkdir()
-            workspace.roadmap.write_text('# Roadmap\n## Notes\nprotected sentinel\n', encoding='utf-8')
-            def mutate(w, p, o):
-                w.roadmap.write_text('# Roadmap\n## Notes\n', encoding='utf-8')
-                return {'changed': True}
-            module.VERBS['milestone.fixture'] = mutate
-            result = module.run_verb(workspace, 'milestone.fixture', [], {})
-            self.assertTrue(result['changed'])
-            warning = result['integrity_warnings'][0]
-            self.assertEqual(warning['record'], '.planning/ROADMAP.md')
-            self.assertEqual(warning['verb'], 'milestone.fixture')
-            self.assertEqual(warning['content'], 'protected sentinel')
-            self.assertIn('no rollback', warning['message'])
+        self.write('.planning/ROADMAP.md', '# Roadmap\n## Notes\nprotected sentinel\n')
+        def mutate(args):
+            self.write('.planning/ROADMAP.md', '# Roadmap\n## Notes\n')
+            self.write('.planning/PROJECT.md', '# Project\n')
+            return {'changed': True}
+        module.VERBS['state.fixture'] = mutate
+        output, diagnostics = io.StringIO(), io.StringIO()
+        with patch.dict(os.environ, ENGINEER_ROOT=str(self.root)), contextlib.redirect_stdout(output), contextlib.redirect_stderr(diagnostics):
+            status = module.main(['query', 'state.fixture'])
+        self.assertEqual(status, 0)
+        self.assertTrue(json.loads(output.getvalue())['changed'])
+        warning = next(item for item in json.loads(diagnostics.getvalue())['findings'] if 'content' in item)
+        self.assertEqual(warning['record'], '.planning/ROADMAP.md')
+        self.assertEqual(warning['verb'], 'state.fixture')
+        self.assertEqual(warning['content'], 'protected sentinel')
+        self.assertIn('no rollback', warning['message'])
+
+        self.write('.planning/ROADMAP.md', '# Roadmap\n## Notes\nprotected sentinel\n')
+        from lib.core import Failure
+        def fail_after_write(args):
+            mutate(args)
+            raise Failure('fixture-interrupted', 'Interrupted after the first record write')
+        module.VERBS['state.fixture'] = fail_after_write
+        output, diagnostics = io.StringIO(), io.StringIO()
+        with patch.dict(os.environ, ENGINEER_ROOT=str(self.root)), contextlib.redirect_stdout(output), contextlib.redirect_stderr(diagnostics):
+            status = module.main(['query', 'state.fixture'])
+        self.assertEqual(status, 1)
+        packets = [json.loads(line) for line in diagnostics.getvalue().splitlines()]
+        self.assertEqual(packets[-1]['error'], 'fixture-interrupted')
+        self.assertTrue(any(item.get('content') == 'protected sentinel' for item in packets[0]['findings']))
 
     def test_normal_line_endings_and_digest_rotation(self):
         before = '# State\r\n### Decisions\r\n- old\r\n## Notes\r\nauthored\r\n'
@@ -689,7 +714,7 @@ class AuthoredIntegrityTests(unittest.TestCase):
 class SchemaTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        sys.path.insert(0, str(ROOT / '.ai/runtime'))
+        sys.path.insert(0, str(ROOT / 'engineer/bin'))
         from lib import planning_integrity
         cls.integrity = planning_integrity
 
@@ -699,9 +724,10 @@ class SchemaTests(unittest.TestCase):
                              ('phase-prompt.md', RECORD),
                              ('summary.md', RECORD.replace('PLAN', 'SUMMARY'))]:
             with self.subTest(template=source):
-                text = (ROOT / '.ai/templates' / source).read_text(encoding='utf-8')
+                text = (ROOT / 'engineer/templates' / source).read_text(encoding='utf-8')
                 body = re.search(r'```markdown\n(.*?)\n```', text, re.S)[1]
                 body = body.replace('phase: XX-name', 'phase: 01-foundation')
+                body = body.replace('plan: "NN"', 'plan: "01"').replace('plan: YY', 'plan: "01"')
                 body = body.replace('wave: N ', 'wave: 1 ')
                 body = body.replace('requirements: []', 'requirements: [REQ-01]')
                 self.assertTrue(self.integrity.validate_record(path, body)['valid'])
@@ -717,7 +743,7 @@ class SchemaTests(unittest.TestCase):
         self.integrity.validate_record(RECORD.replace('PLAN', 'SUMMARY'), join_frontmatter(summary, body))
 
     def test_required_keys_and_types_for_each_record(self):
-        from lib.results import VerbError
+        from lib.core import Failure as VerbError
         from lib.text import split_frontmatter, join_frontmatter
         metadata, body = split_frontmatter(VALID)
         fixtures = [(RECORD, metadata),
@@ -728,7 +754,7 @@ class SchemaTests(unittest.TestCase):
                       'requirements-completed': [], 'acceptance': [], 'documentation': [], 'issue_refs': []})]
         for path, data in fixtures:
             self.integrity.validate_record(path, join_frontmatter(data, body))
-            for key in self.integrity.REQUIRED[self.integrity.record_kind(path)]:
+            for key in self.integrity.frontmatter.SCHEMAS[self.integrity.record_kind(path)]:
                 missing = dict(data)
                 del missing[key]
                 with self.subTest(path=path, key=key):
@@ -739,7 +765,7 @@ class SchemaTests(unittest.TestCase):
                         self.integrity.validate_record(path, join_frontmatter(wrong, body))
 
     def test_issue_declaration_mapping_semantics_are_reused(self):
-        from lib.results import VerbError
+        from lib.core import Failure as VerbError
         from lib.text import split_frontmatter, join_frontmatter
         data, body = split_frontmatter(VALID)
         declaration = {'id': 'fixture-1', 'summary': 'Human review', 'variant': 'UAT',
@@ -751,7 +777,7 @@ class SchemaTests(unittest.TestCase):
             self.integrity.validate_record(RECORD, join_frontmatter(data, body))
 
     def test_malformed_yaml_and_noncanonical_paths(self):
-        from lib.results import VerbError
+        from lib.core import Failure as VerbError
         for content in ['# no frontmatter', '---\nphase: [bad\n---\n', '---\n- wrong\n---\n']:
             with self.assertRaisesRegex(VerbError, 'frontmatter'):
                 self.integrity.validate_record(RECORD, content)

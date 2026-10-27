@@ -1,12 +1,13 @@
 """Safe YAML subset used by configuration and Markdown frontmatter.
 
 Supports indented mappings/sequences, flow collections, quoted/plain scalars,
-comments, and literal/folded blocks. Tags, anchors, aliases, merge keys and
-duplicate mapping keys are rejected; no executable constructors are involved.
+comments, literal/folded blocks, and bounded mapping anchors/merges. Tags,
+forward/cyclic aliases and duplicate explicit keys fail closed.
 """
 from __future__ import annotations
 import json
 import re
+from copy import deepcopy
 from .core import Failure
 
 
@@ -65,12 +66,51 @@ def _comment(text):
     return text.rstrip()
 
 
-def scalar(text):
+def _bounded_copy(value):
+    pending, count = [(value, 0)], 0
+    while pending:
+        item, depth = pending.pop()
+        count += 1
+        if count > 10000 or depth > 64:
+            raise Failure("unsafe-yaml", "Mapping alias expansion exceeds its structural limit", 2)
+        children = item.values() if isinstance(item, dict) else item if isinstance(item, list) else ()
+        pending.extend((child, depth+1) for child in children)
+    return deepcopy(value)
+
+
+def _merge(mapping, source):
+    sources = source if isinstance(source, list) else [source]
+    if not sources or any(not isinstance(item, dict) for item in sources):
+        raise Failure("invalid-yaml", "Merge sources must be mappings", 2)
+    merged = {}
+    for item in sources:
+        for key, value in item.items():
+            if key not in merged:
+                merged[key] = _bounded_copy(value)
+    return _bounded_copy({**merged, **mapping})
+
+
+def scalar(text, anchors=None):
+    anchors = {} if anchors is None else anchors
     text = _comment(text.strip())
     if not text or text in ("null", "Null", "NULL", "~"):
         return None
-    if text.startswith(("!", "&", "*")):
-        raise Failure("unsafe-yaml", "YAML tags, anchors and aliases are unsupported", 2)
+    if text.startswith("!"):
+        raise Failure("unsafe-yaml", "YAML tags are unsupported", 2)
+    if text.startswith("&"):
+        match = re.fullmatch(r"&([A-Za-z0-9_-]+)\s+(.+)", text)
+        if not match or match[1] in anchors:
+            raise Failure("invalid-yaml", "Invalid or duplicate mapping anchor", 2)
+        value = scalar(match[2], anchors)
+        if not isinstance(value, dict):
+            raise Failure("unsafe-yaml", "Only mapping anchors are supported", 2)
+        anchors[match[1]] = _bounded_copy(value)
+        return value
+    if text.startswith("*"):
+        name = text[1:]
+        if name not in anchors:
+            raise Failure("invalid-yaml", "Unknown or cyclic mapping alias: "+name, 2)
+        return _bounded_copy(anchors[name])
     if text.startswith(("[", "{")):
         try:
             return _json(text)
@@ -88,17 +128,21 @@ def scalar(text):
     if text.startswith("["):
         if not text.endswith("]"):
             raise Failure("invalid-yaml", "Unclosed flow sequence", 2)
-        return [scalar(item) for item in _split(text[1:-1])] if text[1:-1].strip() else []
+        return [scalar(item, anchors) for item in _split(text[1:-1])] if text[1:-1].strip() else []
     if text.startswith("{"):
         if not text.endswith("}"):
             raise Failure("invalid-yaml", "Unclosed flow mapping", 2)
-        result = {}
+        result, merged, explicit = {}, None, set()
         for item in _split(text[1:-1]) if text[1:-1].strip() else []:
             key, value = pair(item)
-            if key in result:
+            if key in explicit:
                 raise Failure("invalid-yaml", f"Duplicate key: {key}", 2)
-            result[key] = scalar(value)
-        return result
+            explicit.add(key)
+            if key == "<<":
+                merged = scalar(value, anchors)
+            else:
+                result[key] = scalar(value, anchors)
+        return _merge(result, merged) if "<<" in explicit else result
     if text.lower() in ("true", "false"):
         return text.lower() == "true"
     # Leading-zero identifiers such as phase and plan numbers remain strings.
@@ -123,13 +167,14 @@ def pair(text):
             depth -= 1
         elif char == ":" and depth == 0 and (i + 1 == len(text) or text[i+1].isspace()):
             key = scalar(text[:i])
-            if not isinstance(key, (str, int)) or str(key) == "<<":
+            if not isinstance(key, (str, int)):
                 raise Failure("invalid-yaml", "Invalid mapping key", 2)
             return str(key), text[i+1:].strip()
     raise Failure("invalid-yaml", f"Expected mapping entry: {text}", 2)
 
 
 def yaml_load(content):
+    anchors = {}
     stripped = content.strip()
     if not stripped:
         return {}
@@ -137,7 +182,7 @@ def yaml_load(content):
         try:
             return _json(stripped)
         except ValueError:
-            return scalar(stripped)
+            return scalar(stripped, anchors)
     lines = content.splitlines()
     entries = []
     for index, line in enumerate(lines):
@@ -150,20 +195,34 @@ def yaml_load(content):
     def block(cursor, indent):
         sequence = entries[cursor][1] == "-" or entries[cursor][1].startswith("- ")
         result = [] if sequence else {}
+        explicit, merged = set(), None
         while cursor < len(entries) and entries[cursor][0] == indent:
             _, line, original = entries[cursor]
             is_item = line == "-" or line.startswith("- ")
             if is_item != sequence:
+                if sequence:
+                    break  # End an indentationless sequence at its mapping sibling.
                 raise Failure("invalid-yaml", "Mixed mapping and sequence", 2)
             if sequence:
                 value = line[1:].strip()
+                if value == "-" or value.startswith("- "):
+                    # PyYAML emits nested argv lists as '- - python'. Present
+                    # the inner first item at its real continuation indentation.
+                    start, saved = cursor, entries[cursor]
+                    entries[cursor] = (indent+2, value, original)
+                    try:
+                        obj, cursor = block(cursor, indent+2)
+                    finally:
+                        entries[start] = saved
+                    result.append(obj)
+                    continue
                 try:
                     key, tail = pair(value)
                     mapping = True
                 except Failure:
                     mapping = False
                 if mapping:
-                    obj = {key: scalar(tail)}
+                    obj = {key: scalar(tail, anchors)}
                     cursor += 1
                     if cursor < len(entries) and entries[cursor][0] > indent:
                         nested_indent = entries[cursor][0]
@@ -172,23 +231,29 @@ def yaml_load(content):
                             obj[key] = child
                         elif isinstance(child, dict):
                             for k, v in child.items():
-                                if k in obj and tail:
+                                if k in obj:
                                     raise Failure("invalid-yaml", f"Duplicate key: {k}", 2)
                                 obj[k] = v
                         else:
                             raise Failure("invalid-yaml", "Invalid sequence mapping", 2)
+                        if cursor < len(entries) and entries[cursor][0] > indent:
+                            siblings, cursor = block(cursor, entries[cursor][0])
+                            if not isinstance(siblings, dict) or set(siblings) & set(obj):
+                                raise Failure("invalid-yaml", "Duplicate or invalid sequence mapping continuation", 2)
+                            obj.update(siblings)
                     result.append(obj)
                 else:
                     cursor += 1
                     if not value and cursor < len(entries) and entries[cursor][0] > indent:
                         obj, cursor = block(cursor, entries[cursor][0])
                     else:
-                        obj = scalar(value)
+                        obj = scalar(value, anchors)
                     result.append(obj)
             else:
                 key, value = pair(line)
-                if key in result:
+                if key in explicit:
                     raise Failure("invalid-yaml", f"Duplicate key: {key}", 2)
+                explicit.add(key)
                 cursor += 1
                 if value in ("|", "|-", "|+", ">", ">-", ">+"):
                     end_line = entries[cursor][2] if cursor < len(entries) else len(lines)
@@ -202,14 +267,26 @@ def yaml_load(content):
                     obj = (" ".join(body) if value.startswith(">") else "\n".join(body))
                     obj = obj.rstrip("\n") + ("" if value.endswith("-") else "\n")
                     cursor = end_cursor
-                elif not value and cursor < len(entries) and entries[cursor][0] > indent:
+                elif re.fullmatch(r"&[A-Za-z0-9_-]+", value) and cursor < len(entries) and entries[cursor][0] > indent:
+                    name = value[1:]
+                    if name in anchors:
+                        raise Failure("invalid-yaml", "Duplicate mapping anchor: "+name, 2)
+                    obj, cursor = block(cursor, entries[cursor][0])
+                    if not isinstance(obj, dict):
+                        raise Failure("unsafe-yaml", "Only mapping anchors are supported", 2)
+                    anchors[name] = _bounded_copy(obj)
+                elif not value and cursor < len(entries) and (entries[cursor][0] > indent or
+                        (entries[cursor][0] == indent and (entries[cursor][1] == "-" or entries[cursor][1].startswith("- ")))):
                     obj, cursor = block(cursor, entries[cursor][0])
                 else:
-                    obj = scalar(value)
-                result[key] = obj
+                    obj = scalar(value, anchors)
+                if key == "<<":
+                    merged = obj
+                else:
+                    result[key] = obj
             if cursor < len(entries) and entries[cursor][0] > indent:
                 raise Failure("invalid-yaml", "Unexpected indentation", 2)
-        return result, cursor
+        return (_merge(result, merged) if "<<" in explicit and not sequence else result), cursor
 
     if not entries:
         return {}

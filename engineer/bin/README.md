@@ -35,8 +35,10 @@ engineer_run query frontmatter.validate path/to/PLAN.md --schema plan
 
 Configuration and frontmatter support safe YAML mappings, sequences, flow
 collections, quoted strings, booleans, nulls, numbers, comments, and block scalars.
-Leading-zero phase identifiers retain string types. Tags, aliases, anchors,
-merge keys and duplicate block mapping keys fail closed. Writes use UTF-8,
+Leading-zero phase identifiers retain string types. Mapping anchors and merges
+preserve explicit overrides and copy alias values within bounded structural
+limits. Tags, scalar anchors, forward/cyclic aliases and duplicate explicit
+mapping keys fail closed. Writes use UTF-8,
 atomic replacement, and a project planning lock; frontmatter writes retain the
 document body and key order.
 

@@ -101,6 +101,8 @@ def progress_bar(args):
 def roadmap_progress(args):
     identifier = args.need()
     path = records.planning()/"ROADMAP.md"
+    if not (records.planning()/"STATE.md").is_file():
+        raise Failure("missing-state", "STATE.md is required before recording plan progress")
     with planning_lock():
         content = read(path)
         pattern = r"(?m)^(- \[)[ x](\]\s*"+re.escape(identifier)+r"(?:-PLAN\.md)?\b.*)$"
