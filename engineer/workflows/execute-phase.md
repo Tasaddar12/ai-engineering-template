@@ -6,20 +6,20 @@ Implement the explicitly authorized phase through isolated dependency waves, the
 The coordinator routes and integrates; each executor reads its full plan and owns only its assigned paths. Shared state, roadmap, requirements, issues and delivery remain coordinator-owned. A timeout does not prove worker exit.
 </core_principle>
 <required_reading>
-@engineer/RULES.md
-@engineer/references/worker-handoff.md
-@engineer/references/worktree-sessions.md
-@engineer/references/parallel-status.md
-@engineer/references/git-workflow.md
-@engineer/references/verification-evidence.md
+@~/.claude/engineer/RULES.md
+@~/.claude/engineer/references/worker-handoff.md
+@~/.claude/engineer/references/worktree-sessions.md
+@~/.claude/engineer/references/parallel-status.md
+@~/.claude/engineer/references/git-workflow.md
+@~/.claude/engineer/references/verification-evidence.md
 </required_reading>
 <isolation_reading>
-@engineer/references/worktree-branch-check.md
-@engineer/references/worktree-path-safety.md
-@engineer/workflows/execute-phase/steps/worktree-recovery-policy.md
+@~/.claude/engineer/references/worktree-branch-check.md
+@~/.claude/engineer/references/worktree-path-safety.md
+@~/.claude/engineer/workflows/execute-phase/steps/worktree-recovery-policy.md
 </isolation_reading>
 <available_agent_types>
-Use exact roles executor, code-reviewer, doc-writer, verifier, debugger, targeted-fixer; resolve any routed executor type through the runtime. Do not fall back to a generic agent.
+Use exact roles executor, code-reviewer, doc-writer, verifier, debugger, code-fixer; resolve any routed executor type through the runtime. Do not fall back to a generic agent.
 </available_agent_types>
 <model_selection>
 For every exact dispatch role run `engineer_run query resolve-model ROLE --raw` and `engineer_run query resolve-effort ROLE --raw`. Pass resolved model and effort inline, omitting each field whose value is `inherit`. Resolve values again for a routed role or continuation. Empty values never become an explicit model parameter.
@@ -192,7 +192,7 @@ Resolve choices within the user's delegated discretion from approved context and
 <step name="run_checks">
 Refresh the assignment table and observed lifecycle under [parallel status](../references/parallel-status.md); preserve bounded observations and confirmed-stop ownership.
 
-Run `engineer_run query verification.run-checks` against the integrated session revision when execution is permitted. Reuse only passing receipts whose declared inputs and fingerprints remain current. A user-deferred test remains pending and blocks any verdict requiring it; do not run it or fabricate a receipt. Join all configured results. A failed or timed-out check blocks dependent integration/completion and routes to bounded targeted-fixer/executor correction, or debugger for an unknown cause. After repair, rerun only invalidated/required checks on the new revision and rejoin their actual results.
+Run `engineer_run query verification.run-checks` against the integrated session revision when execution is permitted. Reuse only passing receipts whose declared inputs and fingerprints remain current. A user-deferred test remains pending and blocks any verdict requiring it; do not run it or fabricate a receipt. Join all configured results. A failed or timed-out check blocks dependent integration/completion and routes to bounded code-fixer/executor correction, or debugger for an unknown cause. After repair, rerun only invalidated/required checks on the new revision and rejoin their actual results.
 </step>
 <step name="track_integrated_slice">
 Run review_phase_issues before the draft write, including every unresolved canonical issue URL. On normal completion, deferral, blocked/halted work or early termination, reconcile all available committed producer records before returning; missing publication remains a concrete blocker. The same-execution fixed-work exemption applies only to ordinary findings actually resolved with evidence and no remaining obligation; it creates no repeated issue for that exact resolved scope. It never waives planned/unplanned threat tracking or human acceptance.

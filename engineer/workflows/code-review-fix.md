@@ -1,6 +1,6 @@
 ---
 workflow: code-review-fix
-roles: [coordinator, targeted-fixer, code-reviewer, debugger]
+roles: [coordinator, code-fixer, code-reviewer, debugger]
 produces: [per-repair SUMMARY.md, REVIEW-FIX.md, refreshed REVIEW.md]
 ---
 
@@ -17,7 +17,7 @@ only a capped repair loop; it never chains phases or grants merge authority.
 Read code-review.md initialization/scope contracts; engineer/RULES.md; complete
 bounded-correction-dispatch, worker-handoff, worktree-sessions, worktree-path-safety,
 git-workflow, template-contract, verification-evidence references; the complete
-agents/targeted-fixer.md and agents/code-fixer.md methods; full SUMMARY template;
+agents/code-fixer.md and agents/code-fixer.md methods; full SUMMARY template;
 source REVIEW and owning CONTEXT/PLAN/QUICK. Use the identity-checked Python
 runtime selected by the invoking workflow. All runtime verbs use query and dotted
 names. No missing helper, host-native adapter or provider lane is a prerequisite.
@@ -54,7 +54,7 @@ content including inline/fenced/prose and every referenced file, but those
 references are discovery evidence, NOT new write authority. Include classification,
 required_property, authority and source revision in every packet. Fix suggestions
 are advisory; unknown causal diagnosis routes an exact debugger assignment before
-repair, not a speculative targeted-fixer patch.
+repair, not a speculative code-fixer patch.
 </step>
 
 <step name="dispatch_per_finding">
@@ -84,8 +84,8 @@ ownership. Do not ask the worker to create/switch/merge a checkout. Create via:
 
 ```sh
 engineer_run query worktree.create REPAIR_ID --phase OWNER_KEY --base INPUT_SHA --branch REPAIR_BRANCH --files PATH1 PATH2 --deletions DELETED_PATH
-engineer_run query resolve-model targeted-fixer --raw
-engineer_run query resolve-effort targeted-fixer --raw
+engineer_run query resolve-model code-fixer --raw
+engineer_run query resolve-effort code-fixer --raw
 ```
 
 OWNER_KEY is the actual phase worker group, or a collision-free quick-ID group
@@ -110,8 +110,8 @@ agents/code-fixer.md; installed Claude reads engineer/references/code-fixer.md;
 Codex reads the method Markdown directly. It is never independently dispatched.
 
 ```text
-Agent(subagent_type="targeted-fixer", model="{resolved_model}", effort="{resolved_effort}", prompt="
-Follow the complete targeted-fixer role and code-fixer method.
+Agent(subagent_type="code-fixer", model="{resolved_model}", effort="{resolved_effort}", prompt="
+Follow the complete code-fixer role and code-fixer method.
 checkout: {coordinator_created_absolute_root}
 branch: {returned_branch}; revision: {returned_base}
 owned_paths: {exact_authorized_paths}; files_deleted: {exact_authorized_deletions}

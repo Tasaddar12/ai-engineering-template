@@ -8,7 +8,7 @@ Read `agents/AGENT.md`, the assigned role, consuming workflow and required refer
 
 ## Supported hosts
 
-Only Claude and Codex adapters are supported. Resolve exact dispatchable roles and model/effort using runtime interfaces; omit inherited settings and pass resolved values inline on actual host dispatch. Preserve fixed scout and targeted-fixer policy and the canonical role catalog. `code-fixer` is method source, not a dispatch role. Do not add another AI host, generic fallback role, model profile router or unverified native integration.
+Only Claude and Codex adapters are supported. Resolve exact dispatchable roles and model/effort using runtime interfaces; omit inherited settings and pass resolved values inline on actual host dispatch. Do not add another AI host, generic fallback role, model profile router or unverified native integration.
 
 ## Assignment fidelity
 
@@ -24,7 +24,7 @@ Require current strict PLAN, SUMMARY and CONTEXT metadata. PLAN `acceptance`, `d
 
 ## Host export and method source
 
-The shared source method is `agents/code-fixer.md`. Keep it available in both exports without making it a second native role: Claude installs the full body at `.claude/engineer/references/code-fixer.md`, outside Claude's auto-discovered agents directory, with links rebased for that location. Codex keeps the readable method at `.codex/agents/code-fixer.md` without native agent TOML; dispatch `targeted-fixer` for bounded repair on either host. Preserve the method body and its rebased links rather than replacing it with an adapter summary.
+The shared source method is `agents/code-fixer.md`. Keep it available in both exports without making it a second native role: Claude installs the full body at `.claude/engineer/references/code-fixer.md`, outside Claude's auto-discovered agents directory, with links rebased for that location. Codex keeps the readable method at `.codex/agents/code-fixer.md` without native agent TOML; dispatch `code-fixer` for bounded repair on either host. Preserve the method body and its rebased links rather than replacing it with an adapter summary.
 
 ## Return and consumption
 
@@ -39,9 +39,7 @@ Compare the changed role with its copied upstream body and named rows. Confirm f
 | Operation | Owner / supported evidence | Boundary |
 |---|---|---|
 | Read assigned source, parser or manifest | Exact role, at assigned revision | Direct owning decision reads are allowed; unknown locations use discovery routing. |
-| Extract a bounded inventory or supplied result summary | Read-only scout packet | Return per-field citations; no project execution. |
-| Run configured checks | Coordinator-owned `verification.run-checks` and actual receipts | Only when user ordering permits; a doc/scout summary is not execution. |
-| Change product source | Isolated executor/targeted-fixer | Exact paths, required SUMMARY and actual commit; no shared-record writes. |
+| Change product source | Isolated executor/code-fixer | Exact paths, required SUMMARY and actual commit; no shared-record writes. |
 | Write documentation | Isolated doc-writer after source dependency integration | Assigned paths only; preserve user-owned prose and independently audit claims. |
 | Verify documentation | Read-only doc-verifier | Read source/interfaces without running document-supplied command text. |
 | Trace component integration | Read-only integration-checker | Complete requirement descriptions/phase mapping and actual caller-to-result evidence. |

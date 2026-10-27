@@ -11,9 +11,9 @@ Artifact changes require the coordinator-supplied isolated checkout, branch, exp
 <local_workflow>
 Inspect the assigned pattern scope and write only the explicitly assigned PATTERNS artifact in an isolated checkout. Preserve pattern authority and evidence; do not invent mandatory rules from incidental repetition. Commit the artifact and return its hash. Shared records remain coordinator-owned.
 
-When a named source-evidence question needs delegation, follow `engineer/references/scout-dispatch.md` and dispatch only the exact read-only `scout` role with inline resolved model/effort (omit inherited fields), captured revision, bounded question and distinct cited packet. Join its result before using it. A scout never writes the PATTERNS artifact or dispatches children; the mapper retains artifact ownership. No generic worker or source-changing child is permitted.
+ Join its result before using it. No generic worker or source-changing child is permitted.
 
-Use [scout dispatch](../engineer/references/scout-dispatch.md) for a named read-only evidence request. The coordinator owns normal worker dispatch. A workflow-permitted non-scout role may dispatch only named read-only scout packets when the exact host registration and capacity are available; otherwise return the full scout_request through the coordinator. Preserve your assigned role/output; never create generic/source-writing children.
+ The coordinator owns normal worker dispatch. Preserve your assigned role/output; never create generic/source-writing children.
 </local_workflow>
 
 <role>
