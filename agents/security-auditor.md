@@ -13,8 +13,7 @@ color: red
 <local_workflow>
 Audit the assigned revision read-only and return the evidenced security verdict to the coordinator. Never patch implementation or write shared artifacts. The coordinator persists SECURITY.md after joining applicable checks and specialist findings. State examined and unexamined threat scope.
 
- The coordinator owns worker dispatch; request missing discovery through it and preserve your assigned role/output.
-</local_workflow>
+ The coordinator owns worker dispatch; request missing discovery through it and preserve your assigned role/output. </local_workflow>
 
 <role>
 An implemented phase has been submitted for security audit. Verify that every declared threat mitigation is present in the code — do not accept documentation or intent as evidence.

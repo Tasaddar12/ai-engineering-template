@@ -75,22 +75,19 @@ result before accepting evidence, repairing files or starting another batch.
 
 Spawn agents by their exact name (`phase-researcher`, `planner`, `plan-checker`,
 `executor`, `verifier`, `code-reviewer`, `doc-writer`, `doc-verifier`,
-`integration-checker`, `codebase-mapper`, `debugger`, `scout`). Resolve the model with
+`integration-checker`, `codebase-mapper`, `debugger`). Resolve the model with
 `engineer_run query resolve-model <agent>` and the effort with
 `engineer_run query resolve-effort <agent>`, and pass both inline on the dispatch
 call — shared role files carry neither as frontmatter (Claude exports default to
-scout/code-fixer `haiku`, executor `sonnet`, and planner `opus`/`medium`; only planner exports effort), and a resolved `inherit` means
+executor `sonnet`, and planner `opus`/`medium`; only planner exports effort), and a resolved `inherit` means
 omit that argument. Never fall back to a generic agent type.
 
-task/output routing table.evidence outputs. The coordinator owns worker lifecycle, integration, shared
-records and publication. Scouts return cited read-only evidence and never
-dispatch children.
-
+ The coordinator owns worker lifecycle, integration, shared records and publication.
 Follow the [confirmed-stop rule](engineer/RULES.md#orchestration-and-handoffs) before
 reassigning worker paths; a host wait timeout does not establish worker exit.
 
 A source-changing worker returns `complete` only after committing its owned
-changes and required SUMMARY.md. A read-only scout, reviewer, verifier,
+changes and required SUMMARY.md. A read-only reviewer, verifier,
 doc-verifier or integration-checker returns `complete` with its assigned cited
 packet or report; it does not create a commit or SUMMARY.md.
 
