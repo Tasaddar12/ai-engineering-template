@@ -27,12 +27,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: python -m pip install -r .ai/runtime/requirements.txt
+      - run: python -m pip install -r tests/requirements.txt
       - run: python -m unittest discover -s tests -v
-      - run: bash .ai/hooks/ai-tier-notice.test.sh
-      - run: bash .ai/hooks/worktree-guard.test.sh
-      - run: bash .ai/hooks/context-handoff.test.sh
-      - run: bash .ai/hooks/worktree-location.test.sh
+      - run: bash tests/hooks/ai-tier-notice.test.sh
+      - run: bash tests/hooks/context-handoff.test.sh
+      - run: bash tests/hooks/worktree-location.test.sh
 
   # Keep the existing branch-protection context while checking both platforms.
   validate:
