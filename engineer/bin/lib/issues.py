@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 import tempfile
 from . import delivery, models, records, repository
-from .core import Failure, digest, load_json, now, planning_lock, read, root, safe_path, write, write_json
+from .core import Failure, digest, load_json, now, planning_lock, read, root, run, safe_path, write, write_json
 from .text import join_frontmatter, split_frontmatter
 
 
@@ -23,6 +23,13 @@ def todo_path(value):
 
 
 VARIANTS = ("Bug", "Enhancement", "Decision required", "Security risk", "UAT")
+
+
+def read_record(path):
+    try:
+        return split_frontmatter(read(path))
+    except Failure as exc:
+        raise Failure("invalid-issue-source", "Private source frontmatter is invalid; repair it locally before publication") from exc
 
 
 def variant_template(template, variant):
@@ -84,19 +91,45 @@ def semantic_key(title, body):
     return re.sub(r"\s+", " ", title.strip().casefold())+"\n"+re.sub(r"\s+", " ", (problem[1] if problem else body).strip().casefold())
 
 
-def candidates(title, body, provenance):
-    """Search open AND closed records; ambiguity blocks all publication writes."""
+def provider_inventory():
+    """Read all canonical open/closed issues and PR context without search limits."""
+    origin = repository.identity()
+    result = {"issues": [], "pulls": []}
+    for family in result:
+        for page in range(1, 102):
+            endpoint = "repos/"+origin["owner"]+"/"+origin["repository"]+"/"+family+"?state=all&per_page=100&page="+str(page)
+            response = run(["gh", "api", "--hostname", origin["hostname"], "--method", "GET", endpoint], root(), check=False)
+            if response.returncode:
+                raise Failure("issue-provider-unavailable", "Canonical issue discovery did not succeed")
+            try:
+                rows = json.loads(response.stdout)
+            except (ValueError, RecursionError) as exc:
+                raise Failure("issue-provider-incomplete", "Canonical discovery returned malformed data") from exc
+            if not isinstance(rows, list) or len(rows) > 100 or any(not isinstance(row, dict) for row in rows):
+                raise Failure("issue-provider-incomplete", "Canonical discovery is incomplete")
+            for row in rows:
+                if family == "issues" and "pull_request" in row:
+                    continue
+                url = row.get("html_url", row.get("url", ""))
+                if repository.require_url(str(url), "issues" if family == "issues" else "pull") != row.get("number"):
+                    raise Failure("issue-provider-identity", "Canonical discovery number disagrees with URL")
+                result[family].append({"url": url, "number": row["number"], "title": row.get("title", ""),
+                                       "body": row.get("body") or "", "state": str(row.get("state", "")).upper()})
+            if len(rows) < 100:
+                break
+        else:
+            raise Failure("issue-provider-incomplete", "Canonical discovery exceeded the pagination safety bound")
+    return result
+
+
+def candidates(title, body, provenance, inventory=None):
+    """Compare public problem identity across complete open AND closed records."""
     matches = {}
-    for query in (provenance, title):
-        result = json.loads(delivery.gh(["issue", "list", "--state", "all", "--limit", "100", "--search", query,
-                                        "--json", "url,title,body,state,number"]).stdout)
-        if not isinstance(result, list) or len(result) >= 100:
-            raise Failure("issue-search-incomplete", "Narrow issue identity before publication; search reached its bound")
-        for issue in result:
-            if provenance in issue.get("body", "") or semantic_key(title, body) == semantic_key(issue.get("title", ""), issue.get("body", "")):
-                repository.require_url(str(issue.get("url", "")), "issues")
-                issue["identity_match"] = "provenance" if provenance in issue.get("body", "") else "semantic"
-                matches[issue["url"]] = issue
+    for row in (inventory if inventory is not None else provider_inventory())["issues"]:
+        issue = dict(row)
+        if provenance in issue.get("body", "") or semantic_key(title, body) == semantic_key(issue.get("title", ""), issue.get("body", "")):
+            issue["identity_match"] = "provenance" if provenance in issue.get("body", "") else "semantic"
+            matches[issue["url"]] = issue
     return list(matches.values())
 
 
@@ -112,7 +145,7 @@ def publication(args, action, family="todo"):
         if source.parent != directory or not source.is_file():
             raise Failure("finding-record-not-found", str(source))
     initial_source = digest([source])
-    metadata, content = split_frontmatter(read(source))
+    metadata, content = read_record(source)
     finding = None
     if family == "phase":
         identifier = args.need(2)
@@ -141,7 +174,8 @@ def publication(args, action, family="todo"):
     marker = "<!-- "+provenance+" -->"
     if marker not in body:
         body = body.rstrip()+"\n\n"+marker+"\n"
-    matches = candidates(title, body, provenance)
+    inventory = provider_inventory()
+    matches = candidates(title, body, provenance, inventory)
     selection = args.get("existing-issue")
     linked = (finding or metadata).get("issue_url", (finding or metadata).get("url", metadata.get("issue")))
     if action == "update" and linked:
@@ -172,6 +206,7 @@ def publication(args, action, family="todo"):
     snapshot = {"source": str(source), "source_digest": source_snapshot, "title": title, "body": body,
                 "labels": args.all("labels"), "family": family, "finding": args.arg(2), "origin": origin,
                 "provenance": provenance, "existing_issue": selection, "no_match": args.has("no-match"), "variant": variant,
+                "provider_digest": hashlib.sha256(json.dumps(inventory, sort_keys=True).encode()).hexdigest(),
                 "candidates": candidate_snapshot}
     supplied = args.get("preview-token")
     prior_supplied = load_json(records.planning()/"issue-previews"/(str(supplied)+".json")) if re.fullmatch(r"[a-f0-9]{64}", str(supplied)) else None
@@ -179,6 +214,7 @@ def publication(args, action, family="todo"):
         # Recovery may discover the issue produced by the consumed create. It
         # may not reinterpret reviewed source/title/body/labels/origin/variant.
         snapshot["candidates"] = prior_supplied.get("candidates", [])
+        snapshot["provider_digest"] = prior_supplied.get("provider_digest")
     token = hashlib.sha256(json.dumps(snapshot, sort_keys=True).encode()).hexdigest()
     preview = records.planning()/"issue-previews"/(token+".json")
     prior_attempt = load_json(preview)
@@ -263,7 +299,7 @@ def publication(args, action, family="todo"):
     with planning_lock():
         if repository.identity() != origin or digest([source, template]) != snapshot["source_digest"]:
             raise Failure("issue-source-drift", "Issue published but source changed; reconcile the returned URL", url=url)
-        metadata, content = split_frontmatter(read(source))
+        metadata, content = read_record(source)
         if family == "phase":
             matches = [entry for entry in metadata.get("issue_refs", []) if entry.get("id") == args.need(2)]
             if len(matches) != 1:
@@ -282,7 +318,7 @@ def publication(args, action, family="todo"):
 
 def unresolved_attempt(source):
     """Read-only retirement gate for a source whose provider outcome is unknown."""
-    metadata, _ = split_frontmatter(read(source))
+    metadata, _ = read_record(source)
     if metadata.get("issue_url", metadata.get("issueURL", metadata.get("issue"))):
         return False
     legacy = metadata.get("issuePublication")

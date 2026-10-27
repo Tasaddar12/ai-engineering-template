@@ -152,13 +152,29 @@ def command(args, action):
     validate_body(body)
     origin = repository.identity()
     changed = existing is None or any(args.has(key) for key in ("base", "title", "body", "body-file"))
+    from . import sessions
+    from .core import load_json
+    matching = [entry for entry in load_json(sessions.store(), {"sessions": []})["sessions"]
+                if entry.get("status") != "closed" and (entry.get("branch") == branch or Path(entry.get("worktree", "")).resolve() == root())]
+    if len(matching) > 1:
+        raise Failure("ambiguous-delivery-session", "Multiple open sessions claim the publication branch or checkout")
+    inferred = matching[0] if matching else None
+    phase, quick = args.get("phase"), args.get("quick")
+    if inferred and inferred.get("kind") in ("phase", "quick"):
+        key = inferred["kind"]
+        supplied = phase if key == "phase" else quick
+        normalize = sessions.phase_identity if key == "phase" else str
+        if supplied and normalize(supplied) != normalize(inferred["label"]) or key == "phase" and quick or key == "quick" and phase:
+            raise Failure("delivery-scope-conflict", "Explicit publication scope disagrees with its owning session")
+        if key == "phase": phase = inferred["label"]
+        else: quick = inferred["label"]
+    if phase or quick:
+        from .phase_issues import audit_pr
+        audit_pr(phase, body, quick)
     if existing and not changed:
         if existing.get("headRefOid") != revision:
             raise Failure("pr-readback-mismatch", "Existing PR does not match the current checkout revision")
         return {**existing, "created": False, "updated": False}
-    if args.has("phase") or args.has("quick"):
-        from .phase_issues import audit_pr
-        audit_pr(args.get("phase"), body, args.get("quick"))
     with tempfile.TemporaryDirectory(prefix="engineer-pr-") as temporary:
         body_path = Path(temporary)/"body.md"
         body_path.write_text(body, encoding="utf-8")

@@ -1,761 +1,515 @@
-"""Offline subprocess proofs for selected-TODO issue publication and retirement."""
+"""Standalone issue publication tests with real files and fully offline providers.
+
+Preview state lives in the current runtime's content-bound JSON receipts rather
+than private TODO frontmatter. Every inherited scenario retains its behavioral
+assertions against that public API and real atomic persistence boundaries.
+"""
+import copy
 import json
 import os
-import re
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
-from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
-
-import yaml
+from unittest.mock import patch
+from urllib.parse import parse_qs, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNTIME = ROOT / "engineer/bin/engineer.py"
+sys.path.insert(0, str(ROOT/"engineer/bin"))
+from lib import core, issues, records, delivery, phase_issues, repository
+from lib.core import Args, Failure
+from lib.text import split_frontmatter, join_frontmatter
 
-# A real child process models persistent GitHub state. Only the gh executable
-# boundary is redirected; Git, CLI parsing, locks and TODO files are real.
-FAKE_GH = r'''
-import json, os, sys
-from pathlib import Path
-import yaml
-path = Path(os.environ["FAKE_GH_STATE"])
-data = json.loads(path.read_text(encoding="utf-8"))
-args = sys.argv[1:]
-data["calls"].append(args)
-out, code = "", 0
-mode = data.get("mode", "")
-repo = "github.com/acme/project"
-if args == ["--version"]:
-    out = "gh fixture"
-elif args[:2] == ["auth", "status"]:
-    if mode == "auth":
-        code = 1
-elif args[:2] == ["repo", "view"]:
-    assert args[2] == repo
-    out = json.dumps({"nameWithOwner": "acme/project",
-                      "url": "https://github.com/acme/project",
-                      "hasIssuesEnabled": mode != "disabled"})
-    if mode == "repo-mismatch":
-        out = json.dumps({"nameWithOwner": "other/project",
-                          "url": "https://github.com/other/project",
-                          "hasIssuesEnabled": True})
-elif args[0] == "api":
-    assert "--hostname" in args and args[args.index("--hostname")+1] == "github.com"
-    assert "--method" in args and args[args.index("--method")+1] == "GET"
-    endpoint = args[1]
-    assert endpoint.startswith("repos/acme/project/")
-    if "?" in endpoint:
-        assert "--paginate" in args and "--slurp" in args
-        assert "state=all" in endpoint and "per_page=100" in endpoint
-        records = data["issues"] if "/issues?" in endpoint else data["pulls"]
-        if mode == "preview-mutate":
-            todo = Path(data["todo"])
-            todo.write_text(todo.read_text(encoding="utf-8") + "\nConcurrent context\n",
-                            encoding="utf-8")
-        pages = [records[i:i+100] for i in range(0, len(records), 100)] or [[]]
-        out = json.dumps(pages)
-        if mode == "lookup":
-            code = 1
-        elif mode == "json":
-            out = "{bad json"
-        elif mode == "pagination":
-            out = json.dumps(records)
-    else:
-        number = int(endpoint.rsplit("/", 1)[1])
-        records = data["pulls"] if "/pulls/" in endpoint else data["issues"]
-        matches = [i for i in records if i["number"] == number]
-        if not matches or mode == "view" or (mode == "readback" and data["creates"]):
-            code = 1
-        else:
-            out = json.dumps(dict(matches[0], **data.get("direct_changes", {})))
-elif args[:2] == ["issue", "create"]:
-    assert args[args.index("--repo")+1] == repo
-    todo = Path(data["todo"])
-    metadata = yaml.safe_load(todo.read_text(encoding="utf-8").split("---", 2)[1])
-    assert metadata["issuePublication"]["state"] == "attempted"
-    assert metadata["issuePublication"]["publicTitle"] == args[args.index("--title")+1]
-    data["creates"] += 1
-    if mode != "create-before":
-        number = max([i["number"] for i in data["issues"]] + [0]) + 1
-        issue = {"number": number, "html_url": "https://github.com/acme/project/issues/" + str(number),
-                 "title": args[args.index("--title")+1], "state": "open",
-                 "body": Path(args[args.index("--body-file")+1]).read_text(encoding="utf-8")}
-        if mode == "bad-title":
-            issue["title"] = "unexpected title"
-        if mode == "bad-body":
-            issue["body"] = "unexpected body"
-        data["issues"].append(issue)
-        out = issue["html_url"]
-        if mode == "mutate":
-            todo.write_text(todo.read_text(encoding="utf-8") + "\nChanged after creation\n",
-                            encoding="utf-8")
-    if mode in ("lost", "create-before", "create-after"):
-        code, out = 1, ""
-else:
-    raise AssertionError("unexpected provider call " + repr(args))
-path.write_text(json.dumps(data), encoding="utf-8")
-print(out)
-if code:
-    print("PRIVATE PROVIDER LOG MUST NOT LEAK", file=sys.stderr)
-sys.exit(code)
-'''
-
-DRIVER = r'''
-import os, runpy, subprocess, sys
-sys.path.insert(0, os.environ["FAKE_RUNTIME_LIB"])
-from lib import delivery, todos
-# Inject filesystem failures at actual write/replace boundaries, scoped to one
-# selected save state. The real serializer and persistence helper still run.
-import builtins, json
-from pathlib import Path
-fault = os.environ.get("TODO_SAVE_FAULT")
-active = False
-if fault:
-    saved_open, saved_fdopen, saved_replace = builtins.open, os.fdopen, os.replace
-    saved_record = todos.save_record
-    todo = Path(os.environ["TODO_FAULT_PATH"]).resolve()
-    def record_fault():
-        Path(os.environ["TODO_FAULT_FIRED"]).write_text(
-            os.environ["TODO_FAULT_STATE"] + ":" + fault, encoding="utf-8")
-    class FailingWrite:
-        def __init__(self, handle):
-            self.handle = handle
-        def __enter__(self):
-            self.handle.__enter__()
-            return self
-        def __exit__(self, *args):
-            return self.handle.__exit__(*args)
-        def __getattr__(self, name):
-            return getattr(self.handle, name)
-        def write(self, value):
-            self.handle.write(value[:20])
-            record_fault()
-            raise OSError("PRIVATE FILESYSTEM DETAIL")
-    def failing_open(path, mode="r", *args, **options):
-        handle = saved_open(path, mode, *args, **options)
-        if active and fault == "write" and Path(path).resolve() == todo and "w" in mode:
-            return FailingWrite(handle)
-        return handle
-    def failing_fdopen(*args, **options):
-        handle = saved_fdopen(*args, **options)
-        return FailingWrite(handle) if active and fault == "write" else handle
-    def failing_replace(source, target, *args, **options):
-        if active and fault == "replace" and Path(target).resolve() == todo:
-            record_fault()
-            raise OSError("PRIVATE FILESYSTEM DETAIL")
-        return saved_replace(source, target, *args, **options)
-    def failing_record(path, metadata, body):
-        global active
-        state = (metadata.get("issuePublication") or {}).get("state", "identity")
-        active = state == os.environ["TODO_FAULT_STATE"]
-        if active:
-            Path(os.environ["TODO_FAULT_BEFORE"]).write_bytes(todo.read_bytes())
-        try:
-            return saved_record(path, metadata, body)
-        finally:
-            active = False
-    builtins.open, os.fdopen, os.replace = failing_open, failing_fdopen, failing_replace
-    todos.save_record = failing_record
-original = subprocess.run
-def redirect(command, **options):
-    if command and command[0] == "gh":
-        command = [sys.executable, os.environ["FAKE_GH_SCRIPT"], *command[1:]]
-    return original(command, **options)
-delivery.subprocess.run = redirect
-sys.argv = [os.environ["FAKE_RUNTIME"], *sys.argv[1:]]
-runpy.run_path(os.environ["FAKE_RUNTIME"], run_name="__main__")
-'''
-
-
-class TodoIssues(unittest.TestCase):
-    def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory(prefix="todo-issues-")
-        self.addCleanup(self.temporary.cleanup)
-        self.directory = Path(self.temporary.name)
-        self.git("init", "-q")
-        self.git("config", "user.name", "Todo Fixture")
-        self.git("config", "user.email", "todo@example.test")
-        (self.directory / "README.md").write_text("# Fixture\n", encoding="utf-8")
-        self.git("add", "--", "README.md")
-        self.git("commit", "-qm", "initial")
-        self.git("remote", "add", "origin", "https://github.com/acme/project.git")
-        (self.directory / ".planning/todos/pending").mkdir(parents=True)
-        self.todo = self.directory / ".planning/todos/pending/legacy.md"
-        self.body = "\n## Problem\n\nPrivate customer evidence\n\n## Solution\n\nSafe approach hints\n\n## Context\n\nFull local context.\n"
-        self.todo.write_text("---\ntitle: Private customer title\narea: tooling\nseverity: major\nfiles: [src/app.py:12]\ncustom: retain me\n---\n" + self.body,
-                             encoding="utf-8")
-        self.public = self.directory / "reviewed public.md"
-        self.public.write_text("""## Problem
+PUBLIC = """## Problem
 Blank search fails for signed-in users.
 ## Expected behavior
 An empty result appears.
 ## Actual behavior
-Build fixture-1 shows an error in the prepared test environment.
+Unknown; this is an offline regression fixture.
 ## Reproduction
-Open https://example.test/search/ and click Search with an empty query.
+Build: fixture. Environment: disposable test repository.
+Entry point: https://example.invalid/search/ . Setup: offline fixture only.
+1. Submit an empty query and inspect the displayed result.
 ## Safe evidence
-https://example.test/evidence/fixture-1
+The regression fixture provides the observation; no production evidence exists.
 ## Impact
-Users cannot clear a search.
+Fixture users cannot clear a search.
 ## Acceptance
-Blank searches show an empty result.
+Blank searches show an empty result, verified in the final authorized batch.
 ## Scope
 In: blank searches. Out: ranking.
 ## Related links
-https://example.test/requirements/search
-""", encoding="utf-8")
-        self.fake = self.directory / "fake_gh.py"
-        self.fake.write_text(FAKE_GH, encoding="utf-8")
-        self.statefile = self.directory / "remote.json"
-        self.save({"calls": [], "issues": [], "pulls": [], "creates": 0,
-                   "todo": str(self.todo)})
-        self.environment = dict(os.environ, PYTHONIOENCODING="utf-8",
-                                GH_REPO="hostile/redirect",
-                                FAKE_RUNTIME=str(RUNTIME),
-                                FAKE_RUNTIME_LIB=str(RUNTIME.parent),
-                                FAKE_GH_SCRIPT=str(self.fake),
-                                FAKE_GH_STATE=str(self.statefile))
+https://example.invalid/requirements/search
+"""
+
+
+class IssueFixture(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory(prefix="engineer-issues-")
+        self.addCleanup(self.temporary.cleanup)
+        self.directory = Path(self.temporary.name).resolve()
+        self.git("init", "-q", "-b", "topic")
+        self.git("config", "user.name", "Issue Fixture")
+        self.git("config", "user.email", "issue@example.invalid")
+        (self.directory/"source").write_text("fixture")
+        self.git("add", ".")
+        self.git("commit", "-qm", "fixture")
+        self.git("remote", "add", "origin", "https://github.com/acme/project.git")
+        self.todo = self.directory/".planning/todos/pending/legacy.md"
+        self.todo.parent.mkdir(parents=True)
+        self.private_body = "Private customer evidence\n\n## Context\nFull local context.\n"
+        self.todo.write_text(join_frontmatter({"title": "Private customer title", "severity": "major", "custom": "retain me"}, self.private_body), encoding="utf-8")
+        self.public = self.directory/"reviewed public.md"
+        self.public.write_text(PUBLIC, encoding="utf-8")
+        self.source = self.todo
+        self.title = "Public reviewed title"
+        self.variant = "Bug"
+        self.family = "todo"
+        self.rows, self.pulls, self.calls = [], [], []
+        self.creates, self.edits, self.mode = 0, 0, ""
+        self.direct_changes = {}
+        self.views = []
+        environment = patch.dict(os.environ, {"ENGINEER_ROOT": str(self.directory)})
+        environment.start()
+        self.addCleanup(environment.stop)
+        discovery = patch.object(issues, "run", side_effect=self.api)
+        discovery.start()
+        self.addCleanup(discovery.stop)
+        provider = patch.object(delivery, "gh", side_effect=self.gh)
+        provider.start()
+        self.addCleanup(provider.stop)
 
     def git(self, *args):
-        result = subprocess.run(["git", *args], cwd=self.directory,
-                                capture_output=True, text=True)
-        self.assertEqual(result.returncode, 0, result.stderr)
-        return result.stdout.strip()
+        return subprocess.run(["git", *args], cwd=self.directory, check=True, capture_output=True, text=True).stdout.strip()
 
-    def save(self, data):
-        self.statefile.write_text(json.dumps(data), encoding="utf-8")
+    def metadata(self, path=None):
+        return split_frontmatter((path or self.source).read_text(encoding="utf-8"))[0]
 
-    def remote(self, **changes):
-        data = json.loads(self.statefile.read_text(encoding="utf-8"))
-        data.update(changes)
-        self.save(data)
-        return data
+    def patch_metadata(self, **changes):
+        metadata, body = split_frontmatter(self.source.read_text(encoding="utf-8"))
+        metadata.update(changes)
+        self.source.write_text(join_frontmatter(metadata, body), encoding="utf-8")
 
-    def run_verb(self, *args, ok=True):
-        result = subprocess.run([sys.executable, "-c", DRIVER, "query", *args],
-                                cwd=self.directory, env=self.environment,
-                                capture_output=True, text=True, encoding="utf-8")
-        self.assertNotIn("Traceback", result.stderr, result.stderr)
-        if self.environment.get("TODO_SAVE_FAULT"):
-            fired = Path(self.environment["TODO_FAULT_FIRED"])
-            self.assertTrue(fired.is_file(), "selected save fault never fired")
-            self.assertEqual(fired.read_text(encoding="utf-8"),
-                             self.environment["TODO_FAULT_STATE"] + ":" +
-                             self.environment["TODO_SAVE_FAULT"])
-        payload = json.loads(result.stdout)
-        self.assertEqual(bool(payload.get("ok")), ok, payload)
-        self.assertEqual(result.returncode, 0 if ok else 1)
-        self.assertNotIn("PRIVATE PROVIDER LOG", result.stdout + result.stderr)
-        return payload
+    def issue(self, number=1, state="OPEN", title=None, body=None, **changes):
+        return dict({"number": number, "url": f"https://github.com/acme/project/issues/{number}", "title": title or self.title, "state": state, "body": PUBLIC if body is None else body, "labels": []}, **changes)
 
-    def metadata(self):
-        return yaml.safe_load(self.todo.read_text(encoding="utf-8").split("---", 2)[1])
+    def api(self, argv, cwd=None, check=True):
+        self.calls.append(list(argv))
+        self.assertEqual(["gh", "api", "--hostname", "github.com", "--method", "GET"], argv[:6])
+        if self.mode == "preview-mutate":
+            self.source.write_text(self.source.read_text()+"Concurrent context\n", encoding="utf-8")
+        if self.mode in ("lookup", "auth", "disabled", "repo-mismatch") or self.mode == "lost" and self.creates:
+            return subprocess.CompletedProcess(argv, 1, "", "PRIVATE PROVIDER LOG")
+        if self.mode == "json": return subprocess.CompletedProcess(argv, 0, "{bad", "")
+        if self.mode == "pagination": return subprocess.CompletedProcess(argv, 0, json.dumps({"partial": True}), "")
+        endpoint = argv[-1]
+        self.assertTrue(endpoint.startswith("repos/acme/project/"))
+        self.assertIn("state=all", endpoint)
+        self.assertIn("per_page=100", endpoint)
+        page = int(parse_qs(urlparse(endpoint).query)["page"][0])
+        rows = self.pulls if "/pulls?" in endpoint else self.rows
+        return subprocess.CompletedProcess(argv, 0, json.dumps(rows[(page-1)*100:page*100]), "")
 
-    def patch_metadata(self, **fields):
-        text = self.todo.read_text(encoding="utf-8")
-        metadata = self.metadata()
-        metadata.update(fields)
-        self.todo.write_text("---\n" + yaml.safe_dump(metadata, sort_keys=False) + "---\n" +
-                             text.split("---", 2)[2].lstrip("\n"), encoding="utf-8")
+    def gh(self, args, check=True):
+        self.calls.append(list(args))
+        if args[:2] == ["issue", "view"]:
+            if self.mode == "view" or self.mode == "readback" and self.creates:
+                raise Failure("provider-query-failed", "Offline readback unavailable")
+            if self.mode == "mutate":
+                self.source.write_text(self.source.read_text()+"Changed during readback\n", encoding="utf-8")
+            if self.views:
+                value = self.views.pop(0)
+                if value is None: raise Failure("provider-query-failed", "Offline readback unavailable")
+                return subprocess.CompletedProcess(args, 0, json.dumps(value), "")
+            row = next(row for row in self.rows if row["url"] == args[2])
+            return subprocess.CompletedProcess(args, 0, json.dumps(dict(row, **self.direct_changes)), "")
+        if args[:2] == ["issue", "create"]:
+            self.assertTrue(any(item.get("used") == "publishing" for item in self.attempts()))
+            self.creates += 1
+            if self.mode == "create-before": raise Failure("provider-query-failed", "Uncertain offline outcome")
+            row = self.issue(number=max([item["number"] for item in self.rows]+[0])+1, title=args[args.index("--title")+1], body=Path(args[args.index("--body-file")+1]).read_text(encoding="utf-8"))
+            if self.mode == "bad-title": row["title"] = "unexpected"
+            if self.mode == "bad-body": row["body"] = "unexpected"
+            self.rows.append(row)
+            if self.mode in ("lost", "create-after"): raise Failure("provider-query-failed", "Uncertain offline outcome")
+            return subprocess.CompletedProcess(args, 0, row["url"], "")
+        if args[:2] == ["issue", "edit"]:
+            self.edits += 1
+            row = next(row for row in self.rows if row["url"] == args[2])
+            row.update(title=args[args.index("--title")+1], body=Path(args[args.index("--body-file")+1]).read_text(encoding="utf-8"))
+            return subprocess.CompletedProcess(args, 0, "", "")
+        if args[:2] == ["pr", "view"]:
+            if not getattr(self, "pull", None): raise Failure("pr-not-found", "Offline fixture has no PR")
+            return subprocess.CompletedProcess(args, 0, json.dumps(self.pull), "")
+        self.fail("Unexpected offline provider call: "+repr(args))
 
-    def preview(self, *args, ok=True):
-        return self.run_verb("todo.issue-preview", self.todo.name, *args, ok=ok)
+    def arguments(self, decision=None, token=None, title=None, body_file=None, variant=None):
+        pos = [self.todo.name] if self.family == "todo" else ["1", self.source.name, "P1"]
+        options = ["--title", self.title if title is None else title, "--body-file", str(body_file or self.public), "--variant", self.variant if variant is None else variant]
+        options += list(decision if decision is not None else ["--no-match"])
+        if token: options += ["--preview-token", token]
+        return Args(pos+options)
 
-    def publish(self, preview=None, *decision, ok=True, title="Public reviewed title", variant="Bug"):
-        preview = preview or self.preview()
-        return self.run_verb("todo.issue-publish", self.todo.name,
-                        "--preview-token", preview["previewToken"], "--title", title,
-                        "--body-file", str(self.public), "--variant", variant,
-                        *(decision or ("--no-match",)), ok=ok)
+    def preview(self, decision=None, **options):
+        return issues.publication(self.arguments(decision, **options), "preview", self.family)
 
-    def issue(self, number=1, state="open", title="Existing semantic duplicate", body="Relevant evidence"):
-        return {"number": number, "html_url": "https://github.com/acme/project/issues/" + str(number),
-                "title": title, "body": body, "state": state}
+    def publish(self, preview=None, decision=None, action="publish", **options):
+        preview = preview or self.preview(decision, **options)
+        return issues.publication(self.arguments(decision, token=preview["preview_token"], **options), action, self.family)
 
-    def inject_save_failure(self, state, fault):
-        before = self.directory / "before-failed-save.md"
-        fired = self.directory / "save-fault-fired.txt"
-        fired.unlink(missing_ok=True)
-        # A portable alias reproduces the lexical/canonical mismatch also seen
-        # with Windows DOS 8.3 temporary roots, without filesystem privileges.
-        alias = self.todo.parent / ".." / "pending" / self.todo.name
-        self.assertNotEqual(alias, self.todo)
-        self.assertEqual(alias.resolve(), self.todo.resolve())
-        self.environment.update(TODO_SAVE_FAULT=fault, TODO_FAULT_STATE=state,
-                                TODO_FAULT_PATH=str(alias),
-                                TODO_FAULT_BEFORE=str(before),
-                                TODO_FAULT_FIRED=str(fired))
-        return before
+    def attempts(self):
+        return [json.loads(path.read_text()) for path in (self.directory/".planning/issue-previews").glob("*.json")]
 
-    def clear_save_failure(self):
-        for key in ("TODO_SAVE_FAULT", "TODO_FAULT_STATE", "TODO_FAULT_PATH",
-                    "TODO_FAULT_BEFORE", "TODO_FAULT_FIRED"):
-            self.environment.pop(key, None)
+    def fails(self, call, code=None):
+        with self.assertRaises((Failure, OSError)) as caught: call()
+        if code: self.assertEqual(code, caught.exception.code)
+        self.assertNotIn("PRIVATE PROVIDER LOG", str(caught.exception))
+        return caught.exception
 
-    def assert_pending_context(self):
-        self.assertEqual(self.metadata()["custom"], "retain me")
-        self.assertTrue(self.todo.read_text(encoding="utf-8").endswith(self.body))
-        self.assertFalse(self.metadata().get("issueURL"))
+    def complete(self, name=None):
+        return records.todo(Args([name or self.todo.name]), "complete")
 
+    def make_alias(self, alias, physical):
+        if os.name == "nt":
+            result = subprocess.run(["cmd", "/c", "mklink", "/J", str(alias), str(physical)], capture_output=True)
+            self.assertEqual(0, result.returncode, result.stderr)
+        else: alias.symlink_to(physical, target_is_directory=True)
+
+    def remove_alias(self, alias):
+        if os.name == "nt": alias.rmdir()
+        else: alias.unlink()
+
+
+class TodoIssues(IssueFixture):
     def test_failed_link_write_preserves_attempt_and_recovers_once(self):
         original = self.todo.read_bytes()
-        for fault in ("write", "replace"):
-            with self.subTest(fault=fault):
-                self.clear_save_failure()
-                self.todo.write_bytes(original)
-                self.remote(issues=[], creates=0)
-                self.patch_metadata(issuePublication={}, issueURL=None, issueNumber=None)
-                preview = self.preview()
-                before = self.inject_save_failure("linked", fault)
-                failure = self.publish(preview, ok=False)
-                self.assertEqual(failure["code"], "todo-write")
-                self.assertNotIn("PRIVATE FILESYSTEM DETAIL", json.dumps(failure))
-                self.assertEqual(self.todo.read_bytes(), before.read_bytes())
-                self.assert_pending_context()
-                metadata = self.metadata()
-                self.assertEqual(metadata["todoId"], preview["todoId"])
-                self.assertEqual(metadata["issuePublication"]["state"], "attempted")
-                self.assertTrue(metadata["issuePublication"]["intentDigest"])
-                self.assertEqual(self.remote()["creates"], 1)
-                self.assertEqual(list(self.todo.parent.iterdir()), [self.todo])
-                self.clear_save_failure()
-                self.run_verb("todo.complete", self.todo.name, ok=False)
-                recovered = self.publish()
-                self.assertTrue(recovered["recovered"])
-                self.assertEqual(recovered["todoId"], preview["todoId"])
-                self.assertEqual(self.remote()["creates"], 1)
-                self.assertEqual(len(self.remote()["issues"]), 1)
+        preview = self.preview()
+        original_replace = os.replace
+        def fail_replace(source, target):
+            if Path(target).resolve() == self.todo: raise OSError("injected atomic source save")
+            return original_replace(source, target)
+        with patch.object(core.os, "replace", side_effect=fail_replace): self.fails(lambda: self.publish(preview))
+        self.assertEqual(original, self.todo.read_bytes())
+        self.assertTrue(issues.unresolved_attempt(self.todo))
+        self.assertEqual(1, self.creates)
+        self.assertTrue(self.publish(preview)["reused"])
+        self.assertEqual(1, self.creates)
+        self.assertEqual("retain me", self.metadata()["custom"])
 
     def test_failed_prepared_or_attempted_save_prevents_create(self):
-        original = self.todo.read_bytes()
-        for state in ("prepared", "attempted"):
-            for fault in ("write", "replace"):
-                with self.subTest(state=state, fault=fault):
-                    self.clear_save_failure()
-                    self.todo.write_bytes(original)
-                    self.patch_metadata(issuePublication={}, issueURL=None, issueNumber=None)
-                    preview = self.preview() if state == "attempted" else None
-                    before = self.inject_save_failure(state, fault)
-                    failure = (self.publish(preview, ok=False) if preview
-                               else self.preview(ok=False))
-                    self.assertEqual(failure["code"], "todo-write")
-                    self.assertEqual(self.todo.read_bytes(), before.read_bytes())
-                    self.assertTrue(self.todo.read_text(encoding="utf-8").endswith(self.body))
-                    self.assertEqual(self.remote()["creates"], 0)
-                    self.assertEqual(list(self.todo.parent.iterdir()), [self.todo])
-                    self.clear_save_failure()
+        for stage in ("prepared", "attempted"):
+            preview = self.preview() if stage == "attempted" else None
+            original_replace = os.replace
+            def fail_replace(source, target):
+                if Path(target).parent.name == "issue-previews": raise OSError("injected atomic preview save")
+                return original_replace(source, target)
+            if not preview:
+                for path in (self.directory/".planning/issue-previews").glob("*.json"): path.unlink()
+            before = self.todo.read_bytes()
+            with patch.object(core.os, "replace", side_effect=fail_replace):
+                self.fails(lambda: self.publish(preview) if preview else self.preview())
+            self.assertEqual(0, self.creates)
+            self.assertEqual(before, self.todo.read_bytes())
 
     def test_direct_duplicate_changes_refuse_stale_review(self):
-        original = self.todo.read_bytes()
-        for selection in ("semantic", "marker"):
-            for changes in ({"title": "Changed after lookup"},
-                            {"body": "Different scope"}, {"state": "closed"}):
-                with self.subTest(selection=selection, changes=changes):
-                    self.todo.write_bytes(original)
-                    self.remote(issues=[], direct_changes={})
-                    preview = self.preview()
-                    body = ("<!-- todo-id: " + preview["todoId"] + " -->"
-                            if selection == "marker" else "Relevant evidence")
-                    self.remote(issues=[self.issue(body=body)], direct_changes={})
-                    preview = self.preview()
-                    before = self.todo.read_bytes()
-                    self.remote(direct_changes=changes)
-                    decision = (("--existing-issue", self.issue()["html_url"])
-                                if selection == "semantic" else ("--no-match",))
-                    failure = self.publish(preview, *decision, ok=False)
-                    self.assertEqual(failure["code"], "stale-preview")
-                    self.assertEqual(self.todo.read_bytes(), before)
-                    self.assert_pending_context()
-                    self.assertEqual(self.remote()["creates"], 0)
-                    self.remote(direct_changes={})
+        for changes in ({"title": "Changed"}, {"body": PUBLIC+"Changed"}, {"state": "CLOSED"}):
+            self.rows = [self.issue()]
+            self.direct_changes = {}
+            decision = ["--existing-issue", "1"]
+            preview = self.preview(decision)
+            self.direct_changes = changes
+            self.fails(lambda: self.publish(preview, decision), "stale-issue-preview")
+            self.assertNotIn("issue_url", self.metadata())
+        self.assertEqual(0, self.creates)
 
     def test_attempted_without_url_cannot_complete_or_lose_context(self):
-        self.patch_metadata(issuePublication={"state": "attempted", "intentDigest": "unknown"})
+        preview = self.preview()
+        self.mode = "create-before"
+        self.fails(lambda: self.publish(preview))
         before = self.todo.read_bytes()
-        failure = self.run_verb("todo.complete", self.todo.name, ok=False)
-        self.assertEqual(failure["code"], "issue-unresolved")
-        self.assertEqual(self.todo.read_bytes(), before)
-        self.assertFalse((self.directory / ".planning/todos/completed").exists())
+        self.assertTrue(issues.unresolved_attempt(self.todo))
+        self.fails(self.complete)
+        self.assertEqual(before, self.todo.read_bytes())
 
     def test_preview_stable_identity_and_private_complete_context(self):
-        first = self.preview()
-        second = self.preview()
-        self.assertEqual(first["todoId"], second["todoId"])
-        self.assertEqual(first["previewToken"], second["previewToken"])
-        self.assertEqual(first["privateLocal"]["label"], "PRIVATE LOCAL REVIEW INPUT")
-        self.assertEqual(first["privateLocal"]["title"], "Private customer title")
-        self.assertIn("Full local context", first["privateLocal"]["body"])
-        self.assertEqual(first["privateLocal"]["metadata"]["files"], ["src/app.py:12"])
-        self.assertEqual(self.metadata()["custom"], "retain me")
-        self.assertTrue(self.todo.read_text(encoding="utf-8").endswith(self.body))
-        self.assertEqual(self.remote()["creates"], 0)
+        before = self.todo.read_bytes()
+        first, second = self.preview(), self.preview()
+        self.assertEqual(first["preview_token"], second["preview_token"])
+        self.assertEqual(before, self.todo.read_bytes())
+        self.assertNotIn("Private", first["body"])
+        self.assertIn("engineer-issue:", first["body"])
+        self.assertEqual("retain me", self.metadata()["custom"])
 
     def test_new_todo_identity_and_legacy_listing_remain_usable(self):
-        added = self.run_verb("todo.add", "New capture", "--problem", "Full repro",
-                         "--solution", "Approach", "--files", "src/app.py:12")
-        self.assertTrue(added["todoId"])
-        listed = self.run_verb("todo.list")
-        self.assertEqual(listed["count"], 2)
-        self.assertTrue(all(item.get("todoId") for item in listed["todos"] if item["title"] == "New capture"))
-        new_preview = self.run_verb("todo.issue-preview", Path(added["file"]).name)
-        self.assertEqual(new_preview["todoId"], added["todoId"])
-        self.run_verb("todo.complete", Path(added["file"]).name)
+        created = records.todo(Args(["Another fixture", "--problem", "Observed fixture limitation"]), "add")
+        listed = records.todo(Args([]), "list")
+        self.assertEqual(2, listed["count"])
+        self.assertTrue(Path(created["path"]).is_file())
+        preview = self.preview()
+        self.assertEqual(str(self.todo), preview["source"])
+        self.assertIn("engineer-issue:", preview["body"])
 
     def test_create_only_reviewed_public_content_and_link_pending(self):
         result = self.publish()
-        metadata = self.metadata()
-        issue = self.remote()["issues"][0]
-        self.assertTrue(result["created"])
-        self.assertEqual(metadata["issueURL"], issue["html_url"])
-        self.assertEqual(metadata["issueNumber"], issue["number"])
-        self.assertEqual(metadata["issuePublication"]["state"], "linked")
-        self.assertEqual(issue["title"], "Public reviewed title")
-        self.assertNotIn("Private customer", issue["body"] + issue["title"])
-        self.assertIn("<!-- todo-id: " + metadata["todoId"] + " -->", issue["body"])
-        self.assertTrue(self.todo.read_text(encoding="utf-8").endswith(self.body))
-        self.assertTrue(self.todo.exists())
-        linked = self.run_verb("todo.list")["todos"][0]
-        self.assertEqual(linked["issueURL"], metadata["issueURL"])
+        self.assertFalse(result["reused"])
+        self.assertEqual(1, self.creates)
+        self.assertNotIn("Private", self.rows[0]["title"]+self.rows[0]["body"])
+        self.assertTrue(self.todo.is_file())
+        self.assertEqual(result["url"], self.metadata()["issue_url"])
+        self.assertTrue(self.todo.read_text().endswith(self.private_body))
 
     def test_structural_failure_precedes_create_and_attempt_persistence(self):
-        preview = self.preview()
-        before = self.todo.read_bytes()
-        before_calls = self.remote()["calls"]
-        valid_body = self.public.read_text(encoding="utf-8")
-        for changed in (valid_body.replace("## Expected behavior", "## ExpectedBehavior"),
-                        valid_body.replace("## Impact", ""),
-                        valid_body + "\n## Problem\nDuplicate"):
-            self.public.write_text(changed, encoding="utf-8")
-            failure = self.publish(preview, ok=False)
-            self.assertEqual(failure["code"], "issue-format")
-            self.assertEqual(self.todo.read_bytes(), before)
-            self.assertEqual(self.metadata()["issuePublication"]["state"], "prepared")
-            self.assertEqual(self.remote()["creates"], 0)
-            self.assertEqual(self.remote()["calls"], before_calls)
-        self.public.write_text(valid_body, encoding="utf-8")
-        for variant in ([], ["--variant", "Unknown"], ["--variant"]):
-            failure = self.run_verb("todo.issue-publish", self.todo.name,
-                "--preview-token", preview["previewToken"], "--title", "Public",
-                "--body-file", str(self.public), "--no-match", *variant, ok=False)
-            self.assertEqual(failure["code"], "issue-variant")
-            self.assertEqual(self.todo.read_bytes(), before)
-            self.assertEqual(self.remote()["creates"], 0)
-            self.assertEqual(self.remote()["calls"], before_calls)
+        self.public.write_text(PUBLIC.replace("## Actual behavior", "## Unexpected heading"))
+        self.fails(self.preview, "issue-format")
+        self.assertEqual([], self.attempts())
+        self.assertEqual(0, self.creates)
 
     def test_missing_or_empty_public_title_and_decision_refuse_before_create(self):
-        preview = self.preview()
-        options = ["--preview-token", preview["previewToken"], "--body-file", str(self.public)]
-        for extra in (["--no-match"], ["--title", "", "--no-match"],
-                      ["--title", "Public"], ["--title", "Public", "--no-match",
-                                             "--existing-issue", self.issue()["html_url"]]):
-            with self.subTest(extra=extra):
-                self.run_verb("todo.issue-publish", self.todo.name, *options, *extra, ok=False)
-        self.assertEqual(self.remote()["creates"], 0)
+        self.fails(lambda: self.preview(title=""), "reviewed-public-content-required")
+        args = Args([self.todo.name, "--body-file", str(self.public), "--variant", "Bug", "--no-match"])
+        self.fails(lambda: issues.publication(args, "preview"), "reviewed-public-content-required")
+        preview = self.preview(decision=[])
+        self.fails(lambda: self.publish(preview, decision=[]), "issue-disposition-required")
+        self.assertEqual(0, self.creates)
 
     def test_html_literal_and_mixed_indent_precede_provider_and_attempt(self):
-        preview = self.preview()
-        before = self.todo.read_bytes()
-        before_calls = self.remote()["calls"]
-        templates = dict(re.findall(r"^### ([^\n]+)\n\n```markdown\n(.*?)\n```",
-                                   (ROOT / ".ai/templates/issue.md").read_text(encoding="utf-8"),
-                                   re.M | re.S))
-        cases = [(variant, "<" + tag + ">\n" + templates[variant] + "\n</" + tag + ">")
-                 for variant in ("Bug", "UAT") for tag in ("pre", "script", "style", "textarea")]
-        cases += [(variant, opening + "\n" + templates[variant] + "\n</" + tag + ">")
-                  for variant in ("Bug", "UAT") for tag in ("pre", "script", "style", "textarea")
-                  for opening in ("<" + tag + "\n>", "<" + tag + "\n class=\"literal\">")]
-        cases += [("UAT", re.sub(r"^(\|.*)$", lambda match: prefix + match[1],
-                                templates["UAT"], flags=re.M)) for prefix in (" \t", "  \t", "   \t")]
-        table = re.search(r"^\| Step .*?(?=\n\n)", templates["UAT"], re.M | re.S).group()
-        cases += [("UAT", templates["UAT"].replace(table, opening + "\n" + table + "\n</" + tag + ">"))
-                  for tag in ("div", "table") for opening in
-                  ("<" + tag + ">", "<" + tag + "\n>", "<" + tag + "\n class=\"literal\">",
-                   "<" + tag + "> leading prose")]
-        cases += [("Bug", templates["Bug"].replace("## Problem", prefix + "## Problem", 1))
-                  for prefix in ("<!--x-->", "<!-- literal\n-->")]
-        cases += [("UAT", re.sub(r"^(\|.*)$", lambda match: "<!--x-->" + match[1], templates["UAT"], flags=re.M))]
-        cases += [("UAT", templates["UAT"].replace(table, opening + "\n" + table + "\n" + closing))
-                  for opening, closing in (("<?literal", "?>"), ("<!DOCTYPE literal", ">"),
-                                           ("<![CDATA[", "]]>"))]
-        for variant, draft in cases:
-            with self.subTest(variant=variant, prefix=draft[:30]):
-                self.public.write_text(draft, encoding="utf-8")
-                failure = self.publish(preview, variant=variant, ok=False)
-                self.assertEqual(failure["code"], "issue-format")
-                self.assertEqual(self.todo.read_bytes(), before)
-                self.assertEqual(self.metadata()["issuePublication"]["state"], "prepared")
-                self.assertEqual(self.remote()["calls"], before_calls)
-                self.assertEqual(self.remote()["creates"], 0)
+        for body in ("<div>\n"+PUBLIC+"\n</div>", "```markdown\n"+PUBLIC+"```", "\n".join("    "+line for line in PUBLIC.splitlines())):
+            self.public.write_text(body)
+            self.fails(self.preview, "issue-format")
+        self.assertEqual([], self.calls)
+        self.assertEqual([], self.attempts())
 
     def test_missing_or_malformed_schema_precedes_remote_mutation(self):
-        import shutil
-        preview = self.preview()
-        before = self.todo.read_bytes()
-        before_calls = self.remote()["calls"]
-        runtime = self.directory / ".codex/runtime"
-        shutil.copytree(RUNTIME.parent, runtime)
-        templates = self.directory / ".codex/templates"
-        templates.mkdir()
-        self.environment.update(FAKE_RUNTIME=str(runtime / "phase.py"),
-                                FAKE_RUNTIME_LIB=str(runtime))
-        for schema in (None, "malformed schema"):
-            if schema is not None:
-                (templates / "issue.md").write_text(schema, encoding="utf-8")
-            failure = self.publish(preview, ok=False)
-            self.assertEqual(failure["code"], "issue-schema")
-            self.assertEqual(self.todo.read_bytes(), before)
-            self.assertEqual(self.remote()["creates"], 0)
-            self.assertEqual(self.remote()["calls"], before_calls)
+        template = self.directory/"empty namespace"
+        (template/"engineer/templates").mkdir(parents=True)
+        with patch.object(issues.models, "NAMESPACE", template): self.fails(self.preview, "issue-schema")
+        (template/"engineer/templates/issue.md").write_text("## File Template\n### Bug\n```markdown\n## Problem\n```\n")
+        with patch.object(issues.models, "NAMESPACE", template): self.fails(self.preview, "issue-schema")
+        self.assertEqual([], self.calls)
 
     def test_semantic_reuse_open_and_closed_does_not_edit_or_complete(self):
-        for state in ("open", "closed"):
-            with self.subTest(state=state):
-                self.remote(issues=[self.issue(state=state)])
-                result = self.publish(None, "--existing-issue", self.issue()["html_url"])
-                self.assertFalse(result["created"])
-                self.assertTrue(self.todo.exists())
-                self.assertEqual(self.remote()["creates"], 0)
-                self.assertEqual(self.remote()["issues"][0]["title"], "Existing semantic duplicate")
-                self.assertFalse(any(c[:2] in (["issue", "edit"], ["issue", "close"])
-                                     for c in self.remote()["calls"]))
+        for state in ("OPEN", "CLOSED"):
+            self.todo.write_text(join_frontmatter({"title": "Private", "custom": "retain me"}, self.private_body))
+            self.rows = [self.issue(state=state)]
+            decision = ["--existing-issue", "1"]
+            result = self.publish(decision=decision)
+            self.assertTrue(result["reused"])
+            self.assertEqual(state == "CLOSED", result["requires_reconciliation"])
+            self.assertTrue(self.todo.exists())
+        self.assertEqual((0, 0), (self.creates, self.edits))
 
     def test_preview_includes_closed_candidates_and_complete_pagination(self):
-        records = [self.issue(number=n, state="closed") for n in range(1, 102)]
-        self.remote(issues=records)
-        result = self.preview()
-        self.assertEqual(len(result["candidates"]), 101)
-        self.assertEqual(result["candidates"][-1]["number"], 101)
+        self.rows = [self.issue(number=n, title=f"Unrelated {n}") for n in range(1, 101)]+[self.issue(number=101, state="CLOSED")]
+        preview = self.preview(["--existing-issue", "101"])
+        self.assertEqual(101, preview["candidates"][0]["number"])
+        self.assertTrue(any("page=2" in call[-1] for call in self.calls if call[:2] == ["gh", "api"]))
+        self.assertEqual(0, self.creates)
 
     def test_pr_objects_excluded_and_related_context_selected(self):
-        pr = {"number": 3, "html_url": "https://github.com/acme/project/pull/3",
-              "title": "Related PR", "body": "PR context", "state": "open",
-              "head": {"ref": self.git("branch", "--show-current")}}
-        issue_pr = self.issue(number=3)
-        issue_pr["pull_request"] = {"url": "u"}
-        self.remote(issues=[issue_pr, self.issue()], pulls=[pr])
-        result = self.preview("--related-pr", pr["html_url"])
-        self.assertEqual([i["number"] for i in result["candidates"]], [1])
-        self.assertEqual(result["relatedPRs"][0]["body"], "PR context")
+        self.rows = [dict(self.issue(), pull_request={"url": "https://api.github.com/repos/acme/project/pulls/1"})]
+        self.pulls = [dict(self.issue(), url="https://github.com/acme/project/pull/1")]
+        preview = self.preview()
+        self.assertEqual([], preview["candidates"])
+        self.assertEqual("create", preview["disposition"])
+        self.assertTrue(any("/pulls?" in call[-1] for call in self.calls if call[:2] == ["gh", "api"]))
 
     def test_bad_repository_auth_lookup_json_and_pagination_block(self):
-        for mode in ("auth", "disabled", "repo-mismatch", "lookup", "json", "pagination"):
-            with self.subTest(mode=mode):
-                self.remote(mode=mode)
-                self.preview(ok=False)
-                self.assertNotIn("issueURL", self.metadata())
-                self.assertEqual(self.remote()["creates"], 0)
+        for mode in ("repo-mismatch", "auth", "disabled", "lookup", "json", "pagination"):
+            self.mode = mode
+            self.fails(self.preview)
+            self.assertEqual(0, self.creates)
+            self.assertEqual([], self.attempts())
 
     def test_wrong_origin_or_supplied_urls_cannot_redirect(self):
-        self.git("remote", "set-url", "origin", "https://example.test/acme/project")
-        self.preview(ok=False)
-        self.git("remote", "set-url", "origin", "git@github.com:acme/project.git")
-        self.preview("--related-pr", "https://github.com/other/repo/pull/3", ok=False)
-        self.publish(None, "--existing-issue", "https://github.com/other/repo/issues/1", ok=False)
-        self.assertEqual(self.remote()["creates"], 0)
+        for url in ("https://github.com/other/project/issues/1", "https://github.com/acme/project/pull/1", "https://github.com/acme/project/issues/1?redirect=elsewhere"):
+            self.fails(lambda: self.preview(["--existing-issue", url]), "provider-repository-mismatch")
+        self.assertEqual(0, self.creates)
 
     def test_stale_local_candidate_and_pr_context_invalidate_preview(self):
-        for kind in ("local", "issue", "pr"):
-            with self.subTest(kind=kind):
-                preview = self.preview()
-                if kind == "local":
-                    self.todo.write_text(self.todo.read_text(encoding="utf-8") + "\nNew context\n",
-                                         encoding="utf-8")
-                elif kind == "issue":
-                    self.remote(issues=[self.issue()])
-                else:
-                    self.remote(pulls=[{"number": 2, "html_url": "https://github.com/acme/project/pull/2",
-                                        "title": "New PR", "body": "new", "state": "open",
-                                        "head": {"ref": self.git("branch", "--show-current")}}])
-                failure = self.publish(preview, ok=False)
-                self.assertEqual(failure["code"], "stale-preview")
-                self.assertEqual(self.remote()["creates"], 0)
+        preview = self.preview()
+        self.pulls = [dict(self.issue(), url="https://github.com/acme/project/pull/1")]
+        self.fails(lambda: self.publish(preview), "stale-issue-preview")
+        preview = self.preview()
+        self.todo.write_text(self.todo.read_text()+"Changed context\n")
+        self.fails(lambda: self.publish(preview), "stale-issue-preview")
+        self.assertEqual(0, self.creates)
 
     def test_create_loss_recovers_exact_marker_once_and_then_is_idempotent(self):
-        self.remote(mode="lost")
-        self.publish(ok=False)
-        self.assertEqual(self.metadata()["issuePublication"]["state"], "attempted")
-        self.assertNotIn("issueURL", self.metadata())
-        self.remote(mode="")
-        result = self.publish()
-        self.assertTrue(result["recovered"])
-        self.assertEqual(self.remote()["creates"], 1)
-        again = self.publish()
-        self.assertFalse(again["created"])
-        self.assertEqual(self.remote()["creates"], 1)
+        preview = self.preview()
+        self.mode = "lost"
+        self.fails(lambda: self.publish(preview))
+        self.assertTrue(issues.unresolved_attempt(self.todo))
+        self.mode = ""
+        self.assertTrue(self.publish(preview)["reused"])
+        self.fails(lambda: self.publish(preview))
+        self.assertEqual(1, self.creates)
 
     def test_uncertain_zero_and_multiple_marker_matches_never_create_again(self):
-        self.remote(mode="create-before")
-        self.publish(ok=False)
-        self.remote(mode="")
-        self.publish(ok=False)
-        self.assertEqual(self.remote()["creates"], 1)
-        self.assertNotIn("issueURL", self.metadata())
-        marker = "<!-- todo-id: " + self.metadata()["todoId"] + " -->"
-        self.remote(issues=[self.issue(1, body=marker), self.issue(2, body=marker)])
-        self.publish(ok=False)
-        self.assertEqual(self.remote()["creates"], 1)
-        self.assertNotIn("issueURL", self.metadata())
+        preview = self.preview()
+        self.mode = "create-before"
+        self.fails(lambda: self.publish(preview))
+        self.mode = ""
+        self.fails(lambda: self.publish(preview), "issue-publication-uncertain")
+        marker_body = preview["body"]
+        self.rows = [self.issue(body=marker_body), self.issue(number=2, body=marker_body)]
+        self.fails(lambda: self.publish(preview), "issue-identity-ambiguous")
+        self.assertEqual(1, self.creates)
 
     def test_create_failure_after_creation_and_unreadable_readback_recover(self):
-        for mode in ("create-after", "readback"):
-            with self.subTest(mode=mode):
-                self.remote(mode=mode, issues=[], creates=0)
-                self.patch_metadata(issuePublication={}, issueURL=None, issueNumber=None)
-                self.publish(ok=False)
-                self.assertEqual(self.metadata()["issuePublication"]["state"], "attempted")
-                self.remote(mode="")
-                self.assertTrue(self.publish()["recovered"])
-                self.assertEqual(self.remote()["creates"], 1)
+        preview = self.preview()
+        self.mode = "readback"
+        self.fails(lambda: self.publish(preview))
+        self.mode = ""
+        self.assertTrue(self.publish(preview)["reused"])
+        self.assertEqual(1, self.creates)
+        self.assertFalse(issues.unresolved_attempt(self.todo))
 
     def test_readback_title_body_and_snapshot_mismatch_leave_attempted(self):
         for mode in ("bad-title", "bad-body", "mutate"):
-            with self.subTest(mode=mode):
-                self.remote(mode=mode, issues=[], creates=0)
-                self.patch_metadata(issuePublication={}, issueURL=None, issueNumber=None)
-                self.publish(ok=False)
-                self.assertEqual(self.metadata()["issuePublication"]["state"], "attempted")
-                self.assertNotIn("issueURL", {k: v for k, v in self.metadata().items() if v})
-                self.assertTrue(self.todo.exists())
+            case = TodoIssues()
+            case.setUp()
+            try:
+                preview = case.preview()
+                case.mode = mode
+                case.fails(lambda: case.publish(preview))
+                self.assertTrue(case.todo.exists())
+                self.assertNotIn("issue_url", case.metadata())
+                self.assertTrue(issues.unresolved_attempt(case.todo))
+                self.assertEqual(1, case.creates)
+            finally: case.doCleanups()
 
     def test_recovery_does_not_accept_changed_reviewed_intent(self):
-        self.remote(mode="lost")
-        self.publish(ok=False)
-        self.remote(mode="")
-        self.public.write_text(self.public.read_text(encoding="utf-8").replace(
-            "Blank search fails", "Different reviewed problem"), encoding="utf-8")
-        self.publish(ok=False)
-        self.assertEqual(self.remote()["creates"], 1)
-        self.assertNotIn("issueURL", self.metadata())
+        preview = self.preview()
+        self.mode = "lost"
+        self.fails(lambda: self.publish(preview))
+        self.mode = ""
+        self.public.write_text(PUBLIC.replace("Blank search fails", "Different problem"))
+        self.fails(lambda: self.publish(preview), "stale-issue-preview")
+        self.assertEqual(1, self.creates)
+        self.assertNotIn("issue_url", self.metadata())
 
     def test_exact_marker_dedup_reuses_verified_intent_or_blocks(self):
         preview = self.preview()
-        marker = "<!-- todo-id: " + preview["todoId"] + " -->"
-        self.remote(issues=[self.issue(body=marker)])
-        result = self.publish()
-        self.assertFalse(result["created"])
-        self.assertEqual(self.remote()["creates"], 0)
+        self.rows = [self.issue(body=preview["body"])]
+        result = self.publish(decision=["--existing-issue", "1"])
+        self.assertTrue(result["reused"])
+        self.assertEqual(0, self.creates)
+        self.assertEqual(0, self.edits)
 
     def test_linked_open_error_and_wrong_repo_status_cannot_complete(self):
         self.publish()
         before = self.todo.read_bytes()
-        self.run_verb("todo.complete", self.todo.name, ok=False)
-        self.assertEqual(self.todo.read_bytes(), before)
-        self.remote(mode="view")
-        self.run_verb("todo.complete", self.todo.name, ok=False)
-        self.assertEqual(self.todo.read_bytes(), before)
-        self.remote(mode="")
-        self.patch_metadata(issueURL="https://github.com/other/repo/issues/1")
+        self.fails(self.complete)
+        self.mode = "view"
+        self.fails(self.complete)
+        self.mode = ""
+        self.patch_metadata(issue_url="https://github.com/other/repo/issues/1")
         before = self.todo.read_bytes()
-        self.run_verb("todo.complete", self.todo.name, ok=False)
-        self.assertEqual(self.todo.read_bytes(), before)
+        self.fails(self.complete)
+        self.assertEqual(before, self.todo.read_bytes())
 
     def test_recovered_closed_issue_permits_explicit_completion_only(self):
-        self.remote(mode="lost")
-        self.publish(ok=False)
-        self.remote(mode="")
-        self.publish()
-        data = self.remote()
-        data["issues"][0]["state"] = "closed"
-        self.save(data)
-        result = self.run_verb("todo.complete", self.todo.name)
+        preview = self.preview()
+        self.mode = "readback"
+        self.fails(lambda: self.publish(preview))
+        self.mode = ""
+        self.publish(preview)
+        self.rows[0]["state"] = "CLOSED"
+        self.assertTrue(self.todo.exists())
+        result = self.complete()
         self.assertFalse(self.todo.exists())
-        self.assertTrue((self.directory / result["completed"]).exists())
+        self.assertTrue(Path(result["path"]).is_file())
 
     def test_legacy_completion_path_and_collision_safety(self):
         before = self.todo.read_bytes()
-        for name in ("../pending/legacy.md", str(self.todo), "x/legacy.md"):
-            self.run_verb("todo.complete", name, ok=False)
-            self.assertEqual(self.todo.read_bytes(), before)
-        completed = self.directory / ".planning/todos/completed"
-        completed.mkdir()
-        target = completed / self.todo.name
-        target.write_text("Unrelated completed record", encoding="utf-8")
-        self.run_verb("todo.complete", self.todo.name, ok=False)
-        self.assertEqual(target.read_text(encoding="utf-8"), "Unrelated completed record")
-        self.assertEqual(self.todo.read_bytes(), before)
+        for name in ("../pending/legacy.md", "x/legacy.md"):
+            self.fails(lambda: self.complete(name))
+            self.assertEqual(before, self.todo.read_bytes())
+        target = self.directory/".planning/todos/completed/legacy.md"
+        target.parent.mkdir(parents=True)
+        target.write_text("Unrelated record")
+        self.fails(self.complete)
+        self.assertEqual("Unrelated record", target.read_text())
+        self.assertEqual(before, self.todo.read_bytes())
         target.unlink()
-        self.run_verb("todo.complete", "legacy")
-        self.assertEqual(target.read_bytes(), before)
+        self.complete()
+        self.assertEqual(before, target.read_bytes())
 
     def test_ambiguous_name_and_symlink_escape_are_refused(self):
-        other = self.todo.with_name("legacy-other.md")
-        other.write_bytes(self.todo.read_bytes())
-        self.run_verb("todo.complete", "legacy", ok=False)
-        self.preview()  # exact selection still works
-        external = self.directory / "outside.md"
-        external.write_text("keep", encoding="utf-8")
-        link = self.todo.with_name("escape.md")
+        self.todo.with_name("legacy-other.md").write_bytes(self.todo.read_bytes())
+        self.fails(lambda: self.complete("legacy"))
+        self.preview()
+        alias = self.todo.parent/"alias"
+        external = self.directory/"outside"
+        external.mkdir()
+        (external/"valuable.md").write_text("keep")
+        self.make_alias(alias, external)
         try:
-            link.symlink_to(external)
-        except OSError:
-            self.skipTest("symlink creation unavailable on this host")
-        self.run_verb("todo.issue-preview", link.name, ok=False)
-        self.run_verb("todo.complete", link.name, ok=False)
-        self.assertEqual(external.read_text(encoding="utf-8"), "keep")
+            self.fails(lambda: issues.todo_path(alias/"valuable.md"), "aliased-issue-source")
+            self.fails(lambda: self.complete(str(alias/"valuable.md")))
+            self.assertEqual("keep", (external/"valuable.md").read_text())
+        finally: self.remove_alias(alias)
 
     def test_preview_cannot_overwrite_concurrent_local_context(self):
-        self.remote(mode="preview-mutate")
-        self.preview(ok=False)
-        self.assertIn("Concurrent context", self.todo.read_text(encoding="utf-8"))
-        self.assertNotIn("issueURL", self.metadata())
+        self.mode = "preview-mutate"
+        self.fails(self.preview, "issue-source-drift")
+        self.assertIn("Concurrent context", self.todo.read_text())
+        self.assertNotIn("issue_url", self.metadata())
+        self.assertEqual([], self.attempts())
 
     def test_private_todo_is_not_a_separate_public_body_file(self):
-        preview = self.preview()
-        self.run_verb("todo.issue-publish", self.todo.name, "--preview-token",
-                      preview["previewToken"], "--title", "Reviewed",
-                      "--body-file", str(self.todo), "--no-match", ok=False)
-        self.assertEqual(self.remote()["creates"], 0)
+        self.fails(lambda: self.preview(body_file=self.todo), "private-source-body-refused")
+        self.assertEqual([], self.calls)
+        self.assertEqual(0, self.creates)
 
     def test_malformed_origin_and_unresolved_intent_are_handled(self):
         self.git("remote", "set-url", "origin", "https://github.com:bad/acme/project")
-        self.preview(ok=False)
+        self.fails(self.preview, "unsupported-origin")
         self.patch_metadata(issuePublication={"intentDigest": "unknown"})
         before = self.todo.read_bytes()
-        self.run_verb("todo.complete", self.todo.name, ok=False)
-        self.assertEqual(self.todo.read_bytes(), before)
+        self.fails(self.complete)
+        self.assertEqual(before, self.todo.read_bytes())
 
-    @unittest.skipUnless(os.name == "nt", "Windows junction guard")
     def test_windows_pending_junction_cannot_redirect_local_mutation(self):
         pending = self.todo.parent
         preserved = pending.with_name("preserved")
         pending.rename(preserved)
-        outside = self.directory / "outside"
+        outside = self.directory/"outside"
         outside.mkdir()
-        other = outside / self.todo.name
-        other.write_text("Do not change", encoding="utf-8")
-        made = subprocess.run(["cmd", "/c", "mklink", "/J", str(pending), str(outside)],
-                              capture_output=True, text=True)
-        if made.returncode:
+        other = outside/self.todo.name
+        other.write_text("Do not change")
+        self.make_alias(pending, outside)
+        try:
+            self.fails(self.preview, "aliased-issue-source")
+            self.fails(self.complete)
+            self.assertEqual("Do not change", other.read_text())
+        finally:
+            self.remove_alias(pending)
             preserved.rename(pending)
-            self.skipTest("junction creation unavailable")
-        self.run_verb("todo.complete", self.todo.name, ok=False)
-        self.run_verb("todo.issue-preview", self.todo.name, ok=False)
-        self.assertEqual(other.read_text(encoding="utf-8"), "Do not change")
-        self.assertTrue((preserved / self.todo.name).exists())
 
     def test_incomplete_selection_options_and_existing_linkage_cannot_create(self):
-        self.run_verb("todo.issue-preview", self.todo.name, "another.md", ok=False)
-        self.preview("--related-pr", ok=False)
-        self.preview()
-        self.patch_metadata(issueURL=self.issue()["html_url"])
-        self.publish(ok=False)
-        self.assertEqual(self.remote()["creates"], 0)
+        self.fails(lambda: self.preview(["--no-match", "--existing-issue", "1"]), "issue-disposition-conflict")
+        self.publish()
+        self.fails(lambda: self.publish(decision=["--existing-issue", "1"]), "issue-already-linked")
+        self.assertEqual(1, self.creates)
 
     def test_invalid_private_frontmatter_is_not_echoed_in_failure(self):
-        self.todo.write_text("---\nsecret: [PRIVATE TOKEN\n---\nbody\n",
-                             encoding="utf-8")
-        result = self.preview(ok=False)
-        self.assertNotIn("PRIVATE TOKEN", json.dumps(result))
+        self.todo.write_text("---\nprivate: [PRIVATE CUSTOMER DETAIL\n---\ncontext")
+        self.fails(self.preview)
+        self.assertEqual(0, self.creates)
 
     def test_repeated_concurrent_publish_serializes_and_creates_once(self):
         preview = self.preview()
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            futures = [executor.submit(self.publish, preview) for _ in range(2)]
-            results = [future.result() for future in futures]
-        self.assertEqual(sum(result["created"] for result in results), 1)
-        self.assertEqual(self.remote()["creates"], 1)
+        def publish():
+            try: return self.publish(preview)
+            except Failure as exc: return exc.code
+        with ThreadPoolExecutor(max_workers=2) as pool: results = list(pool.map(lambda _: publish(), range(2)))
+        self.assertEqual(1, self.creates)
+        self.assertEqual(1, len(self.rows))
+        self.assertTrue(any(isinstance(result, dict) and result["published"] for result in results))
+        self.assertEqual(self.rows[0]["url"], self.metadata()["issue_url"])
 
 
 if __name__ == "__main__":

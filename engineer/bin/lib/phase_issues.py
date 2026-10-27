@@ -7,9 +7,15 @@ from .core import Failure, digest, planning_lock, read, safe_path, write
 from .text import join_frontmatter, split_frontmatter
 
 
+def source_record(path):
+    from .issues import read_record
+    return read_record(path)
+
+
 def artifacts(directory):
     suffixes = ("-SUMMARY.md", "-REVIEW.md", "-VERIFICATION.md", "-SECURITY.md", "-VALIDATION.md")
-    return [p for p in directory.iterdir() if p.is_file() and p.name.endswith(suffixes)]
+    return [p for p in directory.iterdir() if p.is_file() and
+            (p.name.endswith(suffixes) or p.name.endswith("-CONTEXT.md") and "issue_refs" in source_record(p)[0])]
 
 
 def handoff(args):
@@ -27,24 +33,40 @@ def handoff(args):
         errors.append({"reason": exc.message})
     for plan in plans:
         summary = plan.with_name(plan.name.replace("-PLAN.md", "-SUMMARY.md"))
-        metadata, body = split_frontmatter(read(summary))
+        metadata, body = source_record(summary)
         if not summary.exists() or metadata.get("status") != "complete":
             errors.append({"file": str(summary), "reason": "Missing complete worker summary"})
     for path in artifacts(directory):
-        metadata, body = split_frontmatter(read(path))
+        metadata, body = source_record(path)
         if "issue_refs" not in metadata or not isinstance(metadata["issue_refs"], list):
             errors.append({"file": str(path), "reason": "An explicit issue_refs list is required"})
             continue
+        seen = set()
         for entry in metadata["issue_refs"]:
             if not isinstance(entry, dict) or not entry.get("id"):
                 errors.append({"file": str(path), "reason": "Malformed finding declaration"})
                 continue
+            if entry["id"] in seen:
+                errors.append({"file": str(path), "id": entry["id"], "reason": "Duplicate finding identity"})
+                continue
+            seen.add(entry["id"])
+            url = entry.get("url", entry.get("issue_url", entry.get("issueURL")))
+            if url:
+                try:
+                    number = repository.require_url(str(url), "issues")
+                    if entry.get("issueNumber", number) != number or entry.get("issueRepo", repository.identity()["slug"]) != repository.identity()["slug"]:
+                        raise Failure("finding-identity-conflict", "Declared canonical issue identity disagrees")
+                    entry = {**entry, "url": url}
+                except Failure as exc:
+                    errors.append({"file": str(path), "id": entry["id"], "reason": exc.code})
             findings.append({"file": str(path), **entry})
             if entry.get("state") in ("resolved", "fixed", "dismissed"):
                 if not entry.get("evidence") and not entry.get("reason"):
                     errors.append({"file": str(path), "id": entry["id"], "reason": "Resolution requires evidence"})
             elif not entry.get("url", entry.get("issue_url")):
                 errors.append({"file": str(path), "id": entry["id"], "reason": "Unresolved finding requires a published issue"})
+            if entry.get("relationship") in ("closes", "close", "fixes", "resolving") and (entry.get("state") not in ("resolved", "fixed") or not entry.get("evidence")):
+                errors.append({"file": str(path), "id": entry["id"], "reason": "Closure requires resolved scope and actual evidence"})
     return {"ready": not errors, "errors": errors, "findings": findings, "phase": directory.name.split("-")[0]}
 
 
@@ -54,7 +76,7 @@ def declare(args):
     if path.parent != directory or not path.is_file():
         raise Failure("invalid-phase-artifact", str(path))
     snapshot = digest([path])
-    metadata, body = split_frontmatter(read(path))
+    metadata, body = source_record(path)
     if not args.has("entries-file"):
         return {"snapshotDigest": snapshot, "entries": metadata.get("issue_refs", []), "path": str(path)}
     entries = json.loads(read(safe_path(args.get("entries-file"))))
@@ -63,7 +85,21 @@ def declare(args):
     with planning_lock():
         if args.get("expect-digest") != digest([path]):
             raise Failure("phase-artifact-drift", "Declaration snapshot is stale")
-        metadata, body = split_frontmatter(read(path))
+        metadata, body = source_record(path)
+        prior = {item["id"]: item for item in metadata.get("issue_refs", []) if isinstance(item, dict) and item.get("id")}
+        ids = [item["id"] for item in entries]
+        if len(ids) != len(set(ids)):
+            raise Failure("invalid-finding-declarations", "Finding identities must be unique")
+        for identifier, old in prior.items():
+            if old.get("issue_url", old.get("url")) and identifier not in ids:
+                raise Failure("finding-publication-preserved", "A linked declaration cannot disappear from the source")
+        for item in entries:
+            old = prior.get(item["id"], {})
+            for key in ("issue_url", "url", "published", "variant"):
+                if key in old:
+                    if key in item and item[key] != old[key]:
+                        raise Failure("finding-publication-preserved", "Published identity and kind cannot be reinterpreted")
+                    item[key] = old[key]
         metadata["issue_refs"] = entries
         write(path, join_frontmatter(metadata, body))
     return {"updated": True, "entries": entries}
@@ -75,6 +111,7 @@ def audit_pr(phase, body, quick=None):
     if not packet["ready"]:
         raise Failure("phase-issues", "Phase findings are not reconciled", errors=packet["errors"])
     failures = []
+    closing_body = re.sub(r"\[[^\]]*\]\((https://[^\s)]+)\)", r"\1", body)
     for item in packet["findings"]:
         url = item.get("url", item.get("issue_url"))
         if not url:
@@ -87,7 +124,7 @@ def audit_pr(phase, body, quick=None):
         relationship = item.get("relationship", "followup")
         origin = repository.identity()
         reference = r"(?:"+re.escape(url)+r"|"+re.escape(origin["owner"]+"/"+origin["repository"])+r"#"+str(number)+r"|#"+str(number)+r")(?!\d)"
-        closing = re.search(r"(?im)\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+"+reference, body)
+        closing = re.search(r"(?im)\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+"+reference, closing_body)
         if relationship in ("closes", "close", "fixes", "resolving") and (item.get("state") not in ("resolved", "fixed") or not item.get("evidence")):
             failures.append({"id": item["id"], "reason": "Unresolved, accepted or deferred findings cannot authorize issue closure"})
         if url not in body:
@@ -105,6 +142,11 @@ def audit_pr(phase, body, quick=None):
 
 
 def accepted_human(body):
+    """Necessary recorded acceptance shape, never proof of reviewer authenticity.
+
+    The coordinator and independent reviewer must establish the actual human
+    decision and current required PASS actions from the cited source evidence.
+    """
     body = re.sub(r"(?m)^- (?=(?:Status|Reviewer|Date|Decision|Evidence):)", "", body.replace("**", ""))
     if not re.search(r"(?mi)^Status:\s*ACCEPTED\s*$", body):
         return False
