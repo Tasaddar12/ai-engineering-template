@@ -107,6 +107,9 @@ class PlanningArchive(unittest.TestCase):
         self.write(".planning/phases/01-foundation/01-CONTEXT.md", "# Context\n\n## Decisions\n\nFoundation is shared.\n")
         self.write(".planning/phases/02-feature/02-01-PLAN.md", "---\ndepends_on: [01-01]\n---\n# Plan\n")
         self.commit("Fixture implementation and completed phase records")
+        self.seal_phase()
+
+    def seal_phase(self):
         self.cli("verification.fingerprint", "1")
         report = ".planning/phases/01-foundation/01-VERIFICATION.md"
         metadata, _ = split_frontmatter(self.read(report))
@@ -199,8 +202,8 @@ class PlanningArchive(unittest.TestCase):
         progress = self.cli("init.progress")
         self.assertEqual(progress["totals"]["phases"], 1)
         self.assertEqual(progress["totals"]["plans"], 1)
-        self.assertEqual(progress["next_phase"]["number"], "2")
-        self.assertEqual(self.cli("init.plan-phase", "2")["prior_context"][0]["phase"], "1")
+        self.assertEqual(progress["next_phase"]["number"], "02")
+        self.assertEqual(self.cli("init.plan-phase", "2")["prior_context"][0]["phase"], "01")
         self.assertEqual(self.cli("phase-plan-index", "2")["plans"][0]["depends_on"], ["01-01"])
         self.assertEqual(self.cli("roadmap.analyze")["blocked"], [])
         self.assertTrue(self.cli("phase.locate", "1")["phase_found"])
@@ -486,7 +489,7 @@ class PlanningArchive(unittest.TestCase):
         self.cli("planning.archive", "phase", "1", "--apply")
         readiness = self.cli("init.complete-milestone", "v1.0")
         self.assertTrue(readiness["ready_to_complete"])
-        self.assertEqual(readiness["milestone_phases"][0]["number"], "1")
+        self.assertEqual(readiness["milestone_phases"][0]["number"], "01")
         self.assertTrue(readiness["milestone_phases"][0]["archived"])
         complete = self.cli("milestone.complete", "v1.0", "--confirm")
         self.assertEqual(complete["phases"], ["1"])
@@ -494,8 +497,42 @@ class PlanningArchive(unittest.TestCase):
         self.assertIn("1 (1 plans total)", self.read(".planning/MILESTONES.md"))
 
     def test_authored_markdown_evidence_links_are_accepted(self):
-        self.write(".planning/phases/01-foundation/01-01-SUMMARY.md", "---\nstatus: complete\n---\n# Summary\n\n## Accomplishments\n\nBuilt foundation; [verification](01-VERIFICATION.md) proves the outcome.\n")
+        path = ".planning/phases/01-foundation/01-01-SUMMARY.md"
+        metadata, _ = split_frontmatter(self.read(path))
+        self.write(path, join_frontmatter(metadata, "# Summary\n\n## Accomplishments\n\nBuilt foundation; [verification](01-VERIFICATION.md) proves the outcome.\n"))
+        self.commit("Fixture authored linked outcome")
+        self.seal_phase()
         self.assertEqual(self.cli("planning.archive", "phase", "1", "--apply")["state"], "archived")
+
+    def test_phase_numeric_alias_collision_is_ambiguous(self):
+        (self.root/".planning/phases/001-alias").mkdir()
+        before = self.snapshot()
+        self.assertEqual("archive-ambiguous", self.cli("planning.archive", "phase", "1", ok=False)["code"])
+        self.assertEqual(before, self.snapshot())
+
+    def test_archived_phase_identity_cannot_hide_active_numeric_alias(self):
+        self.cli("planning.archive", "phase", "1", "--apply")
+        (self.root/".planning/phases/001-reused").mkdir()
+        before = self.snapshot()
+        self.assertEqual("archive-collision", self.cli("planning.archive", "phase", "1", ok=False)["code"])
+        self.assertEqual(before, self.snapshot())
+
+    def test_wildcard_and_prefix_selectors_never_choose_records(self):
+        task = self.quick()
+        for kind, selector in (("phase", "01-*"), ("quick", task[:-2]), ("quick", "*"), ("phase", "01-found")):
+            with self.subTest(kind=kind, selector=selector):
+                before = self.snapshot()
+                result = self.cli("planning.archive", kind, selector, ok=False)
+                self.assertIn(result["code"], ("invalid-archive-selection", "archive-not-found"))
+                self.assertEqual(before, self.snapshot())
+
+    def test_ambiguous_replacement_adr_is_refused(self):
+        self.adr()
+        self.write(".planning/decisions/ADR-001-old.md", "---\nstatus: superseded\nsuperseded_by: [ADR-002]\n---\nHistorical reasoning remains.\n")
+        self.write(".planning/decisions/ADR-002-alias.md", "---\nstatus: accepted\n---\nA colliding replacement.\n")
+        before = self.snapshot()
+        self.assertEqual("archive-evidence-required", self.cli("planning.archive", "adr", "1", ok=False)["code"])
+        self.assertEqual(before, self.snapshot())
 
     def test_pending_journal_blocks_additional_archive_operations(self):
         task = self.quick()

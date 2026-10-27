@@ -486,6 +486,25 @@ class PlanningReviewTests(unittest.TestCase):
         self.assertTrue(all(not Path(item["record"]).is_absolute() for item in report["inventory"]))
         self.assertTrue(all(not Path(item["record"]).is_absolute() for item in report["repairs"]))
 
+    def test_retired_directory_requires_bound_historical_evidence(self):
+        directory = self.planning/"phases/01-foundation"
+        write_text(directory/"01-VERIFICATION.md", "---\nstatus: passed\n---\nA shallow claim of historical success.\n")
+        self.assertFalse(planning_review._retired(directory))
+        with self.assertRaises(VerbError) as caught:
+            planning_review.selected(Args(["--paths", str(directory)]))
+        self.assertEqual("record-not-retired", caught.exception.code)
+
+    def test_exact_selection_rejects_symlink_before_retirement_content(self):
+        target = self.planning/"notes/retired.md"
+        write_text(target, "---\nstatus: retired\n---\nKeep the original outcome.\n")
+        alias = self.planning/"notes/alias.md"
+        self._symlink(target, alias)
+        with patch.object(planning_review, "_retired") as retired:
+            with self.assertRaises(VerbError) as caught:
+                planning_review.selected(Args(["--paths", str(alias)]))
+            self.assertEqual("path-escape", caught.exception.code)
+            retired.assert_not_called()
+
     def test_uppercase_markdown_is_fingerprinted_and_changes_reject_old_preview(self):
         record = self.planning / "notes/DECISION.MD"
         write_text(record, "The original recorded instruction.\n")

@@ -175,8 +175,11 @@ def historical_phase_evidence(directory):
         if any(not isinstance(item, str) for item in details.get("files_modified", [])):
             return False
         covered.update(details.get("files_modified", []))
-        covered.update(item["path"] for item in details.get("must_haves", {}).get("artifacts", [])
-                       if isinstance(item, dict) and item.get("path"))
+        for item in details.get("must_haves", {}).get("artifacts", []):
+            if isinstance(item, dict) and item.get("path"):
+                if not isinstance(item["path"], str):
+                    return False
+                covered.add(item["path"])
     for item in covered:
         if not isinstance(item, str):
             return False
@@ -237,14 +240,26 @@ def _evidence(path, kind, args):
         replacements = metadata.get("superseded_by", [])
         if metadata.get("status") in ("superseded", "retired") and replacements:
             for identifier in replacements:
-                if not list(guarded(records.planning()/"decisions").glob(str(identifier)+"*.md")):
-                    raise Failure("archive-evidence-required", "Replacement ADR does not exist")
+                _replacement(identifier)
             return
     else:
         from .planning_review import _retired
         if _retired(path):
             return
     raise Failure("archive-evidence-required", "Explicit retirement outcome evidence is required")
+
+
+def _replacement(identifier):
+    identifier = str(identifier).removesuffix(".md")
+    if not re.fullmatch(r"ADR-\d+(?:-[\w-]+)?", identifier):
+        raise Failure("archive-evidence-required", "Replacement requires an exact ADR identity")
+    base = guarded(records.planning()/"decisions")
+    numeric = re.fullmatch(r"ADR-\d+", identifier)
+    candidates = [path for path in base.iterdir() if path.suffix == ".md" and
+                  (path.stem.startswith(identifier+"-") if numeric else path.stem == identifier)] if base.exists() else []
+    if len(candidates) != 1:
+        raise Failure("archive-evidence-required", "Replacement ADR is absent or ambiguous")
+    return guarded(candidates[0])
 
 
 def _selection(args):
@@ -268,8 +283,10 @@ def _selection(args):
                 raise Failure("invalid-archive-selection", selector)
             numeric = (kind == "phase" and re.fullmatch(r"\d+(?:\.\d+)?", stem)) or (kind == "adr" and re.fullmatch(r"ADR-\d+", stem))
             values = sorted(path for path in base.iterdir() if path.is_dir() == (kind != "adr")
+                            and (kind != "adr" or path.suffix == ".md")
                             and (path.stem == stem if kind == "adr" and not numeric else
-                                 path.name.startswith(stem+"-") if numeric else path.name == selector)) if base.exists() else []
+                                 records.number(path.name) == stem if numeric and kind == "phase" and re.match(r"^\d+(?:\.\d+)?-", path.name) else
+                                 path.name.startswith(stem+"-") if numeric and kind == "adr" else path.name == selector)) if base.exists() else []
             if len(values) != 1:
                 raise Failure("archive-ambiguous" if values else "archive-not-found", selector)
     paths = [guarded(value) for value in values]
@@ -349,6 +366,8 @@ def archive(args):
         source = guarded(entry["path"])
         if source.exists():
             raise Failure("archive-collision", "An active record reuses the archived identity")
+        if entry["kind"] == "phase" and any(records.number(path.name) == records.number(entry["id"]) for path in records.phases()):
+            raise Failure("archive-collision", "An active phase reuses the archived number")
         if args.arg(0) == "adr" and re.fullmatch(r"(?i)(?:adr-)?\d+", args.arg(1, "")):
             identity = re.match(r"(?i)ADR-(\d+)", entry["id"])[1]
             if list(guarded(records.planning()/"decisions").glob("ADR-"+identity+"*.md")):
@@ -413,7 +432,7 @@ def archive(args):
                 entry.update({"number": records.number(source.name), "name": source.name.split("-", 1)[-1], "plan_count": 0})
         if kind == "adr":
             metadata, _ = split_frontmatter(read(source))
-            replacement = list(guarded(records.planning()/"decisions").glob(str(metadata["superseded_by"][0])+"*.md"))[0]
+            replacement = _replacement(metadata["superseded_by"][0])
             entry["replacement"] = replacement.relative_to(root()).as_posix()
             from .text import join_frontmatter
             archived_name = target.relative_to(root()).as_posix()
