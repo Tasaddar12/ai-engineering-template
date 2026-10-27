@@ -101,7 +101,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `commands/validate-phase.md` | reconciled | 41 | 0 |
 | `commands/verify-work.md` | reconciled | 33 | 0 |
 | `docs/ARTIFACT-GUIDE.md` | local-only | 49 | 0 |
-| `docs/INVENTORY.md` | local-only | 451 | 2 |
+| `docs/INVENTORY.md` | local-only | 452 | 2 |
 | `docs/PHASE-WORKFLOW.md` | local-only | 46 | 0 |
 | `docs/REQUESTS.md` | local-only | 35 | 0 |
 | `docs/WORKFLOW-FEATURES.md` | local-only | 30 | 0 |
@@ -419,6 +419,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `scripts/overhaul/progress.py` | local-only | 38 | 0 |
 | `scripts/overhaul/rename.py` | local-only | 101 | 20 |
 | `scripts/overhaul/verbs.py` | local-only | 135 | 0 |
+| `scripts/run-tests.py` | local-only | 71 | 0 |
 | `skills/add-tests/SKILL.md` | local-only | 47 | 0 |
 | `skills/audit-fix/SKILL.md` | local-only | 38 | 0 |
 | `skills/audit-uat/SKILL.md` | local-only | 24 | 0 |
