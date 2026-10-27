@@ -3,11 +3,11 @@
 `planner.stall_detection_enabled` controls the wait policy for the five scoped
 planner/plan-checker spawns. It defaults to `true`. In that default-on mode each
 spawn dispatches with `run_in_background=true`, records `TS=$(date +%s)`, and
-then repeatedly calls `gsd_stall_watch` until it returns something other than
+then repeatedly calls `engineer_stall_watch` until it returns something other than
 `waiting`/`active`. This mirrors the already-shipped `executor.stall_*`
 pattern (`execute-phase.md`, bug #3212, commit `e7942c21b`) but — unlike
 that prose-only surveillance, which cannot run during a *blocking* `Agent()`
-call — each `gsd_stall_watch` call is a real, bounded bash subprocess wait
+call — each `engineer_stall_watch` call is a real, bounded bash subprocess wait
 issued as its own tool call, so it returns control to the orchestrator on
 its own schedule regardless of whether the backgrounded agent's own
 completion notification ever arrives.
@@ -15,13 +15,13 @@ completion notification ever arrives.
 When the key is explicitly the JSON boolean `false`, each scoped call instead
 omits `run_in_background`, waits through the runtime-native ordinary Agent()
 completion mechanism, and consumes that real returned result. It never calls
-`gsd_stall_watch`, so there are no periodic shell sleeps. This is still a wait,
+`engineer_stall_watch`, so there are no periodic shell sleeps. This is still a wait,
 not fire-and-forget. It deliberately gives up #2650's bounded automatic
 recovery: if the runtime loses the completion handoff, the user may need to
 interrupt and use the existing filesystem fallback. The completion markers and
 empty/truncated/unrecognized-return fallback remain unchanged.
 
-**Binding `{outputFile}` (load-bearing, not optional):** every `gsd_stall_watch`
+**Binding `{outputFile}` (load-bearing, not optional):** every `engineer_stall_watch`
 call below takes `{outputFile}` as its second argument — a literal token the
 orchestrator must substitute with the REAL path from the immediately preceding
 `run_in_background=true` Agent() call's returned `async_launched` result,
@@ -47,7 +47,7 @@ original unbounded wait. The marker path (via `{outputFile}`) is the ONLY
 working completion signal for that spawn; the artifact glob is secondary
 there.
 
-**Single-cycle by design, not one long-lived loop:** `gsd_stall_watch` sleeps
+**Single-cycle by design, not one long-lived loop:** `engineer_stall_watch` sleeps
 for exactly one `PLANNER_STALL_INTERVAL_MINUTES` and returns — it does NOT
 loop internally for the full `PLANNER_STALL_THRESHOLD_MINUTES`. A single Bash
 tool call blocking for `threshold + interval` minutes (up to 15 min at
@@ -59,9 +59,9 @@ threshold is enforced by `dispatch_ts` accumulating across calls, not by one
 call's own duration.
 
 **Never a wake-up call between cycles (#4079):** while the orchestrator waits
-between `gsd_stall_watch` cycles, it must NOT call `ScheduleWakeup` (or any
+between `engineer_stall_watch` cycles, it must NOT call `ScheduleWakeup` (or any
 host wake/sleep-scheduling tool, e.g. the `/loop` pacing surface) to
-literalize "I'll wait". The `gsd_stall_watch` bash call IS the wait mechanism;
+literalize "I'll wait". The `engineer_stall_watch` bash call IS the wait mechanism;
 wake-up scheduling is never part of it, and a partial-args `ScheduleWakeup`
 call surfaces the host's red validation error (`prompt` is required when
 `stop` is not true). Just issue the next watch call (or let the blocking
@@ -149,7 +149,7 @@ PLANNER_STALL_THRESHOLD_MINUTES=$(engineer_run query config-get planner.stall_th
 [[ "$PLANNER_STALL_INTERVAL_MINUTES" =~ ^[0-9]+$ ]] || PLANNER_STALL_INTERVAL_MINUTES=5
 [[ "$PLANNER_STALL_THRESHOLD_MINUTES" =~ ^[0-9]+$ ]] || PLANNER_STALL_THRESHOLD_MINUTES=10
 
-# gsd_stall_should_recover — pure decision function, no IO, no sleeping. Given how
+# engineer_stall_should_recover — pure decision function, no IO, no sleeping. Given how
 # long the orchestrator has been waiting plus two liveness signals (a completion
 # marker found in the agent's output file, and fresh on-disk artifact activity),
 # decides whether to keep waiting, treat the wait as satisfied, or auto-surface the
@@ -157,7 +157,7 @@ PLANNER_STALL_THRESHOLD_MINUTES=$(engineer_run query config-get planner.stall_th
 # itself — it only classifies. Re-validates both numeric args as bare non-negative
 # integers (defense in depth — safe to call with any input, not just the resolved
 # config globals above) before either ever reaches arithmetic expansion.
-gsd_stall_should_recover() {
+engineer_stall_should_recover() {
   local elapsed_seconds="$1" threshold_minutes="$2" marker_found="$3" artifact_fresh="$4"
   [[ "$elapsed_seconds" =~ ^[0-9]+$ ]] || elapsed_seconds=0
   [[ "$threshold_minutes" =~ ^[0-9]+$ ]] || threshold_minutes=10
@@ -174,7 +174,7 @@ gsd_stall_should_recover() {
   echo "waiting"; return 0
 }
 
-# gsd_stall_watch — ONE bounded, real (non-LLM-side) sleep-and-check cycle, not
+# engineer_stall_watch — ONE bounded, real (non-LLM-side) sleep-and-check cycle, not
 # a long-lived loop (see "Single-cycle by design" above — a single Bash tool
 # call spanning the full threshold risks the host tool's own timeout killing
 # it first). Sleeps exactly one PLANNER_STALL_INTERVAL_MINUTES, then checks for
@@ -185,7 +185,7 @@ gsd_stall_should_recover() {
 # are completion markers. Prints exactly one of: marker_received | active |
 # waiting | stalled. The caller repeats the call while the result is
 # waiting/active; any other result ends the wait.
-gsd_stall_watch() {
+engineer_stall_watch() {
   local dispatch_ts="$1" output_file="$2" artifact_glob="$3"; shift 3
   local markers=("$@")
   [[ "$dispatch_ts" =~ ^[0-9]+$ ]] || dispatch_ts=$(date +%s)
@@ -212,6 +212,6 @@ gsd_stall_watch() {
   if [ -n "$(find $artifact_glob -mmin "-${PLANNER_STALL_INTERVAL_MINUTES}" 2>/dev/null)" ]; then
     artifact_fresh="true"
   fi
-  gsd_stall_should_recover "$elapsed" "$PLANNER_STALL_THRESHOLD_MINUTES" "$marker_found" "$artifact_fresh"
+  engineer_stall_should_recover "$elapsed" "$PLANNER_STALL_THRESHOLD_MINUTES" "$marker_found" "$artifact_fresh"
 }
 ```

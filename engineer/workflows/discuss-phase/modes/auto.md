@@ -2,10 +2,7 @@ Apply response_language to all user-facing prose — narration between tool call
 
 # --auto mode — fully autonomous discuss-phase
 
-> **Lazy-loaded.** Read this file from `workflows/discuss-phase.md` when
-> `--auto` is present in `$ARGUMENTS`. After the discussion completes, the
-> parent's `auto_advance` step also reads `modes/chain.md` to drive the
-> auto-advance to plan-phase.
+> **Lazy-loaded.** Read this file when `--auto` is present.
 
 ## Effect across steps
 
@@ -29,13 +26,12 @@ Apply response_language to all user-facing prose — narration between tool call
   ```
 - After all areas are auto-resolved, skip the "Explore more gray areas"
   prompt and proceed directly to `write_context`.
-- After `write_context`, **auto-advance** to plan-phase via `modes/chain.md`.
 
 ## CRITICAL — Auto-mode pass cap
 
 In `--auto` mode, the discuss step MUST complete in a **single pass**. After
 writing CONTEXT.md once, you are DONE — proceed immediately to
-`write_context` and then auto_advance. Do NOT re-read your own CONTEXT.md to
+`record_decisions`, `git_commit` and `update_state`, then stop. Do NOT re-read your own CONTEXT.md to
 find "gaps", "undefined types", or "missing decisions" and run additional
 passes. This creates a self-feeding loop where each pass generates references
 that the next pass treats as gaps, consuming unbounded time and resources.
@@ -45,9 +41,4 @@ complete. Move on.
 
 ## Combination rules
 
-- `--auto --text` / `--auto --batch`: text/batch overlays are no-ops in
-  auto mode (no user prompts to render).
-- `--auto --analyze`: trade-off tables can still be logged for the audit
-  trail; selection still uses the recommended option.
-- `--auto --power`: `--power` wins (power mode generates files for offline
-  answering — incompatible with autonomous selection).
+- `--auto --text`: text overlay is a no-op because there are no user prompts to render.

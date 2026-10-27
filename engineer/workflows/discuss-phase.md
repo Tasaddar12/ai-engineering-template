@@ -1,15 +1,14 @@
-<!-- gsd:loop-host
-step: discuss
-points: discuss:pre, discuss:post
-agent-roles: orchestrator
-produces: CONTEXT.md
-consumes:
--->
+<!-- workflow: discuss-phase; produces: CONTEXT.md, DISCUSSION-LOG.md -->
 <purpose>
 Extract implementation decisions that downstream agents need. Analyze the phase to identify gray areas, let the user choose what to discuss, then deep-dive each selected area until satisfied.
 
 You are a thinking partner, not an interviewer. The user is the visionary — you are the builder. Your job is to capture decisions that will guide research and planning, not to figure out implementation yourself.
 </purpose>
+
+<authority>
+Discuss every phase before planning. Record only actual questions, presented options, evidence, replies and explicitly delegated decisions. Discussion completion never grants implementation permission. A recommendation, mode flag, recorded plan or readiness claim cannot authorize execution.
+</authority>
+
 
 <required_reading>
 @engineer/references/domain-probes.md
@@ -18,25 +17,7 @@ You are a thinking partner, not an interviewer. The user is the visionary — yo
 </required_reading>
 
 <progressive_disclosure>
-**Per-mode bodies, templates, and the advisor flow are lazy-loaded** to keep
-this file under the discuss-phase byte budget (32000 bytes, #717; mirrors the agent size-budget convention). Read only the files needed for the current invocation:
-
-| When | Read |
-|---|---|
-| `--power` in $ARGUMENTS | `workflows/discuss-phase/modes/power.md` (then exit standard flow) |
-| `--all` in $ARGUMENTS | `workflows/discuss-phase/modes/all.md` overlay |
-| `--auto` in $ARGUMENTS | `workflows/discuss-phase/modes/auto.md` + `workflows/discuss-phase/modes/chain.md` (auto-advance) |
-| `--chain` in $ARGUMENTS | `workflows/discuss-phase/modes/default.md` + `workflows/discuss-phase/modes/chain.md` |
-| `--text` in $ARGUMENTS or `workflow.text_mode: true` | `workflows/discuss-phase/modes/text.md` overlay |
-| `--batch` in $ARGUMENTS | `workflows/discuss-phase/modes/batch.md` overlay |
-| `--analyze` in $ARGUMENTS | `workflows/discuss-phase/modes/analyze.md` overlay |
-| ADVISOR_MODE = true (USER-PROFILE.md exists) | `workflows/discuss-phase/modes/advisor.md` |
-| no flags above | `workflows/discuss-phase/modes/default.md` |
-| in `write_context` step | `workflows/discuss-phase/templates/context.md` |
-| in `git_commit` step | `workflows/discuss-phase/templates/discussion-log.md` |
-| writing checkpoints | `workflows/discuss-phase/templates/checkpoint.json` |
-
-Do not Read mode files unless the corresponding flag/condition is set.
+Load shared steps in this file. Load `engineer/workflows/discuss-phase/modes/all.md` for `--all`, `modes/auto.md` for `--auto`, `modes/text.md` before questions when `--text` or configured text mode is active, and `modes/default.md` for the ordinary discussion loop. Load context, checkpoint and discussion-log templates when their artifacts are written. Do not load unrelated mode files.
 </progressive_disclosure>
 
 <downstream_awareness>
@@ -104,102 +85,13 @@ Phase: "API documentation"       → Structure/navigation, Code examples depth, 
 - **"Other" with empty text** (the user wants to type freeform): output `"What would you like to discuss?"`, STOP generating, wait for the user's next message, then reflect it back and continue. Do NOT retry AskUserQuestion or call any tools.
 - **Any other empty response:** retry once with the same parameters; if still empty, present options as a plain-text numbered list. Never proceed with empty input.
 
-**Text mode** (`--text` or `workflow.text_mode: true`): follow `workflows/discuss-phase/modes/text.md` — do not use AskUserQuestion at all.
+**Text mode** (`--text` or `workflow.text_mode: true`): follow `engineer/workflows/discuss-phase/modes/text.md` — do not use AskUserQuestion at all.
 </answer_validation>
 
 <process>
 
-**Express path available:** If you already have a PRD or acceptance criteria document, use `/plan-phase {phase} --prd path/to/prd.md` to skip this discussion and go straight to planning.
-
-<step name="initialize" priority="first">
-Phase number from argument (required).
-
-```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
-$ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-_engineer_identity_ok() {
-  [ -f "$1" ] || return 1
-  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
-}
-_engineer_select() {
-  for _engineer_candidate do
-    if _engineer_identity_ok "$_engineer_candidate"; then
-      ENGINEER_RUN="$_engineer_candidate"
-      return 0
-    fi
-  done
-  return 1
-}
-if [ -n "${ENGINEER_RUN:-}" ]; then
-  _engineer_identity_ok "$ENGINEER_RUN" || {
-    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
-    exit 1
-  }
-else
-  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
-  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
-  _engineer_select \
-    "$_engineer_root/engineer/bin/engineer_run" \
-    "$_engineer_runtime_root/engineer/bin/engineer_run" \
-    "$_engineer_root/.claude/engineer/bin/engineer_run" \
-    "$_engineer_root/.codex/engineer/bin/engineer_run" \
-    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
-    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
-    "$_engineer_path_candidate" || {
-    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
-    exit 1
-  }
-fi
-export ENGINEER_RUN
-engineer_run() {
-  sh "$ENGINEER_RUN" "$@"
-}
-if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
-  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
-fi
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.phase-op ${GSD_WS:+--ws=${GSD_WS##* }} "${PHASE}"); [[ "$INIT" == @file:* ]] && INIT=$(cat "${INIT#@file:}")
-AGENT_SKILLS_ADVISOR=$(engineer_run query agent-skills gsd-advisor-researcher ${GSD_WS:+--ws=${GSD_WS##* }})
-```
-
-Parse JSON for: `commit_docs`, `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `has_research`, `has_context`, `has_plans`, `has_verification`, `plan_count`, `roadmap_exists`, `planning_exists`, `has_spec`, `spec_path`, `response_language`.
-
-**If `response_language` is set:** All user-facing output of this workflow — narration between tool calls, status updates, progress notes, findings, questions, prompts, and explanations — MUST be presented in `{response_language}`. Technical terms, code, file paths, and subagent prompts stay in English — only user-facing output is translated.
-
-**If `phase_found` is false:**
-```
-Phase [X] not found in roadmap.
-Use /progress ${GSD_WS} to see available phases.
-```
-Exit workflow.
-
-**Mode dispatch — Read mode files lazily based on flags in $ARGUMENTS:**
-
-```bash
-# Detect advisor mode (file-existence guard — no Read until needed)
-if [ -f "$HOME/.claude/engineer/USER-PROFILE.md" ]; then
-  ADVISOR_MODE=true
-else
-  ADVISOR_MODE=false
-fi
-```
-
-- If `--power` in $ARGUMENTS: `Read(workflows/discuss-phase/modes/power.md)` and execute it end-to-end. Do NOT continue with the steps below.
-- Otherwise, continue. Per-flag overlay reads happen at their relevant steps:
-  - `--all` → Read `workflows/discuss-phase/modes/all.md` before `present_gray_areas`.
-  - `--auto` → Read `workflows/discuss-phase/modes/auto.md` before `check_existing` (it overrides several steps).
-  - `--chain` → Read `workflows/discuss-phase/modes/chain.md` before `auto_advance`.
-  - `--text` (or `workflow.text_mode: true`) → Read `workflows/discuss-phase/modes/text.md` before any AskUserQuestion call.
-  - `--batch` → Read `workflows/discuss-phase/modes/batch.md` before `discuss_areas`.
-  - `--analyze` → Read `workflows/discuss-phase/modes/analyze.md` before `discuss_areas`.
-  - `ADVISOR_MODE = true` → Read `workflows/discuss-phase/modes/advisor.md` before `analyze_phase` (it changes the discussion flow and adds an `advisor_research` substep).
-  - No flags → Read `workflows/discuss-phase/modes/default.md` before `discuss_areas`.
-
-**If `phase_found` is true:** Continue to `check_blocking_antipatterns`.
+<step name="initialize">
+Require a phase identifier. Parse only `--all`, `--auto` and `--text`; reject unsupported options without silently changing their meaning. Read and execute `engineer/workflows/_runtime-launcher.snippet.sh`, then run `engineer_run query phase.locate "${PHASE_NUMBER}"`. Stop on a missing or inconsistent phase and report the missing record with `/progress` as the inspection route. Use the locator's quoted `worktree` path; never guess a directory from the phase name. Run `engineer_run query init.phase-op "${PHASE_NUMBER}"` there. Read `phase_found`, `phase_dir`, `expected_phase_dir`, `padded_phase`, `goal`, `text_mode`, `paths`, `artifacts` and `state`. Apply response_language to prose only. If `--auto` is present, load its mode before `check_existing`; `--all` selects all areas; text mode changes rendering, not authority.
 </step>
 
 <step name="check_blocking_antipatterns" priority="first">
@@ -220,22 +112,15 @@ If `.continue-here.md` exists, parse its "Critical Anti-Patterns" table for rows
 
 Write these answers inline before continuing. If a blocking anti-pattern cannot be answered from the context in `.continue-here.md`, stop and ask the user for clarification.
 
-**If no `.continue-here.md` exists, or no `blocking` rows are found:** Proceed directly to `check_spec`.
+**If no `.continue-here.md` exists, or no `blocking` rows are found:** Proceed directly to `open_session`.
+</step>
+
+<step name="open_session">
+Run `engineer_run query session.status` and inspect the locator's session lineage. Reuse the matching open phase session. Adopt an already named clean isolated checkout with `engineer_run query session.adopt phase "${PHASE_NUMBER}"` only when it is the intended session and ownership is established; otherwise run `engineer_run query session.open phase "${PHASE_NUMBER}"`. Never infer adoption from the current branch alone. Stop on a failed result. Read the returned worktree, branch, base and status; `cd "${worktree}"`, then re-run `engineer_run query init.phase-op "${PHASE_NUMBER}"` in that checkout. Report the session branch/path in one line. Leave the session open; do not deliver it here. Continue to `check_spec`.
 </step>
 
 <step name="check_spec">
-Check whether the phase has a SPEC.md (from the spec-phase workflow). SPEC.md locks requirements before implementation decisions. Init already resolved it: use `has_spec` and `spec_path`, which come from one shared definition of "the phase SPEC" (a plain `*-SPEC.md`, never `*-AI-SPEC.md` or `*-UI-SPEC.md`). Do not glob for it.
-
-**If `has_spec` is true:**
-1. Read the SPEC.md file at `spec_path`.
-2. Count requirements (numbered items in `## Requirements`).
-3. Display: `Found SPEC.md — {N} requirements locked. Focusing on implementation decisions.`
-4. Set `spec_loaded = true`.
-5. Store requirements, boundaries, and acceptance criteria as `<locked_requirements>` — these flow directly into CONTEXT.md without re-asking.
-
-**If `has_spec` is false:** Continue with `spec_loaded = false`.
-
-**Note:** `*-AI-SPEC.md` (from the ai-integration-phase workflow) and `*-UI-SPEC.md` (from the ui-phase workflow) are different artifacts and never count as the phase SPEC.
+Use `has_spec` and the SPEC entry in INIT `artifacts`; do not assume a `spec_path` field or glob a UI artifact as a requirements spec. When present, read that exact SPEC in full, count its numbered requirements, and preserve its boundaries, constraints and acceptance as locked requirements. Display the requirement count and discuss implementation decisions only. `*-UI-SPEC.md` is a separate UI contract. When absent, proceed without inventing locked requirements.
 </step>
 
 <step name="check_existing">
@@ -274,39 +159,7 @@ Check `has_plans` and `plan_count` from init. **If `has_plans` is true:**
 </step>
 
 <step name="load_prior_context">
-Read project-level and prior phase context to avoid re-asking decided questions.
-
-```bash
-cat .planning/PROJECT.md 2>/dev/null || true
-cat .planning/REQUIREMENTS.md 2>/dev/null || true
-cat .planning/STATE.md 2>/dev/null || true
-```
-
-Read at most **3** prior CONTEXT.md files (most recent 3 phases before current). If `.planning/DECISIONS-INDEX.md` exists, read that instead — it is a bounded rolling summary that supersedes per-phase reads.
-
-```bash
-(find .planning/phases -name "*-CONTEXT.md" 2>/dev/null || true) | sort -r
-```
-
-For each CONTEXT.md read: extract `<decisions>` (locked preferences), `<specifics>` (particular references), and patterns (e.g., "user prefers minimal UI", "user rejected single-key shortcuts").
-
-**Spike/sketch findings:** Check for project-local skills:
-```bash
-SPIKE_FINDINGS=$(ls ./.claude/skills/spike-findings-*/SKILL.md 2>/dev/null | head -1 || true)
-SKETCH_FINDINGS=$(ls ./.claude/skills/sketch-findings-*/SKILL.md 2>/dev/null | head -1 || true)
-RAW_SPIKES=$(ls .planning/spikes/MANIFEST.md 2>/dev/null)
-RAW_SKETCHES=$(ls .planning/sketches/MANIFEST.md 2>/dev/null)
-```
-
-If findings skills exist, read SKILL.md and reference files; extract validated patterns, landmines, constraints, design decisions. Add them to `<prior_decisions>`.
-
-If raw spikes/sketches exist but no findings skill, note: `⚠ Unpackaged spikes/sketches detected — run /spike --wrap-up or /sketch --wrap-up to make findings available.`
-
-Build internal `<prior_decisions>` with sections for Project-Level (from PROJECT.md / REQUIREMENTS.md), From Prior Phases (per-phase decisions), and From Spike/Sketch Findings (validated patterns, landmines, design decisions).
-
-**Usage downstream:** `analyze_phase` skips already-decided gray areas; `present_gray_areas` annotates options ("You chose X in Phase 5"); `discuss_areas` pre-fills or flags conflicts.
-
-**If no prior context exists:** Continue without — expected for early phases.
+Read PROJECT.md and REQUIREMENTS.md and use INIT `state` for current position and decisions. Resolve prior phases from `engineer_run query roadmap.analyze`; read at most the three most recent prior CONTEXT files. Do not invent a separate decisions index. Extract actual locked preferences, specific references and established patterns. Build `<prior_decisions>` with Project-Level and From Prior Phases sections. Use it to avoid re-asking settled questions, annotate choices with the earlier decision, and flag real conflicts. If prior context is absent, continue without it.
 </step>
 
 <step name="cross_reference_todos">
@@ -334,13 +187,6 @@ Read `@engineer/references/scout-codebase.md` — it contains the phase-type→m
 3. Build internal `<codebase_context>` per the reference's output schema
 </step>
 
-<step name="dispatch_discuss_pre_hooks">
-```bash
-DISCUSS_PRE_HOOKS_JSON=$(engineer_run loop render-hooks discuss:pre --raw)
-```
-Apply each entry in `activeHooks` per @engineer/references/loop-hook-dispatch.md. Empty list → continue to `analyze_phase`.
-</step>
-
 <step name="analyze_phase">
 Analyze the phase to identify gray areas. Use both `prior_decisions` and `codebase_context` to ground the analysis.
 
@@ -359,9 +205,8 @@ Analyze the phase to identify gray areas. Use both `prior_decisions` and `codeba
 
 3. **Gray areas** — For each relevant category, identify 1-2 specific ambiguities that would change implementation. Annotate with code context where relevant.
 
-4. **Skip assessment** — If no meaningful gray areas exist (pure infrastructure, clear-cut implementation, all already decided), the phase may not need discussion.
+4. **Settled-area assessment** — If the phase has no meaningful undecided gray areas, record the existing evidence and actual confirmation rather than fabricate a question sequence. Every phase still needs a genuine discussion record before planning.
 
-**Advisor mode hand-off:** If `ADVISOR_MODE` is true, follow `workflows/discuss-phase/modes/advisor.md` for the rest of analyze/discuss flow (it adds an `advisor_research` substep and replaces the standard `discuss_areas` with table-first selection). The detection block (USER-PROFILE.md existence + non-technical-owner signals + calibration tier resolution) lives in that file — read it once when ADVISOR_MODE is true and follow its rules.
 </step>
 
 <step name="present_gray_areas">
@@ -394,22 +239,11 @@ We'll clarify HOW to implement this. (New capabilities belong in other phases.)
 
 **Do NOT include a "skip" or "you decide" option.** User ran this command to discuss — give real choices.
 
-Continue to `discuss_areas` with selected areas (or to `advisor_research` per `modes/advisor.md` if `ADVISOR_MODE` is true).
+Continue to `discuss_areas` with the selected areas.
 </step>
 
 <step name="discuss_areas">
-Discussion behavior is defined by the active mode file(s):
-
-- **Advisor mode (ADVISOR_MODE = true):** follow `workflows/discuss-phase/modes/advisor.md` — research-backed comparison tables, table-first selection.
-- **--auto:** follow `workflows/discuss-phase/modes/auto.md` — Claude picks recommended option for every question; no AskUserQuestion. Single-pass cap enforced.
-- **Default (no flags):** follow `workflows/discuss-phase/modes/default.md` — 4 single-question turns per area, then check whether to continue.
-
-Overlays (combine with the active mode):
-- `--text` → `workflows/discuss-phase/modes/text.md` (replace AskUserQuestion with plain-text numbered lists)
-- `--batch` → `workflows/discuss-phase/modes/batch.md` (group 2–5 questions per turn)
-- `--analyze` → `workflows/discuss-phase/modes/analyze.md` (trade-off table before each question)
-
-**Overlay stacking:** overlays combine and apply outer→inner in fixed order `--analyze` → `--batch` → `--text` (e.g., `--batch --analyze` = trade-off table per question group; add `--text` for plain-text rendering). Mode-specific precedence (e.g., `--auto --power`) is documented in each overlay file's "Combination rules" section.
+Use `engineer/workflows/discuss-phase/modes/default.md` for four focused single-question turns per area followed by the continue/next-area choice. `--auto` selects and logs recommended options in one pass; it never simulates a human reply. Apply `modes/text.md` only as the question-rendering overlay when needed.
 
 All modes preserve the universal rules below.
 
@@ -417,14 +251,14 @@ All modes preserve the universal rules below.
 
 - **Canonical ref accumulation** — when the user references a doc/spec/ADR during any answer, immediately Read it (or confirm it exists) and add it to the canonical refs accumulator with full relative path. Use what you learned to inform subsequent questions. These docs are often MORE important than ROADMAP.md refs because the user specifically wants downstream agents to follow them.
 - **Scope creep** — if user mentions something outside the phase domain, capture as deferred idea and redirect.
-- **Incremental checkpoint** — after each area completes, write `${phase_dir}/${padded_phase}-DISCUSS-CHECKPOINT.json`. Read `workflows/discuss-phase/templates/checkpoint.json` for the schema. The checkpoint is structured state, not the canonical CONTEXT.md (`write_context` produces the canonical output). On session resume, the parent's `check_existing` step detects the checkpoint and offers to resume.
+- **Incremental checkpoint** — after each area completes, write `${phase_dir}/${padded_phase}-DISCUSS-CHECKPOINT.json`. Read `engineer/workflows/discuss-phase/templates/checkpoint.json` for the schema. The checkpoint is structured state, not the canonical CONTEXT.md (`write_context` produces the canonical output). On session resume, the parent's `check_existing` step detects the checkpoint and offers to resume.
 - **Discussion log accumulation** — for each question asked, accumulate area name, options presented, user's selection, follow-up notes. Used by `git_commit` to write DISCUSSION-LOG.md.
 </step>
 
 <step name="write_context">
 Create CONTEXT.md and DISCUSSION-LOG.md.
 
-DISCUSSION-LOG.md is for human reference only (audits, retrospectives) and is NOT consumed by downstream agents (researcher, planner, executor).
+DISCUSSION-LOG.md is required evidence of the actual discussion. Record every actual question, options, evidence, reply, follow-up and delegated choice. Never manufacture a user answer or a research result. Downstream phase-researcher and planner use CONTEXT.md; the log preserves the audit trail.
 
 **Find or create phase directory:**
 
@@ -439,7 +273,7 @@ Set `phase_dir="${expected_phase_dir}"` after creation.
 
 **Read the CONTEXT.md template now (lazy-loaded):**
 ```
-Read(workflows/discuss-phase/templates/context.md)
+Read(engineer/workflows/discuss-phase/templates/context.md)
 ```
 
 The template documents variable substitutions and conditional sections. Substitute live values for `[X]`, `[Name]`, `[date]`, `${padded_phase}`, `{N}`. Include `<spec_lock>` only when `spec_loaded = true`. Include "Folded Todos" / "Reviewed Todos" subsections only when the `cross_reference_todos` step folded or reviewed todos.
@@ -453,109 +287,28 @@ The template documents variable substitutions and conditional sections. Substitu
 Write the file.
 </step>
 
-<step name="dispatch_discuss_post_hooks">
-```bash
-DISCUSS_POST_HOOKS_JSON=$(engineer_run loop render-hooks discuss:post --raw)
-```
-Apply each entry in `activeHooks` per @engineer/references/loop-hook-dispatch.md. Empty list → continue to `confirm_creation`.
+<step name="confirm_creation">
+Show the created CONTEXT and DISCUSSION-LOG paths, the decisions captured by area, explicitly delegated discretion and deferred ideas. Keep unrelated ideas out of the phase scope and do not create new todos from them. End with: "Planning and implementation await your instruction." Do not launch another workflow from discussion completion.
 </step>
 
-<step name="confirm_creation">
-Present summary and next steps:
-
-```
-Created: .planning/phases/${PADDED_PHASE}-${SLUG}/${PADDED_PHASE}-CONTEXT.md
-
-## Decisions Captured
-### [Category]
-- [Key decision]
-
-[If deferred ideas exist:]
-## Noted for Later
-- [Deferred idea] — future phase
-
----
-
-## ▶ Next Up — [${PROJECT_CODE}] ${PROJECT_TITLE}
-
-**Phase ${PHASE}: [Name]** — [Goal from ROADMAP.md]
-
-`/clear` then:
-
-`/plan-phase ${PHASE} ${GSD_WS}`
-
----
-
-**Also available:** `--chain` for auto plan+execute after; `/plan-phase ${PHASE} --skip-research ${GSD_WS}` to plan without research; `/ui-phase ${PHASE} ${GSD_WS}` for UI design contracts; review/edit CONTEXT.md before continuing.
-```
+<step name="record_decisions">
+Record decisions that outlive this phase through `engineer_run query state.add-decision "${DECISION}" --rationale "${RATIONALE}" --outcome "Accepted"`. Keep a small set of consequential decisions; discussion details stay in CONTEXT. Before recommending a technology, run an authorized targeted spike or check and record what actually ran, its outcome and limitations. If that execution is deferred, leave the choice unvalidated and state the pending evidence rather than calling it accepted on technical grounds. Do not rerun a check the user explicitly postponed.
 </step>
 
 <step name="git_commit">
-**Write DISCUSSION-LOG.md before committing.**
-
-**File location:** `${phase_dir}/${padded_phase}-DISCUSSION-LOG.md`
-
-**Read the DISCUSSION-LOG.md template now (lazy-loaded):**
-```
-Read(workflows/discuss-phase/templates/discussion-log.md)
-```
-
-Substitute live values from the discussion log accumulator (area names, options presented, user selections, notes, deferred ideas, Claude's discretion items). Write the file.
-
-**Clean up checkpoint file** — CONTEXT.md is now the canonical record:
-```bash
-rm -f "${phase_dir}/${padded_phase}-DISCUSS-CHECKPOINT.json"
-```
-
-Commit phase context and discussion log:
-```bash
-engineer_run query commit "docs(${padded_phase}): capture phase context" --files "${phase_dir}/${padded_phase}-CONTEXT.md" "${phase_dir}/${padded_phase}-DISCUSSION-LOG.md"
-```
-
-Confirm: "Committed: docs(${padded_phase}): capture phase context"
+Read `engineer/workflows/discuss-phase/templates/discussion-log.md` in full and write the real accumulator to `${phase_dir}/${padded_phase}-DISCUSSION-LOG.md`. Require it before committing. Preserve the full context template, actual decisions, canonical references, folded pending items and deferred ideas. Remove an obsolete checkpoint only after its contents are accounted for in the canonical context/log. Commit the exact CONTEXT, DISCUSSION-LOG, PROJECT Key Decisions and STATE paths with `engineer_run query commit "docs(${padded_phase}): record phase discussion" --files ...`; do not stage unrelated work.
 </step>
 
 <step name="update_state">
-Update STATE.md with session info:
-
-```bash
-engineer_run query state.record-session \
-  --stopped-at "Phase ${PHASE} context gathered" \
-  --resume-file "${phase_dir}/${padded_phase}-CONTEXT.md"
-
-engineer_run query commit "docs(state): record phase ${PHASE} context session" --files .planning/STATE.md
-```
-</step>
-
-<step name="auto_advance">
-Auto-advance behavior is defined in `workflows/discuss-phase/modes/chain.md`.
-
-If `--auto`, `--chain`, or `workflow.auto_advance` is enabled, Read that file now and execute its `auto_advance` step (flag-syncing, banner, plan-phase dispatch, return-status branching).
-
-Otherwise, end here — `confirm_creation` already ran; do not route back to it.
+Run `engineer_run query state.record-session --stopped-at "Phase ${PHASE_NUMBER} discussion complete" --resume-file "${phase_dir}/${padded_phase}-CONTEXT.md" --status "Discussion complete"`. Commit the resulting record change if it was not already included in the discussion slice. Keep the session open. Stop after reporting the discussion result; planning and implementation each require their own instruction.
 </step>
 
 </process>
 
 <success_criteria>
-- Phase validated against roadmap
-- Prior context loaded (PROJECT.md, REQUIREMENTS.md, STATE.md, prior CONTEXT.md files)
-- Already-decided questions not re-asked (carried forward from prior phases)
-- Codebase scouted for reusable assets, patterns, and integration points
-- Gray areas identified with code and prior-decision annotations
-- User selected which areas to discuss (or `--all`/`--auto` auto-selected)
-- Each selected area explored under the active mode's rules until satisfied
-- Scope creep redirected to deferred ideas
-- CONTEXT.md captures actual decisions, not vague vision
-- CONTEXT.md includes canonical_refs section with full file paths to every spec/ADR/doc downstream agents need (MANDATORY)
-- CONTEXT.md includes code_context section with reusable assets and patterns
-- Deferred ideas preserved for future phases
-- STATE.md updated with session info
-- User knows next steps
-- Checkpoint file written after each area completes (incremental save)
-- Interrupted sessions can be resumed from checkpoint
-- Checkpoint file cleaned up after successful CONTEXT.md write
-- `--chain` triggers interactive discuss followed by auto plan+execute (no auto-answering)
-- `--chain` and `--auto` both persist chain flag and auto-advance to plan-phase
-- Per-mode bodies, templates, and advisor flow are lazy-loaded — parent stays under the workflow size budget enforced by `tests/workflow-size-budget.test.cjs`
+- Every phase was actually discussed, with locked requirements and prior decisions respected.
+- CONTEXT includes canonical references and concrete code context; DISCUSSION-LOG contains only real interactions and explicitly delegated decisions.
+- Consequential Key Decisions have actual validation evidence or a clearly pending limitation.
+- The phase session was joined, records were committed, and the session stays open.
+- Discussion did not grant or begin implementation.
 </success_criteria>
