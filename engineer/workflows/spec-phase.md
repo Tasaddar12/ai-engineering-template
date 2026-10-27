@@ -228,10 +228,10 @@ classifier.
 
 **Runtime coverage compute — canonical Python verb:**
 
-Write the Requirements gathered in THIS spec session to a temporary JSON file, one `{id,text,text_en?,shapes?}` per actual requirement. Preserve the exact SPEC text and IDs; translate only text_en. The following heredoc is an authoring example: replace every placeholder before execution. Use portable suffixless mktemp then append .json; do not build/install a second engine or run an adopting project's build scripts.
+Write the Requirements gathered in THIS spec session to a temporary JSON file, one `{id,text,text_en?,shapes?}` per actual requirement. Preserve the exact SPEC text and IDs; translate only text_en. The following heredoc is an authoring example: replace every placeholder before execution. The runtime confines JSON input paths to the repository. Use portable suffixless mktemp inside the actual phase directory then append .json; do not build/install a second engine or run an adopting project's build scripts.
 
 ```bash
-REQS_JSON=$(mktemp "${TMPDIR:-/tmp}/edge-probe-reqs-XXXXXX") || exit 1
+REQS_JSON=$(mktemp "${phase_dir}/edge-probe-reqs-XXXXXX") || exit 1
 mv "$REQS_JSON" "${REQS_JSON}.json" || exit 1
 REQS_JSON="${REQS_JSON}.json"
 cat > "$REQS_JSON" <<'JSON'
@@ -249,7 +249,7 @@ if ! COVERAGE=$(engineer_run query spec.edge-probe "$REQS_JSON"); then
   printf '%s\n' 'ERROR: edge probe failed; correct the input/runtime contract and rerun. Never proceed with empty coverage.' >&2
   exit 1
 fi
-rm -f "$REQS_JSON"
+# Keep REQS_JSON until final resolution projection below.
 if ! printf '%s' "$COVERAGE" | python -I -c 'import json,sys; r=json.load(sys.stdin); assert isinstance(r,dict) and isinstance(r.get("items"),list) and isinstance(r.get("coverage"),dict); c=r["coverage"]; assert all(isinstance(c.get(k),int) and c[k]>=0 for k in ("applicable","resolved","unresolved","unclassified")); assert isinstance(c.get("byVerification"),dict) and all(isinstance(c["byVerification"].get(k),int) for k in ("explicit","backstop"))'; then
   printf '%s\n' 'ERROR: malformed edge coverage report; refusing prose-only fallthrough.' >&2
   exit 1
@@ -320,6 +320,18 @@ risks a vacuous edge test. Leaving it `unresolved` keeps the zero-cue requiremen
 (never a silent drop) without fabricating an edge — which is exactly #1110's purpose: surface
 it for review, do not auto-handle it.
 
+**Return final deterministic resolution coverage.** Keep the actual `REQS_JSON` from the initial dispatch. Write `EDGE_RESOLUTIONS_JSON` inside the repository as an array of `{requirement_id,category,status,verification?,resolution?,reason?}` for every engine-raised row. Resolved rows require a nonempty resolution and tier explicit/backstop; dismissed rows require a nonempty reason. Unknown/duplicate IDs, shapes, categories and duplicate resolution keys fail closed; resolutions naming an edge the engine did not raise are rejected. Dispatch after resolution when execution is permitted:
+
+```bash
+if ! FINAL_EDGES=$(engineer_run query spec.edge-probe "$REQS_JSON" --resolutions "$EDGE_RESOLUTIONS_JSON"); then
+  printf '%s\n' 'ERROR: final edge resolution projection failed; keep coverage Pending and repair the exact input.' >&2
+  exit 1
+fi
+printf '%s\n' "$FINAL_EDGES"
+```
+
+Consume every final item and all coverage fields (including unclassified and explicit/backstop counts), joining IDs and categories to the initial floor. Preserve manual extra categories alongside this full report, with their own lifecycle and resolution evidence; never feed a manual category the engine did not raise into its resolutions file or present deterministic counts as counts of the larger union. Where approved authored shapes faithfully express a missed shape, update that requirement input and rerun the initial floor before projecting its resolutions. Authored `shapes: []` remains an explicit opt-out; nonempty zero-cue prose without authored shapes yields unclassified. Do not auto-resolve an unclassified row. Retain original `text`, faithful optional `text_en`, authored shapes and both returned reports until SPEC rows are reconciled, then remove only these owned temporary files. Under user deferral, retain inputs/proposed resolutions Pending without running either command.
+
 Populate the `## Edge Coverage` section of SPEC.md from the resolved edges.
 
 ## Step 5.6: Prohibition-Completeness Probe (must-NOT)
@@ -367,14 +379,13 @@ For each Requirement gathered so far, run the two-stage recall→precision pass:
        - `check_violation_fixture` (#1279) — path to a KNOWN-BAD subject the wired check is run
          against to **machine-prove fail-first**; rides BOTH kinds. Capture it to let the item green
          end-to-end with zero hand-authoring at verify time; for `test-command` the negative test should
-         read its subject from the `GSD_PROHIB_SUBJECT` env var so the prover can inject this fixture.
-       - `check_clean_fixture` (#1346; **REQUIRED for `test-command` as of #1906**) — path to a
-         KNOWN-CLEAN control subject. The `test-command` prover runs the check against it and requires
+         read its subject from `ENGINEER_PROHIB_SUBJECT` (legacy `GSD_PROHIB_SUBJECT` is also set) so the prover can inject this fixture.
+       - `check_clean_fixture` (#1346; **REQUIRED for BOTH check kinds**) — path to a
+         KNOWN-CLEAN control subject. The prover runs the check against it and requires
          GREEN — proving the violation's RED is caused by the subject's *content*, not by
-         `GSD_PROHIB_SUBJECT` merely being set. For a `test-command` this is **mandatory**: omit it and
+         the subject environment variable merely being set. For either kind this is **mandatory**: omit it and
          the check is un-provable (fail-closed), never proven on the violation alone — so a deceptive
-         content-independent test cannot pass. (`lint-rule` needs no clean fixture: its subject IS the
-         linted file, no `GSD_PROHIB_SUBJECT` indirection.)
+         content-independent check cannot pass. A lint check must also inject the actual subject in argv.
        This is a **SOFT capture (CHK-04): a `test`-tier prohibition WITHOUT a descriptor is still
        allowed** — if the author cannot yet name the wired check, leave the descriptor empty and
        proceed. It is NOT a hard authoring block; the item simply stays fail-closed/flagged
@@ -418,13 +429,27 @@ rows route to judgment review; `⚠ UNRESOLVED` rows are flagged as assumptions)
 a `test` row with no captured descriptor is still valid — it stays fail-closed/flagged
 downstream rather than blocking authoring.
 
+**Execute the projection producer after recall and resolution.** Write the selected flat rows to `PROHIBITIONS_JSON`, an owned temporary JSON file INSIDE the repository containing either an array or `{ "items": [...] }`. Include every retained resolved/dismissed/unresolved row, exact requirement ID, category, statement and lifecycle; optional check descriptors remain the five flat string scalars above. This input is the actual recall result, never the example fixture or an invented deterministic recall classification. Dispatch and retain the complete return:
+
+```bash
+if ! PROHIBITIONS=$(engineer_run query spec.prohibition-project "$PROHIBITIONS_JSON"); then
+  printf '%s\n' 'ERROR: prohibition projection failed; retain selected rows and correct the input. Do not fabricate coverage.' >&2
+  exit 1
+fi
+printf '%s\n' "$PROHIBITIONS"
+```
+
+Consume exact `items` plus `coverage: {applicable,resolved,unresolved,byVerification:{test,judgment}}`. `resolved` counts resolved AND dismissed rows, while tier counts count resolved rows only. Reconcile each returned row against selected requirement/category/statement/lifecycle; do not silently drop retained candidates or inflate counts. Only resolved/test rows with a recognized kind, nonempty target and lint rule when applicable carry genuinely nonempty flat check fields in the projection. A projection without check fields is still a selected obligation, never proof. No nested `check`, fabricated fixture, or `failFirst` attestation is permitted. Use these returned items/coverage for SPEC and downstream PLAN projection, keeping selected raw input for the audit trail. The three full worked examples and fixture oracles in prohibition-probe.md remain precision expectations, never substitute session input.
+
+If execution is deferred by the user, retain actual selected JSON and proposed SPEC rows with projection/coverage Pending. Do not execute this producer or its input checks until allowed, and do not claim a returned report. Judgment review remains separate from runtime projection and mechanical proof.
+
 ## Step 5.7: Downstream completeness and spec-less precedence
 
 Read engineer/references/specless-probe-fallback.md in full when integrating a phase without SPEC or with an absent/empty Edge Coverage or Prohibitions section. It preserves the SAME complete Step 5.5/5.6 methods; only the requirement source changes to approved phase requirement IDs/text. Detect section supply independently with `engineer_run query spec.section SPEC.md edges` and `spec.section SPEC.md prohibitions`; an absent SPEC makes both absent without a file-read fallback that hides real errors. Empty sections cannot suppress fallback. Preserve every supplied nonempty section unchanged; run fallback only for its absent sibling. The default-on workflow.specless_probe_fallback policy and a genuinely empty requirement list produce visible, cited skip reasons rather than a silent drop or invented requirement.
 
 Edges resolved explicit become PLAN acceptance/must_haves.truths strings; resolved backstop becomes a structured flat `{statement, verification: backstop}` marker requiring actual held-out/PBT evidence, never a parenthetical that a parser cannot see. Every unresolved/unclassified edge stays a flagged planner assumption. Kept prohibitions become the sibling must_haves.prohibitions list with statement/lifecycle/verification and only genuinely wired optional flat check_* fields. Fallback --auto writes NO invented descriptors, never auto-dismisses, and leaves those prohibitions flagged-unverified. Judgment tiers require real review; required human decisions remain human_needed. The same items feed requirement-level VALIDATION, with no-silent-drop equality between surfaced items and authored predicates/flagged assumptions. SPEC section presence does not prove its predicates were wired or checked.
 
-The complete verification pipeline must locate each test-tier prohibition, machine-prove failure on the known violation (assertion/rule failure, never setup/error/timeout), require the known-clean causation control for test-command, and require a real nonvacuous clean production pass. Missing/partial descriptors and missing fixture/check evidence stay flagged and prevent passed; authoring can continue with these explicit obligations. No caller-attested failFirst flag, merely existing file, or report-format string grants a pass. Capture the actual check argv/configuration, target/rule/fixtures, revision and observed per-stage evidence. User-deferred checks remain pending and cannot be promoted during report-only inspection.
+The complete verification pipeline must locate each test-tier prohibition, machine-prove failure on the known violation (assertion/rule failure, never setup/error/timeout), require the known-clean causation control for both check kinds, and require a real nonvacuous clean production pass. Missing/partial descriptors and missing fixture/check evidence stay flagged and prevent passed; authoring can continue with these explicit obligations. No caller-attested failFirst flag, merely existing file, or report-format string grants a pass. Capture the actual check argv/configuration, target/rule/fixtures, revision and observed per-stage evidence. User-deferred checks remain pending and cannot be promoted during report-only inspection.
 
 ## Step 6: Generate SPEC.md
 
