@@ -1450,13 +1450,15 @@ class PlanningValidation(RuntimeCase):
         super().setUp()
         requirements = self.directory / ".planning" / "REQUIREMENTS.md"
         requirements.write_text(
-            "# Requirements\n\n## Traceability\n\n"
+            "# Requirements\n\n- [ ] **REQ-01**: Foundation behavior.\n"
+            "- [ ] **REQ-02**: Foundation wiring.\n- [ ] **REQ-03**: Feature behavior.\n\n## Traceability\n\n"
             "| Requirement | Phase | Status |\n"
             "|-------------|-------|--------|\n"
             "| REQ-01 | Phase 1 | Pending |\n"
             "| REQ-02 | Phase 1 | Pending |\n"
             "| REQ-03 | Phase 2 | Pending |\n",
             encoding="utf-8", newline="\n")
+        self.run_verb("state.save")
 
     def validate(self, *args, expect_ok=True):
         return self.run_verb("planning.validate", "--skip", "codebase-freshness",

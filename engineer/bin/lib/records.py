@@ -425,7 +425,15 @@ def append_section(file, heading, line):
         if not match:
             text = text.rstrip()+"\n\n"+heading+"\n\n"+line+"\n"
         else:
-            text = text[:match.end()]+"\n"+line+text[match.end():]
+            limit = re.search(r"(?m)^#{1,"+str(len(heading.split()[0]))+r"} ", text[match.end():])
+            end = match.end()+limit.start() if limit else len(text)
+            section = text[match.end():end]
+            section = re.sub(r"(?m)^None yet\.\s*$|^\| \*\(none\)\* \|[^\n]*\n?|^\| \[Choice\] \|[^\n]*\n?", "", section)
+            if line.startswith("|") and re.search(r"(?m)^\|[- |]+\|\s*$", section):
+                section = section.rstrip()+"\n"+line+"\n\n"
+            else:
+                section = "\n\n"+line+"\n"+section.lstrip("\n")
+            text = text[:match.end()]+section+text[end:]
         if Path(file).name == "STATE.md" and heading in ("### Roadmap Evolution", "### Decisions"):
             section = re.search(r"(?ms)^"+re.escape(heading)+r"\s*\n(.*?)(?=^##|\Z)", text)
             bullets = re.findall(r"(?m)^- .+$", section[1]) if section else []
@@ -440,6 +448,8 @@ def append_section(file, heading, line):
 
 
 def state_action(args, action):
+    if not (planning()/"STATE.md").is_file():
+        raise Failure("missing-state", "STATE.md is required before updating project state")
     if action == "save":
         if args.pos or any(key not in ("raw", "json", "pick") for key in args.opts):
             raise Failure("derived-state-only", "state.save synchronizes derived fields; it accepts no replacement content", 2)
@@ -505,21 +515,25 @@ def state_action(args, action):
         rationale = args.get("rationale", "")
         result = append_section(planning()/"PROJECT.md", "## Key Decisions", f"| {decision} | {rationale} | {args.get('outcome', 'Pending')} |")
         append_section(planning()/"STATE.md", "### Decisions", "- "+decision)
-        return result
+        return {**result, "project_record": str(planning()/"PROJECT.md")}
     if action in sections:
         return append_section(planning()/"STATE.md", sections[action], "- "+args.need())
     if action == "resolve-blocker":
         path = planning()/"STATE.md"
         with planning_lock():
             text = read(path)
-            lines = text.splitlines(keepends=True)
+            section = re.search(r"(?ms)^### Blockers/Concerns\s*\n(.*?)(?=^##|\Z)", text)
+            lines = section[1].splitlines(keepends=True) if section else []
             removed = [line for line in lines if args.need() in line and line.lstrip().startswith("- ")]
             if not removed:
-                raise Failure("blocker-not-found", args.need())
+                raise Failure("no-match", args.need())
             archive = planning()/"archive/blockers.md"
             write(archive, read(archive)+"\n".join(line.strip() for line in removed)+"\n")
-            write(path, "".join(line for line in lines if line not in removed))
-        return {"resolved": len(removed), "archive": str(archive)}
+            remaining = "".join(line for line in lines if line not in removed)
+            if not re.search(r"(?m)^- ", remaining):
+                remaining = "\nNone yet.\n\n"
+            write(path, text[:section.start(1)]+remaining+text[section.end(1):])
+        return {"resolved": len(removed), "removed": [line.strip().removeprefix("- ") for line in removed], "archive": str(archive)}
     raise Failure("unsupported-action", action, 2)
 
 

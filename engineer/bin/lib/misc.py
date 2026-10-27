@@ -31,7 +31,14 @@ def integrity(args, strict=False):
     if not schema_only:
         from .planning_consistency import findings
         errors.extend(findings())
-    return {"valid": not errors, "warnings": errors, "errors": errors if strict else [], "checked": len(paths)}, int(bool(errors) and strict)
+        from .state_diagnostics import findings as state_findings
+        errors.extend(state_findings())
+    errors = [{"check": "record-consistency", "message": item.get("error", "Planning record drift"), **item} for item in errors]
+    packet = {"valid": not errors, "status": "warnings" if errors else "clean", "strict": strict,
+              "warnings": errors, "errors": errors if strict else [], "checked": len(paths)}
+    if strict and errors and not schema_only:
+        raise Failure("validation-failed", "Planning records require reconciliation", warnings=errors)
+    return packet, int(bool(errors) and strict)
 
 
 def summary_extract(args):
