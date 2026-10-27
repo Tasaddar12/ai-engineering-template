@@ -68,7 +68,7 @@ The managed host tree contains `agents/`, `commands/`, `engineer/bin/`, workflow
 
 The runtime entry point is `<target>/engineer/bin/engineer_run`. It resolves Python and invokes the pinned `engineer.py`; workflows load the shared runtime launcher and require identity `engineer-runtime`. Hook registration is managed by the installer. Do not manually duplicate registrations when a command appears unavailable.
 
-`agents/code-fixer.md` is a complete method source used by the dispatchable `code-fixer` role; it is not a separate dispatch identity. Preserve the method in both host exports: Claude installs it as `.claude/engineer/references/code-fixer.md` so native agent discovery does not expose it as a role, while Codex keeps it readable at `.codex/agents/code-fixer.md` without native agent TOML. Preserve its full method and rebase links for each installed location. Dispatch `code-fixer` for bounded review repair on both hosts.
+Install the complete copied `agents/code-fixer.md` as the `code-fixer` agent for the selected host.
 
 ## Existing installations and migration
 
