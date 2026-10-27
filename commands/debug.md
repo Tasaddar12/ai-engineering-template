@@ -1,5 +1,5 @@
 ---
-name: gsd:debug
+name: debug
 description: Systematic debugging with persistent state across context resets
 argument-hint: "[list | status <slug> | continue <slug> | --diagnose] [issue description]"
 allowed-tools:
@@ -18,7 +18,7 @@ The text inside `<arguments>` is exactly what the user typed after the command n
 <objective>
 Debug issues using scientific method with subagent isolation.
 
-**Orchestrator role:** Gather symptoms, spawn gsd-debugger agent, handle checkpoints, spawn continuations.
+**Orchestrator role:** Gather symptoms, spawn debugger agent, handle checkpoints, spawn continuations.
 
 **Flags:**
 - `--diagnose` — Diagnose only. Returns a Root Cause Report without applying a fix.
@@ -28,12 +28,12 @@ Debug issues using scientific method with subagent isolation.
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd-debug-session-manager — manages debug checkpoint/continuation loop in isolated context
-- gsd-debugger — investigates bugs using scientific method
+- debug-session-manager — manages debug checkpoint/continuation loop in isolated context
+- debugger — investigates bugs using scientific method
 </available_agent_types>
 
 <execution_context>
-@~/.claude/gsd-core/workflows/debug.md
+@~/.claude/engineer/workflows/debug.md
 </execution_context>
 
 <context>

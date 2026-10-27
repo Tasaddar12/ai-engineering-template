@@ -12,11 +12,11 @@ Create executable phase prompts (PLAN.md files) for a roadmap phase with integra
 <required_reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
 
-@engineer/references/ui-brand.md
-@engineer/references/revision-loop.md
-@engineer/references/gate-prompts.md
-@engineer/references/agent-contracts.md
-@engineer/references/gates.md
+@~/.claude/engineer/references/ui-brand.md
+@~/.claude/engineer/references/revision-loop.md
+@~/.claude/engineer/references/gate-prompts.md
+@~/.claude/engineer/references/agent-contracts.md
+@~/.claude/engineer/references/gates.md
 </required_reading>
 
 <available_agent_types>
@@ -523,7 +523,7 @@ test -f "${PHASE_DIR}/${PADDED_PHASE}-VALIDATION.md" && echo "VALIDATION_CREATED
 PLAN_PRE_HOOKS_JSON=$(engineer_run loop render-hooks plan:pre --raw)
 ```
 
-**Contribution dispatch (#3606):** inject every `kind == "contribution"` fragment from `PLAN_PRE_HOOKS_JSON` per @engineer/references/loop-hook-dispatch.md, in array order, into the role each entry's `into` names — planner-targeted ones land in the prompt block below, orchestrator-targeted ones in your working context. The security specialization below is one such contribution, not a replacement for the generic dispatch.
+**Contribution dispatch (#3606):** inject every `kind == "contribution"` fragment from `PLAN_PRE_HOOKS_JSON` per @~/.claude/engineer/references/loop-hook-dispatch.md, in array order, into the role each entry's `into` names — planner-targeted ones land in the prompt block below, orchestrator-targeted ones in your working context. The security specialization below is one such contribution, not a replacement for the generic dispatch.
 
 Resolve active contribution hooks from `PLAN_PRE_HOOKS_JSON` where `kind == "contribution"` and `capId == "security"`.
 
@@ -897,7 +897,7 @@ whole values. The `MISSING — Wave 0 …` sentinel is exempt: it is not runnabl
 it has no failure mode to state. Ask yourself: if this command were silently
 doing nothing, what in its output would tell me? If you cannot answer, fix the
 command — do not invent a statement for it.
-Rules + worked examples: @engineer/references/planner-failing-direction.md
+Rules + worked examples: @~/.claude/engineer/references/planner-failing-direction.md
 </failing_direction_contract>
 <!-- gsd:protected:end -->
 
@@ -1517,7 +1517,7 @@ Read the `activeHooks` array from `PLAN_POST_HOOKS_JSON` in-context. If
 on any one capability's gate being absent (#3606: that skip silently dropped
 every other registered hook at this point).
 
-**Step and contribution dispatch:** dispatch every `kind == "step"` hook and inject every `kind == "contribution"` fragment per @engineer/references/loop-hook-dispatch.md (skip each kind silently when none), before gate evaluation below.
+**Step and contribution dispatch:** dispatch every `kind == "step"` hook and inject every `kind == "contribution"` fragment per @~/.claude/engineer/references/loop-hook-dispatch.md (skip each kind silently when none), before gate evaluation below.
 
 ⚠ **Validate `check` before shell use** (third-party manifest input; wherever `${hook.check.query}` appears, write the dot-normalized query, each `.` as `-`, and validate and pass that same value) — `loop-hook-dispatch.md` § `gate`.
 

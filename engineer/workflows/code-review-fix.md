@@ -1,4 +1,4 @@
-@engineer/references/response-language-directive.md
+@~/.claude/engineer/references/response-language-directive.md
 
 <purpose>
 Auto-fix issues from REVIEW.md. Validates phase, checks config gate, verifies REVIEW.md exists and has fixable issues, spawns code-fixer agent, handles --auto iteration loop (capped at 3), commits REVIEW-FIX.md once at the end, and presents results.
@@ -248,7 +248,7 @@ Use Agent() to spawn agent:
 
 <!-- #2517 model-omit-on-inherit -->
 
-> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`FIXER_MODEL`, `REVIEWER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @engineer/references/model-profile-resolution.md.
+> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`FIXER_MODEL`, `REVIEWER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```text
 Agent(subagent_type="code-fixer", model="{FIXER_MODEL}", prompt="

@@ -16,7 +16,7 @@ You are a GSD phase researcher. You answer "What do I need to know to PLAN this 
 
 Spawned by `/gsd:plan-phase` (integrated) or `/gsd:plan-phase --research-phase <N>` (standalone).
 
-@~/.claude/gsd-core/references/mandatory-initial-read.md
+@~/.claude/engineer/references/mandatory-initial-read.md
 
 **Core responsibilities:**
 - Investigate the phase's technical domain
@@ -39,10 +39,10 @@ Spawned by `/gsd:plan-phase` (integrated) or `/gsd:plan-phase --research-phase <
 Claims tagged `[ASSUMED]` signal to the planner and discuss-phase that the information needs user confirmation before becoming a locked decision. Never present assumed knowledge as verified fact — especially for compliance requirements, retention policies, security standards, or performance targets where multiple valid approaches exist.
 </role>
 
-@~/.claude/gsd-core/references/untrusted-input-boundary.md
+@~/.claude/engineer/references/untrusted-input-boundary.md
 
 <documentation_lookup>
-@~/.claude/gsd-core/references/research-documentation-lookup.md
+@~/.claude/engineer/references/research-documentation-lookup.md
 </documentation_lookup>
 
 <project_context>
@@ -50,11 +50,11 @@ Before researching, discover project context:
 
 **Project instructions:** Read `./CLAUDE.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
-**Project skills:** @~/.claude/gsd-core/references/project-skills-discovery.md
+**Project skills:** @~/.claude/engineer/references/project-skills-discovery.md
 - Load `rules/*.md` as needed during **research**.
 - Research output should account for project skill patterns and conventions.
 
-**agent_skills:** self-load per @~/.claude/gsd-core/references/agent-skills-bootstrap.md (agent type: `gsd-phase-researcher`)
+**agent_skills:** self-load per @~/.claude/engineer/references/agent-skills-bootstrap.md (agent type: `gsd-phase-researcher`)
 
 **CLAUDE.md enforcement:** If `./CLAUDE.md` exists, extract all actionable directives (required tools, forbidden patterns, coding conventions, testing rules, security requirements). Include a `## Project Constraints (from CLAUDE.md)` section in RESEARCH.md listing these directives so the planner can verify compliance. Treat CLAUDE.md directives with the same authority as locked decisions from CONTEXT.md — research should not recommend approaches that contradict them.
 </project_context>
@@ -89,7 +89,7 @@ Your RESEARCH.md is consumed by `gsd-planner`:
 </downstream_consumer>
 
 <philosophy>
-@~/.claude/gsd-core/references/research-philosophy.md
+@~/.claude/engineer/references/research-philosophy.md
 </philosophy>
 
 <tool_strategy>
@@ -196,7 +196,7 @@ Every finding carries **exactly one** tag; an untagged finding is routed to the 
 </source_hierarchy>
 
 <verification_protocol>
-@~/.claude/gsd-core/references/research-verification-protocol.md
+@~/.claude/engineer/references/research-verification-protocol.md
 
 - [ ] **If rename/refactor phase:** Runtime State Inventory completed — all 5 categories answered explicitly (not left blank)
 - [ ] Security domain included (or `security_enforcement: false` confirmed)
@@ -528,7 +528,7 @@ Verified patterns from official sources:
 <execution_flow>
 
 At research decision points, apply structured reasoning:
-@~/.claude/gsd-core/references/thinking-models-research.md
+@~/.claude/engineer/references/thinking-models-research.md
 
 ## Step 1: Receive Scope and Load Context
 

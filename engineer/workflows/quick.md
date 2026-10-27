@@ -189,7 +189,7 @@ USE_WORKTREES=$(engineer_run query config-get workflow.use_worktrees --raw 2>/de
 RUNTIME=$(engineer_run query config-get runtime --default claude --raw 2>/dev/null || echo "claude")
 ```
 
-**Resolve isolation now (#2584/#2652).** Read @engineer/references/dispatch-isolation-gate.md
+**Resolve isolation now (#2584/#2652).** Read @~/.claude/engineer/references/dispatch-isolation-gate.md
 and run its `Resolve ISOLATION`, `Single-agent dispatch sites`, and `Resolve the harness flag`
 blocks in order; they set `ISOLATION`/`HARNESS_FLAG` via `query dispatch-isolation`.
 `ISOLATION` — not `RUNTIME` — gates every worktree decision below. Substitute `{harnessFlag}`
@@ -624,7 +624,7 @@ Skip this step entirely if `$FULL_MODE` is false.
 EXECUTE_POST_HOOKS_JSON=$(engineer_run loop render-hooks execute:post --raw)
 ```
 
-**Generic step dispatch (#3606):** dispatch every `kind == "step"` hook from `EXECUTE_POST_HOOKS_JSON` per @engineer/references/loop-hook-dispatch.md (skip silently when none); each step is advisory and best-effort. The code-review specialization below is one such hook, not a replacement for the generic dispatch.
+**Generic step dispatch (#3606):** dispatch every `kind == "step"` hook from `EXECUTE_POST_HOOKS_JSON` per @~/.claude/engineer/references/loop-hook-dispatch.md (skip silently when none); each step is advisory and best-effort. The code-review specialization below is one such hook, not a replacement for the generic dispatch.
 
 Resolve active step hooks from `EXECUTE_POST_HOOKS_JSON` where `kind == "step"` and `ref.skill == "code-review"`.
 

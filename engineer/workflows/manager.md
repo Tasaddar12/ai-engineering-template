@@ -23,9 +23,9 @@ IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
 $ARGUMENTS
 GSD_ARGS_END
 GSD_ARGS=${GSD_ARGS%$'\n'}
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving gsd_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok gsd_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
+_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then engineer_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then engineer_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f engineer_run; _G="$(command -v engineer_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; engineer_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving engineer_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok engineer_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
 GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(gsd_run query init.manager ${GSD_WS:+--ws=${GSD_WS##* }})
+INIT=$(engineer_run query init.manager ${GSD_WS:+--ws=${GSD_WS##* }})
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
@@ -34,11 +34,11 @@ Parse JSON for: `milestone_version`, `milestone_name`, `phase_count`, `completed
 **If `response_language` is set:** All user-facing output of this workflow — narration between tool calls, status updates, progress notes, findings, questions, prompts, and explanations — MUST be presented in `{response_language}`. Technical terms, code, file paths, and subagent prompts stay in English — only user-facing output is translated. Subagent dispatches (discuss/plan/execute) stay in English at the prompt level; include `response_language` in their spawn args per the workflow being dispatched.
 
 `manager_flags` contains per-step passthrough flags from config:
-- `manager_flags.discuss` — appended to `/gsd:discuss-phase` args (e.g. `"--auto --analyze"`)
+- `manager_flags.discuss` — appended to `/discuss-phase` args (e.g. `"--auto --analyze"`)
 - `manager_flags.plan` — appended to plan agent init command
 - `manager_flags.execute` — appended to execute agent init command
 
-These are empty strings by default. Set via: `gsd_run query config-set manager.flags.discuss "--auto --analyze"`
+These are empty strings by default. Set via: `engineer_run query config-set manager.flags.discuss "--auto --analyze"`
 
 **If error:** Display the error message and exit.
 
@@ -72,7 +72,7 @@ $ARGUMENTS
 GSD_ARGS_END
 GSD_ARGS=${GSD_ARGS%$'\n'}
 GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(gsd_run query init.manager ${GSD_WS:+--ws=${GSD_WS##* }})
+INIT=$(engineer_run query init.manager ${GSD_WS:+--ws=${GSD_WS##* }})
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
@@ -142,8 +142,8 @@ If `all_complete` is true:
 ### MILESTONE COMPLETE
 
 All {phase_count} phases verified complete. Ready for final steps:
-  → /gsd:verify-work — run acceptance testing
-  → /gsd:complete-milestone — archive and wrap up
+  → /verify-work — run acceptance testing
+  → /complete-milestone — archive and wrap up
 ```
 
 **Text mode (`workflow.text_mode: true` in config or `--text` flag):** Set `TEXT_MODE=true` if `--text` is present in `$ARGUMENTS` OR `text_mode` from init JSON is `true`. When TEXT_MODE is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for non-Claude runtimes (OpenAI Codex) where `AskUserQuestion` is not available.
@@ -224,7 +224,7 @@ Go to exit step.
 
 ### Compound Action (background + inline)
 
-When the user selects a compound option, behavior depends on whether the runtime supports background dispatch of nesting-capable orchestrators — the Plan Phase N / Execute Phase N handlers below resolve it via `gsd_run query dispatch-should-flatten` (#1708):
+When the user selects a compound option, behavior depends on whether the runtime supports background dispatch of nesting-capable orchestrators — the Plan Phase N / Execute Phase N handlers below resolve it via `engineer_run query dispatch-should-flatten` (#1708):
 
 - **If `FLATTEN` is `false` (the host can background a nesting-capable orchestrator — e.g. codex):** **Spawn all background agents first** (plan/execute) — dispatch them in parallel using the Plan Phase N / Execute Phase N handlers below — then run verification actions, then run the inline discuss; the background agents continue while you verify/discuss.
 - **Otherwise (`FLATTEN` is `true` — run inline):** run the chosen plan/execute step(s) **inline** via their handlers below (in order), then run verification actions, then run the inline discuss. There is no overlap.
@@ -259,7 +259,7 @@ After discuss completes, loop back to dashboard step.
 Planning runs autonomously. **First resolve whether background dispatch is safe.** Background dispatch is only safe on a runtime where a backgrounded agent can still nest the pipeline's subagents (plan-checker / worktree executors / verifier). This is determined from the documentation-sourced dispatch capability in the registry (#1708); Claude Code's backgrounded agents have no `Agent`/`Task` tool, and every other runtime either prohibits nested subagents or disables them by default. So run **inline** everywhere except where `dispatch-should-flatten` returns `false`.
 
 ```bash
-FLATTEN=$(gsd_run query dispatch-should-flatten --raw 2>/dev/null || echo "true")
+FLATTEN=$(engineer_run query dispatch-should-flatten --raw 2>/dev/null || echo "true")
 ```
 
 **If `FLATTEN` is `false`:** Spawn a background agent that delegates to the Skill pipeline with any configured flags:
@@ -313,7 +313,7 @@ Then loop back to dashboard step.
 Execution runs autonomously. **First resolve whether background dispatch is safe.** Background dispatch is only safe on a runtime where a backgrounded agent can still nest the pipeline's subagents (plan-checker / worktree executors / verifier). This is determined from the documentation-sourced dispatch capability in the registry (#1708); Claude Code's backgrounded agents have no `Agent`/`Task` tool, and every other runtime either prohibits nested subagents or disables them by default. So run **inline** everywhere except where `dispatch-should-flatten` returns `false`.
 
 ```bash
-FLATTEN=$(gsd_run query dispatch-should-flatten --raw 2>/dev/null || echo "true")
+FLATTEN=$(engineer_run query dispatch-should-flatten --raw 2>/dev/null || echo "true")
 ```
 
 **If `FLATTEN` is `false`:** Spawn a background agent that delegates to the Skill pipeline with any configured flags:
@@ -416,12 +416,12 @@ Display final status with progress bar:
  {milestone_version} — {milestone_name}
  {PROGRESS_BAR} {progress_pct}%  ({completed_count}/{phase_count} phases)
 
- Resume anytime: /gsd:manager
+ Resume anytime: /manager
 
 ---
 ```
 
-**Note:** Any background agents still running will continue to completion. Their results will be visible on next `/gsd:manager` or `/gsd:progress` invocation.
+**Note:** Any background agents still running will continue to completion. Their results will be visible on next `/manager` or `/progress` invocation.
 
 </step>
 

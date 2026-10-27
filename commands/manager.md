@@ -1,5 +1,5 @@
 ---
-name: gsd:manager
+name: manager
 description: Interactive command center for managing multiple phases from one terminal
 argument-hint: "[--analyze-deps]"
 allowed-tools:
@@ -31,8 +31,8 @@ Designed for power users who want to parallelize work across phases from one ter
 </objective>
 
 <execution_context>
-@~/.claude/gsd-core/workflows/manager.md
-@~/.claude/gsd-core/references/ui-brand.md
+@~/.claude/engineer/workflows/manager.md
+@~/.claude/engineer/references/ui-brand.md
 </execution_context>
 
 <context>

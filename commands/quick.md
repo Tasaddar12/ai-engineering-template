@@ -45,7 +45,7 @@ Granular flags are composable: `--discuss --research --validate` gives the same 
 </objective>
 
 <execution_context>
-@engineer/workflows/quick.md
+@~/.claude/engineer/workflows/quick.md
 </execution_context>
 
 <context>

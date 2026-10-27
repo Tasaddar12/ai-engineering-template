@@ -34,9 +34,9 @@ via filesystem and git state.
 
 <required_reading>
 Read STATE.md before any operation to load project context.
-@engineer/references/agent-contracts.md
-@engineer/references/context-budget.md
-@engineer/references/gates.md
+@~/.claude/engineer/references/agent-contracts.md
+@~/.claude/engineer/references/context-budget.md
+@~/.claude/engineer/references/gates.md
 </required_reading>
 
 <available_agent_types>
@@ -76,7 +76,7 @@ If `--wave` is absent, preserve the current behavior of executing all incomplete
 <step name="initialize" priority="first">
 Load all context in one call:
 
-@engineer/references/gsd-run-resolver.md
+@~/.claude/engineer/references/gsd-run-resolver.md
 
 ```bash
 IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
@@ -98,7 +98,7 @@ Parse JSON for: `executor_model`, `verifier_model`, `commit_docs`, `parallelizat
 
 **Model resolution:** If `executor_model` is `"inherit"`, omit the `model=` parameter from all `Agent()` calls — do NOT pass `model="inherit"` to Agent. Omitting the `model=` parameter causes Claude Code to inherit the orchestrator model automatically. Only set `model=` when `executor_model` is an explicit model name (e.g., `"claude-sonnet-5"`, `"claude-opus-4-8"`).
 
-@engineer/references/execute-phase-response-language.md
+@~/.claude/engineer/references/execute-phase-response-language.md
 
 Reset the wave-failure tally (#4915). Fenced `bash` blocks are separate shells, so the post-merge gate's cumulative count reaches step 5.8 through a handoff file; a previous run's tally must not leak in:
 
@@ -158,8 +158,8 @@ When `CONTEXT_WINDOW >= 500000` (1M-class models), subagent prompts include rich
 
 When `CONTEXT_WINDOW < 200000` (sub-200K models), subagent prompts are thinned to reduce static overhead:
 
-- Executor agents omit extended deviation rule examples and checkpoint examples from inline prompt — load on-demand via @engineer/references/executor-examples.md
-- Planner agents omit extended anti-pattern lists and specificity examples from inline prompt — load on-demand via @engineer/references/planner-antipatterns.md
+- Executor agents omit extended deviation rule examples and checkpoint examples from inline prompt — load on-demand via @~/.claude/engineer/references/executor-examples.md
+- Planner agents omit extended anti-pattern lists and specificity examples from inline prompt — load on-demand via @~/.claude/engineer/references/planner-antipatterns.md
 - Core rules and decision logic remain inline; only verbose examples and edge-case lists are extracted
 - This reduces executor static overhead by ~40% while preserving behavioral correctness
 
@@ -536,9 +536,9 @@ between a large tool_result and the next assistant turn (seen on Claude Code
 
 **For each wave:**
 
-@engineer/references/execute-phase-wave-guard.md
+@~/.claude/engineer/references/execute-phase-wave-guard.md
 
-@engineer/references/execute-phase-context-guard.md
+@~/.claude/engineer/references/execute-phase-context-guard.md
 
 1. **Intra-wave files_modified overlap check (BEFORE spawning):**
 
@@ -615,9 +615,9 @@ The dispatch branches in step 3 gate on both `USE_WORKTREES` and the dispatched 
 WAVE_PRE_HOOKS_JSON=$(engineer_run loop render-hooks execute:wave:pre --raw)
 ```
 
-**Contribution dispatch:** inject every `kind == "contribution"` fragment per @engineer/references/loop-hook-dispatch.md (skip when none); one naming an alternate wave dispatch replaces step 3's inline loop.
+**Contribution dispatch:** inject every `kind == "contribution"` fragment per @~/.claude/engineer/references/loop-hook-dispatch.md (skip when none); one naming an alternate wave dispatch replaces step 3's inline loop.
 
-**Step dispatch:** `kind == "step"` per @engineer/references/loop-hook-dispatch.md; never blocks or redirects executor spawning. ⚠ Validate `ref.command` in-context before any shell use.
+**Step dispatch:** `kind == "step"` per @~/.claude/engineer/references/loop-hook-dispatch.md; never blocks or redirects executor spawning. ⚠ Validate `ref.command` in-context before any shell use.
 
 3. **Spawn executor agents:**
 
@@ -985,9 +985,9 @@ Read the `activeHooks` array from `WAVE_POST_HOOKS_JSON` in-context (do NOT pipe
 
 **If `activeHooks` is empty or absent:** Skip silently to step 5.8.
 
-**Contribution dispatch:** inject every `kind == "contribution"` fragment per @engineer/references/loop-hook-dispatch.md (skip when none), before the gates below.
+**Contribution dispatch:** inject every `kind == "contribution"` fragment per @~/.claude/engineer/references/loop-hook-dispatch.md (skip when none), before the gates below.
 
-**Step dispatch:** dispatch every `kind == "step"` hook per @engineer/references/loop-hook-dispatch.md (skip when none) — not one shape of one. A step here is advisory: it never blocks wave completion. ⚠ **Validate `ref.command` in-context before any shell use** (third-party manifest input) — loop-hook-dispatch.md § `step`. **`ref.skill == "code-review"` (#3661):** the generic contract's bare skill dispatch carries no phase argument, but `code-review.md`'s `initialize` step requires one (`PHASE_ARG="${1}"`) or it reports "Phase not found" and exits — pass it explicitly, mirroring step `code_review_gate` in `execute-phase/steps/verify-phase-goal.md`: `Skill(skill="gsd-code-review", args="${PHASE_NUMBER}")`.
+**Step dispatch:** dispatch every `kind == "step"` hook per @~/.claude/engineer/references/loop-hook-dispatch.md (skip when none) — not one shape of one. A step here is advisory: it never blocks wave completion. ⚠ **Validate `ref.command` in-context before any shell use** (third-party manifest input) — loop-hook-dispatch.md § `step`. **`ref.skill == "code-review"` (#3661):** the generic contract's bare skill dispatch carries no phase argument, but `code-review.md`'s `initialize` step requires one (`PHASE_ARG="${1}"`) or it reports "Phase not found" and exits — pass it explicitly, mirroring step `code_review_gate` in `execute-phase/steps/verify-phase-goal.md`: `Skill(skill="gsd-code-review", args="${PHASE_NUMBER}")`.
 
 **For each active entry where `kind == "gate"`** (process in array order): read and execute `engineer/workflows/execute-phase/steps/wave-post-gate-hooks.md` for the full evaluation contract (check validation, `onError`, blocking semantics, mapper spawn). A gate declared `blocking: false` — the `drift` capability's codebase-drift gate is one — is non-blocking by contract: it reports and the wave continues. When all active gates are processed without a blocking halt, continue to step 5.8.
 
@@ -1077,9 +1077,9 @@ the next wave builds on a broken foundation.
    **Step 7.3 — `class == "unknown-failure"`:**
    Report failed plan and ask Continue/Stop; continuing may cascade into dependent plan failures.
 
-@engineer/references/execute-phase-quota-recovery.md
+@~/.claude/engineer/references/execute-phase-quota-recovery.md
 
-@engineer/references/execute-phase-between-wave-reset.md
+@~/.claude/engineer/references/execute-phase-between-wave-reset.md
 
 8. **Execute checkpoint plans between waves** — see `<checkpoint_handling>`.
 9. **Proceed to next wave.**
@@ -1262,7 +1262,7 @@ Verify-work will walk you through each item and mark the phase complete when all
 **If user reports issues now:** Proceed to gap closure.
 
 **If gaps_found:**
-@engineer/references/execute-phase-requirement-revert.md
+@~/.claude/engineer/references/execute-phase-requirement-revert.md
 
 ```
 ## ⚠ Phase {X}: {Name} — Gaps Found
@@ -1408,7 +1408,7 @@ transition in **post-completion mode**: SKIP its `verify_completion` and
 `update_roadmap_and_state` (re-running `phase.complete` would double-write state) and
 BEGIN at `evolve_project`, running the full set through `offer_next_phase`.
 
-@engineer/workflows/transition.md
+@~/.claude/engineer/workflows/transition.md
 </step>
 
 </process>

@@ -14,7 +14,7 @@ From `$ARGUMENTS`:
 The `find-phase` command handles normalization and validation in one step:
 
 ```bash
-PHASE_INFO=$(gsd_run query find-phase "${PHASE}")
+PHASE_INFO=$(engineer_run query find-phase "${PHASE}")
 ```
 
 Returns JSON with:
@@ -47,7 +47,7 @@ fi
 Use `roadmap get-phase` to validate phase exists:
 
 ```bash
-PHASE_CHECK=$(gsd_run query roadmap.get-phase "${PHASE}" --pick found)
+PHASE_CHECK=$(engineer_run query roadmap.get-phase "${PHASE}" --pick found)
 if [ "$PHASE_CHECK" = "false" ]; then
   echo "ERROR: Phase ${PHASE} not found in roadmap"
   exit 1
@@ -59,5 +59,5 @@ fi
 Use `find-phase` for directory lookup:
 
 ```bash
-PHASE_DIR=$(gsd_run query find-phase "${PHASE}" --raw)
+PHASE_DIR=$(engineer_run query find-phase "${PHASE}" --raw)
 ```

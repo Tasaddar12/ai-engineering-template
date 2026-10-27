@@ -18,7 +18,7 @@ When the agent type is only known at runtime — a capability hook naming its ow
 example — resolve it directly instead:
 
 ```bash
-AGENT_MODEL=$(gsd_run query resolve-model "<agent-type>" --raw)
+AGENT_MODEL=$(engineer_run query resolve-model "<agent-type>" --raw)
 ```
 
 Both surfaces return the same thing: a model string for the active runtime, or the **empty
@@ -26,14 +26,14 @@ string** when nothing resolved.
 
 ## Lookup Table
 
-@~/.claude/gsd-core/references/model-profiles.md
+@~/.claude/engineer/references/model-profiles.md
 
 ## Passing the model to a spawn
 
 ```
 Agent(
   prompt="...",
-  subagent_type="gsd-planner",
+  subagent_type="planner",
   model="{planner_model}"
 )
 ```
@@ -46,7 +46,7 @@ empty, **omit the `model=` parameter entirely**:
 ```
 Agent(
   prompt="...",
-  subagent_type="gsd-planner"
+  subagent_type="planner"
 )
 ```
 

@@ -17,17 +17,17 @@ In your mandatory init step — right after `mandatory-initial-read.md` / the
    file states on its `agent_skills:` pointer line, as `(agent type: \`executor\`)`.
 Do not read it from your frontmatter `name:`— Claude Code shows a subagent only the
 body, and Codex keeps it in a TOML key. Run the
-query with`--skills-only`, in the **same bash call** as the launcher so `gsd_run`is
+query with`--skills-only`, in the **same bash call** as the launcher so `engineer_run`is
 defined when it runs. Substitute your type for`<your-agent-type>`:
 
    ```bash
-   # 1. Launcher: paste the bash block from gsd-run-resolver.md here unless gsd_run
+   # 1. Launcher: paste the bash block from gsd-run-resolver.md here unless engineer_run
    #    is already defined in this shell (@~/.claude/references/gsd-run-resolver.md).
    # 2. Query:
-   _AGENT_SKILLS=$(gsd_run query agent-skills <your-agent-type> --skills-only)
+   _AGENT_SKILLS=$(engineer_run query agent-skills <your-agent-type> --skills-only)
    ```
 
-   Not every agent file defines `gsd_run`, so supply it as above rather than assuming
+   Not every agent file defines `engineer_run`, so supply it as above rather than assuming
    your init did. The query is read-only and idempotent. Its stderr and exit status stay
    visible, so a missing launcher or a failed query is never mistaken for "nothing
    configured".

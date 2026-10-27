@@ -27,11 +27,11 @@ If the prompt contains a `<required_reading>` block, you MUST use the `Read` too
 - Return structured result to orchestrator
 </role>
 
-@~/.claude/gsd-core/references/untrusted-input-boundary.md
-@~/.claude/gsd-core/references/ui-consideration-probe.md
+@~/.claude/engineer/references/untrusted-input-boundary.md
+@~/.claude/engineer/references/ui-consideration-probe.md
 
 <documentation_lookup>
-@~/.claude/gsd-core/references/research-documentation-lookup.md
+@~/.claude/engineer/references/research-documentation-lookup.md
 </documentation_lookup>
 
 <project_context>
@@ -41,7 +41,7 @@ Before researching, discover project context:
 
 **Project skills:** Check `.claude/skills/` or `.agents/skills/` directory if either exists:
 
-**agent_skills:** self-load per @~/.claude/gsd-core/references/agent-skills-bootstrap.md (agent type: `gsd-ui-researcher`)
+**agent_skills:** self-load per @~/.claude/engineer/references/agent-skills-bootstrap.md (agent type: `gsd-ui-researcher`)
 1. List available skills (subdirectories)
 2. Read `SKILL.md` for each skill (lightweight index ~130 lines)
 3. Load specific `rules/*.md` files as needed during research

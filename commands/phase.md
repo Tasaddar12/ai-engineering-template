@@ -36,10 +36,10 @@ Mode routing:
 </routing>
 
 <execution_context>
-@engineer/workflows/add-phase.md
-@engineer/workflows/insert-phase.md
-@engineer/workflows/remove-phase.md
-@engineer/workflows/edit-phase.md
+@~/.claude/engineer/workflows/add-phase.md
+@~/.claude/engineer/workflows/insert-phase.md
+@~/.claude/engineer/workflows/remove-phase.md
+@~/.claude/engineer/workflows/edit-phase.md
 </execution_context>
 
 <context>

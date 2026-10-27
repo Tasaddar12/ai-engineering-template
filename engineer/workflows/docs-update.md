@@ -4,13 +4,13 @@ Generate, update, and verify all project documentation — both canonical doc ty
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd-doc-writer — Writes and updates project documentation files
-- gsd-doc-verifier — Verifies factual claims in docs against the live codebase
+- doc-writer — Writes and updates project documentation files
+- doc-verifier — Verifies factual claims in docs against the live codebase
 </available_agent_types>
 
 <process>
 
-**Compact Content Gate.** Read and follow `gsd-core/references/compact-content-gate.md` now — it states the `workflow.compact_content` check and the resolution rule this spine defers to. When it directs a Read, read `gsd-core/workflows/docs-update/detail/elaboration.md` in full before continuing past this point; its content elaborates on three steps below (sequential_generation, fix_loop, verify_only_report).
+**Compact Content Gate.** Read and follow `engineer/references/compact-content-gate.md` now — it states the `workflow.compact_content` check and the resolution rule this spine defers to. When it directs a Read, read `engineer/workflows/docs-update/detail/elaboration.md` in full before continuing past this point; its content elaborates on three steps below (sequential_generation, fix_loop, verify_only_report).
 
 <step name="init_context" priority="first">
 Load docs-update context:
@@ -20,16 +20,16 @@ IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
 $ARGUMENTS
 GSD_ARGS_END
 GSD_ARGS=${GSD_ARGS%$'\n'}
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving gsd_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok gsd_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
-INIT=$(gsd_run query docs-init)
+_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then engineer_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then engineer_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f engineer_run; _G="$(command -v engineer_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; engineer_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving engineer_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok engineer_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
+INIT=$(engineer_run query docs-init)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-AGENT_SKILLS=$(gsd_run query agent-skills gsd-doc-writer ${GSD_WS:+--ws=${GSD_WS##* }})
+AGENT_SKILLS=$(engineer_run query agent-skills doc-writer ${GSD_WS:+--ws=${GSD_WS##* }})
 # #2994: dedicated init.docs-update call — additive to docs-init above, carries
 # only the section_manifest field (gates dispatch_monorepo_packages).
-INIT_DOCS_UPDATE=$(gsd_run query init.docs-update ${GSD_WS:+--ws=${GSD_WS##* }})
+INIT_DOCS_UPDATE=$(engineer_run query init.docs-update ${GSD_WS:+--ws=${GSD_WS##* }})
 if [[ "$INIT_DOCS_UPDATE" == @file:* ]]; then INIT_DOCS_UPDATE=$(cat "${INIT_DOCS_UPDATE#@file:}"); fi
-DOC_VERIFIER_MODEL=$(gsd_run query resolve-model gsd-doc-verifier --raw)
+DOC_VERIFIER_MODEL=$(engineer_run query resolve-model doc-verifier --raw)
 ```
 
 Extract from init JSON:
@@ -126,8 +126,8 @@ After assembling the canonical doc queue above, scan the `existing_docs` array f
 
 For each non-canonical existing doc found:
 - Add to a separate `review_queue`
-- These will be passed to gsd-doc-verifier in the verify_docs step for accuracy checking
-- If inaccuracies are found, they will be dispatched to gsd-doc-writer in `fix` mode for surgical corrections
+- These will be passed to doc-verifier in the verify_docs step for accuracy checking
+- If inaccuracies are found, they will be dispatched to doc-writer in `fix` mode for surgical corrections
 
 If non-canonical docs are found, display them in the queue presentation:
 
@@ -172,7 +172,7 @@ AskUserQuestion([{
 4. For each gap the user selects:
    - Add to the generation queue with mode = `"create"`
    - Set the output path to match the project's existing doc directory structure
-   - The gsd-doc-writer will receive a `doc_assignment` with `type: "custom"` and a description of what to document, using the project's source files as content discovery targets
+   - The doc-writer will receive a `doc_assignment` with `type: "custom"` and a description of what to document, using the project's source files as content discovery targets
 
 If no gaps are detected, omit this section entirely.
 
@@ -390,7 +390,7 @@ After all decisions recorded, continue to detect_runtime_capabilities.
 <step name="dispatch_wave_1" condition="Task tool is available">
 **Read the work manifest first:** `Read .planning/tmp/docs-work-manifest.json` — use `canonical_queue` items with `wave: 1` for this step.
 
-Spawn 3 parallel gsd-doc-writer agents for Wave 1 docs: README, ARCHITECTURE, CONFIGURATION (each runs in a subagent — no output until they return, ~1–5 min; expected, not a freeze).
+Spawn 3 parallel doc-writer agents for Wave 1 docs: README, ARCHITECTURE, CONFIGURATION (each runs in a subagent — no output until they return, ~1–5 min; expected, not a freeze).
 
 These are foundational docs with no cross-references needed, making them ideal for parallel generation.
 
@@ -403,11 +403,11 @@ Use `run_in_background=true` for all three to enable parallel execution.
 
 <!-- #2517 model-omit-on-inherit -->
 
-> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`doc_writer_model`, `DOC_VERIFIER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @gsd-core/references/model-profile-resolution.md.
+> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`doc_writer_model`, `DOC_VERIFIER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```
 Agent(
-  subagent_type="gsd-doc-writer",
+  subagent_type="doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
   description="Generate README.md for target project",
@@ -429,7 +429,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 
 ```
 Agent(
-  subagent_type="gsd-doc-writer",
+  subagent_type="doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
   description="Generate ARCHITECTURE.md for target project",
@@ -451,7 +451,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 
 ```
 Agent(
-  subagent_type="gsd-doc-writer",
+  subagent_type="doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
   description="Generate CONFIGURATION.md for target project",
@@ -532,7 +532,7 @@ Use `run_in_background=true` for all Wave 2 agents to enable parallel execution 
 
 ```
 Agent(
-  subagent_type="gsd-doc-writer",
+  subagent_type="doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
   description="Generate GETTING-STARTED.md for target project",
@@ -558,7 +558,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 
 ```
 Agent(
-  subagent_type="gsd-doc-writer",
+  subagent_type="doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
   description="Generate DEVELOPMENT.md for target project",
@@ -584,7 +584,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 
 ```
 Agent(
-  subagent_type="gsd-doc-writer",
+  subagent_type="doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
   description="Generate TESTING.md for target project",
@@ -610,7 +610,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 
 ```
 Agent(
-  subagent_type="gsd-doc-writer",
+  subagent_type="doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
   description="Generate API.md for target project",
@@ -636,7 +636,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 
 ```
 Agent(
-  subagent_type="gsd-doc-writer",
+  subagent_type="doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
   description="Generate DEPLOYMENT.md for target project",
@@ -663,7 +663,7 @@ Write the doc file directly. Return confirmation only — do not return doc cont
 
 ```
 Agent(
-  subagent_type="gsd-doc-writer",
+  subagent_type="doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
   description="Generate CONTRIBUTING.md for target project",
@@ -725,13 +725,13 @@ Continue to dispatch_monorepo_packages (if monorepo_workspaces is non-empty) or 
 </step>
 
 <!-- gsd:section id="dispatch-monorepo-packages" when="state:is-monorepo" -->
-If `section_manifest` (from `INIT_DOCS_UPDATE`) is `null` or `"dispatch-monorepo-packages"` is in its `included` list: read and execute `gsd-core/workflows/docs-update/steps/dispatch-monorepo-packages.md`. Otherwise skip — do not read the file; continue to commit_docs.
-<!-- /gsd:section -->
+If `section_manifest` (from `INIT_DOCS_UPDATE`) is `null` or `"dispatch-monorepo-packages"` is in its `included` list: read and execute `engineer/workflows/docs-update/steps/dispatch-monorepo-packages.md`. Otherwise skip — do not read the file; continue to commit_docs.
+<!-- /section -->
 
 <step name="sequential_generation" condition="Task tool is NOT available (e.g. Codex)">
-When the `Task` tool is unavailable, generate all queued docs sequentially in the current context instead of spawning subagents — this step replaces dispatch_wave_1, collect_wave_1, dispatch_wave_2, and collect_wave_2. Read `agents/gsd-doc-writer.md` once, then for each queued doc (Wave 1: README/ARCHITECTURE/CONFIGURATION, complete before Wave 2; Wave 2: GETTING-STARTED/DEVELOPMENT/TESTING plus any queued conditional docs, referencing Wave 1 outputs) construct the same doc_assignment fields the parallel path uses and write the file inline, using only file system tools (never browser-based tools). If `monorepo_workspaces` is non-empty, generate per-package READMEs sequentially afterward. Continue to verify_docs.
+When the `Task` tool is unavailable, generate all queued docs sequentially in the current context instead of spawning subagents — this step replaces dispatch_wave_1, collect_wave_1, dispatch_wave_2, and collect_wave_2. Read `agents/doc-writer.md` once, then for each queued doc (Wave 1: README/ARCHITECTURE/CONFIGURATION, complete before Wave 2; Wave 2: GETTING-STARTED/DEVELOPMENT/TESTING plus any queued conditional docs, referencing Wave 1 outputs) construct the same doc_assignment fields the parallel path uses and write the file inline, using only file system tools (never browser-based tools). If `monorepo_workspaces` is non-empty, generate per-package READMEs sequentially afterward. Continue to verify_docs.
 
-Exact per-doc construction and the monorepo per-package loop: `gsd-core/workflows/docs-update/detail/elaboration.md` § 1.
+Exact per-doc construction and the monorepo per-package loop: `engineer/workflows/docs-update/detail/elaboration.md` § 1.
 </step>
 
 <step name="verify_docs">
@@ -757,7 +757,7 @@ Pass `result_path` in the verifier's assignment block (the XML below) and read t
 **Dispatch bound (#5050).** Verifier spawns are bounded by the host's negotiated dispatch capacity, the same query `quick-batch` and chunked planning use, which fails closed to `1` (one at a time) for a host that declares no limit:
 
 ```bash
-DISPATCH_CAPACITY=$(gsd_run query dispatch-capacity --raw 2>/dev/null || echo 1)
+DISPATCH_CAPACITY=$(engineer_run query dispatch-capacity --raw 2>/dev/null || echo 1)
 ```
 
 Spawn the verifiers in batches of at most `DISPATCH_CAPACITY`, and wait for a batch to return before spawning the next, so a runtime with a concurrent-subagent cap never rejects a spawn. This applies to every verifier loop below and to `verify_only_report`.
@@ -767,7 +767,7 @@ Spawn the verifiers in batches of at most `DISPATCH_CAPACITY`, and wait for a ba
 For each doc in `canonical_queue` that was successfully written to disk:
 
 1. Print: `◆ Spawning doc verifier for {doc_path}... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)`
-   Spawn the `gsd-doc-verifier` agent (or invoke sequentially if Task tool is unavailable) with a `<verify_assignment>` block:
+   Spawn the `doc-verifier` agent (or invoke sequentially if Task tool is unavailable) with a `<verify_assignment>` block:
    ```xml
    <verify_assignment>
    doc_path: {relative path to the doc file, e.g. README.md}
@@ -787,11 +787,11 @@ This is NOT optional. Every doc in `review_queue` MUST be verified.
 For each doc in `review_queue` from the manifest:
 
 1. Print: `◆ Spawning doc verifier for {doc_path}... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)`
-   Spawn the `gsd-doc-verifier` agent with the same assignment block as above (including its `result_path`).
+   Spawn the `doc-verifier` agent with the same assignment block as above (including its `result_path`).
 2. Read the result JSON from its `result_path`.
 3. Update the manifest: set `status: "verified"` for each review_queue doc processed.
 
-Non-canonical docs with failures ARE eligible for the fix_loop. When a non-canonical doc has `claims_failed > 0`, dispatch it to gsd-doc-writer in `fix` mode with the failures array — the writer's fix mode does surgical corrections on specific lines regardless of doc type (no template needed). The writer MUST NOT restructure, rephrase, or reformat any content beyond the failing claims.
+Non-canonical docs with failures ARE eligible for the fix_loop. When a non-canonical doc has `claims_failed > 0`, dispatch it to doc-writer in `fix` mode with the failures array — the writer's fix mode does surgical corrections on specific lines regardless of doc type (no template needed). The writer MUST NOT restructure, rephrase, or reformat any content beyond the failing claims.
 
 **Phase 3: Present combined verification summary**
 
@@ -826,14 +826,14 @@ If any doc (canonical OR non-canonical) has `claims_failed > 0`: continue to fix
 <step name="fix_loop">
 **Skip condition:** if every doc passed verification (no `claims_failed > 0`), skip this step entirely.
 
-Otherwise, correct flagged inaccuracies by re-sending failing docs to `gsd-doc-writer` in `fix` mode (one spawn per doc, never batched), for at most 2 iterations (D-06). Each spawn carries a `<doc_assignment>` block: `type` (the doc's original type), `mode: fix`, `doc_path`, `project_context`, `existing_content` (current file content), and `failures:` — a structured array of `{line, claim, expected, actual}` objects, one per failed claim.
+Otherwise, correct flagged inaccuracies by re-sending failing docs to `doc-writer` in `fix` mode (one spawn per doc, never batched), for at most 2 iterations (D-06). Each spawn carries a `<doc_assignment>` block: `type` (the doc's original type), `mode: fix`, `doc_path`, `project_context`, `existing_content` (current file content), and `failures:` — a structured array of `{line, claim, expected, actual}` objects, one per failed claim.
 
 For each doc with a failure, per iteration:
    a. Read the current file content from disk. Record the pre-fix line count:
       ```bash
       PRE_FIX_LINES=$(wc -l < "{doc_path}" 2>/dev/null || echo 0)
       ```
-   b. Spawn `gsd-doc-writer` with the `<doc_assignment>` block above.
+   b. Spawn `doc-writer` with the `<doc_assignment>` block above.
    c. One agent spawn per doc with failures. Do not batch multiple docs into one spawn.
    d. **Post-fix truncation guard:** After the fix agent completes, check for file corruption:
       ```bash
@@ -849,13 +849,13 @@ After each iteration's fix agents complete, re-verify ALL docs and check for reg
 
 Continue to scan_for_secrets either way.
 
-Exact iteration bookkeeping and the regression-halt report wording: `gsd-core/workflows/docs-update/detail/elaboration.md` § 2.
+Exact iteration bookkeeping and the regression-halt report wording: `engineer/workflows/docs-update/detail/elaboration.md` § 2.
 </step>
 
 <step name="verify_only_report">
-**Reached when `--verify-only` is present in `$ARGUMENTS`** — an early-exit reporting mode: do not proceed to dispatch, generation, commit, or report steps after this step. Spawn `gsd-doc-verifier` (read-only) for every file in `existing_docs`, count `<!-- VERIFY:` markers in each, and present a combined claims-checked/passed/failed/markers table plus a "how to fix" pointer to `/gsd:docs-update` (or `--force` to regenerate everything). Clean up `{project_root}/.planning/tmp/verify-*.json` afterward. Compute `doc_key`/`result_path` and bound the spawns exactly as `verify_docs` § Result file contract and § Dispatch bound specify. End the workflow here.
+**Reached when `--verify-only` is present in `$ARGUMENTS`** — an early-exit reporting mode: do not proceed to dispatch, generation, commit, or report steps after this step. Spawn `doc-verifier` (read-only) for every file in `existing_docs`, count `<!-- VERIFY:` markers in each, and present a combined claims-checked/passed/failed/markers table plus a "how to fix" pointer to `/docs-update` (or `--force` to regenerate everything). Clean up `{project_root}/.planning/tmp/verify-*.json` afterward. Compute `doc_key`/`result_path` and bound the spawns exactly as `verify_docs` § Result file contract and § Dispatch bound specify. End the workflow here.
 
-Exact table format and failure-detail wording: `gsd-core/workflows/docs-update/detail/elaboration.md` § 3.
+Exact table format and failure-detail wording: `engineer/workflows/docs-update/detail/elaboration.md` § 3.
 </step>
 
 <step name="scan_for_secrets">
@@ -885,7 +885,7 @@ This would expose credentials if committed.
 Action required:
 1. Review the flagged lines above
 2. Remove any real secrets from the doc files
-3. Re-run /gsd:docs-update to regenerate clean docs
+3. Re-run /docs-update to regenerate clean docs
 ```
 
 Then confirm with AskUserQuestion:
@@ -915,7 +915,7 @@ Only run this step if `commit_docs` is `true` from the init JSON. If `commit_doc
 Assemble the list of files that were actually generated (do not include files that failed or were skipped):
 
 ```bash
-gsd_run query commit "docs: generate project documentation" \
+engineer_run query commit "docs: generate project documentation" \
   --files README.md docs/ARCHITECTURE.md docs/CONFIGURATION.md docs/GETTING-STARTED.md docs/DEVELOPMENT.md docs/TESTING.md
 # Append any conditional docs that were generated:
 # --files ... docs/API.md docs/DEPLOYMENT.md CONTRIBUTING.md
@@ -987,7 +987,7 @@ All generated files committed.
 Remind the user they can fact-check generated docs:
 
 ```
-Run `/gsd:docs-update --verify-only` to fact-check generated docs against the codebase.
+Run `/docs-update --verify-only` to fact-check generated docs against the codebase.
 ```
 
 End workflow.
@@ -1012,5 +1012,5 @@ End workflow.
 - [ ] verify_docs step checked all generated docs against the live codebase
 - [ ] fix_loop ran at most 2 iterations and halted on regression
 - [ ] scan_for_secrets ran before commit and blocked on detected patterns
-- [ ] --verify-only invokes gsd-doc-verifier for full fact-checking (not just VERIFY marker count)
+- [ ] --verify-only invokes doc-verifier for full fact-checking (not just VERIFY marker count)
 </success_criteria>

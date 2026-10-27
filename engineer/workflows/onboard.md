@@ -1,9 +1,9 @@
-# /gsd:onboard Workflow
+# /onboard Workflow
 
 One-command onboarding for an existing or unknown repo. This workflow is a thin
 renderer around `init onboard`; deterministic routing lives in the CLI projection.
 
-@~/.claude/gsd-core/references/gsd-run-resolver.md
+@~/.claude/engineer/references/gsd-run-resolver.md
 
 ## 1. Render the Onboarding Projection
 
@@ -11,13 +11,13 @@ Parse `$ARGUMENTS`:
 - `--fast` passes `--fast` to `init onboard`. Fast mode accepts the fast map for lightweight onboarding only; `next_action` still decides whether complete map work is required before project setup.
 - `--text` forces text-mode choices for runtimes without `AskUserQuestion`.
 
-Run the standard `gsd_run` resolver from the reference above, then run the projection from the runtime root:
+Run the standard `engineer_run` resolver from the reference above, then run the projection from the runtime root:
 
 ```bash
 # If --fast was parsed from $ARGUMENTS:
-INIT=$(gsd_run --cwd "$_GSD_RUNTIME_ROOT" init onboard --fast --raw)
+INIT=$(engineer_run --cwd "$_GSD_RUNTIME_ROOT" init onboard --fast --raw)
 # Otherwise:
-INIT=$(gsd_run --cwd "$_GSD_RUNTIME_ROOT" init onboard --raw)
+INIT=$(engineer_run --cwd "$_GSD_RUNTIME_ROOT" init onboard --raw)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
@@ -256,7 +256,7 @@ Summary template:
 If `commit_docs` is true, commit only the summary path from the onboarding root:
 
 ```bash
-gsd_run --cwd "$ONBOARDING_ROOT" query commit "docs: create onboarding summary" --files .planning/onboarding/SUMMARY.md
+engineer_run --cwd "$ONBOARDING_ROOT" query commit "docs: create onboarding summary" --files .planning/onboarding/SUMMARY.md
 ```
 
 Continue to final status.

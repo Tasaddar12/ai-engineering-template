@@ -23,7 +23,7 @@ Output: MILESTONE_SUMMARY written to `.planning/reports/`, presented inline, opt
 </objective>
 
 <execution_context>
-@engineer/workflows/milestone-summary.md
+@~/.claude/engineer/workflows/milestone-summary.md
 </execution_context>
 
 <context>

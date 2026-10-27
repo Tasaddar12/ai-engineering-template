@@ -4,7 +4,7 @@
   extraction restores byte-budget headroom the frozen ceiling exists to provide.
 -->
 
-**Exception:** If `gaps_found`, the `verify_phase_goal` step already presents the gap-closure path (`/gsd:plan-phase {X} --gaps`). No additional routing needed — skip auto-advance.
+**Exception:** If `gaps_found`, the `verify_phase_goal` step already presents the gap-closure path (`/plan-phase {X} --gaps`). No additional routing needed — skip auto-advance.
 
 **No-transition check (spawned by auto-advance chain):**
 
@@ -34,7 +34,7 @@ STOP. Do not proceed to auto-advance or transition.
 1. Parse `--auto` flag from $ARGUMENTS
 2. Read consolidated auto-mode (`active` = chain flag OR user preference; chain flag already synced in init step):
    ```bash
-   AUTO_MODE=$(gsd_run query check auto-mode --pick active 2>/dev/null) || AUTO_MODE="false"
+   AUTO_MODE=$(engineer_run query check auto-mode --pick active 2>/dev/null) || AUTO_MODE="false"
    ```
 
 **If `--auto` flag present OR `AUTO_MODE` is true (AND verification passed with no gaps):**
@@ -66,10 +66,10 @@ If CONTEXT.md does **not** exist for the next phase, present:
 ```
 ## ✓ Phase {X}: {Name} Complete
 
-/gsd:progress ${GSD_WS} — see updated roadmap
-/gsd:discuss-phase {next} ${GSD_WS} — start here: discuss next phase before planning  ← recommended
-/gsd:plan-phase {next} ${GSD_WS} — plan next phase (skip discuss)
-/gsd:execute-phase {next} ${GSD_WS} — execute next phase (skip discuss and plan)
+/progress ${GSD_WS} — see updated roadmap
+/discuss-phase {next} ${GSD_WS} — start here: discuss next phase before planning  ← recommended
+/plan-phase {next} ${GSD_WS} — plan next phase (skip discuss)
+/execute-phase {next} ${GSD_WS} — execute next phase (skip discuss and plan)
 ```
 
 If CONTEXT.md **exists** for the next phase, present:
@@ -77,10 +77,10 @@ If CONTEXT.md **exists** for the next phase, present:
 ```
 ## ✓ Phase {X}: {Name} Complete
 
-/gsd:progress ${GSD_WS} — see updated roadmap
-/gsd:plan-phase {next} ${GSD_WS} — start here: plan next phase (CONTEXT.md already present)  ← recommended
-/gsd:discuss-phase {next} ${GSD_WS} — re-discuss next phase
-/gsd:execute-phase {next} ${GSD_WS} — execute next phase (skip planning)
+/progress ${GSD_WS} — see updated roadmap
+/plan-phase {next} ${GSD_WS} — start here: plan next phase (CONTEXT.md already present)  ← recommended
+/discuss-phase {next} ${GSD_WS} — re-discuss next phase
+/execute-phase {next} ${GSD_WS} — execute next phase (skip planning)
 ```
 
 Only suggest the commands listed above. Do not invent or hallucinate command names.

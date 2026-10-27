@@ -1,4 +1,4 @@
-@engineer/references/response-language-directive.md
+@~/.claude/engineer/references/response-language-directive.md
 
 <purpose>
 Add a new integer phase to the end of the current milestone in the roadmap. Automatically calculates next phase number, creates phase directory, and updates roadmap structure.

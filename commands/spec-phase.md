@@ -33,8 +33,8 @@ Clarify phase requirements through structured Socratic questioning with quantita
 </objective>
 
 <execution_context>
-@engineer/workflows/spec-phase.md
-@engineer/templates/spec.md
+@~/.claude/engineer/workflows/spec-phase.md
+@~/.claude/engineer/templates/spec.md
 </execution_context>
 
 <context>

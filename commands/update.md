@@ -29,7 +29,7 @@ Routes to the update workflow which handles:
 </objective>
 
 <execution_context>
-@engineer/workflows/update.md
+@~/.claude/engineer/workflows/update.md
 </execution_context>
 
 <flags>
@@ -48,6 +48,6 @@ Parse the first token of the `<arguments>` block:
 </process>
 
 <execution_context_extended>
-@engineer/workflows/sync-skills.md
-@engineer/workflows/reapply-patches.md
+@~/.claude/engineer/workflows/sync-skills.md
+@~/.claude/engineer/workflows/reapply-patches.md
 </execution_context_extended>

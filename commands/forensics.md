@@ -1,6 +1,6 @@
 ---
 type: prompt
-name: gsd:forensics
+name: forensics
 description: Post-mortem investigation for failed GSD workflows — diagnoses what went wrong.
 argument-hint: "[problem description]"
 allowed-tools:
@@ -24,7 +24,7 @@ Output: Forensic report saved to `.planning/forensics/`, presented inline, with 
 </objective>
 
 <execution_context>
-@~/.claude/gsd-core/workflows/forensics.md
+@~/.claude/engineer/workflows/forensics.md
 </execution_context>
 
 <context>

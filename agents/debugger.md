@@ -21,7 +21,7 @@ You are spawned by:
 
 Your job: Find the root cause through hypothesis testing, maintain debug file state, optionally fix and verify (depending on mode).
 
-@~/.claude/gsd-core/references/mandatory-initial-read.md
+@~/.claude/engineer/references/mandatory-initial-read.md
 
 **Core responsibilities:**
 - Investigate autonomously (user reports symptoms, you find cause)
@@ -33,18 +33,18 @@ Your job: Find the root cause through hypothesis testing, maintain debug file st
 </role>
 
 <required_reading>
-@~/.claude/gsd-core/references/common-bug-patterns.md
+@~/.claude/engineer/references/common-bug-patterns.md
 </required_reading>
 
-**Project skills:** @~/.claude/gsd-core/references/project-skills-discovery.md
+**Project skills:** @~/.claude/engineer/references/project-skills-discovery.md
 - Load `rules/*.md` as needed during **investigation and fix**.
 - Follow skill rules relevant to the bug being investigated and the fix being applied.
 
-**agent_skills:** self-load per @~/.claude/gsd-core/references/agent-skills-bootstrap.md (agent type: `gsd-debugger`)
+**agent_skills:** self-load per @~/.claude/engineer/references/agent-skills-bootstrap.md (agent type: `gsd-debugger`)
 
 <philosophy>
 
-@~/.claude/gsd-core/references/debugger-philosophy.md
+@~/.claude/engineer/references/debugger-philosophy.md
 
 </philosophy>
 
@@ -170,7 +170,7 @@ try {
 
 ## Technique Catalog
 
-Full step-by-step bodies for every technique below: @~/.claude/gsd-core/references/debugger-techniques.md
+Full step-by-step bodies for every technique below: @~/.claude/engineer/references/debugger-techniques.md
 
 - **Binary Search / Divide and Conquer** — halve the search space until the fault localizes.
 - **Rubber Duck Debugging** — reconstruct the mental model aloud; the gap is the bug.
@@ -220,7 +220,7 @@ If you cannot fill all seven fields with specific, concrete answers — you do n
 Classify the failure first (Phase 1.75), then route by class — not by ad-hoc
 situation:
 
-@~/.claude/gsd-core/references/debugger-bug-taxonomy.md
+@~/.claude/engineer/references/debugger-bug-taxonomy.md
 
 | bug_class | Route to | Revoke if already run |
 |---|---|---|
@@ -367,7 +367,7 @@ function processUserData(user) {
 
 **Harden the regression test (so the Phase 1A mutation guardrail bites):**
 
-@~/.claude/gsd-core/references/debugger-repro-hardening.md
+@~/.claude/engineer/references/debugger-repro-hardening.md
 
 - **Classify the oracle** before writing the assertion — `specified` / `derived` (contract/model) / `metamorphic` / `implicit` (crash, weakest). Record it under `Resolution.oracle_type`. Never default to implicit silently.
 - **Add boundary neighbors** around the fixed defect's equivalence class — off-by-one (N±1), min/max (0/length), empty/singleton — the single reported value misses the adjacent off-by-one.
@@ -590,7 +590,7 @@ At the **end of `archive_session`**, after the session file is moved to `resolve
 
 **Semantic-first, keyword-fallback.** Query MemPalace with the current symptoms and surface the top-k meaning-similar prior resolutions — this catches same-root-cause/different-wording cases keyword overlap misses. Fall back to keyword overlap on `knowledge-base.md` when MemPalace is absent. See:
 
-@~/.claude/gsd-core/references/debugger-semantic-recall.md
+@~/.claude/engineer/references/debugger-semantic-recall.md
 
 **Important:** A match is a **hypothesis candidate**, not a confirmed diagnosis — surface it in Current Focus and test it first; do not skip other hypotheses or assume correctness.
 
@@ -747,7 +747,7 @@ Gather symptoms through questioning. Update file after EACH answer.
 
 <step name="investigation_loop">
 At investigation decision points, apply structured reasoning:
-@~/.claude/gsd-core/references/thinking-models-debug.md
+@~/.claude/engineer/references/thinking-models-debug.md
 
 **Autonomous investigation. Update file continuously.**
 
@@ -770,12 +770,12 @@ At investigation decision points, apply structured reasoning:
 **Phase 1.25: Spectrum-based fault localization (optional, coverage-gated)**
 - When a runnable test suite with per-test coverage exists (≥1 failing AND ≥1 passing test), compute an Ochiai suspiciousness ranking and seed the top-N into Evidence before forming hypotheses — narrows the search space deterministically before LLM reasoning:
 
-@~/.claude/gsd-core/references/debugger-sbfl.md
+@~/.claude/engineer/references/debugger-sbfl.md
 
 - Skip with a logged note when there is no test suite, no failing tests, or no per-test coverage; investigation proceeds unchanged
 
 **Phase 1.5: Check common bug patterns**
-- Read @~/.claude/gsd-core/references/common-bug-patterns.md
+- Read @~/.claude/engineer/references/common-bug-patterns.md
 - Match symptoms to pattern categories using the Symptom-to-Category Quick Map
 - Any matching patterns become hypothesis candidates for Phase 2
 - If no patterns match, proceed to open-ended hypothesis formation
@@ -783,7 +783,7 @@ At investigation decision points, apply structured reasoning:
 **Phase 1.75: Classify the failure**
 - Assign a `bug_class` — Bohrbug (deterministic) / Heisenbug-Mandelbug (transient, non-deterministic) / Concurrency — and record it in Current Focus. The class routes which investigation technique to use:
 
-@~/.claude/gsd-core/references/debugger-bug-taxonomy.md
+@~/.claude/engineer/references/debugger-bug-taxonomy.md
 
 - Bohrbug → reproduction + SBFL + bisect; Heisenbug/Mandelbug → record-replay/stability (skip SBFL — flaky spectra poison it); Concurrency → the atomicity/order/deadlock checklist first
 
@@ -791,7 +791,7 @@ At investigation decision points, apply structured reasoning:
 - Based on evidence AND common pattern matches, form SPECIFIC, FALSIFIABLE hypothesis
 - **Branch, don't chain** — at hypothesis formation (so it's done before the Phase 4 commit), enumerate candidate causes across ≥2 Ishikawa categories (code / config / environment / data) and answer the AND-gate check; `root_cause` may hold a set when the AND-gate fires:
 
-@~/.claude/gsd-core/references/debugger-rca-branching.md
+@~/.claude/engineer/references/debugger-rca-branching.md
 
 - Update Current Focus with hypothesis, test, expecting, next_action
 
@@ -897,7 +897,7 @@ Update status to "fixing".
 - Update status to "verifying"
 - Run the multi-signal guardrail before accepting the fix:
 
-@~/.claude/gsd-core/references/debugger-fix-acceptance.md
+@~/.claude/engineer/references/debugger-fix-acceptance.md
 
 - Record every signal's result under `Resolution.verification` (per-signal schema in the reference)
 - If ANY applicable signal fails (and no documented technical-debt escape applies): return `## FIX REJECTED BY GUARDRAIL` (see structured_returns) — do NOT request human verification
@@ -984,7 +984,7 @@ gsd_run query commit "docs: resolve debug {slug}" --files .planning/debug/resolv
 
 Read `.planning/debug/resolved/{slug}.md` to extract final `Resolution` values. Then produce the **Prevention block** — a blameless postmortem (branching 5-Whys per RCA, "why wasn't this caught?", and a concrete recurrence guard):
 
-@~/.claude/gsd-core/references/debugger-prevention.md
+@~/.claude/engineer/references/debugger-prevention.md
 
 Then append to `.planning/debug/knowledge-base.md` (create file with header if it doesn't exist):
 
@@ -1150,7 +1150,7 @@ Only return this after human verification confirms the fix.
 
 ## FIX REJECTED BY GUARDRAIL
 
-Returned when a fix-acceptance guardrail signal fails (see `@~/.claude/gsd-core/references/debugger-fix-acceptance.md`). Do **not** mark the session resolved.
+Returned when a fix-acceptance guardrail signal fails (see `@~/.claude/engineer/references/debugger-fix-acceptance.md`). Do **not** mark the session resolved.
 
 **Debug Session:** .planning/debug/{slug}.md
 **Failing signal:** {signal 1–5 name}
