@@ -1,7 +1,7 @@
 # Windows Troubleshooting
 
 **Windows users:** If plan-phase freezes during agent spawning (common on Windows due to
-stdio deadlocks with MCP servers â€” see Claude Code issue anthropics/claude-code#28126):
+stdio deadlocks with MCP servers — see Claude Code issue anthropics/claude-code#28126):
 
 1. **Preserve and identify:** Record each actual worker/session handle, assigned checkout, branch/base/head, known dirty paths and observed host state. A quiet wait, process age or executable name does not prove an orphan or ownership.
 2. **Request a bounded status observation:** Use the native host handle and record the returned state/timestamps under [parallel status](../../../references/parallel-status.md). Do not force-close a terminal that may own unrelated work.

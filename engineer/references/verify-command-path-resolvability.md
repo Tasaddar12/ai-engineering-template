@@ -8,7 +8,7 @@ this asks whether the command can *run at all*.
 
 **Do not hand-reason the filesystem.** #2401 is precisely the failure of doing so: this
 checker flagged a bad `cd ../../frontend` (correct), then prescribed two successively-wrong
-replacement paths â€” the second citing a `package.json` that did not exist. Consume the
+replacement paths — the second citing a `package.json` that did not exist. Consume the
 deterministic probe result, never re-derive it yourself.
 
 The coordinator supplies `engineer_run query check.verify-command-paths PHASE` (or `--plan PLAN_PATH`) output as `{VERIFY_PATHS}` in the review packet when execution is permitted. The result carries `valid`, `findings` and detailed `commands` rows with `severity` and `reason`; consume the actual returned fields, not a guessed legacy shape. A structural/probe pass is not behavioral execution evidence.
@@ -29,12 +29,11 @@ Inspect literal targets relative to the assigned project root; an absolute targe
 
 Rules:
 - **Report, never prescribe.** State the target that failed to resolve and what was missing.
-  Choosing the replacement is the planner's job â€” it now receives the prior phase's proven
-  commands (see `prior_verify_commands` in the planning context).
+  Choosing the replacement is the planner's job. Supplied `prior_verify_commands` must carry complete committed SUMMARY `checks_run` evidence; prior PLAN declarations are `prior_verify_candidates`, never proven runs.
 - `status: pending_creation` means an earlier task in this phase creates that directory. **Not
   a finding.** Say nothing.
 - `unresolvable` means the probe could not ground the path (a variable, glob, substitution, or
-  `~`). That is a WARNING, never a BLOCKER â€” and never a licence to guess the literal path.
+  `~`). That is a WARNING, never a BLOCKER — and never a licence to guess the literal path.
 - `outside_root` covers two shapes: a bare ancestor climb (`cd ../..`) and an **absolute target
   outside the project root** (#4767). Both are ambiguous across worktrees; the absolute one is
   pinned to a single checkout, so under worktree isolation it runs against the wrong tree and
@@ -44,4 +43,4 @@ Rules:
   and this probe the backstop.
 - A non-empty `readError` means the probe **could not look**. Report that as a WARNING in its
   own words; it is not a clean bill of health.
-- `MISSING â€¦` sentinels are Dimension 8's business â€” this dimension stays silent on them.
+- `MISSING …` sentinels are Dimension 8's business — this dimension stays silent on them.

@@ -76,4 +76,4 @@ See @engineer/references/planner-guidance.md for Granularity Calibration table (
 
 ## Evidence selection and continuation
 
-Read complete templates before authoring their artifacts even when general read-depth guidance favors frontmatter. Workers read exact assignment paths; scouts return cited evidence, never children. Only the coordinator schedules specialist work. A context handoff records base/head revisions, completed and remaining work, dirty paths, pending gates and first continuation.
+Read complete templates before authoring their artifacts even when general read-depth guidance favors frontmatter. Workers read exact assignment paths; scouts return cited evidence, never children. The coordinator schedules normal specialist work; explicitly permitted non-scout roles can dispatch only named read-only scout packets when the actual host supports them, otherwise return the complete fallback request. A context handoff records base/head revisions, completed and remaining work, dirty paths, pending gates and first continuation.
