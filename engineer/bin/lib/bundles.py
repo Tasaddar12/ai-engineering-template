@@ -45,6 +45,11 @@ def init(args, kind):
     packet["incomplete_phase"] = next((phase for phase in progress["phases"] if not phase["complete"]), None)
     packet["models"], packet["efforts"] = {}, {}
     roles = ("executor", "planner", "verifier", "phase-researcher", "plan-checker", "code-reviewer", "doc-writer", "doc-verifier", "integration-checker", "security-auditor", "nyquist-auditor", "ui-researcher", "ui-checker", "ui-auditor", "scout", "targeted-fixer", "codebase-mapper")
+    packet["agents"] = list(roles)
+    packet["records"] = {name: "filled" if path and "CHANGEME" not in read(Path(path)) else "unfilled" if path else "missing"
+                         for name in ("project", "requirements", "roadmap", "state") for path in [packet[name+"_path"]]}
+    packet["phase_count"] = progress["phase_count"]
+    packet["project_requirements"] = list(dict.fromkeys(re.findall(r"\b[A-Z][A-Z0-9]*-\d+\b", read(records.planning()/"REQUIREMENTS.md"))))
     packet["missing_agents"] = [role for role in roles if not (models.agents_dir()/(role+".md")).is_file()]
     packet["agents_installed"] = not packet["missing_agents"]
     for role in roles:
@@ -69,9 +74,27 @@ def init(args, kind):
         return {**packet, "description": args.arg(0, ""), "quick_dir": str(records.planning()/"quick"),
                 **{flag: args.has(flag) for flag in ("discuss", "research", "validate", "full")}}
     if kind == "todos":
-        return {**packet, **records.todo(args, "list")}
+        todos = records.todo(args, "list")
+        return {**packet, **todos, "todo_count": todos["count"], "pending_read_ok": True,
+                "pending_todos_markdown": "\n".join("- "+item["title"]+" ("+item.get("area", "general")+", "+item.get("severity", "minor")+")" for item in todos["todos"])}
     if kind in ("progress", "complete-milestone"):
         progress = records.roadmap_analyze()
+        incomplete = None
+        for phase in progress["phases"]:
+            try:
+                index = records.plan_index(type(args)([phase["number"]]))
+            except Failure:
+                continue
+            if index["plans"] and index["incomplete_plans"]:
+                incomplete = str(int(phase["number"])) if "." not in phase["number"] else phase["number"]
+                break
+        from .archive import catalog
+        archived = [{**entry, "complete": True, "archived": True} for entry in catalog() if entry["kind"] == "phase"]
+        if kind == "complete-milestone" and args.pos:
+            selected = args.need()
+            members = [phase for phase in [*progress["phases"], *archived] if str(phase.get("milestone", "")).startswith(selected)]
+            packet["milestone_phases"] = members
+            packet["ready_to_complete"] = bool(members) and all(phase["complete"] for phase in members)
         verified = []
         for phase in progress["phases"]:
             from .core import Args
@@ -79,7 +102,10 @@ def init(args, kind):
                 verified.append(verification.status(Args([phase["number"]]))["status"] == "passed")
             except Failure:
                 verified.append(False)
-        return {**packet, **progress, "progress_percent": progress["percent"], "all_phases_verified": bool(verified) and all(verified)}
+        return {**packet, **progress, "progress_percent": progress["percent"], "all_phases_verified": bool(verified) and all(verified),
+                "incomplete_phase": incomplete,
+                "totals": {"phases": progress["phase_count"], "plans": records.derived_progress()["total_plans"]},
+                "next_phase": next((phase for phase in progress["phases"] if not phase["complete"]), None)}
     value = args.arg(0, args.get("phase"))
     if not value:
         value = packet["state"].get("phase")
@@ -103,7 +129,8 @@ def init(args, kind):
     packet["has_spec"] = bool(specs)
     packet["spec_path"] = str(specs[0]) if specs else None
     research = list(directory.glob("*-RESEARCH.md"))
-    packet["research_partial"] = any(split_frontmatter(read(path))[0].get("status") in ("partial", "incomplete", "in_progress") for path in research)
+    packet["research_partial"] = any(split_frontmatter(read(path))[0].get("status") in ("partial", "incomplete", "in_progress") or
+                                      re.search(r"(?mi)^\*\*Coverage:\*\*\s*partial\b|^## Not Yet Researched\s*$", read(path)) for path in research)
     packet["paths"]["phase"] = str(directory)
     packet["phase"] = info["number"]
     packet["padded_phase"] = info["number"]
@@ -117,7 +144,9 @@ def init(args, kind):
     packet["incomplete_plans"] = [identifier+"-PLAN.md" for identifier in index["incomplete_plans"]]
     packet["incomplete_count"] = len(packet["incomplete_plans"])
     packet["waves"] = index["waves"]
-    packet["prior_context"] = [{"path": str(path), "content": read(path)} for phase in records.phases() if phase != directory for path in phase.glob("*-SUMMARY.md")]
+    from .archive import catalog, guarded
+    prior = records.phases()+[guarded(entry["archived_path"]) for entry in catalog() if entry["kind"] == "phase"]
+    packet["prior_context"] = [{"phase": phase.name.split("-", 1)[0], "path": str(path), "content": read(path)} for phase in prior if phase != directory for path in phase.glob("*-CONTEXT.md")]
     packet["artifact_files"] = info["artifacts"]
     packet["artifacts"] = {"plans": info["plans"], "summaries": info["summaries"]}
     for suffix in ("CONTEXT", "RESEARCH", "VERIFICATION", "VALIDATION", "UI-SPEC", "SECURITY", "REVIEW", "UAT"):
@@ -131,6 +160,7 @@ def init(args, kind):
     try:
         phase = records.roadmap_phase(info["number"])
         packet["phase_req_ids"] = phase["requirements"]
+        packet["requirements"] = phase["requirements"]
         packet["goal"] = phase["goal"]
         packet["phase_name"] = phase["name"]
         status = re.search(r"(?mi)^\*\*Status(?::\*\*|\*\*:)\s*(.+)$", phase["body"])

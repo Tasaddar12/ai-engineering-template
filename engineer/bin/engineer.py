@@ -13,6 +13,7 @@ from lib import sessions, delivery, handoff, codebase
 from lib import issues, cleanup
 from lib import phase_issues
 from lib import planning_review
+from lib import archive
 from lib import requirements
 from lib import planning_integrity
 from lib import security_tracking
@@ -56,9 +57,9 @@ def registry():
         "package-legitimacy": packages.check, "run-with-timeout": misc.timeout,
         "generate-claude-md": misc.instruction_file, "planning.validate": lambda a: misc.integrity(a, False),
         "planning.integrity": lambda a: misc.integrity(a, True),
-        "planning.archive": lambda a: planning_review.archive(a) if a.has("paths") or a.has("path") else misc.archive(a),
+        "planning.archive": lambda a: archive.archive(a) if a.has("paths") or a.has("path") or a.arg(0) in ("phase", "quick", "adr") else misc.archive(a),
         "planning.review": planning_review.review, "planning.repair": planning_review.repair,
-        "planning.archives": planning_review.archives, "planning.archive-recover": planning_review.recover,
+        "planning.archives": archive.archives, "planning.archive-recover": archive.recover,
         "progress.bar": misc.progress_bar,
         "phase.handoff": phase_issues.handoff, "phase.issue-declare": phase_issues.declare,
         "issue.validate": issues.validate_command,

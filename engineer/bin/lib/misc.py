@@ -31,7 +31,20 @@ def integrity(args, strict=False):
     if not schema_only:
         from .planning_consistency import findings
         errors.extend(findings())
-    return {"valid": not errors, "warnings": errors, "errors": errors if strict else [], "checked": len(paths)}, int(bool(errors) and strict)
+        from .state_diagnostics import findings as state_findings
+        errors.extend(state_findings())
+        if "codebase-freshness" not in args.all("skip") and not re.search(r"(?i)unfilled adoption skeleton.*CHANGEME", read(records.planning()/"PROJECT.md")):
+            from .codebase import command
+            for item in command(type(args)([]), "status")["maps"]:
+                if item["state"] != "fresh":
+                    errors.append({"check": "codebase-freshness", "record": item["name"],
+                                   "error": "Codebase map is missing" if item["state"] == "missing" else str(item["commits_since"])+" commits have touched source since this map was written"})
+    errors = [{"check": "record-consistency", "message": item.get("error", "Planning record drift"), **item} for item in errors]
+    packet = {"valid": not errors, "status": "warnings" if errors else "clean", "strict": strict,
+              "warnings": errors, "errors": errors if strict else [], "checked": len(paths)}
+    if strict and errors and not schema_only:
+        raise Failure("validation-failed", "Planning records require reconciliation", warnings=errors)
+    return packet, int(bool(errors) and strict)
 
 
 def summary_extract(args):
@@ -72,6 +85,7 @@ def instruction_file(args):
     name = next((line.lstrip("# ") for line in project.splitlines() if line.startswith("# ")), "Project")
     block = "<!-- engineer:managed:start -->\n# "+name+"\n\n"+template.strip()+"\n<!-- engineer:managed:end -->"
     with planning_lock():
+        split_frontmatter(read(records.planning()/"STATE.md"))
         content = read(path)
         pattern = r"(?s)<!-- engineer:managed:start -->.*?<!-- engineer:managed:end -->"
         content = re.sub(pattern, lambda _: block, content) if re.search(pattern, content) else content.rstrip()+"\n\n"+block+"\n"
@@ -100,21 +114,24 @@ def progress_bar(args):
 
 def roadmap_progress(args):
     identifier = args.need()
+    records.require_active(identifier.rsplit("-", 1)[0])
     path = records.planning()/"ROADMAP.md"
     if not (records.planning()/"STATE.md").is_file():
         raise Failure("missing-state", "STATE.md is required before recording plan progress")
     with planning_lock():
         content = read(path)
         pattern = r"(?m)^(- \[)[ x](\]\s*"+re.escape(identifier)+r"(?:-PLAN\.md)?\b.*)$"
-        content, count = re.subn(pattern, r"\1x\2", content)
+        content, count = re.subn(pattern, lambda match: match[1]+(" " if args.has("undo") else "x")+match[2], content)
         if not count:
             raise Failure("plan-not-in-roadmap", identifier)
         write(path, content)
         records.sync_roadmap()
-    return {"updated": True, "plan": identifier}
+        progress = records.synchronize_progress(identifier.rsplit("-", 1)[0])
+    return {"updated": True, "plan": identifier, "progress": progress}
 
 
 def complete_phase(args):
+    records.require_active(args.need())
     from . import phase_issues, verification
     packet = phase_issues.handoff(args)
     if not packet["ready"]:
@@ -163,7 +180,7 @@ def milestone(args, action):
         shipped = read(records.planning()/"MILESTONES.md")
         versions = list(dict.fromkeys(re.findall(r"\bv\d+(?:\.\d+)+[^\n]*", roadmap+"\n"+shipped)))
         entries = [{"name": name, "version": name.split()[0], "status": "shipped" if name in shipped else "active"} for name in versions]
-        return {"milestones": entries, "count": len(entries), "active": records.milestone_name()}
+        return {"milestones": entries, "count": len(entries), "active": records.milestone_name(), "current": records.milestone_name()}
     name = args.need()
     if action == "create":
         with planning_lock():
@@ -172,17 +189,41 @@ def milestone(args, action):
             if name in existing:
                 raise Failure("milestone-exists", name)
             goal = str(args.get("goal", ""))
-            write(path, existing.rstrip()+"\n\n## "+name+"\n\n"+("**Goal:** "+goal+"\n\n" if goal else ""))
-        return {"created": True, "milestone": name, "goal": goal}
+            block = "### "+name+" (In Progress)\n\n**Milestone:** "+name+"\n\n"+("**Milestone Goal:** "+goal+"\n\n" if goal else "")
+            marker = re.search(r"(?m)^## Progress\s*$", records.roadmap_structure(existing))
+            write(path, existing[:marker.start()].rstrip()+"\n\n"+block+existing[marker.start():] if marker else existing.rstrip()+"\n\n"+block)
+        return {"created": True, "milestone": name, "goal": goal, "status": "in_progress"}
     if not args.has("confirm"):
-        raise Failure("confirmation-required", "Milestone completion requires --confirm")
+        raise Failure("needs-confirm", "Milestone completion requires --confirm")
     progress = records.roadmap_analyze()
     from . import verification
     from .core import Args
-    for phase in progress["phases"]:
+    from .archive import catalog
+    members = [phase for phase in progress["phases"] if str(phase.get("milestone", "")).startswith(name)]
+    archived = [entry for entry in catalog() if entry["kind"] == "phase" and str(entry.get("milestone", "")).startswith(name)]
+    if not members and not archived:
+        raise Failure("empty-milestone", "No phases belong to this milestone")
+    if any(not phase["complete"] for phase in members):
+        raise Failure("milestone-incomplete", "Milestone contains incomplete work")
+    for phase in members:
         if verification.status(Args([phase["number"]]))["status"] != "passed":
             raise Failure("phase-unverified", phase["number"])
-    records.append_section(records.planning()/"MILESTONES.md", "## Shipped", "- "+name+" — "+now())
-    if not args.has("no-archive-phases"):
-        return {"completed": True, **archive(Args([name, "--confirm"]))}
-    return {"completed": True, "milestone": name}
+    phases = [*members, *archived]
+    identifiers = [str(int(phase["number"])) if "." not in phase["number"] else phase["number"] for phase in phases]
+    plans = sum(phase.get("plan_count", 0) for phase in phases)
+    accomplishments = []
+    for phase in phases:
+        for source in records.phase_dir(phase["number"]).glob("*-SUMMARY.md"):
+            _, body = split_frontmatter(read(source))
+            match = re.search(r"(?ms)^## Accomplishments\s*\n(.*?)(?=^## |\Z)", body)
+            if match and match[1].strip():
+                accomplishments.append(match[1].strip())
+    title = name+(" "+str(args.get("name")) if args.has("name") else "")
+    record = "## "+title+" (Shipped: "+now()[:10]+")\n\n**Phases completed:** "+", ".join(identifiers)+"\n\n"+str(len(phases))+" ("+str(plans)+" plans total)\n\n"+"\n\n".join(accomplishments)+"\n"
+    with planning_lock():
+        path = records.planning()/"MILESTONES.md"
+        content = read(path, "# Milestones\n")
+        if re.search(r"(?m)^## "+re.escape(title)+r" \(Shipped:", content):
+            raise Failure("milestone-complete", "Milestone already has a shipped entry")
+        write(path, content.rstrip()+"\n\n"+record)
+    return {"completed": True, "milestone": name, "phases": identifiers, "plans": plans, "accomplishments": accomplishments}

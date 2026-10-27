@@ -1,6 +1,7 @@
 """Runtime-owned phase, roadmap, state, quick-task, and todo records."""
 from __future__ import annotations
 from pathlib import Path
+from decimal import Decimal
 import json
 import re
 import shutil
@@ -15,24 +16,50 @@ def planning():
 
 def number(value):
     text = str(value).split("-", 1)[0]
-    return ".".join(str(int(part)).zfill(2) if i == 0 else str(int(part)) for i, part in enumerate(text.split(".")))
+    if not re.fullmatch(r"[0-9]+(?:\.[0-9]+)?", text):
+        raise ValueError("Invalid phase identifier: "+str(value))
+    integer, separator, fraction = text.partition(".")
+    fraction = fraction.rstrip("0")
+    return str(int(integer)).zfill(2)+("."+fraction if separator and fraction else "")
 
 
 def phases():
     directory = planning()/"phases"
     return sorted([path for path in directory.iterdir() if path.is_dir() and re.match(r"^\d", path.name)],
-                  key=lambda p: tuple(int(x) for x in p.name.split("-")[0].split("."))) if directory.exists() else []
+                  key=lambda p: Decimal(p.name.split("-")[0])) if directory.exists() else []
 
 
 def phase_dir(value):
     candidate = Path(str(value))
     if candidate.is_dir():
         return safe_path(candidate)
-    target = number(value)
-    for path in phases():
-        if number(path.name) == target:
-            return path
+    try:
+        target = number(value)
+    except ValueError:
+        target = None
+    active = [path for path in phases() if number(path.name) == target or str(value) in (path.name, path.name.split("-", 1)[-1])]
+    from .archive import catalog, guarded
+    matches = [entry for entry in catalog() if entry["kind"] == "phase" and
+               (number(entry["id"]) == target or str(value) in (entry["id"], entry["id"].split("-", 1)[-1]))]
+    candidates = active+[guarded(entry["archived_path"]) for entry in matches]
+    if len(candidates) > 1:
+        raise Failure("phase-ambiguous", "Multiple records share the canonical phase identity")
+    if candidates:
+        return candidates[0]
     raise Failure("phase-not-found", f"Phase not found: {value}")
+
+
+def require_active(value):
+    try:
+        directory = phase_dir(value)
+    except Failure as exc:
+        if exc.code != "phase-not-found":
+            raise
+        roadmap_phase(value)
+        return None
+    if directory.is_relative_to(planning()/"archive"):
+        raise Failure("phase-archived", "Recover the archived phase before changing it")
+    return directory
 
 
 def find(value):
@@ -42,8 +69,10 @@ def find(value):
     summaries = [p for p in artifacts if p.endswith("-SUMMARY.md")]
     human_name = next((phase["name"] for phase in roadmap_phases()
                        if phase["number"] == number(directory.name)), directory.name.split("-", 1)[-1])
-    return {"found": True, "directory": str(directory), "phase_dir": str(directory),
-            "number": directory.name.split("-")[0], "phase_number": directory.name.split("-")[0],
+    archived = directory.is_relative_to(planning()/"archive")
+    return {"found": True, "phase_found": True, "archived": archived, "status": "Complete" if archived else None,
+            "directory": str(directory), "phase_dir": str(directory),
+            "number": number(directory.name), "phase_number": number(directory.name),
             "name": human_name, "artifacts": artifacts,
             "plans": plans, "summaries": summaries, "plan_count": len(plans), "plan_count_all": len(plans),
             "summary_count": len(summaries), "has_context": any(p.endswith("CONTEXT.md") for p in artifacts),
@@ -75,6 +104,7 @@ def roadmap_phases():
                          (match[2].strip() == "Critical Fix (INSERTED)" and fields.get("goal", "").startswith("["))):
             continue
         result.append({"number": number(match.group(1)), "name": match.group(2).strip(),
+                       "milestone": next(iter(re.findall(r"(?m)^###\s+(v\d[^\n]*)$", structure[:match.start()])[::-1]), None) if structure[match.start():].startswith("#### ") else None,
                        "goal": fields.get("goal", ""), "depends_on": fields.get("depends_on", ""),
                        "requirements": re.findall(r"\b[A-Z]+-\d+\b", fields.get("requirements", "")),
                        "mode": fields.get("mode", "standard"), "body": body,
@@ -84,9 +114,11 @@ def roadmap_phases():
 
 def roadmap_phase(value):
     target = number(value)
-    for phase in roadmap_phases():
-        if phase["number"] == target:
-            return phase
+    matches = [phase for phase in roadmap_phases() if phase["number"] == target]
+    if len(matches) > 1:
+        raise Failure("phase-ambiguous", "Multiple roadmap phases share the canonical identity")
+    if matches:
+        return matches[0]
     raise Failure("phase-not-found", f"Phase absent from roadmap: {value}")
 
 
@@ -96,15 +128,27 @@ def sync_roadmap():
     text = read(path)
     structure = roadmap_structure(text)
     items = roadmap_phases()
+    history = {}
+    for line in text.splitlines():
+        cells = [cell.strip() for cell in line.strip().strip('|').split('|')]
+        match = re.match(r"^(\d+(?:\.\d+)?)\.\s", cells[0]) if cells else None
+        if match and len(cells) in (4, 5):
+            history[number(match[1])] = cells[-2:]
+    grouped = any(phase.get("milestone") for phase in items)
     overview, rows = [], []
     for phase in items:
         done = len(re.findall(r"(?m)^- \[x\]\s*\d", phase["body"]))
         total = len(re.findall(r"(?m)^- \[[ x]\]\s*\d", phase["body"]))
         complete = phase_completed(phase)
         status = "Complete" if complete else "In progress" if done else "Not started"
-        identifier = phase["number"]
+        previous_status, previous_date = history.get(phase["number"], (None, None))
+        if complete and previous_status == "Shipped":
+            status = "Shipped"
+        completed_date = previous_date if complete and previous_date not in (None, "", "-") else now()[:10] if complete else "-"
+        identifier = str(int(phase["number"])) if "." not in phase["number"] else phase["number"]
         overview.append(f"- [{'x' if complete else ' '}] **Phase {identifier}: {phase['name']}** - {phase['goal']}")
-        rows.append(f"| {identifier}. {phase['name']} | {done}/{total} | {status} | {now()[:10] if complete else '-'} |")
+        milestone_cell = (phase.get("milestone") or "-")+" | " if grouped else ""
+        rows.append(f"| {identifier}. {phase['name']} | {milestone_cell}{done}/{total} | {status} | {completed_date} |")
     existing = re.search(r"(?m)^- \[[ x]\]\s*\*\*Phase\s+\d[^\n]*(?:\n- \[[ x]\]\s*\*\*Phase\s+\d[^\n]*)*", structure)
     block = "\n".join(overview)
     if existing:
@@ -116,7 +160,8 @@ def sync_roadmap():
     progress = re.search(r"(?m)^## Progress\s*$", roadmap_structure(text))
     if progress:
         tail = text[progress.end():]
-        table = "| Phase | Plans Complete | Status | Completed |\n|-------|----------------|--------|-----------|\n"+"\n".join(rows)
+        table = ("| Phase | Milestone | Plans Complete | Status | Completed |\n|-------|-----------|----------------|--------|-----------|\n" if grouped else
+                 "| Phase | Plans Complete | Status | Completed |\n|-------|----------------|--------|-----------|\n")+"\n".join(rows)
         existing_table = re.search(r"(?m)^\| Phase \|[^\n]*(?:\n\|[^\n]*)*", tail)
         if existing_table:
             # Refresh derived rows, but retain authored rows sharing the table.
@@ -143,11 +188,20 @@ def roadmap_analyze(args=None):
         complete += int(phase["complete"])
         phase.pop("start", None)
         phase.pop("end", None)
-    return {"phases": items, "phase_count": len(items), "completed_phases": complete,
+    from .archive import catalog
+    archived = {number(entry["id"]) for entry in catalog() if entry["kind"] == "phase"}
+    known = {phase["number"] for phase in items}|archived
+    blocked = [{"phase": phase["number"], "dependency": dependency}
+               for phase in items for dependency in re.findall(r"(?i)\bPhase\s+(\d+(?:\.\d+)?)", phase["depends_on"])
+               if number(dependency) not in known]
+    return {"phases": items, "phase_count": len(items), "completed_phases": complete, "blocked": blocked,
             "percent": round(100*complete/len(items)) if items else 0, "milestone": milestone_name()}
 
 
 def phase_completed(phase):
+    checked = re.findall(r"(?m)^- \[([ x])\]\s*"+re.escape(phase["number"])+r"-[0-9]{2}\s*:", phase["body"])
+    if checked:
+        return all(value == "x" for value in checked)
     if re.search(r"(?mi)^\*\*Status(?::\*\*|\*\*:)\s*(?:Complete|Completed|Shipped)\s*$", phase["body"]):
         return True
     label = r"0*"+str(int(phase["number"].split(".")[0]))+(r"\."+phase["number"].split(".")[1] if "." in phase["number"] else "")
@@ -155,7 +209,11 @@ def phase_completed(phase):
 
 
 def milestone_name():
-    match = re.search(r"(?m)^#{1,3}\s+.*?\b(v\d[^\n]*)", read(planning()/"ROADMAP.md"))
+    text = read(planning()/"ROADMAP.md")
+    matches = re.findall(r"(?m)^###\s+(v\d[^\n]*?)\s*\(In Progress\)\s*$", text)
+    if matches:
+        return matches[-1].strip()
+    match = re.search(r"(?m)^#{1,3}\s+.*?\b(v\d[^\n]*)", text)
     return match.group(1).strip() if match else None
 
 
@@ -167,10 +225,20 @@ def phase_list(args):
             info["files"] = info[args.get("type")]
             info["count"] = len(info["files"])
         items.append(info)
-    return {"phases": items, "count": sum(p.get("count", 1) for p in items)}
+    from .archive import catalog
+    archived = [find(entry["id"]) for entry in catalog() if entry["kind"] == "phase"]
+    return {"phases": items, "count": sum(p.get("count", 1) for p in items),
+            "archived_phases": archived, "archived_count": len(archived), "total_count": len(items)+len(archived)}
 
 
 def phase_change(args, action):
+    for option in ("name", "goal", "depends-on", "requirements"):
+        if any("\n" in value or "\r" in value for value in args.all(option)):
+            raise Failure("invalid-phase-field", "Phase fields must be single-line values")
+    if action in ("add", "insert"):
+        description = args.need(1 if action == "insert" else 0)
+        if not description.strip() or "\n" in description or "\r" in description:
+            raise Failure("invalid-phase-name", "Use a nonempty single-line phase name")
     path = planning()/"ROADMAP.md"
     with planning_lock():
         if action == "set-plans":
@@ -185,22 +253,36 @@ def phase_change(args, action):
                 raise Failure("invalid-state", "Current Position requires phase, plan and status before plan registration")
         text = read(path, "# Roadmap\n\n")
         existing = roadmap_phases()
+        identities = [phase["number"] for phase in existing]
+        directory_ids = [number(directory.name) for directory in phases()]
+        if len(set(identities)) != len(identities) or len(set(directory_ids)) != len(directory_ids):
+            raise Failure("phase-ambiguous", "Reconcile duplicate canonical phase identities before mutation")
         if action in ("add", "insert"):
             if action == "add":
-                current = max([int(p["number"].split(".")[0]) for p in existing], default=0)+1
+                from .archive import catalog
+                reserved = [int(number(entry["id"]).split(".")[0]) for entry in catalog() if entry["kind"] == "phase"]
+                current = max([int(p["number"].split(".")[0]) for p in existing]+reserved, default=0)+1
                 identifier, description = str(current).zfill(2), args.need()
             else:
                 after, description = number(args.need()), args.need(1)
                 roadmap_phase(after)
-                siblings = [int(p["number"].split(".")[1]) for p in existing if p["number"].startswith(after+".")]
-                identifier = after+"."+str(max(siblings, default=0)+1)
+                siblings = [p["number"].split(".")[1] for p in existing if p["number"].startswith(after+".")]
+                highest = max(siblings, key=lambda value: Decimal("0."+value)) if siblings else "0"
+                following = str(int(highest)+1).zfill(len(highest))
+                if len(following) > len(highest):
+                    following = highest+"1"
+                identifier = number(after+"."+following)
             directory = planning()/"phases"/(identifier+"-"+slug(description))
             if directory.exists():
                 raise Failure("phase-exists", f"Phase directory already exists: {directory}")
             directory.mkdir(parents=True)
-            block = (f"### Phase {identifier}: {description}\n\n**Goal:** {args.get('goal', description)}\n"
-                     f"**Depends on:** {args.get('depends-on', 'Nothing')}\n"
-                     f"**Requirements:** {', '.join(args.all('requirements'))}\n**Plans:** 0 plans\n\n")
+            display = str(int(identifier.split('.')[0]))+('.'+identifier.split('.')[1] if '.' in identifier else '')
+            label = description+(" (INSERTED)" if action == "insert" else "")
+            grouped = milestone_name() and re.search(r"(?m)^### v\d.*\(In Progress\)", text)
+            level = "####" if grouped else "###"
+            block = (f"{level} Phase {display}: {label}\n\n**Goal**: {args.get('goal', description)}\n"
+                     f"**Depends on**: {args.get('depends-on', 'Nothing')}\n"
+                     f"**Requirements**: {', '.join(args.all('requirements'))}\n**Plans**: 0 plans\n\n")
             if action == "insert":
                 insertion = roadmap_phase(args.need())["end"]
                 text = text[:insertion]+block+text[insertion:]
@@ -209,11 +291,16 @@ def phase_change(args, action):
                 text = text[:progress.start()].rstrip()+"\n\n"+block+text[progress.start():] if progress else text.rstrip()+"\n\n"+block
             write(path, text)
             sync_roadmap()
-            return {"added": True, "phase": identifier, "phase_number": str(int(identifier.split('.')[0])) + ('.'+identifier.split('.')[1] if '.' in identifier else ''),
+            synchronize_progress()
+            return {"added": True, "phase": identifier, "phase_number": display,
+                    **({"warning": "Use a concise phase title and put the full intended outcome in --goal"} if len(description) > 90 or "\n" in description else {}),
                     "padded": identifier, "name": description, "slug": slug(description), "directory": str(directory)}
+        require_active(args.need())
         phase = roadmap_phase(args.need())
         before, block, after = text[:phase["start"]], text[phase["start"]:phase["end"]], text[phase["end"]:]
         if action == "remove":
+            if re.search(r"(?m)^- \[x\]\s*\d", block):
+                raise Failure("phase-started", "Retire completed work through reviewed archive instead of removing its identity")
             directory = phase_dir(args.need())
             if list(directory.iterdir()) and not args.has("force"):
                 raise Failure("phase-not-empty", "Use --force to remove a phase with artifacts")
@@ -234,18 +321,28 @@ def phase_change(args, action):
                 content = numbering.references(numbering.remove_dependency(content, removed), removed)
             write(path, content)
             sync_roadmap()
-            return {"removed": True, "phase": phase["number"], "archive": str(archive), "renumbered": renamed}
+            synchronize_progress()
+            return {"removed": str(int(phase["number"])) if "." not in phase["number"] else phase["number"], "phase": phase["number"], "archive": str(archive),
+                    "renumbered": [{key: str(int(value)) if "." not in value else value for key, value in entry.items()} for entry in renamed]}
         if action == "edit":
+            if not any(args.has(key) for key in ("name", "goal", "depends-on", "requirements")):
+                raise Failure("no-changes", "Provide an explicit phase field to edit")
             if args.has("name"):
+                original = phase_dir(args.need())
+                renamed = original.with_name(phase["number"]+"-"+slug(args.get("name")))
+                if renamed != original and renamed.exists():
+                    raise Failure("phase-exists", str(renamed))
                 block = re.sub(r"(^#{2,4}\s+Phase\s+[^:]+:).+", lambda m: m[1]+" "+str(args.get("name")), block, count=1)
+                if renamed != original:
+                    original.rename(renamed)
             for option, label in (("goal", "Goal"), ("depends-on", "Depends on"), ("requirements", "Requirements")):
                 if args.has(option):
                     value = ", ".join(args.all(option))
                     pattern = rf"(?mi)^\*\*{label}(?::\*\*|\*\*:).*$"
-                    line = f"**{label}:** {value}"
+                    line = f"**{label}**: {value}"
                     block = re.sub(pattern, lambda _: line, block) if re.search(pattern, block) else block.rstrip()+"\n"+line+"\n\n"
         elif action == "complete":
-            block = re.sub(r"(?m)^(- \[) (\].*)", r"\1x\2", block)
+            block = re.sub(r"(?m)^(- \[) (\]\s*"+re.escape(phase["number"])+r"-[0-9]{2}\s*:.*)", r"\1x\2", block)
             if "**Status:**" in block:
                 block = re.sub(r"(?m)^\*\*Status:\*\*.*", "**Status:** Complete", block)
             else:
@@ -255,9 +352,17 @@ def phase_change(args, action):
             if args.has("summary") and len(args.all("summary")) != 1:
                 raise Failure("bad-plan", "Provide one explicit single-line summary")
             block, registered = rewrite(block, phase["number"], args.all("plans"), args.get("summary"))
+            # The checklist owns completion after registration. Clear terminal
+            # metadata when newly registered work reopens the phase.
+            if re.search(r"(?m)^- \[ \]\s*"+re.escape(phase["number"])+r"-[0-9]{2}\s*:", block):
+                block = re.sub(r"(?mi)^\*\*Status(?::\*\*|\*\*:)\s*(?:Complete|Completed|Shipped)\s*$", "**Status:** In progress", block)
         write(path, before+block+after)
         sync_roadmap()
+        progress = synchronize_progress(phase["number"])
         return {"updated": True, "phase": phase["number"], "action": action,
+                **({"changed": {key: args.get(key) for key in ("name", "goal", "depends-on", "requirements") if args.has(key)}} if action == "edit" else {}),
+                "progress": progress,
+                **({"plans_completed": len(re.findall(r"(?m)^- \[x\]\s*\d", block))} if action == "complete" else {}),
                 **({"plans": registered} if action == "set-plans" else {})}
 
 
@@ -283,7 +388,7 @@ def state_view(args=None):
     section = position_match[1] if position_match else text
     position = {k.strip(): v.strip() for k, v in re.findall(r"(?m)^(?:\*\*)?([^*\n:]+?)(?::\*\*|\*\*:|:)\s*(.*)$", section)}
     fields = {slug(k).replace("-", "_"): v for k, v in position.items()}
-    fields = {**metadata, **fields}
+    fields = {**fields, **metadata}
     fields["milestone"] = milestone_name()
     fields["exists"] = bool(text)
     fields["content"] = text
@@ -336,7 +441,15 @@ def append_section(file, heading, line):
         if not match:
             text = text.rstrip()+"\n\n"+heading+"\n\n"+line+"\n"
         else:
-            text = text[:match.end()]+"\n"+line+text[match.end():]
+            limit = re.search(r"(?m)^#{1,"+str(len(heading.split()[0]))+r"} ", text[match.end():])
+            end = match.end()+limit.start() if limit else len(text)
+            section = text[match.end():end]
+            section = re.sub(r"(?m)^None yet\.\s*$|^\| \*\(none\)\* \|[^\n]*\n?|^\| \[Choice\] \|[^\n]*\n?", "", section)
+            if line.startswith("|") and re.search(r"(?m)^\|[- |]+\|\s*$", section):
+                section = section.rstrip()+"\n"+line+"\n\n"
+            else:
+                section = "\n\n"+line+"\n"+section.lstrip("\n")
+            text = text[:match.end()]+section+text[end:]
         if Path(file).name == "STATE.md" and heading in ("### Roadmap Evolution", "### Decisions"):
             section = re.search(r"(?ms)^"+re.escape(heading)+r"\s*\n(.*?)(?=^##|\Z)", text)
             bullets = re.findall(r"(?m)^- .+$", section[1]) if section else []
@@ -351,6 +464,8 @@ def append_section(file, heading, line):
 
 
 def state_action(args, action):
+    if not (planning()/"STATE.md").is_file():
+        raise Failure("missing-state", "STATE.md is required before updating project state")
     if action == "save":
         if args.pos or any(key not in ("raw", "json", "pick") for key in args.opts):
             raise Failure("derived-state-only", "state.save synchronizes derived fields; it accepts no replacement content", 2)
@@ -360,15 +475,28 @@ def state_action(args, action):
         with planning_lock():
             metadata, body = split_frontmatter(read(path))
             metadata["progress"] = derived_progress()
-            position = state_view().get("status")
+            position = state_view().get("position", {}).get("Status")
             if position:
-                metadata["status"] = position
+                metadata["status"] = "executing" if position == "In progress" else position.lower().replace(" ", "_")
             write(path, join_frontmatter(metadata, body))
         return {"synced": True, "progress": metadata["progress"], "path": str(path)}
     if action == "update":
         return patch_state({args.need(): args.need(1)})
     if action == "begin-phase":
-        return patch_state({"Phase": args.need(), "Status": args.get("status", "Executing"), "Last Activity": now()})
+        require_active(args.need())
+        phase = roadmap_phase(args.need())
+        rows = re.findall(r"(?m)^- \[[ x]\]\s*\d", phase["body"])
+        identifier = str(int(phase["number"])) if "." not in phase["number"] else phase["number"]
+        result = patch_state({"Phase": f"{identifier} of {len(roadmap_phases())} ({phase['name']})",
+                              "Plan": f"1 of {len(rows)} in current phase",
+                              "Status": args.get("status", "Executing"), "Last activity": now()})
+        path = planning()/"STATE.md"
+        with planning_lock():
+            content = read(path)
+            content = re.sub(r"(?m)^(\*\*Current focus:\*\*).*$", lambda match: match[1]+" "+phase["name"], content)
+            write(path, content)
+            synchronize_progress()
+        return result
     if action == "record-session":
         result = patch_state({"Last session": now(), "Stopped at": args.get("stopped-at", ""), "Resume file": args.get("resume-file", "None")}, "## Session Continuity")
         if args.has("status"):
@@ -403,48 +531,85 @@ def state_action(args, action):
         rationale = args.get("rationale", "")
         result = append_section(planning()/"PROJECT.md", "## Key Decisions", f"| {decision} | {rationale} | {args.get('outcome', 'Pending')} |")
         append_section(planning()/"STATE.md", "### Decisions", "- "+decision)
-        return result
+        return {**result, "project_record": str(planning()/"PROJECT.md")}
     if action in sections:
         return append_section(planning()/"STATE.md", sections[action], "- "+args.need())
     if action == "resolve-blocker":
         path = planning()/"STATE.md"
         with planning_lock():
             text = read(path)
-            lines = text.splitlines(keepends=True)
+            section = re.search(r"(?ms)^### Blockers/Concerns\s*\n(.*?)(?=^##|\Z)", text)
+            lines = section[1].splitlines(keepends=True) if section else []
             removed = [line for line in lines if args.need() in line and line.lstrip().startswith("- ")]
             if not removed:
-                raise Failure("blocker-not-found", args.need())
+                raise Failure("no-match", args.need())
             archive = planning()/"archive/blockers.md"
             write(archive, read(archive)+"\n".join(line.strip() for line in removed)+"\n")
-            write(path, "".join(line for line in lines if line not in removed))
-        return {"resolved": len(removed), "archive": str(archive)}
+            remaining = "".join(line for line in lines if line not in removed)
+            if not re.search(r"(?m)^- ", remaining):
+                remaining = "\nNone yet.\n\n"
+            write(path, text[:section.start(1)]+remaining+text[section.end(1):])
+        return {"resolved": len(removed), "removed": [line.strip().removeprefix("- ") for line in removed], "archive": str(archive)}
     raise Failure("unsupported-action", action, 2)
 
 
 def derived_progress():
-    from .core import Args
     progress = roadmap_analyze()
-    completed = 0
-    for phase in progress["phases"]:
-        try:
-            completed += sum(item["complete"] for item in plan_index(Args([phase["number"]]))["plans"])
-        except Failure:
-            pass
+    completed = sum(len(re.findall(r"(?m)^- \[x\]\s*\d", phase["body"])) for phase in progress["phases"])
+    total = sum(len(re.findall(r"(?m)^- \[[ x]\]\s*\d", phase["body"])) for phase in progress["phases"])
     return {"total_phases": progress["phase_count"], "completed_phases": progress["completed_phases"],
-            "total_plans": sum(p.get("plan_count", 0) for p in progress["phases"]),
-            "completed_plans": completed, "percent": progress["percent"]}
+            "total_plans": total, "completed_plans": completed,
+            "percent": round(100*completed/total) if total else 0}
+
+
+def synchronize_progress(selected=None):
+    """Derive counters without treating report presence as completed work."""
+    path = planning()/"STATE.md"
+    progress = derived_progress()
+    if not path.is_file():
+        return progress
+    metadata, body = split_frontmatter(read(path))
+    match = re.search(r"(?m)^Phase:\s*(\d+(?:\.\d+)?)\b", body)
+    if selected is not None and match and number(match[1]) == number(selected):
+        phase = roadmap_phase(selected)
+        rows = re.findall(r"(?m)^- \[([ x])\]\s*\d+(?:\.\d+)?-[0-9]{2}\s*:", phase["body"])
+        status_match = re.search(r"(?m)^Status:\s*(.*)$", body)
+        status = status_match[1] if status_match else "Planning"
+        if rows and all(value == "x" for value in rows):
+            status = "Shipped" if status == "Shipped" else "Complete"
+        elif status.lower() in ("complete", "completed", "shipped", "phase complete"):
+            status = "In progress"
+        plan_match = re.search(r"(?m)^Plan:\s*(\d+)\b", body)
+        ordinal = min(int(plan_match[1]) if plan_match else 1, len(rows))
+        if status == "In progress":
+            ordinal = min(rows.count("x")+1, len(rows))
+        body = re.sub(r"(?m)^Plan:.*$", f"Plan: {ordinal} of {len(rows)} in current phase", body)
+        body = re.sub(r"(?m)^Status:.*$", lambda _: "Status: "+status, body)
+        metadata["status"] = "executing" if status == "In progress" else status.lower().replace(" ", "_")
+    metadata["progress"] = progress
+    percent = progress["percent"]
+    filled = round(percent/10)
+    body = re.sub(r"(?m)^Progress:.*$", lambda _: "Progress: ["+"█"*filled+"░"*(10-filled)+f"] {percent}%", body)
+    write(path, join_frontmatter(metadata, body))
+    return progress
 
 
 def quick_create(description):
+    from datetime import datetime
+    from .archive import catalog
     directory = planning()/"quick"
     directory.mkdir(parents=True, exist_ok=True)
-    numbers = [int(p.name.split("-", 1)[0]) for p in directory.iterdir() if p.is_dir() and re.match(r"^\d+-", p.name)]
-    identifier = str(max(numbers, default=0)+1).zfill(3)
-    path = directory/(identifier+"-"+slug(description))
+    stamp = datetime.now().strftime("%y%m%d")
+    identities = [path.name for path in directory.iterdir() if path.is_dir()]
+    identities += [entry["id"] for entry in catalog() if entry["kind"] == "quick"]
+    numbers = [int(match[1]) for value in identities if (match := re.match(re.escape(stamp)+r"-([0-9]{3})-", value))]
+    sequence = max(numbers, default=0)+1
+    identifier = stamp+"-"+str(sequence).zfill(3)+"-"+slug(description)
+    path = directory/identifier
     path.mkdir()
-    metadata = {"id": identifier, "description": description, "status": "pending", "created": now()}
+    metadata = {"id": identifier, "sequence": sequence, "description": description, "status": "open", "created": now()}
     write(path/"QUICK.md", join_frontmatter(metadata, "# "+description+"\n"))
-    return {**metadata, "quick_id": identifier, "directory": str(path), "path": str(path/"QUICK.md")}
+    return {**metadata, "quick_id": identifier, "directory": str(path), "path": str(path/"QUICK.md"), "record": (path/"QUICK.md").relative_to(root()).as_posix()}
 
 
 def quick(args, action):
@@ -458,11 +623,13 @@ def quick(args, action):
             if requested and requested != "open" and metadata.get("status") != requested:
                 continue
             items.append({**metadata, "path": str(path), "directory": str(path.parent)})
-        return {"tasks": items, "quick_tasks": items, "count": len(items)}
+        from .archive import catalog
+        archived = [entry for entry in catalog() if entry["kind"] == "quick"]
+        return {"tasks": items, "quick_tasks": items, "count": len(items), "archived_tasks": archived, "archived_count": len(archived)}
     with planning_lock():
         if action == "create":
             return quick_create(args.need())
-        matches = list((planning()/"quick").glob(args.need().split("-")[0]+"-*/QUICK.md"))
+        matches = list((planning()/"quick").glob(args.need()+"/QUICK.md"))
         if len(matches) != 1:
             raise Failure("quick-not-found", args.need())
         path = matches[0]
@@ -471,6 +638,10 @@ def quick(args, action):
             for key in ("status", "commit", "verification", "issue", "pr"):
                 if args.has(key):
                     metadata[key] = args.get(key)
+            if args.has("files"):
+                metadata["files"] = args.all("files")
+            if metadata.get("status") == "complete":
+                metadata["completed"] = now()
             metadata["updated"] = now()
             write(path, join_frontmatter(metadata, body))
         return {**metadata, "directory": str(path.parent), "path": str(path)}

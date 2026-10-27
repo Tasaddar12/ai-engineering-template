@@ -221,6 +221,26 @@ class RuntimeCase(unittest.TestCase):
 
 
 class PhaseCrud(RuntimeCase):
+    def test_decimal_aliases_resolve_one_canonical_phase(self):
+        self.run_verb("phase.insert", "1", "Inserted work")
+        for label in ("1.10", "01.1", "001.100"):
+            with self.subTest(label=label):
+                self.assertEqual("01.1", self.run_verb("roadmap.get-phase", label)["number"])
+                self.assertEqual("01.1", self.run_verb("find-phase", label)["number"])
+
+    def test_canonical_directory_alias_collision_is_rejected_without_mutation(self):
+        self.run_verb("phase.insert", "1", "Inserted work")
+        (self.directory/".planning/phases/001.100-duplicate").mkdir()
+        before = self.read(".planning/ROADMAP.md")
+        self.assertEqual("phase-ambiguous", self.run_verb("find-phase", "1.10", expect_ok=False)["code"])
+        self.assertEqual("phase-ambiguous", self.run_verb("phase.add", "Unrelated work", expect_ok=False)["code"])
+        self.assertEqual(before, self.read(".planning/ROADMAP.md"))
+
+    def test_decimal_insert_does_not_reuse_tenth_alias_of_first_insert(self):
+        labels = [self.run_verb("phase.insert", "1", "Inserted "+str(index))["padded"] for index in range(10)]
+        self.assertEqual(10, len(set(labels)))
+        self.assertEqual("01.91", labels[-1])
+
     def test_add_allocates_next_number_and_directory(self):
         result = self.run_verb("phase.add", "API key session hardening",
                                "--goal", "IDP-managed sessions")
@@ -811,12 +831,12 @@ class Bundles(RuntimeCase):
         self.assertEqual(bundle["padded_phase"], "01")
         self.assertEqual(bundle["phase_name"], "Foundation")
         self.assertFalse(bundle["has_context"])
-        self.assertEqual(bundle["expected_phase_dir"], ".planning/phases/01-foundation")
-        self.assertEqual(bundle["paths"]["roadmap"], ".planning/ROADMAP.md")
+        self.assertEqual(Path(bundle["expected_phase_dir"]), self.directory / ".planning/phases/01-foundation")
+        self.assertEqual(Path(bundle["paths"]["roadmap"]), self.directory / ".planning/ROADMAP.md")
 
     def test_plan_phase_bundle_tells_partial_research_from_finished(self):
         directory = self.directory / ".planning/phases/01-foundation"
-        directory.mkdir(parents=True)
+        directory.mkdir(parents=True, exist_ok=True)
         research = directory / "01-RESEARCH.md"
         bundle = self.run_verb("init.plan-phase", "1")
         self.assertFalse(bundle["has_research"])
@@ -842,7 +862,7 @@ class Bundles(RuntimeCase):
 
     def test_progress_bundle_flags_incomplete_execution(self):
         directory = self.directory / ".planning/phases/01-foundation"
-        directory.mkdir(parents=True)
+        directory.mkdir(parents=True, exist_ok=True)
         (directory / "01-01-PLAN.md").write_text("# plan\n", encoding="utf-8")
         bundle = self.run_verb("init.progress")
         self.assertEqual(bundle["incomplete_phase"], "1")
@@ -850,9 +870,8 @@ class Bundles(RuntimeCase):
 
     def test_progress_bundle_has_no_incomplete_phase_when_summaries_match(self):
         directory = self.directory / ".planning/phases/01-foundation"
-        directory.mkdir(parents=True)
-        (directory / "01-01-PLAN.md").write_text("# plan\n", encoding="utf-8")
-        (directory / "01-01-SUMMARY.md").write_text("# summary\n", encoding="utf-8")
+        directory.mkdir(parents=True, exist_ok=True)
+        self.reviewed_summary("01")
         bundle = self.run_verb("init.progress")
         self.assertIsNone(bundle["incomplete_phase"])
 
@@ -865,7 +884,7 @@ class Bundles(RuntimeCase):
 
     def test_plan_phase_bundle_carries_models_and_requirements(self):
         bundle = self.run_verb("init.plan-phase", "1")
-        self.assertIn("phase-preparer", bundle["models"])
+        self.assertIn("planner", bundle["models"])
         self.assertEqual(bundle["requirements"], ["REQ-01", "REQ-02"])
         self.assertEqual(bundle["project_requirements"],
                          ["REQ-01", "REQ-02", "REQ-03"])
@@ -1450,13 +1469,15 @@ class PlanningValidation(RuntimeCase):
         super().setUp()
         requirements = self.directory / ".planning" / "REQUIREMENTS.md"
         requirements.write_text(
-            "# Requirements\n\n## Traceability\n\n"
+            "# Requirements\n\n- [ ] **REQ-01**: Foundation behavior.\n"
+            "- [ ] **REQ-02**: Foundation wiring.\n- [ ] **REQ-03**: Feature behavior.\n\n## Traceability\n\n"
             "| Requirement | Phase | Status |\n"
             "|-------------|-------|--------|\n"
             "| REQ-01 | Phase 1 | Pending |\n"
             "| REQ-02 | Phase 1 | Pending |\n"
             "| REQ-03 | Phase 2 | Pending |\n",
             encoding="utf-8", newline="\n")
+        self.run_verb("state.save")
 
     def validate(self, *args, expect_ok=True):
         return self.run_verb("planning.validate", "--skip", "codebase-freshness",

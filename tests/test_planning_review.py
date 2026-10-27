@@ -11,11 +11,11 @@ from unittest.mock import patch
 from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / ".ai/runtime"))
+sys.path.insert(0, str(ROOT / "engineer/bin"))
 
 from lib import planning_review  # noqa: E402
-from lib.paths import Workspace, write_text  # noqa: E402
-from lib.results import VerbError  # noqa: E402
+from lib.core import Args, write as write_text  # noqa: E402
+from lib.core import Failure as VerbError  # noqa: E402
 from lib.text import join_frontmatter, split_frontmatter  # noqa: E402
 
 
@@ -147,7 +147,14 @@ class PlanningReviewTests(unittest.TestCase):
         # Windows TEMP may use an 8.3 alias. Workspace canonicalizes the same
         # directory, so fixture paths and containment checks must share its spelling.
         self.root = Path(self.temp.name).resolve()
-        self.workspace = Workspace(self.root)
+        self.workspace = Args([])
+        self.workspace.root = self.root
+        self.workspace.planning = self.root/".planning"
+        for name in ("state", "project", "roadmap", "requirements"):
+            setattr(self.workspace, name, self.workspace.planning/(name.upper()+".md"))
+        environment = patch.dict(os.environ, ENGINEER_ROOT=str(self.root), ENGINEER_HOST="claude")
+        environment.start()
+        self.addCleanup(environment.stop)
         # Workspace uses Git root only when one exists; this isolated fixture
         # has none and therefore cannot resolve to the template checkout.
         self.assertEqual(self.root, self.workspace.root)
@@ -316,7 +323,7 @@ class PlanningReviewTests(unittest.TestCase):
 
     def test_canonical_checkpoint_does_not_need_automatic_task_fields(self):
         path = self.planning / "phases/01-foundation/01-01-PLAN.md"
-        write_text(path, "---\nphase: 01-foundation\nplan: '01'\nwave: 1\ndepends_on: []\nfiles_modified: []\nrequirements: [REQ-01]\nacceptance: [REQ-01]\nmust_haves: {}\n---\n" +
+        write_text(path, "---\nphase: 01-foundation\nplan: '01'\ntype: execute\nwave: 1\ndepends_on: []\nfiles_modified: []\nfiles_deleted: []\nresources: []\nautonomous: false\nrequirements: [REQ-01]\nacceptance: [REQ-01]\ndocumentation: []\nchecks: []\nissue_refs: []\nmust_haves: {truths: [], artifacts: [], key_links: []}\n---\n" +
                    "<objective>Decide it.</objective><context>Phase context.</context>\n" +
                    '<tasks><task type="checkpoint:decision"><decision>The open choice</decision><resume-signal>Select an option.</resume-signal></task></tasks>\n' +
                    "<verification>Check recorded decision.</verification><success_criteria>Decision recorded.</success_criteria><output>Record.</output>\n")
@@ -350,9 +357,9 @@ class PlanningReviewTests(unittest.TestCase):
             self.skipTest("host cannot create symlink fixture: " + str(exc))
 
     def _assert_rejected_before_io(self):
-        with patch.object(planning_review, "read_text", side_effect=AssertionError("content was read before link rejection")), \
-                patch.object(planning_review, "write_text") as writer, \
-                patch.object(planning_review.state, "planning_lock") as locker:
+        with patch.object(planning_review, "read", side_effect=AssertionError("content was read before link rejection")), \
+                patch.object(planning_review, "write") as writer, \
+                patch.object(planning_review, "planning_lock") as locker:
             for action in (lambda: planning_review.review(self.workspace),
                            lambda: planning_review.repair(self.workspace),
                            lambda: planning_review.repair(self.workspace, apply=True, expected="old-review")):
@@ -424,7 +431,7 @@ class PlanningReviewTests(unittest.TestCase):
                         link.rmdir()
 
     def test_linked_canonical_template_is_rejected_before_fingerprint_reads(self):
-        namespace = self.root / ".ai"
+        namespace = self.root / "engineer"
         templates = namespace / "templates"
         templates.mkdir(parents=True)
         with tempfile.TemporaryDirectory() as directory:
@@ -460,7 +467,7 @@ class PlanningReviewTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             external = Path(directory)
             write_text(external / "state.md", "External template must not be read.\n")
-            namespace = self.root / ".ai"
+            namespace = self.root / "engineer"
             result = subprocess.run(["cmd", "/c", "mklink", "/J", str(namespace), str(external)],
                                     capture_output=True, text=True)
             self.assertEqual(0, result.returncode, result.stderr)
@@ -487,7 +494,7 @@ class PlanningReviewTests(unittest.TestCase):
             item["record"] for item in planning_review.review(self.workspace)["inventory"]})
         write_text(record, "A later recorded instruction changes the evidence.\n")
         before = self.workspace.state.read_bytes()
-        with patch.object(planning_review, "write_text") as writer:
+        with patch.object(planning_review, "write") as writer:
             with self.assertRaises(VerbError) as caught:
                 planning_review.repair(self.workspace, apply=True, expected=preview["fingerprint"])
             self.assertEqual("stale-review", caught.exception.code)
@@ -507,7 +514,7 @@ class PlanningReviewTests(unittest.TestCase):
             item["record"] for item in planning_review.review(self.workspace)["inventory"]})
         write_text(uppercase, uppercase.read_text(encoding="utf-8") + "\nLater authored evidence.\n")
         before = uppercase.read_bytes()
-        with patch.object(planning_review, "write_text") as writer:
+        with patch.object(planning_review, "write") as writer:
             with self.assertRaises(VerbError) as caught:
                 planning_review.repair(self.workspace, apply=True, expected=preview["fingerprint"])
             self.assertEqual("stale-review", caught.exception.code)
@@ -522,7 +529,7 @@ class PlanningReviewTests(unittest.TestCase):
             candidate = {"id": "state-structure", "record": str(external), "content": "bad overwrite"}
             report = {"fingerprint": "frozen", "findings": [], "status": "findings"}
             with patch.object(planning_review, "_audit", return_value=(report, [candidate])), \
-                    patch.object(planning_review, "write_text") as writer:
+                    patch.object(planning_review, "write") as writer:
                 with self.assertRaises(VerbError) as caught:
                     planning_review._repair(self.workspace, True, "frozen", ())
                 self.assertEqual("path-escape", caught.exception.code)
@@ -530,22 +537,23 @@ class PlanningReviewTests(unittest.TestCase):
             self.assertEqual("Untouched external target.\n", external.read_text())
 
     def test_clean_entrypoint_renders_to_project_host_workflow_and_discovery_path(self):
-        spec = importlib.util.spec_from_file_location("planning_installer", ROOT / ".ai/install.py")
+        spec = importlib.util.spec_from_file_location("planning_installer", ROOT / "bin/install.py")
         installer = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(installer)
-        source = ".ai/commands/clean-planning.md"
+        source = "commands/clean-planning.md"
         body = (ROOT / source).read_bytes()
-        mirror = (ROOT / ".agents/skills/clean-planning/SKILL.md").read_bytes()
+        mirror = (ROOT / "skills/clean-planning/SKILL.md").read_bytes()
         self.assertEqual(body, mirror)
         for host in ("codex", "claude"):
             with self.subTest(host=host):
                 rendered = installer.render_asset(source, body, host).decode("utf-8")
-                path = "." + host + "/workflows/clean-planning.md"
+                path = "." + host + "/engineer/workflows/clean-planning.md"
                 self.assertIn("`" + path + "`", rendered)
                 self.assertNotIn("~/", rendered)
-                self.assertEqual(".agents/skills/clean-planning/SKILL.md" if host == "codex"
-                                 else ".claude/skills/clean-planning/SKILL.md",
-                                 installer.destination_path(".agents/skills/clean-planning/SKILL.md", host))
+                installed = installer.payload(ROOT, host)
+                skill = ".agents/skills/clean-planning/SKILL.md" if host == "codex" else ".claude/skills/clean-planning/SKILL.md"
+                self.assertIn(skill, installed)
+                self.assertIn(path, installed[skill].decode("utf-8"))
 
 
 if __name__ == "__main__":
