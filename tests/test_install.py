@@ -16,7 +16,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
-INSTALLER = ROOT / ".ai/install.py"
+INSTALLER = ROOT / "bin/install.py"
 spec = importlib.util.spec_from_file_location("workflow_installer", INSTALLER)
 installer = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(installer)
@@ -83,7 +83,7 @@ class CodexConcurrencySettings(unittest.TestCase):
             b'"agents"."max_concurrent_threads_per_session" = 5\n"agents"."max_threads" = 7\n',
             b'agents.other = 3',
             b'[agents]',
-            b'[agents.coder]\nconfig_file = "coder.toml"\n',
+            b'[agents.executor]\nconfig_file = "executor.toml"\n',
         )
         incoming = b'[agents]\nmax_concurrent_threads_per_session = 12\n'
         for original in cases:
@@ -133,7 +133,7 @@ class InstallerTests(unittest.TestCase):
 
     def test_claude_role_defaults_replace_stale_metadata_and_preserve_body(self):
         for name, model, effort in (("scout", "haiku", None), ("targeted-fixer", "haiku", None),
-                                    ("coder", "sonnet", None), ("phase-preparer", "opus", "medium")):
+                                    ("executor", "sonnet", None), ("planner", "opus", "medium")):
             with self.subTest(role=name):
                 source = (ROOT / ".ai/agents" / (name + ".md")).read_text(encoding="utf-8")
                 stale = source.replace("---\n", "---\nmodel: wrong\nmodel: stale\neffort: max\nmodel_reasoning_effort: high\n", 1)
@@ -190,7 +190,9 @@ class InstallerTests(unittest.TestCase):
     def setUpClass(cls):
         cls.source_temp = tempfile.TemporaryDirectory(prefix="installer-source-")
         cls.source = Path(cls.source_temp.name)
-        for directory in (".ai", ".agents", ".planning", "docs"):
+        for directory in ("agents", "commands", "engineer", "hooks", "scripts", "skills", "bin"):
+            if not (ROOT / directory).exists():
+                continue
             shutil.copytree(ROOT / directory, cls.source / directory,
                             ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
         for name in ("AGENTS.md", "README.md", ".gitattributes"):
@@ -201,6 +203,9 @@ class InstallerTests(unittest.TestCase):
             path = cls.source / ".planning" / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("Source-only project history", encoding="utf-8")
+        legacy_fixture = cls.source / ".ai/maintenance/agent-scout-SUMMARY.md"
+        legacy_fixture.parent.mkdir(parents=True, exist_ok=True)
+        legacy_fixture.write_text("Source-only maintenance fixture; never installed.\n", encoding="utf-8")
         command("git", "init", "--quiet", str(cls.source))
         command("git", "add", ".", cwd=cls.source)
         command("git", "-c", "user.name=Installer Test", "-c", "user.email=test@example.invalid",
@@ -327,7 +332,7 @@ issue_refs: []
                 self.target = self.base / host
                 result = self.install("--host", host)
                 self.assertEqual(0, result.returncode, result.stderr)
-                runtime = "." + host + "/runtime/phase.py"
+                runtime = "." + host + "/engineer/bin/engineer.py"
                 identity = json.loads(command(sys.executable, runtime, "query",
                                               "runtime-identity", cwd=self.target))
                 self.assertTrue(identity["ok"])
@@ -366,7 +371,7 @@ issue_refs: []
         self.assertIn("human must review and commit", result.stdout)
         self.assertEqual(self.target.resolve(), Path(command("git", "rev-parse", "--show-toplevel", cwd=self.target).strip()).resolve())
         self.assertEqual("", command("git", "remote", cwd=self.target))
-        listed = json.loads(command(sys.executable, ".codex/runtime/phase.py", "query",
+        listed = json.loads(command(sys.executable, ".codex/engineer/bin/engineer.py", "query",
                                     "phases.list", cwd=self.target))
         self.assertEqual([], listed["phases"])
         self.assertIn("Onboarding pending", (self.target / ".planning/PROJECT.md").read_text(encoding="utf-8"))
@@ -376,7 +381,7 @@ issue_refs: []
                         ".planning/decisions/ADR-source.md", ".planning/codebase/source-map.md"):
             self.assertFalse((self.target / omitted).exists(), omitted)
         self.assertEqual([], list(self.target.glob("*.log")))
-        for name in ("AGENTS.md", ".codex/RULES.md", ".codex/README.md", ".planning/PROJECT.md",
+        for name in ("AGENTS.md", ".codex/engineer/RULES.md", ".codex/README.md", ".planning/PROJECT.md",
                      ".planning/REQUIREMENTS.md", ".planning/ROADMAP.md", ".planning/STATE.md"):
             body = (self.target / name).read_text(encoding="utf-8")
             for source_claim in ("This repository is a reusable engineering workflow template",
@@ -393,7 +398,7 @@ issue_refs: []
         self.assertFalse((self.target / ".ai").exists())
         self.assertIn(".agents/skills/", (self.target / "AGENTS.md").read_text())
         guide = (self.target / ".codex/commands/install.md").read_text(encoding="utf-8")
-        self.assertIn("/main/.ai/install.py", guide)
+        self.assertIn("/main/bin/install.py", guide)
         # Local-only workflow scratch stays out of the project's history.
         for ignored in (".codex-venv/probe.txt", ".workflow-backups/probe.txt",
                         ".planning/handoffs/sess--agent-a1.json"):
@@ -465,7 +470,7 @@ issue_refs: []
                 self.assertFalse((self.target / ".ai").exists())
                 self.assertFalse((self.target / other).exists())
                 self.assertFalse((self.target / ("CLAUDE.md" if host == "codex" else "AGENTS.md")).exists())
-                for relative in ("RULES.md", "runtime/phase.py", "agents/coder.md",
+                for relative in ("RULES.md", "runtime/phase.py", "agents/executor.md",
                                  "commands/onboard.md", "templates/context.md"):
                     self.assertTrue((self.target / namespace / relative).is_file(), relative)
                 body = (self.target / entry).read_text(encoding="utf-8")
@@ -474,7 +479,7 @@ issue_refs: []
                 config = (self.target / ".planning/config.yaml").read_text(encoding="utf-8")
                 self.assertIn("verification:", config)
                 self.assertNotIn(".ai/", config)
-                listed = json.loads(command(sys.executable, namespace + "/runtime/phase.py",
+                listed = json.loads(command(sys.executable, namespace + "/engineer/bin/engineer.py",
                                             "query", "phases.list", cwd=self.target))
                 self.assertEqual([], listed["phases"])
                 self.assertIn(namespace + "-venv/", (self.target / ".gitignore").read_text())
@@ -493,10 +498,10 @@ issue_refs: []
                     self.assertFalse((self.target / ".agents").exists())
 
     def test_native_agent_models_and_direct_roles_install_without_hooks(self):
-        astra = {"coordinator", "researcher", "phase-preparer", "coder"}
-        sol = {"debugger", "code-reviewer", "verifier", "phase-checker"}
-        roles = {"coordinator", "codebase-mapper", "researcher", "phase-preparer",
-                 "phase-checker", "coder", "doc-writer", "doc-verifier",
+        astra = {"coordinator", "researcher", "planner", "executor"}
+        sol = {"debugger", "code-reviewer", "verifier", "plan-checker"}
+        roles = {"coordinator", "codebase-mapper", "researcher", "planner",
+                 "plan-checker", "executor", "doc-writer", "doc-verifier",
                  "integration-checker", "code-reviewer", "debugger", "verifier", "scout", "targeted-fixer"}
         for host in ("codex", "claude"):
             with self.subTest(host=host):
@@ -512,17 +517,17 @@ issue_refs: []
                         methods[metadata["name"]] = (role, metadata)
                 self.assertEqual(roles, set(methods))
                 for name, (role, metadata) in methods.items():
-                    if host == "claude" and name in {"scout", "targeted-fixer", "coder", "phase-preparer"}:
+                    if host == "claude" and name in {"scout", "targeted-fixer", "executor", "planner"}:
                         self.assertEqual({"scout": "haiku", "targeted-fixer": "haiku",
-                                          "coder": "sonnet", "phase-preparer": "opus"}[name], metadata["model"])
+                                          "executor": "sonnet", "planner": "opus"}[name], metadata["model"])
                     else:
                         self.assertNotIn("model", metadata, name)
-                    self.assertEqual("medium" if host == "claude" and name == "phase-preparer" else None,
+                    self.assertEqual("medium" if host == "claude" and name == "planner" else None,
                                      metadata.get("effort"), name)
                     self.assertNotIn("model_reasoning_effort", metadata, name)
                     # Full source methods survive relocation, not compact substitutes.
                     self.assertEqual(installer.render_asset(".ai/agents/" + role.name,
-                        (self.source / ".ai/agents" / role.name).read_bytes(), host),
+                        (self.source / "agents" / role.name).read_bytes(), host),
                         role.read_bytes())
                 if host == "codex":
                     self.assertEqual(roles, {p.stem for p in agents.glob("*.toml")})
@@ -533,7 +538,7 @@ issue_refs: []
                         self.assertEqual(methods[name][1]["description"], config["description"])
                         expected = "gpt-6.1-sol" if name in astra | sol else "gpt-6-luna"
                         self.assertEqual(expected, config["model"])
-                        checkers = {"coder", "doc-verifier", "integration-checker"}
+                        checkers = {"executor", "doc-verifier", "integration-checker"}
                         effort = "medium" if name in checkers else "high"
                         self.assertEqual(effort, config["model_reasoning_effort"])
                         role_path = ".codex/agents/" + name + ".md"
@@ -554,30 +559,30 @@ issue_refs: []
             with self.subTest(host=host):
                 self.target = self.base / host
                 self.assertEqual(0, self.install("--host", host, "--no-hooks").returncode)
-                runtime = "." + host + "/runtime/phase.py"
-                for name, model, effort in (("coder", "sonnet", "high"), ("phase-preparer", "opus", "medium")):
+                runtime = "." + host + "/engineer/bin/engineer.py"
+                for name, model, effort in (("executor", "sonnet", "high"), ("planner", "opus", "medium")):
                     default = json.loads(command(sys.executable, runtime, "query", "resolve-agent", name, cwd=self.target))
                     self.assertEqual("gpt-6.1-sol" if host == "codex" else model, default["model"])
-                    self.assertEqual(("medium" if name == "coder" else "high") if host == "codex" else effort, default["effort"])
+                    self.assertEqual(("medium" if name == "executor" else "high") if host == "codex" else effort, default["effort"])
                 config = self.target / ".planning/config.yaml"
-                config.write_text("agents:\n  coder:\n    model: opus\n    effort: max\n"
-                                  "  phase-preparer:\n    model: sonnet\n    effort: low\n"
+                config.write_text("agents:\n  executor:\n    model: opus\n    effort: max\n"
+                                  "  planner:\n    model: sonnet\n    effort: low\n"
                                   "  scout:\n    model: wrong\n    effort: max\n"
                                   "  targeted-fixer:\n    model: wrong\n    effort: max\n")
                 if host == "codex":
-                    native = self.target / ".codex/agents/coder.toml"
+                    native = self.target / ".codex/agents/executor.toml"
                     native.write_text(native.read_text().replace('"gpt-6.1-sol"', '"custom-codex"')
                                       .replace('"medium"', '"xhigh"'))
                     for name in ("scout", "targeted-fixer"):
                         fixed = self.target / ".codex/agents" / (name + ".toml")
                         fixed.write_text(fixed.read_text().replace('"gpt-6-luna"', '"wrong"')
                                          .replace('"high"', '"max"'))
-                runtime = "." + host + "/runtime/phase.py"
+                runtime = "." + host + "/engineer/bin/engineer.py"
                 resolved = json.loads(command(sys.executable, runtime, "query", "resolve-agent",
-                                              "coder", cwd=self.target))
+                                              "executor", cwd=self.target))
                 self.assertEqual("custom-codex" if host == "codex" else "opus", resolved["model"])
                 self.assertEqual("xhigh" if host == "codex" else "max", resolved["effort"])
-                preparer = json.loads(command(sys.executable, runtime, "query", "resolve-agent", "phase-preparer", cwd=self.target))
+                preparer = json.loads(command(sys.executable, runtime, "query", "resolve-agent", "planner", cwd=self.target))
                 self.assertEqual("gpt-6.1-sol" if host == "codex" else "sonnet", preparer["model"])
                 self.assertEqual("high" if host == "codex" else "low", preparer["effort"])
                 for name in ("scout", "targeted-fixer"):
@@ -629,14 +634,14 @@ issue_refs: []
             with self.subTest(host=host):
                 self.target = self.base / host
                 self.assertEqual(0, self.install("--host", host).returncode)
-                role = self.target / ("." + host) / "agents" / ("coder." + suffix)
+                role = self.target / ("." + host) / "agents" / ("executor." + suffix)
                 # A comment is valid in both formats, so the edit stays representative.
                 role.write_text(role.read_text(encoding="utf-8") + "\n# local customization\n",
                                 encoding="utf-8")
                 before = self.snapshot()
                 result = self.install("--host", host)
                 self.assertNotEqual(0, result.returncode)
-                self.assertIn("coder." + suffix, result.stderr)
+                self.assertIn("executor." + suffix, result.stderr)
                 self.assertEqual(before, self.snapshot())
 
     def test_installed_runtime_creates_phase_from_native_templates(self):
@@ -655,7 +660,7 @@ issue_refs: []
                         "commit", "--quiet", "-m", "Install workflow", cwd=self.target)
                 worktree = self.target / ".worktrees/phase"
                 command("git", "worktree", "add", "-b", "codex/phase", str(worktree), cwd=self.target)
-                runtime = "." + host + "/runtime/phase.py"
+                runtime = "." + host + "/engineer/bin/engineer.py"
                 added = json.loads(command(sys.executable, runtime, "query", "phase.add",
                                            "Installed runtime", "--goal", "Prove the install",
                                            cwd=worktree))
@@ -796,7 +801,7 @@ issue_refs: []
                     self.assertNotIn("write " + name, output)
                 result = self.install("--host", host, "--no-hooks")
                 self.assertEqual(0, result.returncode, result.stderr)
-                self.assertTrue((self.target / ("." + host) / "runtime/phase.py").exists())
+                self.assertTrue((self.target / ("." + host) / "engineer/bin/engineer.py").exists())
                 if host == "codex":
                     settings = read_settings(self.target / name)
                     self.assertEqual(12, settings["agents"]["max_concurrent_threads_per_session"])
@@ -858,12 +863,12 @@ issue_refs: []
                 argv = self.launcher_argv(host, dispatch[0]["hooks"][0])
                 payload = {"cwd": str(cwd), "hook_event_name": "PreToolUse",
                            "tool_name": "Agent",
-                           "tool_input": {"subagent_type": "coder", "description": "x"}}
+                           "tool_input": {"subagent_type": "executor", "description": "x"}}
                 observed = subprocess.run(argv, cwd=cwd, env=environment,
                                           input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
                                           capture_output=True)
                 self.assertEqual(0, observed.returncode,
-                                 "an unisolated coder dispatch must warn and continue: "
+                                 "an unisolated executor dispatch must warn and continue: "
                                  + observed.stderr.decode("utf-8", "replace"))
                 self.assertIn(b"WARNING", observed.stderr)
                 self.assertIn(b'isolation="worktree"', observed.stderr)
@@ -946,13 +951,13 @@ issue_refs: []
             self.assertEqual(0, result.returncode, result.stderr)
             for name, content in records.items():
                 self.assertEqual(content, (self.target / ".planning" / name).read_bytes())
-        self.assertTrue((self.target / ".codex/runtime/phase.py").is_file())
+        self.assertTrue((self.target / ".codex/engineer/bin/engineer.py").is_file())
 
     def test_git_line_ending_changes_do_not_duplicate_or_conflict_with_context(self):
         self.target.mkdir()
         (self.target / "AGENTS.md").write_bytes(b"# Product instructions\n")
         self.assertEqual(0, self.install().returncode)
-        for name in ("AGENTS.md", ".gitignore", ".codex/RULES.md", ".codex/guides/ARTIFACT-GUIDE.md"):
+        for name in ("AGENTS.md", ".gitignore", ".codex/engineer/RULES.md", ".codex/engineer/guides/ARTIFACT-GUIDE.md"):
             path = self.target / name
             path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
         before = self.snapshot()
@@ -973,7 +978,7 @@ issue_refs: []
                     self.assertTrue(any(("." + host) in path.parts for path in paths))
                     test_workflow_links.WorkflowNavigationTests().test_local_guidance_links_resolve_with_portable_case()
                 guide = (self.target / ("." + host) / "commands/install.md").read_text(encoding="utf-8")
-                self.assertIn("/main/.ai/install.py", guide)
+                self.assertIn("/main/bin/install.py", guide)
 
     def test_existing_ai_is_preserved_and_requires_explicit_migration(self):
         (self.target / ".ai/runtime").mkdir(parents=True)
@@ -988,7 +993,7 @@ issue_refs: []
 
     def test_conflicts_abort_before_any_copy(self):
         (self.target / ".codex").mkdir(parents=True)
-        (self.target / ".codex/RULES.md").write_text("Custom engineering rules")
+        (self.target / ".codex/engineer/RULES.md").write_text("Custom engineering rules")
         (self.target / "AGENTS.md").write_text("Keep instructions")
         before = self.snapshot()
         result = self.install()
@@ -1066,7 +1071,7 @@ issue_refs: []
         result = self.install()
         self.assertEqual(0, result.returncode, result.stderr)
         canonical = long_parent.resolve() / "new project"
-        self.assertTrue((canonical / ".codex/runtime/phase.py").is_file())
+        self.assertTrue((canonical / ".codex/engineer/bin/engineer.py").is_file())
         self.assertEqual(canonical, Path(command("git", "rev-parse", "--show-toplevel", cwd=canonical).strip()).resolve())
 
     def test_rejects_subdirectory_but_accepts_linked_worktree(self):

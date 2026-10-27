@@ -23,14 +23,14 @@ def load(name, path):
     return module
 
 
-installer = load("migration_installer", ROOT / ".ai/install.py")
-migration = load("install_migration", ROOT / ".ai/install_migration.py")
-update = load("migration_followup_update", ROOT / ".ai/install_update.py")
+installer = load("migration_installer", ROOT / "bin/install.py")
+migration = load("install_migration", ROOT / "bin/migrate.py")
+update = load("migration_followup_update", ROOT / "bin/update.py")
 
 
 class MigrationTests(unittest.TestCase):
     def test_scout_metadata_export_preserves_custom_body_during_claude_migration(self):
-        shared = (self.source / ".ai/agents/scout.md").read_text(encoding="utf-8")
+        shared = (self.source / "agents/scout.md").read_text(encoding="utf-8")
         self.assertNotIn("model:", shared.split("---", 2)[1])
         custom = shared + "\nCustom scout evidence instruction sentinel.\n"
         self.write(".ai/agents/scout.md", custom.encode())
@@ -48,18 +48,18 @@ class MigrationTests(unittest.TestCase):
         self.assertEqual(custom.encode(), (backup / "files/.ai/agents/scout.md").read_bytes())
 
     def test_worker_defaults_migrate_preserving_custom_bodies_backups_and_config(self):
-        config = b"agents:\n  coder:\n    model: opus\n    effort: max\n"
+        config = b"agents:\n  executor:\n    model: opus\n    effort: max\n"
         self.write(".planning/config.yaml", config)
         originals_by_role = {}
-        for name in ("coder", "phase-preparer"):
-            shared = (self.source / ".ai/agents" / (name + ".md")).read_text(encoding="utf-8")
+        for name in ("executor", "planner"):
+            shared = (self.source / "agents" / (name + ".md")).read_text(encoding="utf-8")
             custom = shared.replace("---\n", "---\nmodel: wrong\neffort: max\n", 1) + "\nCustom body sentinel.\n"
             originals_by_role[name] = custom.encode()
             self.write(".ai/agents/" + name + ".md", custom.encode())
         changes, originals, _ = self.plan("claude", hooks=False)
         backup = installer.backup_migration(self.target, originals)
         self.apply(changes)
-        for name, model, effort in (("coder", "sonnet", None), ("phase-preparer", "opus", "medium")):
+        for name, model, effort in (("executor", "sonnet", None), ("planner", "opus", "medium")):
             exported = (self.target / ".claude/agents" / (name + ".md")).read_text(encoding="utf-8")
             metadata = yaml.safe_load(exported.split("---", 2)[1])
             self.assertEqual(model, metadata["model"])
@@ -74,7 +74,7 @@ class MigrationTests(unittest.TestCase):
         self.assertEqual(before, self.snapshot())
 
     def test_targeted_fixer_migration_preserves_body_and_leaf_permissions(self):
-        shared = (self.source / ".ai/agents/targeted-fixer.md").read_text(encoding="utf-8")
+        shared = (self.source / "agents/targeted-fixer.md").read_text(encoding="utf-8")
         custom = shared + "\nCustom repair instruction sentinel.\n"
         self.write(".ai/agents/targeted-fixer.md", custom.encode())
         changes, originals, _ = self.plan("claude", hooks=False)
@@ -101,7 +101,7 @@ class MigrationTests(unittest.TestCase):
         # Inline excerpts from the assigned base; no historical Git object is
         # required in the shallow CI checkout. Custom additions must survive
         # migration and remain recoverable when the explicit update replaces them.
-        legacy = (b'---\nname: coder\ndisallowedTools: Agent, Task\n'
+        legacy = (b'---\nname: executor\ndisallowedTools: Agent, Task\n'
                   b'description: Executes one assigned phase plan with atomic commits, deviation handling, checkpoint handoffs, and evidence summaries.\n'
                   b'tools: Read, Write, Edit, Bash, Grep, Glob, Skill, mcp__context7__*, mcp__plugin_context7_context7__*\n'
                   b'color: yellow\n---\n\n<local_workflow>\n'
@@ -115,27 +115,27 @@ class MigrationTests(unittest.TestCase):
         for host in ("codex", "claude"):
             with self.subTest(host=host):
                 self.setUp()
-                self.write(".ai/agents/coder.md", legacy)
+                self.write(".ai/agents/executor.md", legacy)
                 self.write(".ai/RULES.md", rules)
                 changes, originals, notes = self.plan(host, hooks=False)
                 self.assertIn("Scout activation is pending", " ".join(notes))
                 migration_backup = installer.backup_migration(self.target, originals)
                 self.apply(changes)
                 namespace = "." + host
-                coder = self.target / namespace / "agents/coder.md"
-                migrated = coder.read_bytes()
+                executor = self.target / namespace / "agents/executor.md"
+                migrated = executor.read_bytes()
                 self.assertIn(b"disallowedTools: Agent, Task", migrated)
                 self.assertIn(b"Custom worker instruction sentinel.", migrated)
-                self.assertEqual(legacy, (migration_backup / "files/.ai/agents/coder.md").read_bytes())
+                self.assertEqual(legacy, (migration_backup / "files/.ai/agents/executor.md").read_bytes())
                 self.assertEqual(rules, (migration_backup / "files/.ai/RULES.md").read_bytes())
-                migrated_rules = (self.target / namespace / "RULES.md").read_bytes()
+                migrated_rules = (self.target / namespace / "engineer/RULES.md").read_bytes()
                 self.assertIn(b"Custom approval instruction sentinel.", migrated_rules)
 
                 changes, originals, _ = update.plan_update(self.source, self.target, host, False, installer)
                 update_backup = installer.backup_migration(self.target, originals)
                 self.apply(changes)
-                self.assertEqual(migrated, (update_backup / "files" / namespace / "agents/coder.md").read_bytes())
-                self.assertEqual(migrated_rules, (update_backup / "files" / namespace / "RULES.md").read_bytes())
+                self.assertEqual(migrated, (update_backup / "files" / namespace / "agents/executor.md").read_bytes())
+                self.assertEqual(migrated_rules, (update_backup / "files" / namespace / "engineer/RULES.md").read_bytes())
                 for role in (self.target / namespace / "agents").glob("*.md"):
                     text = role.read_text(encoding="utf-8")
                     if not text.startswith("---\n") or role.stem in {"scout", "targeted-fixer"}:
@@ -147,7 +147,7 @@ class MigrationTests(unittest.TestCase):
                     self.assertIn("scout-dispatch.md", text)
                     adapter = text.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0]
                     self.assertNotRegex(adapter, r"Only the (?:coordinator|orchestrator)\s+dispatches\s+agents")
-                current_rules = (self.target / namespace / "RULES.md").read_text(encoding="utf-8")
+                current_rules = (self.target / namespace / "engineer/RULES.md").read_text(encoding="utf-8")
                 self.assertIn("scout-dispatch.md", current_rules)
                 self.assertNotIn("not spawn agents", current_rules)
 
@@ -168,13 +168,13 @@ class MigrationTests(unittest.TestCase):
         self.assertNotIn("max_threads", parsed["agents"])
         incoming = installer.host_payload({}, "codex", False)[".codex/config.toml"]
         self.assertEqual(content, installer.merge_codex_config(content, incoming, path))
-        rules = self.target / ".codex/RULES.md"
+        rules = self.target / ".codex/engineer/RULES.md"
         self.assertEqual(b"# Rules\nCustom approval rule. Read .codex/commands/worktree.md\n",
                          rules.read_bytes())
         before = self.snapshot()
         with self.assertRaisesRegex(ValueError, r"Existing files conflict;.*") as caught:
             installer.plan_install(self.source, self.target, "codex", hooks=False)
-        self.assertIn(".codex/RULES.md", str(caught.exception).replace("\\", "/"))
+        self.assertIn(".codex/engineer/RULES.md", str(caught.exception).replace("\\", "/"))
         self.assertEqual(before, self.snapshot())
 
     def test_no_hooks_migration_invalid_settings_do_not_write_or_delete(self):
@@ -213,7 +213,9 @@ class MigrationTests(unittest.TestCase):
     def setUpClass(cls):
         cls.source_temp = tempfile.TemporaryDirectory(prefix="migration-source-")
         cls.source = Path(cls.source_temp.name)
-        for name in (".ai", ".agents", ".planning"):
+        for name in ("agents", "commands", "engineer", "hooks", "scripts", "skills", "bin"):
+            if not (ROOT / name).exists():
+                continue
             shutil.copytree(ROOT / name, cls.source / name,
                             ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
         subprocess.run(["git", "init", "--quiet", str(cls.source)], check=True)
@@ -266,22 +268,22 @@ class MigrationTests(unittest.TestCase):
 
     def test_claude_migration_preserves_custom_roles(self):
         """Agent bodies and frontmatter survive relocation untouched."""
-        legacy = b"---\r\nname: coder\r\ndescription: My coding rules\r\n---\r\nKeep this custom body.\r\n"
+        legacy = b"---\r\nname: executor\r\ndescription: My coding rules\r\n---\r\nKeep this custom body.\r\n"
         custom = b"---\nname: verifier\ndescription: Custom verifier\n---\nKeep my checks.\n"
         unusual = b'---\n{"name": "debugger"}\n---\nKeep my YAML.\n'
         unrelated = b"---\nname: custom\ndescription: Custom role\n---\nKeep unchanged.\n"
-        for role, content in (("coder", legacy), ("verifier", custom),
+        for role, content in (("executor", legacy), ("verifier", custom),
                               ("debugger", unusual), ("custom", unrelated)):
             self.write(".ai/agents/" + role + ".md", content)
         before = self.snapshot()
         changes, backups, notes = self.plan("claude", hooks=False)
         self.assertEqual(before, self.snapshot())
-        self.assertIn(self.target / ".ai/agents/coder.md", backups)
+        self.assertIn(self.target / ".ai/agents/executor.md", backups)
         self.apply(changes)
-        coder = (self.target / ".claude/agents/coder.md").read_bytes()
+        executor = (self.target / ".claude/agents/executor.md").read_bytes()
         expected = legacy.replace(b"\r\n", b"\n").replace(b"\n---\n", b"\nmodel: sonnet\n---\n")
-        self.assertEqual(expected, coder)
-        self.assertEqual("sonnet", yaml.safe_load(coder.decode().split("---", 2)[1])["model"])
+        self.assertEqual(expected, executor)
+        self.assertEqual("sonnet", yaml.safe_load(executor.decode().split("---", 2)[1])["model"])
         for role, content in (("verifier", custom), ("debugger", unusual), ("custom", unrelated)):
             self.assertEqual(content, (self.target / ".claude/agents" / (role + ".md")).read_bytes())
         self.assertFalse(list((self.target / ".claude/agents").glob("*.toml")))
@@ -300,15 +302,15 @@ class MigrationTests(unittest.TestCase):
                 namespace = "." + host
                 self.assertFalse((self.target / ".ai").exists())
                 self.assertEqual(before[".ai/private/archive.bin"], (self.target / namespace / "private/archive.bin").read_bytes())
-                self.assertEqual((self.source / ".ai/runtime/phase.py").read_bytes(), (self.target / namespace / "runtime/phase.py").read_bytes())
-                self.assertEqual(before[".ai/runtime/custom.py"], (self.target / namespace / "runtime/custom.py").read_bytes())
-                self.assertIn(f"{namespace}/commands/worktree.md".encode(), (self.target / namespace / "RULES.md").read_bytes())
+                self.assertEqual((self.source / "engineer/bin/engineer.py").read_bytes(), (self.target / namespace / "engineer/bin/engineer.py").read_bytes())
+                self.assertEqual(before[".ai/runtime/custom.py"], (self.target / namespace / "engineer/bin/custom.py").read_bytes())
+                self.assertIn(f"{namespace}/commands/worktree.md".encode(), (self.target / namespace / "engineer/RULES.md").read_bytes())
                 for name, original in before.items():
                     if name.startswith(".planning/") and name != ".planning/config.yaml":
                         self.assertEqual(original, (self.target / name).read_bytes(), name)
                     if name.startswith((".git/", ".worktrees/", ".ai-venv/")):
                         self.assertEqual(original, (self.target / name).read_bytes(), name)
-                self.assertEqual(before[".planning/config.yaml"].replace(b".ai/runtime/", namespace.encode() + b"/runtime/"), (self.target / ".planning/config.yaml").read_bytes())
+                self.assertEqual(before[".planning/config.yaml"].replace(b".ai/runtime/", namespace.encode() + b"/engineer/bin/"), (self.target / ".planning/config.yaml").read_bytes())
                 self.assertIn("original versions remain in backup", " ".join(notes))
                 self.assertIn(b"Customer preface\r\n", (self.target / ("AGENTS.md" if host == "codex" else "CLAUDE.md")).read_bytes())
                 self.assertIn(b"Customer footer\r\n", (self.target / ("AGENTS.md" if host == "codex" else "CLAUDE.md")).read_bytes())
@@ -327,7 +329,7 @@ class MigrationTests(unittest.TestCase):
                     self.write(name, content)
 
     def test_collision_refuses_without_any_target_changes(self):
-        self.write(".codex/RULES.md", b"Independent existing host workflow")
+        self.write(".codex/engineer/RULES.md", b"Independent existing host workflow")
         before = self.snapshot()
         with self.assertRaisesRegex(ValueError, "destination conflicts"):
             self.plan()

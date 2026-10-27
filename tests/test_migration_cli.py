@@ -99,7 +99,7 @@ class MigrationCliTests(unittest.TestCase):
 
     def test_native_collision_leaves_all_originals_and_no_backup(self):
         self.seed_project()
-        native = self.target / ".claude/RULES.md"
+        native = self.target / ".claude/engineer/RULES.md"
         native.parent.mkdir()
         native.write_bytes(b"An existing second workflow must not be overwritten.\n")
         before = self.snapshot()
