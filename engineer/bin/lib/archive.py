@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import re
 import stat
+import subprocess
 import tempfile
 from . import records
 from .core import Failure, now, planning_lock, read, root, write_json
@@ -117,6 +118,106 @@ def _authored(content, heading):
     return len(prose) >= 12 and not re.search(r"(?im)filled on completion|how the change|^\s*\[[^]]+\]\s*$", prose)
 
 
+def historical_phase_evidence(directory):
+    """Validate a committed past result without treating it as current readiness.
+
+    Source files may have evolved since verification. The phase records must
+    still describe that exact result, and the digest must match Git's bytes at
+    the recorded revision, rather than today's source or an unbound status.
+    """
+    from . import frontmatter
+    directory = guarded(directory)
+    reports = list(directory.glob("*-VERIFICATION.md"))
+    if len(reports) != 1:
+        return False
+    report = guarded(reports[0])
+    metadata, body = split_frontmatter(read(report))
+    if (frontmatter.errors(metadata, "verification") or
+            frontmatter.path_errors(report, metadata, "verification") or
+            metadata.get("status") != "passed" or len(body.strip()) < 12):
+        return False
+    revision = metadata.get("revision", metadata.get("verified_revision", ""))
+    if not isinstance(revision, str) or not re.fullmatch(r"[a-f0-9]{40,64}", revision):
+        return False
+    def git(*argv):
+        return subprocess.run(["git", *argv], cwd=root(), capture_output=True, check=False)
+    if git("merge-base", "--is-ancestor", revision, "HEAD").returncode:
+        return False
+    name = report.relative_to(root()).as_posix()
+    committed = git("show", "HEAD:"+name)
+    if committed.returncode or committed.stdout != report.read_bytes():
+        return False
+    # Establish when these exact report bytes entered history. A new report
+    # cannot borrow an old digest after development has already moved on; an
+    # actual historical report remains valid when source evolves afterwards.
+    history = git("log", "--format=%H", "--", name)
+    if history.returncode:
+        return False
+    witness = None
+    for commit in reversed(history.stdout.decode("ascii").splitlines()):
+        candidate = git("show", commit+":"+name)
+        if candidate.returncode == 0 and candidate.stdout == committed.stdout:
+            witness = commit
+            break
+    if not witness or git("merge-base", "--is-ancestor", revision, witness).returncode:
+        return False
+    changed = git("diff", "--name-only", "-z", revision, witness)
+    allowed = {name, ".planning/STATE.md", ".planning/ROADMAP.md", ".planning/REQUIREMENTS.md"}
+    if changed.returncode or any(item.decode("utf-8") not in allowed for item in changed.stdout.split(b"\0") if item):
+        return False
+    relative = directory.relative_to(root()).as_posix()
+    inventory = git("ls-tree", "-r", "--name-only", "-z", revision, "--", relative)
+    if inventory.returncode:
+        return False
+    names = [item.decode("utf-8") for item in inventory.stdout.split(b"\0") if item]
+    historical = {name for name in names if Path(name).parent == Path(relative)
+                  and name.endswith(("-PLAN.md", "-SUMMARY.md"))}
+    current = {p.relative_to(root()).as_posix() for p in directory.iterdir()
+               if p.name.endswith(("-PLAN.md", "-SUMMARY.md"))}
+    if not historical or current != historical:
+        return False
+    if any(not isinstance(item, str) for item in metadata["covered_files"]):
+        return False
+    covered = set(metadata["covered_files"])
+    contents = {}
+    for name in sorted(historical):
+        path = guarded(name)
+        blob = git("show", revision+":"+name)
+        if blob.returncode or blob.stdout != path.read_bytes():
+            return False
+        contents[path] = blob.stdout
+        details, _ = split_frontmatter(blob.stdout.decode("utf-8-sig"))
+        kind = "plan" if name.endswith("-PLAN.md") else "summary"
+        if frontmatter.errors(details, kind) or frontmatter.path_errors(path, details, kind):
+            return False
+        if any(not isinstance(item, str) for item in details.get("files_modified", [])):
+            return False
+        covered.update(details.get("files_modified", []))
+        for item in details.get("must_haves", {}).get("artifacts", []):
+            if isinstance(item, dict) and item.get("path"):
+                if not isinstance(item["path"], str):
+                    return False
+                covered.add(item["path"])
+    for item in covered:
+        if not isinstance(item, str):
+            return False
+        path = guarded(item)
+        if path == report:
+            continue
+        name = path.relative_to(root()).as_posix()
+        mode = git("ls-tree", revision, "--", name)
+        if mode.stdout and not mode.stdout.startswith((b"100644 ", b"100755 ")):
+            return False
+        blob = git("show", revision+":"+name)
+        contents[path] = blob.stdout if blob.returncode == 0 else b"<missing>"
+    fingerprint = hashlib.sha256()
+    for path in sorted(contents, key=str):
+        fingerprint.update(path.relative_to(root()).as_posix().encode()+b"\0")
+        fingerprint.update(contents[path]+b"\0")
+    expected = fingerprint.hexdigest()
+    return metadata.get("fingerprint") == expected and metadata.get("covered_digest") == "v4:sha256:"+expected
+
+
 def _evidence(path, kind, args):
     if kind == "phase":
         try:
@@ -139,8 +240,7 @@ def _evidence(path, kind, args):
                 raise Failure("archive-active", "Every plan requires completed source evidence")
             if not _authored(prose, "Accomplishments"):
                 raise Failure("archive-evidence-required", "Completed summaries require authored accomplishments")
-        reports = list(path.glob("*-VERIFICATION.md"))
-        if reports and all(split_frontmatter(read(report))[0].get("status") == "passed" for report in reports):
+        if historical_phase_evidence(path):
             return
         if args.has("evidence"):
             metadata, _ = split_frontmatter(read(guarded(args.get("evidence"))))
@@ -158,14 +258,26 @@ def _evidence(path, kind, args):
         replacements = metadata.get("superseded_by", [])
         if metadata.get("status") in ("superseded", "retired") and replacements:
             for identifier in replacements:
-                if not list(guarded(records.planning()/"decisions").glob(str(identifier)+"*.md")):
-                    raise Failure("archive-evidence-required", "Replacement ADR does not exist")
+                _replacement(identifier)
             return
     else:
         from .planning_review import _retired
         if _retired(path):
             return
     raise Failure("archive-evidence-required", "Explicit retirement outcome evidence is required")
+
+
+def _replacement(identifier):
+    identifier = str(identifier).removesuffix(".md")
+    if not re.fullmatch(r"ADR-\d+(?:-[\w-]+)?", identifier):
+        raise Failure("archive-evidence-required", "Replacement requires an exact ADR identity")
+    base = guarded(records.planning()/"decisions")
+    numeric = re.fullmatch(r"ADR-\d+", identifier)
+    candidates = [path for path in base.iterdir() if path.suffix == ".md" and
+                  (path.stem.startswith(identifier+"-") if numeric else path.stem == identifier)] if base.exists() else []
+    if len(candidates) != 1:
+        raise Failure("archive-evidence-required", "Replacement ADR is absent or ambiguous")
+    return guarded(candidates[0])
 
 
 def _selection(args):
@@ -185,8 +297,14 @@ def _selection(args):
                 stem = records.number(stem)
             if kind == "adr" and re.fullmatch(r"(?i)(?:adr-)?\d+", stem):
                 stem = "ADR-"+str(int(re.sub(r"(?i)^adr-", "", stem))).zfill(3)
-            pattern = stem+"-*" if kind == "phase" and re.fullmatch(r"\d+(?:\.\d+)?", stem) else stem+"*"
-            values = sorted(path for path in base.glob(pattern) if path.is_dir() == (kind != "adr"))
+            if any(character in selector for character in "*?[]") or selector in (".", ".."):
+                raise Failure("invalid-archive-selection", selector)
+            numeric = (kind == "phase" and re.fullmatch(r"\d+(?:\.\d+)?", stem)) or (kind == "adr" and re.fullmatch(r"ADR-\d+", stem))
+            values = sorted(path for path in base.iterdir() if path.is_dir() == (kind != "adr")
+                            and (kind != "adr" or path.suffix == ".md")
+                            and (path.stem == stem if kind == "adr" and not numeric else
+                                 records.number(path.name) == stem if numeric and kind == "phase" and re.match(r"^\d+(?:\.\d+)?-", path.name) else
+                                 path.name.startswith(stem+"-") if numeric and kind == "adr" else path.name == selector)) if base.exists() else []
             if len(values) != 1:
                 raise Failure("archive-ambiguous" if values else "archive-not-found", selector)
     paths = [guarded(value) for value in values]
@@ -200,6 +318,8 @@ def _selection(args):
     for path in paths:
         relative = path.relative_to(records.planning()) if path.is_relative_to(records.planning()) else Path()
         if len(relative.parts) < 2 or relative.parts[0] in ("archive",) or not path.exists():
+            raise Failure("invalid-archive-selection", str(path))
+        if kind in ("phase", "quick", "adr") and len(relative.parts) != 2:
             raise Failure("invalid-archive-selection", str(path))
         if kind in ("phase", "quick", "adr") and relative.parts[0] != {"phase": "phases", "quick": "quick", "adr": "decisions"}[kind]:
             raise Failure("invalid-archive-selection", str(path))
@@ -264,6 +384,8 @@ def archive(args):
         source = guarded(entry["path"])
         if source.exists():
             raise Failure("archive-collision", "An active record reuses the archived identity")
+        if entry["kind"] == "phase" and any(records.number(path.name) == records.number(entry["id"]) for path in records.phases()):
+            raise Failure("archive-collision", "An active phase reuses the archived number")
         if args.arg(0) == "adr" and re.fullmatch(r"(?i)(?:adr-)?\d+", args.arg(1, "")):
             identity = re.match(r"(?i)ADR-(\d+)", entry["id"])[1]
             if list(guarded(records.planning()/"decisions").glob("ADR-"+identity+"*.md")):
@@ -328,7 +450,7 @@ def archive(args):
                 entry.update({"number": records.number(source.name), "name": source.name.split("-", 1)[-1], "plan_count": 0})
         if kind == "adr":
             metadata, _ = split_frontmatter(read(source))
-            replacement = list(guarded(records.planning()/"decisions").glob(str(metadata["superseded_by"][0])+"*.md"))[0]
+            replacement = _replacement(metadata["superseded_by"][0])
             entry["replacement"] = replacement.relative_to(root()).as_posix()
             from .text import join_frontmatter
             archived_name = target.relative_to(root()).as_posix()

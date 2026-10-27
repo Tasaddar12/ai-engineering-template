@@ -198,7 +198,7 @@ def milestone(args, action):
     progress = records.roadmap_analyze()
     from . import verification
     from .core import Args
-    from .archive import catalog
+    from .archive import catalog, historical_phase_evidence
     members = [phase for phase in progress["phases"] if str(phase.get("milestone", "")).startswith(name)]
     archived = [entry for entry in catalog() if entry["kind"] == "phase" and str(entry.get("milestone", "")).startswith(name)]
     if not members and not archived:
@@ -206,7 +206,7 @@ def milestone(args, action):
     if any(not phase["complete"] for phase in members):
         raise Failure("milestone-incomplete", "Milestone contains incomplete work")
     for phase in members:
-        if verification.status(Args([phase["number"]]))["status"] != "passed":
+        if not historical_phase_evidence(records.phase_dir(phase["number"])):
             raise Failure("phase-unverified", phase["number"])
     phases = [*members, *archived]
     identifiers = [str(int(phase["number"])) if "." not in phase["number"] else phase["number"] for phase in phases]

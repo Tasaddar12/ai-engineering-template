@@ -204,7 +204,7 @@ class RuntimeCase(unittest.TestCase):
             summary = {**identity, "status": "complete", "requirements-completed": requirements,
                        "acceptance": [], "documentation": [], "issue_refs": []}
             for suffix, metadata in (("PLAN", plan), ("SUMMARY", summary)):
-                text = "---\n"+"\n".join(key+": "+json.dumps(value) for key, value in metadata.items())+"\n---\nReviewed: no remaining problems.\n"
+                text = "---\n"+"\n".join(key+": "+json.dumps(value) for key, value in metadata.items())+"\n---\n## Accomplishments\n\nCompleted the fixture scope against its recorded acceptance cases.\n"
                 (selected/(identifier+"-"+suffix+".md")).write_text(text, encoding="utf-8")
         self.git("add", "--", ".planning")
         committed = self.git("commit", "-m", "fixture: completed source records")
@@ -212,6 +212,8 @@ class RuntimeCase(unittest.TestCase):
         report = self.run_verb("verification.fingerprint", number)["path"]
         self.run_verb("frontmatter.set", report, "--field", "issue_refs", "--value", "[]")
         self.run_verb("frontmatter.set", report, "--field", "status", "--value", "passed")
+        report_path = Path(report)
+        report_path.write_text(report_path.read_text(encoding="utf-8")+"\n## Verification\n\nConfirmed the fixture acceptance cases against the recorded implementation.\n", encoding="utf-8")
         self.git("add", "--", report)
         committed = self.git("commit", "-m", "fixture: current v4 verification")
         self.assertEqual(0, committed.returncode, committed.stderr)
@@ -747,6 +749,51 @@ class Todos(RuntimeCase):
         self.assertFalse((self.directory / added["file"]).exists())
         self.assertTrue((self.directory / ".planning/todos/completed" / name).exists())
 
+    def test_todo_completion_preserves_uncertain_legacy_issue_publication(self):
+        added = self.run_verb("todo.add", "Uncertain legacy publication")
+        path = Path(added["file"])
+        self.run_verb("frontmatter.set", str(path), "--field", "issuePublication", "--value", '{"attempted": true}')
+        before = path.read_bytes()
+        denied = self.run_verb("todo.complete", path.name, expect_ok=False)
+        self.assertEqual("todo-publication-unresolved", denied["code"])
+        self.assertEqual(before, path.read_bytes())
+        self.assertFalse((self.directory/".planning/todos/completed"/path.name).exists())
+
+    def test_todo_completion_preserves_consumed_issue_preview_without_provider_url(self):
+        added = self.run_verb("todo.add", "Uncertain preview publication")
+        path = Path(added["file"])
+        attempts = self.directory/".planning/issue-previews"
+        attempts.mkdir(parents=True, exist_ok=True)
+        attempt = attempts/"consumed.json"
+        attempt.write_text(json.dumps({"source": str(path.resolve()), "used": True, "url": None}), encoding="utf-8")
+        before = path.read_bytes(), attempt.read_bytes()
+        denied = self.run_verb("todo.complete", path.name, expect_ok=False)
+        self.assertEqual("todo-publication-unresolved", denied["code"])
+        self.assertEqual(before, (path.read_bytes(), attempt.read_bytes()))
+
+    def test_todo_completion_refuses_completed_destination_collision(self):
+        added = self.run_verb("todo.add", "Collision remains pending")
+        path = Path(added["file"])
+        destination = self.directory/".planning/todos/completed"/path.name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text("Existing historical todo.\n", encoding="utf-8")
+        before = path.read_bytes(), destination.read_bytes()
+        self.assertEqual("todo-exists", self.run_verb("todo.complete", path.name, expect_ok=False)["code"])
+        self.assertEqual(before, (path.read_bytes(), destination.read_bytes()))
+
+    def test_todo_completion_refuses_symlink_alias_before_retirement(self):
+        added = self.run_verb("todo.add", "Preserve original source")
+        path = Path(added["file"])
+        alias = path.with_name("alias.md")
+        try:
+            alias.symlink_to(path)
+        except (OSError, NotImplementedError) as exc:
+            self.skipTest("Host cannot create symlink fixture: "+str(exc))
+        before = path.read_bytes()
+        self.assertEqual("aliased-issue-source", self.run_verb("todo.complete", alias.name, expect_ok=False)["code"])
+        self.assertTrue(alias.is_symlink())
+        self.assertEqual(before, path.read_bytes())
+
     def test_match_phase_scores_shared_keywords(self):
         self.run_verb("todo.add", "Harden the foundation scaffold")
         matches = self.run_verb("todo.match-phase", "1")
@@ -822,6 +869,33 @@ class Milestones(RuntimeCase):
         entry = self.read(".planning/MILESTONES.md")
         self.assertIn("## v1.1 Hardening (Shipped:", entry)
         self.assertIn("**Phases completed:** 3", entry)
+
+    def test_milestone_completion_refuses_shallow_passed_verification(self):
+        self.run_verb("milestone.create", "v1.1 Hardening")
+        self.run_verb("phase.add", "Hardening work", "--goal", "Harden it")
+        self.reviewed_summary("03")
+        self.run_verb("phase.complete", "3")
+        report = self.directory/".planning/phases/03-hardening-work/03-VERIFICATION.md"
+        report.write_text("---\nphase: '03'\nstatus: passed\n---\nA claimed result without revision-bound evidence.\n", encoding="utf-8")
+        self.git("add", "--", str(report))
+        self.git("commit", "-m", "fixture: shallow verification")
+        before = self.read(".planning/ROADMAP.md")
+        denied = self.run_verb("milestone.complete", "v1.1", "--confirm", expect_ok=False)
+        self.assertEqual("phase-unverified", denied["code"])
+        self.assertEqual(before, self.read(".planning/ROADMAP.md"))
+        self.assertFalse((self.directory/".planning/MILESTONES.md").exists())
+
+    def test_milestone_completion_preserves_valid_historical_verification(self):
+        self.run_verb("milestone.create", "v1.1 Hardening")
+        self.run_verb("phase.add", "Hardening work", "--goal", "Harden it")
+        self.reviewed_summary("03")
+        self.run_verb("phase.complete", "3")
+        later = self.directory/"later-source.txt"
+        later.write_text("Later work after the verified milestone scope.\n", encoding="utf-8")
+        self.git("add", "--", ".planning", str(later))
+        committed = self.git("commit", "-m", "fixture: later development")
+        self.assertEqual(0, committed.returncode, committed.stderr)
+        self.assertTrue(self.run_verb("milestone.complete", "v1.1", "--confirm")["completed"])
 
 
 class Bundles(RuntimeCase):

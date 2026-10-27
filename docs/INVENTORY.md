@@ -111,7 +111,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `engineer/bin/engineer.py` | local-only | 181 | 0 |
 | `engineer/bin/engineer_run` | reconciled | 24 | 0 |
 | `engineer/bin/lib/__init__.py` | local-only | 1 | 0 |
-| `engineer/bin/lib/archive.py` | local-only | 436 | 0 |
+| `engineer/bin/lib/archive.py` | local-only | 558 | 0 |
 | `engineer/bin/lib/bundles.py` | local-only | 204 | 0 |
 | `engineer/bin/lib/cleanup.py` | local-only | 210 | 0 |
 | `engineer/bin/lib/codebase.py` | local-only | 80 | 0 |
@@ -136,7 +136,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `engineer/bin/lib/plans.py` | local-only | 99 | 0 |
 | `engineer/bin/lib/probes.py` | local-only | 399 | 1 |
 | `engineer/bin/lib/quick_batch.py` | local-only | 397 | 0 |
-| `engineer/bin/lib/records.py` | local-only | 733 | 0 |
+| `engineer/bin/lib/records.py` | local-only | 738 | 0 |
 | `engineer/bin/lib/repository.py` | local-only | 28 | 0 |
 | `engineer/bin/lib/requirements.py` | local-only | 41 | 0 |
 | `engineer/bin/lib/review_disposition.py` | local-only | 285 | 1 |

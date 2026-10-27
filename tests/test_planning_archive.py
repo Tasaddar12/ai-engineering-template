@@ -14,6 +14,7 @@ RUNTIME = ROOT / "engineer/bin/engineer.py"
 sys.path.insert(0, str(RUNTIME.parent))
 from lib import archive
 from lib.core import Args, Failure as VerbError
+from lib.text import join_frontmatter, split_frontmatter
 
 ROADMAP = """# Roadmap
 
@@ -93,11 +94,33 @@ class PlanningArchive(unittest.TestCase):
         self.write(".planning/STATE.md", STATE)
         self.write(".planning/PROJECT.md", "# Test project\n")
         self.write(".planning/config.yaml", "verification:\n  commands: []\n")
-        self.write(".planning/phases/01-foundation/01-01-PLAN.md", "---\nphase: 01-foundation\n---\n# Plan\n")
-        self.write(".planning/phases/01-foundation/01-01-SUMMARY.md", "---\nstatus: complete\n---\n# Summary\n\n## Accomplishments\n\nBuilt and checked foundation.\n")
-        self.write(".planning/phases/01-foundation/01-VERIFICATION.md", "---\nstatus: passed\nrevision: abcdef\n---\n# Verified\n")
+        identity = {"phase": "01-foundation", "plan": "01"}
+        plan = {**identity, "type": "execute", "wave": 1, "depends_on": [],
+                "files_modified": ["foundation.txt"], "files_deleted": [], "resources": [],
+                "autonomous": True, "must_haves": {"truths": [], "artifacts": [], "key_links": []},
+                "requirements": ["REQ-01"], "acceptance": [], "documentation": [], "checks": [], "issue_refs": []}
+        summary = {**identity, "status": "complete", "requirements-completed": ["REQ-01"],
+                   "acceptance": [], "documentation": [], "issue_refs": []}
+        self.write("foundation.txt", "The verified foundation output.\n")
+        self.write(".planning/phases/01-foundation/01-01-PLAN.md", join_frontmatter(plan, "# Plan\n"))
+        self.write(".planning/phases/01-foundation/01-01-SUMMARY.md", join_frontmatter(summary, "# Summary\n\n## Accomplishments\n\nBuilt and checked foundation.\n"))
         self.write(".planning/phases/01-foundation/01-CONTEXT.md", "# Context\n\n## Decisions\n\nFoundation is shared.\n")
         self.write(".planning/phases/02-feature/02-01-PLAN.md", "---\ndepends_on: [01-01]\n---\n# Plan\n")
+        self.commit("Fixture implementation and completed phase records")
+        self.seal_phase()
+
+    def seal_phase(self):
+        self.cli("verification.fingerprint", "1")
+        report = ".planning/phases/01-foundation/01-VERIFICATION.md"
+        metadata, _ = split_frontmatter(self.read(report))
+        metadata["status"] = "passed"
+        self.write(report, join_frontmatter(metadata, "# Verification\n\nConfirmed the foundation acceptance cases against the recorded implementation.\n"))
+        self.commit("Fixture historical v4 verification")
+
+    def commit(self, message):
+        subprocess.run(["git", "add", "--", "."], cwd=self.root, check=True, capture_output=True)
+        subprocess.run(["git", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.test",
+                        "commit", "-qm", message], cwd=self.root, check=True, capture_output=True)
 
     def write(self, path, text):
         path = self.root / path
@@ -179,8 +202,8 @@ class PlanningArchive(unittest.TestCase):
         progress = self.cli("init.progress")
         self.assertEqual(progress["totals"]["phases"], 1)
         self.assertEqual(progress["totals"]["plans"], 1)
-        self.assertEqual(progress["next_phase"]["number"], "2")
-        self.assertEqual(self.cli("init.plan-phase", "2")["prior_context"][0]["phase"], "1")
+        self.assertEqual(progress["next_phase"]["number"], "02")
+        self.assertEqual(self.cli("init.plan-phase", "2")["prior_context"][0]["phase"], "01")
         self.assertEqual(self.cli("phase-plan-index", "2")["plans"][0]["depends_on"], ["01-01"])
         self.assertEqual(self.cli("roadmap.analyze")["blocked"], [])
         self.assertTrue(self.cli("phase.locate", "1")["phase_found"])
@@ -209,6 +232,54 @@ class PlanningArchive(unittest.TestCase):
         before = self.snapshot()
         result = self.cli("planning.archive", "phase", "1", "--apply", ok=False)
         self.assertEqual(result["code"], "archive-evidence-required")
+        self.assertEqual(before, self.snapshot())
+
+    def test_shallow_passed_report_is_not_historical_evidence(self):
+        self.write(".planning/phases/01-foundation/01-VERIFICATION.md", "---\nstatus: passed\n---\nClaimed success with no revision or digest.\n")
+        self.commit("Fixture shallow report")
+        before = self.snapshot()
+        denied = self.cli("planning.archive", "phase", "1", ok=False)
+        self.assertEqual("archive-evidence-required", denied["code"])
+        self.assertEqual(before, self.snapshot())
+
+    def test_historical_verification_survives_later_source_changes_without_shipping_waiver(self):
+        self.write("foundation.txt", "Later implementation changed the covered source.\n")
+        self.commit("Fixture later source change")
+        self.assertTrue(archive.historical_phase_evidence(self.root/".planning/phases/01-foundation"))
+        from lib import verification
+        self.assertFalse(verification.current_evidence("1")["current"])
+        self.assertEqual("preview", self.cli("planning.archive", "phase", "1")["state"])
+
+    def test_modified_phase_records_cannot_borrow_old_verification(self):
+        for suffix in ("PLAN", "SUMMARY"):
+            with self.subTest(suffix=suffix):
+                path = ".planning/phases/01-foundation/01-01-"+suffix+".md"
+                original = self.read(path)
+                self.write(path, original+"\nA changed phase outcome.\n")
+                before = self.snapshot()
+                self.assertEqual("archive-evidence-required", self.cli("planning.archive", "phase", "1", ok=False)["code"])
+                self.assertEqual(before, self.snapshot())
+                self.write(path, original)
+
+    def test_forged_digest_and_uncommitted_report_do_not_establish_history(self):
+        path = ".planning/phases/01-foundation/01-VERIFICATION.md"
+        original = self.read(path)
+        metadata, body = split_frontmatter(original)
+        metadata["fingerprint"] = "0"*64
+        metadata["covered_digest"] = "v4:sha256:"+"0"*64
+        self.write(path, join_frontmatter(metadata, body))
+        self.assertFalse(archive.historical_phase_evidence(self.root/".planning/phases/01-foundation"))
+        self.commit("Fixture forged bound report")
+        self.assertFalse(archive.historical_phase_evidence(self.root/".planning/phases/01-foundation"))
+
+    def test_new_report_cannot_borrow_valid_old_digest_after_source_changes(self):
+        path = ".planning/phases/01-foundation/01-VERIFICATION.md"
+        self.write("foundation.txt", "Development already moved beyond the verified revision.\n")
+        self.commit("Fixture intervening development")
+        self.write(path, self.read(path)+"\nA newly asserted verdict after source changed.\n")
+        self.commit("Fixture new stale verdict with borrowed old digest")
+        before = self.snapshot()
+        self.assertEqual("archive-evidence-required", self.cli("planning.archive", "phase", "1", ok=False)["code"])
         self.assertEqual(before, self.snapshot())
 
     def test_active_phase_denied_even_with_legacy_evidence(self):
@@ -428,7 +499,7 @@ class PlanningArchive(unittest.TestCase):
         self.cli("planning.archive", "phase", "1", "--apply")
         readiness = self.cli("init.complete-milestone", "v1.0")
         self.assertTrue(readiness["ready_to_complete"])
-        self.assertEqual(readiness["milestone_phases"][0]["number"], "1")
+        self.assertEqual(readiness["milestone_phases"][0]["number"], "01")
         self.assertTrue(readiness["milestone_phases"][0]["archived"])
         complete = self.cli("milestone.complete", "v1.0", "--confirm")
         self.assertEqual(complete["phases"], ["1"])
@@ -436,8 +507,42 @@ class PlanningArchive(unittest.TestCase):
         self.assertIn("1 (1 plans total)", self.read(".planning/MILESTONES.md"))
 
     def test_authored_markdown_evidence_links_are_accepted(self):
-        self.write(".planning/phases/01-foundation/01-01-SUMMARY.md", "---\nstatus: complete\n---\n# Summary\n\n## Accomplishments\n\nBuilt foundation; [verification](01-VERIFICATION.md) proves the outcome.\n")
+        path = ".planning/phases/01-foundation/01-01-SUMMARY.md"
+        metadata, _ = split_frontmatter(self.read(path))
+        self.write(path, join_frontmatter(metadata, "# Summary\n\n## Accomplishments\n\nBuilt foundation; [verification](01-VERIFICATION.md) proves the outcome.\n"))
+        self.commit("Fixture authored linked outcome")
+        self.seal_phase()
         self.assertEqual(self.cli("planning.archive", "phase", "1", "--apply")["state"], "archived")
+
+    def test_phase_numeric_alias_collision_is_ambiguous(self):
+        (self.root/".planning/phases/001-alias").mkdir()
+        before = self.snapshot()
+        self.assertEqual("archive-ambiguous", self.cli("planning.archive", "phase", "1", ok=False)["code"])
+        self.assertEqual(before, self.snapshot())
+
+    def test_archived_phase_identity_cannot_hide_active_numeric_alias(self):
+        self.cli("planning.archive", "phase", "1", "--apply")
+        (self.root/".planning/phases/001-reused").mkdir()
+        before = self.snapshot()
+        self.assertEqual("archive-collision", self.cli("planning.archive", "phase", "1", ok=False)["code"])
+        self.assertEqual(before, self.snapshot())
+
+    def test_wildcard_and_prefix_selectors_never_choose_records(self):
+        task = self.quick()
+        for kind, selector in (("phase", "01-*"), ("quick", task[:-2]), ("quick", "*"), ("phase", "01-found")):
+            with self.subTest(kind=kind, selector=selector):
+                before = self.snapshot()
+                result = self.cli("planning.archive", kind, selector, ok=False)
+                self.assertIn(result["code"], ("invalid-archive-selection", "archive-not-found"))
+                self.assertEqual(before, self.snapshot())
+
+    def test_ambiguous_replacement_adr_is_refused(self):
+        self.adr()
+        self.write(".planning/decisions/ADR-001-old.md", "---\nstatus: superseded\nsuperseded_by: [ADR-002]\n---\nHistorical reasoning remains.\n")
+        self.write(".planning/decisions/ADR-002-alias.md", "---\nstatus: accepted\n---\nA colliding replacement.\n")
+        before = self.snapshot()
+        self.assertEqual("archive-evidence-required", self.cli("planning.archive", "adr", "1", ok=False)["code"])
+        self.assertEqual(before, self.snapshot())
 
     def test_pending_journal_blocks_additional_archive_operations(self):
         task = self.quick()
