@@ -1,4 +1,5 @@
 import json
+import sys
 try:
     from .test_engineer_runtime import RuntimeCase
 except ImportError:
@@ -91,3 +92,48 @@ class TddChecks(RuntimeCase):
         sibling = self.git("rev-parse", "HEAD")
         self.git("switch", "main")
         self.cli("check.tdd-red-evidence", self.evidence(testCommit=sibling), status=1, raw=True)
+
+    def test_crlf_checkout_binds_to_git_normalized_red_content(self):
+        self.git("config", "core.autocrlf", "true")
+        target = self.root/"tests/test_app.py"
+        target.write_bytes(b"assert 1 == 2\r\n")
+        self.git("add", "tests/test_app.py")
+        self.git("commit", "-m", "test(01-01): CRLF assertion fixture")
+        red = self.git("rev-parse", "HEAD")
+        result = self.cli("check.tdd-red-evidence", self.evidence(testCommit=red))
+        self.assertEqual("RED_EVIDENCE_OK", result["verdict"])
+        target.write_bytes(b"assert 1 == 1\r\n")
+        self.cli("check.tdd-red-evidence", self.evidence(testCommit=red), status=1, raw=True)
+
+    def test_minus_text_keeps_distinct_test_bytes(self):
+        self.git("config", "core.autocrlf", "true")
+        self.put(".gitattributes", "tests/test_app.py -text\n")
+        target = self.root/"tests/test_app.py"
+        target.write_bytes(b"assert 1 == 2\r\n")
+        self.git("add", ".gitattributes", "tests/test_app.py")
+        self.git("commit", "-m", "test(01-01): byte-preserving assertion fixture")
+        red = self.git("rev-parse", "HEAD")
+        self.assertEqual("RED_EVIDENCE_OK", self.cli("check.tdd-red-evidence", self.evidence(testCommit=red))["verdict"])
+        target.write_bytes(b"assert 1 == 2\n")
+        self.cli("check.tdd-red-evidence", self.evidence(testCommit=red), status=1, raw=True)
+
+    def test_clean_filter_is_refused_without_executing_it(self):
+        marker = self.root/"filter-was-executed"
+        self.put("filter-side-effect.py", "from pathlib import Path\nimport sys\nPath('filter-was-executed').write_text('executed')\nsys.stdout.buffer.write(sys.stdin.buffer.read())\n")
+        command = '"'+sys.executable.replace("\\", "/")+'" filter-side-effect.py'
+        self.git("config", "filter.untrusted.clean", command)
+        self.git("config", "filter.untrusted.required", "true")
+        self.put(".gitattributes", "tests/test_app.py filter=untrusted\n")
+        result = self.cli("check.tdd-red-evidence", self.evidence(), status=1)
+        self.assertEqual("INVALID_RED:invalid_record", result["verdict"])
+        self.assertIn("untrusted", result["evidence"]["report_errors"][0])
+        self.assertFalse(marker.exists())
+
+    def test_working_tree_encoding_uses_git_builtin_normalization(self):
+        self.put(".gitattributes", "tests/test_app.py text working-tree-encoding=UTF-16LE\n")
+        target = self.root/"tests/test_app.py"
+        target.write_bytes("assert 1 == 2\n".encode("utf-16-le"))
+        self.git("add", ".gitattributes", "tests/test_app.py")
+        self.git("commit", "-m", "test(01-01): encoded assertion fixture")
+        red = self.git("rev-parse", "HEAD")
+        self.assertEqual("RED_EVIDENCE_OK", self.cli("check.tdd-red-evidence", self.evidence(testCommit=red))["verdict"])

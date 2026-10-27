@@ -167,8 +167,19 @@ def red(args):
         return invalid("invalid_record", ["Target test must be a readable repository file"])
     if changed.returncode or relative not in changed.stdout.split("\0"):
         return invalid("invalid_record", ["Target test is absent from RED commit"])
-    committed_test = subprocess.run(["git", "show", test_commit+":"+relative], cwd=root(), capture_output=True)
-    if committed_test.returncode or committed_test.stdout != current_test:
-        return invalid("invalid_record", ["Target test differs from its committed RED bytes"])
+    # Git stores normalized blobs, while a genuine Windows checkout can contain
+    # CRLF or a declared working-tree encoding. Use Git's built-in conversion,
+    # but never invoke a repository-supplied clean/process filter as evidence.
+    attributes = run(["git", "check-attr", "-z", "filter", "--", relative], root(), check=False)
+    fields = attributes.stdout.split("\0")
+    if attributes.returncode or len(fields) != 4 or fields[:2] != [relative, "filter"] or fields[3]:
+        return invalid("invalid_record", ["Target test filter attributes are unavailable"])
+    if fields[2] not in ("unspecified", "unset"):
+        return invalid("invalid_record", ["Target test uses an untrusted clean/process filter"])
+    committed_test = run(["git", "rev-parse", "--verify", test_commit+":"+relative], root(), check=False)
+    normalized_test = subprocess.run(["git", "hash-object", "--stdin", "--path="+relative],
+                                     cwd=root(), input=current_test, capture_output=True)
+    if committed_test.returncode or normalized_test.returncode or committed_test.stdout.strip().encode("ascii") != normalized_test.stdout.strip():
+        return invalid("invalid_record", ["Target test differs from its committed RED content"])
     return {"verdict": "RED_EVIDENCE_OK", "evidence": {"target": target, "tests": total, "report_errors": [],
             "testCommit": test_commit, "implementationCommit": implementation_commit, "checkedRevision": head}}, 0
