@@ -232,7 +232,7 @@ If gate passes (ambiguity ≤ 0.20 AND all minimums met):
 ## Step 5.5: Edge-Completeness Probe
 
 Run AFTER the ambiguity gate passes (you probe edges of clear requirements, not vague
-ones). Reference: @engineer/references/edge-probe.md.
+ones). Reference: @~/.claude/engineer/references/edge-probe.md.
 
 **Non-English projects — `text_en` carries the classifier-facing translation; the SPEC is
 not.** The shape cues the classifier matches are **English** word-boundary patterns, so
@@ -425,7 +425,7 @@ Populate the `## Edge Coverage` section of SPEC.md from the resolved edges.
 ## Step 5.6: Prohibition-Completeness Probe (must-NOT)
 
 Run AFTER Step 5.5 (you probe the must-NOT axis of clear requirements, over the same
-requirement list). Reference: @engineer/references/prohibition-probe.md — the
+requirement list). Reference: @~/.claude/engineer/references/prohibition-probe.md — the
 portable two-stage protocol, the canon-referral rule, and the status×verification schema
 live there (size-cap discipline; keep this step lean).
 
@@ -520,7 +520,7 @@ downstream rather than blocking authoring.
 
 ## Step 6: Generate SPEC.md
 
-Use the SPEC.md template from @engineer/templates/spec.md.
+Use the SPEC.md template from @~/.claude/engineer/templates/spec.md.
 
 - Populate the **Edge Coverage** section from Step 5.5 (resolved/dismissed/unresolved rows; resolved items carry `verification: explicit|backstop`).
 - Populate the **Prohibitions** section from Step 5.6 (resolved/dismissed/unresolved rows with the test|judgment tier).
@@ -580,7 +580,6 @@ Next: /discuss-phase {X}
 - Acceptance criteria must be pass/fail — no subjective criteria
 - SPEC.md is NEVER written if the user selects "Abandon"
 - Do NOT ask about HOW to implement — that is discuss-phase territory
-- Scout the codebase BEFORE the first question — grounded questions only
 - Max 2–3 questions per round — do not frontload all questions at once
 - Step 5.5 edge probe runs after the ambiguity gate; dismissals require a reason; --auto never auto-dismisses
 - Step 5.6 prohibition probe runs after the edge probe; dismissals require a reason; --auto never auto-dismisses a prohibition

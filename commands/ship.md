@@ -23,7 +23,7 @@ Closes the plan → execute → verify → ship loop.
 </objective>
 
 <execution_context>
-@engineer/workflows/ship.md
+@~/.claude/engineer/workflows/ship.md
 </execution_context>
 
-Execute the ship workflow from @engineer/workflows/ship.md end-to-end.
+Execute the ship workflow from @~/.claude/engineer/workflows/ship.md end-to-end.

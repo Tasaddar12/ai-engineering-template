@@ -22,8 +22,8 @@ This is a launcher/router only. It never does the work itself. It reads project 
 </objective>
 
 <execution_context>
-@engineer/workflows/smart-entry.md
-@engineer/references/ui-brand.md
+@~/.claude/engineer/workflows/smart-entry.md
+@~/.claude/engineer/references/ui-brand.md
 </execution_context>
 
 <context>

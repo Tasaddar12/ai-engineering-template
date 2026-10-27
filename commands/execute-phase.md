@@ -38,8 +38,8 @@ Context budget: ~15% orchestrator, 100% fresh per subagent.
 </objective>
 
 <execution_context>
-@engineer/workflows/execute-phase.md
-@engineer/references/ui-brand.md
+@~/.claude/engineer/workflows/execute-phase.md
+@~/.claude/engineer/references/ui-brand.md
 </execution_context>
 
 <context>

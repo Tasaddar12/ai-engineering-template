@@ -6,7 +6,7 @@
 > Dimension 8 Output table, which gains a `Failing Direction` column and a
 > stated/runnable tally so check 8f's result is reported alongside them.
 > Check 8f itself lives in its own reference:
-> @engineer/references/failing-direction.md
+> @~/.claude/engineer/references/failing-direction.md
 
 **Skip if:** `workflow.nyquist_validation` is explicitly set to `false` in config.json
 (absent key = enabled), phase has no RESEARCH.md, or RESEARCH.md has no "Validation

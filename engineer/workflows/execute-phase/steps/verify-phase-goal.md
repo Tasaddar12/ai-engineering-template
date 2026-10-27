@@ -87,7 +87,7 @@ VERIFY_POST_HOOKS_JSON=$(engineer_run loop render-hooks verify:post --raw)
 SECURITY_FILE=$(ls "${PHASE_DIR}"/*-SECURITY.md 2>/dev/null | head -1)
 ```
 
-Dispatch every `kind == "step"` hook per @engineer/references/loop-hook-dispatch.md (skip when none). The secure-phase routing below applies when that specific hook is active.
+Dispatch every `kind == "step"` hook per @~/.claude/engineer/references/loop-hook-dispatch.md (skip when none). The secure-phase routing below applies when that specific hook is active.
 
 If no active secure-phase step hook exists: skip.
 
@@ -113,7 +113,7 @@ If an active secure-phase step hook exists AND SECURITY.md exists: check frontma
 EXECUTE_POST_HOOKS_JSON=${EXECUTE_POST_HOOKS_JSON:-$(engineer_run loop render-hooks execute:post --raw)}
 ```
 
-Dispatch `kind == "step"` hooks per @engineer/references/loop-hook-dispatch.md. `ref.skill == "code-review"`:
+Dispatch `kind == "step"` hooks per @~/.claude/engineer/references/loop-hook-dispatch.md. `ref.skill == "code-review"`:
 
 If no active code-review step hook exists: display "Code review skipped (code-review capability inactive)" and proceed to gate dispatch.
 

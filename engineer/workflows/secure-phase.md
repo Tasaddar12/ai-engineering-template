@@ -3,7 +3,7 @@ Verify threat mitigations for a completed phase. Confirm PLAN.md threat register
 </purpose>
 
 <required_reading>
-@engineer/references/ui-brand.md
+@~/.claude/engineer/references/ui-brand.md
 </required_reading>
 
 <available_agent_types>
@@ -153,7 +153,7 @@ Print: `◆ Spawning security auditor... (runs in a subagent — no output until
 
 <!-- #2517 model-omit-on-inherit -->
 
-> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`AUDITOR_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @engineer/references/model-profile-resolution.md.
+> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`AUDITOR_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```
 Agent(

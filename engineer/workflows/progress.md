@@ -1,4 +1,4 @@
-@engineer/references/response-language-directive.md
+@~/.claude/engineer/references/response-language-directive.md
 
 <purpose>
 Check project progress, summarize recent work and what's ahead, then intelligently route to the next action — either executing an existing plan or creating the next one. Provides situational awareness before continuing work.

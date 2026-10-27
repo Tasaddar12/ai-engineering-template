@@ -42,13 +42,13 @@ Mode routing:
 </routing>
 
 <execution_context>
-@engineer/workflows/add-todo.md
-@engineer/workflows/note.md
-@engineer/workflows/add-backlog.md
-@engineer/workflows/plant-seed.md
-@engineer/workflows/check-todos.md
-@engineer/workflows/list-seeds.md
-@engineer/references/ui-brand.md
+@~/.claude/engineer/workflows/add-todo.md
+@~/.claude/engineer/workflows/note.md
+@~/.claude/engineer/workflows/add-backlog.md
+@~/.claude/engineer/workflows/plant-seed.md
+@~/.claude/engineer/workflows/check-todos.md
+@~/.claude/engineer/workflows/list-seeds.md
+@~/.claude/engineer/references/ui-brand.md
 </execution_context>
 
 <context>
