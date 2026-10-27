@@ -405,5 +405,5 @@ Resume with: `/progress --next --auto` once resolved.
 - [ ] `--cross-ai` is accepted as an alias for `--converge`
 - [ ] `--converge` fails fast with enable instructions when `workflow.plan_review_convergence=false`
 - [ ] `--converge` forwards reviewer selector flags and `--max-cycles N`
-- [ ] Default planning remains `gsd-plan-phase` when convergence is not requested
+- [ ] Default planning remains `plan-phase` when convergence is not requested
 </success_criteria>

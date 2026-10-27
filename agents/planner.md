@@ -252,7 +252,7 @@ Exceptions where `tdd="true"` is not needed: `type="checkpoint:*"` tasks, config
 
 ## Tracer-First Decomposition (default)
 
-**Every phase plan LEADS with one `type="tracer"` task** — the thinnest path that touches every layer the phase will modify, wired end-to-end, carrying a real runnable `<verify>`. The remaining `<tasks>` are horizontal *expansion* tasks that build out from the proven slice. This is the default for **every** phase; it is not gated behind a flag. Required reading for the full vertical-slice rules and anti-patterns: Read `~/.claude/engineer/references/planner-mvp-mode.md`.
+**Every phase plan LEADS with one `type="tracer"` task** — the thinnest path that touches every layer the phase will modify, wired end-to-end, carrying a real runnable `<verify>`. The remaining `<tasks>` are horizontal *expansion* tasks that build out from the proven slice. This is the default for **every** phase; it is not gated behind a flag.
 
 **Why tracer-first:** proving the architecture end-to-end on the agent's best early-context tokens catches an architectural dead-end after one commit instead of after ten already-committed layers.
 
@@ -273,8 +273,6 @@ Exceptions where `tdd="true"` is not needed: `type="checkpoint:*"` tasks, config
 **Core rule (expansion tasks):** after each task a real user can do something they could not before. A task that only "lays foundation" is horizontal disguised as vertical — restructure.
 
 **`--no-tracer` (`TRACER_MODE=false`):** opt out of tracer-first and decompose into horizontal layers (the legacy default). Use only when the architecture is already proven and a thin slice would add no information. Do not mix a tracer-first plan with horizontal-layer tasks — one shape per phase.
-
-**MVP enrichment (`MVP_MODE=true`):** layered on top of the tracer-first ordering above (MVP no longer *turns on* vertical slices — that is now the default). It adds: (1) frame the phase goal as a user story at the top of `PLAN.md`, sourced from the ROADMAP `**Goal:**` line, bolding `**As a**` / `**I want to**` / `**so that**` (Read `~/.claude/engineer/references/user-story-template.md`; if the Goal line is not in user-story format, surface it and ask the user to run `/mvp-phase ${PHASE}` first — do not invent a story); and (2) **Walking Skeleton mode** (`WALKING_SKELETON=true`, Phase 1 of a new project) — emit `SKELETON.md` from `~/.claude/engineer/references/skeleton-template.md` alongside `PLAN.md`. The Walking Skeleton is the Phase-1 special case of the tracer, recording architectural decisions (framework, DB, auth, deployment, layout) later phases build on.
 
 **TDD composition (`workflow.tdd_mode=true`):** the leading tracer task is `type="tracer"` and starts red — its first move is a failing end-to-end test for the happy path — and every behavior-adding expansion task uses `tdd="true"` with a `<behavior>` block.
 
@@ -568,7 +566,7 @@ start of execution when `--reviews` flag is present or reviews mode is active.
 <step name="load_project_state" priority="first">
 Load planning context:
 
-@~/.claude/engineer/references/gsd-run-resolver.md
+@~/.claude/engineer/references/run-resolver.md
 
 ```bash
 INIT=$(engineer_run query init.plan-phase "${PHASE}")
@@ -616,14 +614,6 @@ If exists, load relevant documents by phase type:
 | refactor, cleanup | CONCERNS.md, ARCHITECTURE.md |
 | setup, config | STACK.md, STRUCTURE.md |
 | (default) | STACK.md, ARCHITECTURE.md |
-</step>
-
-<step name="load_graph_context">
-Read `engineer/references/planner-load-graph-context.md` and execute it. It checks for a
-knowledge graph and, if one exists, reads freshness and phase-relevant dependency context
-— through the `graphify` CLI when it is on PATH, otherwise through the `engineer_run` launcher
-— and incorporates the results into planning. If the graph is absent, skip and continue
-without graph context.
 </step>
 
 <step name="identify_phase">
@@ -813,7 +803,7 @@ These PLAN.md files are the canonical output of this agent. The orchestrator rea
 1. **Default: write each PLAN.md in a single `Write` call.** On most runtimes this is correct and reliable — do this unless rule 4 applies.
 2. **Do NOT return the PLAN.md content in your response.** Your return message is a brief confirmation (see `<structured_returns>`); the content lives on disk.
 3. **Do NOT use `Bash(cat << 'EOF')` or heredoc** for file creation. Use the `Write` tool.
-4. **Large-file / truncation fallback.** Some runtimes (e.g. OpenCode) cap tool-call output, and a single oversized `Write` is truncated mid-payload — surfacing a tool error such as `JSON Parse error: Expected '}'`. If a `Write` fails with a truncation / invalid-tool error, **do NOT retry the same oversized call** (that loops forever). Instead build the file incrementally so no single tool call carries the whole payload:
+4. **Large-file / truncation fallback.** Some runtimes cap tool-call output, and a single oversized `Write` is truncated mid-payload — surfacing a tool error such as `JSON Parse error: Expected '}'`. If a `Write` fails with a truncation / invalid-tool error, **do NOT retry the same oversized call** (that loops forever). Instead build the file incrementally so no single tool call carries the whole payload:
    - `Write` the file with only the first section, ending with the sentinel line `<!-- gsd:write-continue -->`.
    - `Read` the file, then `Edit` it, replacing `<!-- gsd:write-continue -->` with the next section followed by the sentinel again. Repeat, one section per `Edit`.
    - On the final section, replace the sentinel with the closing content and no trailing sentinel.
@@ -912,8 +902,6 @@ Return structured planning outcome to orchestrator.
 
 See @~/.claude/engineer/references/planner-guidance.md for return formats; gap-closure returns are artifact-based (#3440).
 
-See @~/.claude/engineer/references/planner-chunked.md for `## OUTLINE COMPLETE` and `## PLAN COMPLETE` return formats used in chunked mode.
-
 </structured_returns>
 
 <critical_rules>
@@ -935,11 +923,6 @@ Your orchestrator dispatches on exact marker strings in your final output. Emit 
 ## PLANNING COMPLETE
 ```
 (final plans committed, ready for verification)
-
-```markdown
-## OUTLINE COMPLETE
-```
-(outline produced, awaiting confirmation — chunked planning mode)
 
 ```markdown
 ## PHASE SPLIT RECOMMENDED

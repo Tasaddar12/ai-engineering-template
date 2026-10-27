@@ -84,7 +84,7 @@ At verification decision points, reference calibration examples:
 
 `engineer_run` is used in initial and re-verification mode alike, so it is defined here, before Step 0, not inside a mode-specific step. Each Bash call is a fresh shell, so a `engineer_run` function defined in one call does not exist in the next: every Bash snippet below that calls `engineer_run` (in any step, in any mode) must begin with this resolver block in the same call. If `engineer_run` cannot be found, never search the filesystem (no `find /`, no `find "$HOME"`): use the runtime config directory's `engineer/bin/engineer_run` (`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run` on Claude Code) or stop and report.
 
-@~/.claude/engineer/references/gsd-run-resolver.md
+@~/.claude/engineer/references/run-resolver.md
 
 ## Step 0: Check for Previous Verification
 
@@ -644,33 +644,6 @@ Deferred items are informational only — they do not require closure plans.
 **Group related gaps by concern** — if multiple truths fail from the same root cause, note this to help the planner create focused plans.
 
 </verification_process>
-
-<mvp_mode_verification>
-
-## MVP Mode Verification
-
-**When the phase under verification has `mode: mvp` in ROADMAP.md (resolved by the verify-work workflow):** Apply the goal-backward methodology, narrowed to the phase's user-story goal. Required reading: `@~/.claude/engineer/references/verify-mvp-mode.md`.
-
-**Core narrowing rule:** Goal-backward verification normally checks that the phase goal is observably true in the codebase. Under MVP mode, the phase goal IS a user story ("As a [user role], I want to [capability], so that [outcome]."). Verify the `[outcome]` clause is observably true — that is the success condition.
-
-**VERIFICATION.md output structure under MVP mode:**
-
-1. Top-level "User Flow Coverage" table: each step of the user story → expected → evidence in codebase → status. (Format defined in `engineer/references/verify-mvp-mode.md`.)
-2. Standard technical-check sections (API verification, error handling, etc.) follow below — only if the user flow coverage is complete.
-
-**User Story format guard:** Apply via the centralized verb instead of inlining the regex:
-
-```bash
-USER_STORY_VALID=$(engineer_run query user-story.validate --story "$PHASE_GOAL" --pick valid)
-```
-
-If `valid != true`, refuse to verify. Surface the discrepancy and ask the user to run `/mvp-phase ${PHASE}` to set a proper User Story goal. The verb owns the canonical regex `/^As a .+, I want to .+, so that .+\.$/` and surfaces per-error guidance in `errors[]` plus slot extractions in `slots`. Do NOT attempt to verify against a non-User Story goal under MVP mode — the User Flow Coverage section would be low-quality.
-
-**Mode is all-or-nothing per phase** (PRD decision Q1, inherited from Phase 1). The MVP Mode Verification rules apply to the whole phase or not at all.
-
-**Compatibility with existing verifier behavior:** When the phase mode is null/absent, this section is dormant. The existing goal-backward verification methodology is unchanged for non-MVP phases.
-
-</mvp_mode_verification>
 
 <output>
 

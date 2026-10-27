@@ -1,6 +1,6 @@
 # Engineer Canonical Artifact Registry
 
-This directory contains the template files for every artifact that Engineer workflows officially produce. The table below is the authoritative index: **if a `.planning/` root file is not listed here, `gsd-health` will flag it as W019** (unrecognized artifact).
+This directory contains the template files for every artifact that Engineer workflows officially produce. The table below is the authoritative index: **if a `.planning/` root file is not listed here, `health` will flag it as W019** (unrecognized artifact).
 
 Agents should query this file before treating a `.planning/` file as authoritative. If the file name does not appear below, it is not a canonical Engineer artifact.
 

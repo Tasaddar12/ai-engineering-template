@@ -152,8 +152,8 @@ Ask user via AskUserQuestion:
 - **options:** "Verify work" / "Complete milestone" / "Exit manager"
 
 Handle responses:
-- "Verify work": `Skill(skill="gsd-verify-work")`  then loop to dashboard.
-- "Complete milestone": `Skill(skill="gsd-complete-milestone")` then exit.
+- "Verify work": `Skill(skill="verify-work")`  then loop to dashboard.
+- "Complete milestone": `Skill(skill="complete-milestone")` then exit.
 - "Exit manager": Go to exit step.
 
 **If NOT all_complete**, build compound options from `recommended_actions`:
@@ -232,14 +232,14 @@ When the user selects a compound option, behavior depends on whether the runtime
 Inline verification:
 
 For each verification recommendation, dispatch by the recommended action's `command`:
-- If `command` contains `execute-phase`, run `Skill(skill="gsd-execute-phase", args="{PHASE_NUM} {manager_flags.execute}")`.
-- If `command` contains `verify-work`, run `Skill(skill="gsd-verify-work", args="{PHASE_NUM}")`.
+- If `command` contains `execute-phase`, run `Skill(skill="execute-phase", args="{PHASE_NUM} {manager_flags.execute}")`.
+- If `command` contains `verify-work`, run `Skill(skill="verify-work", args="{PHASE_NUM}")`.
 - If `command` is missing or unrecognized, stop and show the recommendation row instead of guessing.
 
 Inline discuss:
 
 ```
-Skill(skill="gsd-discuss-phase", args="{PHASE_NUM} {manager_flags.discuss}")
+Skill(skill="discuss-phase", args="{PHASE_NUM} {manager_flags.discuss}")
 ```
 
 After discuss completes, loop back to dashboard step.
@@ -249,7 +249,7 @@ After discuss completes, loop back to dashboard step.
 Discussion is interactive — needs user input. Run inline with any configured flags:
 
 ```
-Skill(skill="gsd-discuss-phase", args="{PHASE_NUM} {manager_flags.discuss}")
+Skill(skill="discuss-phase", args="{PHASE_NUM} {manager_flags.discuss}")
 ```
 
 After discuss completes, loop back to dashboard step.
@@ -276,7 +276,7 @@ Goal: {goal}
 Manager flags: {manager_flags.plan}
 
 Run the plan-phase Skill with any configured manager flags:
-Skill(skill=\"gsd-plan-phase\", args=\"{N} --auto {manager_flags.plan}\")
+Skill(skill=\"plan-phase\", args=\"{N} --auto {manager_flags.plan}\")
 
 This delegates to the full plan-phase pipeline including local patches, research, plan-checker, and all quality gates.
 
@@ -297,7 +297,7 @@ Loop back to dashboard step.
 **Otherwise (`FLATTEN` is `true` — run inline):** Run plan inline so the plan-checker and quality gates actually run — do NOT wrap it in `Agent(run_in_background=true, …)`:
 
 ```
-Skill(skill="gsd-plan-phase", args="{N} --auto {manager_flags.plan}")
+Skill(skill="plan-phase", args="{N} --auto {manager_flags.plan}")
 ```
 
 Display while it runs:
@@ -330,7 +330,7 @@ Goal: {goal}
 Manager flags: {manager_flags.execute}
 
 Run the execute-phase Skill with any configured manager flags:
-Skill(skill=\"gsd-execute-phase\", args=\"{N} {manager_flags.execute}\")
+Skill(skill=\"execute-phase\", args=\"{N} {manager_flags.execute}\")
 
 This delegates to the full execute-phase pipeline including local patches, branching, wave-based execution, verification, and all quality gates.
 
@@ -351,7 +351,7 @@ Loop back to dashboard step.
 **Otherwise (`FLATTEN` is `true` — run inline):** Run execute inline so worktree isolation and the verifier actually run — do NOT wrap it in `Agent(run_in_background=true, …)`:
 
 ```
-Skill(skill="gsd-execute-phase", args="{N} {manager_flags.execute}")
+Skill(skill="execute-phase", args="{N} {manager_flags.execute}")
 ```
 
 Display while it runs:
@@ -390,7 +390,7 @@ Classify the error:
   - **question:** "Phase {N} failed — permission denied for `{tool_or_command}`. Want me to add it to settings.local.json so it's allowed?"
   - **options:** "Add permission and retry" / "Run this phase inline instead" / "Skip and continue"
   - "Add permission and retry": Use `Skill(skill="update-config")` to add the permission to `settings.local.json`, then re-spawn the background agent. Loop to dashboard.
-  - "Run this phase inline instead": Dispatch the same action inline via the appropriate Skill — use `Skill(skill="gsd-plan-phase", args="{N}")` if the failed action was planning, or `Skill(skill="gsd-execute-phase", args="{N}")` if the failed action was execution. Loop to dashboard after.
+  - "Run this phase inline instead": Dispatch the same action inline via the appropriate Skill — use `Skill(skill="plan-phase", args="{N}")` if the failed action was planning, or `Skill(skill="execute-phase", args="{N}")` if the failed action was execution. Loop to dashboard after.
   - "Skip and continue": Loop to dashboard (phase stays in current state).
 
 **Other errors** (git lock, file conflict, logic error, etc.):
@@ -398,7 +398,7 @@ Classify the error:
   - **question:** "Background agent for Phase {N} encountered an issue: {error}. What next?"
   - **options:** "Retry" / "Run inline instead" / "Skip and continue" / "View details"
   - "Retry": Re-spawn the same background agent. Loop to dashboard.
-  - "Run inline instead": Dispatch the action inline via the appropriate Skill — use `Skill(skill="gsd-plan-phase", args="{N}")` if the failed action was planning, or `Skill(skill="gsd-execute-phase", args="{N}")` if the failed action was execution. Loop to dashboard after.
+  - "Run inline instead": Dispatch the action inline via the appropriate Skill — use `Skill(skill="plan-phase", args="{N}")` if the failed action was planning, or `Skill(skill="execute-phase", args="{N}")` if the failed action was execution. Loop to dashboard after.
   - "Skip and continue": Loop to dashboard (phase stays in current state).
   - "View details": Read STATE.md blockers section, display, then re-present options.
 

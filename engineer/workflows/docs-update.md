@@ -10,7 +10,7 @@ Valid Engineer subagent types (use exact names — do not fall back to 'general-
 
 <process>
 
-**Compact Content Gate.** Read and follow `engineer/references/compact-content-gate.md` now — it states the `workflow.compact_content` check and the resolution rule this spine defers to. When it directs a Read, read `engineer/workflows/docs-update/detail/elaboration.md` in full before continuing past this point; its content elaborates on three steps below (sequential_generation, fix_loop, verify_only_report).
+Read `engineer/workflows/docs-update/detail/elaboration.md` in full before continuing.
 
 <step name="init_context" priority="first">
 Load docs-update context:
