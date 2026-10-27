@@ -27,7 +27,7 @@ Output: complete coordinator-owned SECURITY.md, or a full provisional report ret
 </objective>
 
 <execution_context>
-@engineer/workflows/secure-phase.md
+@~/.claude/engineer/workflows/secure-phase.md
 </execution_context>
 
 <context>

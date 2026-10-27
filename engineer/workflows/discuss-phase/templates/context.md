@@ -93,7 +93,7 @@ If no todos were folded: omit this subsection entirely.]
 
 [MANDATORY section. Write the FULL accumulated canonical refs list here.
 Sources: ROADMAP.md refs + REQUIREMENTS.md refs + user-referenced docs during
-discussion + any docs discovered during codebase scout. Group by topic area.
+ Group by topic area.
 Every entry needs a full relative path — not just a name.]
 
 ### [Topic area 1]
