@@ -1,5 +1,19 @@
 # Engineer runtime
 
+Preparation workers declare their actual planning outputs before dispatch:
+`worktree.create PLAN_TAG --phase REGISTRY_LABEL --artifact-role ROLE --files PATH...`
+or the same arguments to `worktree.record-agent` for a harness-created checkout.
+`worktree.merge-artifacts --phase REGISTRY_LABEL` integrates committed, clean,
+exact deltas and returns `workers`, `action`, `merged`, `preserved`, `wave_clean`
+and the real `artifacts` list. Registry labels (including `quick-ID`) do not
+create phase authority. Shipped pattern-mapper, phase-researcher, planner,
+ui-researcher and codebase-mapper roles may write only their named planning
+artifacts. Product paths, undeclared changes and deletions fail closed.
+Preparation outputs require no fabricated SUMMARY. Source workers continue to
+use `merge-wave` and require a committed complete SUMMARY. The coordinator must
+confirm the worker host has stopped before either merge. Cleanup preserves
+unmerged resources and refuses dirty workers, moved HEADs and missing ancestry.
+
 Use Python 3.11 or newer. The runtime uses only the standard library. The POSIX
 shim selects a namespace virtual environment, a project virtual environment, or
 `python3` / `python` and executes the CLI in isolated mode.
