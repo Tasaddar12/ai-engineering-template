@@ -4,7 +4,7 @@ Apply response_language to all user-facing prose — narration between tool call
 
 > **Lazy-loaded.** Read this file from `workflows/discuss-phase.md` when no
 > mode flag is present (the baseline interactive flow). When `--text`,
-> `--batch`, or `--analyze` is also present, layer the corresponding overlay
+> `--batch` is also present, layer the corresponding overlay
 > file from this directory on top of the rules below.
 
 This document defines `discuss_areas` for the default flow. The shared steps

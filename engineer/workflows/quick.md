@@ -3,7 +3,7 @@ Execute small, ad-hoc tasks with GSD guarantees (atomic commits, STATE.md tracki
 
 With `--full` flag: enables the complete quality pipeline — discussion + research + plan-checking + verification. One flag for everything.
 
-With `--validate` flag: enables plan-checking (max 2 iterations) and post-execution verification only. Use when you want quality guarantees without discussion or research.
+With `--validate` flag: enables plan-checking (max 2 iterations) and post-execution verification only. Discussion remains the default and research runs as needed.
 
 With `--discuss` flag: lightweight discussion phase before planning. Surfaces assumptions, clarifies gray areas, captures decisions in CONTEXT.md so the planner treats them as locked.
 
@@ -26,6 +26,10 @@ Valid GSD subagent types (use exact names — do not fall back to 'general-purpo
 - gsd-code-reviewer — Reviews source files for bugs, security issues, and code quality
 </available_agent_types>
 
+<default_preparation>
+For a new or resumed implementation task, set DISCUSS_MODE=true by default. Ask the clarifying questions needed to establish scope before planning. Use the complete copied discussion-phase step; no --discuss flag is required. Reuse decisions already supplied by the user.
+Set RESEARCH_MODE=true when the scoped task has unresolved technical questions that need research before the planner can build its plan. Use the complete copied research-phase step when needed; no --research flag is required. List and status requests remain read-only.
+</default_preparation>
 <process>
 **Step 1: Parse arguments and get task description**
 
@@ -284,15 +288,11 @@ Store `$QUICK_DIR` for use in orchestration.
 
 **Step 4 ordering (#3894):** Check whether `workflow.research_before_questions` is enabled in `.planning/config.json` (or the config from init context) — the same check `/gsd:discuss-phase` and `/gsd:new-project` already make. When **enabled**, execute the research-phase section BELOW BEFORE the discussion-phase section: a gray-area answer given without research is written to `<quick_id>-CONTEXT.md` as a locked decision downstream agents are told not to revisit, so the evidence must come first. When **false or unset**, keep the written order (discussion, then research) — behavior unchanged.
 
-<!-- gsd:section id="discussion-phase" when="flag:--discuss" -->
-If `section_manifest` is `null` or `"discussion-phase"` is in its `included` list: read and execute `gsd-core/workflows/quick/steps/discussion-phase.md`. Otherwise skip — do not read the file.
-<!-- /gsd:section -->
+Read and execute `gsd-core/workflows/quick/steps/discussion-phase.md`.
 
 ---
 
-<!-- gsd:section id="research-phase" when="flag:--research" -->
-If `section_manifest` is `null` or `"research-phase"` is in its `included` list: read and execute `gsd-core/workflows/quick/steps/research-phase.md`. Otherwise skip — do not read the file.
-<!-- /gsd:section -->
+If RESEARCH_MODE is true, read and execute `gsd-core/workflows/quick/steps/research-phase.md`.
 
 ---
 
