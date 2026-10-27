@@ -101,6 +101,7 @@ def progress_bar(args):
 
 def roadmap_progress(args):
     identifier = args.need()
+    records.require_active(identifier.rsplit("-", 1)[0])
     path = records.planning()/"ROADMAP.md"
     if not (records.planning()/"STATE.md").is_file():
         raise Failure("missing-state", "STATE.md is required before recording plan progress")
@@ -117,6 +118,7 @@ def roadmap_progress(args):
 
 
 def complete_phase(args):
+    records.require_active(args.need())
     from . import phase_issues, verification
     packet = phase_issues.handoff(args)
     if not packet["ready"]:

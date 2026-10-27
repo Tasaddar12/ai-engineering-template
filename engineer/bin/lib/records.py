@@ -28,11 +28,32 @@ def phase_dir(value):
     candidate = Path(str(value))
     if candidate.is_dir():
         return safe_path(candidate)
-    target = number(value)
+    try:
+        target = number(value)
+    except ValueError:
+        target = None
     for path in phases():
-        if number(path.name) == target:
+        if number(path.name) == target or str(value) in (path.name, path.name.split("-", 1)[-1]):
             return path
+    from .archive import catalog, guarded
+    matches = [entry for entry in catalog() if entry["kind"] == "phase" and
+               (number(entry["id"]) == target or str(value) in (entry["id"], entry["id"].split("-", 1)[-1]))]
+    if len(matches) == 1:
+        return guarded(matches[0]["archived_path"])
     raise Failure("phase-not-found", f"Phase not found: {value}")
+
+
+def require_active(value):
+    try:
+        directory = phase_dir(value)
+    except Failure as exc:
+        if exc.code != "phase-not-found":
+            raise
+        roadmap_phase(value)
+        return None
+    if directory.is_relative_to(planning()/"archive"):
+        raise Failure("phase-archived", "Recover the archived phase before changing it")
+    return directory
 
 
 def find(value):
@@ -42,7 +63,9 @@ def find(value):
     summaries = [p for p in artifacts if p.endswith("-SUMMARY.md")]
     human_name = next((phase["name"] for phase in roadmap_phases()
                        if phase["number"] == number(directory.name)), directory.name.split("-", 1)[-1])
-    return {"found": True, "directory": str(directory), "phase_dir": str(directory),
+    archived = directory.is_relative_to(planning()/"archive")
+    return {"found": True, "phase_found": True, "archived": archived, "status": "Complete" if archived else None,
+            "directory": str(directory), "phase_dir": str(directory),
             "number": directory.name.split("-")[0], "phase_number": directory.name.split("-")[0],
             "name": human_name, "artifacts": artifacts,
             "plans": plans, "summaries": summaries, "plan_count": len(plans), "plan_count_all": len(plans),
@@ -157,7 +180,13 @@ def roadmap_analyze(args=None):
         complete += int(phase["complete"])
         phase.pop("start", None)
         phase.pop("end", None)
-    return {"phases": items, "phase_count": len(items), "completed_phases": complete,
+    from .archive import catalog
+    archived = {number(entry["id"]) for entry in catalog() if entry["kind"] == "phase"}
+    known = {phase["number"] for phase in items}|archived
+    blocked = [{"phase": phase["number"], "dependency": dependency}
+               for phase in items for dependency in re.findall(r"(?i)\bPhase\s+(\d+(?:\.\d+)?)", phase["depends_on"])
+               if number(dependency) not in known]
+    return {"phases": items, "phase_count": len(items), "completed_phases": complete, "blocked": blocked,
             "percent": round(100*complete/len(items)) if items else 0, "milestone": milestone_name()}
 
 
@@ -184,7 +213,10 @@ def phase_list(args):
             info["files"] = info[args.get("type")]
             info["count"] = len(info["files"])
         items.append(info)
-    return {"phases": items, "count": sum(p.get("count", 1) for p in items)}
+    from .archive import catalog
+    archived = [find(entry["id"]) for entry in catalog() if entry["kind"] == "phase"]
+    return {"phases": items, "count": sum(p.get("count", 1) for p in items),
+            "archived_phases": archived, "archived_count": len(archived), "total_count": len(items)+len(archived)}
 
 
 def phase_change(args, action):
@@ -204,7 +236,9 @@ def phase_change(args, action):
         existing = roadmap_phases()
         if action in ("add", "insert"):
             if action == "add":
-                current = max([int(p["number"].split(".")[0]) for p in existing], default=0)+1
+                from .archive import catalog
+                reserved = [int(number(entry["id"]).split(".")[0]) for entry in catalog() if entry["kind"] == "phase"]
+                current = max([int(p["number"].split(".")[0]) for p in existing]+reserved, default=0)+1
                 identifier, description = str(current).zfill(2), args.need()
             else:
                 after, description = number(args.need()), args.need(1)
@@ -228,6 +262,7 @@ def phase_change(args, action):
             sync_roadmap()
             return {"added": True, "phase": identifier, "phase_number": str(int(identifier.split('.')[0])) + ('.'+identifier.split('.')[1] if '.' in identifier else ''),
                     "padded": identifier, "name": description, "slug": slug(description), "directory": str(directory)}
+        require_active(args.need())
         phase = roadmap_phase(args.need())
         before, block, after = text[:phase["start"]], text[phase["start"]:phase["end"]], text[phase["end"]:]
         if action == "remove":
@@ -392,6 +427,7 @@ def state_action(args, action):
     if action == "update":
         return patch_state({args.need(): args.need(1)})
     if action == "begin-phase":
+        require_active(args.need())
         phase = roadmap_phase(args.need())
         rows = re.findall(r"(?m)^- \[[ x]\]\s*\d", phase["body"])
         identifier = str(int(phase["number"])) if "." not in phase["number"] else phase["number"]
@@ -499,15 +535,21 @@ def synchronize_progress(selected=None):
 
 
 def quick_create(description):
+    from datetime import datetime
+    from .archive import catalog
     directory = planning()/"quick"
     directory.mkdir(parents=True, exist_ok=True)
-    numbers = [int(p.name.split("-", 1)[0]) for p in directory.iterdir() if p.is_dir() and re.match(r"^\d+-", p.name)]
-    identifier = str(max(numbers, default=0)+1).zfill(3)
-    path = directory/(identifier+"-"+slug(description))
+    stamp = datetime.now().strftime("%y%m%d")
+    identities = [path.name for path in directory.iterdir() if path.is_dir()]
+    identities += [entry["id"] for entry in catalog() if entry["kind"] == "quick"]
+    numbers = [int(match[1]) for value in identities if (match := re.match(re.escape(stamp)+r"-([0-9]{3})-", value))]
+    sequence = max(numbers, default=0)+1
+    identifier = stamp+"-"+str(sequence).zfill(3)+"-"+slug(description)
+    path = directory/identifier
     path.mkdir()
-    metadata = {"id": identifier, "description": description, "status": "pending", "created": now()}
+    metadata = {"id": identifier, "sequence": sequence, "description": description, "status": "open", "created": now()}
     write(path/"QUICK.md", join_frontmatter(metadata, "# "+description+"\n"))
-    return {**metadata, "quick_id": identifier, "directory": str(path), "path": str(path/"QUICK.md")}
+    return {**metadata, "quick_id": identifier, "directory": str(path), "path": str(path/"QUICK.md"), "record": (path/"QUICK.md").relative_to(root()).as_posix()}
 
 
 def quick(args, action):
@@ -521,11 +563,13 @@ def quick(args, action):
             if requested and requested != "open" and metadata.get("status") != requested:
                 continue
             items.append({**metadata, "path": str(path), "directory": str(path.parent)})
-        return {"tasks": items, "quick_tasks": items, "count": len(items)}
+        from .archive import catalog
+        archived = [entry for entry in catalog() if entry["kind"] == "quick"]
+        return {"tasks": items, "quick_tasks": items, "count": len(items), "archived_tasks": archived, "archived_count": len(archived)}
     with planning_lock():
         if action == "create":
             return quick_create(args.need())
-        matches = list((planning()/"quick").glob(args.need().split("-")[0]+"-*/QUICK.md"))
+        matches = list((planning()/"quick").glob(args.need()+"/QUICK.md"))
         if len(matches) != 1:
             raise Failure("quick-not-found", args.need())
         path = matches[0]
@@ -534,6 +578,10 @@ def quick(args, action):
             for key in ("status", "commit", "verification", "issue", "pr"):
                 if args.has(key):
                     metadata[key] = args.get(key)
+            if args.has("files"):
+                metadata["files"] = args.all("files")
+            if metadata.get("status") == "complete":
+                metadata["completed"] = now()
             metadata["updated"] = now()
             write(path, join_frontmatter(metadata, body))
         return {**metadata, "directory": str(path.parent), "path": str(path)}

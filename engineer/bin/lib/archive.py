@@ -204,6 +204,26 @@ def _selection(args):
     return kind, paths
 
 
+def catalog():
+    path = guarded(records.planning()/"archive/catalog.json")
+    return json.loads(read(path)) if path.is_file() else []
+
+
+def _matches(entry, kind, selector):
+    if entry["kind"] != kind:
+        return False
+    if selector in (entry["id"], entry["id"]+".md", entry["path"], entry["archived_path"]):
+        return True
+    if kind == "phase":
+        try:
+            return records.number(selector) == records.number(entry["id"])
+        except ValueError:
+            return selector == entry["id"].split("-", 1)[-1]
+    if kind == "adr" and re.fullmatch(r"(?i)(?:adr-)?\d+", selector):
+        return int(re.sub(r"(?i)^adr-", "", selector)) == int(re.match(r"(?i)ADR-(\d+)", entry["id"])[1])
+    return False
+
+
 def _rebase(content, source, destination, moves):
     def mapped(path):
         for before, after in moves:
@@ -228,6 +248,19 @@ def _rebase(content, source, destination, moves):
 def archive(args):
     if any(_load(path)["state"] == "pending" for path in _journal_paths()):
         raise Failure("archive-pending", "Recover the interrupted archive before starting another")
+    previous = [entry for entry in catalog() if _matches(entry, args.arg(0), args.arg(1, ""))]
+    if previous:
+        if len(previous) != 1:
+            raise Failure("archive-ambiguous", "Select the exact archived identity")
+        entry = previous[0]
+        source = guarded(entry["path"])
+        if source.exists():
+            raise Failure("archive-collision", "An active record reuses the archived identity")
+        if args.arg(0) == "adr" and re.fullmatch(r"(?i)(?:adr-)?\d+", args.arg(1, "")):
+            identity = re.match(r"(?i)ADR-(\d+)", entry["id"])[1]
+            if list(guarded(records.planning()/"decisions").glob("ADR-"+identity+"*.md")):
+                raise Failure("archive-collision", "An active ADR reuses the archived number")
+        return {"state": "already_archived", "recovery_id": entry["recovery_id"], "archived": True}
     kind, paths = _selection(args)
     moves = [(path, guarded(records.planning()/"archive"/path.relative_to(records.planning()))) for path in paths]
     if any(target.exists() for _, target in moves):
@@ -263,7 +296,63 @@ def archive(args):
     identifier = snapshot[:24]
     journal_path = records.planning()/"archive/recovery"/(identifier+".json")
     packet = {"recovery_id": identifier, "snapshotDigest": snapshot, "digest": snapshot,
-              "entries": [{"id": source.stem, "kind": kind, "path": source.relative_to(root()).as_posix(), "archived_path": target.relative_to(root()).as_posix()} for source, target in moves]}
+              "entries": [{"id": source.name if source.is_dir() else source.stem, "kind": kind, "path": source.relative_to(root()).as_posix(), "archived_path": target.relative_to(root()).as_posix()} for source, target in moves]}
+    entries = catalog()
+    for entry in entries:
+        for old, new in moves:
+            entry["replacement"] = str(entry.get("replacement", "")).replace(old.relative_to(root()).as_posix(), new.relative_to(root()).as_posix())
+    for entry, (source, target) in zip(packet["entries"], moves):
+        entry["recovery_id"] = identifier
+        if kind == "phase":
+            try:
+                phase = records.roadmap_phase(source.name)
+                entry.update({key: phase.get(key) for key in ("number", "name", "milestone", "goal", "requirements")})
+                entry["roadmap_member"] = True
+                entry["plan_count"] = len(re.findall(r"(?m)^- \[[ x]\]\s*\d", phase["body"]))
+                roadmap_name = ".planning/ROADMAP.md"
+                roadmap = base64.b64decode(before[roadmap_name]).decode()
+                roadmap = roadmap[:phase["start"]]+roadmap[phase["end"]:]
+                label = r"0*"+str(int(phase["number"].split(".")[0]))+(r"\."+phase["number"].split(".")[1] if "." in phase["number"] else "")
+                roadmap = re.sub(r"(?m)^- \[[ x]\]\s*\*\*Phase\s+"+label+r":.*\n?", "", roadmap)
+                roadmap = re.sub(r"(?m)^\|\s*"+label+r"\.\s*[^\n]+\n?", "", roadmap)
+                after[roadmap_name] = base64.b64encode(_rebase(roadmap, root()/roadmap_name, root()/roadmap_name, moves).encode()).decode()
+            except Failure:
+                entry.update({"number": records.number(source.name), "name": source.name.split("-", 1)[-1], "plan_count": 0})
+        if kind == "adr":
+            metadata, _ = split_frontmatter(read(source))
+            replacement = list(guarded(records.planning()/"decisions").glob(str(metadata["superseded_by"][0])+"*.md"))[0]
+            entry["replacement"] = replacement.relative_to(root()).as_posix()
+            from .text import join_frontmatter
+            archived_name = target.relative_to(root()).as_posix()
+            moved_metadata, moved_body = split_frontmatter(base64.b64decode(after[archived_name]).decode())
+            moved_metadata["superseded_by"] = [entry["replacement"]]
+            after[archived_name] = base64.b64encode(join_frontmatter(moved_metadata, moved_body).encode()).decode()
+            replacement_name = replacement.relative_to(root()).as_posix()
+            new_metadata, new_body = split_frontmatter(base64.b64decode(after[replacement_name]).decode())
+            supersedes = new_metadata.get("supersedes", [])
+            if archived_name not in supersedes:
+                new_metadata["supersedes"] = [*supersedes, archived_name]
+            after[replacement_name] = base64.b64encode(join_frontmatter(new_metadata, new_body).encode()).decode()
+        entries.append(entry)
+    if kind == "phase" and ".planning/STATE.md" in after:
+        from .text import join_frontmatter
+        metadata, body = split_frontmatter(base64.b64decode(after[".planning/STATE.md"]).decode())
+        progress = records.derived_progress()
+        for entry in packet["entries"]:
+            progress["total_phases"] -= int(entry.get("roadmap_member", False))
+            progress["completed_phases"] -= int(entry.get("roadmap_member", False))
+            progress["total_plans"] -= entry["plan_count"]
+            progress["completed_plans"] -= entry["plan_count"]
+        progress["completed_phases"] = max(0, progress["completed_phases"])
+        progress["percent"] = round(100*progress["completed_plans"]/progress["total_plans"]) if progress["total_plans"] else 0
+        metadata["progress"] = progress
+        after[".planning/STATE.md"] = base64.b64encode(join_frontmatter(metadata, body).encode()).decode()
+    after[".planning/archive/catalog.json"] = base64.b64encode((json.dumps(entries, indent=2)+"\n").encode()).decode()
+    index = "# Archived planning records\n\n"+"\n".join("- ["+entry["id"]+"]("+os.path.relpath(root()/entry["archived_path"], records.planning()/"archive").replace("\\", "/")+")" for entry in entries)+"\n"
+    after[".planning/archive/INDEX.md"] = base64.b64encode(index.encode()).decode()
+    changes = [{"path": name, "before_exists": name in before, "after_exists": name in after,
+                "before": before.get(name), "after": after.get(name)}
+               for name in sorted(set(before)|set(after)) if (name in before, before.get(name)) != (name in after, after.get(name))]
     if not args.has("apply") and not args.has("confirm"):
         return {**packet, "dry_run": True, "state": "preview", "archived": False}
     if args.get("expect", args.get("expect-digest")) != snapshot:
@@ -334,7 +423,6 @@ def recover(args):
 
 def archives(args):
     journals = [_load(path) for path in _journal_paths()]
-    entries = [entry for journal in journals if journal["state"] == "archived" for entry in journal["entries"]
-               if not args.has("kind") or entry["kind"] == args.get("kind")]
+    entries = [entry for entry in catalog() if not args.has("kind") or entry["kind"] == args.get("kind")]
     return {"entries": entries, "archives": entries, "count": len(entries),
             "recoveries": [{"recovery_id": journal["recovery_id"], "state": journal["state"]} for journal in journals]}

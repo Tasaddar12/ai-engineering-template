@@ -72,6 +72,13 @@ def init(args, kind):
         return {**packet, **records.todo(args, "list")}
     if kind in ("progress", "complete-milestone"):
         progress = records.roadmap_analyze()
+        from .archive import catalog
+        archived = [{**entry, "complete": True, "archived": True} for entry in catalog() if entry["kind"] == "phase"]
+        if kind == "complete-milestone" and args.pos:
+            selected = args.need()
+            members = [phase for phase in [*progress["phases"], *archived] if str(phase.get("milestone", "")).startswith(selected)]
+            packet["milestone_phases"] = members
+            packet["ready_to_complete"] = bool(members) and all(phase["complete"] for phase in members)
         verified = []
         for phase in progress["phases"]:
             from .core import Args
@@ -79,7 +86,9 @@ def init(args, kind):
                 verified.append(verification.status(Args([phase["number"]]))["status"] == "passed")
             except Failure:
                 verified.append(False)
-        return {**packet, **progress, "progress_percent": progress["percent"], "all_phases_verified": bool(verified) and all(verified)}
+        return {**packet, **progress, "progress_percent": progress["percent"], "all_phases_verified": bool(verified) and all(verified),
+                "totals": {"phases": progress["phase_count"], "plans": records.derived_progress()["total_plans"]},
+                "next_phase": next((phase for phase in progress["phases"] if not phase["complete"]), None)}
     value = args.arg(0, args.get("phase"))
     if not value:
         value = packet["state"].get("phase")
@@ -117,7 +126,9 @@ def init(args, kind):
     packet["incomplete_plans"] = [identifier+"-PLAN.md" for identifier in index["incomplete_plans"]]
     packet["incomplete_count"] = len(packet["incomplete_plans"])
     packet["waves"] = index["waves"]
-    packet["prior_context"] = [{"path": str(path), "content": read(path)} for phase in records.phases() if phase != directory for path in phase.glob("*-SUMMARY.md")]
+    from .archive import catalog, guarded
+    prior = records.phases()+[guarded(entry["archived_path"]) for entry in catalog() if entry["kind"] == "phase"]
+    packet["prior_context"] = [{"phase": phase.name.split("-", 1)[0], "path": str(path), "content": read(path)} for phase in prior if phase != directory for path in phase.glob("*-CONTEXT.md")]
     packet["artifact_files"] = info["artifacts"]
     packet["artifacts"] = {"plans": info["plans"], "summaries": info["summaries"]}
     for suffix in ("CONTEXT", "RESEARCH", "VERIFICATION", "VALIDATION", "UI-SPEC", "SECURITY", "REVIEW", "UAT"):

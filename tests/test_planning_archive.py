@@ -10,11 +10,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNTIME = ROOT / ".ai/runtime/phase.py"
+RUNTIME = ROOT / "engineer/bin/engineer.py"
 sys.path.insert(0, str(RUNTIME.parent))
 from lib import archive
-from lib.paths import Workspace
-from lib.results import VerbError
+from lib.core import Args, Failure as VerbError
 
 ROADMAP = """# Roadmap
 
@@ -84,7 +83,11 @@ Resume file: None
 class PlanningArchive(unittest.TestCase):
     def setUp(self):
         self.root = Path(tempfile.mkdtemp(prefix="planning-archive-"))
+        self.root = self.root.resolve()
         self.addCleanup(shutil.rmtree, self.root, ignore_errors=True)
+        environment = patch.dict(os.environ, ENGINEER_ROOT=str(self.root), ENGINEER_HOST="claude")
+        environment.start()
+        self.addCleanup(environment.stop)
         subprocess.run(["git", "init", "-q", str(self.root)], check=True, capture_output=True)
         self.write(".planning/ROADMAP.md", ROADMAP)
         self.write(".planning/STATE.md", STATE)
@@ -105,14 +108,33 @@ class PlanningArchive(unittest.TestCase):
         return (self.root / path).read_text(encoding="utf-8")
 
     def cli(self, *args, ok=True):
+        # Reviewed publication supersedes unbound legacy --apply. Obtain the
+        # exact read-only packet before every requested archive/recovery apply.
+        if args[0] in ("planning.archive", "planning.archive-recover") and "--apply" in args:
+            preview_args = [value for value in args if value != "--apply"]
+            preview = self.cli(*preview_args, ok=None)
+            if not preview["ok"]:
+                self.assertFalse(ok, preview)
+                return preview
+            digest = preview.get("digest", preview.get("recoveryDigest"))
+            if digest:
+                args = (*args, "--expect", digest)
         result = subprocess.run([sys.executable, str(RUNTIME), "query", *args], cwd=self.root,
                                 capture_output=True, text=True, encoding="utf-8",
                                 env=dict(os.environ, PYTHONIOENCODING="utf-8"))
         self.assertNotIn("Traceback", result.stderr, result.stderr)
-        data = json.loads(result.stdout)
-        self.assertEqual(data["ok"], ok, data)
-        self.assertEqual(result.returncode, 0 if ok else 1)
+        data = json.loads(result.stdout) if result.stdout else json.loads(result.stderr.strip().splitlines()[-1])
+        data["ok"] = result.returncode == 0
+        if not result.stdout:
+            data["code"] = data["error"]
+        if ok is not None:
+            self.assertEqual(data["ok"], ok, data)
+            self.assertEqual(result.returncode, 0 if ok else 1)
         return data
+
+    def archive_apply(self, kind, selector):
+        preview = archive.archive(Args([kind, selector]))
+        return archive.archive(Args([kind, selector, "--apply", "--expect", preview["digest"]]))
 
     def snapshot(self):
         return {path.relative_to(self.root).as_posix(): path.read_bytes()
@@ -148,7 +170,7 @@ class PlanningArchive(unittest.TestCase):
         phase = self.cli("find-phase", "1")
         self.assertTrue(phase["phase_found"])
         self.assertTrue(phase["archived"])
-        self.assertEqual(phase["phase_dir"], ".planning/archive/phases/01-foundation")
+        self.assertEqual(Path(phase["phase_dir"]), self.root / ".planning/archive/phases/01-foundation")
         self.assertTrue(self.cli("find-phase", "foundation")["archived"])
         self.assertEqual(self.cli("phase-plan-index", "1")["plans"][0]["id"], "01-01")
         self.assertTrue(self.cli("verification.status", "1")["status"] == "passed")
@@ -315,17 +337,16 @@ class PlanningArchive(unittest.TestCase):
         (source / "binary.dat").write_bytes(b"\x00\xff\x10")
         (source / "empty").mkdir()
         before = self.snapshot()
-        workspace = Workspace(self.root)
         original_write = archive.atomic_write
         calls = []
-        def interrupt(ws, path, content):
+        def interrupt(path, content):
             calls.append(path)
             if len(calls) == 3:
                 raise OSError("simulated write interruption")
-            return original_write(ws, path, content)
+            return original_write(path, content)
         with patch.object(archive, "atomic_write", side_effect=interrupt):
             with self.assertRaises(VerbError) as error:
-                archive.archive(workspace, "phase", "1", apply=True)
+                self.archive_apply("phase", "1")
         self.assertEqual(error.exception.code, "archive-interrupted")
         recoveries = self.cli("planning.archives")["recoveries"]
         self.assertEqual(recoveries[0]["state"], "pending")
@@ -420,17 +441,16 @@ class PlanningArchive(unittest.TestCase):
 
     def test_pending_journal_blocks_additional_archive_operations(self):
         task = self.quick()
-        workspace = Workspace(self.root)
         original_write = archive.atomic_write
         calls = []
-        def interrupt(ws, path, content):
+        def interrupt(path, content):
             calls.append(path)
             if len(calls) == 2:
                 raise OSError("simulated interruption")
-            return original_write(ws, path, content)
+            return original_write(path, content)
         with patch.object(archive, "atomic_write", side_effect=interrupt):
             with self.assertRaises(VerbError):
-                archive.archive(workspace, "phase", "1", apply=True)
+                self.archive_apply("phase", "1")
         before = self.snapshot()
         self.assertEqual(self.cli("planning.archive", "quick", task, "--apply", ok=False)["code"], "archive-pending")
         self.assertEqual(before, self.snapshot())
@@ -544,11 +564,14 @@ class PlanningArchive(unittest.TestCase):
         with patch.object(type(link), "is_junction", property(unavailable), create=True):
             for path in (link, link / "protected.md"):
                 with self.assertRaises(VerbError) as error:
-                    archive.guarded(Workspace(self.root), path)
+                    archive.guarded(path)
                 self.assertEqual(error.exception.code, "path-escape")
             for apply in (False, True):
                 with self.assertRaises(VerbError) as error:
-                    archive.archive(Workspace(self.root), "phase", "1", apply=apply)
+                    if apply:
+                        self.archive_apply("phase", "1")
+                    else:
+                        archive.archive(Args(["phase", "1"]))
                 self.assertEqual(error.exception.code, "path-escape")
         self.assertEqual(before, self.snapshot())
         self.assertEqual((target / "protected.md").read_text(encoding="utf-8"), "Keep internal target.\n")
