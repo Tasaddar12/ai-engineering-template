@@ -497,7 +497,8 @@ class TodoIssues(IssueFixture):
 
     def test_invalid_private_frontmatter_is_not_echoed_in_failure(self):
         self.todo.write_text("---\nprivate: [PRIVATE CUSTOMER DETAIL\n---\ncontext")
-        self.fails(self.preview)
+        failure = self.fails(self.preview)
+        self.assertNotIn("PRIVATE CUSTOMER DETAIL", str(failure))
         self.assertEqual(0, self.creates)
 
     def test_repeated_concurrent_publish_serializes_and_creates_once(self):

@@ -147,6 +147,11 @@ def accepted_human(body):
     The coordinator and independent reviewer must establish the actual human
     decision and current required PASS actions from the cited source evidence.
     """
+    from .issue_format import visible_lines, cells
+    body = "\n".join(visible_lines(body))
+    actions = [cells(line) for line in body.splitlines() if re.match(r"^\s*\|\s*\d+\s*\|", line)]
+    if not actions or any(len(row) != 4 or not re.match(r"^PASS\b", row[3], re.I) or re.search(r"\b(?:FAIL|BLOCKED|PENDING)\b", row[3], re.I) for row in actions):
+        return False
     body = re.sub(r"(?m)^- (?=(?:Status|Reviewer|Date|Decision|Evidence):)", "", body.replace("**", ""))
     if not re.search(r"(?mi)^Status:\s*ACCEPTED\s*$", body):
         return False
