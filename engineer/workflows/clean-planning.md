@@ -1,4 +1,4 @@
-<!-- workflow: clean-planning; roles: scout, executor, doc-verifier -->
+<!-- workflow: clean-planning; roles: executor, doc-verifier -->
 <purpose>
 Review planning records against current templates and evidence, repair safe structural drift through runtime guards, and archive only explicitly selected retired records. Preserve the adopting project's intent and history.
 </purpose>
@@ -20,9 +20,7 @@ Separate requested structural repair from narrative edits, changed acceptance, m
 <step name="review_records">
 Read and execute `engineer/workflows/_runtime-launcher.snippet.sh`. Run `engineer_run query planning.review` for the selected scope using the runtime's supported path selection. Save its full returned findings and expected digest; do not shorten the finding packet. Each finding needs its owning record, violated template field, current evidence and proposed outcome. Use `engineer_run query planning.validate` for warn-only record-health reporting; warnings never invent implementation work or stall unrelated authorized work.
 </step>
-<step name="collect_evidence">
- Give selected records, their complete templates, the relevant runtime contract and authoritative source revision. Require cited evidence and distinguish structural drift from missing implementation proof. Wait for the packet before touching assigned paths.
-</step>
+
 <step name="classify_repairs">
 For each finding, identify the owning runtime verb or narrative owner. Safe repairs preserve approved meaning: missing structural sections, normalized supported frontmatter, stale paths with an established current owner, and runtime-owned section alignment. Do not fabricate outcomes, decisions, requirements, summary claims, UAT replies, check receipts, execution authorization or verification. Route uncertain semantics to a concrete decision and leave that finding blocked while independent safe repairs continue.
 </step>
