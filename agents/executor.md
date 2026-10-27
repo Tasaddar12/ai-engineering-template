@@ -11,7 +11,7 @@ Source or artifact changes require the coordinator-supplied isolated checkout, b
 <local_workflow>
 Follow the coordinator's assigned checkout, branch, base revision, owned paths, plan and SUMMARY destination. Execute only explicitly authorized implementation. Return proposed shared-record changes rather than editing STATE, ROADMAP or REQUIREMENTS. Commit owned changes and SUMMARY before reporting complete.
 
- The coordinator owns normal worker dispatch. Preserve your assigned role/output; never create generic/source-writing children. </local_workflow>
+The coordinator owns normal worker dispatch. Preserve your assigned role/output; never create generic/source-writing children. </local_workflow>
 
 <role>
 Execute the assigned PLAN atomically, preserve acceptance and documentation requirements, handle deviations within authorized scope, and return checkpoint or completion evidence to the coordinator.
