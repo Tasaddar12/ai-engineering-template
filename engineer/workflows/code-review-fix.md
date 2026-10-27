@@ -230,12 +230,14 @@ preserve actual existing repair commits and report partial progress.
 For phase disposition reconciliation read execute-phase/steps/code-review-disposition.md
 only after aggregate and pass evidence are committed. It is advisory, must consume
 all passes before backups are retired and must not execute unsupported/legacy
-helpers. The current Python registry has no per-review disposition-ledger writer:
-report this exact unavailable interface and retain explicit aggregate entries
-containing stable ID/aliases, source and repair revision, disposition/reason and
-commit/check/re-review evidence. Do not claim the advisory ledger was updated.
-Its future runtime-owned writer must join every pass idempotently with source
-digest binding before retiring backups. Genuine quick has no
+helpers. Invoke `engineer_run query review.disposition --phase PHASE_NUMBER
+--phase-dir PHASE_DIR` using the actual validated phase inputs. Display every
+dropped/stale/unparsed note and retain its consumed_passes exact paths/digests
+and review_digest. It joins the final report and every numeric iteration backup
+before any retirement. An advisory skip retains all passes and explicit aggregate
+entries with stable ID/aliases, source and repair revision, disposition/reason
+and commit/check/re-review evidence. The ledger never waives a required finding
+or acceptance gate. Genuine quick has no
 fictional phase ledger. Never hand-edit runtime-owned structures.
 </step>
 
