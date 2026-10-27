@@ -31,7 +31,7 @@ Output: Test files committed with message `test(phase-{N}): add unit and E2E tes
 </objective>
 
 <execution_context>
-@engineer/workflows/add-tests.md
+@~/.claude/engineer/workflows/add-tests.md
 </execution_context>
 
 <context>
