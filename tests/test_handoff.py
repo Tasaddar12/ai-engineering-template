@@ -419,6 +419,22 @@ class Consuming(HandoffCase):
 
 class Writing(HandoffCase):
 
+    def test_context_hook_records_real_transcript_plan_attribution(self):
+        transcript = self.directory/'context-transcript.jsonl'
+        transcript.write_text(json.dumps({'role': 'user', 'content':
+                              'Execute plan at .planning/phases/04-y/04-01-PLAN.md\nsummary_path: reports/executor-SUMMARY.md'})+'\n', encoding='utf-8')
+        event = {'tool_name': 'exec_command', 'hook_event_name': 'PostToolUse',
+                 'cwd': str(self.directory), 'agent_id': 'worker1', 'agent_type': 'executor',
+                 'session_id': 'attribution', 'context_tokens': 200000, 'transcript_path': str(transcript)}
+        process = subprocess.run([sys.executable, str(ROOT/'hooks/context-handoff.py')],
+                                 cwd=self.directory, input=json.dumps(event), capture_output=True, text=True,
+                                 env=dict(os.environ, ENGINEER_ROOT=str(self.directory), ENGINEER_HOST='codex'))
+        self.assertEqual(0, process.returncode, process.stderr)
+        self.assertIn('hookSpecificOutput', json.loads(process.stdout))
+        packet = self.run_verb('handoff.read', 'attribution-worker1')
+        self.assertEqual('.planning/phases/04-y/04-01-PLAN.md', packet['plan'])
+        self.assertEqual('reports/executor-SUMMARY.md', packet['summary'])
+
     def test_transcript_attribution_uses_only_contained_user_assignments(self):
         transcript = self.directory/'transcript.jsonl'
         plan = self.directory/'.planning/phases/04-y/04-01-PLAN.md'

@@ -63,7 +63,13 @@ def main():
         if used < threshold:
             return 0
         name = re.sub(r"[^A-Za-z0-9_.-]", "_", str(event.get("session_id", "session")) + "-" + str(agent))
-        query(root, "handoff.write", name, "--reason", "Configured context threshold reached", "--agent", str(agent), "--role", str(role or "unknown"), "--remaining", "Converge on a safe boundary and return exact remaining scope", "--next", "Return continuation digest to coordinator")
+        arguments = ["handoff.write", name, "--reason", "Configured context threshold reached", "--agent", str(agent), "--role", str(role or "unknown"), "--remaining", "Converge on a safe boundary and return exact remaining scope", "--next", "Return continuation digest to coordinator"]
+        transcript = event.get("transcript_path")
+        if transcript:
+            if not isinstance(transcript, str):
+                raise ValueError("transcript path must be a string")
+            arguments.extend(["--transcript", transcript])
+        query(root, *arguments)
         inventory = roles()
         if role in inventory.get("REVIEW_ROLES", set()):
             instruction = "Return examined scope, findings and unreached scope; do not claim a complete review."
