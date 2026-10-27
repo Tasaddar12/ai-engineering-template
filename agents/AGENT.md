@@ -18,8 +18,6 @@ Read [the engineering rules](../engineer/RULES.md) and [agent adaptation](../eng
 | [Doc verifier](doc-verifier.md) | verification coordinator | Documentation and captured source revision → complete claim JSON with FAIL/UNVERIFIABLE evidence → coordinator |
 | [Integration checker](integration-checker.md) | verification coordinator | Component boundaries and acceptance → traced success/error/empty paths and UNVERIFIED scope → coordinator |
 | [Codebase mapper](codebase-mapper.md) | onboard / research coordinator | Validated source scope and owned map paths → committed repository map → coordinator |
-| [Scout](scout.md) | Coordinator or specifically permitted role | One named discovery question → cited read-only evidence packet → named consumer |
-| [Targeted fixer](targeted-fixer.md) | Bounded correction coordinator | Stable finding and required property, isolated assignment → committed bounded repair and SUMMARY → coordinator |
 | [UI researcher](ui-researcher.md) | ui-phase coordinator | Approved UI decisions and assigned output → committed UI-SPEC → coordinator and ui-checker |
 | [UI checker](ui-checker.md) | ui-phase coordinator | Captured UI-SPEC and CONTEXT → evidenced read-only verdict → coordinator |
 | [UI auditor](ui-auditor.md) | ui-review coordinator | Running UI, acceptance and optional external capture_dir → returned UI-REVIEW and external captures → coordinator |
@@ -27,9 +25,9 @@ Read [the engineering rules](../engineer/RULES.md) and [agent adaptation](../eng
 | [Security auditor](security-auditor.md) | secure-phase coordinator | Threat register and captured implementation → SECURED / OPEN_THREATS / ESCALATE evidence → coordinator, which writes SECURITY |
 | [Nyquist auditor](nyquist-auditor.md) | Validation-gap coordinator | Assigned test gaps, test/fixture paths and optional VALIDATION path → committed behavioral tests and SUMMARY → coordinator |
 | [Pattern mapper](pattern-mapper.md) | plan-phase coordinator | Scoped pattern question and assigned artifact path → committed PATTERNS → planner via coordinator |
-| [Code fixer method](code-fixer.md) | Loaded by targeted-fixer for code-review --fix | Assigned review findings → parsing, bounded repair and REVIEW-FIX method → coordinator |
+| [Code fixer](code-fixer.md) | code-review --fix coordinator | Assigned review findings → committed fixes and REVIEW-FIX report → coordinator |
 
-Pattern-mapper is read-only for source inspection; its explicitly assigned evidence artifact is its sole write scope. Debugger is read-only unless an owned debug-record or source repair assignment supplies write authority. Code-fixer is method source rather than an extra dispatch identity: dispatch targeted-fixer for bounded review repairs.
+Pattern-mapper is read-only for source inspection; its explicitly assigned evidence artifact is its sole write scope. Debugger is read-only unless an owned debug-record or source repair assignment supplies write authority. 
 
 ## Compatibility aliases
 
@@ -48,11 +46,11 @@ Do not send an alias as a host-native role name. Do not substitute a generic age
 
 The coordinator owns worker lifecycle, integration, shared-record mutations and publication. After dispatching work, it waits before touching that worker's owned paths or integrating its commits. A timeout is not proof that a worker has stopped; reassignment requires confirmed exit.
 
-Unknown source location calls for one discovery scout with a named question, scoped search and cited packet. Additional scouts require separately named questions and distinct outputs. Scouts and targeted-fixer are leaves and cannot create children. Other roles may request only workflow-permitted named packets; they must not recreate the coordinator's worker tree.
+Other roles may request only workflow-permitted named packets; they must not recreate the coordinator's worker tree.
 
 Use a fresh code-reviewer for every source-changing phase and its independent implementation review. The author may self-check claims but cannot supply its own independent review. Plan-checker evaluates plan outcomes and dependencies; verifier evaluates delivered behavior. Doc-verifier inspects claims without executing the documented commands. Integration-checker traces real boundaries; grep counts do not prove flow.
 
-A bounded correction carries a stable finding ID, its authority and required property. The fix hint is advisory: any permitted smaller repair satisfying the property is acceptable. The coordinator applies [bounded correction dispatch](../engineer/references/bounded-correction-dispatch.md) and chooses targeted-fixer when scope is already known.
+A bounded correction carries a stable finding ID, its authority and required property. The fix hint is advisory: any permitted smaller repair satisfying the property is acceptable. The coordinator applies [bounded correction dispatch](../engineer/references/bounded-correction-dispatch.md) and chooses code-fixer when scope is already known.
 
 ## Dispatching an agent
 
@@ -89,7 +87,7 @@ A worker verifies root, branch and HEAD before mutation. It never creates its ow
 
 Source-changing workers commit owned changes and their assigned SUMMARY before returning complete. Use exact-path staging and preserve unrelated dirty files. Return status, base identity, commit hashes, summary path, actual checks and Remaining. Artifact-only producers commit and return their assigned artifact; they do not create an unassigned SUMMARY. A partial artifact writer preserves useful committed work and states uncovered scope instead of claiming completion.
 
-Read-only scouts and specialists return their complete cited packet or report with captured revision and examined scope. They write no commit or SUMMARY. A coordinator-assigned external capture path is permitted only for the explicitly assigned report or browser evidence; it must resolve outside the checkout.
+Read-only specialists return their complete cited packet or report with captured revision and examined scope. They write no commit or SUMMARY. A coordinator-assigned external capture path is permitted only for the explicitly assigned report or browser evidence; it must resolve outside the checkout.
 
 ## Native hosts
 
@@ -101,8 +99,6 @@ Use the installed exact role definition and dispatch with resolved model setting
 
 | Role | Claude default | Effort |
 |---|---|---|
-| scout | haiku | Inherit |
-| targeted-fixer | haiku | Inherit |
 | executor | sonnet | Inherit |
 | planner | opus | medium |
 | Other roles | Resolve project/default policy | Resolve project/default policy |
@@ -115,16 +111,13 @@ Use Codex native agent dispatch with the exact role method and resolved model/ef
 
 | Role group | Codex resolution policy |
 |---|---|
-| scout | Fixed scout resolution from runtime policy |
-| targeted-fixer | Fixed targeted-fixer resolution from runtime policy |
 | executor | Project agents.executor override, then runtime profile/default |
 | planner | Project agents.planner override, then runtime profile/default |
 | phase-researcher | Project agents.phase-researcher override, then runtime profile/default |
 | plan-checker | Project agents.plan-checker override, then runtime profile/default |
 | Review, documentation, mapping, UI and security roles | Exact role override, then runtime profile/default |
 
-Resolve each role separately even if another role in the same batch appears similar. A supported host's default model is a runtime concern, not authority to skip resolution. Preserve the runtime's fixed scout and targeted-fixer rules and never expand the shared catalog to unsupported hosts.
-
+Resolve each role separately even if another role in the same batch appears similar. A supported host's default model is a runtime concern, not authority to skip resolution.
 ## Verification and continuation
 
 A frozen verification batch captures one revision. Configured checks and independent specialists may inspect it concurrently, but the coordinator waits for every result before accepting evidence, repairing files or capturing another batch. A provisional specialist pass does not establish the joined phase verdict.

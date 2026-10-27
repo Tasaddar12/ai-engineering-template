@@ -19,14 +19,13 @@ Checks: exact argv lists, or none/not run with authority
 Output: required artifact or cited packet, commit and result fields
 ```
 
-Scouts receive a named discovery question and distinct evidence output, remain read-only and never dispatch children. A timeout is not evidence that a worker stopped.
+ A timeout is not evidence that a worker stopped.
 
 ## Completion contracts
 
 | Worker kind | Completion requires | Does not do |
 |-------------|---------------------|-------------|
 | Source-changing executor/fixer/writer | Owned commits and required SUMMARY or explicitly assigned maintenance result | Push, integrate, update shared state or publish |
-| Read-only scout/reviewer/verifier | Assigned cited evidence packet/report at captured revision | Create a completion commit or SUMMARY |
 | Coordinator | Join results, reconcile gates and owned records, integrate and publish when authorized | Reassign a live worker's paths |
 
 The consuming workflow owns exact completion markers and regexes. A presentation heading alone is not completion evidence. Inspect artifact content, commit ancestry, scope and remaining items. Preserve the upstream distinction between sentinel-match, artifact+query and structured-return; do not invent a single generic completion parser.

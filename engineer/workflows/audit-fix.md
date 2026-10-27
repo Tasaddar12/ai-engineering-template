@@ -2,12 +2,12 @@ Read and execute `engineer/workflows/_runtime-launcher.snippet.sh` before runtim
 
 <purpose>
 Autonomous audit-to-fix pipeline. Runs an audit, parses findings, classifies each as
-auto-fixable vs manual-only, spawns targeted-fixer agents for fixable issues, runs tests
+auto-fixable vs manual-only, spawns code-fixer agents for fixable issues, runs tests
 after each fix, and commits atomically with finding IDs for traceability.
 </purpose>
 
 <available_agent_types>
-- targeted-fixer — commits one bounded correction in an assigned isolated checkout; debugger supplies read-only root-cause evidence for unknown causes
+- code-fixer — commits one bounded correction in an assigned isolated checkout; debugger supplies read-only root-cause evidence for unknown causes
 </available_agent_types>
 
 <process>
@@ -101,16 +101,16 @@ After classification/dry-run, reuse the matching owned quick session or call `en
 Process at most --max auto-fixable findings sequentially, highest severity first with stable-ID ordering within severity. Each finding has one initial attempt and at most two revised attempts (three total); change the hypothesis/input before retrying. The first failed integrated check stops the pipeline. Never broaden the correction to consume ambiguous work.
 
 ```bash
-FIXER_MODEL=$(engineer_run query resolve-model targeted-fixer --raw)
-FIXER_EFFORT=$(engineer_run query resolve-effort targeted-fixer --raw)
+FIXER_MODEL=$(engineer_run query resolve-model code-fixer --raw)
+FIXER_EFFORT=$(engineer_run query resolve-effort code-fixer --raw)
 engineer_run query dispatch-isolation --phase "quick-${QUICK_ID}" --plan "${PLAN_ID}"
 ```
 
-Require successful resolution. Omit inherit model/effort parameters; pass all other actual values inline. Load the complete targeted-fixer role and bounded-correction-dispatch reference. Use the returned mandatory worktree mode. Under orchestrator-worktree call `worktree.create PLAN --phase quick-ID --base SHA --files PATH...` with real exact paths. Under harness-worktree dispatch native isolation="worktree", validate base and record actual path/branch via worktree.record-agent with the same scope. Refuse missing isolation or mismatched root/branch/base; never fall back to shared edits.
+Require successful resolution. Omit inherit model/effort parameters; pass all other actual values inline. Load the complete code-fixer role and bounded-correction-dispatch reference. Use the returned mandatory worktree mode. Under orchestrator-worktree call `worktree.create PLAN --phase quick-ID --base SHA --files PATH...` with real exact paths. Under harness-worktree dispatch native isolation="worktree", validate base and record actual path/branch via worktree.record-agent with the same scope. Refuse missing isolation or mismatched root/branch/base; never fall back to shared edits.
 
 ```text
 Agent(
-  subagent_type="targeted-fixer",
+  subagent_type="code-fixer",
   model=<actual FIXER_MODEL; omit inherit>,
   effort=<actual FIXER_EFFORT; omit inherit>,
   prompt="<assignment>absolute isolated root, branch, full expected base, real quick PLAN/SUMMARY paths, exact files/deletions/resources and actual authority</assignment><finding>stable source ID, source report path/revision, cited cause, unchanged required property and exact pass/fail expectations</finding><required_reading>complete PLAN/QUICK, source report, approved CONTEXT/SPEC, relevant implementation/test files, full SUMMARY template and bounded correction method</required_reading><checks>exact argv/cwd/timeouts and user test order</checks><constraints>Minimal scoped repair, no refactors or acceptance edits, no shared records/publication/children; commit owned repair and schema-valid SUMMARY. Return actual commands and pending evidence, root/base/head, hashes and Remaining.</constraints>"
