@@ -213,9 +213,13 @@ None — all verifiable items checked programmatically.
 
 **Fix-plan handoff:**
 - Return gaps with exact authority, source paths, observed evidence and first continuation.
-- The verifier does not author PLANs; the coordinator assigns the phase-preparer.
+- The verifier does not author PLANs; the coordinator assigns the planner.
 - Group related corrections by coherent outcome and real dependencies within the configured cap.
 - Preserve required verification obligations; no review count or decision reference waives them.
+
+## Partial diagnosis and handoff
+
+Diagnosis is a separate coordinator-routed investigation, not an acceptance result. When UAT gaps need diagnosis, retain the UAT record as `partial`, preserve each stable gap ID and the user's original report, and use `/audit-uat` to inventory the actual outstanding records. The coordinator assigns the existing `debugger` role to investigate each bounded gap using its cited source and evidence; no `diagnose-issues` workflow is assumed. Each debugger return must identify the gap, exact repository/branch/revision, examined paths and evidence, likely root cause (or unresolved alternatives), affected artifacts, concrete missing behavior, and a first next action. The coordinator records only supported diagnosis fields in UAT, keeps unresolved or partial findings explicit, and routes diagnosed gaps to `/plan-phase --gaps` when authorized. Diagnosis never changes a failed action to pass, closes the gap, or supplies human acceptance. Resume diagnosis from the preserved partial record and remaining gap IDs; do not restart completed investigations or discard an incomplete return.
 
 ---
 
@@ -357,4 +361,4 @@ None needed until automated gaps are fixed.
 
 ## Findings and handoff authority
 
-A Warning identifies an evidenced non-blocking concern, never a substitute for a missing required check. A demonstrated acceptance failure or missing mandatory evidence blocks `passed`. Return precise gaps, affected paths, authority and observed evidence to the coordinator; the verifier does not author fix PLANs. The phase-preparer plans corrections within the configured task cap. Decision references preserve traceability and never waive acceptance.
+A Warning identifies an evidenced non-blocking concern, never a substitute for a missing required check. A demonstrated acceptance failure or missing mandatory evidence blocks `passed`. Return precise gaps, affected paths, authority and observed evidence to the coordinator; the verifier does not author fix PLANs. The planner plans corrections within the configured task cap. Decision references preserve traceability and never waive acceptance.

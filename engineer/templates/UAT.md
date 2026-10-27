@@ -7,15 +7,15 @@ Template for `.planning/phases/XX-name/{phase_num}-UAT.md` — persistent UAT se
 
 ## Authoring contract
 
-1. Read every source SUMMARY and the actual delivered entry points. Include at least one existing source path; do not generate speculative product features.
-2. Give each acceptance obligation an ID and concrete action. State a one-sentence expected result, exact entry point, fixtures and cleanup/preconditions.
-3. Separate acceptance obligations from actions. Several actions can support one acceptance obligation; passing one action does not pass unrelated obligations.
-4. Present the reply format `N PASS`, `N FAIL <observation>`, `N BLOCKED <reason>`. Record the human's observed words verbatim for failures and acceptance.
-5. Record pending without brackets. Require a reason for skips and blocks; preserve unresolved actions and accurate counters.
-6. Diagnosis adds root cause and repair evidence while the record stays partial. Do not treat diagnosis as acceptance.
-7. Reconcile a resolved gap only when `resolved_by` names an executed plan with an existing matching SUMMARY. Preserve history, `resolved_at` and stable gap IDs. A later regression receives a fresh ID.
-8. Complete only when every required action passes and Human acceptance contains an actual explicit human acceptance decision. Until then show `PENDING HUMAN acceptance` and preserve partial status.
-9. Link failures to the canonical [UAT issue format](issue.md#uat), preserving action, expected/actual result, source, revision and evidence. Do not claim tests were run when this file is only a prepared protocol.
+1. Read every source SUMMARY in full and inspect the actual delivered entry points and controls. Cite at least one existing source path for every acceptance obligation; do not invent product behavior.
+2. Give each acceptance obligation a stable ID and one-sentence observable result. Link each obligation to its source SUMMARY deliverable ID (`D1`, `D2`, etc.) where available.
+3. Write an exact, runnable human action for every test: actual full delivered URL (including required trailing slash), or the supplied launcher and exact keys/steps; name fixtures, preconditions, safe cleanup and the expected visible result. Verify these against the delivered UI before publication.
+4. Keep a numbered test index that links obligations to the test numbers and source deliverables. Record action results only in those linked tests; do not add duplicate index-row results or a second acceptance checklist that can contradict the tests.
+5. Use only `N PASS`, `N FAIL <observation>`, and `N BLOCKED <reason>` for human action replies. Capture the user's actual words verbatim for failures and final acceptance; never invent an observation.
+6. Keep pending actions explicit, require a reason for skips and blocks, and recalculate accurate counters after each response. A skipped, not-testable, blocked or pending required action does not pass.
+7. Diagnosis may add supported root cause, artifact, missing-behavior and investigation evidence while the record remains `partial`; diagnosis never changes an action result or supplies acceptance.
+8. Reconcile a historical issue only through an executed resolving plan and matching committed SUMMARY, preserving the original failure, stable gap ID, `resolved_at`, and any required human retest. A regression receives a new gap ID.
+9. Complete only when every required current action passes and Human acceptance records an actual explicit decision from the human. Until then preserve `PENDING HUMAN acceptance` and partial status. Link defects to the canonical [UAT issue format](issue.md#uat) with action, expected/actual result, source, revision and evidence. The maintainer records build, provenance, access, fixtures and bundle details in a separate maintainer-owned preparation record; the human performs the acceptance actions and owns the acceptance decision. Never claim a run based on a prepared protocol.
 
 ---
 
@@ -37,14 +37,17 @@ updated: [ISO timestamp]
 number: [N]
 name: [test name]
 expected: [One sentence stating the observable result]
-entry_point: [URL, route or exact entry command]
+entry_point: [Exact delivered full URL including required trailing slash, or supplied launcher plus exact keys/steps]
 fixtures: [Required account, data and setup]
 awaiting: user response or final human acceptance decision
 
-## Acceptance checklist
+## Test index
 
-- [ ] [Acceptance ID and observable outcome linked to source SUMMARY]
-- [ ] [Required human judgment and reason]
+| Acceptance ID | Delivered outcome | Source SUMMARY / deliverable | Linked test numbers |
+|---------------|-------------------|-----------------------------|---------------------|
+| A1 | [One-sentence observable outcome] | [XX-NN-SUMMARY.md, D1] | [1, 2] |
+
+The numbered tests below are the sole action-result records. The index links outcomes to tests; it has no separate result or acceptance rows. Do not create a second acceptance checklist. Human acceptance is recorded once in the dedicated section below.
 
 ## Tests
 
@@ -52,36 +55,52 @@ awaiting: user response or final human acceptance decision
 
 acceptance: [Acceptance ID]
 action: [Exact action the human performs]
-entry_point: [URL / route / command]
+entry_point: [Exact delivered full URL including required trailing slash, or supplied launcher plus exact keys/steps]
 fixtures: [Required data]
 
 expected: [observable behavior - what user should see]
 result: pending
 
-### 2. [Test Name]
+### 2. [Acceptance / action name]
 
-expected: [observable behavior]
-result: pass
+acceptance: [Acceptance ID]
+action: [Exact action; include the delivered controls and sequence]
+entry_point: [Exact delivered full URL including required trailing slash, or supplied launcher plus exact keys/steps]
+fixtures: [Required data, setup and safe cleanup]
+expected: [One-sentence observable result]
+result: pending
 
-### 3. [Test Name]
+### 3. [Acceptance / action name]
 
-expected: [observable behavior]
+acceptance: [Acceptance ID]
+action: [Exact action]
+entry_point: [Exact delivered full URL including required trailing slash, or supplied launcher plus exact keys/steps]
+fixtures: [Required data, setup and safe cleanup]
+expected: [One-sentence observable result]
 result: issue
 reported: "[verbatim user response]"
 severity: major
 
-### 4. [Test Name]
+### 4. [Acceptance / action name]
 
-expected: [observable behavior]
+acceptance: [Acceptance ID]
+action: [Exact action]
+entry_point: [Exact delivered full URL including required trailing slash, or supplied launcher plus exact keys/steps]
+fixtures: [Required data, setup and safe cleanup]
+expected: [One-sentence observable result]
 result: skipped
-reason: [why skipped]
+reason: [Required reason; skipped actions remain not passed]
 
-### 5. [Test Name]
+### 5. [Acceptance / action name]
 
-expected: [observable behavior]
+acceptance: [Acceptance ID]
+action: [Exact action]
+entry_point: [Exact delivered full URL including required trailing slash, or supplied launcher plus exact keys/steps]
+fixtures: [Required data, setup and safe cleanup]
+expected: [One-sentence observable result]
 result: blocked
-blocked_by: server | physical-device | release-build | third-party | prior-phase
-reason: [why blocked]
+blocked_by: [actual prerequisite category]
+reason: [Required concrete blocker and dependent scope]
 
 ...
 
@@ -92,7 +111,11 @@ accepted_by: ""
 accepted_at: ""
 decision: ""
 
-Record the actual human's final acceptance words and identity. Automated checks, source inspection, a resolving plan, silence and mode flags do not fill this block.
+Record the actual human's final acceptance words and identity. Automated checks, source inspection, a resolving plan, maintainer smoke checks, silence and mode flags do not fill this block. The maintainer does not accept on behalf of the human.
+
+## Maintainer preparation reference
+
+Preparation is a separate maintainer-owned record, not a human test result. Link the exact record that identifies the build and tested commit, provenance, access/readiness, bundle or launcher, fixture setup and cleanup, and any technical smoke-check evidence. The maintainer verifies the build is the delivered build, the actual URL or launcher/key sequence works, and the fixtures are safe and ready; the human then performs the linked UAT tests and makes the final acceptance decision. If the exact entry point, access, build or fixture is unavailable, mark only the dependent action `blocked` with its reason. Do not convert a missing prerequisite into a product failure or claim maintainer preparation as user acceptance.
 
 ## Summary
 
@@ -154,7 +177,7 @@ blocked: [N]
 **Gaps:**
 
 - APPEND only when issue found (YAML format)
-- After diagnosis: fill `root_cause`, `artifacts`, `missing`, `debug_session`
+- After diagnosis: fill `root_cause`, `artifacts`, `missing`, `debug_session`; keep stable `gap_id` values and source/revision evidence.
 - This section feeds `/plan-phase` gap correction alongside Findings and Acceptance
 - `status: resolved` (#1921, #4983): when `/verify-work`'s `reconcile_gaps`
   step finds an executed gap-closure plan (a `*-PLAN.md` naming this entry's
@@ -173,15 +196,14 @@ blocked: [N]
 
 <diagnosis_lifecycle>
 
-**While status is partial, if gaps exist:**
+**While status is partial, if gaps need diagnosis:**
 
-1. User runs diagnosis (from verify-work offer or manually)
-2. diagnose-issues workflow spawns parallel debug agents
-3. Each agent investigates one gap, returns root cause
-4. UAT.md Gaps section updated with diagnosis:
-   - Each gap gets `root_cause`, `artifacts`, `missing`, `debug_session` filled
-5. status remains "partial"
-6. Ready for /plan-phase --gaps with root causes
+1. The coordinator preserves the failed UAT action and stable gap IDs, then uses `/audit-uat` to inventory actual outstanding UAT records and determine which gaps need investigation. The audit is read-only and does not diagnose or pass a test.
+2. The coordinator routes each bounded gap to the existing `debugger` role with the exact repository, branch, revision, source paths, original report and relevant artifacts. There is no `diagnose-issues` workflow in this template.
+3. A debugger investigates the assigned gap and returns cited observations, examined paths, likely root cause or unresolved alternatives, affected artifacts, missing behavior and the first next action. Partial findings remain explicitly partial; do not fabricate completion or relaunch finished investigations.
+4. After the debugger stops, the coordinator records supported diagnosis evidence in that gap's `root_cause`, `artifacts`, `missing` and `debug_session` fields, preserving the original report and `status: failed`. The UAT session remains `partial`.
+5. Once diagnosis is sufficient, the coordinator may route the gap to `/plan-phase --gaps` under the applicable phase authority. Planning, diagnosis and a fix plan do not grant implementation permission or acceptance.
+6. After an authorized fix executes, verify the matching committed SUMMARY and gap-specific evidence before reconciling `resolved_by` / `resolved_at`. Retest when required; only the actual human can supply final acceptance.
 
 **After diagnosis:**
 
@@ -193,6 +215,7 @@ blocked: [N]
   reason: "User reported: works but doesn't show until I refresh the page"
   severity: major
   test: 2
+  gap_id: "GAP-04-comments-02" # Preserve the actual stable ID assigned to this gap.
   root_cause: "useEffect in CommentList.tsx missing commentCount dependency"
   artifacts:
     - path: "src/components/CommentList.tsx"
@@ -200,6 +223,8 @@ blocked: [N]
   missing:
     - "Add commentCount to useEffect dependency array"
   debug_session: ".planning/debug/comment-not-refreshing.md"
+  resolved_by: ""
+  resolved_at: ""
 ```
 
 </diagnosis_lifecycle>
@@ -281,37 +306,69 @@ updated: 2025-01-15T10:45:00Z
 awaiting: final human acceptance decision
 [Action 2 remains failed; repair and retest before acceptance.]
 
+## Test index
+
+| Acceptance ID | Delivered outcome | Source SUMMARY / deliverable | Linked test numbers |
+|---------------|-------------------|-----------------------------|---------------------|
+| A1 | Viewer sees the comment list and accurate count | 04-01-SUMMARY.md, D1 | 1, 6 |
+| A2 | Author can create and reply to comments, and the result appears immediately | 04-02-SUMMARY.md, D2 | 2, 3 |
+| A3 | Viewer can inspect nested-comment layout and remove their own comment | 04-02-SUMMARY.md, D3 | 4, 5 |
+
 ## Tests
 
 ### 1. View Comments on Post
 
+acceptance: A1
+action: Open the delivered post page and inspect its comments section.
+entry_point: https://staging.example.invalid/posts/123/ # Fictional example; replace with the verified delivered URL.
+fixtures: Maintainer-prepared test account and post; cleanup documented in the maintainer preparation record.
 expected: Comments section expands, shows count and comment list
 result: pass
 
 ### 2. Create Top-Level Comment
 
-expected: Submit comment via rich text editor, appears in list with author info
+acceptance: A2
+action: Open the delivered comments view, create a top-level comment with the prepared fixture, and observe the new comment in the list without refreshing.
+entry_point: https://staging.example.invalid/posts/123/ # Fictional example; replace with the verified delivered URL.
+fixtures: Maintainer-prepared test account and post; cleanup documented in the maintainer preparation record.
+expected: The submitted comment appears in the list immediately with its author information.
 result: issue
 reported: "works but doesn't show until I refresh the page"
 severity: major
 
 ### 3. Reply to a Comment
 
+acceptance: A2
+action: Use the delivered Reply control on the prepared comment, submit a nested reply, and inspect the thread.
+entry_point: https://staging.example.invalid/posts/123/ # Fictional example; replace with the verified delivered URL.
+fixtures: Maintainer-prepared test account, post and parent comment; cleanup documented in the maintainer preparation record.
 expected: Click Reply, inline composer appears, submit shows nested reply
 result: pass
 
 ### 4. Visual Nesting
 
+acceptance: A3
+action: Open a thread with at least three comment levels and inspect indentation, borders and the maximum depth.
+entry_point: https://staging.example.invalid/posts/123/ # Fictional example; replace with the verified delivered URL.
+fixtures: Maintainer-prepared three-level comment thread; cleanup documented in the maintainer preparation record.
 expected: 3+ level thread shows indentation, left borders, caps at reasonable depth
 result: pass
 
 ### 5. Delete Own Comment
 
+acceptance: A3
+action: Use the delivered delete control on a comment owned by the prepared test account.
+entry_point: https://staging.example.invalid/posts/123/ # Fictional example; replace with the verified delivered URL.
+fixtures: Maintainer-prepared owned comment with replies; cleanup documented in the maintainer preparation record.
 expected: Click delete on own comment, removed or shows [deleted] if has replies
 result: pass
 
 ### 6. Comment Count
 
+acceptance: A1
+action: Compare the displayed comment count with the prepared thread, then create one comment and observe the count update.
+entry_point: https://staging.example.invalid/posts/123/ # Fictional example; replace with the verified delivered URL.
+fixtures: Maintainer-prepared test account and post; cleanup documented in the maintainer preparation record.
 expected: Post shows accurate count, increments when adding comment
 result: pass
 
@@ -335,16 +392,23 @@ decision: ""
 
 - truth: "Comment appears immediately after submission in list"
   status: failed
+  gap_id: "GAP-04-comments-02"
   reason: "User reported: works but doesn't show until I refresh the page"
   severity: major
   test: 2
   root_cause: "useEffect in CommentList.tsx missing commentCount dependency"
   artifacts:
-  - path: "src/components/CommentList.tsx"
-    issue: "useEffect missing dependency"
-    missing:
-  - "Add commentCount to useEffect dependency array"
-    debug_session: ".planning/debug/comment-not-refreshing.md"
+    - path: "src/components/CommentList.tsx"
+      issue: "useEffect missing dependency"
+  missing:
+    - "Add commentCount to useEffect dependency array"
+  debug_session: ".planning/debug/comment-not-refreshing.md"
+  resolved_by: ""
+  resolved_at: ""
+
+## Maintainer preparation reference
+
+`.planning/phases/04-comments/04-UAT-PREPARATION.md` (fictional path for this example) records the exact build SHA and provenance, staging access, delivered URL, test account/post fixture, cleanup procedure, and maintainer smoke-check evidence. The human action result above remains `issue`; maintainer preparation is not acceptance.
 ```
 
 </good_example>

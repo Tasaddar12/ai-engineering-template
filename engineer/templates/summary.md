@@ -53,6 +53,10 @@ acceptance: []
 documentation: []
 issue_refs: []
 
+# Optional runtime-owned observations of checks actually executed for this plan.
+# Replace [] only with actual observations; use [] when no check was run.
+checks_run: []
+
 # Coverage metadata — one entry per shipped deliverable. Drives DETERMINISTIC UAT routing in verify-work.
 # Current summaries preserve this complete block. Legacy prose may inform review but cannot pass required acceptance.
 # See <coverage_guidance> for coordinator/verifier classification.
@@ -61,10 +65,11 @@ coverage:
     description: "[deliverable in human-readable form — what would have been a prose ## Accomplishments bullet]"
     requirement: "[REQ-ID from this plan's `requirements`, or omit if none]"
     verification:
-      - kind: unit # unit | integration | e2e | automated_ui | manual_procedural | other
-        ref: "[tests/path.test.ts#test name | playwright:shot.png | command invocation]"
-        status: pass # pass | fail | unknown — from the latest run
-    human_judgment: false # REQUIRED boolean. false does not waive required human UAT; automatic classification requires non-empty passing evidence.
+      - kind: unit # unit | integration | e2e | automated_ui
+        ref: "[exact receipt path returned by verification.run-checks]"
+        status: passed # actual receipt result; only passed can qualify for automatic coverage
+        revision: "[optional full tested SHA; if supplied it must match the receipt]"
+    human_judgment: false # Set false only with actual current passing native receipt evidence; otherwise true with rationale. It never waives required UAT.
   - id: D2
     description: "[a deliverable that needs a human to sign off]"
     verification: []
@@ -113,7 +118,7 @@ _Note: TDD tasks may have multiple commits (test → feat → refactor)_
 |-----------------|--------------|-----------------|----------|
 | [SHA] | [exact argv] | [pass / fail / not run] | [receipt or output path] |
 
-TDD Evidence: record the RED failure, GREEN pass and commit ancestry; missing evidence remains a gap.
+`checks_run` is optional metadata accepted by the current runtime. Each entry records only a check that was actually executed: `command` is either its exact argv list or exact observed command text, `status` is the observed status (`passed` for a passing entry), and `revision` is the actual tested commit SHA. Use `checks_run: []` when no check ran. Planned checks, unexecuted commands, inferred success, or a revision other than the one tested must not appear as executed evidence. The Markdown table remains the human-readable record and may include failures or not-run obligations; it does not replace the full runtime receipt when one exists. TDD Evidence: record the RED failure, GREEN pass and commit ancestry; missing evidence remains a gap.
 
 ## Files Created/Modified
 
@@ -182,6 +187,8 @@ None - no external service configuration required.
 
 Follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking); do not silently drop open threats. Keep mitigation details and remaining exposure in the outcome/evidence cells; do not duplicate the six-column PLAN register here.
 
+For every planned threat, preserve the stable PLAN threat ID and record the canonical issue URL (or the exact Pending reason), final outcome and remaining exposure. Outcomes are `unresolved`, `mitigated`, `accepted`, or `deferred`; `resolved` is not a threat disposition. A closed issue is not proof by itself: read the canonical issue back and reconcile its current state, discussion and closure evidence with the committed implementation and actual checks. Record the actual owned commit/integration state and tested revision with the relevant evidence. `accepted` and `deferred` remain distinct decisions with their authority and rationale; do not describe a deferred risk as resolved or a closed tracker as proof of mitigation.
+
 ## Next Phase Readiness
 
 [What's ready for next phase]
@@ -223,17 +230,19 @@ _Completed: [date]_
 | `id`                    | Stable identifier (`D1`, `D2`…) for cross-referencing from UAT.md and audit reports. Must be unique within the SUMMARY. |
 | `description`           | The deliverable in human-readable form — what would have been a prose bullet.                                           |
 | `requirement`           | Links back to a REQUIREMENTS.md REQ-ID (joins `requirements-completed`). Optional.                                      |
-| `verification[].kind`   | Enum: `unit \| integration \| e2e \| automated_ui \| manual_procedural \| other`.                                       |
-| `verification[].ref`    | Test path + descriptor (`file#test name`), Playwright screenshot ref, or command invocation. Required per entry.        |
-| `verification[].status` | `pass \| fail \| unknown` — populated from the latest test run.                                                         |
-| `human_judgment`        | Explicit boolean; REQUIRED. `true` always routes to a human.                                                            |
-| `rationale`             | REQUIRED when `human_judgment: true`. The audit trail for why automation is insufficient.                               |
+| `verification[].kind`   | Native enum: `unit \| integration \| e2e \| automated_ui`. Manual observations do not qualify as automated evidence. |
+| `verification[].ref`    | Exact receipt path returned by `engineer_run query verification.run-checks`; required per entry. A test path, screenshot or command string is not a native receipt. |
+| `verification[].status` | `passed` for an actually passing native receipt; any other or missing result remains unverified. |
+| `verification[].revision` | Optional full SHA of the revision actually tested; when present it must match the receipt's tested revision. |
+| `human_judgment`        | Explicit boolean; REQUIRED. `true` routes the outcome to a human; the field is not itself a human decision.            |
+| `rationale`             | REQUIRED when `human_judgment: true`. Explain why automation is insufficient or coverage is undetermined.               |
 
 **Deterministic contract (what the classifier does):**
 
-- The coordinator and verifier may classify an automated deliverable only when human_judgment is false, verification is non-empty, every result is pass and revision/input coverage is current. This never waives required human UAT or final acceptance.
-- **Everything else is presented to a human** — `human_judgment: true`, an empty `verification:`, any non-`pass`/`unknown` status, or any schema error. A false-negative is a redundant prompt (the status quo); a false-positive ships a bug UAT existed to catch.
-- **Fail-safe default:** if you cannot determine coverage for a deliverable, you MUST set `human_judgment: true` with `rationale: "Coverage not determined at authoring time — verifier must classify"`. Never leave a deliverable's `human_judgment` empty, and never set it `false` just to skip the prompt — automated coverage additionally requires non-empty passing verification, so the flag alone cannot skip the human.
+- The runtime binds a receipt's actual `result.name` to exactly one configured check ID, then reads that receipt using the current check fingerprint and current HEAD. The receipt must have matching source/configuration/argv/environment/input/log digests and valid revision ancestry. Use only the actual receipt path returned by `verification.run-checks`; metadata that merely names a test, command or SHA is not proof.
+- The coordinator and verifier may classify an automated deliverable only when `human_judgment` is false, verification is non-empty, every entry uses a native automated kind and has `status: passed`, each ref resolves to a valid current native receipt, and any supplied revision matches the receipt's actual tested revision. This never waives separately required human UAT or final acceptance.
+- **Everything else is presented to a human or left unverified** — `human_judgment: true`, an empty `verification:`, any non-passing status, missing/unbound/stale receipt, schema error, or unknown coverage. `human_judgment: false` alone is never evidence of automation and never waives required human acceptance.
+- **Fail-safe default:** if you cannot determine coverage for a deliverable, set `human_judgment: true` with `rationale: "Coverage not determined at authoring time — verifier must classify"`. Never leave `human_judgment` empty. Metadata-only claims, a test path, a command, or a screenshot must not be substituted for an actual receipt.
 - Current SUMMARYs require coverage for every delivered outcome. Empty coverage or missing required metadata remains a classification gap; legacy prose is discovery input only and cannot automatically approve current acceptance.
   </coverage_guidance>
 
