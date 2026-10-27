@@ -228,10 +228,11 @@ classifier.
 
 **Runtime coverage compute — canonical Python verb:**
 
-Write the Requirements gathered in THIS spec session to a temporary JSON file, one `{id,text,text_en?,shapes?}` per actual requirement. Preserve the exact SPEC text and IDs; translate only text_en. The following heredoc is an authoring example: replace every placeholder before execution. The runtime confines JSON input paths to the repository. Use portable suffixless mktemp inside the actual phase directory then append .json; do not build/install a second engine or run an adopting project's build scripts.
+Write the Requirements gathered in THIS spec session to a temporary JSON file, one `{id,text,text_en?,shapes?}` per actual requirement. Preserve the exact SPEC text and IDs; translate only text_en. The following heredoc is an authoring example: replace every placeholder before execution. The runtime confines JSON input paths to the repository. Use portable suffixless mktemp inside the ignored `.planning/verification-receipts/probes/` directory then append .json; keep generated inputs out of tracked phase records and the clean frozen source baseline. Remove only this session's exact generated files after their evidence has been retained; do not build/install a second engine or run an adopting project's build scripts.
 
 ```bash
-REQS_JSON=$(mktemp "${phase_dir}/edge-probe-reqs-XXXXXX") || exit 1
+mkdir -p .planning/verification-receipts/probes || exit 1
+REQS_JSON=$(mktemp '.planning/verification-receipts/probes/edge-probe-reqs-XXXXXX') || exit 1
 mv "$REQS_JSON" "${REQS_JSON}.json" || exit 1
 REQS_JSON="${REQS_JSON}.json"
 cat > "$REQS_JSON" <<'JSON'
