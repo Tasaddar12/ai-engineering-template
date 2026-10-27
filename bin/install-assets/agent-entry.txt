@@ -67,8 +67,7 @@ independent authorized work while preparing the concrete decision with evidence.
 
 The coordinator owns worker lifecycle, integration, shared records and
 publication. It routes work and does not perform work it has dispatched. Use
-exact canonical names from `agents/AGENT.md`; historical aliases and the retained
-code-fixer method are not additional dispatch roles. Only Claude and Codex hosts
+exact canonical names from `agents/AGENT.md`; historical aliases are not additional dispatch roles. Only Claude and Codex hosts
 are supported. Resolve model and effort for each dispatch through `resolve-model`
 and `resolve-effort`, passing concrete values inline and omitting `inherit`.
 Shared role Markdown does not carry model or effort settings.
