@@ -141,24 +141,12 @@ def write_json(path, value):
 
 @contextlib.contextmanager
 def planning_lock(base=None, timeout=10):
-    directory = (base or root()) / ".planning"
-    directory.mkdir(parents=True, exist_ok=True)
-    lock = directory / ".engineer.lock"
-    end = time.monotonic() + timeout
-    while True:
-        try:
-            descriptor = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-            os.write(descriptor, json.dumps({"pid": os.getpid(), "created": now()}).encode())
-            os.close(descriptor)
-            break
-        except FileExistsError:
-            if time.monotonic() >= end:
-                raise Failure("planning-locked", f"Planning records locked: {lock}")
-            time.sleep(0.05)
+    from .locking import acquire, lock_path
     try:
-        yield
-    finally:
-        lock.unlink(missing_ok=True)
+        with acquire(lock_path(base or root()), timeout):
+            yield
+    except TimeoutError as exc:
+        raise Failure("planning-locked", str(exc)) from exc
 
 
 def digest(paths, base=None):
