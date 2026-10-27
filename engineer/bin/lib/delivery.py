@@ -20,7 +20,12 @@ def view(branch):
         if "no pull requests found" in result.stderr.lower():
             return None
         raise Failure("provider-query-failed", result.stderr.strip())
-    packet = json.loads(result.stdout)
+    try:
+        packet = json.loads(result.stdout)
+    except (TypeError, ValueError) as exc:
+        raise Failure("provider-query-failed", "Provider returned malformed pull request data") from exc
+    if not isinstance(packet, dict) or not isinstance(packet.get("url"), str):
+        raise Failure("pr-identity-mismatch", "Provider returned no canonical pull request URL")
     number = repository.require_url(packet["url"], "pull")
     if packet.get("number") != number:
         raise Failure("pr-identity-mismatch", "Provider number differs from canonical URL")

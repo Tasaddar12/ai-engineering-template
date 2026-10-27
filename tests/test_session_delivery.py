@@ -627,7 +627,7 @@ class OpeningPullRequests(unittest.TestCase):
         self.assertEqual([], self.pushes)
 
     def test_metadata_edits_preserve_target_and_body_file_precedence(self):
-        body_file = self.directory/"pull body.md"
+        body_file = self.directory/".git/pull body.md"
         body_file.write_text(self.body+"\nReviewed file body.\n", encoding="utf-8")
         result = self.open(title="Updated", body="Ignored", body_file=body_file)
         self.assertEqual("stack-parent", result["baseRefName"])
@@ -666,7 +666,7 @@ class OpeningPullRequests(unittest.TestCase):
     def test_new_pr_uses_explicit_base_metadata_and_ready_state(self):
         # Creation always produces a draft; explicit verified pr.ready owns the
         # transition to ready and cannot be replaced by a creation argument.
-        body_file = self.directory/"pull body.md"
+        body_file = self.directory/".git/pull body.md"
         body_file.write_text(self.body+"\nCreation file.\n", encoding="utf-8")
         for options, expected in (({"body": self.body}, self.body), ({"body": "Ignored", "body_file": body_file}, body_file.read_text())):
             self.pull = None

@@ -93,6 +93,7 @@ class RecordBehavior(RuntimeCase):
         quick = self.cli("quick.create", "Repair the login")
         self.cli("quick.update", quick["quick_id"], "--status", "complete")
         self.assertEqual("complete", self.cli("quick.get", quick["quick_id"])["status"])
+        self.phase()
         todo = self.cli("todo.add", "Inspect a boundary", "--phase", "1")
         self.assertEqual(1, self.cli("todo.match-phase", "1")["count"])
         self.cli("todo.complete", todo["path"])
@@ -118,18 +119,25 @@ class IsolationSafety(RuntimeCase):
     def test_cleanup_requires_exact_preview_and_revalidates_dirty_resources(self):
         self.prepare_isolation()
         session = self.cli("session.open", "quick", "repair")
-        preview = self.cli("cleanup.preview")
-        self.assertEqual(1, preview["count"])
-        self.cli("cleanup.apply", "--approval-token", preview["approval_token"], status=1, raw=True)
+        # Offline provider evidence still runs real ownership, Git, token and
+        # filesystem checks through the public CLI in each fresh process.
+        driver = "import sys,runpy;sys.dont_write_bytecode=True;sys.path.insert(0,sys.argv.pop(1));from lib import cleanup;cleanup.provider_evidence=lambda *a,**k:{'offline':'closed'};runpy.run_path(sys.argv.pop(1),run_name='__main__')"
+        def cleanup_cli(verb, *args, status=0):
+            process = subprocess.run([sys.executable, "-I", "-c", driver, str(SOURCE/"engineer/bin"), str(RUNTIME), "query", verb, *map(str, args)], cwd=self.root, env=self.env, text=True, capture_output=True)
+            self.assertEqual(status, process.returncode, process.stderr or process.stdout)
+            return json.loads(process.stdout) if status == 0 else None
+        preview = cleanup_cli("cleanup.preview")
+        self.assertEqual(2, preview["count"])
+        cleanup_cli("cleanup.apply", "--approval-token", preview["approval_token"], status=1)
         target = Path(session["worktree"])
         (target/"untracked.txt").write_text("keep", encoding="utf-8")
-        self.cli("cleanup.apply", "--approval-token", preview["approval_token"], "--confirm", status=1, raw=True)
+        cleanup_cli("cleanup.apply", "--approval-token", preview["approval_token"], "--confirm", status=1)
         self.assertTrue(target.exists())
         (target/"untracked.txt").unlink()
-        preview = self.cli("cleanup.preview")
-        self.assertEqual(1, self.cli("cleanup.apply", "--approval-token", preview["approval_token"], "--confirm")["count"])
+        preview = cleanup_cli("cleanup.preview")
+        self.assertEqual(2, cleanup_cli("cleanup.apply", "--approval-token", preview["approval_token"], "--confirm")["count"])
         self.assertFalse(target.exists())
-        self.cli("cleanup.apply", "--approval-token", preview["approval_token"], "--confirm", status=1, raw=True)
+        cleanup_cli("cleanup.apply", "--approval-token", preview["approval_token"], "--confirm", status=1)
 
     def test_worker_undeclared_deletion_blocks_integration(self):
         self.prepare_isolation()

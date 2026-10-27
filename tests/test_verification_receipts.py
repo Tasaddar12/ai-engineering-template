@@ -8,7 +8,6 @@ import tempfile
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 
-import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "engineer/bin/engineer.py"
@@ -89,7 +88,7 @@ class ReceiptTests(unittest.TestCase):
         return [sys.executable, "check.py", name, mode, *args]
 
     def configure(self, commands, **options):
-        self.write(".planning/config.yaml", yaml.safe_dump({"verification": dict(commands=commands, **options)}))
+        self.write(".planning/config.yaml", json.dumps({"verification": dict(commands=commands, **options)}))
 
     def run_checks(self, environment=None, ok=True):
         env = dict(os.environ, PYTHONIOENCODING="utf-8")
@@ -425,7 +424,7 @@ class ReceiptTests(unittest.TestCase):
 
     def test_report_only_ancestry_rejects_source_edit_then_revert(self):
         self.configure([])
-        self.write(".planning/phases/01-example/01-01-PLAN.md", "---\nphase: '01'\nfiles_modified: [input.txt]\n---\n# Plan\n")
+        self.write(".planning/phases/01-example/01-01-PLAN.md", "---\nphase: '01'\nplan: '01'\ntype: execute\nwave: 1\ndepends_on: []\nfiles_modified: [input.txt]\nfiles_deleted: []\nresources: []\nautonomous: true\nrequirements: []\nacceptance: []\ndocumentation: []\nchecks: []\nissue_refs: []\nmust_haves: {truths: [], artifacts: [], key_links: []}\n---\n# Plan\n")
         self.git("add", ".")
         self.git("commit", "-qm", "plan")
         def cli(*args):

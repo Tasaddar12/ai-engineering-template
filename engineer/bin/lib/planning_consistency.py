@@ -46,15 +46,15 @@ def findings():
             report(base/"REQUIREMENTS.md", "Duplicate traceability row "+identifier)
     for phase in roadmap:
         directory = directories.get(phase["number"])
-        if directory is None:
-            report(base/"ROADMAP.md", "Roadmap phase lacks directory: "+phase["number"])
-            continue
         for identifier in phase["requirements"]:
             if identifier not in declared:
                 report(base/"ROADMAP.md", "Phase references undeclared requirement "+identifier)
         for dependency in re.findall(r"(?i)\bPhase\s+(\d+(?:\.\d+)?)", phase["depends_on"]):
             if records.number(dependency) not in ids or records.number(dependency) == phase["number"]:
                 report(base/"ROADMAP.md", "Invalid phase dependency "+dependency)
+        if directory is None:
+            report(base/"ROADMAP.md", "Roadmap phase lacks directory: "+phase["number"])
+            continue
         for path in directory.glob("*.md"):
             try:
                 metadata, body = split_frontmatter(read(path))

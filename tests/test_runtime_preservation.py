@@ -117,7 +117,7 @@ class RecordPreservation(PreservationCase):
 
     def test_decision_outcome_milestone_goal_and_derived_save_preserve_prose(self):
         misc.milestone(Args(["v1.0 Test", "--goal", "Observable goal"]), "create")
-        self.assertIn("**Goal:** Observable goal", read(self.root/".planning/ROADMAP.md"))
+        self.assertIn("**Milestone Goal:** Observable goal", read(self.root/".planning/ROADMAP.md"))
         self.phase("Behavior")
         self.put(".planning/STATE.md", "# State\n\n## Current Position\n\nPhase: 01\nStatus: Planning\n\nAuthor supplied narrative.\n")
         records.state_action(Args(["Use stdlib", "--rationale", "Portable", "--outcome", "Accepted"]), "add-decision")
@@ -134,7 +134,9 @@ class RecordPreservation(PreservationCase):
         packet, status = misc.integrity(Args([]))
         self.assertEqual(0, status)
         self.assertTrue(any("absent phase" in item["error"] for item in packet["warnings"]))
-        self.assertEqual(1, misc.integrity(Args(["--strict"]))[1])
+        with self.assertRaises(Failure) as strict:
+            misc.integrity(Args(["--strict"]))
+        self.assertEqual("validation-failed", strict.exception.code)
         preview = planning_review.repair(Args([]))
         self.put(".planning/PROJECT.md", "Changed author intent\n")
         with self.assertRaises(Failure):
@@ -155,7 +157,9 @@ class RecordPreservation(PreservationCase):
         self.assertEqual(quick["id"], packet["open_quick"][0]["id"])
         self.assertEqual(todo["title"], packet["pending_todos"][0]["title"])
         self.assertEqual(config.DEFAULTS["context_window"], packet["context_window"])
-        self.assertEqual("01", packet["incomplete_phase"]["number"])
+        self.assertIsNone(packet["incomplete_phase"])
+        self.assertEqual("01", packet["next_phase"]["number"])
+        self.assertFalse(packet["next_phase"]["complete"])
 
 
 class HandoffAndFreshness(PreservationCase):
@@ -186,7 +190,7 @@ class HandoffAndFreshness(PreservationCase):
         self.assertEqual(baseline, packet["baseline_revision"])
         self.put("src/app.py", "changed\n")
         self.commit("source change")
-        with patch.object(config, "load", return_value={"codebase": {"max_age_commits": 0}}):
+        with patch.object(config, "load", return_value={"codebase": {"staleness": {"architecture": 0}}}):
             packet = codebase.command(Args([]), "status")["maps"][0]
         self.assertTrue(packet["stale"])
         self.assertEqual(["src/app.py"], packet["changed_files"])
@@ -279,7 +283,7 @@ fake
     def test_uncertain_create_recovers_once_and_preview_cannot_reset_consumption(self):
         argv = self.prepare_issue()+["--no-match"]
         self.remote, self.creates, self.timeout = [], 0, True
-        with patch.object(delivery, "gh", side_effect=self.provider):
+        with patch.object(delivery, "gh", side_effect=self.provider), patch.object(issues, "provider_inventory", side_effect=lambda: self.remote):
             preview = issues.publication(Args(argv), "preview")
             result = issues.publication(Args(argv+["--preview-token", preview["previewToken"]]), "publish")
         self.assertEqual(1, self.creates)
@@ -290,7 +294,7 @@ fake
         argv = self.prepare_issue()
         self.remote = [{"url": "https://github.com/example/preservation/issues/7", "number": 7, "title": "Fix boundary", "body": read(self.body), "state": "CLOSED", "labels": []}]
         self.creates, self.timeout = 0, False
-        with patch.object(delivery, "gh", side_effect=self.provider):
+        with patch.object(delivery, "gh", side_effect=self.provider), patch.object(issues, "provider_inventory", side_effect=lambda: self.remote):
             with self.assertRaises(Failure):
                 issues.publication(Args(argv+["--no-match"]), "preview")
             selected = argv+["--existing-issue", "7"]
@@ -320,6 +324,16 @@ class QuickVerification(PreservationCase):
         self.commit("stale digest scheme")
         self.assertTrue(any("v4" in reason for reason in verification.current_evidence("01")["reasons"]))
         self.assertTrue(any("v4" in error for error in frontmatter.errors(metadata, "verification")))
+
+    def test_exact_dated_quick_identity_selects_one_of_same_day_tasks(self):
+        first = records.quick(Args(["First boundary"]), "create")
+        second = records.quick(Args(["Second boundary"]), "create")
+        self.assertNotEqual(first["id"], second["id"])
+        self.assertEqual(Path(first["directory"]), verification.quick_dir(first["id"]))
+        self.assertEqual(Path(second["directory"]), verification.quick_dir(second["id"]))
+        with self.assertRaises(Failure) as wrong:
+            verification.quick_dir(first["id"]+"-wrong")
+        self.assertEqual("quick-not-found", wrong.exception.code)
 
     def test_unknown_check_selection_cannot_produce_vacuous_passing_receipt(self):
         self.put(".planning/config.yaml", "verification:\n  commands:\n    - id: real\n      argv: [python, -c, pass]\n")

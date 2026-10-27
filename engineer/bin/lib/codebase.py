@@ -31,10 +31,14 @@ def command(args, action):
         return {"recorded": maps, "revision": revision}
     result = []
     settings = config.load()
-    entries = {"ARCHITECTURE.md": {}, "STACK.md": {}, **data["maps"]}
+    entries = dict(data["maps"])
+    recorded = {name.upper().removesuffix(".MD") for name in entries}
+    for default in ("ARCHITECTURE.md", "STACK.md"):
+        if default.removesuffix(".md") not in recorded:
+            entries[default] = {}
     for name, entry in entries.items():
         actual = map_file(directory, entry.get("map_path", name))
-        focus = "tech" if name.upper() == "STACK.MD" else "arch"
+        focus = "tech" if name.upper().removesuffix(".MD") == "STACK" else "arch"
         if actual is None:
             result.append({"name": name, "focus": focus, "state": "missing", "stale": True, "revision": None, "commits_since": None})
             continue
@@ -44,7 +48,7 @@ def command(args, action):
             result.append({"name": name, "focus": focus, "state": "fresh", "stale": False, "pending": True, "revision": None, "commits_since": 0})
             continue
         map_revision = run(["git", "log", "-1", "--format=%H", "HEAD", "--", map_path], root()).stdout.strip()
-        baseline = map_revision or entry.get("revision", "")
+        baseline = entry.get("revision") or map_revision
         reachable = run(["git", "merge-base", "--is-ancestor", baseline, "HEAD"], root(), check=False).returncode == 0
         recovered = False
         if not reachable:

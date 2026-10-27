@@ -742,6 +742,15 @@ class Todos(RuntimeCase):
         self.assertIn("- First todo (general, major)", section)
         self.assertNotIn("None yet.", section)
 
+    def test_keyword_matching_respects_explicit_assignment_and_area_override(self):
+        self.run_verb("todo.add", "Foundation authentication", "--phase", "2")
+        explicit = self.run_verb("todo.add", "Unrelated title", "--phase", "01")
+        inferred = self.run_verb("todo.add", "Foundation hardening", "--files", "src/auth/key.py", "--area", "infra")
+        matches = self.run_verb("todo.match-phase", "1")["matches"]
+        self.assertEqual([explicit["file"], inferred["file"]], [item["path"] for item in matches])
+        self.assertTrue(matches[0]["assigned"])
+        self.assertEqual("infra", inferred["area"])
+
     def test_completing_a_todo_moves_it_out_of_pending(self):
         added = self.run_verb("todo.add", "Transient idea")
         name = Path(added["file"]).name
@@ -805,7 +814,7 @@ class Todos(RuntimeCase):
 class QuickTasks(RuntimeCase):
     def test_create_allocates_a_dated_sequence_directory(self):
         result = self.run_verb("quick.create", "Fix typo in login copy")
-        self.assertTrue(result["id"].endswith("-001-fix-typo-login-copy"))
+        self.assertTrue(result["id"].endswith("-001-fix-typo-in-login-copy"))
         self.assertEqual(result["status"], "open")
         self.assertTrue((self.directory / result["record"]).is_file())
 
@@ -836,7 +845,7 @@ class Milestones(RuntimeCase):
                                "--goal", "IDP-managed credentials")
         self.assertEqual(result["status"], "in_progress")
         roadmap = self.read(".planning/ROADMAP.md")
-        self.assertIn("**v1.1 Hardening**", roadmap)
+        self.assertIn("### v1.1 Hardening (In Progress)", roadmap)
         self.assertIn("**Milestone Goal:** IDP-managed credentials", roadmap)
         listed = self.run_verb("milestone.list")
         self.assertEqual(listed["current"], "v1.1 Hardening")
@@ -1835,12 +1844,12 @@ class RequirementTraceability(RuntimeCase):
         before = [item["check"] for item
                   in self.run_verb("planning.validate", "--skip",
                                    "codebase-freshness")["warnings"]]
-        self.assertIn("requirements-traceability", before)
+        self.assertIn("requirement-completion", before)
         self.run_verb("requirements.close-phase", "1")
         after = [item["check"] for item
                  in self.run_verb("planning.validate", "--skip",
                                   "codebase-freshness")["warnings"]]
-        self.assertNotIn("requirements-traceability", after)
+        self.assertNotIn("requirement-completion", after)
 
 
 class InstallSeedContract(RuntimeCase):
@@ -1924,6 +1933,9 @@ class InstallSeedContract(RuntimeCase):
         for asset, record in (("PROJECT.txt", "PROJECT.md"),
                               ("REQUIREMENTS.txt", "REQUIREMENTS.md")):
             self.install(assets / asset, record)
+        self.install(assets / "ROADMAP.txt", "ROADMAP.md")
+        # Installation starts without the phase artifacts created by RuntimeCase.
+        shutil.rmtree(self.directory / ".planning/phases")
         result = self.run_verb("planning.validate", "--skip", "codebase-freshness")
         self.assertEqual(result["status"], "clean", result["warnings"])
 

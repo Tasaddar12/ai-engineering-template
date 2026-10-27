@@ -120,6 +120,16 @@ class CleanupTests(unittest.TestCase):
         self.assertEqual(len(caught.exception.details.get("removed", [])), removed)
         return caught.exception
 
+    def assert_posix_backup_refused(self, preview, backup):
+        self.refused(preview, "cleanup-backup-unsupported")
+        self.assertEqual("approved original", (backup/"valuable").read_text())
+        self.assertTrue(self.tree.is_dir())
+        self.assertEqual(self.head, self.repair_ref_output("refs/heads/phase-owned"))
+        if hasattr(self, "other_tree"):
+            self.assertTrue(self.other_tree.is_dir())
+            self.assertEqual(self.head, self.repair_ref_output("refs/heads/phase-z-other"))
+        self.assertEqual([], self.mutations)
+
     def backup(self, name="group/owned"):
         path = self.root/".workflow-backups"/name
         path.mkdir(parents=True)
@@ -211,6 +221,14 @@ class CleanupTests(unittest.TestCase):
         self.refused(preview, "cleanup-backup-drift")
         self.assertTrue(backup.exists())
         self.assertEqual([], self.mutations)
+        if os.name != "nt":
+            preview = self.preview()
+            self.refused(preview, "cleanup-backup-unsupported")
+            self.assertEqual("changed", (backup/"valuable").read_text())
+            self.assertTrue(self.tree.is_dir())
+            self.assertEqual(self.head, self.repair_ref_output("refs/heads/phase-owned"))
+            self.assertEqual([], self.mutations)
+            return
         self.assertEqual(3, self.apply(self.preview())["count"])
         self.assertFalse(backup.exists())
         self.assertTrue(backup.parent.is_dir())
@@ -403,6 +421,9 @@ class CleanupTests(unittest.TestCase):
         backup = self.repair_two_owned_fixture()
         preview = self.preview()
         self.assertEqual(5, preview["count"])
+        if os.name != "nt":
+            self.assert_posix_backup_refused(preview, backup)
+            return
         self.assertEqual(5, self.apply(preview)["count"])
         self.assertFalse(backup.exists())
         self.assertTrue(backup.parent.is_dir())
@@ -428,6 +449,9 @@ class CleanupTests(unittest.TestCase):
                             case.write_owner()
                     return result
                 case.mutate = mutate
+                if os.name != "nt":
+                    case.assert_posix_backup_refused(case.preview(), backup)
+                    continue
                 case.refused(case.preview(), removed=3)
                 self.assertEqual(2, len(case.mutations))
                 self.assertFalse(backup.exists())
@@ -447,6 +471,10 @@ class CleanupTests(unittest.TestCase):
                 (unowned/"valuable").write_text("preserve")
             return result
         self.mutate = mutate
+        if os.name != "nt":
+            self.assert_posix_backup_refused(self.preview(), backup)
+            self.assertFalse(unowned.exists())
+            return
         self.refused(self.preview(), "cleanup-backup-drift", removed=3)
         self.assertEqual(2, len(self.mutations))
         self.assertTrue(self.other_tree.is_dir())
