@@ -218,7 +218,7 @@ class PlanningReviewTests(unittest.TestCase):
     def test_apply_requires_review_and_rejects_changed_evidence(self):
         with self.assertRaises(VerbError) as caught:
             planning_review.repair(self.workspace, apply=True)
-        self.assertEqual("review-required", caught.exception.code)
+        self.assertEqual("stale-review", caught.exception.code)
         report = planning_review.review(self.workspace)
         write_text(self.workspace.project, PROJECT + "\nA later recorded instruction.\n")
         before = self.workspace.state.read_bytes()

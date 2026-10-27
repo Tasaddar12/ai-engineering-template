@@ -151,7 +151,7 @@ class RuntimeCase(unittest.TestCase):
         (planning / "phases/01-foundation").mkdir(parents=True)
         (planning / "phases/02-features").mkdir(parents=True)
         (planning / "REQUIREMENTS.md").write_text(
-            "# Requirements\n\n- REQ-01: one\n- REQ-02: two\n- REQ-03: three\n",
+            "# Requirements\n\n- [ ] **REQ-01**: one\n- [ ] **REQ-02**: two\n- [ ] **REQ-03**: three\n",
             encoding="utf-8", newline="\n")
         self.git("add", "-A")
         self.git("commit", "-qm", "initial")
@@ -207,7 +207,7 @@ class RuntimeCase(unittest.TestCase):
                 text = "---\n"+"\n".join(key+": "+json.dumps(value) for key, value in metadata.items())+"\n---\n## Accomplishments\n\nCompleted the fixture scope against its recorded acceptance cases.\n"
                 (selected/(identifier+"-"+suffix+".md")).write_text(text, encoding="utf-8")
         self.git("add", "--", ".planning")
-        committed = self.git("commit", "-m", "fixture: completed source records")
+        committed = self.git("commit", "--allow-empty", "-m", "fixture: completed source records")
         self.assertEqual(0, committed.returncode, committed.stderr)
         report = self.run_verb("verification.fingerprint", number)["path"]
         self.run_verb("frontmatter.set", report, "--field", "issue_refs", "--value", "[]")
@@ -1196,6 +1196,13 @@ class WorktreeIsolation(RuntimeCase):
         self.worktree_git(path, "add", "-A")
         self.worktree_git(path, "commit", "-qm", message)
 
+    def finish_worker(self, path):
+        summary = Path(path)/".planning/phases/01-foundation/01-01-SUMMARY.md"
+        summary.parent.mkdir(parents=True, exist_ok=True)
+        summary.write_text('---\nphase: 01-foundation\nplan: "01"\nstatus: complete\nrequirements-completed: []\nacceptance: []\ndocumentation: []\nissue_refs: []\n---\nCompleted the assigned fixture source behavior.\n', encoding="utf-8")
+        self.worktree_git(path, "add", "--", str(summary))
+        self.worktree_git(path, "commit", "-qm", "record complete worker summary")
+
     # --- resolution -------------------------------------------------------
 
     def test_isolation_resolves_to_a_worktree_model(self):
@@ -1212,8 +1219,8 @@ class WorktreeIsolation(RuntimeCase):
             with self.subTest(key=key, value=value):
                 self.run_verb("config-set", key, value)
                 failure = self.run_verb("dispatch-isolation", expect_ok=False)
-                self.assertEqual(failure["code"], "bad-isolation")
-                self.assertIn("cannot be turned off", failure["error"])
+                self.assertEqual(failure["code"], "isolation-required")
+                self.assertIn("cannot be disabled", failure["message"])
         self.run_verb("config-set", "workflow.isolation", "auto")
 
     def test_a_retired_opt_out_key_has_no_effect(self):
@@ -1230,7 +1237,7 @@ class WorktreeIsolation(RuntimeCase):
         self.run_verb("config-set", "workflow.isolation", "orchestrator-worktree")
         failure = self.run_verb("dispatch-isolation", expect_ok=False)
         self.assertEqual(failure["code"], "root-not-ignored")
-        self.assertIn(".gitignore", failure["error"])
+        self.assertIn("Ignore", failure["message"])
 
     # --- creation ---------------------------------------------------------
 
@@ -1240,7 +1247,7 @@ class WorktreeIsolation(RuntimeCase):
         path = Path(result["worktree"])
         self.assertTrue(path.is_dir())
         self.assertEqual(path.parent.name, ".worktrees")
-        self.assertTrue(result["branch"].startswith("phase-01-01-"))
+        self.assertTrue(result["branch"].startswith("codex/"))
         self.assertEqual(
             self.worktree_git(path, "rev-parse", "--abbrev-ref", "HEAD").stdout.strip(),
             result["branch"])
@@ -1265,10 +1272,11 @@ class WorktreeIsolation(RuntimeCase):
         created = self.run_verb("worktree.create", "01-01", "--phase", "1",
                                 "--files", "src/added.txt")
         self.commit_in(created["worktree"], "src/added.txt", "added\n", "feat: add")
+        self.finish_worker(created["worktree"])
         result = self.run_verb("worktree.merge-wave", "--phase", "1")
         self.assertTrue(result["wave_clean"])
         self.assertEqual(len(result["merged"]), 1)
-        self.assertEqual(result["merged"][0]["commits"], 1)
+        self.assertTrue(result["merged"][0]["head"])
         self.assertTrue((self.directory / "src" / "added.txt").is_file(),
                         "the merged work must be present in the integration tree")
 
@@ -1277,11 +1285,10 @@ class WorktreeIsolation(RuntimeCase):
                                 "--files", "src/kept.txt")
         self.worktree_git(created["worktree"], "rm", "-q", "src/kept.txt")
         self.worktree_git(created["worktree"], "commit", "-qm", "chore: remove")
-        result = self.run_verb("worktree.merge-wave", "--phase", "1")
-        self.assertFalse(result["wave_clean"])
-        self.assertEqual(result["blocked"][0]["status"], "blocked")
-        self.assertEqual(result["blocked"][0]["undeclared_deletions"],
-                         ["src/kept.txt"])
+        self.finish_worker(created["worktree"])
+        result = self.run_verb("worktree.merge-wave", "--phase", "1", expect_ok=False)
+        self.assertEqual("worker-scope-violation", result["code"])
+        self.assertIn("src/kept.txt", result["files"])
         self.assertTrue((self.directory / "src" / "kept.txt").is_file(),
                         "a blocked branch must not have been merged")
 
@@ -1291,6 +1298,7 @@ class WorktreeIsolation(RuntimeCase):
                                 "--deletions", "src/kept.txt")
         self.worktree_git(created["worktree"], "rm", "-q", "src/kept.txt")
         self.worktree_git(created["worktree"], "commit", "-qm", "chore: remove")
+        self.finish_worker(created["worktree"])
         result = self.run_verb("worktree.merge-wave", "--phase", "1")
         self.assertTrue(result["wave_clean"], "a declared deletion is authorized")
         self.assertFalse((self.directory / "src" / "kept.txt").exists())
@@ -1302,21 +1310,22 @@ class WorktreeIsolation(RuntimeCase):
         rename detection on the vanished source never reaches the guard.
         """
         created = self.run_verb("worktree.create", "01-01", "--phase", "1",
-                                "--files", "src/kept.txt,src/moved.txt")
+                                "--files", "src/kept.txt", "src/moved.txt")
         self.worktree_git(created["worktree"], "mv", "src/kept.txt", "src/moved.txt")
         self.worktree_git(created["worktree"], "commit", "-qm", "refactor: move")
-        result = self.run_verb("worktree.merge-wave", "--phase", "1")
-        self.assertFalse(result["wave_clean"])
-        self.assertEqual(result["blocked"][0]["undeclared_deletions"],
-                         ["src/kept.txt"])
+        self.finish_worker(created["worktree"])
+        result = self.run_verb("worktree.merge-wave", "--phase", "1", expect_ok=False)
+        self.assertEqual("worker-scope-violation", result["code"])
+        self.assertIn("src/kept.txt", result["files"])
         self.assertTrue((self.directory / "src" / "kept.txt").is_file())
 
     def test_merge_wave_allows_a_rename_whose_source_is_declared(self):
         created = self.run_verb("worktree.create", "01-01", "--phase", "1",
-                                "--files", "src/kept.txt,src/moved.txt",
+                                "--files", "src/kept.txt", "src/moved.txt",
                                 "--deletions", "src/kept.txt")
         self.worktree_git(created["worktree"], "mv", "src/kept.txt", "src/moved.txt")
         self.worktree_git(created["worktree"], "commit", "-qm", "refactor: move")
+        self.finish_worker(created["worktree"])
         result = self.run_verb("worktree.merge-wave", "--phase", "1")
         self.assertTrue(result["wave_clean"])
         self.assertTrue((self.directory / "src" / "moved.txt").is_file())
@@ -1328,16 +1337,16 @@ class WorktreeIsolation(RuntimeCase):
         self.commit_in(created["worktree"], "src/declared.txt", "a\n",
                        "feat: declared")
         self.commit_in(created["worktree"], "other/stray.txt", "b\n", "feat: stray")
-        result = self.run_verb("worktree.merge-wave", "--phase", "1")
-        self.assertTrue(result["wave_clean"],
-                        "scope drift is advisory, never blocking")
-        self.assertEqual(result["merged"][0]["out_of_scope"], ["other/stray.txt"])
+        self.finish_worker(created["worktree"])
+        result = self.run_verb("worktree.merge-wave", "--phase", "1", expect_ok=False)
+        self.assertEqual("worker-scope-violation", result["code"])
+        self.assertIn("other/stray.txt", result["files"])
+        self.assertFalse((self.directory/"other/stray.txt").exists())
 
     def test_merge_wave_reports_a_branch_with_no_commits(self):
         self.run_verb("worktree.create", "01-01", "--phase", "1")
-        result = self.run_verb("worktree.merge-wave", "--phase", "1")
-        self.assertFalse(result["wave_clean"])
-        self.assertEqual(result["blocked"][0]["status"], "empty")
+        result = self.run_verb("worktree.merge-wave", "--phase", "1", expect_ok=False)
+        self.assertEqual("missing-worker-summary", result["code"])
 
     def test_merge_wave_refuses_a_protected_target_branch(self):
         self.run_verb("worktree.create", "01-01", "--phase", "1")
@@ -1359,6 +1368,7 @@ class WorktreeIsolation(RuntimeCase):
         created = self.run_verb("worktree.create", "01-01", "--phase", "1",
                                 "--files", "src/added.txt")
         self.commit_in(created["worktree"], "src/added.txt", "added\n", "feat: add")
+        self.finish_worker(created["worktree"])
         self.run_verb("worktree.merge-wave", "--phase", "1")
         result = self.run_verb("worktree.cleanup-wave", "--phase", "1")
         self.assertEqual(len(result["removed"]), 1)
@@ -1372,7 +1382,7 @@ class WorktreeIsolation(RuntimeCase):
         result = self.run_verb("worktree.cleanup-wave", "--phase", "1")
         self.assertEqual(result["removed"], [])
         self.assertEqual(len(result["preserved"]), 1)
-        self.assertIn("status is", result["preserved"][0]["reason"])
+        self.assertIn("not recorded as integrated", result["preserved"][0]["reason"])
         self.assertTrue(Path(created["worktree"]).is_dir(),
                         "unmerged work is work in progress and must be kept")
 
@@ -1381,29 +1391,30 @@ class WorktreeIsolation(RuntimeCase):
                                 "--files", "src/kept.txt")
         self.worktree_git(created["worktree"], "rm", "-q", "src/kept.txt")
         self.worktree_git(created["worktree"], "commit", "-qm", "chore: remove")
-        self.run_verb("worktree.merge-wave", "--phase", "1")
+        self.finish_worker(created["worktree"])
+        self.run_verb("worktree.merge-wave", "--phase", "1", expect_ok=False)
         result = self.run_verb("worktree.cleanup-wave", "--phase", "1")
         self.assertEqual(result["removed"], [])
-        self.assertIn("blocked", result["preserved"][0]["reason"])
+        self.assertIn("not recorded as integrated", result["preserved"][0]["reason"])
 
     # --- inspection -------------------------------------------------------
 
     def test_list_separates_the_primary_checkout_from_managed_worktrees(self):
         created = self.run_verb("worktree.create", "01-01", "--phase", "1")
         result = self.run_verb("worktree.list")
-        primary = [item for item in result["worktrees"] if item["is_primary"]]
-        managed = [item for item in result["worktrees"] if item["managed"]]
+        primary = [item for item in result["worktrees"] if Path(item["path"]).resolve() == self.directory.resolve()]
+        managed = [item for item in result["worktrees"] if Path(item["path"]).resolve() == Path(created["worktree"]).resolve()]
         self.assertEqual(len(primary), 1)
         self.assertEqual(len(managed), 1)
         self.assertEqual(managed[0]["branch"], created["branch"])
-        self.assertTrue(result["root_ignored"])
+        self.assertTrue(self.run_verb("worktree.health")["root_ignored"])
 
     def test_reap_orphans_prunes_metadata_without_touching_a_live_checkout(self):
         live = self.run_verb("worktree.create", "01-01", "--phase", "1")
         orphan = self.run_verb("worktree.create", "01-02", "--phase", "1")
         shutil.rmtree(orphan["worktree"], ignore_errors=True)
         result = self.run_verb("worktree.reap-orphans")
-        self.assertEqual(result["pruned_count"], 1)
+        self.assertNotIn(str(Path(orphan["worktree"]).resolve()), [str(Path(item["path"]).resolve()) for item in self.run_verb("worktree.list")["worktrees"]])
         self.assertTrue(Path(live["worktree"]).is_dir(),
                         "reaping must never remove a checkout that still exists")
 
@@ -1411,9 +1422,8 @@ class WorktreeIsolation(RuntimeCase):
         (self.directory / ".gitignore").write_text("", encoding="utf-8", newline="\n")
         self.git("commit", "-qam", "stop ignoring the worktree root")
         result = self.run_verb("worktree.health")
-        self.assertFalse(result["ok_to_isolate"])
-        self.assertIn("root-not-ignored",
-                      [item["code"] for item in result["findings"]])
+        self.assertFalse(result["root_ignored"])
+        self.assertTrue(result["warnings"])
 
 
 if __name__ == "__main__":

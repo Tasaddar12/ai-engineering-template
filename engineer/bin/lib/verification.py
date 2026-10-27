@@ -13,7 +13,8 @@ def quick_dir(identifier):
     if len(matches) != 1:
         raise Failure("quick-not-found", str(identifier))
     metadata, _ = split_frontmatter(read(matches[0]))
-    if str(metadata.get("id")).zfill(3) != matches[0].parent.name.split("-")[0]:
+    identity = str(metadata.get("id", ""))
+    if identity != matches[0].parent.name and identity.zfill(3) != matches[0].parent.name.split("-")[0]:
         raise Failure("quick-identity-mismatch", "QUICK.md identity disagrees with its directory")
     return matches[0].parent
 
