@@ -117,7 +117,7 @@ class RecordPreservation(PreservationCase):
 
     def test_decision_outcome_milestone_goal_and_derived_save_preserve_prose(self):
         misc.milestone(Args(["v1.0 Test", "--goal", "Observable goal"]), "create")
-        self.assertIn("**Goal:** Observable goal", read(self.root/".planning/ROADMAP.md"))
+        self.assertIn("**Milestone Goal:** Observable goal", read(self.root/".planning/ROADMAP.md"))
         self.phase("Behavior")
         self.put(".planning/STATE.md", "# State\n\n## Current Position\n\nPhase: 01\nStatus: Planning\n\nAuthor supplied narrative.\n")
         records.state_action(Args(["Use stdlib", "--rationale", "Portable", "--outcome", "Accepted"]), "add-decision")
@@ -134,7 +134,9 @@ class RecordPreservation(PreservationCase):
         packet, status = misc.integrity(Args([]))
         self.assertEqual(0, status)
         self.assertTrue(any("absent phase" in item["error"] for item in packet["warnings"]))
-        self.assertEqual(1, misc.integrity(Args(["--strict"]))[1])
+        with self.assertRaises(Failure) as strict:
+            misc.integrity(Args(["--strict"]))
+        self.assertEqual("validation-failed", strict.exception.code)
         preview = planning_review.repair(Args([]))
         self.put(".planning/PROJECT.md", "Changed author intent\n")
         with self.assertRaises(Failure):
@@ -279,7 +281,7 @@ fake
     def test_uncertain_create_recovers_once_and_preview_cannot_reset_consumption(self):
         argv = self.prepare_issue()+["--no-match"]
         self.remote, self.creates, self.timeout = [], 0, True
-        with patch.object(delivery, "gh", side_effect=self.provider):
+        with patch.object(delivery, "gh", side_effect=self.provider), patch.object(issues, "provider_inventory", side_effect=lambda: self.remote):
             preview = issues.publication(Args(argv), "preview")
             result = issues.publication(Args(argv+["--preview-token", preview["previewToken"]]), "publish")
         self.assertEqual(1, self.creates)
@@ -290,7 +292,7 @@ fake
         argv = self.prepare_issue()
         self.remote = [{"url": "https://github.com/example/preservation/issues/7", "number": 7, "title": "Fix boundary", "body": read(self.body), "state": "CLOSED", "labels": []}]
         self.creates, self.timeout = 0, False
-        with patch.object(delivery, "gh", side_effect=self.provider):
+        with patch.object(delivery, "gh", side_effect=self.provider), patch.object(issues, "provider_inventory", side_effect=lambda: self.remote):
             with self.assertRaises(Failure):
                 issues.publication(Args(argv+["--no-match"]), "preview")
             selected = argv+["--existing-issue", "7"]

@@ -5,8 +5,10 @@ import subprocess
 import json
 try:
     from .test_engineer_runtime import RuntimeCase, SOURCE
+    from .test_todo_issues import PUBLIC
 except ImportError:
     from test_engineer_runtime import RuntimeCase, SOURCE
+    from test_todo_issues import PUBLIC
 
 
 class MiscVerbs(RuntimeCase):
@@ -62,7 +64,7 @@ import json, os, sys
 from pathlib import Path
 from types import SimpleNamespace
 sys.path.insert(0, sys.argv[1])
-from lib import models, delivery
+from lib import models, delivery, issues
 import engineer
 models.NAMESPACE = Path(os.environ["ENGINEER_ROOT"])/"namespace"
 state_path = Path(os.environ["ENGINEER_ROOT"])/"provider.json"
@@ -70,7 +72,7 @@ def gh(argv, check=True):
     state = json.loads(state_path.read_text()) if state_path.exists() else {"creates": 0}
     if argv[:2] == ["issue", "create"]:
         state["creates"] += 1
-        state["issue"] = {"url":"https://github.com/example/project/issues/1", "state":"OPEN",
+        state["issue"] = {"number":1, "url":"https://github.com/example/project/issues/1", "state":"OPEN",
             "title":argv[argv.index("--title")+1],
             "body":Path(argv[argv.index("--body-file")+1]).read_text(encoding="utf-8")}
         state_path.write_text(json.dumps(state))
@@ -87,9 +89,9 @@ class IssuePublicationSafety(RuntimeCase):
     def setUp(self):
         super().setUp()
         self.git("remote", "add", "origin", "https://github.com/example/project.git")
-        self.put("namespace/engineer/templates/issue.md", "# Issue\n## Problem\n## Validation\n")
+        self.put("namespace/engineer/templates/issue.md", (SOURCE/"engineer/templates/issue.md").read_text(encoding="utf-8"))
         self.todo = self.put(".planning/todos/pending/issue.md", "---\ntitle: Private finding\n---\nPrivate implementation evidence\n")
-        self.public = self.put("public.md", "## Problem\nObserved public problem\n## Validation\nReproduce the public behavior\n")
+        self.public = self.put("public.md", PUBLIC)
 
     def issue_cli(self, *args, status=0):
         process = subprocess.run([sys.executable, "-I", "-c", ISSUE_DRIVER, str(SOURCE/"engineer/bin"), *map(str, args)], cwd=self.root, env=self.env, text=True, capture_output=True)
@@ -97,7 +99,7 @@ class IssuePublicationSafety(RuntimeCase):
         return json.loads(process.stdout) if process.stdout.strip() else None
 
     def test_preview_binds_public_body_and_readback_preserves_private_record(self):
-        options = ["issue.md", "--title", "Public reviewed title", "--body-file", self.public]
+        options = ["issue.md", "--title", "Public reviewed title", "--body-file", self.public, "--variant", "Bug", "--no-match"]
         preview = self.issue_cli("todo.issue-preview", *options)
         published = self.issue_cli("todo.issue-publish", *options, "--preview-token", preview["previewToken"])
         self.assertTrue(published["published"])
@@ -109,7 +111,7 @@ class IssuePublicationSafety(RuntimeCase):
         self.assertEqual(1, json.loads((self.root/"provider.json").read_text())["creates"])
 
     def test_source_or_public_body_drift_refuses_provider_call(self):
-        options = ["issue.md", "--title", "Public reviewed title", "--body-file", self.public]
+        options = ["issue.md", "--title", "Public reviewed title", "--body-file", self.public, "--variant", "Bug", "--no-match"]
         preview = self.issue_cli("todo.issue-preview", *options)
         self.public.write_text(self.public.read_text()+"\nChanged evidence\n", encoding="utf-8")
         self.issue_cli("todo.issue-publish", *options, "--preview-token", preview["previewToken"], status=1)

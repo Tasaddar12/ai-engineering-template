@@ -9,7 +9,11 @@ class UatChecks(RuntimeCase):
     def test_pending_failures_and_checkpoint(self):
         directory = self.phase()
         path = Path(directory)/"01-UAT.md"
-        path.write_text('---\nstatus: testing\n---\n### 1. Login\nexpected: Signed in\nresult: pending\n', encoding="utf-8")
+        summary = Path(directory)/"01-01-SUMMARY.md"
+        summary.write_text('---\nphase: "01"\nplan: "01"\nstatus: complete\nrequirements-completed: []\nacceptance: []\ndocumentation: []\nissue_refs: []\n---\nDelivered login fixture.\n', encoding="utf-8")
+        self.git("add", str(summary))
+        self.git("commit", "-m", "fixture: delivered login summary")
+        path.write_text('---\nphase: "01"\nstatus: testing\nsource: [01-01-SUMMARY.md]\n---\n## Tests\n\n### 1. Login\nexpected: Signed in\nresult: pending\n\n## Human acceptance\nstatus: accepted\naccepted_by: Fixture reviewer\naccepted_at: 2026-10-27\ndecision: Fixture acceptance recorded for offline tests\n', encoding="utf-8")
         self.assertFalse(self.cli("phase.uat-passed", "1", "--uat-only", status=1)["passed"])
         self.assertEqual("1", self.cli("uat.render-checkpoint", path)["test"]["id"])
         self.assertEqual(1, self.cli("audit-uat")["count"])
