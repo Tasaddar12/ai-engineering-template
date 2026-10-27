@@ -270,7 +270,7 @@ PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 - ${PROJECT_ROOT}/.planning/PROJECT.md (Project context — core value, requirements, evolution rules)
 - ${PROJECT_ROOT}/.planning/STATE.md (State)
 - ${PROJECT_ROOT}/.planning/config.json (Config, if exists)
-- ${PROJECT_ROOT}/AGENTS.md (Project instructions, if exists — follow project-specific guidelines and coding conventions)
+- ${PROJECT_ROOT}/CLAUDE.md (Project instructions, if exists — follow project-specific guidelines and coding conventions)
 - ${PROJECT_ROOT}/.claude/skills/ or ${PROJECT_ROOT}/.agents/skills/ (Project skills, if either exists — list skills, read SKILL.md for each, follow relevant rules during implementation)
 - ${PROJECT_ROOT}/{phase_dir}/*-CONTEXT.md (User decisions from discuss-phase — honors locked choices; skip silently when none exist)
 - ${PROJECT_ROOT}/{phase_dir}/*-RESEARCH.md (Technical research — pitfalls and patterns to follow; skip silently when none exist)
@@ -278,7 +278,7 @@ PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 </required_reading>
 
 <mcp_tools>
-If AGENTS.md or project instructions reference MCP tools, prefer those tools
+If CLAUDE.md or project instructions reference MCP tools, prefer those tools
 over Grep/Glob for code navigation when available. Check tool availability
 first — fall back to Grep/Glob if not accessible.
 </mcp_tools>

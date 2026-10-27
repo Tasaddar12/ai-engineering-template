@@ -159,7 +159,7 @@ Make targeted updates to address checker issues.
 
 `required_property` + evidence + severity BIND. `fix_hint` is ONE non-binding example route: a
 smaller or different mechanism reaching the same property addresses the issue in full — say which
-you used. Re-check ${DISCUSS_MODE ? 'locked decisions in ' + quick_id + '-CONTEXT.md, ' : ''}capability guidance (AGENTS.md, project skills) and the
+you used. Re-check ${DISCUSS_MODE ? 'locked decisions in ' + quick_id + '-CONTEXT.md, ' : ''}capability guidance (CLAUDE.md, project skills) and the
 constraints these plans already encode BEFORE editing; if a hint would contradict one, or the
 property is unreachable without breaking one, return `## REVISION_CONFLICT` with the conflict and
 the alternatives rather than applying or working around it. Full contract:

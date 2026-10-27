@@ -367,7 +367,7 @@ Regenerate with `python -I scripts/inventory.py --apply`; compare with `--check`
 | `scripts/links.py` | local-only | 65 | 0 |
 | `scripts/manifest.json` | local-only | 195 | 34 |
 | `scripts/progress.py` | local-only | 38 | 0 |
-| `scripts/rename.py` | local-only | 101 | 20 |
+| `scripts/rename.py` | local-only | 100 | 20 |
 | `scripts/verbs.py` | local-only | 72 | 0 |
 | `skills/SKILL/SKILL.md` | upstream | 0 | 0 |
 | `skills/add-tests/SKILL.md` | local-only | 47 | 0 |

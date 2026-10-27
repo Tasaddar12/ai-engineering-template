@@ -302,7 +302,7 @@ The UI checker found issues with the current UI-SPEC.md.
 
 `required_property` + evidence + severity BIND. `fix_hint` is ONE non-binding example route: a
 smaller or different mechanism reaching the same property resolves the issue in full — say which
-you used. Re-check the user's locked answers, capability guidance (AGENTS.md, project skills) and
+you used. Re-check the user's locked answers, capability guidance (CLAUDE.md, project skills) and
 the constraints this UI-SPEC already encodes BEFORE editing; if a hint would contradict one, or
 the property is unreachable without breaking one, return `## REVISION_CONFLICT` with the conflict
 and the alternatives rather than applying or working around it — see your `## Revision Conflict`

@@ -84,7 +84,7 @@ environment, per `debugger-rca-branching.md`).
   hypothesis — concurrency bugs almost always AND-gate (code race +
   environment/config amplification), so branch across categories.
 
-## Bound the Heisenbug-chase runs (AGENTS.md gauntlet — unbounded subprocess)
+## Bound the Heisenbug-chase runs (CLAUDE.md gauntlet — unbounded subprocess)
 
 `rr record` on a real application, stability-stress runs, and statistical
 sampling (N repeated executions) can each run minutes-to-hours. Bound them:

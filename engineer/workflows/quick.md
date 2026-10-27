@@ -367,7 +367,7 @@ Agent(
 
 <required_reading>
 - ${STATE_PATH} (Project State)
-- ./AGENTS.md or ./.claude/AGENTS.md (if exists — follow project-specific guidelines)
+- ./CLAUDE.md or ./.claude/CLAUDE.md (if exists — follow project-specific guidelines)
 ${DISCUSS_MODE ? '- ' + QUICK_DIR + '/' + quick_id + '-CONTEXT.md (User decisions — locked, do not revisit)' : ''}
 ${RESEARCH_MODE ? '- ' + QUICK_DIR + '/' + quick_id + '-RESEARCH.md (Research findings — use to inform implementation choices)' : ''}
 </required_reading>
@@ -527,7 +527,7 @@ You are running as a SEQUENTIAL executor agent on the main working tree (set SEQ
 ${DISCUSS_MODE ? '- ' + QUICK_DIR + '/' + quick_id + '-CONTEXT.md (User decisions — locked, do not revisit)' : ''}
 ${RESEARCH_MODE ? '- ' + QUICK_DIR + '/' + quick_id + '-RESEARCH.md (Research findings — use to inform implementation choices)' : ''}
 - ${STATE_PATH} (Project state)
-- ./AGENTS.md or ./.claude/AGENTS.md (Project instructions, if exists)
+- ./CLAUDE.md or ./.claude/CLAUDE.md (Project instructions, if exists)
 - .claude/skills/ or .agents/skills/ (Project skills, if either exists — list skills, read SKILL.md for each, follow relevant rules during implementation)
 </required_reading>
 

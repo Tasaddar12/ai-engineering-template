@@ -99,7 +99,7 @@ DATA_END
 <required_reading>
 - ${STATE_PATH} (Project state — what's already built)
 - ${PROJECT_PATH} (Project context)
-- ./AGENTS.md or ./.claude/AGENTS.md (if exists — project-specific guidelines)
+- ./CLAUDE.md or ./.claude/CLAUDE.md (if exists — project-specific guidelines)
 </required_reading>
 
 ${AGENT_SKILLS_RESEARCHER}

@@ -128,7 +128,7 @@ fi
 
    <required_reading>
    - ${STATE_PATH} (Project State)
-   - ./AGENTS.md or ./.claude/AGENTS.md (if exists)
+   - ./CLAUDE.md or ./.claude/CLAUDE.md (if exists)
    ${RESEARCH_MODE ? '- ' + item_dir + '/' + quick_id + '-RESEARCH.md (Research findings, if present)' : ''}
    </required_reading>
 

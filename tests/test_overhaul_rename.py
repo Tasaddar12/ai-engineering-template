@@ -11,10 +11,10 @@ tool = load_tool("rename")
 class RenameTests(unittest.TestCase):
     def test_token_boundaries_and_full_content_preservation(self):
         original = "Keep this entire paragraph.\n/gsd:plan-phase gsd-planner gsd-planner-extra\n@~/.claude/gsd-core/references/tdd.md\nname: gsd:test\nCLAUDE.md phase_run query help\n"
-        expected = "Keep this entire paragraph.\n/plan-phase planner gsd-planner-extra\n@engineer/references/tdd.md\nname: test\nAGENTS.md engineer_run query help\n"
+        expected = "Keep this entire paragraph.\n/plan-phase planner gsd-planner-extra\n@engineer/references/tdd.md\nname: test\nCLAUDE.md engineer_run query help\n"
         replaced, counts = tool.substitutions(original, {"agents/gsd-planner.md": "agents/planner.md"})
         self.assertEqual(replaced, expected)
-        self.assertEqual(sum(counts.values()), 6)
+        self.assertEqual(sum(counts.values()), 5)
         self.assertEqual(tool.substitutions(replaced, {})[1], {})
 
     def test_launcher_is_replaced_as_complete_line_and_requires_port(self):

@@ -48,7 +48,6 @@ def substitutions(text, role_renames, launcher=None):
         ("local-methods", re.escape(".ai/references/methods/"), "engineer/references/"),
         ("local-paths", r'\.ai/(references|templates|workflows)/', r'engineer/\1/'),
         ("local-runtime", r'\bphase_run(?=\s+query\b)', "engineer_run"),
-        ("instruction-file", r'\bCLAUDE\.md\b', "AGENTS.md"),
         # These standalone verbs retain their CLI shape in section 14. Family
         # dispatch, DROP verbs and argument rewrites remain reconciliation work.
         ("query-prefix", r'\bengineer_run\s+(?=(?:run-with-timeout|audit-open)\b)', "engineer_run query "),

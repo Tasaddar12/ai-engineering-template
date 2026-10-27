@@ -46,7 +46,7 @@ hardened path. The shrinking step is additive; its absence is logged, never a
 silent pass. The oracle-classification and boundary steps below are prompt-level
 and always apply regardless of framework.
 
-## Bound the property/shrink run (AGENTS.md gauntlet — unbounded subprocess)
+## Bound the property/shrink run (CLAUDE.md gauntlet — unbounded subprocess)
 
 A fast-check/Hypothesis run can execute the property many times against a slow
 path or a custom generator; a pathological input space can run for minutes. Bound it:

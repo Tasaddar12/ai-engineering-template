@@ -901,7 +901,7 @@ Rules + worked examples: @~/.claude/engineer/references/planner-failing-directio
 </failing_direction_contract>
 <!-- gsd:protected:end -->
 
-**Project instructions:** Read ./AGENTS.md or ./.claude/AGENTS.md if either exists — follow project-specific guidelines
+**Project instructions:** Read ./CLAUDE.md or ./.claude/CLAUDE.md if either exists — follow project-specific guidelines
 **Project skills:** Check .claude/skills/ or .agents/skills/ directory (if either exists) — read SKILL.md files, plans should account for project skill rules
 
 {For each active entry in `PLAN_PRE_HOOKS_JSON` where `kind == "contribution"` and `into == "planner"` (in array order): inject the entry's `fragment.inline` verbatim here. This delivers all planner-targeted contributions — including tdd's `<tdd_mode_active>` block (type:tdd heuristics), schema-gate's schema-push detection guidance (if active at plan:pre), and security's threat-model guidance. For the security contribution, also surface the resolved `configValues`: `security_asvs_level` (ASVS enforcement level) and `security_block_on` (severity threshold) so the planner uses the configured values when generating `<threat_model>` blocks. If no active planner contributions exist, omit this block entirely.}
@@ -1130,7 +1130,7 @@ If an actionable finding remains only in REVIEWS.md and would be invisible to /e
 
 **Phase requirement IDs (MUST ALL be covered):** {phase_req_ids}
 
-**Project instructions:** Read ./AGENTS.md or ./.claude/AGENTS.md if either exists — verify plans honor project guidelines
+**Project instructions:** Read ./CLAUDE.md or ./.claude/CLAUDE.md if either exists — verify plans honor project guidelines
 **Project skills:** Check .claude/skills/ or .agents/skills/ directory (if either exists) — verify plans account for project skill rules
 </verification_context>
 

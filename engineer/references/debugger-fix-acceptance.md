@@ -118,11 +118,11 @@ The session-manager continuation loop handles this return: it surfaces the
 failing signal and offers revise / accept-as-debt / abandon. It does **not** mark
 the session resolved.
 
-## Bounded subprocesses (AGENTS.md gauntlet)
+## Bounded subprocesses (CLAUDE.md gauntlet)
 
 The mutation check shells out to Stryker; revert-and-reconfirm shells out to
 git. Every such subprocess is **bounded** with a timeout (npm/Stryker: 60s per
-AGENTS.md; git: 5–30s per the gauntlet). On timeout, the signal is recorded as
+CLAUDE.md; git: 5–30s per the gauntlet). On timeout, the signal is recorded as
 `skipped — <reason> timed out` (logged, never a silent pass) and the guardrail
 proceeds on the remaining signals. Never run an unbounded Stryker or git op;
 never let a subprocess hang the debug session. Pass Stryker/git arguments as an

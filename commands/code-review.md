@@ -47,7 +47,7 @@ Optional flags parsed from the `<arguments>` block:
 - `--depth=VALUE` — Depth override (quick|standard|deep). If provided, overrides workflow.code_review_depth config.
 - `--files=file1,file2,...` — Explicit file list override. Has highest precedence for file scoping per D-08. When provided, workflow skips SUMMARY.md extraction and git diff fallback entirely.
 
-Context files (AGENTS.md, SUMMARY.md, phase state) are resolved inside the workflow via `engineer_run query init.phase-op` and delegated to agent via `<required_reading>` blocks.
+Context files (CLAUDE.md, SUMMARY.md, phase state) are resolved inside the workflow via `engineer_run query init.phase-op` and delegated to agent via `<required_reading>` blocks.
 
 ## Outside a phase
 

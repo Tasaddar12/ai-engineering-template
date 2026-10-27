@@ -142,7 +142,7 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.
    <required_reading>
    - ${ITEM_DIR}/${quick_id}-PLAN.md (Plan)
    - ${STATE_PATH} (Project state — READ ONLY, do not write it)
-   - ./AGENTS.md or ./.claude/AGENTS.md (if exists)
+   - ./CLAUDE.md or ./.claude/CLAUDE.md (if exists)
    </required_reading>
 
    ${AGENT_SKILLS_EXECUTOR}

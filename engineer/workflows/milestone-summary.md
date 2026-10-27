@@ -215,7 +215,7 @@ Present as a bulleted list of decisions with brief rationale:
 {Entry points for new contributors:}
 - **Run the project:** {from PROJECT.md or SUMMARY.md}
 - **Key directories:** {from codebase structure}
-- **Tests:** {test command from PROJECT.md or AGENTS.md}
+- **Tests:** {test command from PROJECT.md or CLAUDE.md}
 - **Where to look first:** {main entry points, core modules}
 
 ---

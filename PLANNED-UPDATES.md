@@ -141,7 +141,6 @@ Apply with `scripts/rename.py` (section 6). Never hand-apply these across many f
 | `.ai/references/methods/<x>` | `engineer/references/<x>` | Text copied from `.ai/` |
 | `.ai/references/<x>`, `.ai/templates/<x>`, `.ai/workflows/<x>` | `engineer/references/<x>`, `engineer/templates/<x>`, `engineer/workflows/<x>` | Text copied from `.ai/` |
 | `phase_run query` | `engineer_run query` | Text copied from `.ai/` |
-| `CLAUDE.md` (as the project instruction file) | `AGENTS.md` | All kept files |
 
 ### 3.3 Role names
 
@@ -811,7 +810,7 @@ Evidence base: line numbers verified at HEAD 9443672 (`git diff`-equivalent `dif
 | R-AG-002 | REPLACE | every stitched local link | `.ai/agents/*.md` links `../references/methods/<x>`, `../references/<x>`, `../templates/<x>`, `../commands/<x>`, `../workflows/<x>`, `@.ai/references/<x>` | Rewrite to `../engineer/references/<x>`, `../engineer/references/<x>`, `../engineer/templates/<x>`, `../commands/<x>`, `../engineer/workflows/<x>`, `@engineer/references/<x>` respectively. |
 | R-AG-003 | REPLACE | every stitched local link | `../RULES.md`, `../rules/README.md`, `../runtime/TEMPLATE-CONTRACT.md`, `../hooks/context-handoff.sh`, `README.md` (catalog) | Rewrite to the relocated targets chosen by the references/runtime sections (`engineer/RULES.md`, `engineer/rules/README.md`, `engineer/references/template-contract.md`, `hooks/context-handoff.sh`), and `README.md` → `AGENT.md`. |
 | R-AG-004 | REPLACE | every `gsd_run`/`gsd-tools`/`_GSD_SHIM_NAME` launcher | local `phase_run query`, `python .ai/runtime/phase.py query` | Use `engineer_run query <verb>` only for verbs present in `.ai/runtime/phase.py:801-915`; remove calls to absent verbs (`state.load`, `state.record-metric`, `requirements.mark-complete`, `check *`, `windows`, `verify.*`, `frontmatter.*`, `plan.task-structure`, `phase.list-*`, `history-digest`, `learnings.query`, `estimate-check`, `research-plan`, `research-store`, `classify-confidence`, `websearch`, `package-legitimacy`, `summary-extract`, `run-with-timeout`, `user-story.validate`, `verification.fingerprint`, `graphify`, `intel`). |
-| R-AG-005 | REPLACE | every `CLAUDE.md` mention | `.ai/agents/coder.md:74,83` | Replace `CLAUDE.md` with `AGENTS.md` (installer swaps it per host at `.ai/install.py:182-183`). |
+| R-AG-005 | KEEP-UPSTREAM | every `CLAUDE.md` mention | Original copied GSD text | Preserve `CLAUDE.md` and `.claude/CLAUDE.md`; do not substitute `AGENTS.md` in shared source. |
 | R-AG-006 | REPLACE | every `/gsd:<cmd>` and `/gsd-<cmd>` | — | Replace with the bare command name (`plan-phase`, `execute-phase`, `verify-work`, `ui-phase`, `ui-review`, `secure-phase`, `code-review`) present in `commands/`. |
 | R-AG-007 | REPLACE | stitched local prose role names | role mapping in `.ai/agents/README.md:11-24` | Rename whole-word local roles in stitched text: coder→executor, phase-preparer/preparer→planner, phase-checker→plan-checker, researcher→phase-researcher (leave ui-researcher/scout/targeted-fixer/coordinator unchanged). |
 | R-AG-008 | REPLACE | every `agent_skills: self-load per @.../agent-skills-bootstrap.md (agent type: ...)` | `.ai/agents/coder.md:81` | Replace with `**agent_skills:** self-load from \`.claude/skills/\` or \`.agents/skills/\``. |
@@ -823,7 +822,7 @@ Evidence base: line numbers verified at HEAD 9443672 (`git diff`-equivalent `dif
 Done when:
 - `grep -lE "gsd_run|gsd-tools|_GSD_SHIM|phase_run|\.ai/runtime/phase\.py" agents/*.md` prints nothing.
 - `grep -lE "~/\.claude|gsd-core/|\(\.\./references/|@\.ai/" agents/*.md` prints nothing.
-- `grep -lE "/gsd[:-]|agent-skills-bootstrap|mandatory-initial-read|CLAUDE\.md" agents/*.md` prints nothing.
+- `grep -lE "/gsd[:-]|agent-skills-bootstrap|mandatory-initial-read" agents/*.md` prints nothing.
 - `grep -l "^name: gsd-" agents/*.md` prints nothing.
 
 ### agents/executor.md (from agents/executor.md; local source .ai/agents/coder.md)
@@ -1345,7 +1344,7 @@ Template: leaf fixer from `.ai/agents/targeted-fixer.md:9-81` and `.ai/reference
 | R-AG-331 | REMOVE | agents/gsd-code-fixer.md:665-674,686-691 | — | Delete worktree-mandate, `workflow.use_worktrees`, "where verification ran" and cleanup-tail rules. |
 | R-AG-332 | KEEP-UPSTREAM | agents/gsd-code-fixer.md:676-684 | — | Keep reparse-point `rm -rf` prohibition; prevents Windows data loss. |
 | R-AG-333 | KEEP-UPSTREAM | agents/gsd-code-fixer.md:64-93 | .ai/agents/coder.md:592-595 | Keep per-file `git checkout -- {file}` rollback; matches coder's single-file discard. |
-| R-AG-334 | REPLACE | agents/gsd-code-fixer.md:718,768 | — | Replace CLAUDE.md conventions with AGENTS.md. |
+| R-AG-334 | KEEP-UPSTREAM | agents/gsd-code-fixer.md:718,768 | Original copied GSD text | Preserve the original CLAUDE.md conventions. |
 
 Done when:
 - `grep -cE "git worktree|setup_worktree|use_worktrees|review-fix-recovery|gsd-reviewfix|query commit|_GSD_SHIM" agents/code-fixer.md` returns 0.
@@ -1365,7 +1364,7 @@ Template: artifact writer from `.ai/agents/codebase-mapper.md:14-37,869`.
 | R-AG-340 | REPLACE | agents/gsd-pattern-mapper.md:47 | .ai/agents/phase-preparer.md:85 | Replace `/gsd:discuss-phase` with the recorded phase discussion. |
 
 Done when:
-- `grep -cE "/gsd:|CLAUDE\.md" agents/pattern-mapper.md` returns 0; `grep -c "git add --" agents/pattern-mapper.md` ≥ 1.
+- `grep -cE "/gsd:" agents/pattern-mapper.md` returns 0; `grep -c "git add --" agents/pattern-mapper.md` ≥ 1.
 
 ### agents/coordinator.md, agents/scout.md, agents/targeted-fixer.md (NEW FILES)
 

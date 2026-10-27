@@ -122,7 +122,7 @@ so they restate the operative rules inline; this section is the authority they m
    `## Plan-Revision Conflicts` inside that slot:
 
 ```markdown
-- [ ] REVISION_CONFLICT {dimension}/{plan} — required_property: {property} | conflicts with: {locked decision D-nn / AGENTS.md rule / plan constraint} | alternatives: {the agent's alternatives}
+- [ ] REVISION_CONFLICT {dimension}/{plan} — required_property: {property} | conflicts with: {locked decision D-nn / CLAUDE.md rule / plan constraint} | alternatives: {the agent's alternatives}
 ```
 
    A checkbox, not a table row: `- [ ] REVISION_CONFLICT` is open and `- [x] REVISION_CONFLICT`

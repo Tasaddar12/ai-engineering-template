@@ -304,7 +304,7 @@ Your custom files in other locations are preserved:
 - Custom commands not in `commands/gsd/` ✓
 - Custom agents not prefixed with `gsd-` ✓
 - Custom hooks ✓
-- Your AGENTS.md files ✓
+- Your CLAUDE.md files ✓
 
 If you've modified any GSD files directly, they'll be automatically backed up to `gsd-local-patches/` and can be reapplied with `/update --reapply` after the update.
 ```

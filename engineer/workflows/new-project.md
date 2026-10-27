@@ -1252,7 +1252,7 @@ PHASE1_HAS_UI=$(echo "$PHASE1_SECTION" | grep -qi "UI hint.*yes" && echo "true" 
 - `.planning/REQUIREMENTS.md`
 - `.planning/ROADMAP.md`
 - `.planning/STATE.md`
-- `$INSTRUCTION_FILE` (runtime-derived via the shared `getProjectInstructionFile` policy: `AGENTS.md` for codex, `.claude/AGENTS.md` for claude)
+- `$INSTRUCTION_FILE` (runtime-derived via the shared `getProjectInstructionFile` policy: `AGENTS.md` for codex, `.claude/CLAUDE.md` for claude)
 
 </output>
 
@@ -1274,7 +1274,7 @@ PHASE1_HAS_UI=$(echo "$PHASE1_SECTION" | grep -qi "UI hint.*yes" && echo "true" 
 - [ ] ROADMAP.md created with phases, requirement mappings, success criteria
 - [ ] STATE.md initialized
 - [ ] REQUIREMENTS.md traceability updated
-- [ ] `$INSTRUCTION_FILE` generated with GSD workflow guidance (runtime-derived via the shared `getProjectInstructionFile` policy — `AGENTS.md` for codex, `.claude/AGENTS.md` for claude; an existing hand-crafted file without GSD markers is left untouched unless `--force`)
+- [ ] `$INSTRUCTION_FILE` generated with GSD workflow guidance (runtime-derived via the shared `getProjectInstructionFile` policy — `AGENTS.md` for codex, `.claude/CLAUDE.md` for claude; an existing hand-crafted file without GSD markers is left untouched unless `--force`)
 - [ ] User knows next step is `/discuss-phase 1`
 
 **Atomic commits:** Each phase commits its artifacts immediately. If context is lost, artifacts persist.
