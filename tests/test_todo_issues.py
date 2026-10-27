@@ -12,7 +12,7 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNTIME = ROOT / ".ai/runtime/phase.py"
+RUNTIME = ROOT / "engineer/bin/engineer.py"
 
 # A real child process models persistent GitHub state. Only the gh executable
 # boundary is redirected; Git, CLI parsing, locks and TODO files are real.

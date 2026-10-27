@@ -75,7 +75,11 @@ class SessionCase(unittest.TestCase):
         self.assertNotIn("Traceback", completed.stderr,
                          "verb raised instead of returning a result: "
                          + completed.stderr)
-        payload = json.loads(completed.stdout)
+        if completed.returncode:
+            failure = json.loads(completed.stderr.splitlines()[-1])
+            payload = {"ok": False, "code": failure["error"], "error": json.dumps(failure)}
+        else:
+            payload = {"ok": True, **json.loads(completed.stdout)}
         if expect_ok:
             self.assertTrue(payload.get("ok"), "verb failed: " + completed.stdout)
         else:
@@ -89,7 +93,7 @@ class SessionLifecycle(SessionCase):
         self.assertEqual(result["kind"], "phase")
         self.assertEqual(result["label"], "01")
         self.assertFalse(result["reused"])
-        self.assertTrue(result["branch"].startswith("phase-01-"))
+        self.assertTrue(result["branch"].startswith("codex/phase-01"))
         self.assertTrue(Path(result["worktree"]).is_dir())
         listed = self.git("worktree", "list", "--porcelain").stdout
         self.assertIn(result["branch"], listed)
@@ -122,7 +126,7 @@ class SessionLifecycle(SessionCase):
 
     def test_unknown_kind_is_refused(self):
         failed = self.run_verb("session.open", "hotfix", "01", expect_ok=False)
-        self.assertEqual(failed["code"], "bad-session-kind")
+        self.assertEqual(failed["code"], "invalid-session-kind")
 
     def test_open_refuses_when_the_worktree_root_is_not_ignored(self):
         (self.directory / ".gitignore").write_text("", encoding="utf-8", newline="\n")
@@ -137,7 +141,7 @@ class PhaseLocate(SessionCase):
 
     @property
     def manifest(self):
-        return self.directory / ".git" / "ai-phase" / "sessions.json"
+        return self.directory / ".git" / "engineer" / "sessions.json"
 
     def add_phase(self, cwd, name="Located phase"):
         roadmap = Path(cwd) / ".planning" / "ROADMAP.md"
@@ -255,7 +259,8 @@ class PhaseLocate(SessionCase):
 
     def test_duplicate_equivalent_session_labels_fail(self):
         first = self.phase_session("01")
-        second = self.run_verb("session.open", "phase", "1")
+        second = {**first, "label": "1"}
+        self.change_sessions([first, second])
         failed = self.locate("1", expect_ok=False)
         self.assertEqual(failed["code"], "ambiguous-phase-session")
         for session in (first, second):
