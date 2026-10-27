@@ -190,7 +190,7 @@ def parse(args):
             else:
                 result["file"] = argv[cursor]
         elif token.startswith("-"):
-            raise Failure("unknown-option", token, 2)
+            raise Failure("unknown-option", token, 1)
         else:
             result["tasks"].append(token)
         cursor += 1

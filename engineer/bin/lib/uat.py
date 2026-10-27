@@ -180,9 +180,9 @@ def outstanding(args=None):
                 pending = metadata.get("human_verification", [])
                 if pending:
                     for index, item in enumerate(pending, 1):
-                        result.append({scope: directory.name.split("-")[0], "id": "human-"+str(index), "status": "pending", "file": str(path), "body": item})
+                        result.append({scope: verification.quick_identity(directory) if scope == "quick" else directory.name.split("-")[0], "id": "human-"+str(index), "status": "pending", "file": str(path), "body": item})
                 else:
-                    result.append({scope: directory.name.split("-")[0], "id": "human", "status": "pending", "file": str(path), "body": body})
+                    result.append({scope: verification.quick_identity(directory) if scope == "quick" else directory.name.split("-")[0], "id": "human", "status": "pending", "file": str(path), "body": body})
     return {"items": result, "count": len(result)}
 
 
@@ -313,7 +313,7 @@ def audit_open(args):
         for path in directory.glob("*-VERIFICATION.md"):
             metadata, _ = split_frontmatter(read(path))
             if metadata.get("status") in ("gaps_found", "human_needed"):
-                reports.append({"file": str(path), "status": metadata["status"], scope: directory.name.split("-")[0]})
+                reports.append({"file": str(path), "status": metadata["status"], scope: verification.quick_identity(directory) if scope == "quick" else directory.name.split("-")[0]})
     text = read(records.planning()/"STATE.md")
     match = re.search(r"(?ms)^### Blockers/Concerns\s*\n(.*?)(?=^##|\Z)", text)
     blockers = re.findall(r"(?m)^- (.+)$", match[1]) if match else []

@@ -99,7 +99,8 @@ def roadmap_phases():
     result = []
     for i, match in enumerate(matches):
         limit = matches[i+1].start() if i+1 < len(matches) else len(text)
-        boundary = re.search(r"(?m)^#{1,2}\s+", structure[match.end():limit])
+        level = len(match[0].split(None, 1)[0])
+        boundary = re.search(r"(?m)^#{1,"+str(level)+r"}\s+", structure[match.end():limit])
         if boundary:
             limit = match.end()+boundary.start()
         body = text[match.end():limit]

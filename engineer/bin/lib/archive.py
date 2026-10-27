@@ -19,16 +19,25 @@ def guarded(value):
     if ".." in path.parts:
         raise Failure("path-escape", str(value))
     path = path if path.is_absolute() else root()/path
-    if not path.is_relative_to(root()):
+    base = root().resolve()
+    # Match a lexical ancestor to the canonical repository before resolving the
+    # selected path. Windows 8.3 spellings identify the same directory, while
+    # links and junctions in the selected suffix must still be refused.
+    ancestors = [path, *path.parents]
+    anchor = next((item for item in ancestors if item.resolve() == base), None)
+    if anchor is None:
         raise Failure("path-escape", str(value))
-    for component in (root(), *[root().joinpath(*path.relative_to(root()).parts[:i])
-                                for i in range(1, len(path.relative_to(root()).parts)+1)]):
+    components = [anchor, *reversed(ancestors[:ancestors.index(anchor)])]
+    for component in components:
         try:
             info = component.lstat()
         except FileNotFoundError:
             continue
         if stat.S_ISLNK(info.st_mode) or getattr(info, "st_file_attributes", 0) & 0x400:
             raise Failure("path-escape", str(component))
+    path = path.resolve()
+    if not path.is_relative_to(base):
+        raise Failure("path-escape", str(value))
     return path
 
 

@@ -90,16 +90,17 @@ def init(args, kind):
                 break
         from .archive import catalog
         archived = [{**entry, "complete": True, "archived": True} for entry in catalog() if entry["kind"] == "phase"]
+        members = progress["phases"]
         if kind == "complete-milestone" and args.pos:
             selected = args.need()
             members = [phase for phase in [*progress["phases"], *archived] if str(phase.get("milestone", "")).startswith(selected)]
             packet["milestone_phases"] = members
             packet["ready_to_complete"] = bool(members) and all(phase["complete"] for phase in members)
         verified = []
-        for phase in progress["phases"]:
+        for phase in members:
             from .core import Args
             try:
-                verified.append(verification.status(Args([phase["number"]]))["status"] == "passed")
+                verified.append(verification.status(Args([phase.get("number", phase.get("id"))]))["status"] == "passed")
             except Failure:
                 verified.append(False)
         return {**packet, **progress, "progress_percent": progress["percent"], "all_phases_verified": bool(verified) and all(verified),
