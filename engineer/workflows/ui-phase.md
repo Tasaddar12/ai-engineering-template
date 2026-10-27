@@ -5,7 +5,7 @@ UI-SPEC.md locks spacing, typography, color, copywriting, and design system deci
 </purpose>
 
 <required_reading>
-@engineer/references/ui-brand.md
+@~/.claude/engineer/references/ui-brand.md
 </required_reading>
 
 <available_agent_types>
@@ -212,7 +212,7 @@ Omit null file paths from `<required_reading>`.
 
 <!-- #2517 model-omit-on-inherit -->
 
-> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`UI_RESEARCHER_MODEL`, `UI_CHECKER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @engineer/references/model-profile-resolution.md.
+> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`UI_RESEARCHER_MODEL`, `UI_CHECKER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```
 Agent(
@@ -349,7 +349,7 @@ Run AFTER the checker approves the UI-SPEC (VERIFIED, or force-approved at step 
 during authoring, so a revision-loop researcher rewrite (step 9) cannot clobber the section and the
 `## UI Considerations` block is committed with the FINAL UI-SPEC. This is the visual analog of
 spec-phase Step 5.5's edge probe, retargeted to the UI element/state axis. Reference:
-@engineer/references/ui-consideration-probe.md.
+@~/.claude/engineer/references/ui-consideration-probe.md.
 
 **Skip conditions:** if `--auto` and the UI-SPEC already carries a resolved `## UI Considerations`
 section (re-run), the write-back is idempotent (it REPLACES that section, never appends). If the

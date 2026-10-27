@@ -3,8 +3,8 @@
 Remove explicitly selected future work through the runtime, after showing the exact phase and receiving the user's confirmation. Preserve evidence of work that has already run.
 </purpose>
 <required_reading>
-@engineer/RULES.md
-@engineer/references/template-contract.md
+@~/.claude/engineer/RULES.md
+@~/.claude/engineer/references/template-contract.md
 </required_reading>
 <process>
 <step name="parse_arguments">

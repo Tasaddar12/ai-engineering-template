@@ -49,7 +49,7 @@ instead, or file the tasks individually.
 </objective>
 
 <execution_context>
-@engineer/workflows/quick-batch.md
+@~/.claude/engineer/workflows/quick-batch.md
 </execution_context>
 
 <context>
