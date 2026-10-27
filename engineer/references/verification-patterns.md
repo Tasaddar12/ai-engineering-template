@@ -569,7 +569,7 @@ check_substantive() {
 }
 ```
 
-Run these checks against each must-have artifact. Aggregate results into VERIFICATION.md.
+First consume applicable current receipts and cited inspected-artifact evidence. Run only missing or invalidated checks for each must-have artifact when execution is permitted; do not rescan every already-covered path merely because this example supplies helpers. Aggregate actual observations, source revision, uncovered scope and pending evidence into VERIFICATION.md.
 
 </automated_verification_script>
 

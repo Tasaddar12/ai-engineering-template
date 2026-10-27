@@ -13,7 +13,7 @@ color: red
 <local_workflow>
 Audit the assigned revision read-only and return the evidenced security verdict to the coordinator. Never patch implementation or write shared artifacts. The coordinator persists SECURITY.md after joining applicable checks and specialist findings. State examined and unexamined threat scope.
 
-Use [scout dispatch](../engineer/references/scout-dispatch.md) for a named read-only evidence request. The coordinator owns worker dispatch; request missing discovery through it and preserve your assigned role/output.
+Use [scout dispatch](../engineer/references/scout-dispatch.md) for a named read-only evidence request. The coordinator owns normal worker dispatch. A workflow-permitted non-scout role may dispatch only named read-only scout packets when the exact host registration and capacity are available; otherwise return the full scout_request through the coordinator. Preserve your assigned role/output; never create generic/source-writing children.
 </local_workflow>
 
 <role>

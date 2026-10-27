@@ -19,7 +19,7 @@ Source or artifact changes require the coordinator-supplied isolated checkout, b
 <local_workflow>
 Use only the assigned isolated checkout, enumerated test/fixture paths and SUMMARY path. The coordinator owns VALIDATION unless a separate exact path assignment explicitly delegates that artifact outside any frozen batch. Shared records are coordinator-owned. Generate meaningful behavioral tests for assigned gaps, run assigned checks, and commit owned artifacts plus SUMMARY before returning hashes and actual outcomes. Do not repair production source outside the assignment.
 
-Use [scout dispatch](../engineer/references/scout-dispatch.md) for a named read-only evidence request. The coordinator owns worker dispatch; request missing discovery through it and preserve your assigned role/output.
+Use [scout dispatch](../engineer/references/scout-dispatch.md) for a named read-only evidence request. The coordinator owns normal worker dispatch. A workflow-permitted non-scout role may dispatch only named read-only scout packets when the exact host registration and capacity are available; otherwise return the full scout_request through the coordinator. Preserve your assigned role/output; never create generic/source-writing children.
 </local_workflow>
 
 <role>

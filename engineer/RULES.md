@@ -59,6 +59,7 @@ Retirement is an explicit owning operation, never strikethrough, an in-place Clo
 | Deferred item | Owning runtime disposition and `state.add-deferred` for authorized new deferral | Reason, owner and milestone |
 | Decision | Replacement Key Decisions entry through `state.add-decision` | Prior choice and rationale |
 | Todo | `todo.complete` only after its completion/issue/UAT gates | Captured intent, result and canonical links |
+| Requirement | Explicit approved replacement/retirement through its owning requirements operation; reconcile traceability with the runtime | Original obligation, authority, replacement or removal reason and affected phases/acceptance |
 | Phase | `phase.remove` / milestone archive under explicit scope | Exact archived records and numbering relationships |
 | Stale planning record | `planning.review` then guarded repair/archive | Reviewed digest, exact paths and manifest |
 | Worktree/branch | Fresh exact [cleanup approval](references/cleanup.md) | Ownership, clean state and integration evidence |
@@ -66,6 +67,8 @@ Retirement is an explicit owning operation, never strikethrough, an in-place Clo
 ## Deciding
 
 Validate a technology choice with an actual relevant check before recommending it. Read manifest/locked versions and primary documentation; record the command, tested revision, observed result and limitations. A remembered API, search snippet or source presence is not a validated recommendation. If the user defers checks, preserve that order and mark the option unvalidated.
+
+Before dispatch, require commit-ready inputs: current approved CONTEXT decisions and authority, complete executable PLAN, grounded source/interfaces, exact acceptance/docs/check argv, owned paths/deletions/resources and unresolved dependencies. Commit those coordinator-owned inputs as an exact meaningful slice. Bind each planning/review/implementation attempt to its full input revision and artifact digests. When inputs change, reconcile affected decisions, plans and evidence before continuing; never reuse approval over changed content. Do not dispatch a worker to settle an unrecorded consequential decision in passing.
 
 Record consequential decisions while deciding through `engineer_run query state.add-decision TEXT --rationale TEXT`; do not wait until building to reconstruct the rationale. Distinguish delegated implementation discretion from a new one-way product or architecture choice. Approved decisions stay settled unless evidence establishes a concrete conflict that the coordinator resolves with the user as needed.
 
@@ -90,6 +93,8 @@ A frozen verification batch captures one revision after all writers stop. Config
 A demonstrated failure blocks; an unsupported preference is advisory; missing required evidence never becomes passed. Correct findings until resolved or specifically blocked. No fixed review-count exemption waives a failure. Never repeat an identical failed attempt without changing its hypothesis, input or tool.
 
 Required human UAT is never waived by mode, infrastructure/MVP framing, source inspection, issue closure, a resolving plan or automation. Prepare runnable actions/fixtures and record the actual human answer. `resolved_by`/`resolved_at` reconcile a gap only with a real executed plan and matching SUMMARY; final human acceptance remains separately required.
+
+Require an independent plan-checker when a plan changes requirements or locked decisions, introduces a consequential technology/security/dependency choice, spans runtime/host/service boundaries, changes shared artifact contracts, adds producer-consumer sequencing or resource contention, or revises prior failed acceptance. A plan author cannot approve its own risk-bearing plan. Preserve an explicit unexecuted review as missing evidence.
 
 Before readiness, reconcile [canonical threat tracking](references/git-workflow.md#canonical-threat-tracking) and the independent non-author issue-link audit. Structural shape checks do not prove semantic coverage, safe content, provider state, accessible anchors or human decisions.
 
@@ -132,5 +137,7 @@ Reusable rules belong under [rules](rules/README.md), with exact scope, authorit
 ## Complete template use
 
 Read each complete template before authoring its artifact, including frontmatter, guidance, detailed examples and consumer contracts. Preserve required sections and explain not applicable sections explicitly. Do not replace methods with summaries, copy a compact variant or omit fields to fit a context budget. Follow [template use](templates/TEMPLATE.md).
+
+Documentation triggers include user-facing behavior; installation/setup; supported command flags/defaults/errors; public API/schema; configuration/dependency versions; operational ownership/recovery; security controls; significant architecture; and artifact producer/consumer contracts. Require updated and verified, verified unchanged, not applicable with reason, or unresolved for every obligation. Dispatch a doc-writer for stale/missing guidance after its source dependency is integrated; an intended future writer is not delivered documentation. Follow the complete documentation reference and independent doc-verifier claim protocol.
 
 Current PLAN records require acceptance, documentation, checks as argv lists and issue_refs; SUMMARY records report only requirements actually completed by delivered evidence. Read [the runtime template contract](references/template-contract.md) for runtime-owned record sections and integrity boundaries. Keep adopting identity blank in reusable templates. Use `.planning/` for project records; `engineer/` for reusable rules, workflows, templates and tooling.

@@ -8,7 +8,7 @@ color: blue
 <local_workflow>
 Inspect component boundaries at the captured revision read-only and return the complete integration report to the coordinator. Trace real producer-consumer contracts, entry points and success/error/empty outcomes. Search counts never prove an end-to-end flow. Do not write shared records or source; name examined and unexamined scope.
 
-Use [scout dispatch](../engineer/references/scout-dispatch.md) for a named read-only evidence request. The coordinator owns worker dispatch; request missing discovery through it and preserve your assigned role/output.
+Use [scout dispatch](../engineer/references/scout-dispatch.md) for a named read-only evidence request. The coordinator owns normal worker dispatch. A workflow-permitted non-scout role may dispatch only named read-only scout packets when the exact host registration and capacity are available; otherwise return the full scout_request through the coordinator. Preserve your assigned role/output; never create generic/source-writing children.
 </local_workflow>
 <role>
 A set of completed phases has been submitted for cross-phase integration audit. Verify that phases actually wire together — not that each phase individually looks complete.

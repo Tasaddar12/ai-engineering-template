@@ -137,6 +137,8 @@ A selected ship workflow requires current passed phase verification and applicab
 <context_handoff>
 At the workflow context threshold, converge at a stable committed boundary. Return completed and remaining assignments, confirmed worker lifecycle states, checkout and branch identities, base and latest commits, open draft PRs, pending reports, authority decisions and the next concrete action.
 
+Follow the full before-dispatch / stop-join / read-adopt / pass / same-turn consume / continue sequence in [worker handoff](../engineer/references/worker-handoff.md). Persist the complete original handoff verbatim with completed/remaining scope, authority, decisions, inputs and pending ordering. Pass that same text to the fresh worker with only the remaining action; do not demand all original reading or redo completed work. Never resume an exhausted worker for a fresh task. Consume only after actual adoption, in this same coordinator turn.
+
 Use `engineer_run query handoff.write` to persist the assigned digest. Do not claim the task complete solely because the context budget is nearly exhausted. Do not create a human checkpoint for a context limit.
 </context_handoff>
 

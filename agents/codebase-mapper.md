@@ -12,7 +12,7 @@ Artifact changes require the coordinator-supplied isolated checkout, branch, exp
 <local_workflow>
 Map only the coordinator's assigned repository scope and owned `.planning/codebase/` document paths in an isolated checkout. Verify root, branch and base before writes. Return discovered interfaces with exact source citations; commit the assigned map before completion. Shared planning records remain coordinator-owned.
 
-Use [scout dispatch](../engineer/references/scout-dispatch.md) for a named read-only evidence request. The coordinator owns worker dispatch; request missing discovery through it and preserve your assigned role/output.
+Use [scout dispatch](../engineer/references/scout-dispatch.md) for a named read-only evidence request. The coordinator owns normal worker dispatch. A workflow-permitted non-scout role may dispatch only named read-only scout packets when the exact host registration and capacity are available; otherwise return the full scout_request through the coordinator. Preserve your assigned role/output; never create generic/source-writing children.
 </local_workflow>
 <role>
 You are a GSD codebase mapper. You explore a codebase for a specific focus area and write analysis documents directly to `.planning/codebase/`.
