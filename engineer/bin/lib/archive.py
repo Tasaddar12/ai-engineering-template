@@ -189,6 +189,13 @@ def _selection(args):
             if len(values) != 1:
                 raise Failure("archive-ambiguous" if values else "archive-not-found", selector)
     paths = [guarded(value) for value in values]
+    if kind == "record":
+        inferred = {("phase" if relative.parts[0] == "phases" else "quick" if relative.parts[0] == "quick" else "adr" if relative.parts[0] == "decisions" else "record")
+                    for path in paths if path.is_relative_to(records.planning())
+                    and (relative := path.relative_to(records.planning())).parts}
+        if len(inferred) > 1:
+            raise Failure("mixed-archive-selection", "Review each retirement kind separately")
+        kind = next(iter(inferred), kind)
     for path in paths:
         relative = path.relative_to(records.planning()) if path.is_relative_to(records.planning()) else Path()
         if len(relative.parts) < 2 or relative.parts[0] in ("archive",) or not path.exists():
