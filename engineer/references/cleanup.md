@@ -35,3 +35,13 @@ Planning record archival uses `planning.archive` with exact reviewed paths, expe
 ## Result
 
 Return exact removed entries, retained entries with reasons and the runtime outcome. If automatic approval review or a platform restriction blocks a concrete deletion, state that specific restriction and continue permitted read-only inspection.
+
+## Provider eligibility, preservation and readback
+
+For every candidate, inspect the actual remote provider relationship before preview: exact PR/MR URL, source branch, target branch, provider state and merged revision. A closed-but-unmerged request is not integrated; a title, local tracking branch, successful check or branch-name heuristic is not enough. For squash/rebase integration preserve the recorded source-to-integrated equivalence and provider readback; do not pretend ordinary commit ancestry exists when it does not.
+
+Preserve current, protected, pinned/shared or foreign-owned branches/worktrees; active or uncertain workers; dirty/untracked useful work; unmerged commits; needed ignored files; required local environments; pending UAT; and any checkout still referenced by an active assignment. Explain each preserved candidate and its owner. If a backup is necessary, name the exact backup owner, destination, contents and verified recovery path before deletion; do not label an unverified snapshot a backup. Planning archives and app-managed worktree archives have distinct owners and recovery manifests.
+
+Read back each actual provider and local resource after applying the approved list. Confirm only exact approved resources disappeared and retained history/backup remains available. A partial result records removed, retained, failed and not-attempted entries separately, with reason and next action; do not keep deleting after drift or imply a whole list succeeded because one command exited zero.
+
+Final report fields: preview identity/token (without exposing secret material), exact approved entries, integration evidence per entry, positive stopped-owner evidence, backups and owners, actual removals, preserved entries/reasons, failed/not-attempted entries, provider/local readback and recovery/next action. Explicitly state `partial` when any approved deletion did not complete; preserve evidence instead of compensating with a broader shell delete.

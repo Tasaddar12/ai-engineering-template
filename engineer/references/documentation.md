@@ -25,3 +25,18 @@ PROJECT Key Decisions owns decisions through `state.add-decision`. ADRs explain 
 ## Reporting
 
 Record changed paths, why readers need them, inspected revision, checks actually run and pending evidence. If the user defers checks, preserve that order and label validation pending. Missing documentation evidence remains a gap when required by acceptance.
+
+## Per-obligation disposition
+
+Every declared documentation obligation must reach exactly one disposition before readiness:
+
+| Disposition | Required evidence | Effect |
+|---|---|---|
+| Updated and verified | Changed owned path, exact source revision, completed writer commit and independent claim result | Obligation satisfied for that revision. |
+| Verified unchanged | Existing exact section still describes the changed interface/outcome; cite source and independent comparison | No artificial rewrite required. |
+| Not applicable | Concrete reason tied to the actual change and intended reader; cite the obligation/authority | No document change, with an auditable reason. |
+| Unresolved | Missing source, stale claim, incomplete writer, inaccessible dependency or required evidence pending | Remains a readiness gap; never counted as documented. |
+
+Dispatch a doc-writer when user-facing behavior, installation/setup, supported commands/flags/defaults/errors, public API or schema, configuration, dependency versions, operational ownership/recovery, security controls, architecture or artifact contracts change and existing guidance no longer represents them. New reusable workflows also require usable examples, branch outcomes and result contracts. A source-only internal refactor with no reader-visible effect can be verified unchanged or not applicable, with a reason. Do not claim a future writer will document delivered work.
+
+The writer receives the integrated source interface it must document, exact owned document paths, complete applicable template, disposition list, source revision and explicit dependency ordering. If another producer has not yet delivered that interface, retain the dependency and wait for it; do not write guessed API facts. Every command example needs parser/manifest provenance. Execute it only when authorized; otherwise mark runtime validation unverified and preserve pending execution separately from a static claim pass.

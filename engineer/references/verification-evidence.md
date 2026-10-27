@@ -80,3 +80,9 @@ Use `verification.status --quick ID`, `verification.resolve-file --quick ID`, `v
 A historical `result: issue` may stop blocking only through the preserved resolved-gap path: valid stable `gap_id`, `resolved_by` and `resolved_at`; an executed resolving PLAN; a complete matching committed SUMMARY with specific evidence for that gap; and final actual Human acceptance of the covered build. Every remaining required current action must pass. Skipped, not-testable, blocked and pending required actions remain blocking.
 
 If explicit human retest is required, record that actual retest pass; never assume it from a SUMMARY. Diagnosis, a relabeled status, a checked item or a resolving commit alone is insufficient. This narrow historical effective-resolution path preserves the original issue evidence and does not manufacture final human acceptance.
+
+## Receipt input and environment completeness
+
+Receipt reuse also binds generated dependencies and the effective execution environment. Identify source inputs, generated artifact inputs/producer revision, dependency lockfiles, configured argv/working directory, relevant nonsecret environment stamps, runtime/tool versions and fixtures. Do not print secret values; record safe presence/version/reference identities only. A changed generator output, dependency resolution, environment stamp, configuration or input invalidates the affected receipt even when the top-level command text is unchanged.
+
+Volatile external services are not durably covered by a file digest. Record the actual service/target, observation time, applicable freshness window and known state dependencies. Reuse only when the acceptance permits that age/state and current evidence establishes applicability; otherwise rerun the authorized bounded observation. Never describe a previous external response as proving the current deployment or live provider state. User-deferred execution remains pending and cannot be replaced by a matching hash.
