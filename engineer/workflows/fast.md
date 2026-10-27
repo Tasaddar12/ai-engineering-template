@@ -1,4 +1,4 @@
-@engineer/references/response-language-directive.md
+@~/.claude/engineer/references/response-language-directive.md
 
 <purpose>
 Execute a trivial task inline without subagent overhead. No PLAN.md, no Task spawning,

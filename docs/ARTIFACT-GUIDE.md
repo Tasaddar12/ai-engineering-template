@@ -1,6 +1,6 @@
 # Artifact guide
 
-Read the complete [template-use contract](../engineer/templates/TEMPLATE.md) and [registry](../engineer/templates/README.md) before authoring. Templates preserve full fields, methods, examples and producer/consumer guidance; do not replace them with a compact synopsis.
+Read the complete [template-use contract](../engineer/templates/README.md) and [registry](../engineer/templates/README.md) before authoring. Templates preserve full fields, methods, examples and producer/consumer guidance; do not replace them with a compact synopsis.
 
 ## Project records
 
