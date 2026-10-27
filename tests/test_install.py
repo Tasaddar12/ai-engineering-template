@@ -1035,7 +1035,13 @@ issue_refs: []
                     (source / "skills/SKILL").write_text("placeholder")
                 for host in ("codex", "claude"):
                     payload = installer.payload(source, host, False)
-                    for command_path in (source / "commands").glob("*.md"):
+                    commands = [path for path in (source / "commands").glob("*.md")
+                                if path.name != "COMMAND.md"]
+                    self.assertNotIn(installer.skill_root(host) + "/COMMAND/SKILL.md", payload)
+                    installed_skills = [name for name in payload if name.startswith(installer.skill_root(host) + "/")
+                                        and name.endswith("/SKILL.md")]
+                    self.assertEqual(len(commands), len(installed_skills))
+                    for command_path in commands:
                         name = installer.skill_root(host) + "/" + command_path.stem + "/SKILL.md"
                         self.assertEqual(installer.render_asset("commands/" + command_path.name,
                                                               command_path.read_bytes(), host), payload[name])

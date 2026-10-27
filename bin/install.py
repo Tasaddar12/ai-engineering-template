@@ -476,6 +476,8 @@ def payload(source, host, hooks=True):
     # A copied source can omit native skills or carry only its placeholder. Every
     # command still exports its complete method, never a shortened redirect.
     for command in sorted((source / "commands").glob("*.md")):
+        if command.name == "COMMAND.md":
+            continue  # The catalog is documentation, not a dispatchable skill.
         key = skill_root(host) + "/" + command.stem + "/SKILL.md"
         if key not in result:
             result[key] = render_asset("commands/" + command.name, command.read_bytes(), host)
