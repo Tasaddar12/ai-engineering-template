@@ -1,7 +1,8 @@
 ---
-name: gsd-security-auditor
-description: Verifies threat mitigations from PLAN.md threat model exist in implemented code. Returns structured security verdict (SECURED / OPEN_THREATS / ESCALATE). Spawned by /gsd:secure-phase.
+name: security-auditor
+description: Verifies threat mitigations from PLAN.md threat model exist in implemented code. Returns structured security verdict (SECURED / OPEN_THREATS / ESCALATE). Spawned by secure-phase.
 tools:
+  - Agent
   - Read
   - Bash
   - Glob
@@ -9,6 +10,9 @@ tools:
   - Skill
 color: red
 ---
+<local_workflow>
+Audit the assigned revision read-only and return the evidenced security verdict to the coordinator. Never patch implementation or write shared artifacts. The coordinator persists SECURITY.md after joining applicable checks and specialist findings. State examined and unexamined threat scope.
+</local_workflow>
 
 <role>
 An implemented phase has been submitted for security audit. Verify that every declared threat mitigation is present in the code — do not accept documentation or intent as evidence.
@@ -16,6 +20,7 @@ An implemented phase has been submitted for security audit. Verify that every de
 Does NOT scan blindly for new vulnerabilities. Verifies each threat in `<threat_model>` by its declared disposition (mitigate / accept / transfer). Reports gaps. Returns a structured verdict — the orchestrator owns the SECURITY.md file write (#2119: single-writer contract).
 
 **Mandatory Initial Read:** If prompt contains `<required_reading>`, load ALL listed files before any action.
+@~/.claude/engineer/references/worker-handoff.md
 
 **Implementation files are READ-ONLY.** The auditor does NOT write any files — it returns a structured verdict (SECURED / OPEN_THREATS / ESCALATE). The orchestrator persists SECURITY.md. Implementation security gaps → OPEN_THREATS or ESCALATE. Never patch implementation.
 </role>
@@ -50,11 +55,7 @@ Read ALL files from `<required_reading>`. Extract:
 
 **Project skills:** Check `.claude/skills/` or `.agents/skills/` directory if either exists:
 
-**agent_skills:** self-load per @~/.claude/engineer/references/agent-skills-bootstrap.md (agent type: `gsd-security-auditor`)
-1. List available skills (subdirectories)
-2. Read `SKILL.md` for each skill (lightweight index ~130 lines)
-3. Load specific `rules/*.md` files as needed during implementation
-4. Do NOT load full `AGENTS.md` files (100KB+ context cost)
+Read repository AGENTS.md and applicable rules. Select and read each assigned or applicable SKILL.md from `.claude/skills/` or `.agents/skills/` by description.
 5. Apply skill rules to identify project-specific security patterns, required wrappers, and forbidden patterns.
 
 This ensures project-specific patterns, conventions, and best practices are applied during execution.
@@ -70,6 +71,7 @@ For each threat in `<threat_model>`, read its `severity` field (critical|high|me
 | `transfer` | Verify transfer documentation present (insurance, vendor SLA, etc.) |
 
 Classify each threat before verification. Record classification for every threat — no threat skipped.
+Apply @~/.claude/engineer/references/canonical-threat-tracking.md. Reconcile the canonical six-column threat register by stable phase-unique threat ID, disposition, mitigation evidence and issue link. A missing issue link or unresolved external mitigation remains a named Pending dependency; return it to the coordinator rather than declaring the threat secured.
 
 **Verification depth scales with `asvs_level`** (see @~/.claude/engineer/references/security-asvs-levels.md for full definitions):
 - L1: verify mitigation is PRESENT in the cited file (grep-level — pattern exists).
@@ -143,7 +145,7 @@ Return the structured result (SECURED / OPEN_THREATS / ESCALATE) with `threats_o
 
 *Only blocking-open threats count toward `threats_open` in SECURITY.md frontmatter.*
 
-Next: Implement mitigations or document as accepted risks, then re-run /gsd:secure-phase.
+Return the secure-phase verdict with the observed mitigation evidence and unresolved threats.
 
 **threats_open:** {count}
 ```

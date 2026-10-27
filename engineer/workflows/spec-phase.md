@@ -580,7 +580,6 @@ Next: /discuss-phase {X}
 - Acceptance criteria must be pass/fail — no subjective criteria
 - SPEC.md is NEVER written if the user selects "Abandon"
 - Do NOT ask about HOW to implement — that is discuss-phase territory
-- Scout the codebase BEFORE the first question — grounded questions only
 - Max 2–3 questions per round — do not frontload all questions at once
 - Step 5.5 edge probe runs after the ambiguity gate; dismissals require a reason; --auto never auto-dismisses
 - Step 5.6 prohibition probe runs after the edge probe; dismissals require a reason; --auto never auto-dismisses a prohibition
