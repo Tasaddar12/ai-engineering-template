@@ -1170,7 +1170,7 @@ If `section_manifest` is `null` or `"partial-wave"` is in its `included` list: r
 <!-- /section -->
 
 <step name="codebase_drift_gate">
-Read and execute `@~/.claude/gsd-core/workflows/execute-phase/steps/codebase-drift-gate.md` in full.
+Read and execute `@~/.claude/engineer/workflows/execute-phase/steps/codebase-drift-gate.md` in full.
 </step>
 <step name="verify_phase_goal">
 Verify phase achieved its GOAL, not just completed tasks: read and execute
