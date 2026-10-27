@@ -10,6 +10,10 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <process>
 
+<authority>
+Only an explicit user invocation of `/add-tests N`, or an already recorded instruction covering this exact bounded test work, authorizes writing tests. Read CONTEXT and preserve locked acceptance; this command does not authorize product fixes or another phase. Classification/test-plan approvals already supplied remain valid. Inherently human acceptance is not supplied by generated tests. Honor user test ordering throughout; deferred runs remain pending.
+</authority>
+
 <step name="parse_arguments">
 Parse `$ARGUMENTS` for:
 - Phase number (integer, decimal, or letter-suffix) → store as `$PHASE_ARG`
@@ -32,57 +36,13 @@ Exit.
 <step name="init_context">
 Load phase operation context:
 
+Read and execute engineer/workflows/_runtime-launcher.snippet.sh, then run `engineer_run query phase.locate "${PHASE_ARG}"`. Require found=true and enter its quoted worktree. Reuse its actual matching phase session; otherwise open with `session.open phase N` or adopt only an established owned isolated checkout with `session.adopt phase N`. Retain root/branch/base/session/caller identity and initialize there:
+
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
-$ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-_engineer_identity_ok() {
-  [ -f "$1" ] || return 1
-  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
-}
-_engineer_select() {
-  for _engineer_candidate do
-    if _engineer_identity_ok "$_engineer_candidate"; then
-      ENGINEER_RUN="$_engineer_candidate"
-      return 0
-    fi
-  done
-  return 1
-}
-if [ -n "${ENGINEER_RUN:-}" ]; then
-  _engineer_identity_ok "$ENGINEER_RUN" || {
-    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
-    exit 1
-  }
-else
-  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
-  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
-  _engineer_select \
-    "$_engineer_root/engineer/bin/engineer_run" \
-    "$_engineer_runtime_root/engineer/bin/engineer_run" \
-    "$_engineer_root/.claude/engineer/bin/engineer_run" \
-    "$_engineer_root/.codex/engineer/bin/engineer_run" \
-    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
-    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
-    "$_engineer_path_candidate" || {
-    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
-    exit 1
-  }
-fi
-export ENGINEER_RUN
-engineer_run() {
-  sh "$ENGINEER_RUN" "$@"
-}
-if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
-  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
-fi
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.phase-op ${GSD_WS:+--ws=${GSD_WS##* }} "${PHASE_ARG}")
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
+INIT=$(engineer_run query init.phase-op "${PHASE_ARG}")
 ```
+
+Require phase_found=true. No --ws or overflow-file protocol is supported.
 
 Extract from init JSON: `phase_dir`, `phase_number`, `phase_name`, `response_language`.
 
@@ -97,8 +57,8 @@ Exit.
 
 Read the phase artifacts (in order of priority):
 1. `${phase_dir}/*-SUMMARY.md` — what was implemented, files changed
-2. `${phase_dir}/CONTEXT.md` — acceptance criteria, decisions
-3. `${phase_dir}/*-VERIFICATION.md` — user-verified scenarios (if UAT was done)
+2. `${context_path}` (the actual prefixed phase CONTEXT) — acceptance criteria, decisions
+3. `${uat_path}` and `${verification_path}` — actual human UAT observations and independent verification; verification alone is not human acceptance
 
 If no SUMMARY.md exists:
 ```
@@ -109,7 +69,7 @@ Exit.
 
 Present banner:
 ```
-### GSD ► ADD TESTS — Phase ${phase_number}: ${phase_name}
+### ENGINEER ► ADD TESTS — Phase ${phase_number}: ${phase_name}
 ```
 </step>
 
@@ -149,7 +109,9 @@ For each file, classify into one of three categories:
 - Simple CRUD: basic create/read/update/delete with no business logic
 - Type definitions: records, DTOs, interfaces with no logic
 
-Read each file to verify classification. Don't classify based on filename alone.
+Read each file to verify classification. Don't classify based on filename alone. These Skip examples are discovery heuristics, not exemptions: migrations, CRUD, routing, configuration and layout may carry required behavior, security boundaries or acceptance. Cite existing meaningful coverage or a genuine human-only reason for every Skip. Never silently omit a requirement because its implementation fits a Skip label.
+
+Read every UAT action's actual result and evidence, unresolved gaps and historical resolved_by/resolved_at links. Derive cases from accepted behavior in CONTEXT/SPEC and SUMMARY claims; preserve failed/skipped/blocked scenarios as open findings. A diagnosis or planned resolution does not convert them to accepted behavior.
 </step>
 
 <step name="present_classification">
@@ -257,7 +219,17 @@ If "Cherry-pick": ask user which tests to include.
 If "Adjust plan": apply changes and re-present.
 </step>
 
-<step name="execute_tdd_generation">
+<step name="dispatch_test_generation">
+The coordinator dispatches generation rather than writing tests inline. Resolve `engineer_run query resolve-model executor --raw` and `resolve-effort executor --raw`, and pass both concrete non-inherit values inline. Resolve `dispatch-isolation --phase N --plan P`; use its mandatory harness-worktree or orchestrator-worktree strategy. For orchestrator ownership, create the worker with `worktree.create P --phase N --base SHA --files PATH...`; for native harness isolation, pass isolation="worktree" and record actual path/branch/base/owned files with worktree.record-agent. Verify assignment identities before writes; no opt-out exists.
+
+Prepare a real bounded phase PLAN and exact SUMMARY destination from the complete templates, with approved requirements/acceptance/check argv/documentation/issue_refs and enumerated owned tests/fixtures; coordinator retains shared records and VALIDATION. Dispatch `Agent(subagent_type="executor", model=<resolved>, effort=<resolved>, prompt=<full concrete packet>)`, omitting inherit. Supply the complete approved classification/test plan, UAT/CONTEXT/SPEC/SUMMARY/source, test conventions, exact checks/cwd/timeouts/resources, user test ordering and both full worker methods below. Exclude product source changes and child dispatch.
+
+Wait for the terminal result before touching owned paths. Require committed owned tests plus schema-valid SUMMARY, base/head/hashes, per-case generated/pass/fail/pending evidence and Remaining. The worker preserves failing test evidence and reports product bugs; it cannot weaken approved expectations to get green. A deferred run stays pending/blocked; preserve its branch and resume after permission rather than bypassing complete-summary integration gates. Integrate a valid complete return through `engineer_run query worktree.merge-wave --phase N`. Confirm actual merged scope and run configured `verification.run-checks` on the integrated revision when permitted, reusing only current passing receipts.
+
+Retrofitted tests may pass immediately: report characterization evidence accurately, never claim a historical RED. For a true TDD repair, use the full TDD resolution/RED contract in execute-phase/steps/tdd-applicability-resolution.md; require a proven assertion RED test commit ancestor before GREEN. Deliberate broken/known-bad fixture checks must also retain a clean control; do not modify production source merely to fabricate history.
+</step>
+
+<worker_method name="execute_tdd_generation">
 For each approved TDD test:
 
 1. **Create test file** following discovered project conventions (directory, naming, imports)
@@ -271,7 +243,7 @@ For each approved TDD test:
 
 3. **Run the test**:
    ```bash
-   {discovered test command}
+   {approved exact argv}
    ```
 
 4. **Evaluate result:**
@@ -285,9 +257,9 @@ For each approved TDD test:
      ```
      Do NOT fix the implementation — this is a test-generation command, not a fix command. Record the finding.
    - **Test fails with error (import, syntax, etc.)**: This is a test error. Fix the test and re-run.
-</step>
+</worker_method>
 
-<step name="execute_e2e_generation">
+<worker_method name="execute_e2e_generation">
 For each approved E2E test:
 
 1. **Check for existing tests** covering the same scenario:
@@ -300,7 +272,7 @@ For each approved E2E test:
 
 3. **Run the E2E test**:
    ```bash
-   {discovered e2e command}
+   {approved exact E2E argv}
    ```
 
 4. **Evaluate result:**
@@ -317,13 +289,13 @@ For each approved E2E test:
      ```
 
 **No-skip rule:** If E2E tests cannot execute (missing dependencies, environment issues), report the blocker and mark the test as incomplete. Never mark success without actually running the test.
-</step>
+</worker_method>
 
 <step name="summary_and_commit">
 Create a test coverage report and present to user:
 
 ```
-### GSD ► TEST GENERATION COMPLETE
+### ENGINEER ► TEST GENERATION COMPLETE
 
 ## Results
 
@@ -342,42 +314,14 @@ Create a test coverage report and present to user:
 {any assertion failures that indicate implementation bugs}
 ```
 
-Record test generation in project state:
+Read actual state without inventing progress:
 ```bash
-engineer_run query state-snapshot
+engineer_run query state.get
 ```
 
-If there are passing tests to commit:
+The worker already committed its assigned tests and SUMMARY. Commit only actual coordinator record changes with `engineer_run query commit MESSAGE --files PATH...`; never restage worker paths. Report generated, passing, failing and pending separately. "All tests passing" requires actual current checks and complete approved scope, not just generated counts.
 
-```bash
-git add {test files}
-git commit -m "test(phase-${phase_number}): add unit and E2E tests from add-tests command" -- {test files}
-```
-
-Present next steps:
-
-```
----
-
-## ▶ Next Up — [${PROJECT_CODE}] ${PROJECT_TITLE}
-
-{if bugs discovered:}
-**Fix discovered bugs:** `/quick fix the {N} test failures discovered in phase ${phase_number}`
-
-{if blocked tests:}
-**Resolve test blockers:** {description of what's needed}
-
-{otherwise:}
-**All tests passing!** Phase ${phase_number} is fully tested.
-
----
-
-**Also available:**
-- `/add-tests {next_phase}` — test another phase
-- `/verify-work {phase_number}` — run UAT verification
-
----
-```
+Route discovered bugs by stable finding IDs using engineer/references/git-workflow.md and its full Bug/UAT variants. Within authorized publication use phase.issue-declare with the expected digest, phase.issue-preview with exact `--variant Bug` or `--variant UAT`, an explicit reviewed existing-issue/no-match disposition, phase.issue-publish with the same bound token and provider readback. Preserve unresolved human acceptance. Product repairs require already covering implementation authority or a concrete reported dependent decision; generation alone cannot authorize them. Follow canonical draft tracking for authorized delivery and leave merge to the human. Return concrete coverage, hashes, revision, receipts, gaps, issue URLs and session/caller identity; do not replace these with next-command prompts.
 </step>
 
 </process>
@@ -390,7 +334,7 @@ Present next steps:
 - [ ] Test plan presented to user and approved
 - [ ] TDD tests generated with arrange/act/assert structure
 - [ ] E2E tests generated targeting user scenarios
-- [ ] All tests executed — no untested tests marked as passing
+- [ ] Required executions actually pass, or remain explicitly pending under user ordering; no untested pass claims
 - [ ] Bugs discovered by tests flagged (not fixed)
 - [ ] Test files committed with proper message
 - [ ] Coverage gaps documented

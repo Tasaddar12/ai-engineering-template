@@ -3,17 +3,10 @@ Apply response_language to all user-facing prose — narration between tool call
 <step name="regression_gate">
 Run prior phases' test suites to catch cross-phase regressions BEFORE verification.
 
-**Skip if:** This is the first phase (no prior phases), or no prior VERIFICATION.md files exist.
+**Not applicable only if:** the roadmap proves there are no prior phases/required prior suites. Missing prior VERIFICATION files or test references is missing evidence, not a successful gate.
 
-**Step 1: Discover prior phases' test files**
-```bash
-# Find all VERIFICATION.md files from prior phases in current milestone
-PRIOR_VERIFICATIONS=$(find .planning/phases/ -name "*-VERIFICATION.md" ! -path "*${PHASE_NUMBER}*" 2>/dev/null)
-# gsd-handoff:begin regression-files-reset
-_GSD_HANDOFF="$( { git rev-parse --absolute-git-dir 2>/dev/null || echo "${TMPDIR:-/tmp}/gsd-$(pwd | cksum | cut -d' ' -f1)"; } )/handoff"; mkdir -p "$_GSD_HANDOFF"
-rm -f "$_GSD_HANDOFF/regression-files"  # a list left by an earlier run must never reach this gate (#4915)
-# gsd-handoff:end regression-files-reset
-```
+**Step 1: Discover actual prior phases**
+Run `engineer_run query phases.list` and `engineer_run query roadmap.analyze` in the matching integrated phase session. Resolve phase order/dependencies using canonical IDs; `01`, `01.1` and `11` are distinct. Select preceding relevant phases in the active milestone and any earlier/archived dependency whose behavior remains required. Do not exclude by path substring or include later phases merely because a verification file exists. Read the selected PLAN/SUMMARY/VERIFICATION records completely. Capture immutable discovery evidence for this run; no cross-run mutable handoff or reset/delete is needed.
 
 **Step 2: Extract test file lists from prior verifications**
 
@@ -22,19 +15,15 @@ For each VERIFICATION.md found, look for test file references:
 - The "Test Suite" or "Automated Checks" section
 - File patterns from `key-files.created` in corresponding SUMMARY.md files that match `*.test.*` or `*.spec.*`
 
-Write all unique test file paths to the handoff file, one path per line (#4915). Each fenced
-`bash` block is dispatched as its own shell, so a shell variable assigned here would never reach
-`regression-gate-run.md` — the file is the hand-off. Replace the example lines with the real paths;
-write none when no test file was found:
+Record all unique discovered test file paths in the invocation's evidence packet, preserving every origin phase/requirement even when paths deduplicate. Shell calls do not share local variables; pass the complete packet explicitly to the coordinator/check runner assignment instead of relying on a shell variable from another call. Include exact source artifacts, test IDs, configured check IDs and coverage rationale.
 
-Record the complete discovered prior-phase test-file list in the evidence packet passed to the configured check runner. Preserve origin phase IDs; do not use a mutable shared handoff file.
+Before running, map every required prior suite to a nonempty configured verification.commands entry and exact argv/input set. A generic suite name alone does not prove coverage. If no check covers a discovered requirement, correct the grounded configuration within authority before freezing, or leave the gate pending; never add guessed argv or equate zero commands/files to passed.
 
-
-**Step 3: Run configured regression coverage** — Run `engineer_run query verification.run-checks` from the integrated phase session when execution is authorized. Configured checks include prior-phase suites; reuse only current passing input-bound receipts. A timeout or unavailable required runner halts dependent verification and preserves the complete diagnostic output. If execution is deferred by the user, report the required coverage as pending rather than running it or claiming it passed.
+**Step 3: Run configured regression coverage** — Run `engineer_run query verification.run-checks` from the integrated phase session when execution is authorized. Prove the configured checks include all required prior-phase suites; reuse only current passing input-bound receipts. A timeout or unavailable required runner halts dependent verification and preserves the complete diagnostic output. If execution is deferred by the user, report the required coverage as pending rather than running it or claiming it passed.
 
 **Step 4: Report results**
 
-If all tests pass:
+If every required discovered suite is covered by actual current passing receipts:
 ```
 ✓ Regression gate: {N} prior-phase test files passed — no regressions detected
 ```
