@@ -1,46 +1,7 @@
-# Closed-Phase Gate (#3569)
+# Closed-phase gate
 
-The init JSON includes `phase_status` — one of `Pending | Planned | In Progress | Executed | Complete | Needs Review`. `Complete` means the phase has all summaries AND a `VERIFICATION.md` with `status: passed`. Replanning a closed phase silently rewrites plan docs that no longer match the shipped code, so the workflow must hard-stop here unless the operator explicitly overrides.
+Run `engineer_run query roadmap.get-phase "${PHASE_NUMBER}"` and read its structured status. If `--gaps` was explicitly passed, use gap-closure mode and preserve original accepted plans. Otherwise, a status of `Complete` blocks replanning unless the user explicitly supplied `--force`.
 
-Parse `phase_status` from the init JSON, then:
+Report: "Phase {N} is complete. Replanning can invalidate the relationship between plans and shipped code. Use `/phase` for new work, `/phase --insert {N}` for a separately authorized follow-up, or `/plan-phase {N} --gaps` for actual verification gaps."
 
-```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
-$ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-FORCE_REPLAN=false
-if [[ "$GSD_ARGS" =~ (^|[[:space:]])--force([[:space:]]|$) ]]; then
-  FORCE_REPLAN=true
-fi
-
-if [ "${phase_status}" = "Complete" ]; then
-  if [[ "$GSD_ARGS" =~ (^|[[:space:]])--reviews([[:space:]]|$) ]]; then
-    # --reviews on a closed phase is never legitimate — concerns belong in a
-    # new phase or issue against the closed phase's commits.
-    cat <<EOF >&2
-Phase ${phase_number} (${phase_name}) is already CLOSED (VERIFICATION status: passed).
-/plan-phase --reviews cannot replan a closed phase. If the review surfaced
-real concerns, open a follow-up phase or file an issue against the closed
-phase's commits. There is no --force override for --reviews on a closed phase.
-EOF
-    exit 1
-  fi
-  if [ "$FORCE_REPLAN" != "true" ]; then
-    cat <<EOF >&2
-Phase ${phase_number} (${phase_name}) is already CLOSED (VERIFICATION status: passed).
-Replanning a closed phase will overwrite plan docs that no longer match the
-shipped code. If you intentionally want to replan over closed work, re-run
-with: /plan-phase ${phase_number} --force
-
-Otherwise, to view what shipped, see: ${verification_path}
-EOF
-    exit 1
-  fi
-  # FORCE_REPLAN=true: continue, but emit a banner so the operator sees the
-  # decision in the transcript and in any committed plan docs.
-  echo "WARNING: Replanning CLOSED phase ${phase_number} under --force. Verify the closeout was wrong before committing new plan docs." >&2
-fi
-```
-
-The gate fires only when `init plan-phase`'s `phase_status` is `Complete` — the Phase Status Module's COMPLETE rung, i.e. `isPhaseComplete` reports complete (a fresh `passed` VERIFICATION.md; a stale one reads `Executed` and does not trip the gate). `Executed` and `Needs Review` are not gated — those states mean planning was finished but verification did not pass (or has gone stale), and replanning is a legitimate next step.
+With explicit `--force`, warn that the closed phase is being replanned and preserve the previous evidence in Git. Confirm that closeout was wrong or that this exact replan was intended before committing altered plans. The override grants no implementation permission. An executed phase with stale or failed verification is not a completed phase; assess its actual owning records rather than inventing a completion status.

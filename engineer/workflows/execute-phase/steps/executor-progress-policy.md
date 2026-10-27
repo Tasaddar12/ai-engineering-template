@@ -18,15 +18,15 @@ Reconcile activity as well as artifacts:
   RED/GREEN/REFACTOR commits, passing verification, or ongoing reasoning/tool telemetry
   from the child are all meaningful activity.
 - **Only after `${EXECUTOR_STALL_THRESHOLD_MINUTES}` of no meaningful progress** — measured
-  from the LAST sign of progress, not from dispatch — may the pause in step 3 fire, and it
-  asks the user; it does not act on its own.
+  from the LAST sign of progress, not from dispatch — may stall recovery begin: reconcile actual artifacts, confirm worker stop, and continue
+  the recorded handoff in a fresh isolated checkout without asking for routine recovery.
 
 ## Never inject urgency or finalization instructions into a live executor
 
 Messages of the "Finalize immediately", "wrap up now", "you are taking too long" family are
 forbidden: they arrive mid-verification and turn a correct run into a truncated one. If an
-executor must be stopped, the pause in step 3 is the only route, and `kill and retry` is a
-clean restart — not a nudge.
+executor must be stopped, use the confirmed-stop procedure after the no-progress threshold,
+then recover from the actual handoff in a fresh isolated checkout — never a finalization nudge.
 
 ## The absence of a local OS test/build process is NOT idleness
 
@@ -38,6 +38,4 @@ branch, the SUMMARY, and the child's own activity. A process listing is not one 
 
 ## If a stalled executor ran in an isolated worktree
 
-`kill and switch to inline execution` edits the primary checkout — see worktree recovery
-policy (`execute-phase/steps/worktree-recovery-policy.md`). Prefer `kill and retry` in a
-fresh worktree; inline execution requires explicit confirmation, never the default.
+A stalled isolated plan is re-attempted only in a fresh isolated checkout after confirmed stop and artifact reconciliation. Primary-checkout execution is never offered. Preserve the prior worker and evidence under worktree-recovery-policy.md.

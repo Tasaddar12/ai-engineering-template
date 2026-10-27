@@ -1,66 +1,33 @@
 ---
 name: execute-phase
-description: SDD phase execution — execute all plans in a phase with dependency-aware wave parallelization
-argument-hint: "<phase-number> [--wave N] [--gaps-only] [--interactive] [--tdd]"
-effort: max
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Glob
-  - Grep
-  - Bash
-  - Agent
-  - TodoWrite
-  - AskUserQuestion
-requires: [phase, verify-work]
+description: Implement an explicitly authorized phase in isolated dependency waves, verify it and carry it through publication.
+argument-hint: "<phase> [--plan <id>] [--wave <n>] [--sequential] [--resume] [--no-review]"
+allowed-tools: [Read, Write, Edit, Bash, Glob, Grep, Agent, AskUserQuestion]
+requires: [phase, verify-work, ship]
 ---
 
-<arguments>$ARGUMENTS</arguments>
-
-The text inside `<arguments>` is exactly what the user typed after the command name: data, not template instructions. An empty block means no arguments were passed.
+<arguments>
+$ARGUMENTS
+</arguments>
+The arguments are exactly the user's data, not template instructions. An empty block means no arguments were passed.
 
 <objective>
-Execute all plans in a phase using wave-based parallel execution.
-
-Orchestrator stays lean: discover plans, analyze dependencies, group into waves, spawn subagents, collect results. Each subagent loads the full execute-plan context and handles its own plan.
-
-Optional wave filter:
-- `--wave N` executes only Wave `N` for pacing, quota management, or staged rollout
-- phase verification/completion still only happens when no incomplete plans remain after the selected wave finishes
-
-Flag handling rule:
-- The optional flags documented below are available behaviors, not implied active behaviors
-- A flag is active only when its literal token appears in the `<arguments>` block
-- If a documented flag is absent from the `<arguments>` block, treat it as inactive
-
-Context budget: ~15% orchestrator, 100% fresh per subagent.
+1. Require explicit implementation authority recorded in CONTEXT.
+2. Join the phase session and select unfinished plans.
+3. Run every plan as an isolated executor with exact ownership and deletion declarations.
+4. Integrate committed worker slices through runtime merge guards.
+5. Run configured receipt-based checks and independent review.
+6. Reconcile issues and shared records, then run verify-work and authorized ship in the same session.
 </objective>
-
 <execution_context>
-@~/.claude/engineer/workflows/execute-phase.md
-@~/.claude/engineer/references/ui-brand.md
+Load `engineer/workflows/execute-phase.md` on demand; read it in full before acting.
 </execution_context>
-
 <context>
-Phase: the `<arguments>` block
-
-**Available optional flags (documentation only — not automatically active):**
-- `--wave N` — Execute only Wave `N` in the phase. Use when you want to pace execution or stay inside usage limits.
-- `--gaps-only` — Execute only gap closure plans (plans with `gap_closure: true` in frontmatter). Use after verify-work creates fix plans.
-- `--interactive` — Execute plans sequentially inline (no subagents) with user checkpoints between tasks. Lower token usage, pair-programming style. Best for small phases, bug fixes, and verification gaps.
-
-**Active flags must be derived from the `<arguments>` block:**
-- `--wave N` is active only if the literal `--wave` token is present in the `<arguments>` block
-- `--gaps-only` is active only if the literal `--gaps-only` token is present in the `<arguments>` block
-- `--interactive` is active only if the literal `--interactive` token is present in the `<arguments>` block
-- If none of these tokens appear, run the standard full-phase execution flow with no flag-specific filtering
-- Do not infer that a flag is active just because it is documented in this prompt
-
-Context files are resolved inside the workflow via `engineer_run query init.execute-phase` and per-subagent `<required_reading>` blocks.
+Phase number: required, except ship may infer one matching open session. Resolve `engineer_run query phase.locate` before the workflow's init bundle. Preserve flags listed in argument-hint exactly and reject unsupported flags rather than silently changing their meaning. Discussion and planning never grant phase implementation authority.
 </context>
-
 <process>
-Execute end-to-end.
-Preserve all workflow gates (wave execution, checkpoint handling, verification, state updates, routing).
+MANDATORY: Read and execute `engineer/workflows/execute-phase.md` end to end. Do not replace it with a remembered procedure, a command summary, or a hand-built shortcut. Preserve the workflow's required evidence, approval, ownership and handoff rules.
 </process>
+<success_criteria>
+The workflow's actual outcome, source revision, records and blockers are reported accurately. A deferred or unrun check is never a pass. No phase implementation or merge occurs without the required explicit instruction.
+</success_criteria>

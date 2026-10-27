@@ -3,9 +3,8 @@ Apply response_language to all user-facing prose — narration between tool call
 # Default mode — interactive discuss-phase
 
 > **Lazy-loaded.** Read this file from `workflows/discuss-phase.md` when no
-> mode flag is present (the baseline interactive flow). When `--text`,
-> `--batch`, or `--analyze` is also present, layer the corresponding overlay
-> file from this directory on top of the rules below.
+> mode flag is present (the baseline interactive flow). When `--text` is present, layer the text overlay
+> from this directory on top of the rules below.
 
 This document defines `discuss_areas` for the default flow. The shared steps
 that come before (`initialize`, `check_blocking_antipatterns`, `check_spec`,
@@ -17,7 +16,7 @@ file and run for every mode.
 
 For each selected area, conduct a focused discussion loop.
 
-**Research-before-questions mode:** Check if `workflow.research_before_questions` is enabled in config (from init context or `.planning/config.json`). When enabled, before presenting questions for each area:
+**Research-before-questions mode:** Check if `workflow.research_before_questions` is enabled in config (from init context or `.planning/config.yaml`). When enabled, before presenting questions for each area:
 1. Do a brief web search for best practices related to the area topic
 2. Summarize the top findings in 2-3 bullet points
 3. Present the research alongside the question so the user can make a more informed decision
@@ -97,8 +96,8 @@ These user-referenced docs are often MORE important than ROADMAP.md refs because
 - If user picks "Other" to provide freeform input (e.g., "let me describe it", "something else", or an open-ended reply), ask your follow-up as plain text — NOT another AskUserQuestion. Wait for them to type at the normal prompt, then reflect their input back and confirm before resuming AskUserQuestion or the next numbered batch.
 
 **Thinking partner (conditional):**
-If `features.thinking_partner` is enabled in config, check the user's answer for tradeoff signals
-(see `engineer/references/thinking-partner.md` for signal list). If tradeoff detected:
+If `features.thinking_partner` is enabled in config, check the user's answer for concrete tradeoff signals: competing goals, an acknowledged cost, incompatible constraints, or uncertainty between alternatives.
+If tradeoff detected:
 
 ```text
 I notice competing priorities here — {option_A} optimizes for {goal_A} while {option_B} optimizes for {goal_B}.

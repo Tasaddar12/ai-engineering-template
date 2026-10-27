@@ -65,29 +65,21 @@ PARENT_INFO=$(engineer_run query find-phase "${PARENT_PHASE}" --raw)
 
 **3. Update UAT gap statuses:**
 
-Read the parent UAT file's `## Gaps` section. For each gap entry with `status: failed`:
-- Update to `status: resolved`
+Read the parent UAT file's complete `## Gaps` section. Match each failed gap to this follow-up plan, actual committed repair, canonical passed/current verification and required accepted-human evidence. Only a gap whose complete accepted outcome is established may be resolved; preserve every unrelated or pending-human gap. Record exact evidence and reason with the resolved entry, never blanket-resolve all parent failures.
 
 **4. Update UAT frontmatter:**
 
-If all gaps now have `status: resolved`:
-- Update frontmatter `status: diagnosed` → `status: resolved`
-- Update frontmatter `updated:` timestamp
+If every actual parent gap has the required complete accepted evidence, update its frontmatter through `engineer_run query frontmatter.set` using the completed state from the current full UAT template and a real updated timestamp. Do not invent a diagnosed state, write a duplicate status field, or convert pending human acceptance into completion. Otherwise preserve the partial status and concrete remaining gaps.
 
 **5. Resolve referenced debug sessions:**
 
 For each gap that has a `debug_session:` field:
 - Read the debug session file
-- Update frontmatter `status:` → `resolved`
-- Update frontmatter `updated:` timestamp
-- Move to resolved directory:
-```bash
-mkdir -p .planning/debug/resolved
-mv .planning/debug/{slug}.md .planning/debug/resolved/
-```
+- Require exact resolution evidence for that referenced debug session, not merely a successful follow-up plan. Update supported frontmatter fields through frontmatter.set.
+- Preserve the full debug evidence and its source identity. Archive only when that exact record is explicitly selected for retirement, using planning.archive --paths PATH preview followed by its unchanged --expect digest and --confirm. A refusal or missing retirement authority preserves the record; never move it directly or delete its evidence.
 
 **6. Commit updated artifacts:**
 ```bash
-engineer_run query commit "docs(phase-${PARENT_PHASE}): resolve UAT gaps and debug sessions after ${PHASE_NUMBER} gap closure" --files .planning/phases/*${PARENT_PHASE}*/*-UAT.md .planning/debug/resolved/*.md
+engineer_run query commit "docs(phase-${PARENT_PHASE}): resolve UAT gaps and debug sessions after ${PHASE_NUMBER} gap closure" --files "${PARENT_UAT_FILE}" "${EXACT_CHANGED_DEBUG_OR_ARCHIVE_PATH}"
 ```
 </step>

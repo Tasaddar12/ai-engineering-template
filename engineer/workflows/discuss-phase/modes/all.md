@@ -11,8 +11,7 @@ Apply response_language to all user-facing prose — narration between tool call
   (skips the AskUserQuestion area-selection step).
 - Discussion for each area proceeds **fully interactively** — the user drives
   every question for every area (use the default-mode `discuss_areas` flow).
-- Does NOT auto-advance to plan-phase afterward — use `--chain` or `--auto`
-  if you want auto-advance.
+- Never advances to planning; the discussion ends after `update_state`.
 - Log: `[--all] Auto-selected all gray areas: [list area names].`
 
 ## Why this mode exists
@@ -24,7 +23,4 @@ full interactive control over each individual question.
 
 - `--all --auto`: `--auto` wins for the discussion phase too (Claude picks
   recommended answers); `--all`'s contribution is just area auto-selection.
-- `--all --chain`: areas auto-selected, discussion interactive, then
-  auto-advance to plan/execute (chain semantics).
-- `--all --batch` / `--all --text` / `--all --analyze`: layered overlays
-  apply during discussion as documented in their respective files.
+- `--all --text`: layer the text overlay during discussion.

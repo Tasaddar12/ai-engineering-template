@@ -1,239 +1,55 @@
+<!-- workflow: add-todo; produces: pending todo and canonical issue link -->
 <purpose>
-Capture an idea, task, or issue that surfaces during a GSD session as a structured todo for later work. Enables "thought → capture → continue" flow without losing context.
+Capture the user's idea, task or issue as a complete structured pending record, then publish or link its canonical issue through a reviewed content-bound preview. This workflow records requested work; it does not implement it.
 </purpose>
-
 <required_reading>
-Read all files referenced by the invoking prompt's execution_context before starting.
+@~/.claude/engineer/RULES.md
+@~/.claude/engineer/references/git-workflow.md
+@~/.claude/engineer/templates/issue.md
 </required_reading>
-
 <process>
-
 <step name="init_context">
-Load todo context:
-
-```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
-$ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-_engineer_identity_ok() {
-  [ -f "$1" ] || return 1
-  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
-}
-_engineer_select() {
-  for _engineer_candidate do
-    if _engineer_identity_ok "$_engineer_candidate"; then
-      ENGINEER_RUN="$_engineer_candidate"
-      return 0
-    fi
-  done
-  return 1
-}
-if [ -n "${ENGINEER_RUN:-}" ]; then
-  _engineer_identity_ok "$ENGINEER_RUN" || {
-    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
-    exit 1
-  }
-else
-  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
-  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
-  _engineer_select \
-    "$_engineer_root/engineer/bin/engineer_run" \
-    "$_engineer_runtime_root/engineer/bin/engineer_run" \
-    "$_engineer_root/.claude/engineer/bin/engineer_run" \
-    "$_engineer_root/.codex/engineer/bin/engineer_run" \
-    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
-    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
-    "$_engineer_path_candidate" || {
-    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
-    exit 1
-  }
-fi
-export ENGINEER_RUN
-engineer_run() {
-  sh "$ENGINEER_RUN" "$@"
-}
-if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
-  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
-fi
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.todos ${GSD_WS:+--ws=${GSD_WS##* }})
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-```
-
-Extract from init JSON: `commit_docs`, `date`, `timestamp`, `todo_count`, `todos`, `pending_dir`, `todos_dir_exists`, `response_language`.
-
-**If `response_language` is set:** All user-facing output of this workflow — narration between tool calls, status updates, progress notes, findings, questions, prompts, and explanations — MUST be presented in `{response_language}`. Technical terms, code, file paths, and subagent prompts stay in English — only user-facing output is translated.
-
-Ensure directories exist:
-```bash
-mkdir -p .planning/todos/pending .planning/todos/completed
-```
-
-Note existing areas from the todos array for consistency in infer_area step.
+Read and execute engineer/workflows/_runtime-launcher.snippet.sh. Run `engineer_run query init.todos`. Read actual pending records/count, text_mode, response_language and project/roadmap existence. The runtime todo.add owns record allocation and directories; do not pre-create folders or hand-write frontmatter.
 </step>
-
 <step name="extract_content">
-**With arguments:** Use as the title/focus.
-- `/add-todo Add auth token refresh` → title = "Add auth token refresh"
+Read the user's actual description and relevant conversation. Separate title, concrete problem, desired outcome, proposed solution, affected files, scope and acceptance. Retain details and examples the user supplied; do not replace them with a vague title or shortened restatement. If evidence is missing, identify it as unknown rather than inventing a stack trace or promised behavior.
 
-**Without arguments:** Analyze recent conversation to extract:
-- The specific problem, idea, or task discussed
-- Relevant file paths mentioned
-- Technical details (error messages, line numbers, constraints)
-
-Formulate:
-- `title`: 3-10 word descriptive title (action verb preferred)
-- `problem`: What's wrong or why this is needed
-- `solution`: Approach hints or "TBD" if just an idea
-- `files`: Relevant paths with line numbers from conversation
+Examples: `/capture Fix expired sessions returning an HTML page` records the observed response and desired API behavior; `/capture Add export of the selected date range` records what the export must contain and exclusions; `/capture --list api` routes to the listing workflow, not a new record. Ask only for a missing detail that actually prevents an accurate record.
 </step>
-
 <step name="infer_area">
-Infer area from file paths:
-
-| Path pattern | Area |
-|--------------|------|
-| `src/api/*`, `api/*` | `api` |
-| `src/components/*`, `src/ui/*` | `ui` |
-| `src/auth/*`, `auth/*` | `auth` |
-| `src/db/*`, `database/*` | `database` |
-| `tests/*`, `__tests__/*` | `testing` |
-| `docs/*` | `docs` |
-| `.planning/*` | `planning` |
-| `scripts/*`, `bin/*` | `tooling` |
-| No files or unclear | `general` |
-
-Use existing area from step 2 if similar match exists.
+Choose the existing project's area convention from actual pending records and source ownership. Typical areas are api, auth, ui, data, tests, infra and docs, but use project vocabulary when established. Keep a cross-cutting issue explicit rather than hiding affected components. A source path is evidence to inspect, not authority to modify it.
 </step>
-
 <step name="infer_severity">
-Infer a **suggested** severity from the same blocker/major/minor/cosmetic taxonomy `verify-work.md`'s `severity_inference` uses — then CONFIRM it with the user before writing. Never silently auto-assign: a mis-tagged severity silently corrupts backlog triage, which is exactly the signal this field exists to provide.
-
-Suggest from the user's natural-language description:
-
-| User says | Suggest |
-|-----------|---------|
-| "crashes", "error", "exception", "fails completely", "data loss" | blocker |
-| "doesn't work", "nothing happens", "wrong behavior" | major |
-| "works but...", "slow", "weird", "minor issue" | minor |
-| "color", "spacing", "alignment", "looks off" | cosmetic |
-
-Default the suggestion to **major** if unclear.
-
-**Text mode (`workflow.text_mode: true` in config or `--text` flag):** Set `TEXT_MODE=true` if `--text` is present in `$ARGUMENTS` OR `text_mode` from init JSON is `true`. When TEXT_MODE is active, replace the `AskUserQuestion` below with a plain-text numbered list of the four options and ask the user to type their choice number. Required for non-Claude runtimes (OpenAI Codex) where `AskUserQuestion` is unavailable.
-
-Confirm with AskUserQuestion (present the suggested value first):
-- header: "Severity?"
-- question: "Suggested severity: [suggested]. Confirm or change:"
-- options:
-  - "blocker" — breaks a workflow or loses data; fix first
-  - "major" — wrong behavior with no workaround
-  - "minor" — works, but with a workaround or annoyance
-  - "cosmetic" — visual/polish only
-
-Carry the confirmed value into `severity` in the create_file frontmatter.
+Use minor for a bounded inconvenience, major for a material workflow/behavior defect, and blocker for work that prevents a required outcome. Preserve explicit user severity. When evidence does not distinguish two levels, present the concrete impact and ask a short severity question rather than exaggerating urgency. In text mode, render real numbered options and wait for the answer; do not fabricate a choice.
 </step>
-
 <step name="check_duplicates">
-```bash
-# Search for key words from title in existing todos
-grep -l -i "[key words from title]" .planning/todos/pending/*.md 2>/dev/null || true
-```
-
-If potential duplicate found:
-1. Read the existing todo
-2. Compare scope
-
-
-**Text mode (`workflow.text_mode: true` in config or `--text` flag):** Set `TEXT_MODE=true` if `--text` is present in `$ARGUMENTS` OR `text_mode` from init JSON is `true`. When TEXT_MODE is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for non-Claude runtimes (OpenAI Codex) where `AskUserQuestion` is not available.
-If overlapping, use AskUserQuestion:
-- header: "Duplicate?"
-- question: "Similar todo exists: [title]. What would you like to do?"
-- options:
-  - "Skip" — keep existing todo
-  - "Replace" — update existing with new context
-  - "Add anyway" — create as separate todo
+Read pending records and canonical linked issue evidence before adding a duplicate. If an existing record represents the same work, show its exact identity and preserve its existing scope, status and history. Do not create a second pending record solely because its title differs. A related but distinct acceptance outcome needs its own explicit distinction.
 </step>
-
 <step name="create_file">
-Use values from init context: `timestamp` and `date` are already available.
-
-Generate slug for the title:
-```bash
-slug=$(engineer_run query generate-slug "$title" --raw)
-```
-
-Write to `.planning/todos/pending/${date}-${slug}.md`:
-
-```markdown
----
-created: [timestamp]
-title: [title]
-area: [area]
-severity: [blocker|major|minor|cosmetic — confirmed in infer_severity step]
-files:
-  - [file:lines]
----
-
-## Problem
-
-[problem description - enough context for future Claude to understand weeks later]
-
-## Solution
-
-[approach hints or "TBD"]
-```
+Run `engineer_run query todo.add "${TITLE}" --area "${AREA}" --severity "${SEVERITY}" --problem "${PROBLEM}" --solution "${SOLUTION}" --description "${DESCRIPTION}"`, adding exact known --files paths and an explicitly applicable --phase only when supported by actual scope. Pass each value as a single argument; never interpolate user prose into executable shell code. Read the returned exact file/path, title and stable todo metadata. Stop on failure or an unusable returned path; do not substitute a guessed filename or a manually generated slug.
 </step>
+<step name="publish_issue">
+Read the full canonical issue File Template and populate its required sections, concrete acceptance, evidence, scope/exclusions and validation details. Preserve all required structure and markers. Public content must not expose secrets or invent observations. Search canonical provider issues and existing record links for the same work; explicitly review either one existing issue or a genuine no-match disposition.
 
+Preview with `engineer_run query todo.issue-preview "${TODO_FILE}" --variant "${ISSUE_VARIANT}" --title "${PUBLIC_TITLE}" --body-file "${PUBLIC_BODY_FILE}"`, adding exactly one reviewed `--existing-issue "${ISSUE_URL_OR_NUMBER}"` or `--no-match`. Review the complete returned public title/body, source identity and snapshot. Select the exact canonical variant Bug, Enhancement, Decision required, Security risk, or UAT from the actual finding. Run `engineer_run query issue.validate --variant "${ISSUE_VARIANT}" --body-file "${PUBLIC_BODY_FILE}"` when validation execution is permitted; preview independently validates and binds that same variant. Never change the variant between preview and publish. Retain the content-bound preview token, disposition and exact body file.
+
+Publish with todo.issue-publish and the same source/--variant/title/body/labels/disposition plus `--preview-token "${PREVIEW_TOKEN}"`. Existing linked updates use todo.issue-update under its existing-link contract. The token binds the reviewed public content and duplicate disposition; any edit requires a fresh preview. Read back the canonical issue URL, repository, title/body and state before linking the local record. An already closed reviewed match may be linked for reconciliation; the local todo remains pending and this workflow does not reopen or close the issue.
+
+On a failed or uncertain provider result, inspect canonical provider state before any retry. Never send a second create to recover an unknown first create. Keep the local record and exact blocked-publication reason. A captured local idea is still worth committing even when publication is blocked; do not fabricate a URL or discard the user's details.
+</step>
 <step name="update_state">
-If `.planning/STATE.md` exists:
-
-1. Re-run `engineer_run query init.todos ${GSD_WS:+--ws=${GSD_WS##* }}` (same workstream flag as the first call) to get a fresh, post-write JSON snapshot (the count and rendering must reflect the change just made).
-2. **Fail-safe check (#2618):** if the JSON failed to parse, or `pending_read_ok` is not `true`, or `pending_todos_markdown` is not a string, do NOT touch the "### Pending Todos" section — leave it exactly as-is and continue to the next step. A partial or malformed `init.todos` result must never overwrite a good existing section.
-3. Otherwise, replace the entire body of "### Pending Todos" (under "## Accumulated Context") with the literal value of `pending_todos_markdown` — verbatim, one bullet per pending todo already rendered and length-capped by `init.todos`. Do not reformat, re-wrap, re-order, or hand-edit the bullets; do not append to the old body — replace it wholesale (this is what makes an old run-on-sentence section get superseded cleanly with no migration step).
+Run `engineer_run query state.sync-todos`. It derives pending counts from runtime records. Never re-render STATE's pending section by hand.
 </step>
-
 <step name="git_commit">
-Commit the todo and any updated state:
-
-```bash
-engineer_run query commit "docs: capture todo - [title]" --files .planning/todos/pending/[filename] .planning/STATE.md
-```
-
-Tool respects `commit_docs` config and gitignore automatically.
-
-Confirm: "Committed: docs: capture todo - [title]"
+Commit the exact returned TODO_FILE and changed STATE path with `engineer_run query commit "docs(capture): record ${TODO_TITLE}" --files "${TODO_FILE}" .planning/STATE.md`. Include the actual blocked-publication status when present; do not stage unrelated project work or claim an issue was published from an unverified return.
 </step>
-
 <step name="confirm">
-```
-Todo saved: .planning/todos/pending/[filename]
-
-  [title]
-  Area: [area]
-  Files: [count] referenced
-
----
-
-Would you like to:
-
-1. Continue with current work
-2. Add another todo
-3. View all todos (/capture --list)
-```
+Report the complete record path, title, area, severity and concrete scope. Give a provider-confirmed issue URL or the exact blocked-publication reason. State that the record is pending and no implementation ran. Use `/capture --list` as the single inspection route.
 </step>
-
 </process>
-
+<anti_patterns>
+Do not implement captured work, invent evidence, shorten the user's supplied details, duplicate a canonical issue, bypass preview/readback, or hand-edit runtime pending counts.
+</anti_patterns>
 <success_criteria>
-- [ ] Directory structure exists
-- [ ] Todo file created with valid frontmatter
-- [ ] Problem section has enough context for future Claude
-- [ ] No duplicates (checked and resolved)
-- [ ] Area consistent with existing todos
-- [ ] STATE.md updated if exists
-- [ ] Todo and state committed to git
+The user's actual scope is preserved in a runtime-created pending record, duplicate review and public preview are explicit, publication has verified evidence or an honest blocker, state is synchronized, and exact record changes are committed.
 </success_criteria>

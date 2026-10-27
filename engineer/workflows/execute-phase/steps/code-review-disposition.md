@@ -2,8 +2,7 @@ Apply response_language to all user-facing prose — narration between tool call
 
 # `code_review_gate` — report the review and record a per-finding disposition
 
-Read and executed by the `code_review_gate` step of `execute-phase/steps/verify-phase-goal.md` (the shared verification action `execute-phase.md`'s `verify_phase_goal` runs), immediately after code review
-returns. It consumes `PHASE_DIR` and `PHASE_NUMBER` and derives everything else.
+Read and executed only by code-review-fix.md at record_disposition. Execute-phase owns a separate blocking frozen code_review_gate and does not consume this advisory ledger. It consumes `PHASE_DIR` and `PHASE_NUMBER` and derives everything else.
 
 It lives here rather than inline in the parent because `execute-phase.md` sits against two size
 ceilings — the XL hard cap in `tests/workflow-size-budget.test.cjs` and the frozen ADR-857
@@ -23,12 +22,7 @@ and REVIEW.md has a single writer, `code-reviewer`, which this step is not.
 **Check results using deterministic path (not glob):**
 ```bash
 # PADDED must survive a DOTTED phase number, of ANY segment count. This step is dispatched from
-# exactly TWO places: `execute-phase.md` (`code_review_gate`) and `code-review-fix.md`
-# (`record_disposition`). Only the second validates anything -- `code-review-fix.md`'s PADDED_PHASE validator anchors
-# `^[0-9]+[A-Z]?(\.[0-9]+)*$`, an unbounded `*` widened by #4568 and a letter axis widened by #4744, so it accepts `03.1`, `23.1.2` AND `12A`.
-# `execute-phase.md` applies NO shape gate at all, so this fence is not mirroring an upstream
-# guarantee; it IS the guarantee. (`code-review.md`'s own PADDED_PHASE validator is identical but never
-# dispatches this step. It was cited here as a caller for several rounds and is not one.) And
+# only code-review-fix.md at record_disposition; its validated phase identifier must retain every supported decimal/letter axis.
 # `printf "%02d"` cannot format one: bash prints `invalid number` and exits 1, which under
 # `set -euo pipefail` aborts this step on its FIRST line -- the loudest possible failure from
 # the gate that promises never to block, and it takes the whole phase's review reporting with
