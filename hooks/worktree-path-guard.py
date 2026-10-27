@@ -7,6 +7,19 @@ import time
 from hook_common import read_event, root_for, roles, reparse, safe_state, role_name
 
 
+def assignment_path(value, data, root, kind):
+    if not value:
+        prompt = data.get("prompt") or data.get("description") or ""
+        match = re.search(r"(?mi)^" + ("summary_path:" if kind == "SUMMARY" else "(?:plan_path:|execute plan at)") + r"\s*(.+?\.md)\s*$", prompt)
+        if not match and kind == "PLAN":
+            match = re.search(r"([A-Za-z0-9_./-]*[0-9]{2}(?:\.[0-9]+)?-[0-9]{2}-PLAN\.md)", prompt)
+        value = match[1] if match else ""
+    if not isinstance(value, str) or not value:
+        return ""
+    path = (root / value.strip().strip("\"'")).resolve()
+    return path.relative_to(root).as_posix() if path.is_relative_to(root) else ""
+
+
 def inspect(event):
     root = root_for(event)
     tool = event.get("tool_name", "")
@@ -21,9 +34,13 @@ def inspect(event):
         role = role_name(raw_role)
         if role in writers and data.get("isolation") != "worktree":
             warnings.append("write-capable " + role + ' dispatch lacks isolation="worktree"; supply an isolated checkout before source changes')
+        if role not in writers:
+            return warnings
         session = re.sub(r"[^A-Za-z0-9_.-]", "_", str(event.get("session_id", "session")))
         record = {"agent_id": data.get("agent_id") or event.get("tool_use_id"), "role": role,
-                  "raw_role": raw_role,
+                  "agent": role, "raw_role": raw_role,
+                  "plan": assignment_path(data.get("plan_path") or data.get("plan"), data, root, "PLAN"),
+                  "summary": assignment_path(data.get("summary_path") or data.get("summary"), data, root, "SUMMARY"),
                   "session_id": event.get("session_id"), "transcript_path": event.get("transcript_path"),
                   "cwd": str(root), "tool_use_id": event.get("tool_use_id"), "status": "active", "created_at": time.time()}
         state = safe_state(root, ".planning/handoffs/.active-" + session + ".jsonl")

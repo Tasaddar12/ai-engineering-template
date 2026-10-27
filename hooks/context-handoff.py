@@ -4,7 +4,7 @@ import math
 from pathlib import Path
 import re
 import sys
-from hook_common import read_event, root_for, query, advisory, roles, role_name
+from hook_common import read_event, root_for, query, advisory, roles, role_name, safe_state
 
 
 def context_tokens(event):
@@ -41,9 +41,100 @@ def context_tokens(event):
     return sum(int(value) for value in values)
 
 
+def slug(value):
+    return re.sub(r"[^A-Za-z0-9_.-]", "_", str(value or "session"))
+
+
+def owned_path(root, value):
+    if not isinstance(value, str) or not value:
+        return None
+    path = (root / value.strip().strip("\"'")).resolve()
+    return path if path.is_relative_to(root) else None
+
+
+def assignment(event, root):
+    plan, summary = event.get("plan", ""), event.get("summary", "")
+    transcript = event.get("agent_transcript_path")
+    if not transcript and event.get("agent_id") and event.get("transcript_path"):
+        parent = Path(event["transcript_path"])
+        transcript = parent.with_suffix("") / "subagents" / ("agent-" + slug(event["agent_id"]) + ".jsonl")
+    if transcript and Path(transcript).is_file():
+        for line in Path(transcript).read_text(encoding="utf-8").splitlines():
+            try:
+                record = json.loads(line)
+            except ValueError:
+                continue
+            message = record.get("message", record) if isinstance(record, dict) else {}
+            if not isinstance(message, dict) or message.get("role") != "user":
+                continue
+            content = message.get("content", "")
+            if isinstance(content, list):
+                content = "\n".join(item.get("text", "") for item in content if isinstance(item, dict))
+            if not isinstance(content, str):
+                continue
+            for key, pattern in (("plan", r"(?mi)^(?:execute plan at|plan_path:)\s*(.+?-PLAN\.md)\s*$"), ("summary", r"(?mi)^summary_path:\s*(.+?\.md)\s*$")):
+                match = re.search(pattern, content)
+                if match:
+                    if key == "plan":
+                        plan = match[1]
+                    else:
+                        summary = match[1]
+    if not summary and isinstance(plan, str) and plan.endswith("-PLAN.md"):
+        summary = plan.removesuffix("-PLAN.md") + "-SUMMARY.md"
+    return {key: path.relative_to(root).as_posix() if (path := owned_path(root, value)) else "" for key, value in (("plan", plan), ("summary", summary))}
+
+
+def stopped_worker(event, root):
+    """Close one owned dispatch and preserve unfinished source work silently."""
+    role = role_name(event.get("agent_type") or event.get("role"))
+    if role in ("coordinator", "orchestrator"):
+        return
+    active = safe_state(root, ".planning/handoffs/.active-" + slug(event.get("session_id")) + ".jsonl")
+    records = []
+    if active.is_file():
+        for line in active.read_text(encoding="utf-8").splitlines():
+            record = json.loads(line)
+            if isinstance(record, dict):
+                records.append(record)
+    agent = event.get("agent_id")
+    matching = [index for index, record in enumerate(records) if agent and record.get("agent_id") == agent]
+    if not matching:
+        matching = [index for index, record in enumerate(records) if (role == "unknown" or role_name(record.get("role") or record.get("agent")) == role)]
+        if agent and len(matching) != 1:
+            matching = []
+    selected = records.pop(matching[0]) if matching else {}
+    role = role if role != "unknown" else role_name(selected.get("role") or selected.get("agent"))
+    writers = roles().get("WRITE_ROLES", set())
+    if role not in writers:
+        return
+    paths = assignment({**selected, **event}, root)
+    if selected:
+        active.write_text("".join(json.dumps(record) + "\n" for record in records), encoding="utf-8", newline="\n")
+    summary = owned_path(root, paths["summary"])
+    if summary and summary.is_file():
+        text = summary.read_text(encoding="utf-8")
+        front = text.split("---", 2)
+        if len(front) == 3 and not front[0].strip() and re.search(r"(?m)^status:\s*[\"']?complete[\"']?\s*$", front[1]):
+            return
+    agent = agent or selected.get("agent_id") or role
+    name = slug(event.get("session_id")) + "-" + slug(agent)
+    arguments = ["handoff.write", name, "--reason", "incomplete-exit", "--agent", str(agent), "--role", role,
+                 "--remaining", "Inspect preserved work and finish the assigned scope", "--next", "Return continuation digest to coordinator"]
+    for key, value in paths.items():
+        if value:
+            arguments.extend(["--" + key, value])
+    query(root, *arguments)
+
+
 def main():
     try:
         event = read_event()
+        kind = event.get("hook_event_name", "PostToolUse")
+        if kind in ("Stop", "SessionStart"):
+            return 0
+        if kind == "SubagentStop":
+            stopped_worker(event, root_for(event))
+            return 0
         role = role_name(event.get("agent_type") or event.get("role"))
         agent = event.get("agent_id")
         # Missing identity is the foreground coordinator, not permission to stop it.
@@ -56,7 +147,13 @@ def main():
             raise ValueError("handoff enabled flag must be boolean")
         if not limits.get("enabled", True):
             return 0
-        used = context_tokens(event)
+        measured = dict(event)
+        if event.get("agent_transcript_path"):
+            measured["transcript_path"] = event["agent_transcript_path"]
+        elif event.get("transcript_path"):
+            parent = Path(event["transcript_path"])
+            measured["transcript_path"] = str(parent.with_suffix("") / "subagents" / ("agent-" + slug(agent) + ".jsonl"))
+        used = context_tokens(measured)
         threshold = limits.get("threshold_tokens", 250000)
         if type(threshold) is not int or threshold <= 0:
             raise ValueError("handoff threshold must be a positive integer")
@@ -64,7 +161,10 @@ def main():
             return 0
         name = re.sub(r"[^A-Za-z0-9_.-]", "_", str(event.get("session_id", "session")) + "-" + str(agent))
         arguments = ["handoff.write", name, "--reason", "Configured context threshold reached", "--agent", str(agent), "--role", str(role or "unknown"), "--remaining", "Converge on a safe boundary and return exact remaining scope", "--next", "Return continuation digest to coordinator"]
-        transcript = event.get("transcript_path")
+        transcript = event.get("agent_transcript_path")
+        if not transcript and event.get("transcript_path"):
+            parent = Path(event["transcript_path"])
+            transcript = str(parent.with_suffix("") / "subagents" / ("agent-" + slug(agent) + ".jsonl"))
         if transcript:
             if not isinstance(transcript, str):
                 raise ValueError("transcript path must be a string")

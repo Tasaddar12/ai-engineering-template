@@ -20,6 +20,7 @@ def load(name):
 
 
 context = load("context-handoff")
+guard = load("worktree-path-guard")
 integrity = load("planning-integrity")
 location = load("worktree-location")
 
@@ -41,6 +42,68 @@ class ContextContracts(unittest.TestCase):
             self.assertIn("--reason", query.call_args_list[1].args)
             self.assertIn("status: blocked", advisory.call_args.args[1])
             self.assertNotIn("decision", advisory.call_args.args[1])
+
+    def test_dispatch_stack_recovers_one_unidentified_stopped_executor(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            plan = ".planning/phases/01-feature/01-01-PLAN.md"
+            second = ".planning/phases/01-feature/01-02-PLAN.md"
+            for number, path in enumerate((plan, second)):
+                dispatch = {"tool_name": "Agent", "session_id": "s", "tool_use_id": "tool-" + str(number),
+                            "tool_input": {"subagent_type": "plugin:executor", "isolation": "worktree",
+                                           "prompt": "Execute plan at " + path}}
+                with patch.object(guard, "root_for", return_value=root):
+                    self.assertEqual([], guard.inspect(dispatch))
+            event = {"hook_event_name": "SubagentStop", "session_id": "s"}
+            with patch.object(context, "read_event", return_value=event), patch.object(context, "root_for", return_value=root), patch.object(context, "query", return_value={}) as query, patch.object(context, "advisory") as advisory:
+                self.assertEqual(0, context.main())
+                args = query.call_args.args
+                self.assertIn("incomplete-exit", args)
+                self.assertIn(plan, args)
+                self.assertIn(plan.replace("-PLAN.md", "-SUMMARY.md"), args)
+                advisory.assert_not_called()
+            stack = root / ".planning/handoffs/.active-s.jsonl"
+            remaining = [json.loads(line) for line in stack.read_text(encoding="utf-8").splitlines()]
+            self.assertEqual([second], [record["plan"] for record in remaining])
+
+    def test_complete_summary_consumes_dispatch_without_handoff(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            stack = root / ".planning/handoffs/.active-s.jsonl"
+            stack.parent.mkdir(parents=True)
+            summary = root / "out/01-01-SUMMARY.md"
+            summary.parent.mkdir()
+            summary.write_text("---\nstatus: complete\n---\n", encoding="utf-8")
+            # Retain compatibility with the original shell stack's role field.
+            stack.write_text(json.dumps({"agent": "executor", "summary": "out/01-01-SUMMARY.md"}) + "\n", encoding="utf-8")
+            event = {"hook_event_name": "SubagentStop", "session_id": "s"}
+            with patch.object(context, "read_event", return_value=event), patch.object(context, "root_for", return_value=root), patch.object(context, "query") as query:
+                self.assertEqual(0, context.main())
+                query.assert_not_called()
+            self.assertEqual("", stack.read_text(encoding="utf-8"))
+
+    def test_stop_identity_recovers_only_user_assignment_from_own_transcript(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            transcript = root / "worker.jsonl"
+            transcript.write_text("\n".join(json.dumps(record) for record in (
+                {"role": "assistant", "content": "summary_path: spoof-SUMMARY.md"},
+                {"role": "user", "content": "plan_path: out/01-01-PLAN.md\nsummary_path: out/result.md"})) + "\n", encoding="utf-8")
+            event = {"hook_event_name": "SubagentStop", "session_id": "s", "agent_id": "worker",
+                     "agent_type": "executor", "agent_transcript_path": str(transcript)}
+            with patch.object(context, "read_event", return_value=event), patch.object(context, "root_for", return_value=root), patch.object(context, "query", return_value={}) as query, patch.object(context, "advisory") as advisory:
+                self.assertEqual(0, context.main())
+                self.assertIn("out/result.md", query.call_args.args)
+                self.assertNotIn("spoof-SUMMARY.md", query.call_args.args)
+                advisory.assert_not_called()
+
+    def test_root_stop_and_coordinator_stop_leave_active_worker_untouched(self):
+        for event in ({"hook_event_name": "Stop", "context_tokens": 999999},
+                      {"hook_event_name": "SubagentStop", "agent_type": "coordinator", "agent_id": "root"}):
+            with patch.object(context, "read_event", return_value=event), patch.object(context, "root_for", return_value=ROOT), patch.object(context, "query") as query, patch.object(context, "safe_state") as state:
+                self.assertEqual(0, context.main())
+                query.assert_not_called()
+                state.assert_not_called()
 
     def test_unavailable_runtime_and_malformed_event_fail_open(self):
         with patch.object(context, "read_event", side_effect=ValueError("bad input")), patch("sys.stderr", new=io.StringIO()):
