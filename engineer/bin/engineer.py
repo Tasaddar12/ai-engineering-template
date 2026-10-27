@@ -3,6 +3,9 @@
 from __future__ import annotations
 import json
 import sys
+
+# Read-only installed queries must not create bytecode in the managed tree.
+sys.dont_write_bytecode = True
 from pathlib import Path
 
 # An explicit source path also supports Python's isolated (-I) invocation.

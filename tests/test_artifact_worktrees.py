@@ -98,3 +98,52 @@ class ArtifactWorktrees(unittest.TestCase):
         self.git(worker, "commit", "-qm", "later work")
         self.assertEqual(self.cli("worktree.cleanup-wave", "--phase", "quick-7", ok=False)["error"], "worker-head-drift")
         self.assertTrue(worker.exists())
+
+
+class SourceSummaryOwnership(ArtifactWorktrees):
+    def source_worker(self):
+        return Path(self.cli("worktree.create", "01-01", "--phase", "1", "--files", "product.txt")["path"])
+
+    def summary(self, worker, name=".planning/phases/01-example/01-01-SUMMARY.md", **changes):
+        metadata = dict(phase="01-example", plan="01", status="complete",
+                        acceptance=[], documentation=[], issue_refs=[])
+        metadata["requirements-completed"] = []
+        metadata.update(changes)
+        # JSON is valid YAML scalar/collection syntax for the runtime parser.
+        text = "---\n"+"\n".join(key+": "+json.dumps(value) for key, value in metadata.items())+"\n---\nDelivered assigned source behavior.\n"
+        self.write(worker, name, text)
+
+    def finish_source(self, worker):
+        self.write(worker, "product.txt", "authorized change\n")
+        self.git(worker, "add", ".")
+        self.git(worker, "commit", "-qm", "source change and completion evidence")
+
+    def test_inherited_substring_report_cannot_attest_worker_completion(self):
+        self.summary(self.root, ".planning/phases/99-old/99-01-01-SUMMARY.md")
+        self.git(self.root, "add", ".")
+        self.git(self.root, "commit", "-qm", "unrelated historical report")
+        worker = self.source_worker()
+        self.summary(worker, "unowned/99-01-01-SUMMARY.md")
+        self.finish_source(worker)
+        self.assertEqual("missing-worker-summary", self.cli("worktree.merge-wave", "--phase", "1", ok=False)["error"])
+        self.assertEqual("original\n", (self.root/"product.txt").read_text())
+
+    def test_only_exact_canonical_summary_gets_scope_exemption(self):
+        worker = self.source_worker()
+        self.summary(worker)
+        self.summary(worker, "unowned/01-01-SUMMARY.md")
+        self.finish_source(worker)
+        result = self.cli("worktree.merge-wave", "--phase", "1", ok=False)
+        self.assertEqual("worker-scope-violation", result["error"])
+
+    def test_canonical_committed_schema_and_identity_allow_merge(self):
+        worker = self.source_worker()
+        self.summary(worker)
+        self.finish_source(worker)
+        self.assertEqual(1, len(self.cli("worktree.merge-wave", "--phase", "1")["merged"]))
+
+    def test_mismatched_summary_identity_is_rejected(self):
+        worker = self.source_worker()
+        self.summary(worker, phase="99-old")
+        self.finish_source(worker)
+        self.assertEqual("invalid-worker-summary", self.cli("worktree.merge-wave", "--phase", "1", ok=False)["error"])

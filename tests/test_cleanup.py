@@ -475,6 +475,24 @@ class CleanupTests(unittest.TestCase):
         self.assertTrue((backup/"new valuable").is_file())
         self.assertTrue(self.tree.is_dir())
 
+    @unittest.skipIf(os.name == "nt", "Native POSIX replacement boundary")
+    def test_posix_backup_deletion_preserves_replacement_after_final_read(self):
+        backup = self.backup()
+        entry = next(item for item in self.preview()["entries"] if item["kind"] == "backup")
+        validate = cleanup.validate_backup
+        replacement = backup/"valuable"
+        def replace_after_validation(value, *args, **kwargs):
+            result = validate(value, *args, **kwargs)
+            replacement.unlink()
+            replacement.write_text("unapproved replacement", encoding="utf-8")
+            return result
+        with patch.object(cleanup, "validate_backup", side_effect=replace_after_validation):
+            with self.assertRaises(Failure) as raised:
+                cleanup.remove_backup_nodes(entry)
+        self.assertEqual("cleanup-backup-unsupported", raised.exception.code)
+        self.assertEqual("unapproved replacement", replacement.read_text())
+        self.assertTrue(backup.is_dir())
+
     def test_windows_pinned_backup_handles_block_rename_write_and_report_delete_failure(self):
         backup = self.backup()
         entry = next(entry for entry in self.preview()["entries"] if entry["kind"] == "backup")

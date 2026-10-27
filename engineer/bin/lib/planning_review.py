@@ -58,7 +58,7 @@ def _audit(args):
     for item in consistency():
         message = item["error"]
         check = ("phase-id" if "Duplicate roadmap" in message else "plan-id" if "Frontmatter phase" in message else
-                 "plan-dependency" if "Plan dependency" in message else "phase-dependency" if "phase dependency" in message else
+                 "plan-dependency" if "Plan dependency" in message else "phase-dependency" if "phase dependency" in message.lower() else
                  "requirement-phase" if "absent phase" in message else "requirement-id" if "requirement" in message.lower() else "record-consistency")
         report(item["path"], check, message)
     dependencies = {}

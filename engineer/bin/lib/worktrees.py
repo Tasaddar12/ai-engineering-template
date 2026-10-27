@@ -114,6 +114,12 @@ def worktree_command(args, action):
             revision = run(["git", "rev-parse", base+"^{commit}"], root()).stdout.strip()
             prefix = config.lookup(config.load(), "worktree.branch_prefix", "codex/")
             branch = args.get("branch", prefix+slug(str(phase)+"-"+identifier))
+            if action == "record-agent" and not args.has("branch"):
+                raise Failure("missing-branch", "Register the exact branch created by the host")
+            if branch in config.lookup(config.load(), "git.protected_branches", ["main", "master"]):
+                raise Failure("protected-branch", "Worker branches must not use protected names")
+            if not branch.startswith((prefix, "worktree-")):
+                raise Failure("bad-branch", "Worker branch must use the configured isolated namespace")
             target = safe_path(args.get("path", str(config.lookup(config.load(), "worktree.directory", ".worktrees"))+"/"+slug(branch)))
             if target == root():
                 raise Failure("primary-worktree-refused", "Worker must have an isolated checkout")
@@ -173,15 +179,46 @@ def worktree_command(args, action):
                     raise Failure("worker-branch-mismatch", actual_branch)
                 head = run(["git", "rev-parse", "HEAD"], target).stdout.strip()
                 if not entry.get("merged"):
-                    summary_files = list(target.glob(".planning/phases/**/*-SUMMARY.md"))+list(target.glob(".planning/quick/**/*-SUMMARY.md"))
-                    summaries = [] if artifact else [p for p in summary_files if entry["plan"] in p.name]
-                    if not artifact and not summaries:
-                        raise Failure("missing-worker-summary", entry["plan"])
-                    for summary in summaries:
-                        metadata, _ = split_frontmatter(read(summary))
-                        if metadata.get("status") != "complete":
-                            raise Failure("worker-incomplete", str(summary))
                     changed = worker_delta(entry, target, head)
+                    summaries = []
+                    if not artifact:
+                        from . import frontmatter
+                        # A basename substring or inherited report cannot attest
+                        # this worker's completion. Bind one canonical output to
+                        # the exact assigned phase/plan and committed delta.
+                        identifier = entry["plan"]
+                        match = re.fullmatch(r"(\d+(?:\.\d+)?)-(\d{2})", identifier)
+                        quick = str(data["phase"]) == "quick-"+identifier
+                        if quick:
+                            candidates = list(target.glob(".planning/quick/"+identifier+"/"+identifier+"-SUMMARY.md"))
+                        elif match:
+                            candidates = list(target.glob(".planning/phases/"+match[1]+"-*/"+identifier+"-SUMMARY.md"))
+                            expected_phase = str(data["phase"]).split("-", 1)[0]
+                            if expected_phase != "session" and records.number(expected_phase) != records.number(match[1]):
+                                candidates = []
+                        else:
+                            candidates = []
+                        if len(candidates) != 1:
+                            raise Failure("missing-worker-summary", identifier)
+                        summary = candidates[0]
+                        relative = summary.relative_to(target).as_posix()
+                        metadata, _ = split_frontmatter(read(summary))
+                        if summary.is_symlink() or frontmatter.errors(metadata, "summary") or frontmatter.path_errors(summary, metadata, "summary"):
+                            raise Failure("invalid-worker-summary", relative)
+                        if quick:
+                            valid_identity = str(metadata.get("quick", "")) == identifier
+                        else:
+                            valid_identity = "phase" in metadata and records.number(metadata["phase"]) == records.number(match[1]) and str(metadata.get("plan", "")).zfill(2) == match[2]
+                        if not valid_identity:
+                            raise Failure("invalid-worker-summary", relative)
+                        if metadata.get("status") != "complete":
+                            raise Failure("worker-incomplete", relative)
+                        if not any(status in ("A", "M") and file == relative for status, file in changed):
+                            raise Failure("missing-worker-summary", identifier)
+                        committed = run(["git", "show", head+":"+relative], target).stdout
+                        if committed != read(summary):
+                            raise Failure("invalid-worker-summary", relative)
+                        summaries = [summary]
                     if artifact:
                         if entry.get("schema") != 1:
                             raise Failure("invalid-artifact-manifest", entry["plan"])
@@ -205,7 +242,7 @@ def worktree_command(args, action):
                     for status, file in changed:
                         if status.startswith("D") and file not in entry["deletions"]:
                             forbidden.append(file)
-                        elif entry["files"] and file not in entry["files"] and not any(file.endswith(p.name) for p in summaries):
+                        elif entry["files"] and file not in entry["files"] and file not in {p.relative_to(target).as_posix() for p in summaries}:
                             forbidden.append(file)
                     if forbidden:
                         raise Failure("worker-scope-violation", entry["plan"], files=forbidden)

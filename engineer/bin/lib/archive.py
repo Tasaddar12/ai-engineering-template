@@ -150,7 +150,7 @@ def historical_phase_evidence(directory):
     # Establish when these exact report bytes entered history. A new report
     # cannot borrow an old digest after development has already moved on; an
     # actual historical report remains valid when source evolves afterwards.
-    history = git("log", "--format=%H", "--", name)
+    history = git("log", "--full-history", "--format=%H", "--", name)
     if history.returncode:
         return False
     witness = None
@@ -161,10 +161,16 @@ def historical_phase_evidence(directory):
             break
     if not witness or git("merge-base", "--is-ancestor", revision, witness).returncode:
         return False
-    changed = git("diff", "--name-only", "-z", revision, witness)
     allowed = {name, ".planning/STATE.md", ".planning/ROADMAP.md", ".planning/REQUIREMENTS.md"}
-    if changed.returncode or any(item.decode("utf-8") not in allowed for item in changed.stdout.split(b"\0") if item):
+    commits = git("rev-list", revision+".."+witness)
+    if commits.returncode:
         return False
+    for commit in commits.stdout.decode("ascii").splitlines():
+        # Inspect each parent of merges too. Net equality after a revert does
+        # not prove that the frozen source survived until the first verdict.
+        changed = git("diff-tree", "--no-renames", "--no-commit-id", "--name-only", "-r", "-m", "-z", commit)
+        if changed.returncode or any(item.decode("utf-8") not in allowed for item in changed.stdout.split(b"\0") if item):
+            return False
     relative = directory.relative_to(root()).as_posix()
     inventory = git("ls-tree", "-r", "--name-only", "-z", revision, "--", relative)
     if inventory.returncode:
@@ -431,6 +437,8 @@ def archive(args):
     for entry in entries:
         for old, new in moves:
             entry["replacement"] = str(entry.get("replacement", "")).replace(old.relative_to(root()).as_posix(), new.relative_to(root()).as_posix())
+    phase_spans = []
+    phase_labels = []
     for entry, (source, target) in zip(packet["entries"], moves):
         entry["recovery_id"] = identifier
         if kind == "phase":
@@ -439,13 +447,8 @@ def archive(args):
                 entry.update({key: phase.get(key) for key in ("number", "name", "milestone", "goal", "requirements")})
                 entry["roadmap_member"] = True
                 entry["plan_count"] = len(re.findall(r"(?m)^- \[[ x]\]\s*\d", phase["body"]))
-                roadmap_name = ".planning/ROADMAP.md"
-                roadmap = base64.b64decode(before[roadmap_name]).decode()
-                roadmap = roadmap[:phase["start"]]+roadmap[phase["end"]:]
-                label = r"0*"+str(int(phase["number"].split(".")[0]))+(r"\."+phase["number"].split(".")[1] if "." in phase["number"] else "")
-                roadmap = re.sub(r"(?m)^- \[[ x]\]\s*\*\*Phase\s+"+label+r":.*\n?", "", roadmap)
-                roadmap = re.sub(r"(?m)^\|\s*"+label+r"\.\s*[^\n]+\n?", "", roadmap)
-                after[roadmap_name] = base64.b64encode(_rebase(roadmap, root()/roadmap_name, root()/roadmap_name, moves).encode()).decode()
+                phase_spans.append((phase["start"], phase["end"]))
+                phase_labels.append(r"0*"+str(int(phase["number"].split(".")[0]))+(r"\."+phase["number"].split(".")[1] if "." in phase["number"] else ""))
             except Failure:
                 entry.update({"number": records.number(source.name), "name": source.name.split("-", 1)[-1], "plan_count": 0})
         if kind == "adr":
@@ -464,6 +467,15 @@ def archive(args):
                 new_metadata["supersedes"] = [*supersedes, archived_name]
             after[replacement_name] = base64.b64encode(join_frontmatter(new_metadata, new_body).encode()).decode()
         entries.append(entry)
+    if phase_spans:
+        roadmap_name = ".planning/ROADMAP.md"
+        roadmap = base64.b64decode(before[roadmap_name]).decode()
+        for start, end in sorted(phase_spans, reverse=True):
+            roadmap = roadmap[:start]+roadmap[end:]
+        for label in phase_labels:
+            roadmap = re.sub(r"(?m)^- \[[ x]\]\s*\*\*Phase\s+"+label+r":.*\n?", "", roadmap)
+            roadmap = re.sub(r"(?m)^\|\s*"+label+r"\.\s*[^\n]+\n?", "", roadmap)
+        after[roadmap_name] = base64.b64encode(_rebase(roadmap, root()/roadmap_name, root()/roadmap_name, moves).encode()).decode()
     if kind == "phase" and ".planning/STATE.md" in after:
         from .text import join_frontmatter
         metadata, body = split_frontmatter(base64.b64decode(after[".planning/STATE.md"]).decode())

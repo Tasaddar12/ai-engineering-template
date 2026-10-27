@@ -13,7 +13,8 @@ def quick_dir(identifier):
     if len(matches) != 1:
         raise Failure("quick-not-found", str(identifier))
     metadata, _ = split_frontmatter(read(matches[0]))
-    if str(metadata.get("id")).zfill(3) != matches[0].parent.name.split("-")[0]:
+    identity = str(metadata.get("id", ""))
+    if identity != matches[0].parent.name and identity.zfill(3) != matches[0].parent.name.split("-")[0]:
         raise Failure("quick-identity-mismatch", "QUICK.md identity disagrees with its directory")
     return matches[0].parent
 
@@ -96,7 +97,7 @@ def current_evidence(value=None, quick=None):
         commits = run(["git", "rev-list", "--reverse", str(revision)+".."+head], root(), check=False)
         changed = []
         for commit in commits.stdout.splitlines():
-            delta = run(["git", "diff-tree", "--no-commit-id", "--name-only", "-r", "-m", commit], root(), check=False)
+            delta = run(["git", "diff-tree", "--no-renames", "--no-commit-id", "--name-only", "-r", "-m", commit], root(), check=False)
             if delta.returncode:
                 changed.append("<unreadable-commit>")
             changed.extend(delta.stdout.splitlines())

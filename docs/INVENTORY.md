@@ -108,12 +108,12 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `docs/prompts.md` | reconciled | 193 | 0 |
 | `engineer/RULES.md` | local-only | 135 | 0 |
 | `engineer/bin/README.md` | local-only | 593 | 0 |
-| `engineer/bin/engineer.py` | local-only | 181 | 0 |
+| `engineer/bin/engineer.py` | local-only | 184 | 0 |
 | `engineer/bin/engineer_run` | reconciled | 24 | 0 |
 | `engineer/bin/lib/__init__.py` | local-only | 1 | 0 |
-| `engineer/bin/lib/archive.py` | local-only | 558 | 0 |
+| `engineer/bin/lib/archive.py` | local-only | 570 | 0 |
 | `engineer/bin/lib/bundles.py` | local-only | 204 | 0 |
-| `engineer/bin/lib/cleanup.py` | local-only | 521 | 0 |
+| `engineer/bin/lib/cleanup.py` | local-only | 510 | 0 |
 | `engineer/bin/lib/codebase.py` | local-only | 80 | 0 |
 | `engineer/bin/lib/config.py` | local-only | 105 | 0 |
 | `engineer/bin/lib/core.py` | local-only | 183 | 0 |
@@ -128,7 +128,7 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `engineer/bin/lib/models.py` | local-only | 141 | 2 |
 | `engineer/bin/lib/numbering.py` | local-only | 76 | 0 |
 | `engineer/bin/lib/packages.py` | local-only | 39 | 0 |
-| `engineer/bin/lib/phase_issues.py` | local-only | 212 | 0 |
+| `engineer/bin/lib/phase_issues.py` | local-only | 218 | 0 |
 | `engineer/bin/lib/plan_registration.py` | local-only | 68 | 0 |
 | `engineer/bin/lib/planning_consistency.py` | local-only | 103 | 0 |
 | `engineer/bin/lib/planning_integrity.py` | local-only | 132 | 0 |
@@ -148,9 +148,9 @@ Regenerate with `python -I scripts/overhaul/inventory.py --apply`; compare with 
 | `engineer/bin/lib/text.py` | local-only | 329 | 0 |
 | `engineer/bin/lib/uat.py` | local-only | 297 | 0 |
 | `engineer/bin/lib/ui.py` | local-only | 148 | 0 |
-| `engineer/bin/lib/verification.py` | local-only | 365 | 0 |
+| `engineer/bin/lib/verification.py` | local-only | 366 | 0 |
 | `engineer/bin/lib/verify.py` | local-only | 56 | 0 |
-| `engineer/bin/lib/worktrees.py` | local-only | 272 | 0 |
+| `engineer/bin/lib/worktrees.py` | local-only | 309 | 0 |
 | `engineer/bin/requirements.txt` | local-only | 1 | 0 |
 | `engineer/references/REFERENCE.md` | reconciled | 16 | 0 |
 | `engineer/references/agent-adaptation.md` | local-only | 31 | 0 |

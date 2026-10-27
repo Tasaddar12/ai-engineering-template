@@ -425,7 +425,7 @@ class ReceiptTests(unittest.TestCase):
 
     def test_report_only_ancestry_rejects_source_edit_then_revert(self):
         self.configure([])
-        self.write(".planning/phases/01-example/01-PLAN.md", "---\nphase: '01'\nfiles_modified: [input.txt]\n---\n# Plan\n")
+        self.write(".planning/phases/01-example/01-01-PLAN.md", "---\nphase: '01'\nfiles_modified: [input.txt]\n---\n# Plan\n")
         self.git("add", ".")
         self.git("commit", "-qm", "plan")
         def cli(*args):
@@ -435,7 +435,7 @@ class ReceiptTests(unittest.TestCase):
         cli("verification.fingerprint", "01", "--files", "input.txt")
         report = self.root/".planning/phases/01-example/01-VERIFICATION.md"
         text = report.read_text()
-        report.write_text(text.replace("status: not_started", "status: passed"))
+        cli("frontmatter.set", str(report), "--field", "status", "--value", "passed")
         self.git("add", ".")
         self.git("commit", "-qm", "final report only")
         self.assertTrue(cli("verification.current", "01")["current"])
