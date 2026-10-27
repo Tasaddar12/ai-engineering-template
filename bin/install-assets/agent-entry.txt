@@ -1,0 +1,1 @@
+Read the installed engineer/RULES.md, selected command and agents/AGENT.md. The workflow owns procedure; the coordinator owns shared records. Phase implementation requires explicit user authorization.

@@ -25,14 +25,18 @@ def load(name, path):
     return module
 
 
-installer = load("update_installer", ROOT / ".ai/install.py")
-legacy_update = load("install_update", ROOT / ".ai/install_update.py")
+installer = load("update_installer", ROOT / "bin/install.py")
+legacy_update = load("install_update", ROOT / "bin/update.py")
 
 
 def seed_source(directory):
-    for name in (".ai", ".agents", ".planning"):
+    for name in ("agents", "commands", "engineer", "hooks", "scripts", "skills", "bin"):
+        if not (ROOT / name).exists():
+            continue
         shutil.copytree(ROOT / name, directory / name,
                         ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+    (directory / ".planning").mkdir(exist_ok=True)
+    (directory / ".planning/config.yaml").write_text("fixture: true\n", encoding="utf-8")
     subprocess.run(["git", "init", "--quiet", str(directory)], check=True)
     subprocess.run(["git", "add", "."], cwd=directory, check=True,
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -54,27 +58,27 @@ class UpdateTests(unittest.TestCase):
         else:
             self.assertNotIn("model", metadata)
         self.assertNotIn("effort", metadata)
-        shared = (self.source / ".ai/agents/scout.md").read_bytes()
+        shared = (self.source / "agents/scout.md").read_bytes()
         expected = installer.render_asset(".ai/agents/scout.md", shared, self.host)
         self.assertEqual(expected, self.read(path))
         self.assertEqual([], self.plan()[0])
 
     def test_worker_defaults_update_preserves_config_and_is_idempotent(self):
-        config = b"agents:\n  coder:\n    model: opus\n    effort: max\n"
+        config = b"agents:\n  executor:\n    model: opus\n    effort: max\n"
         self.write(".planning/config.yaml", config)
-        for name in ("coder", "phase-preparer"):
+        for name in ("executor", "planner"):
             self.write(self.namespace + "/agents/" + name + ".md",
                        ("---\nname: " + name + "\nmodel: wrong\neffort: max\n---\nOld body.\n").encode())
         changes, backups, _ = self.plan()
         self.apply(changes)
-        for name, model, effort in (("coder", "sonnet", None), ("phase-preparer", "opus", "medium")):
+        for name, model, effort in (("executor", "sonnet", None), ("planner", "opus", "medium")):
             path = self.namespace + "/agents/" + name + ".md"
             self.assertIn(self.target / path, backups)
             exported = self.read(path).decode()
             metadata = yaml.safe_load(exported.split("---", 2)[1])
             self.assertEqual(model if self.host == "claude" else None, metadata.get("model"))
             self.assertEqual(effort if self.host == "claude" else None, metadata.get("effort"))
-            shared = (self.source / ".ai/agents" / (name + ".md")).read_bytes()
+            shared = (self.source / "agents" / (name + ".md")).read_bytes()
             self.assertEqual(installer.render_asset(".ai/agents/" + name + ".md", shared, self.host), self.read(path))
         self.assertEqual(config, self.read(".planning/config.yaml"))
         self.assertEqual([], self.plan()[0])
@@ -86,7 +90,7 @@ class UpdateTests(unittest.TestCase):
         changes, backups, _ = self.plan()
         self.assertIn(self.target / path, backups)
         self.apply(changes)
-        shared = (self.source / ".ai/agents/targeted-fixer.md").read_bytes()
+        shared = (self.source / "agents/targeted-fixer.md").read_bytes()
         self.assertEqual(installer.render_asset(".ai/agents/targeted-fixer.md", shared, self.host), self.read(path))
         metadata = yaml.safe_load(self.read(path).decode().split("---", 2)[1])
         self.assertTrue({"Agent", "Task"} <= set(metadata["disallowedTools"].split(", ")))
@@ -94,7 +98,7 @@ class UpdateTests(unittest.TestCase):
         self.assertNotIn("effort", metadata)
         if self.host == "codex":
             native_path = ".codex/agents/targeted-fixer.toml"
-            native = (self.source / ".ai/install-assets/codex-agents/targeted-fixer.toml").read_bytes()
+            native = (self.source / "bin/install-assets/codex-agents/targeted-fixer.toml").read_bytes()
             self.assertEqual(installer.render_asset(".ai/install-assets/codex-agents/targeted-fixer.toml", native, self.host), self.read(native_path))
         self.assertEqual([], self.plan()[0])
 
@@ -372,22 +376,22 @@ class UpdateTests(unittest.TestCase):
             rules = self.namespace + "/RULES.md"
             baseline = installer.payload(previous, self.host, True)
             self.write(rules, baseline[rules] + b"\n<!-- upstream moved on -->\n")
-            (previous / ".ai/RULES.md").write_bytes(
-                (previous / ".ai/RULES.md").read_bytes() + b"\n<!-- upstream moved on -->\n")
+            (previous / "engineer/RULES.md").write_bytes(
+                (previous / "engineer/RULES.md").read_bytes() + b"\n<!-- upstream moved on -->\n")
             subprocess.run(["git", "add", "."], cwd=previous, check=True,
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-            role = self.namespace + "/agents/coder.md"
+            role = self.namespace + "/agents/executor.md"
             self.write(role, self.installed[role] + b"\nMY LOCAL RULE\n")
 
             _, _, notes = self.plan(previous=previous)
             review = [note for note in notes if note.startswith("REVIEW")]
             self.assertEqual(1, len(review), notes)
-            self.assertIn("coder.md", review[0])
+            self.assertIn("executor.md", review[0])
             self.assertNotIn("RULES.md", review[0])
 
     def test_without_a_baseline_the_report_says_it_cannot_tell(self):
-        self.write(self.namespace + "/agents/coder.md", b"# local\n")
+        self.write(self.namespace + "/agents/executor.md", b"# local\n")
         _, _, notes = self.plan()
         self.assertTrue(any("--from-ref" in note for note in notes), notes)
 
@@ -447,7 +451,7 @@ from unittest.mock import patch
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-_spec = importlib.util.spec_from_file_location("workflow_update", ROOT / ".ai/update.py")
+_spec = importlib.util.spec_from_file_location("workflow_update", ROOT / "bin/update.py")
 update = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(update)
 installer = update.installer
@@ -464,7 +468,9 @@ class ReviewedUpdates(unittest.TestCase):
         cls.temp = tempfile.TemporaryDirectory(prefix="update-fixture-")
         cls.source = Path(cls.temp.name) / "source"
         cls.source.mkdir()
-        for folder in (".ai", ".agents", ".planning"):
+        for folder in ("agents", "commands", "engineer", "hooks", "scripts", "skills", "bin"):
+            if not (ROOT / folder).exists():
+                continue
             shutil.copytree(ROOT / folder, cls.source / folder,
                             ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
         git("init", "--quiet", cwd=cls.source)
@@ -473,8 +479,10 @@ class ReviewedUpdates(unittest.TestCase):
         cls.first = git("rev-parse", "HEAD", cwd=cls.source)
         cls.baseline = Path(cls.temp.name) / "baseline"
         update.fetch(str(cls.source), cls.first, cls.baseline)
-        rules = cls.source / ".ai/RULES.md"
+        rules = cls.source / "engineer/RULES.md"
         rules.write_bytes(rules.read_bytes() + b"\nPinned upstream fixture addition.\n")
+        (cls.source / ".planning").mkdir(exist_ok=True)
+        (cls.source / ".planning/config.yaml").write_text("fixture: true\n", encoding="utf-8")
         optional = cls.source / ".planning/config.yaml"
         optional.write_bytes(optional.read_bytes() + b"\nnew_optional: example\n")
         git("add", ".", cwd=cls.source)
@@ -489,7 +497,7 @@ class ReviewedUpdates(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(prefix="update-target-")
         self.addCleanup(self.temp.cleanup)
         self.target = Path(self.temp.name) / "project"
-        result = subprocess.run([sys.executable, str(ROOT / ".ai/install.py"), "--source", str(self.source),
+        result = subprocess.run([sys.executable, str(ROOT / "bin/install.py"), "--source", str(self.source),
                                  "--ref", self.first, "--target", str(self.target), "--skip-deps", "--no-hooks"],
                                 capture_output=True, text=True, encoding="utf-8")
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -507,11 +515,11 @@ class ReviewedUpdates(unittest.TestCase):
     def test_manifest_ownership_and_content_diff_not_version_stamp(self):
         manifest = update.load_manifest(self.target, "codex")
         self.assertEqual(manifest["current"]["revision"], self.first)
-        self.assertEqual(manifest["files"][".codex/RULES.md"]["classification"], "upstream-managed")
+        self.assertEqual(manifest["files"][".codex/engineer/RULES.md"]["classification"], "upstream-managed")
         manifest["current"]["revision"] = self.second  # A false stamp cannot hide changed bytes.
         (self.target / ".codex/workflow-ownership.json").write_bytes(installer.json_bytes(manifest))
         plan = self.plan()
-        entry = self.entry(plan, ".codex/RULES.md")
+        entry = self.entry(plan, ".codex/engineer/RULES.md")
         self.assertEqual(entry["action"], "write")
         self.assertIn("Pinned upstream fixture addition", entry["diff"])
 
@@ -531,7 +539,7 @@ class ReviewedUpdates(unittest.TestCase):
         settings.write_text('model = "project-model"\n[agents]\nmax_concurrent_threads_per_session = 4\n')
         plan = self.plan(hooks=True)
         changed = update.apply_plan(plan, self.source, self.baseline)
-        self.assertIn(".codex/RULES.md", changed)
+        self.assertIn(".codex/engineer/RULES.md", changed)
         parsed = tomllib.loads(settings.read_text())
         self.assertEqual(parsed["model"], "project-model")
         self.assertEqual(parsed["agents"]["max_concurrent_threads_per_session"], 4)
@@ -541,34 +549,34 @@ class ReviewedUpdates(unittest.TestCase):
         manifest = update.load_manifest(self.target, "codex")
         self.assertEqual(manifest["current"]["revision"], self.second)
         self.assertEqual(manifest["previous"]["revision"], self.first)
-        self.assertEqual(manifest["files"][".codex/RULES.md"]["installed_sha256"], update.digest((self.target / ".codex/RULES.md").read_bytes()))
+        self.assertEqual(manifest["files"][".codex/engineer/RULES.md"]["installed_sha256"], update.digest((self.target / ".codex/engineer/RULES.md").read_bytes()))
         # Repeat is a byte no-op and does not overwrite previous provenance.
         again = update.build_plan(self.source, self.target, "codex", True, str(self.source), self.second, self.source)
         self.assertEqual(update.apply_plan(again, self.source, self.source), [])
 
     def test_customization_requires_review_and_keep_remains_customized(self):
-        path = self.target / ".codex/RULES.md"
+        path = self.target / ".codex/engineer/RULES.md"
         path.write_bytes(path.read_bytes() + b"\nUser rule.\n")
         plan = self.plan()
         before = self.snapshot()
         with self.assertRaisesRegex(ValueError, "Unresolved conflict"):
             update.apply_plan(plan, self.source, self.baseline)
         self.assertEqual(before, self.snapshot())
-        plan["resolutions"][".codex/RULES.md"] = {"action": "keep", "classification": "customized"}
+        plan["resolutions"][".codex/engineer/RULES.md"] = {"action": "keep", "classification": "customized"}
         update.apply_plan(plan, self.source, self.baseline)
         self.assertIn(b"User rule", path.read_bytes())
-        self.assertEqual(update.load_manifest(self.target, "codex")["files"][".codex/RULES.md"]["classification"], "customized")
+        self.assertEqual(update.load_manifest(self.target, "codex")["files"][".codex/engineer/RULES.md"]["classification"], "customized")
 
     def managed_block_upgrade_fixture(self, host):
         target = Path(self.temp.name) / ("managed-block-" + host)
-        result = subprocess.run([sys.executable, str(ROOT / ".ai/install.py"),
+        result = subprocess.run([sys.executable, str(ROOT / "bin/install.py"),
                                  "--source", str(self.source), "--ref", self.first,
                                  "--target", str(target), "--host", host,
                                  "--skip-deps", "--no-hooks"], capture_output=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         later = Path(self.temp.name) / ("later-source-" + host)
         update.fetch(str(self.source), self.second, later)
-        asset = later / ".ai/install-assets/agent-entry.txt"
+        asset = later / "bin/install-assets/agent-entry.txt"
         asset.write_bytes(asset.read_bytes() + b"\nNew upstream instruction.\n")
         git("add", ".", cwd=later)
         git("-c", "user.name=Fixture", "-c", "user.email=test@example.invalid",
@@ -633,7 +641,7 @@ class ReviewedUpdates(unittest.TestCase):
 
     def test_nested_missing_required_config_preserves_existing_values(self):
         config = self.target / ".planning/config.yaml"
-        old = {"workflow": {"auto_advance": True}, "agents": {"coder": {"model": "custom"}},
+        old = {"workflow": {"auto_advance": True}, "agents": {"executor": {"model": "custom"}},
                "handoff": {"context_tokens": 30000}, "verification": {"commands": [["python", "check.py"]]}}
         config.write_text(yaml.safe_dump(old))
         plan = self.plan()
@@ -664,7 +672,7 @@ class ReviewedUpdates(unittest.TestCase):
     def test_legacy_can_upgrade_after_reviewed_classification(self):
         (self.target / ".codex/workflow-ownership.json").unlink()
         plan = self.plan()
-        row = self.entry(plan, ".codex/RULES.md")
+        row = self.entry(plan, ".codex/engineer/RULES.md")
         self.assertEqual(row["classification"], "unproven")
         self.assertTrue(row["conflict"])
         with self.assertRaises(ValueError):
@@ -673,7 +681,7 @@ class ReviewedUpdates(unittest.TestCase):
             if entry["classification"] == "unproven":
                 plan["resolutions"][entry["path"]] = {"action": entry["action"], "classification": "upstream-managed"}
         update.apply_plan(plan, self.source, self.baseline)
-        self.assertIn(b"Pinned upstream fixture addition", (self.target / ".codex/RULES.md").read_bytes())
+        self.assertIn(b"Pinned upstream fixture addition", (self.target / ".codex/engineer/RULES.md").read_bytes())
 
     def test_target_path_aliases_have_identical_review_plan_identity(self):
         aliases = [self.target / ".." / self.target.name]
@@ -694,20 +702,20 @@ class ReviewedUpdates(unittest.TestCase):
                 self.assertEqual(plan["target"], str(self.target.resolve()))
                 update.apply_plan(plan, self.source, self.baseline)
                 self.assertIn(b"Pinned upstream fixture addition",
-                              (self.target / ".codex/RULES.md").read_bytes())
+                              (self.target / ".codex/engineer/RULES.md").read_bytes())
                 # Alias normalization must not weaken the actual content guard.
                 forged = copy.deepcopy(plan)
-                self.entry(forged, ".codex/RULES.md")["candidate_base64"] = "dGFtcGVyZWQ="
+                self.entry(forged, ".codex/engineer/RULES.md")["candidate_base64"] = "dGFtcGVyZWQ="
                 with self.assertRaisesRegex(ValueError, "stale"):
                     update.apply_plan(forged, self.source, self.baseline)
 
     def test_stale_plan_candidate_tampering_and_changed_manifest_fail_before_writes(self):
         plan = self.plan()
         forged = copy.deepcopy(plan)
-        self.entry(forged, ".codex/RULES.md")["candidate_base64"] = "dGFtcGVyZWQ="
+        self.entry(forged, ".codex/engineer/RULES.md")["candidate_base64"] = "dGFtcGVyZWQ="
         with self.assertRaisesRegex(ValueError, "stale"):
             update.apply_plan(forged, self.source, self.baseline)
-        path = self.target / ".codex/RULES.md"
+        path = self.target / ".codex/engineer/RULES.md"
         path.write_bytes(path.read_bytes() + b"concurrent edit")
         before = self.snapshot()
         with self.assertRaisesRegex(ValueError, "stale"):
@@ -740,17 +748,17 @@ class ReviewedUpdates(unittest.TestCase):
     def test_cli_default_dry_run_and_reviewed_hash_required(self):
         before = self.snapshot()
         plan_path = Path(self.temp.name) / "review.json"
-        result = subprocess.run([sys.executable, str(ROOT / ".ai/update.py"), "--target", str(self.target),
+        result = subprocess.run([sys.executable, str(ROOT / "bin/update.py"), "--target", str(self.target),
                                  "--source", str(self.source), "--ref", self.second, "--no-hooks", "--plan", str(plan_path)],
                                 text=True, encoding="utf-8", capture_output=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Pinned upstream fixture addition", result.stdout)
         self.assertEqual(before, self.snapshot())
-        result = subprocess.run([sys.executable, str(ROOT / ".ai/update.py"), "--apply", str(plan_path)],
+        result = subprocess.run([sys.executable, str(ROOT / "bin/update.py"), "--apply", str(plan_path)],
                                 text=True, encoding="utf-8", capture_output=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(before, self.snapshot())
-        result = subprocess.run([sys.executable, str(ROOT / ".ai/update.py"), "--apply", str(plan_path),
+        result = subprocess.run([sys.executable, str(ROOT / "bin/update.py"), "--apply", str(plan_path),
                                  "--reviewed-plan-sha256", update.digest(plan_path.read_bytes())],
                                 text=True, encoding="utf-8", capture_output=True)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -759,13 +767,13 @@ class ReviewedUpdates(unittest.TestCase):
         target = Path(self.temp.name) / "existing"
         target.mkdir()
         incoming = installer.payload(self.baseline, "codex", False)
-        path = target / ".codex/RULES.md"
+        path = target / ".codex/engineer/RULES.md"
         path.parent.mkdir()
-        path.write_bytes(incoming[".codex/RULES.md"])
-        result = subprocess.run([sys.executable, str(ROOT / ".ai/install.py"), "--source", str(self.source),
+        path.write_bytes(incoming[".codex/engineer/RULES.md"])
+        result = subprocess.run([sys.executable, str(ROOT / "bin/install.py"), "--source", str(self.source),
                                  "--ref", self.first, "--target", str(target), "--skip-deps", "--no-hooks"], capture_output=True)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(update.load_manifest(target, "codex")["files"][".codex/RULES.md"]["classification"], "customized")
+        self.assertEqual(update.load_manifest(target, "codex")["files"][".codex/engineer/RULES.md"]["classification"], "customized")
 
 
 if __name__ == "__main__":

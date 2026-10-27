@@ -1,0 +1,5 @@
+name = "doc-verifier"
+description = "Engineering doc-verifier role"
+model = "gpt-6.1-sol"
+model_reasoning_effort = "medium"
+developer_instructions = "Read and follow the complete method at agents/doc-verifier.md."

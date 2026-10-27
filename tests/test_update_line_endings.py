@@ -13,8 +13,8 @@ from unittest.mock import patch
 from test_install_update import git, load, seed_source
 
 ROOT = Path(__file__).resolve().parents[1]
-update = load("line_ending_update", ROOT / ".ai/update.py")
-legacy = load("line_ending_legacy", ROOT / ".ai/install_update.py")
+update = load("line_ending_update", ROOT / "bin/update.py")
+legacy = load("line_ending_legacy", ROOT / "bin/update.py")
 installer = update.installer
 
 
@@ -69,25 +69,25 @@ class ReviewedLineEndings(unittest.TestCase):
         seed_source(cls.source)
         git("config", "core.autocrlf", "false", cwd=cls.source)
         shutil.copyfile(ROOT / ".gitattributes", cls.source / ".gitattributes")
-        (cls.source / ".ai/workflows/newlines.md").write_bytes(b"first\nsecond\n")
-        (cls.source / ".ai/workflows/retired.md").write_bytes(b"retired\n")
+        (cls.source / "engineer/workflows/newlines.md").write_bytes(b"first\nsecond\n")
+        (cls.source / "engineer/workflows/retired.md").write_bytes(b"retired\n")
         cls.lf_assets = {"hooks/line-ending-fixture.sh": b"#!/bin/sh\nprintf fixture\\n\n",
                          "fixtures/nginx.conf": b"events {}\nhttp {}\n",
                          "fixtures/nginx.conf.template": b"events {}\n# template\n"}
         for name, content in cls.lf_assets.items():
-            path = cls.source / ".ai" / name
+            path = cls.source / (name if name.startswith("hooks/") else "engineer/" + name)
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(content)
         cls.commit("baseline")
         cls.first = git("rev-parse", "HEAD", cwd=cls.source)
         cls.baseline = Path(cls.fixture.name) / "baseline"
         update.fetch(str(cls.source), cls.first, cls.baseline)
-        rules = cls.source / ".ai/RULES.md"
+        rules = cls.source / "engineer/RULES.md"
         rules.write_bytes(rules.read_bytes() + b"\nSubstantive upstream fixture change.\n")
-        (cls.source / ".ai/workflows/retired.md").unlink()
-        (cls.source / ".ai/workflows/added.md").write_bytes(b"added\n")
+        (cls.source / "engineer/workflows/retired.md").unlink()
+        (cls.source / "engineer/workflows/added.md").write_bytes(b"added\n")
         for name, content in cls.lf_assets.items():
-            (cls.source / ".ai" / name).write_bytes(content + b"# reviewed LF update\n")
+            (cls.source / (name if name.startswith("hooks/") else "engineer/" + name)).write_bytes(content + b"# reviewed LF update\n")
         cls.commit("upstream")
         cls.second = git("rev-parse", "HEAD", cwd=cls.source)
 
@@ -107,12 +107,12 @@ class ReviewedLineEndings(unittest.TestCase):
         self.target = Path(self.temporary.name) / "project"
 
     def install(self, host="codex"):
-        result = subprocess.run([sys.executable, str(ROOT / ".ai/install.py"),
+        result = subprocess.run([sys.executable, str(ROOT / "bin/install.py"),
                                  "--source", str(self.source), "--ref", self.first,
                                  "--target", str(self.target), "--host", host,
                                  "--skip-deps", "--no-hooks"], capture_output=True)
         self.assertEqual(0, result.returncode, result.stderr)
-        return self.target / ("." + host) / "update.py"
+        return self.target / ("." + host) / "bin/update.py"
 
     def write(self, name, data):
         path = self.target / name
@@ -137,7 +137,7 @@ class ReviewedLineEndings(unittest.TestCase):
 
     def test_installed_review_tracer_is_read_only_and_distinguishes_changes(self):
         entry = self.install()
-        self.write(".codex/workflows/newlines.md", b"first\r\nsecond\n")
+        self.write(".codex/engineer/workflows/newlines.md", b"first\r\nsecond\n")
         before = self.snapshot()
         saved = Path(self.temporary.name) / "review.json"
         result = self.cli(entry, "--target", self.target, "--source", self.source,
@@ -148,12 +148,12 @@ class ReviewedLineEndings(unittest.TestCase):
         self.assertIn("line-ending-only", result.stdout)
         self.assertIn("substantive", result.stdout)
         self.assertIn("Substantive upstream fixture change", result.stdout)
-        row = self.row(plan, ".codex/workflows/newlines.md")
+        row = self.row(plan, ".codex/engineer/workflows/newlines.md")
         self.assertEqual("line-ending-only", row["comparison"])
         self.assertEqual("customized", row["classification"])
         self.assertTrue(row["conflict"])
-        self.assertEqual("added", self.row(plan, ".codex/workflows/added.md")["comparison"])
-        self.assertEqual("retired", self.row(plan, ".codex/workflows/retired.md")["comparison"])
+        self.assertEqual("added", self.row(plan, ".codex/engineer/workflows/added.md")["comparison"])
+        self.assertEqual("retired", self.row(plan, ".codex/engineer/workflows/retired.md")["comparison"])
 
     def resolve(self, plan, replace_rules=False):
         for row in plan["entries"]:
@@ -183,20 +183,20 @@ class ReviewedLineEndings(unittest.TestCase):
                              ("upstream_sha256", "0" * 64)):
             with self.subTest(field=field):
                 forged = copy.deepcopy(plan)
-                self.row(forged, ".codex/RULES.md")[field] = value
+                self.row(forged, ".codex/engineer/RULES.md")[field] = value
                 self.assert_refused_without_mutation(forged)
         old = copy.deepcopy(plan)
         old["schema"] = 1
         self.assert_refused_without_mutation(old, "schema.*new plan")
         missing = copy.deepcopy(plan)
-        del self.row(missing, ".codex/RULES.md")["comparison"]
+        del self.row(missing, ".codex/engineer/RULES.md")["comparison"]
         self.assert_refused_without_mutation(missing)
 
     def test_crlf_only_changes_to_each_reviewed_input_are_stale(self):
         self.install()
-        paths = [self.target / ".codex/workflows/newlines.md",
-                 self.source / ".ai/workflows/newlines.md",
-                 self.baseline / ".ai/workflows/newlines.md",
+        paths = [self.target / ".codex/engineer/workflows/newlines.md",
+                 self.source / "engineer/workflows/newlines.md",
+                 self.baseline / "engineer/workflows/newlines.md",
                  self.target / ".codex/workflow-ownership.json"]
         for path in paths:
             with self.subTest(path=path.name):
@@ -214,7 +214,7 @@ class ReviewedLineEndings(unittest.TestCase):
 
     def test_comparison_matrix_keeps_raw_candidates_and_ownership(self):
         self.install()
-        name = ".codex/workflows/newlines.md"
+        name = ".codex/engineer/workflows/newlines.md"
         incoming = b"first\nsecond\n"
         for current, expected in ((incoming, "unchanged"),
                                   (b"first\r\nsecond\r\n", "line-ending-only"),
@@ -239,7 +239,7 @@ class ReviewedLineEndings(unittest.TestCase):
                 if expected in ("line-ending-only", "substantive"):
                     self.assertEqual("customized", row["classification"])
                     self.assertTrue(row["conflict"])
-        row = self.row(self.plan(), ".codex/workflows/retired.md")
+        row = self.row(self.plan(), ".codex/engineer/workflows/retired.md")
         self.assertEqual("retired", row["comparison"])
         self.assertEqual("keep", row["action"])
         self.assertTrue(row["conflict"])
@@ -256,13 +256,13 @@ class ReviewedLineEndings(unittest.TestCase):
             "action": "remove", "classification": "upstream-managed"}
         update.apply_plan(removal, self.source, self.baseline)
         self.assertFalse(retired.exists())
-        backup = list((self.target / ".workflow-backups").glob("*/files/.codex/workflows/retired.md"))
+        backup = list((self.target / ".workflow-backups").glob("*/files/.codex/engineer/workflows/retired.md"))
         self.assertEqual(1, len(backup))
         self.assertEqual(b"retired\n", backup[0].read_bytes())
 
     def test_legacy_skip_and_substantive_refresh_use_strict_helper(self):
         self.install()
-        name = ".codex/workflows/newlines.md"
+        name = ".codex/engineer/workflows/newlines.md"
         for current, skipped in ((b"first\r\nsecond\n", True),
                                  (b"\x00first\r\nsecond\n", False),
                                  (b"\xfffirst\r\nsecond\n", False),
@@ -278,12 +278,12 @@ class ReviewedLineEndings(unittest.TestCase):
 
     def test_normalized_equality_does_not_prove_missing_or_invalid_ownership(self):
         self.install()
-        self.write(".codex/workflows/newlines.md", b"first\r\nsecond\n")
+        self.write(".codex/engineer/workflows/newlines.md", b"first\r\nsecond\n")
         manifest_path = self.target / ".codex/workflow-ownership.json"
         original = manifest_path.read_bytes()
         manifest_path.unlink()
         plan = self.plan()
-        row = self.row(plan, ".codex/workflows/newlines.md")
+        row = self.row(plan, ".codex/engineer/workflows/newlines.md")
         self.assertEqual("line-ending-only", row["comparison"])
         self.assertEqual("unproven", row["classification"])
         self.assert_refused_without_mutation(plan, "Unresolved conflict")
@@ -327,23 +327,23 @@ class ReviewedLineEndings(unittest.TestCase):
         changed = b"first\r\nsecond\n"
         def concurrent(target, paths):
             result = real_backup(target, paths)
-            self.write(".codex/workflows/newlines.md", changed)
+            self.write(".codex/engineer/workflows/newlines.md", changed)
             return result
         with patch.object(installer, "backup_migration", side_effect=concurrent):
             with self.assertRaisesRegex(ValueError, "changed during backup"):
                 update.apply_plan(plan, self.source, self.baseline)
         after = self.snapshot()
         for name, content in untouched.items():
-            self.assertEqual(changed if name == ".codex/workflows/newlines.md" else content,
+            self.assertEqual(changed if name == ".codex/engineer/workflows/newlines.md" else content,
                              after[name], name)
-        self.assertEqual(original, untouched[".codex/workflows/newlines.md"])
+        self.assertEqual(original, untouched[".codex/engineer/workflows/newlines.md"])
         self.assertTrue(any(name.startswith(".workflow-backups/") for name in after))
 
     def test_raw_source_change_after_backup_is_refused(self):
         self.install()
         plan = self.resolve(self.plan())
         before = self.snapshot()
-        path = self.source / ".ai/workflows/newlines.md"
+        path = self.source / "engineer/workflows/newlines.md"
         original = path.read_bytes()
         real_backup = installer.backup_migration
         def concurrent(target, paths):

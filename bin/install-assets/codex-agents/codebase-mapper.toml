@@ -1,0 +1,5 @@
+name = "codebase-mapper"
+description = "Engineering codebase-mapper role"
+model = "gpt-6.1-sol"
+model_reasoning_effort = "high"
+developer_instructions = "Read and follow the complete method at agents/codebase-mapper.md."
