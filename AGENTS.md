@@ -82,7 +82,7 @@ call — shared role files carry neither as frontmatter (Claude exports default 
 executor `sonnet`, and planner `opus`/`medium`; only planner exports effort), and a resolved `inherit` means
 omit that argument. Never fall back to a generic agent type.
 
- The coordinator owns worker lifecycle, integration, shared records and publication.
+The coordinator owns worker lifecycle, integration, shared records and publication.
 Follow the [confirmed-stop rule](engineer/RULES.md#orchestration-and-handoffs) before
 reassigning worker paths; a host wait timeout does not establish worker exit.
 
