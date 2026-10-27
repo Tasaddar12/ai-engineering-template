@@ -256,15 +256,20 @@ def _pinned_update(text, command, runtime_path):
     text = _step(text, "parse_update_channel", '''Select a concrete source and revision from the user's request. A channel name is not an immutable revision. Preserve any update authorization already given; ask only for genuinely missing source/ref inputs. Do not install or query an unpinned package.
 
 ```bash
+IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+$ARGUMENTS
+GSD_ARGS_END
+GSD_ARGS=${GSD_ARGS%$'\\n'}
 UPDATE_SOURCE="${UPDATE_SOURCE:-$(UC_SOURCE)}"
 : "${UPDATE_SOURCE:?Specify the local source repository from the actual request or installed provenance}"
 : "${UPDATE_REF:?Specify the actual user-selected commit, branch or tag to resolve once}"
 UPDATE_TARGET="$(UC_TARGET)"
 UPDATE_HOST="$(UC_HOST)"
 case "$INSTALL_SCOPE" in LOCAL|local) UPDATE_SCOPE=--local ;; GLOBAL|global) UPDATE_SCOPE=--global ;; *) printf '%s\\n' 'BLOCKED: installation scope is unresolved' >&2; exit 1 ;; esac
+TEXT_MODE=$(UC_TEXT_MODE) || exit $?
 ```
 
-The source repository must already exist locally. Do not fetch, choose a different repository, infer a release channel or move an unrelated checkout. The next step resolves the selected ref to a full immutable SHA before preview or mutation.'''.replace("UC_SOURCE", command("json.get")+' --payload "$UC" --field source_path --raw').replace("UC_TARGET", command("json.get")+' --payload "$UC" --field target --raw').replace("UC_HOST", command("json.get")+' --payload "$UC" --field host --raw'))
+The source repository must already exist locally. Do not fetch, choose a different repository, infer a release channel or move an unrelated checkout. The next step resolves the selected ref to a full immutable SHA before preview or mutation.'''.replace("UC_SOURCE", command("json.get")+' --payload "$UC" --field source_path --raw').replace("UC_TARGET", command("json.get")+' --payload "$UC" --field target --raw').replace("UC_HOST", command("json.get")+' --payload "$UC" --field host --raw').replace("UC_TEXT_MODE", command("config-get")+' workflow.text_mode --raw'))
     text = _step(text, "check_latest_version", '''Resolve and capture the selected revision. The installed revision comes from the actual installation manifest, not a guessed package version.
 
 ```bash
@@ -325,6 +330,7 @@ Inspect every conflict, migration finding, managed write, preserved custom path 
     text = text.replace("gsd-user-files-backup/", "engineer-user-files-backup/")
     text = text.replace("before the wipe", "before applying the reviewed transaction")
     text = text.replace("installer wipes the directories", "reviewed updater applies its managed writes")
+    text = text.replace("`text_mode` from init JSON is `true`", "`TEXT_MODE` from the actual configuration is `true`")
     text = _step(text, "run_update", '''Apply only the exact reviewed plan after the existing update authorization or explicit answer covers this pin and its concrete transaction. Do not request approval again solely because this workflow reached the apply step.
 
 ```bash
