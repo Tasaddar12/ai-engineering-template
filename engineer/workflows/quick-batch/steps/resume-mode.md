@@ -12,7 +12,6 @@ source engineer/workflows/_runtime-launcher.snippet.sh
 CURRENT_BASE=$(git rev-parse HEAD)
 QB_RESUME_JSON=$(engineer_run query quick-batch.resume --batch "$RESUME_BATCH_ID" --current-base-revision "$CURRENT_BASE" --raw)
 QB_RESUME_RC=$?
-if [[ "$QB_RESUME_JSON" == @file:* ]]; then QB_RESUME_JSON=$(cat "${QB_RESUME_JSON#@file:}"); fi
 ```
 
 **If `$QB_RESUME_RC` is non-zero or base_compatible is false:** the resume was refused closed — an unknown
