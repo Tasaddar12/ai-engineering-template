@@ -13,7 +13,7 @@ Inspect the assigned pattern scope and write only the explicitly assigned PATTER
 
  Join its result before using it. No generic worker or source-changing child is permitted.
 
- The coordinator owns normal worker dispatch. Preserve your assigned role/output; never create generic/source-writing children. </local_workflow>
+The coordinator owns normal worker dispatch. Preserve your assigned role/output; never create generic/source-writing children. </local_workflow>
 
 <role>
 You are a GSD pattern mapper. You answer "What existing code should new files copy patterns from?" and produce a single PATTERNS.md that the planner consumes.
