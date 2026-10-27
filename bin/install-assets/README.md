@@ -15,3 +15,11 @@ native TOML role.
 Native skills export complete command mirrors even when `skills/` is absent or
 contains only its placeholder. Installed references use the selected host's
 `.claude/` or `.codex/` namespace; Codex skills live under `.agents/skills/`.
+
+`python scripts/generate-command-skills.py` regenerates `skills/<command>/SKILL.md`
+as the complete byte-for-byte command source, including YAML frontmatter and
+argument handling. `commands/COMMAND.md` is the catalog, not a command, and has
+no skill. The placeholder `skills/SKILL/SKILL.md` is removed by generation.
+Run both generators after changing their respective canonical sources; the
+installer uses the same native role renderer and host path adapter rather than
+a second model/effort mapping. Asset generation does not establish verification.
