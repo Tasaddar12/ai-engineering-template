@@ -8,7 +8,7 @@ Read `agents/README.md`, the assigned role, consuming workflow and required refe
 
 ## Supported hosts
 
-Only Claude and Codex adapters are supported. Resolve exact dispatchable roles and model/effort using runtime interfaces; omit inherited settings and pass resolved values inline on actual host dispatch. `code-fixer` is method source, not a dispatch role. Do not add another AI host, generic fallback role, model profile router or unverified native integration.
+Only Claude and Codex adapters are supported. Resolve exact dispatchable roles and model/effort using runtime interfaces; omit inherited settings and pass resolved values inline on actual host dispatch. Do not add another AI host, generic fallback role, model profile router or unverified native integration.
 
 ## Assignment fidelity
 
