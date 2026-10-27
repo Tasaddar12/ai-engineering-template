@@ -3,7 +3,7 @@ Audit Nyquist validation gaps for a completed phase. Generate missing tests. Upd
 </purpose>
 
 <required_reading>
-@engineer/references/ui-brand.md
+@~/.claude/engineer/references/ui-brand.md
 </required_reading>
 
 <available_agent_types>

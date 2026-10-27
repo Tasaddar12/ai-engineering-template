@@ -1,6 +1,6 @@
 # Bounded correction dispatch
 
-Use the exact registered `targeted-fixer` for a narrow deterministic repair when its role fits; otherwise use the assigned final role. Read `agents/targeted-fixer.md` before dispatch. The [execute-phase workflow](../workflows/execute-phase.md) owns procedure.
+Use the exact registered `code-fixer` for a narrow deterministic repair when its role fits; otherwise use the assigned final role. Read `agents/code-fixer.md` before dispatch. The [execute-phase workflow](../workflows/execute-phase.md) owns procedure.
 
 ## Required correction packet
 

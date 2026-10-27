@@ -25,7 +25,7 @@ Fast has at most three exact file edits and one concrete done criterion. If the 
 </objective>
 
 <execution_context>
-@engineer/workflows/fast.md
+@~/.claude/engineer/workflows/fast.md
 </execution_context>
 
 <process>

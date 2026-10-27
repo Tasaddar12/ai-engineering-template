@@ -72,8 +72,8 @@ Bad: split DB, API and UI mechanically when the authorized outcome requires one 
 
 Read [planner guidance](planner-guidance.md) for outcome calibration.
 
-See @engineer/references/planner-guidance.md for Granularity Calibration table (Coarse/Standard/Fine plans-per-phase).
+See @~/.claude/engineer/references/planner-guidance.md for Granularity Calibration table (Coarse/Standard/Fine plans-per-phase).
 
 ## Evidence selection and continuation
 
-Read complete templates before authoring their artifacts even when general read-depth guidance favors frontmatter. Workers read exact assignment paths; scouts return cited evidence, never children. Only the coordinator schedules specialist work. A context handoff records base/head revisions, completed and remaining work, dirty paths, pending gates and first continuation.
+Read complete templates before authoring their artifacts even when general read-depth guidance favors frontmatter. Only the coordinator schedules specialist work. A context handoff records base/head revisions, completed and remaining work, dirty paths, pending gates and first continuation.

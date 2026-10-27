@@ -3,16 +3,16 @@
 Create the actual project records that every later workflow reads, starting from the user's intent and complete current templates. Keep a reusable template's adopting-project identity unfilled until this workflow is explicitly requested for that adopting project. Onboarding defines goals and phases; it does not implement them.
 </purpose>
 <required_reading>
-@engineer/RULES.md
-@engineer/truth-map.md
-@engineer/references/questioning.md
-@engineer/references/universal-anti-patterns.md
-@engineer/references/template-contract.md
-@engineer/templates/project.md
-@engineer/templates/requirements.md
-@engineer/templates/roadmap.md
-@engineer/templates/state.md
-@engineer/templates/config.yaml
+@~/.claude/engineer/RULES.md
+@~/.claude/engineer/truth-map.md
+@~/.claude/engineer/references/questioning.md
+@~/.claude/engineer/references/universal-anti-patterns.md
+@~/.claude/engineer/references/template-contract.md
+@~/.claude/engineer/templates/project.md
+@~/.claude/engineer/templates/requirements.md
+@~/.claude/engineer/templates/roadmap.md
+@~/.claude/engineer/templates/state.md
+@~/.claude/engineer/templates/config.yaml
 </required_reading>
 <available_agent_types>
 Use phase-researcher for a bounded evidence question and codebase-mapper for actual existing code. No separate research synthesizer or roadmapper writes shared structures.
