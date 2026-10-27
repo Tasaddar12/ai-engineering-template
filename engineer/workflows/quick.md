@@ -3,10 +3,10 @@
 Deliver one bounded outcome with a recorded plan, isolated execution, atomic commits and a runtime-owned quick record. Validate the plan and result when --validate is selected. This is not a shortcut around acceptance, ownership or merge authority.
 </purpose>
 <required_reading>
-@engineer/RULES.md
-@engineer/references/worktree-sessions.md
-@engineer/references/worker-handoff.md
-@engineer/references/git-workflow.md
+@~/.claude/engineer/RULES.md
+@~/.claude/engineer/references/worktree-sessions.md
+@~/.claude/engineer/references/worker-handoff.md
+@~/.claude/engineer/references/git-workflow.md
 </required_reading>
 <available_agent_types>
 Use planner, plan-checker, executor, verifier, code-reviewer and phase-researcher only when the bounded evidence need warrants that role.
