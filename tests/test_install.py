@@ -370,7 +370,7 @@ issue_refs: []
                 self.assertEqual(adoption.returncode, 1)
                 self.assertNotIn("Traceback", adoption.stderr)
                 self.assertEqual(json.loads(adoption.stderr.strip().splitlines()[-1])["error"], "phase-not-found")
-                self.assertFalse((self.target / ".git" / "ai-phase" / "sessions.json").exists())
+                self.assertFalse((self.target / ".git" / "engineer" / "sessions.json").exists())
                 self.assertEqual(before, self.snapshot())
                 # An expected failure is a result, not a traceback.
                 failed = subprocess.run([sys.executable, runtime, "query", "roadmap.get-phase", "9"],

@@ -6,6 +6,8 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+
+sys.dont_write_bytecode = True
 from hook_common import read_event, root_for, query
 
 
