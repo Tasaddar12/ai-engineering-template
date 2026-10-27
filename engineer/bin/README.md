@@ -1,5 +1,57 @@
 # Engineer runtime
 
+Preparation workers declare their actual planning outputs before dispatch:
+`worktree.create PLAN_TAG --phase REGISTRY_LABEL --artifact-role ROLE --files PATH...`
+or the same arguments to `worktree.record-agent` for a harness-created checkout.
+`worktree.merge-artifacts --phase REGISTRY_LABEL` integrates committed, clean,
+exact deltas and returns `workers`, `action`, `merged`, `preserved`, `wave_clean`
+and the real `artifacts` list. Registry labels (including `quick-ID`) do not
+create phase authority. Shipped pattern-mapper, phase-researcher, planner,
+ui-researcher and codebase-mapper roles may write only their named planning
+artifacts. Product paths, undeclared changes and deletions fail closed.
+Preparation outputs require no fabricated SUMMARY. Source workers continue to
+use `merge-wave` and require a committed complete SUMMARY. The coordinator must
+confirm the worker host has stopped before either merge. Cleanup preserves
+unmerged resources and refuses dirty workers, moved HEADs and missing ancestry.
+
+`verification.run-checks` accepts argv arrays and check mappings (`argv`, `id`,
+`sources`, `environment`, `cwd`, `timeout`, `revision`, `reuse`, `independent`,
+`resources`). The `command` and `inputs` spellings remain accepted aliases.
+String commands are split into argv without invoking a shell. Independent
+checks use `verification.max_parallel`; ordinary checks and shared resources
+form barriers. The full batch joins before accepting evidence. Source bytes,
+source stat changes, configuration, selected environment and HEAD are frozen;
+input drift invalidates every result, including reused passes. Environment
+values appear only in a digest unless the check itself prints them. Receipts
+under locally ignored `.planning/verification-receipts/` contain checksummed
+results and unique complete logs; malformed receipts or changed logs rerun.
+Atomic publication is serialized across writers. `verification.check-status`
+returns only valid current fingerprints in the actual revision's ancestry.
+`verification.current` permits only report-only commits after the final batch;
+it inspects every intervening commit, catching source changes later reverted.
+
+PR ready/merge audit the current open PR body and current verified head. Ready
+requires matching non-draft readback; merge requires matching head, MERGED state
+and mergedAt readback. A completed check without an accepted conclusion remains
+pending. Open publishes only the active reviewed branch, rechecks origin, HEAD
+and cleanliness after pushing, and requires exact provider head/body/base/draft
+readback. Canonical provider URLs reject userinfo, ports, queries and fragments.
+Issue-link audit reads each declared canonical issue twice and checks identity,
+state stability and full or shorthand closing relationships. Structural shape
+and these provider checks do not replace the workflow's independent semantic
+review, content safety review or actual human UAT evidence.
+
+Resource cleanup now binds exact owner records and provider dispositions into
+its approval snapshot, rejects raw symlinks/junctions and symbolic branch refs,
+and preserves ignored as well as untracked content. GitHub and GitLab cleanup
+lookups paginate conservatively; open, foreign, changed-head, unavailable or
+incomplete evidence preserves the resource. A worker with actual recorded local
+merge ancestry can be cleaned without an origin; an unmerged manifest cannot
+become eligible merely by sharing an ancestor. Apply uses the common Git resource
+lock, revalidates before each removal, confirms actual worktree disappearance,
+then rechecks provider/ownership/ancestry and deletes only the captured branch
+OID with `update-ref --no-deref`. Missing success readback is a failure.
+
 Use Python 3.11 or newer. The runtime uses only the standard library. The POSIX
 shim selects a namespace virtual environment, a project virtual environment, or
 `python3` / `python` and executes the CLI in isolated mode.

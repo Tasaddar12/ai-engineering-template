@@ -87,7 +87,7 @@ def registry():
     verbs["state.clear-blocker"] = lambda a: records.state_action(a, "resolve-blocker")
     for action in ("cleanup-entry", "complete", "create", "effective-concurrency", "filter-executed", "merge-eligible", "merge-routing", "parse-args", "resume", "spawn-plan", "update", "verification-routing"):
         verbs["quick-batch."+action] = lambda a, action=action: quick_batch.command(a, action)
-    for action in ("create", "record-agent", "list", "merge-wave", "cleanup-wave", "reap-orphans", "health"):
+    for action in ("create", "record-agent", "list", "merge-wave", "merge-artifacts", "cleanup-wave", "reap-orphans", "health"):
         verbs["worktree."+action] = lambda a, action=action: worktrees.command(a, action)
     for action in ("create", "complete", "list"):
         verbs["milestone."+action] = lambda a, action=action: misc.milestone(a, action)

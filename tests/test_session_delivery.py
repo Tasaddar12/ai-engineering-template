@@ -23,10 +23,11 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNTIME = ROOT / ".ai" / "runtime" / "phase.py"
+RUNTIME = ROOT / "engineer" / "bin" / "engineer.py"
 
-sys.path.insert(0, str(ROOT / ".ai" / "runtime"))
+sys.path.insert(0, str(ROOT / "engineer" / "bin"))
 from lib import delivery  # noqa: E402
+from lib.core import Args, Failure
 
 CONFIG = """commit_docs: true
 worktree:
@@ -74,7 +75,11 @@ class SessionCase(unittest.TestCase):
         self.assertNotIn("Traceback", completed.stderr,
                          "verb raised instead of returning a result: "
                          + completed.stderr)
-        payload = json.loads(completed.stdout)
+        if completed.returncode:
+            failure = json.loads(completed.stderr.splitlines()[-1])
+            payload = {"ok": False, "code": failure["error"], "error": json.dumps(failure)}
+        else:
+            payload = {"ok": True, **json.loads(completed.stdout)}
         if expect_ok:
             self.assertTrue(payload.get("ok"), "verb failed: " + completed.stdout)
         else:
@@ -88,7 +93,7 @@ class SessionLifecycle(SessionCase):
         self.assertEqual(result["kind"], "phase")
         self.assertEqual(result["label"], "01")
         self.assertFalse(result["reused"])
-        self.assertTrue(result["branch"].startswith("phase-01-"))
+        self.assertTrue(result["branch"].startswith("codex/phase-01"))
         self.assertTrue(Path(result["worktree"]).is_dir())
         listed = self.git("worktree", "list", "--porcelain").stdout
         self.assertIn(result["branch"], listed)
@@ -121,7 +126,7 @@ class SessionLifecycle(SessionCase):
 
     def test_unknown_kind_is_refused(self):
         failed = self.run_verb("session.open", "hotfix", "01", expect_ok=False)
-        self.assertEqual(failed["code"], "bad-session-kind")
+        self.assertEqual(failed["code"], "invalid-session-kind")
 
     def test_open_refuses_when_the_worktree_root_is_not_ignored(self):
         (self.directory / ".gitignore").write_text("", encoding="utf-8", newline="\n")
@@ -136,7 +141,7 @@ class PhaseLocate(SessionCase):
 
     @property
     def manifest(self):
-        return self.directory / ".git" / "ai-phase" / "sessions.json"
+        return self.directory / ".git" / "engineer" / "sessions.json"
 
     def add_phase(self, cwd, name="Located phase"):
         roadmap = Path(cwd) / ".planning" / "ROADMAP.md"
@@ -254,7 +259,8 @@ class PhaseLocate(SessionCase):
 
     def test_duplicate_equivalent_session_labels_fail(self):
         first = self.phase_session("01")
-        second = self.run_verb("session.open", "phase", "1")
+        second = {**first, "label": "1"}
+        self.change_sessions([first, second])
         failed = self.locate("1", expect_ok=False)
         self.assertEqual(failed["code"], "ambiguous-phase-session")
         for session in (first, second):
@@ -512,13 +518,15 @@ class SessionClose(SessionCase):
     def test_closing_an_unknown_branch_is_an_expected_failure(self):
         failed = self.run_verb("session.close", "phase-nope-000000000",
                                expect_ok=False)
-        self.assertEqual(failed["code"], "no-session")
+        self.assertEqual(failed["code"], "session-not-found")
 
-    def test_force_closes_unmerged_work_when_explicitly_asked(self):
+    def test_force_does_not_override_unmerged_resource_preservation(self):
         session = self.open_and_commit()
         result = self.run_verb("session.close", session["branch"], "--force")
-        self.assertTrue(result["closed"])
-        self.assertTrue(result["forced"])
+        self.assertFalse(result["closed"])
+        self.assertTrue(result["preserved"])
+        self.assertEqual(result["reason"], "session-not-integrated")
+        self.assertTrue(Path(session["worktree"]).is_dir())
 
 
 class OpeningPullRequests(unittest.TestCase):
@@ -838,6 +846,47 @@ class BaseSync(SessionCase):
         self.assertFalse(result["synced"])
         self.assertIn("remote", result["reason"])
         self.assertEqual(result["base"], self.base)
+
+
+class ReviewedProviderDelivery(unittest.TestCase):
+    """Provider boundary regressions for the current reviewed publication API."""
+    def test_completed_without_success_conclusion_remains_pending(self):
+        self.assertEqual(delivery.classify_checks([{"name": "unfinished", "status": "COMPLETED"}])["status"], "pending")
+
+    def test_merge_requires_explicit_confirmation_before_provider_or_verification(self):
+        with patch.object(delivery, "verified_delivery") as gate:
+            with self.assertRaises(Failure) as raised:
+                delivery.command(Args(["topic"]), "merge")
+            self.assertEqual(raised.exception.code, "merge-not-authorized")
+            gate.assert_not_called()
+
+    def test_successful_merge_command_requires_same_head_merged_readback(self):
+        current = {"number": 7, "url": "https://github.com/owner/repo/pull/7", "headRefOid": "abc", "statusCheckRollup": [{"conclusion": "SUCCESS"}], "mergeable": "MERGEABLE"}
+        for final in (None, {**current, "state": "OPEN"}, {**current, "state": "MERGED", "headRefOid": "changed", "mergedAt": "2026-10-27"}):
+            with self.subTest(final=final), patch.object(delivery, "verified_delivery", return_value=current), patch.object(delivery, "gh"), patch.object(delivery, "view", return_value=final):
+                with self.assertRaises(Failure) as raised:
+                    delivery.command(Args(["topic", "--confirm"]), "merge")
+                self.assertEqual(raised.exception.code, "pr-merge-uncertain")
+        final = {**current, "state": "MERGED", "mergedAt": "2026-10-27"}
+        with patch.object(delivery, "verified_delivery", return_value=current), patch.object(delivery, "gh"), patch.object(delivery, "view", return_value=final):
+            self.assertTrue(delivery.command(Args(["topic", "--confirm"]), "merge")["merged"])
+
+    def test_ready_readback_cannot_silently_accept_changed_head(self):
+        reviewed = {"url": "https://github.com/owner/repo/pull/7", "headRefOid": "abc"}
+        final = {**reviewed, "state": "OPEN", "isDraft": False, "headRefOid": "changed"}
+        with patch.object(delivery, "verified_delivery", return_value=reviewed), patch.object(delivery, "gh"), patch.object(delivery, "view", return_value=final):
+            with self.assertRaises(Failure) as raised:
+                delivery.command(Args(["topic", "--phase", "01"]), "ready")
+            self.assertEqual(raised.exception.code, "pr-ready-uncertain")
+
+    def test_canonical_provider_url_rejects_redirect_decorations_and_wrong_repository(self):
+        from lib import repository
+        identity = {"hostname": "github.com", "owner": "owner", "repository": "repo"}
+        with patch.object(repository, "identity", return_value=identity):
+            self.assertEqual(repository.require_url("https://github.com/owner/repo/pull/7", "pull"), 7)
+            for url in ("https://github.com/owner/repo/pull/7?redirect=elsewhere", "https://github.com/owner/repo/pull/7#fragment", "https://evil@github.com/owner/repo/pull/7", "https://github.com/another/repo/pull/7"):
+                with self.subTest(url=url), self.assertRaises(Failure):
+                    repository.require_url(url, "pull")
 
 
 if __name__ == "__main__":

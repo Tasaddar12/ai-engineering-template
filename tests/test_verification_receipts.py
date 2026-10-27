@@ -6,11 +6,12 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNTIME = ROOT / ".ai/runtime/phase.py"
+RUNTIME = ROOT / "engineer/bin/engineer.py"
 
 CHECK = '''import json, os, pathlib, sys, time
 root = pathlib.Path.cwd()
@@ -98,7 +99,10 @@ class ReceiptTests(unittest.TestCase):
                                  cwd=self.root, env=env, capture_output=True, text=True,
                                  encoding="utf-8", timeout=30)
         self.assertNotIn("Traceback", process.stderr)
-        payload = json.loads(process.stdout)
+        payload = json.loads(process.stdout if ok else process.stderr.splitlines()[-1])
+        if not ok:
+            self.assertEqual(process.returncode, 2)
+            return {"code": payload["error"]}
         self.assertEqual(payload["ok"], ok, process.stdout + process.stderr)
         self.assertEqual(process.returncode, 0 if ok else 1)
         return payload
@@ -407,6 +411,41 @@ class ReceiptTests(unittest.TestCase):
             with self.subTest(entry=entry):
                 self.configure([entry])
                 self.assertEqual(self.run_checks(ok=False)["code"], "bad-config")
+
+    def test_concurrent_writers_publish_valid_atomic_receipts_and_unique_logs(self):
+        self.configure([{"argv": [sys.executable, "-c", "import time; time.sleep(0.1); print('complete')"], "reuse": False}])
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(lambda _: self.run_checks(), range(2)))
+        for result in results:
+            self.assertTrue(result["passed"])
+            document = json.loads(self.receipt(result).read_text())
+            self.assertTrue(document["receipt"]["result"]["passed"])
+            self.assertTrue((self.root/result["checks"][0]["stdout_log"]).is_file())
+        self.assertNotEqual(results[0]["checks"][0]["stdout_log"], results[1]["checks"][0]["stdout_log"])
+
+    def test_report_only_ancestry_rejects_source_edit_then_revert(self):
+        self.configure([])
+        self.write(".planning/phases/01-example/01-PLAN.md", "---\nphase: '01'\nfiles_modified: [input.txt]\n---\n# Plan\n")
+        self.git("add", ".")
+        self.git("commit", "-qm", "plan")
+        def cli(*args):
+            process = subprocess.run([sys.executable, str(RUNTIME), "query", *args], cwd=self.root,
+                                     capture_output=True, text=True, check=True)
+            return json.loads(process.stdout)
+        cli("verification.fingerprint", "01", "--files", "input.txt")
+        report = self.root/".planning/phases/01-example/01-VERIFICATION.md"
+        text = report.read_text()
+        report.write_text(text.replace("status: not_started", "status: passed"))
+        self.git("add", ".")
+        self.git("commit", "-qm", "final report only")
+        self.assertTrue(cli("verification.current", "01")["current"])
+        self.write("input.txt", "changed")
+        self.git("add", "input.txt")
+        self.git("commit", "-qm", "source changed")
+        self.git("revert", "--no-edit", "HEAD")
+        result = cli("verification.current", "01")
+        self.assertFalse(result["current"])
+        self.assertIn("source changed since the frozen verification revision", result["reasons"])
 
 
 if __name__ == "__main__":

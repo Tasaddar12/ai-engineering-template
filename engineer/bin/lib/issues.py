@@ -116,6 +116,10 @@ def publication(args, action, family="todo"):
         finding = matches[0]
     title = str(args.get("title", (finding or {}).get("summary", metadata.get("title", source.stem))))
     body = read(safe_path(args.get("body-file"))) if args.has("body-file") else str(args.get("body", content))
+    if not args.has("title") or not str(args.get("title", "")).strip() or not args.has("body-file"):
+        raise Failure("reviewed-public-content-required", "Supply an explicit reviewed public title and separate body file")
+    if safe_path(args.get("body-file")) == source:
+        raise Failure("private-source-body-refused", "Prepare the reviewed public issue body separately from its source")
     variant = args.get("variant")
     template = validate(title, body, variant)
     origin = repository.identity()
@@ -126,6 +130,11 @@ def publication(args, action, family="todo"):
         body = body.rstrip()+"\n\n"+marker+"\n"
     matches = candidates(title, body, provenance)
     selection = args.get("existing-issue")
+    linked = (finding or metadata).get("issue_url", (finding or metadata).get("url", metadata.get("issue")))
+    if action == "update" and linked:
+        if selection and str(selection) not in (str(linked), str(linked).rsplit("/", 1)[-1]):
+            raise Failure("issue-identity-conflict", "Update selection differs from the linked canonical issue")
+        selection = linked
     if selection and args.has("no-match"):
         raise Failure("issue-disposition-conflict", "Select --existing-issue or --no-match, never both")
     if selection:
@@ -140,9 +149,21 @@ def publication(args, action, family="todo"):
     if len(matches) > 1:
         raise Failure("issue-identity-ambiguous", "Multiple issues match this finding; reconcile before publication", candidates=matches)
     disposition = "create" if not matches else "reuse-"+str(matches[0].get("state", "unknown")).lower()+"-"+matches[0]["identity_match"]
+    for candidate in matches:
+        validate(str(candidate.get("title", "")), str(candidate.get("body", "")), variant)
+        if candidate.get("number") != repository.require_url(str(candidate.get("url", "")), "issues") or str(candidate.get("state", "")).upper() not in ("OPEN", "CLOSED"):
+            raise Failure("issue-candidate-invalid", "Canonical candidate identity or state is unavailable")
+    candidate_snapshot = [{key: candidate.get(key) for key in ("url", "number", "title", "body", "state", "identity_match")} for candidate in matches]
     snapshot = {"source": str(source), "source_digest": digest([source, template]), "title": title, "body": body,
                 "labels": args.all("labels"), "family": family, "finding": args.arg(2), "origin": origin,
-                "provenance": provenance, "existing_issue": selection, "no_match": args.has("no-match"), "variant": variant}
+                "provenance": provenance, "existing_issue": selection, "no_match": args.has("no-match"), "variant": variant,
+                "candidates": candidate_snapshot}
+    supplied = args.get("preview-token")
+    prior_supplied = load_json(records.planning()/"issue-previews"/(str(supplied)+".json")) if re.fullmatch(r"[a-f0-9]{64}", str(supplied)) else None
+    if prior_supplied and prior_supplied.get("used") and len(matches) == 1 and matches[0]["identity_match"] == "provenance":
+        # Recovery may discover the issue produced by the consumed create. It
+        # may not reinterpret reviewed source/title/body/labels/origin/variant.
+        snapshot["candidates"] = prior_supplied.get("candidates", [])
     token = hashlib.sha256(json.dumps(snapshot, sort_keys=True).encode()).hexdigest()
     preview = records.planning()/"issue-previews"/(token+".json")
     prior_attempt = load_json(preview)
@@ -156,7 +177,6 @@ def publication(args, action, family="todo"):
         return {"previewToken": token, "preview_token": token, "title": title, "body": body,
                 "source": str(source), "snapshotDigest": snapshot["source_digest"], "disposition": disposition,
                 "candidates": matches, "prior_attempt": prior.get("used") if prior else False}
-    supplied = args.get("preview-token")
     saved = load_json(records.planning()/"issue-previews"/(str(supplied)+".json")) if re.fullmatch(r"[a-f0-9]{64}", str(supplied)) else None
     if supplied != token or not saved or saved.get("source_digest") != snapshot["source_digest"]:
         raise Failure("stale-issue-preview", "Preview token is absent, consumed, or no longer matches the issue")
