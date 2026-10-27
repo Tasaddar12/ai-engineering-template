@@ -93,6 +93,7 @@ class RecordBehavior(RuntimeCase):
         quick = self.cli("quick.create", "Repair the login")
         self.cli("quick.update", quick["quick_id"], "--status", "complete")
         self.assertEqual("complete", self.cli("quick.get", quick["quick_id"])["status"])
+        self.phase()
         todo = self.cli("todo.add", "Inspect a boundary", "--phase", "1")
         self.assertEqual(1, self.cli("todo.match-phase", "1")["count"])
         self.cli("todo.complete", todo["path"])

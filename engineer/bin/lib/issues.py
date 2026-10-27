@@ -218,6 +218,8 @@ def publication(args, action, family="todo"):
     token = hashlib.sha256(json.dumps(snapshot, sort_keys=True).encode()).hexdigest()
     preview = records.planning()/"issue-previews"/(token+".json")
     prior_attempt = load_json(preview)
+    if action != "preview" and (supplied != token or not prior_supplied or prior_supplied.get("source_digest") != source_snapshot):
+        raise Failure("stale-issue-preview", "Reviewed intent changed; create and review a fresh exact preview")
     if args.has("no-match") and matches and not (prior_attempt and prior_attempt.get("used") and len(matches) == 1 and matches[0]["identity_match"] == "provenance"):
         raise Failure("issue-match-exists", "The no-match declaration conflicts with canonical issue search", candidates=matches)
     if action == "preview":

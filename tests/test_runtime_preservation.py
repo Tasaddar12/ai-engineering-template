@@ -186,7 +186,7 @@ class HandoffAndFreshness(PreservationCase):
         self.assertEqual(baseline, packet["baseline_revision"])
         self.put("src/app.py", "changed\n")
         self.commit("source change")
-        with patch.object(config, "load", return_value={"codebase": {"max_age_commits": 0}}):
+        with patch.object(config, "load", return_value={"codebase": {"staleness": {"architecture": 0}}}):
             packet = codebase.command(Args([]), "status")["maps"][0]
         self.assertTrue(packet["stale"])
         self.assertEqual(["src/app.py"], packet["changed_files"])

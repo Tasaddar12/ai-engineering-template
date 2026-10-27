@@ -425,7 +425,7 @@ class ReceiptTests(unittest.TestCase):
 
     def test_report_only_ancestry_rejects_source_edit_then_revert(self):
         self.configure([])
-        self.write(".planning/phases/01-example/01-01-PLAN.md", "---\nphase: '01'\nfiles_modified: [input.txt]\n---\n# Plan\n")
+        self.write(".planning/phases/01-example/01-01-PLAN.md", "---\nphase: '01'\nplan: '01'\ntype: execute\nwave: 1\ndepends_on: []\nfiles_modified: [input.txt]\nfiles_deleted: []\nresources: []\nautonomous: true\nrequirements: []\nacceptance: []\ndocumentation: []\nchecks: []\nissue_refs: []\nmust_haves: {truths: [], artifacts: [], key_links: []}\n---\n# Plan\n")
         self.git("add", ".")
         self.git("commit", "-qm", "plan")
         def cli(*args):
