@@ -13,7 +13,7 @@ REQUIRED = {"workflow.isolation": "auto", "handoff.enabled": True,
 ENUMS = {"workflow.isolation": {"auto", "harness-worktree", "orchestrator-worktree"},
          "workflow.discuss_mode": {"discuss", "assumptions"},
          "workflow.code_review_depth": {"standard", "deep", "quick"},
-         "workflow.human_verify_mode": {"end-of-phase", "per-task"},
+         "workflow.human_verify_mode": {"end-of-phase", "mid-flight"},
          "delivery.merge_method": {"merge", "squash", "rebase"}}
 
 
@@ -95,7 +95,7 @@ def review(source, before, defaults):
                     break
                 cursor = cursor[part]
             if exists:
-                valid_type = cursor is None if default is None else type(cursor) is type(default)
+                valid_type = (cursor is None or isinstance(cursor, str)) if default is None else type(cursor) is type(default)
                 if not valid_type:
                     errors.append(name + " has invalid type")
                 if name in ENUMS and (not isinstance(cursor, str) or cursor not in ENUMS[name]):

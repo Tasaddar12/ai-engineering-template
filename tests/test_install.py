@@ -959,7 +959,7 @@ issue_refs: []
         self.target.mkdir()
         (self.target / "AGENTS.md").write_bytes(b"# Product instructions\n")
         self.assertEqual(0, self.install().returncode)
-        for name in ("AGENTS.md", ".gitignore", ".codex/engineer/RULES.md", ".codex/engineer/guides/ARTIFACT-GUIDE.md"):
+        for name in ("AGENTS.md", ".gitignore", ".codex/engineer/RULES.md", ".codex/engineer/references/checkpoints.md"):
             path = self.target / name
             path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
         before = self.snapshot()

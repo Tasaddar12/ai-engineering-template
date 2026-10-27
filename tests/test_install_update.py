@@ -171,6 +171,15 @@ class UpdateTests(unittest.TestCase):
         for name, data in records.items():
             self.assertEqual(data, self.read(name))
 
+    def test_user_language_and_checkpoint_overrides_remain_byte_identical(self):
+        config = self.read(".planning/config.yaml").replace(b"response_language: null", b"response_language: French")
+        config = config.replace(b"human_verify_mode: end-of-phase", b"human_verify_mode: mid-flight")
+        self.write(".planning/config.yaml", config)
+        plan = self.plan()
+        self.assertIsNone(self.row(plan, ".planning/config.yaml")["conflict"])
+        self.apply(plan)
+        self.assertEqual(config, self.read(".planning/config.yaml"))
+
     def test_an_aged_shipped_file_is_refreshed_only_after_review(self):
         self.review_role("executor")
 
