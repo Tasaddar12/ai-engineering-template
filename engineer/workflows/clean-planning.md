@@ -3,14 +3,13 @@
 Review planning records against current templates and evidence, repair safe structural drift through runtime guards, and archive only explicitly selected retired records. Preserve the adopting project's intent and history.
 </purpose>
 <required_reading>
-@engineer/RULES.md
-@engineer/truth-map.md
-@engineer/references/scout-dispatch.md
-@engineer/references/template-contract.md
-@engineer/templates/phase-prompt.md
-@engineer/templates/summary.md
-@engineer/templates/context.md
-@engineer/templates/verification-report.md
+@~/.claude/engineer/RULES.md
+@~/.claude/engineer/truth-map.md
+@~/.claude/engineer/references/template-contract.md
+@~/.claude/engineer/templates/phase-prompt.md
+@~/.claude/engineer/templates/summary.md
+@~/.claude/engineer/templates/context.md
+@~/.claude/engineer/templates/verification-report.md
 </required_reading>
 <process>
 <step name="resolve_scope">
@@ -22,7 +21,7 @@ Separate requested structural repair from narrative edits, changed acceptance, m
 Read and execute `engineer/workflows/_runtime-launcher.snippet.sh`. Run `engineer_run query planning.review` for the selected scope using the runtime's supported path selection. Save its full returned findings and expected digest; do not shorten the finding packet. Each finding needs its owning record, violated template field, current evidence and proposed outcome. Use `engineer_run query planning.validate` for warn-only record-health reporting; warnings never invent implementation work or stall unrelated authorized work.
 </step>
 <step name="collect_evidence">
-When source location is unknown, dispatch a single read-only scout with inline resolved model/effort and an exact evidence output. Give selected records, their complete templates, the relevant runtime contract and authoritative source revision. Require cited evidence and distinguish structural drift from missing implementation proof. The scout may not change shared records, invent acceptance, infer a passed test from prose, or dispatch children. Wait for the packet before touching assigned paths.
+ Give selected records, their complete templates, the relevant runtime contract and authoritative source revision. Require cited evidence and distinguish structural drift from missing implementation proof. Wait for the packet before touching assigned paths.
 </step>
 <step name="classify_repairs">
 For each finding, identify the owning runtime verb or narrative owner. Safe repairs preserve approved meaning: missing structural sections, normalized supported frontmatter, stale paths with an established current owner, and runtime-owned section alignment. Do not fabricate outcomes, decisions, requirements, summary claims, UAT replies, check receipts, execution authorization or verification. Route uncertain semantics to a concrete decision and leave that finding blocked while independent safe repairs continue.

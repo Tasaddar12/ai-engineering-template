@@ -3,8 +3,8 @@
 Edit a phase's name, goal, dependencies, or requirement links through the runtime. Show the concrete field diff before writing and preserve approved outcomes.
 </purpose>
 <required_reading>
-@engineer/RULES.md
-@engineer/references/template-contract.md
+@~/.claude/engineer/RULES.md
+@~/.claude/engineer/references/template-contract.md
 </required_reading>
 <process>
 <step name="parse_arguments">
