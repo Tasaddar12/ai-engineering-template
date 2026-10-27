@@ -369,8 +369,18 @@ def merge_codex_config(original, incoming, label="config.toml"):
             lines.insert(index, "max_concurrent_threads_per_session = 12" + newline)
             text = "".join(lines)
         else:
-            # A dotted declaration before all tables avoids reopening a parent table.
-            text = "agents.max_concurrent_threads_per_session = 12" + newline + text
+            statements = [(i, line) for i, line, inside in toml_lines(text) if not inside]
+            first_table = next((i for i, line in statements if re.match(r"\s*\[", line)), len(text.splitlines()))
+            root_dotted = any(i < first_table and re.match(r"\s*(?:agents|\"agents\"|'agents')\.", line)
+                              for i, line in statements)
+            if root_dotted:
+                lines = text.splitlines(keepends=True)
+                if first_table and not lines[first_table - 1].endswith(("\n", "\r")):
+                    lines[first_table - 1] += newline
+                lines.insert(first_table, "agents.max_concurrent_threads_per_session = 12" + newline)
+                text = "".join(lines)
+            else:
+                text += ("" if text.endswith("\n") or not text else newline) + "[agents]" + newline + "max_concurrent_threads_per_session = 12" + newline
     if "hooks" in desired:
         old_hooks = current.get("hooks", {})
         merged = merge_events(old_hooks, desired["hooks"])
@@ -384,7 +394,7 @@ def merge_codex_config(original, incoming, label="config.toml"):
         added = {event: [g for g in groups if g not in old_hooks.get(event, []) or g in desired["hooks"].get(event, [])]
                  for event, groups in merged.items()}
         if any(added.values()):
-            text = text.rstrip() + "\n\n" + hooks_toml(added).decode()
+            text = text + ("\n" if text.endswith("\n") else "\n\n") + hooks_toml(added).decode()
     tomllib.loads(text)
     bom = b"\xef\xbb\xbf" if original.startswith(b"\xef\xbb\xbf") else b""
     return bom + text.encode()
