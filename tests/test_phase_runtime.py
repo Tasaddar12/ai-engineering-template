@@ -814,7 +814,7 @@ class Todos(RuntimeCase):
 class QuickTasks(RuntimeCase):
     def test_create_allocates_a_dated_sequence_directory(self):
         result = self.run_verb("quick.create", "Fix typo in login copy")
-        self.assertTrue(result["id"].endswith("-001-fix-typo-login-copy"))
+        self.assertTrue(result["id"].endswith("-001-fix-typo-in-login-copy"))
         self.assertEqual(result["status"], "open")
         self.assertTrue((self.directory / result["record"]).is_file())
 
@@ -845,7 +845,7 @@ class Milestones(RuntimeCase):
                                "--goal", "IDP-managed credentials")
         self.assertEqual(result["status"], "in_progress")
         roadmap = self.read(".planning/ROADMAP.md")
-        self.assertIn("**v1.1 Hardening**", roadmap)
+        self.assertIn("### v1.1 Hardening (In Progress)", roadmap)
         self.assertIn("**Milestone Goal:** IDP-managed credentials", roadmap)
         listed = self.run_verb("milestone.list")
         self.assertEqual(listed["current"], "v1.1 Hardening")

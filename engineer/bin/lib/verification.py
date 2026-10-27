@@ -9,7 +9,11 @@ from .text import join_frontmatter, split_frontmatter
 
 
 def quick_dir(identifier):
-    matches = list((records.planning()/"quick").glob(str(identifier).split("-")[0].zfill(3)+"-*/QUICK.md"))
+    requested = str(identifier)
+    candidates = list((records.planning()/"quick").glob("*/QUICK.md"))
+    matches = [path for path in candidates if path.parent.name == requested]
+    if not matches and re.fullmatch(r"[0-9]+", requested):
+        matches = [path for path in candidates if path.parent.name.split("-")[0] == requested.zfill(3)]
     if len(matches) != 1:
         raise Failure("quick-not-found", str(identifier))
     metadata, _ = split_frontmatter(read(matches[0]))

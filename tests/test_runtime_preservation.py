@@ -325,6 +325,16 @@ class QuickVerification(PreservationCase):
         self.assertTrue(any("v4" in reason for reason in verification.current_evidence("01")["reasons"]))
         self.assertTrue(any("v4" in error for error in frontmatter.errors(metadata, "verification")))
 
+    def test_exact_dated_quick_identity_selects_one_of_same_day_tasks(self):
+        first = records.quick(Args(["First boundary"]), "create")
+        second = records.quick(Args(["Second boundary"]), "create")
+        self.assertNotEqual(first["id"], second["id"])
+        self.assertEqual(Path(first["directory"]), verification.quick_dir(first["id"]))
+        self.assertEqual(Path(second["directory"]), verification.quick_dir(second["id"]))
+        with self.assertRaises(Failure) as wrong:
+            verification.quick_dir(first["id"]+"-wrong")
+        self.assertEqual("quick-not-found", wrong.exception.code)
+
     def test_unknown_check_selection_cannot_produce_vacuous_passing_receipt(self):
         self.put(".planning/config.yaml", "verification:\n  commands:\n    - id: real\n      argv: [python, -c, pass]\n")
         with self.assertRaises(Failure) as caught:
