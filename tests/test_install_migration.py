@@ -253,7 +253,9 @@ class MigrationTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(prefix="migration-target-")
         self.addCleanup(temporary.cleanup)
-        self.target = Path(temporary.name)
+        # Runtime inventories intentionally return canonical filesystem paths.
+        # Windows TEMP may use RUNNER~1 while the same target resolves long.
+        self.target = Path(temporary.name).resolve()
         self.write(".ai/RULES.md", b"# Rules\r\nCustom approval rule. Read .ai/commands/worktree.md\r\n")
         self.write(".ai/runtime/phase.py", b"# customized old runtime\n")
         self.write(".ai/private/archive.bin", b"\x00\xff\x01.ai/original\r\n")
