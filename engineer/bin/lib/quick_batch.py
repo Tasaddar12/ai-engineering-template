@@ -344,6 +344,9 @@ def command(args, action):
                 raise Failure("worker-stop-unconfirmed", identifier)
             if old["status"] in DELIVERED and any(old.get(k) != v for k, v in update.items() if k not in ("quickId", "expectDigest", "status")):
                 raise Failure("delivered-item-immutable", identifier)
+            order = {"merged": 1, "passed": 2, "complete": 3}
+            if old["status"] in DELIVERED and order.get(update.get("status", old["status"]), 0) < order[old["status"]]:
+                raise Failure("delivered-item-immutable", identifier)
             old.update({k: v for k, v in update.items() if k != "expectDigest"})
             if old["status"] in ACTIVE:
                 if any(indexed[d]["status"] not in DELIVERED for d in old.get("dependsOn", [])):
@@ -365,6 +368,8 @@ def command(args, action):
                     raise Failure("stale-plan", identifier)
                 old["planDigest"] = actual_digest
             if old["status"] in {"executed"} | DELIVERED:
+                if old.get("workerState") not in ("stopped", "exited", "interrupted"):
+                    raise Failure("worker-stop-unconfirmed", identifier)
                 evidence = artifacts(old)
                 if not evidence["source_complete"]:
                     raise Failure("unproven-source-result", identifier, evidence=evidence)
