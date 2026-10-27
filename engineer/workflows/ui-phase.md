@@ -399,6 +399,15 @@ STATE coverage and REFERENCES those rows rather than restating the copy (de-dup)
 `## UI Considerations` section already exists, REPLACE it — never append a duplicate.
 
 
+## 9.6. Record durable decisions before final review
+
+Before capturing the final checker revision, record actual design-system choices
+that outlive this phase with `engineer_run query state.add-decision`, including
+actual rationale and decision provenance. Record session progress with the actual
+stopped-at/resume-file through state.record-session. Do not invent human approval
+or re-add an unchanged already recorded choice. Commit the coordinator-owned
+records before final review; their mutation after review invalidates currentness.
+
 ## 10. Final checker and coordinator approval
 
 The consideration section and COMPLETE body, including Checker Sign-Off, are part
@@ -456,16 +465,14 @@ actual blocked/required/reason; pending gate execution remains pending. Record a
 concrete runtime-version limitation instead of claiming absent protections. No
 status/checkbox alone proves design approval or human implementation authority.
 
-## 11. Commit and durable decisions
+## 11. Preserve the checked planning boundary
 
-Inspect and stage only the coordinator-owned UI-SPEC approval/probe changes;
-commit the meaningful slice under `engineer/references/git-workflow.md`.
-Record design-system choices that outlive this phase with
-`engineer_run query state.add-decision` using actual decision/rationale, never
-invented human approval. Use `state.record-session` with the actual stopped-at
-and resume-file. Follow user delivery/check-order overrides. No routine
-maintenance SUMMARY is required when the assignment excludes it.
-
+The exact approval-only commit and permitted gate execution occurred in Step 10.
+Do not mutate shared records or the contract after that gate and before returning
+to the caller's planner boundary. A necessary change is committed and followed by
+a fresh final checker and gate; never reuse stale approval. Follow actual user
+delivery/check-order overrides and canonical git-workflow. No routine maintenance
+SUMMARY is required when the assignment excludes it.
 
 ## 12. Present final status
 

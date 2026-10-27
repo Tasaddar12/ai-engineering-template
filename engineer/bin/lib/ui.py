@@ -46,6 +46,8 @@ def _evidence_error(evidence, phase, spec_path, context_path, spec, context, roa
     safety = config.lookup(config.load(), "workflow.ui_safety_gate", True)
     if type(safety) is not bool:
         return "workflow.ui_safety_gate must be boolean"
+    if type(evidence.get("ui_safety_gate")) is not bool:
+        return "UI checker evidence requires the actual boolean ui_safety_gate policy"
     required = {"ui_safety_gate": safety, "role": "ui-checker", "verdict": "APPROVED", "phase": phase,
                 "spec_path": spec_path, "context_path": context_path,
                 "spec_digest": contract_digest(spec), "context_digest": text_digest(context),
