@@ -128,10 +128,10 @@ Run syntax/parse check appropriate to file type:
 
 | Language | Check Command |
 |----------|--------------|
-| JavaScript | `node -c {file}` (syntax check) |
+| JavaScript | Optional installed project tool: `node --check {file}` for a supported JavaScript source file only, or the project's configured parser check; Node is not a workflow dependency. |
 | TypeScript | Assigned project-aware check only: the project's own typecheck (`npm run typecheck`) if it exists, else `npx tsc --noEmit -p <nearest tsconfig*.json>` whose `--listFilesOnly` output lists `{file}`; no config includes `{file}` → record missing coverage and Tier 1 only. Preserve complete output; never pass `{file}` to `tsc` positionally. |
 | Python | `python -c "import ast; ast.parse(open('{file}').read())"` |
-| JSON | `node -e "JSON.parse(require('fs').readFileSync('{file}','utf-8'))"` |
+| JSON | `python -I -m json.tool {file}` (standard-library JSON parse; retain diagnostics) |
 | Other | Skip to Tier 1 only |
 
 **Scoping syntax checks:**
@@ -155,7 +155,7 @@ Run syntax/parse check appropriate to file type:
   errors using actual pre-fix evidence. Unknown attribution is unresolved, not
   automatically pre-existing; roll back only when the single-file provenance
   guard holds, otherwise preserve work and return blocked.
-- JavaScript: `node -c {file}` is reliable for plain .js but NOT for JSX, TypeScript, or ESM with bare specifiers. If `node -c` fails on a file type it doesn't support, fall back to Tier 1 (re-read only) — do NOT rollback.
+- JavaScript: When Node is already a configured project tool, `node --check {file}` can supply syntax-only evidence for supported `.js`, `.mjs` or `.cjs` source, including ESM syntax. It does not load imports or resolve bare specifiers, prove exports or establish runtime behavior. It does not parse JSX or TypeScript. Prefer the configured project parser for those source types. If the optional syntax tool does not support the file type, fall back to Tier 1 (re-read only) — do NOT rollback. A required configured gate still needs its actual result.
 - General rule: Baseline evidence may establish the repair did not cause a
   failure; it never converts the failing required gate to passing. Preserve
   completed owned edits/commits with blocked evidence where required.
@@ -164,7 +164,7 @@ If syntax check **FAILS with errors in your modified file that were NOT present 
 If syntax check **FAILS with proven pre-existing errors only**: preserve the
 actual failure and scope. Commit a completed owned repair where authorized,
 but do not return complete while a required gate remains unresolved.
-If syntax check **FAILS because the tool doesn't support the file type** (e.g., node -c on JSX): fall back to Tier 1 only.
+If syntax check **FAILS because the tool doesn't support the file type** (e.g., the optional Node syntax checker on JSX): fall back to Tier 1 only.
 
 If syntax check **PASSES**: proceed to commit.
 
@@ -528,7 +528,7 @@ uncommitted status alone never proves safe discard.
 
 **DO verify each fix** using 3-tier verification strategy:
 - Minimum: re-read file, confirm fix present
-- Preferred: syntax check (node -c, project-aware tsc -p, python ast.parse, etc.)
+- Preferred: supported configured-project syntax check (optional Node `--check` for JavaScript source, project-aware tsc -p, Python ast.parse, standard-library JSON parsing, etc.)
 - Fallback: accept minimum if no syntax checker available
 
 **DO skip findings that cannot be applied cleanly** — do not force broken fixes. Mark as skipped with clear reason.

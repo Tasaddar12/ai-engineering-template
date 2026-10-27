@@ -19,7 +19,7 @@ The command names the procedure; it does not duplicate it. The workflow specifie
 
 ## Session and authorization
 
-Read the user's request, [PROJECT](../.planning/PROJECT.md), [STATE](../.planning/STATE.md), selected phase, assigned [role](../agents/README.md), selected [command](../commands/README.md) and its named references. Honor authorization already provided for its stated scope; do not ask again merely because a workflow reaches another step.
+Read the user's request, [PROJECT](../.planning/PROJECT.md), [STATE](../.planning/STATE.md), selected phase, assigned [role](../agents/AGENT.md), selected [command](../commands/COMMAND.md) and its named references. Honor authorization already provided for its stated scope; do not ask again merely because a workflow reaches another step.
 
 A request to report means report. A request to implement authorizes the stated implementation scope, ordinary investigation, fixes and validation needed to deliver it. Prepare concrete reviewable work before requesting a genuinely missing approval. Continue independent authorized work while a dependent choice remains unresolved. Do not infer approval from silence, readiness, a mode flag or a recommendation.
 
@@ -71,7 +71,7 @@ Record consequential decisions while deciding through `engineer_run query state.
 
 ## Orchestration and handoffs
 
-The orchestrator routes; it does not do work it dispatched. Read exact role boundaries, assign repository/branch/revision, required inputs, owned paths, exclusions, checks and output. Use exact final roles from [the role catalog](../agents/README.md), including the surviving executor/planner/phase-researcher/plan-checker roles and specialized reviewers. Resolve model/effort inline with `resolve-model` and `resolve-effort`; omit inherited values. Only Claude and Codex adapters are supported.
+The orchestrator routes; it does not do work it dispatched. Read exact role boundaries, assign repository/branch/revision, required inputs, owned paths, exclusions, checks and output. Use exact final roles from [the role catalog](../agents/AGENT.md), including the surviving executor/planner/phase-researcher/plan-checker roles and specialized reviewers. Resolve model/effort inline with `resolve-model` and `resolve-effort`; omit inherited values. Only Claude and Codex adapters are supported.
 
 Send one discovery scout when source location is unknown. Additional scouts need separate named questions and distinct evidence packets. Scouts return read-only cited evidence and never dispatch children. Follow [scout dispatch](references/scout-dispatch.md).
 
@@ -107,7 +107,7 @@ Do not create todos while working unless the user explicitly requests capture. U
 
 Isolation is mandatory for write-capable workflow sessions. Dispatch isolation has only `orchestrator-worktree` and `harness-worktree` strategies; no setting disables isolation. The current host/runtime must establish a supported isolated checkout before writes. Check exact root/branch/base, and route mismatches to the coordinator rather than self-resetting.
 
-The coordinator manages sessions with `session.open` / `session.adopt` and worker records with `worktree.create` / `worktree.record-agent`. Execute from the returned assigned path. The hook at `../hooks/worktree-guard.sh` is advisory, not a substitute for verification. [Path safety](references/worktree-path-safety.md) governs writes and check targets, including absolute paths and immediate submodules.
+The coordinator manages sessions with `session.open` / `session.adopt` and worker records with `worktree.create` / `worktree.record-agent`. Execute from the returned assigned path. The hook at `../hooks/worktree-path-guard.py` is advisory, not a substitute for verification. [Path safety](references/worktree-path-safety.md) governs writes and check targets, including absolute paths and immediate submodules.
 
 Integrate only after writers stop. `worktree.merge-wave` requires committed complete summaries, correct ownership and exact declared deletions. An undeclared deletion is out of scope and blocks; there is no cleanup-wave exemption or authorize-everything fallback. Preserve conflicts and workers until the coordinator resolves them against approved outcomes.
 
@@ -133,4 +133,4 @@ Reusable rules belong under [rules](rules/README.md), with exact scope, authorit
 
 Read each complete template before authoring its artifact, including frontmatter, guidance, detailed examples and consumer contracts. Preserve required sections and explain not applicable sections explicitly. Do not replace methods with summaries, copy a compact variant or omit fields to fit a context budget. Follow [template use](templates/TEMPLATE.md).
 
-Current PLAN records require acceptance, documentation, checks as argv lists and issue_refs; SUMMARY records report only requirements actually completed by delivered evidence. Keep adopting identity blank in reusable templates. Use `.planning/` for project records; `engineer/` for reusable rules, workflows, templates and tooling.
+Current PLAN records require acceptance, documentation, checks as argv lists and issue_refs; SUMMARY records report only requirements actually completed by delivered evidence. Read [the runtime template contract](references/template-contract.md) for runtime-owned record sections and integrity boundaries. Keep adopting identity blank in reusable templates. Use `.planning/` for project records; `engineer/` for reusable rules, workflows, templates and tooling.

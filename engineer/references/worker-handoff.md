@@ -4,7 +4,7 @@ The coordinator owns dispatch, lifecycle, integration, shared records and public
 
 ## Assignment pre-flight
 
-Capture the exact repository root, branch and full input SHA. Resolve the exact role from `agents/README.md` and model/effort through `engineer_run query resolve-model ROLE --raw` and `resolve-effort ROLE --raw`; omit inherited settings. Give the worker required paths and complete templates, one bounded outcome, exact write ownership, exclusions, check argv and output destination. A worker verifies identity before any edit.
+Capture the exact repository root, branch and full input SHA. Resolve the exact role from `agents/AGENT.md` and model/effort through `engineer_run query resolve-model ROLE --raw` and `resolve-effort ROLE --raw`; omit inherited settings. Give the worker required paths and complete templates, one bounded outcome, exact write ownership, exclusions, check argv and output destination. A worker verifies identity before any edit.
 
 ```text
 Role: exact registered role

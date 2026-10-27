@@ -316,16 +316,20 @@ Shared-evidence rule: a receipt is reusable only when revision, command, root, e
 
 ```bash
 # API endpoint returns non-empty data
-curl -s http://localhost:$PORT/api/$ENDPOINT 2>/dev/null | node -e "let b='';process.stdin.setEncoding('utf8');process.stdin.on('data',c=>b+=c);process.stdin.on('end',()=>{const d=JSON.parse(b);process.exit(Array.isArray(d)?(d.length>0?0:1):(Object.keys(d).length>0?0:1))})"
+( set -o pipefail; curl --fail --silent --show-error "http://localhost:$PORT/api/$ENDPOINT" | python -I -c 'import json, sys; data = json.load(sys.stdin); sys.exit(0 if isinstance(data, (list, dict)) and len(data) > 0 else 1)' )
 
 # CLI command produces expected output
-node $CLI_PATH --help 2>&1 | grep -q "$EXPECTED_SUBCOMMAND"
+# Populate CLI_COMMAND as a Bash argv array from the project's configured entry point.
+# Include its actual project interpreter when the entry point requires one.
+( set -o pipefail; test "${#CLI_COMMAND[@]}" -gt 0 && "${CLI_COMMAND[@]}" --help 2>&1 | grep -Fq -- "$EXPECTED_SUBCOMMAND" )
 
 # Build produces output files
 ls $BUILD_OUTPUT_DIR/*.{js,css} 2>/dev/null | wc -l
 
 # Module exports expected functions
-node -e "const m = require('$MODULE_PATH'); console.log(typeof m.$FUNCTION_NAME)" 2>/dev/null | grep -q "function"
+# Populate MODULE_EXPORT_CHECK with the configured project's single named test
+# that imports/requires the actual module and asserts the actual binding's type.
+test "${#MODULE_EXPORT_CHECK[@]}" -gt 0 && "${MODULE_EXPORT_CHECK[@]}"
 
 # A test EXISTS (existence proof — enumerate, do NOT run the suite)
 cargo test -- --list 2>/dev/null | grep -q "$PHASE_TEST_PATTERN"   # pytest --collect-only -q · npx vitest list · go test -list '.*'
@@ -333,6 +337,18 @@ cargo test -- --list 2>/dev/null | grep -q "$PHASE_TEST_PATTERN"   # pytest --co
 # A specific test PASSES (run ONE named test, never the whole suite)
 cargo test "$TEST_NAME" -- --exact   # pytest -k "$TEST_NAME" · npx vitest run -t "$TEST_NAME"
 ```
+
+For the module-export check, inspect the project's existing test framework,
+module mode, aliases and configured test argv. Select a named assertion that
+loads the real target through that project's import/export or require mechanism
+and asserts `typeof actualBinding === "function"`; run that assertion with the
+configured project tool. A source-text match for a declaration/export, a mocked
+binding, test discovery alone or Python text inspection cannot establish the
+runtime binding. If no such assertion or configured loader exists, record the
+missing evidence and route the gap; never substitute a presence check for PASS.
+These project tools are optional project dependencies, not workflow helpers.
+Use the existing Python 3 interpreter for JSON parsing; malformed JSON, scalar
+responses, empty collections and failed HTTP requests remain failed checks.
 
 Establish behavior checks from matching configured-check receipts first. Propose a new probe only for an uncovered acceptance claim and explain the gap it resolves.
 

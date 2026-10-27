@@ -21,7 +21,7 @@ Rules that apply to ALL workflows and agents. Individual workflows may have addi
 
 ## Subagent Rules
 
-10. Dispatch exact project roles from `agents/README.md`, with model and effort resolved inline; never substitute generic agents.
+10. Dispatch exact project roles from `agents/AGENT.md`, with model and effort resolved inline; never substitute generic agents.
 11. Preserve approved CONTEXT scope and PROJECT Key Decisions. Resolve evidence-based conflicts through the coordinator; do not relitigate settled choices.
 
 ## Questioning Anti-Patterns
