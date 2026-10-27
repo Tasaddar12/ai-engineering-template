@@ -8,7 +8,7 @@ allowed-tools:
   - Bash
 ---
 <objective>
-Scan all phases for pending, skipped, blocked, and human_needed UAT items. Cross-reference against codebase to detect stale documentation. Produce prioritized human test plan.
+Scan all phases for pending, skipped, blocked, and human_needed UAT items. Cross-reference against codebase to detect stale documentation. Produce a prioritized human test plan and cited outstanding-item report across active, quick and archived records. This command is read-only; diagnosis, stale source and resolving plans never substitute for actual human acceptance.
 </objective>
 
 <execution_context>

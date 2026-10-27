@@ -55,52 +55,19 @@ Rotate through these perspectives — each naturally surfaces different blindspo
 
 ## Step 1: Initialize
 
+Read and execute engineer/workflows/_runtime-launcher.snippet.sh. Parse phase/--auto/--text as data; reject unknown flags. Resolve the actual phase first:
+
 ```bash
-_engineer_identity_ok() {
-  [ -f "$1" ] || return 1
-  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
-}
-_engineer_select() {
-  for _engineer_candidate do
-    if _engineer_identity_ok "$_engineer_candidate"; then
-      ENGINEER_RUN="$_engineer_candidate"
-      return 0
-    fi
-  done
-  return 1
-}
-if [ -n "${ENGINEER_RUN:-}" ]; then
-  _engineer_identity_ok "$ENGINEER_RUN" || {
-    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
-    exit 1
-  }
-else
-  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
-  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
-  _engineer_select \
-    "$_engineer_root/engineer/bin/engineer_run" \
-    "$_engineer_runtime_root/engineer/bin/engineer_run" \
-    "$_engineer_root/.claude/engineer/bin/engineer_run" \
-    "$_engineer_root/.codex/engineer/bin/engineer_run" \
-    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
-    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
-    "$_engineer_path_candidate" || {
-    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
-    exit 1
-  }
-fi
-export ENGINEER_RUN
-engineer_run() {
-  sh "$ENGINEER_RUN" "$@"
-}
-if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
-  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
-fi
-INIT=$(engineer_run init phase-op "${PHASE}")
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
+engineer_run query phase.locate "${PHASE}"
 ```
+
+Require found=true; retain its actual isolated worktree/branch/session and enter it before initialization. Reuse a matching owned phase session; otherwise use `engineer_run query session.open phase "${PHASE}"`, or `session.adopt phase N` only for an established owned isolated checkout. Enter the returned worktree and re-initialize:
+
+```bash
+INIT=$(engineer_run query init.phase-op "${PHASE}")
+```
+
+Require phase_found=true. No overflow-file protocol or workspace flag is supported. Keep root/branch/base/session identity and actual user authority. Spec authoring authorizes requirements clarification, never discussion completion, phase planning/implementation or another phase. A --auto flag selects defensible defaults within existing intent; it cannot invent a human answer, override locked acceptance or grant execution permission. Record consequential decisions through state.add-decision with actual authority; unresolved conflicts remain visible.
 
 Parse JSON for: `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `state_path`, `requirements_path`, `roadmap_path`, `planning_path`, `has_spec`, `spec_path`, `response_language`, `commit_docs`.
 
@@ -132,7 +99,7 @@ notice.
   - "Skip" — Exit (use existing spec as-is)
 
 If "View": Display SPEC.md, then offer Update/Skip.
-If "Skip": Exit with message: "Existing SPEC.md unchanged. Run /discuss-phase [X] to continue."
+If "Skip": Exit with message: "Existing SPEC.md unchanged; discuss-phase consumes it when invoked."
 If "Update": Load existing SPEC.md, continue to Step 3.
 
 ## Step 2: Scout Codebase
@@ -223,7 +190,7 @@ If gate passes (ambiguity ≤ 0.20 AND all minimums met):
   - "Keep talking" → Continue (no round limit from here)
   - "Abandon" → Exit without writing
 
-**If `--auto` mode throughout:** Replace all AskUserQuestion calls above with Claude's recommended choice. Log decisions inline. Apply the same logic as `--auto` in discuss-phase.
+**If `--auto` mode throughout:** Replace all AskUserQuestion calls above with the active Claude or Codex host's defensible recommended choice. Log decisions inline. Apply the same logic as `--auto` in discuss-phase.
 
 **Text mode (`workflow.text_mode: true` or `--text` flag):** Use plain-text numbered lists instead of AskUserQuestion TUI menus.
 
@@ -259,114 +226,47 @@ any language (the recorded recall gap — ADR-857 §98 / ADR-550 D7b, not a tran
 author an explicit `shapes` array on that requirement instead of relying on the prose
 classifier.
 
-**Runtime coverage compute — resolve and invoke edge-probe.cjs:**
+**Runtime coverage compute — canonical Python verb:**
+
+Write the Requirements gathered in THIS spec session to a temporary JSON file, one `{id,text,text_en?,shapes?}` per actual requirement. Preserve the exact SPEC text and IDs; translate only text_en. The following heredoc is an authoring example: replace every placeholder before execution. Use portable suffixless mktemp then append .json; do not build/install a second engine or run an adopting project's build scripts.
 
 ```bash
-# Resolve the compiled edge-probe.cjs against the GSD install dir via RUNTIME_DIR (#448)
-# — NOT the consuming project's git root — falling back to git toplevel / $HOME/.claude.
-# Mirrors the ui-safety-gate.cjs resolution idiom at autonomous.md:290 / plan-phase.md:631.
-_GSD_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-EDGE_PROBE_JS=$(for _c in \
-  "$_GSD_RT/engineer/bin/lib/edge-probe.cjs" \
-  "$_GSD_RT/bin/lib/edge-probe.cjs" \
-  "$_GSD_RT/.claude/bin/lib/edge-probe.cjs" \
-  "$HOME/.claude/engineer/bin/lib/edge-probe.cjs" \
-  "$HOME/.claude/bin/lib/edge-probe.cjs"; do
-  [ -f "$_c" ] && { echo "$_c"; break; }
-done)
-
-# Graceful degradation — never silent skip (RR-04). Build ONLY when $_GSD_RT is a verified
-# GSD source checkout (has tsconfig.build.json + src/edge-probe.cts), and pin npm to it with
-# --prefix so we never trigger the CONSUMING project's own build:lib (its cwd package scripts:
-# codegen/migrations/writes) during a spec workflow. Real installs ship the compiled .cjs via
-# prepublishOnly, so this build path only matters in a GSD dev checkout (review High).
-if [ -z "$EDGE_PROBE_JS" ]; then
-  if [ -f "$_GSD_RT/tsconfig.build.json" ] && [ -f "$_GSD_RT/src/edge-probe.cts" ]; then
-    npm --prefix "$_GSD_RT" run build:lib 2>/dev/null || true
-    EDGE_PROBE_JS=$(for _c in \
-      "$_GSD_RT/engineer/bin/lib/edge-probe.cjs" \
-      "$_GSD_RT/bin/lib/edge-probe.cjs" \
-      "$_GSD_RT/.claude/bin/lib/edge-probe.cjs" \
-      "$HOME/.claude/engineer/bin/lib/edge-probe.cjs" \
-      "$HOME/.claude/bin/lib/edge-probe.cjs"; do
-      [ -f "$_c" ] && { echo "$_c"; break; }
-    done)
-  fi
-  if [ -z "$EDGE_PROBE_JS" ]; then
-    echo "ERROR: edge-probe.cjs not found — reinstall GSD or run \`npm run build:lib\` in your GSD checkout." >&2
-    exit 1
-  fi
-fi
-
-# Write the Requirements gathered in THIS spec session to a temp JSON, then invoke the
-# canonical coverage compute. Populate the heredoc from the SPEC's Requirements — one object
-# per requirement: {"id","text","text_en"?,"shapes"?}. This is the load-bearing step: an empty
-# file makes the probe a no-op, so the guard below fails loud rather than silently skipping
-# (RR-04). When `response_language` is set, ALSO add `text_en` — a faithful ENGLISH
-# translation of `text` (see above) — the shape cues are English-only, so original-language
-# `text` alone classifies to zero shapes; `text` itself stays the SPEC's own requirement text
-# and is never translated. Keep every `id` exactly as it appears in the SPEC.
-# BSD/macOS mktemp only randomizes XXXXXX when it is the final path component, so make a
-# suffixless temp then append the extension — portable across BSD + GNU (#1520).
-REQS_JSON=$(mktemp "${TMPDIR:-/tmp}/edge-probe-reqs-XXXXXX") && mv "$REQS_JSON" "${REQS_JSON}.json" && REQS_JSON="${REQS_JSON}.json" || exit 1
+REQS_JSON=$(mktemp "${TMPDIR:-/tmp}/edge-probe-reqs-XXXXXX") || exit 1
+mv "$REQS_JSON" "${REQS_JSON}.json" || exit 1
+REQS_JSON="${REQS_JSON}.json"
 cat > "$REQS_JSON" <<'JSON'
 [
-  { "id": "R1", "text": "<replace: requirement text from the SPEC>" }
+  {"id":"R1","text":"<replace: actual SPEC requirement text>"}
 ]
 JSON
-# Guard — never invoke on an empty/invalid array, OR one still holding the heredoc
-# `<replace: …>` placeholder (a forgotten substitution would otherwise yield a
-# meaningful-looking but bogus coverage report). Fail loud, not silent no-op.
-if ! node -e 'const a=require(process.argv[1]);if(!Array.isArray(a)||a.length===0)process.exit(1);if(a.some(r=>typeof r.text!=="string"||!r.text.trim()||r.text.includes("<replace:")))process.exit(1)' "$REQS_JSON" 2>/dev/null; then
+if ! python -I -c 'import json,sys; a=json.load(open(sys.argv[1],encoding="utf-8")); assert isinstance(a,list) and a; assert all(isinstance(r,dict) and isinstance(r.get("id"),str) and r["id"].strip() and isinstance(r.get("text"),str) and r["text"].strip() and "<replace:" not in r["text"] for r in a)' "$REQS_JSON"; then
   rm -f "$REQS_JSON"
-  echo "ERROR: edge-probe requirements JSON is empty/invalid or still holds the <replace: …> placeholder — populate \$REQS_JSON from the SPEC Requirements before Step 5.5 runs." >&2
+  printf '%s\n' 'ERROR: populate all real SPEC requirements before the edge probe; empty/invalid/placeholder input cannot pass.' >&2
   exit 1
 fi
-# Invoke the compiled engine and CAPTURE its report — it computes which categories apply per
-# requirement. The report is RENDERED into context below (#3102); its resolved/dismissed/
-# unresolved rows (resolved items carry verification: explicit|backstop) are the deterministic
-# FLOOR the resolution loop consumes and unions with its own classification — the loop no longer
-# re-derives the taxonomy from prose unaided. Floor, never ceiling: the classifier has a measured
-# recall gap (ADR-857 §98 / ADR-550 D7b), so the model still ADDS any category the engine missed.
-# The engine FAILS CLOSED (exit 2) on an invalid authored shape or bad input — so the capture
-# MUST be exit-checked. A bare `COVERAGE=$(node …)` swallows that exit code, leaves $COVERAGE
-# empty, and lets the workflow fall through to prose re-derivation: fail-OPEN at the boundary
-# the engine validation exists to protect. Make the run fatal, then validate the captured
-# report is well-formed JSON before the resolution loop consumes it.
-if ! COVERAGE=$(node "$EDGE_PROBE_JS" "$REQS_JSON"); then
+if ! COVERAGE=$(engineer_run query spec.edge-probe "$REQS_JSON"); then
   rm -f "$REQS_JSON"
-  echo "ERROR: edge-probe engine failed (invalid shapes or bad input) — fix the requirement(s) and re-run; never proceed with empty coverage." >&2
+  printf '%s\n' 'ERROR: edge probe failed; correct the input/runtime contract and rerun. Never proceed with empty coverage.' >&2
   exit 1
 fi
 rm -f "$REQS_JSON"
-# Exit-0-but-garbage guard: the report must parse as JSON with the expected { items[], coverage{} } shape.
-if ! printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let r;try{r=JSON.parse(s)}catch{process.exit(1)}if(!r||!Array.isArray(r.items)||typeof r.coverage!=="object"||r.coverage===null)process.exit(1)})'; then
-  echo "ERROR: edge-probe produced an unparseable or malformed coverage report — refusing to proceed with the resolution loop." >&2
+if ! printf '%s' "$COVERAGE" | python -I -c 'import json,sys; r=json.load(sys.stdin); assert isinstance(r,dict) and isinstance(r.get("items"),list) and isinstance(r.get("coverage"),dict); c=r["coverage"]; assert all(isinstance(c.get(k),int) and c[k]>=0 for k in ("applicable","resolved","unresolved","unclassified")); assert isinstance(c.get("byVerification"),dict) and all(isinstance(c["byVerification"].get(k),int) for k in ("explicit","backstop"))'; then
+  printf '%s\n' 'ERROR: malformed edge coverage report; refusing prose-only fallthrough.' >&2
   exit 1
 fi
-# Render the validated report into the model's visible context (#3102). Until here $COVERAGE was
-# captured, shape-checked, and reduced to coverage.applicable — the engine's per-requirement
-# items[] never reached the model, so the resolution loop below re-derived edge categories from
-# requirement PROSE (the data-flow twin of #2733's control-flow discard). These rows are the
-# deterministic FLOOR the resolution loop consumes. Printed RAW (not a bespoke table) so this
-# step holds NO knowledge of the item schema: an ADR-550 D7a-style re-cut of the item/coverage
-# shape cannot silently desync a hand-rolled renderer here — the engine stays the single source.
-echo "### Edge-probe coverage report (deterministic proposals — the FLOOR for the resolution loop below):"
+printf '%s\n' '### Edge-probe coverage report (deterministic proposals — FLOOR for resolution):'
 printf '%s\n' "$COVERAGE"
-echo "### (end edge-probe coverage report)"
-# Zero-applicable guard: a report where the engine proposed NO applicable edge across ANY
-# requirement is far more likely a shape-classification miss (or malformed requirements) than
-# a genuinely edge-free spec — the same fail-open shape as an invalid shape yielding
-# applicable:0. Surface it loudly; the author must explicitly confirm "no applicable edges"
-# below rather than silently emitting a green empty ## Edge Coverage section.
-APPLICABLE=$(printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let n=0;try{n=JSON.parse(s).coverage.applicable}catch{n=0}process.stdout.write(String(n))})')
-UNCLASSIFIED=$(printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let n=0;try{n=JSON.parse(s).coverage.unclassified}catch{n=0}process.stdout.write(String(n))})')
-# #4656: all-unclassified is the accidental-miss case the applicable:0 guard could never
-# reach — #1110's soft-signal rows make applicable non-zero by construction there.
-if [ "$APPLICABLE" = "0" ] || [ "$UNCLASSIFIED" = "$APPLICABLE" ]; then
-  echo "WARNING: edge-probe proposed ZERO applicable edges across all requirements — likely a classification miss or malformed requirements, not a genuinely edge-free spec. Do NOT silently write an empty Edge Coverage section." >&2
+printf '%s\n' '### (end edge-probe coverage report)'
+APPLICABLE=$(printf '%s' "$COVERAGE" | python -I -c 'import json,sys; print(json.load(sys.stdin)["coverage"]["applicable"])') || exit 1
+UNCLASSIFIED=$(printf '%s' "$COVERAGE" | python -I -c 'import json,sys; print(json.load(sys.stdin)["coverage"]["unclassified"])') || exit 1
+if [ "$APPLICABLE" = 0 ] || [ "$UNCLASSIFIED" = "$APPLICABLE" ]; then
+  printf '%s\n' 'WARNING: zero real edge classifications; explicitly review wording/shapes before an empty Edge Coverage section.' >&2
 fi
 ```
+
+The engine's closed eight-category shape taxonomy and full row/coverage schema live in edge-probe.md. Invalid authored shapes/records fail closed; never ignore text_en or replace authored shapes with guessed prose cues. Unclassified rows are soft review signals; authored shapes:[] is an explicit opt-out. Validate and consume every returned row, not only coverage counts. Preserve full raw items[] in the visible context so resolution cannot silently drop deterministic proposals. The engine is a FLOOR, never a ceiling: union additional relevant categories found during the human/model pass. Persist actual resolutions with the documented `spec.edge-probe REQUIREMENTS.json --resolutions FILE` contract when computing the final report; retain dismissed reasons and unresolved rows. If a runtime contract is unavailable, report the exact dependency and keep coverage pending rather than fake a successful probe.
+
+Honor an explicit user defer-all-checks/probes order: author the requirement/proposed-resolution input as pending and do not execute the verb or JSON checks until allowed. Do not label the deterministic probe complete or claim its report exists before execution. Continue independent authorized prose elicitation without silently substituting it for the required runtime floor.
 
 If the guard above fired (`$APPLICABLE` is `0`, or every requirement is unclassified — `$UNCLASSIFIED = $APPLICABLE`, #4656), do NOT proceed silently: ask the author to confirm via AskUserQuestion
 ("The edge probe found no applicable edges for any requirement — is this genuinely an
@@ -430,7 +330,7 @@ portable two-stage protocol, the canon-referral rule, and the status×verificati
 live there (size-cap discipline; keep this step lean).
 
 **D1 — no compiled engine (ADR-550 D7b).** Unlike Step 5.5, the prohibition probe has NO
-compiled recall engine and runs NO `node` invocation here. The recall stage is an LLM prose
+separate executable recall engine and runs no executable recall invocation here. The recall stage is an LLM prose
 pass: the closed eight-category edge taxonomy a classifier can apply does not exist for the
 open values/safety/ethics must-NOT axis. Do NOT copy the Step 5.5 engine-resolution block.
 Only the schema/projection layer is real code; the recall is prose.
@@ -457,21 +357,21 @@ For each Requirement gathered so far, run the two-stage recall→precision pass:
      checkable — routes to judgment review).
      - **Capture the wired-check descriptor on `test`-tier (#1278, SOFT).** When a prohibition is
        resolved `verification: test`, ALSO capture the descriptor of the wired check so
-       `verify-phase` can LOCATE it deterministically (no verifier invention at verify time).
+       `verify-work` can LOCATE it deterministically (no verifier invention at verify time).
        Capture the flat scalars — persisted into SPEC and projected onto the
-       `must_haves.prohibitions` item by `projectProhibitions`:
-       - `check_kind` — `node-test` | `lint-rule`.
-       - `check_target` — the negative-test file path (for `node-test`), or the path to lint
+       `must_haves.prohibitions` item by the canonical prohibition projection:
+       - `check_kind` — `test-command` | `lint-rule`.
+       - `check_target` — the negative-test file path (for `test-command`), or the path to lint
          (for `lint-rule`).
-       - `check_rule` — the eslint rule id (e.g. `local/no-source-grep`); `lint-rule` only.
+       - `check_rule` — the actual configured lint rule id (e.g. `local/no-source-grep`); `lint-rule` only.
        - `check_violation_fixture` (#1279) — path to a KNOWN-BAD subject the wired check is run
          against to **machine-prove fail-first**; rides BOTH kinds. Capture it to let the item green
-         end-to-end with zero hand-authoring at verify time; for `node-test` the negative test should
+         end-to-end with zero hand-authoring at verify time; for `test-command` the negative test should
          read its subject from the `GSD_PROHIB_SUBJECT` env var so the prover can inject this fixture.
-       - `check_clean_fixture` (#1346; **REQUIRED for `node-test` as of #1906**) — path to a
-         KNOWN-CLEAN control subject. The `node-test` prover runs the check against it and requires
+       - `check_clean_fixture` (#1346; **REQUIRED for `test-command` as of #1906**) — path to a
+         KNOWN-CLEAN control subject. The `test-command` prover runs the check against it and requires
          GREEN — proving the violation's RED is caused by the subject's *content*, not by
-         `GSD_PROHIB_SUBJECT` merely being set. For a `node-test` this is **mandatory**: omit it and
+         `GSD_PROHIB_SUBJECT` merely being set. For a `test-command` this is **mandatory**: omit it and
          the check is un-provable (fail-closed), never proven on the violation alone — so a deceptive
          content-independent test cannot pass. (`lint-rule` needs no clean fixture: its subject IS the
          linted file, no `GSD_PROHIB_SUBJECT` indirection.)
@@ -479,7 +379,7 @@ For each Requirement gathered so far, run the two-stage recall→precision pass:
        allowed** — if the author cannot yet name the wired check, leave the descriptor empty and
        proceed. It is NOT a hard authoring block; the item simply stays fail-closed/flagged
        downstream (an absent/partial descriptor — or one with no `check_violation_fixture` —
-       → `descriptorFromProjection` null/under-specified/fixture-less → producer fail-closed
+       → the canonical descriptor parser null/under-specified/fixture-less → producer fail-closed
        locate-or-unprovable, never green). Do NOT capture `failFirst` here — it is a
        verify-time caller attestation, not a spec-authored field (#1279).
    - **Dismiss (reason)** → mark `dismissed` with a REQUIRED non-empty reason (PROB-05). The
@@ -514,9 +414,17 @@ Populate the `## Prohibitions` section of SPEC.md from the resolved prohibitions
 `resolved`/`test` row is a checkable negative acceptance criterion; `resolved`/`judgment`
 rows route to judgment review; `⚠ UNRESOLVED` rows are flagged as assumptions). A
 `resolved`/`test` row ALSO carries its captured `check_kind` / `check_target` / `check_rule` /
-`check_violation_fixture` / `check_clean_fixture` descriptor when present (so the projection feeds `verify-phase`'s deterministic locate + machine-proof + causation control, #1278 + #1279 + #1346);
+`check_violation_fixture` / `check_clean_fixture` descriptor when present (so the projection feeds `verify-work`'s deterministic locate + machine-proof + causation control, #1278 + #1279 + #1346);
 a `test` row with no captured descriptor is still valid — it stays fail-closed/flagged
 downstream rather than blocking authoring.
+
+## Step 5.7: Downstream completeness and spec-less precedence
+
+Read engineer/references/specless-probe-fallback.md in full when integrating a phase without SPEC or with an absent/empty Edge Coverage or Prohibitions section. It preserves the SAME complete Step 5.5/5.6 methods; only the requirement source changes to approved phase requirement IDs/text. Detect section supply independently with `engineer_run query spec.section SPEC.md edges` and `spec.section SPEC.md prohibitions`; an absent SPEC makes both absent without a file-read fallback that hides real errors. Empty sections cannot suppress fallback. Preserve every supplied nonempty section unchanged; run fallback only for its absent sibling. The default-on workflow.specless_probe_fallback policy and a genuinely empty requirement list produce visible, cited skip reasons rather than a silent drop or invented requirement.
+
+Edges resolved explicit become PLAN acceptance/must_haves.truths strings; resolved backstop becomes a structured flat `{statement, verification: backstop}` marker requiring actual held-out/PBT evidence, never a parenthetical that a parser cannot see. Every unresolved/unclassified edge stays a flagged planner assumption. Kept prohibitions become the sibling must_haves.prohibitions list with statement/lifecycle/verification and only genuinely wired optional flat check_* fields. Fallback --auto writes NO invented descriptors, never auto-dismisses, and leaves those prohibitions flagged-unverified. Judgment tiers require real review; required human decisions remain human_needed. The same items feed requirement-level VALIDATION, with no-silent-drop equality between surfaced items and authored predicates/flagged assumptions. SPEC section presence does not prove its predicates were wired or checked.
+
+The complete verification pipeline must locate each test-tier prohibition, machine-prove failure on the known violation (assertion/rule failure, never setup/error/timeout), require the known-clean causation control for test-command, and require a real nonvacuous clean production pass. Missing/partial descriptors and missing fixture/check evidence stay flagged and prevent passed; authoring can continue with these explicit obligations. No caller-attested failFirst flag, merely existing file, or report-format string grants a pass. Capture the actual check argv/configuration, target/rule/fixtures, revision and observed per-stage evidence. User-deferred checks remain pending and cannot be promoted during report-only inspection.
 
 ## Step 6: Generate SPEC.md
 
@@ -567,8 +475,7 @@ SPEC.md written — {N} requirements locked.
   Phase {X}: {name}
   Ambiguity: {final_score} (gate: ≤ 0.20)
 
-Next: /discuss-phase {X}
-  discuss-phase will detect SPEC.md and focus on implementation decisions only.
+discuss-phase will load SPEC.md when invoked and focus on implementation decisions. No discussion, planning or implementation was started.
 ```
 
 </process>
@@ -594,7 +501,7 @@ Next: /discuss-phase {X}
 - Boundaries are explicit (in scope / out of scope with reasoning)
 - Acceptance criteria are pass/fail checkboxes
 - SPEC.md committed atomically (when commit_docs is true)
-- User directed to /discuss-phase as next step
+- Closing report states that discuss-phase consumes SPEC.md; no automatic workflow chain
 - Edge-completeness probe run; Edge Coverage section populated; unresolved edges flagged as assumptions
 - Prohibition-completeness probe run; Prohibitions section populated; unresolved prohibitions flagged as assumptions
 </success_criteria>
