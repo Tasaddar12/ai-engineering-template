@@ -1,18 +1,23 @@
-"""Standalone cleanup contracts using disposable repositories and offline providers."""
-import importlib.util
+"""Cleanup contracts against the standalone runtime, disposable Git and offline APIs.
+
+The token protocol replaces the old approval-envelope hook. Every inherited case
+still exercises its original destructive or preservation boundary through the
+current public command, without loading or installing the retired runtime.
+"""
+import copy
 import json
 import os
 from pathlib import Path
-import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+from urllib.parse import parse_qs, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/"engineer/bin"))
-from lib import cleanup as current_cleanup
+from lib import cleanup, core, sessions
 from lib.core import Args, Failure
 
 
@@ -22,582 +27,487 @@ def git(cwd, *args):
 
 
 class CleanupTests(unittest.TestCase):
-    """Only disposable repositories and offline provider fixtures can mutate."""
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(prefix="cleanup cafÃ© ")
+        self.temp = tempfile.TemporaryDirectory(prefix="cleanup unicode café ")
         self.addCleanup(self.temp.cleanup)
-        # Establish a canonical disposable root before constructing any normal
-        # fixture paths. Never resolve the alias operands in protection tests.
-        self.temp_root = Path(self.temp.name).resolve()
-        self.root = self.temp_root / "repo"
+        self.root = Path(self.temp.name).resolve()/"repo"
         self.root.mkdir()
         git(self.root, "init", "-q", "-b", "main")
-        (self.root / "tracked").write_text("safe\n", encoding="utf-8")
-        git(self.root, "add", "tracked")
-        git(self.root, "-c", "user.name=Test", "-c", "user.email=t@example.invalid", "commit", "-qm", "fixture")
+        git(self.root, "config", "user.name", "Cleanup Fixture")
+        git(self.root, "config", "user.email", "cleanup@example.invalid")
+        (self.root/".gitignore").write_text(".worktrees/\n.workflow-backups/\n.planning/\nignored\n", encoding="utf-8")
+        (self.root/"tracked").write_text("original\n", encoding="utf-8")
+        git(self.root, "add", ".")
+        git(self.root, "commit", "-qm", "fixture")
         git(self.root, "remote", "add", "origin", "https://github.com/owner/repo.git")
-        self.tree = self.temp_root / "owned tree"
+        self.head = git(self.root, "rev-parse", "HEAD")
+        self.tree = self.root/".worktrees/owned tree"
         git(self.root, "worktree", "add", "-qb", "phase-owned", str(self.tree))
-        self.state = self.root / ".git/ai-phase"
+        self.state = self.root/".git/engineer"
         self.state.mkdir()
-        self.owner = {"branch": "phase-owned", "worktree": str(self.tree), "base_branch": "main", "session_id": "fixture"}
+        self.owner = {"branch": "phase-owned", "worktree": str(self.tree), "base_branch": "main", "session_id": "fixture", "status": "open"}
         self.write_owner()
-        self.provider, self.case = "github", "merged"
-        spec = importlib.util.spec_from_file_location("cleanup_policy", ROOT / ".ai/runtime/lib/cleanup.py")
-        self.policy = importlib.util.module_from_spec(spec)
-        sys.modules[spec.name] = self.policy
-        spec.loader.exec_module(self.policy)
+        self.case = "merged"
+        self.other_provider_open = False
         self.mutations = []
+        self.mutate = None
+        environment = patch.dict(os.environ, {"ENGINEER_ROOT": str(self.root)})
+        environment.start()
+        self.addCleanup(environment.stop)
+        runner = patch.object(cleanup, "run", side_effect=self.runner)
+        runner.start()
+        self.addCleanup(runner.stop)
 
     def write_owner(self):
-        (self.state / "sessions.json").write_text(json.dumps({"sessions": [self.owner]}), encoding="utf-8")
+        owners = [self.owner]+([self.other_owner] if hasattr(self, "other_owner") else [])
+        (self.state/"sessions.json").write_text(json.dumps({"sessions": owners}), encoding="utf-8")
 
-    def runner(self, argv, cwd):
+    def runner(self, argv, cwd=None, check=True, **options):
         if argv[0] == "git":
-            return subprocess.run(argv, cwd=cwd, text=True, encoding="utf-8", capture_output=True)
-        oid = git(self.root, "rev-parse", "phase-owned")
+            destructive = argv[1:3] == ["worktree", "remove"] or argv[1:2] == ["update-ref"] and "-d" in argv
+            if destructive:
+                self.mutations.append(argv)
+                if self.mutate:
+                    result = self.mutate(argv, cwd)
+                    if result is not None:
+                        if check and result.returncode:
+                            raise Failure("command-failed", "offline injected mutation failure")
+                        return result
+            return core.run(argv, cwd, check=check, **options)
         if self.case == "offline":
-            raise OSError("fixture offline")
-        if self.provider == "github":
-            item = {"number": 42, "state": "open" if self.case == "open" else "closed",
-                    "merged_at": "2026-01-01" if self.case == "merged" else None,
-                    "head": {"ref": "phase-owned", "sha": oid, "repo": {"full_name": "owner/repo"}},
-                    "base": {"repo": {"full_name": "owner/repo"}}}
-            if self.case == "fork": item["head"]["repo"]["full_name"] = "fork/repo"
-            if self.case == "recordless": item.pop("number")
-            obj = [[item]]
-            if self.case == "mixed": obj[0].append(dict(item, state="open"))
-            if self.case == "partial": obj = [[item] * 100]
-            if self.case == "missing": obj = [[]]
-            if self.case == "pages":
-                unrelated = dict(item, head=dict(item["head"], ref="unrelated"))
-                obj = [[unrelated] * 100, [item]]
-        elif "/merge_requests" not in argv[-1]:
-            obj = {"id": 7, "path_with_namespace": "owner/repo", "web_url": "https://gitlab.com/owner/repo"}
+            return subprocess.CompletedProcess(argv, 1, "", "offline")
+        endpoint = argv[-1]
+        if endpoint.startswith("projects/") and "/merge_requests" not in endpoint:
+            data = {"id": 7, "path_with_namespace": "owner/repo"}
         else:
-            item = {"iid": 42, "state": "opened" if self.case == "open" else "merged" if self.case == "merged" else "closed",
-                    "source_branch": "phase-owned", "sha": oid, "source_project_id": 7, "target_project_id": 7}
-            if self.case == "fork": item["source_project_id"] = 8
-            if self.case == "recordless": item.pop("iid")
-            obj = [item]
-            if self.case == "mixed": obj.append(dict(item, state="opened"))
-            if self.case == "partial": obj = {"partial": True}
-            if self.case == "missing": obj = []
-            if self.case == "pages": obj = [dict(item, source_branch="unrelated")] * 100 + [item]
-        return subprocess.CompletedProcess(argv, 0, json.dumps(obj), "")
+            rows = []
+            for number, branch in ((42, "phase-owned"), (43, "phase-z-other")):
+                if number == 43 and not hasattr(self, "other_owner"):
+                    continue
+                opened = self.case == "open" or branch == "phase-z-other" and self.other_provider_open
+                if "/merge_requests" in endpoint:
+                    row = {"iid": number, "state": "opened" if opened else "merged" if self.case == "merged" else "closed", "source_branch": branch, "sha": self.head, "source_project_id": 7, "target_project_id": 7}
+                    if self.case == "fork": row["source_project_id"] = 8
+                    if self.case == "recordless": row.pop("iid")
+                else:
+                    row = {"number": number, "state": "open" if opened else "closed", "head": {"ref": branch, "sha": self.head, "repo": {"full_name": "owner/repo"}}, "base": {"repo": {"full_name": "owner/repo"}}}
+                    if self.case == "fork": row["head"]["repo"]["full_name"] = "fork/repo"
+                    if self.case == "recordless": row.pop("number")
+                rows.append(row)
+            if self.case == "missing": rows = []
+            if self.case == "mixed":
+                rows.append(dict(rows[0], state="opened" if "/merge_requests" in endpoint else "open"))
+            page = int(parse_qs(urlparse(endpoint).query).get("page", ["1"])[0])
+            if self.case == "partial": rows = {"partial": True}
+            elif self.case == "pages" and page == 1:
+                row = copy.deepcopy(rows[0])
+                if "/merge_requests" in endpoint: row["source_branch"] = "unrelated"
+                else: row["head"]["ref"] = "unrelated"
+                rows = [row]*100
+            data = rows
+        return subprocess.CompletedProcess(argv, 0, json.dumps(data), "")
 
     def preview(self):
-        return self.policy.cleanup_preview(self.root, evidence_runner=self.runner)
+        return cleanup.command(Args([]), "preview")
 
-    def envelope(self, preview=None):
-        preview = preview or self.preview()
-        return {"schema_version": 1, "repository": preview["repository"], "snapshot_id": preview["snapshot_id"],
-                "operations": preview["operations"], "approval": {"text": "Approve exact cleanup snapshot " + preview["snapshot_id"],
-                "reference": "human-message-fixture", "snapshot_id": preview["snapshot_id"]}}
+    def apply(self, preview):
+        return cleanup.command(Args(["--approval-token", preview["approval_token"], "--confirm"]), "apply")
 
-    def apply(self, envelope, mutate=None):
-        approval = self.temp_root / "approval.json"
-        approval.write_text(json.dumps(envelope), encoding="utf-8")
-        def mutation(argv, cwd):
-            self.mutations.append(argv)
-            if mutate: return mutate(argv, cwd)
-            return subprocess.run(argv, cwd=cwd, text=True, encoding="utf-8", capture_output=True)
-        return self.policy.cleanup_apply(self.root, approval, evidence_runner=self.runner, mutation_runner=mutation)
+    def refused(self, preview, code=None, removed=0):
+        with self.assertRaises(Failure) as caught:
+            self.apply(preview)
+        if code: self.assertEqual(caught.exception.code, code)
+        self.assertEqual(len(caught.exception.details.get("removed", [])), removed)
+        return caught.exception
+
+    def backup(self, name="group/owned"):
+        path = self.root/".workflow-backups"/name
+        path.mkdir(parents=True)
+        (path/"valuable").write_text("approved original", encoding="utf-8")
+        self.owner["backups"] = [str(path)]
+        self.write_owner()
+        return path
 
     def test_cleanup_preview_is_readonly_and_lists_distinct_operations(self):
-        before = (git(self.root, "show-ref"), git(self.root, "worktree", "list", "--porcelain"), (self.state / "sessions.json").read_bytes())
-        preview = self.preview()
-        self.assertEqual(["worktree_remove", "branch_delete"], [x["kind"] for x in preview.get("operations", [])], preview)
-        self.assertEqual(preview, self.preview())
-        self.assertEqual(before, (git(self.root, "show-ref"), git(self.root, "worktree", "list", "--porcelain"), (self.state / "sessions.json").read_bytes()))
-        self.assertFalse((self.state / "cleanup").exists())
+        before = (git(self.root, "show-ref"), git(self.root, "worktree", "list", "--porcelain"), (self.state/"sessions.json").read_bytes())
+        first, second = self.preview(), self.preview()
+        self.assertEqual(["worktree_remove", "branch_delete"], [entry["kind"] for entry in first["entries"]])
+        self.assertEqual(first["entries"], second["entries"])
+        self.assertNotEqual(first["approval_token"], second["approval_token"])
+        self.assertEqual(before, (git(self.root, "show-ref"), git(self.root, "worktree", "list", "--porcelain"), (self.state/"sessions.json").read_bytes()))
+        self.assertEqual([], self.mutations)
 
     def test_cleanup_provider_matrix_preserves_open_unknown_fork_and_partial(self):
         for provider in ("github", "gitlab"):
-            self.provider = provider
             git(self.root, "remote", "set-url", "origin", f"https://{provider}.com/owner/repo.git")
             for case in ("merged", "closed", "open", "offline", "fork", "partial", "missing", "mixed", "recordless", "pages"):
                 with self.subTest(provider=provider, case=case):
                     self.case = case
-                    preview = self.preview()
-                    self.assertEqual(2 if case in ("merged", "closed", "pages") else 0, len(preview.get("operations", [])), preview)
-        (self.tree / "tracked").write_text("unique\n", encoding="utf-8")
-        git(self.tree, "add", "tracked")
-        git(self.tree, "-c", "user.name=Test", "-c", "user.email=t@example.invalid", "commit", "-qm", "unique")
-        for provider in ("github", "gitlab"):
-            self.provider = provider
-            git(self.root, "remote", "set-url", "origin", f"https://{provider}.com/owner/repo.git")
-            for state in ("closed", "merged"):
-                with self.subTest(provider=provider, unique_state=state):
-                    self.case = state
-                    self.assertEqual([], self.preview().get("operations", ["missing"]))
+                    self.assertEqual(2 if case in ("merged", "closed", "pages") else 0, self.preview()["count"])
+        (self.tree/"tracked").write_text("unique\n")
+        git(self.tree, "add", ".")
+        git(self.tree, "commit", "-qm", "unmerged")
+        self.head = git(self.tree, "rev-parse", "HEAD")
+        for case in ("merged", "closed"):
+            self.case = case
+            self.assertEqual(0, self.preview()["count"])
 
     def test_cleanup_dirty_ignored_unowned_locked_detached_preserved(self):
         for name in ("untracked", "ignored"):
-            with self.subTest(name=name):
-                if name == "ignored": (self.root / ".git/info/exclude").write_text("ignored\n", encoding="utf-8")
-                (self.tree / name).write_text("valuable", encoding="utf-8")
-                self.assertEqual([], self.preview().get("operations", ["missing"]))
-                (self.tree / name).unlink()
+            (self.tree/name).write_text("valuable")
+            self.assertEqual(0, self.preview()["count"])
+            (self.tree/name).unlink()
         git(self.root, "worktree", "lock", str(self.tree))
-        self.assertEqual([], self.preview().get("operations", ["missing"]))
+        self.assertEqual(0, self.preview()["count"])
         git(self.root, "worktree", "unlock", str(self.tree))
-        self.owner["branch"] = "different"
+        self.owner["branch"] = "unowned"
         self.write_owner()
-        self.assertEqual([], self.preview().get("operations", ["missing"]))
+        self.assertEqual(0, self.preview()["count"])
 
     def test_cleanup_exact_approval_and_stale_refuse_before_mutation(self):
         preview = self.preview()
-        self.assertIn("snapshot_id", preview, preview)
-        original = self.envelope(preview)
-        import copy
-        for variant in ("missing", "broad", "wildcard", "duplicate", "extra", "repository", "snapshot", "reference"):
-            with self.subTest(variant=variant):
-                envelope = copy.deepcopy(original)
-                if variant == "missing": envelope["operations"].pop()
-                if variant == "broad": envelope["approval"]["text"] = "yes delete everything"
-                if variant == "wildcard": envelope["operations"][0]["target"] = "*"
-                if variant == "duplicate": envelope["operations"].append(envelope["operations"][0])
-                if variant == "extra": envelope["operations"].append({"kind": "backup_remove", "target": "/"})
-                if variant == "repository": envelope["repository"]["common_dir"] += "-other"
-                if variant == "snapshot": envelope["snapshot_id"] = "0" * 64
-                if variant == "reference": envelope["approval"]["reference"] = ""
-                self.assertEqual("refused", self.apply(envelope)["status"])
-                self.assertEqual([], self.mutations)
-        (self.tree / "new work").write_text("valuable", encoding="utf-8")
-        self.assertEqual("refused", self.apply(original)["status"])
+        stored = self.root/".planning/cleanup"/(preview["approval_token"]+".json")
+        original = stored.read_bytes()
+        for change in ("missing", "duplicate", "extra", "path", "owner", "head", "nonce", "inventory"):
+            data = json.loads(original)
+            if change == "missing": data["entries"].pop()
+            if change == "duplicate": data["entries"].append(data["entries"][0])
+            if change == "extra": data["entries"].append({"kind": "backup", "path": "/"})
+            if change == "path": data["entries"][0]["path"] = "*"
+            if change == "owner": data["entries"][0]["owner"]["record"]["session_id"] = "another"
+            if change == "head": data["entries"][0]["head"] = "0"*40
+            if change == "nonce": data["nonce"] = "changed"
+            if change == "inventory": data["backup_inventory"] = [{"path": "extra"}]
+            stored.write_text(json.dumps(data))
+            self.refused(preview, "cleanup-preview-corrupt")
+            self.assertEqual([], self.mutations)
+        stored.write_bytes(original)
+        with self.assertRaises(Failure): cleanup.command(Args([preview["approval_token"]]), "apply")
+        (self.tree/"new work").write_text("valuable")
+        self.refused(preview, "cleanup-dirty-resource")
         self.assertEqual([], self.mutations)
 
     def test_cleanup_apply_consumes_once_and_reports_real_removal(self):
         preview = self.preview()
-        self.assertIn("snapshot_id", preview, preview)
-        envelope = self.envelope(preview)
-        result = self.apply(envelope)
-        self.assertEqual("complete", result["status"], result)
-        self.assertEqual(2, len(result["removed"]), result)
+        result = self.apply(preview)
+        self.assertEqual(2, result["count"])
         self.assertFalse(self.tree.exists())
-        self.assertNotIn("refs/heads/phase-owned", git(self.root, "show-ref"))
-        self.assertTrue(any(a[1:3] == ["update-ref", "-d"] and a[-1] == preview["operations"][1]["oid"] for a in self.mutations))
-        self.assertFalse(any("--force" in a for a in self.mutations))
-        self.assertEqual("refused", self.apply(envelope)["status"])
+        self.assertIsNone(self.repair_ref_output("refs/heads/phase-owned"))
+        self.assertTrue(any("--no-deref" in call and call[-1] == self.head for call in self.mutations))
+        self.assertFalse(any("--force" in call for call in self.mutations))
+        self.refused(preview, "cleanup-preview-missing")
 
     def test_cleanup_partial_failure_stops_and_reports_fresh_state(self):
-        preview = self.preview()
-        self.assertIn("snapshot_id", preview, preview)
-        def mutation(argv, cwd):
-            if "update-ref" in argv: return subprocess.CompletedProcess(argv, 1, "", "fixture failure")
-            return subprocess.run(argv, cwd=cwd, text=True, encoding="utf-8", capture_output=True)
-        result = self.apply(self.envelope(preview), mutation)
-        self.assertEqual("partial", result["status"], result)
-        self.assertEqual(1, len(result["removed"]))
-        self.assertEqual(1, len(result["failed"]))
+        self.mutate = lambda argv, cwd: subprocess.CompletedProcess(argv, 1, "", "failure") if "update-ref" in argv else None
+        self.refused(self.preview(), "command-failed", removed=1)
         self.assertFalse(self.tree.exists())
-        self.assertIn("refs/heads/phase-owned", git(self.root, "show-ref"))
+        self.assertEqual(self.head, self.repair_ref_output("refs/heads/phase-owned"))
 
     def test_cleanup_recorded_backup_digest_and_approval_boundary(self):
-        backup = self.root / ".workflow-backups/fixture"
-        backup.mkdir(parents=True)
-        (backup / "valuable").write_text("original", encoding="utf-8")
-        self.owner["backups"] = [str(backup)]
-        self.write_owner()
+        backup = self.backup()
         preview = self.preview()
-        self.assertEqual(1, len([x for x in preview.get("operations", []) if x["kind"] == "backup_remove"]), preview)
-        envelope = self.envelope(preview)
-        (backup / "valuable").write_text("changed", encoding="utf-8")
-        self.assertEqual("refused", self.apply(envelope)["status"])
+        self.assertEqual(1, len([entry for entry in preview["entries"] if entry["kind"] == "backup"]))
+        (backup/"valuable").write_text("changed")
+        self.refused(preview, "cleanup-backup-drift")
         self.assertTrue(backup.exists())
         self.assertEqual([], self.mutations)
-        result = self.apply(self.envelope())
-        self.assertEqual("complete", result["status"], result)
+        self.assertEqual(3, self.apply(self.preview())["count"])
         self.assertFalse(backup.exists())
+        self.assertTrue(backup.parent.is_dir())
 
     def test_cleanup_cli_source_and_installed_hosts(self):
-        # CLI mode has no injected runner: an unsupported fixture host ensures
-        # this wiring check cannot contact a real provider or need credentials.
-        git(self.root, "remote", "set-url", "origin", "https://unsupported.example.invalid/owner/repo.git")
-        for host in ("ai", "codex", "claude"):
-            hook = ROOT / ".ai/hooks/cleanup.py"
-            if host != "ai":
-                shutil.copytree(ROOT / ".ai", self.root / ("." + host), ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
-                hook = self.root / ("." + host) / "hooks/cleanup.py"
-            result = subprocess.run([sys.executable, str(hook), "cleanup-preview", "--repo", str(self.root)], capture_output=True)
+        # Invoke the standalone source CLI with a provider executable seam in a
+        # separate Python process; both supported host selections use that CLI.
+        driver = "import os,sys,runpy;sys.path.insert(0,sys.argv.pop(1));from lib import cleanup;cleanup.provider_evidence=lambda *a,**k:{'offline':'closed'};runpy.run_path(sys.argv.pop(1),run_name='__main__')"
+        for host in ("codex", "claude"):
+            environment = dict(os.environ, ENGINEER_HOST=host, ENGINEER_ROOT=str(self.root))
+            result = subprocess.run([sys.executable, "-c", driver, str(ROOT/"engineer/bin"), str(ROOT/"engineer/bin/engineer.py"), "query", "cleanup.preview"], cwd=self.root, env=environment, capture_output=True, text=True)
             self.assertEqual(0, result.returncode, result.stderr)
-            self.assertEqual(1, json.loads(result.stdout).get("schema_version"))
-            no_mode = subprocess.run([sys.executable, str(hook)], input=b"{}", capture_output=True)
-            self.assertEqual(2, no_mode.returncode)
-            self.assertEqual(b"", no_mode.stdout)
-        invalid = subprocess.run([sys.executable, str(hook), "cleanup-apply", "--repo", str(self.root)], capture_output=True)
-        self.assertNotEqual(0, invalid.returncode)
-
+            self.assertEqual(2, json.loads(result.stdout)["count"])
+        result = subprocess.run([sys.executable, str(ROOT/"engineer/bin/engineer.py"), "query", "cleanup.apply"], cwd=self.root, capture_output=True, text=True)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("cleanup-not-approved", result.stderr)
 
     def test_cleanup_apply_open_github_and_gitlab_stale_ownership_and_ref(self):
         for provider in ("github", "gitlab"):
-            with self.subTest(provider=provider):
-                self.provider = provider
-                git(self.root, "remote", "set-url", "origin", f"https://{provider}.com/owner/repo.git")
-                self.case = "merged"
-                envelope = self.envelope()
-                self.case = "open"
-                self.assertEqual("refused", self.apply(envelope)["status"])
-                self.assertEqual([], self.mutations)
+            git(self.root, "remote", "set-url", "origin", f"https://{provider}.com/owner/repo.git")
+            self.case = "merged"
+            preview = self.preview()
+            self.case = "open"
+            self.refused(preview)
+            self.assertEqual([], self.mutations)
         self.case = "merged"
-        envelope = self.envelope()
-        self.owner["session_id"] = "different-owner"
+        preview = self.preview()
+        self.owner["session_id"] = "changed"
         self.write_owner()
-        self.assertEqual("refused", self.apply(envelope)["status"])
-        self.assertEqual([], self.mutations)
-        envelope = self.envelope()
-        (self.tree / "tracked").write_text("new tip\n", encoding="utf-8")
-        git(self.tree, "add", "tracked")
-        git(self.tree, "-c", "user.name=Test", "-c", "user.email=t@example.invalid", "commit", "-qm", "new tip")
-        self.assertEqual("refused", self.apply(envelope)["status"])
+        self.refused(preview, "cleanup-owner-drift")
+        preview = self.preview()
+        (self.tree/"tracked").write_text("new tip")
+        git(self.tree, "add", ".")
+        git(self.tree, "commit", "-qm", "new tip")
+        self.refused(preview, "cleanup-head-drift")
         self.assertEqual([], self.mutations)
 
     def test_cleanup_common_dir_lock_preserves_existing_lock(self):
-        envelope = self.envelope()
-        storage = self.root / ".git/ai-cleanup"
-        storage.mkdir()
-        lock = storage / "lock"
-        lock.write_text("other cleanup owns this", encoding="utf-8")
-        self.assertEqual("refused", self.apply(envelope)["status"])
-        self.assertEqual("other cleanup owns this", lock.read_text(encoding="utf-8"))
+        preview = self.preview()
+        lock = self.state/"resources.lock"
+        lock.write_text("other owner")
+        with patch.object(sessions.time, "monotonic", side_effect=[0, 11]):
+            self.refused(preview, "resources-locked")
+        self.assertEqual("other owner", lock.read_text())
         self.assertEqual([], self.mutations)
 
     def test_cleanup_revalidates_before_each_item_and_truthful_success_readback(self):
-        envelope = self.envelope()
-        def mutation(argv, cwd):
-            result = subprocess.run(argv, cwd=cwd, text=True, encoding="utf-8", capture_output=True)
+        def mutate(argv, cwd):
+            result = core.run(argv, cwd)
             self.case = "open"
             return result
-        result = self.apply(envelope, mutation)
-        self.assertEqual("partial", result["status"], result)
+        self.mutate = mutate
+        self.refused(self.preview(), removed=1)
         self.assertEqual(1, len(self.mutations))
-        self.assertEqual(1, len(result["removed"]))
-        self.assertTrue(result["final_state"][1]["exists"])
+        self.assertEqual(self.head, self.repair_ref_output("refs/heads/phase-owned"))
         self.case = "merged"
-        # Fake success cannot fabricate branch removal.
-        result = self.apply(self.envelope(), lambda argv, cwd: subprocess.CompletedProcess(argv, 0, "", ""))
-        self.assertEqual("partial", result["status"], result)
-        self.assertEqual([], result["removed"])
-        self.assertTrue(result["final_state"][0]["exists"])
+        self.mutate = lambda argv, cwd: subprocess.CompletedProcess(argv, 0, "", "")
+        self.refused(self.preview(), "cleanup-removal-unconfirmed")
+        self.assertEqual(self.head, self.repair_ref_output("refs/heads/phase-owned"))
 
     def test_cleanup_backup_approval_file_ancestor_and_junction_preserved(self):
-        backup = self.root / ".workflow-backups/owned"
-        backup.mkdir(parents=True)
-        (backup / "valuable").write_text("keep", encoding="utf-8")
-        self.owner["backups"] = [str(backup)]
-        self.write_owner()
-        envelope = self.envelope()
-        approval = backup / "approval.json"
-        approval.write_text(json.dumps(envelope), encoding="utf-8")
-        # Changed content is stale as well as approval-file ancestry unsafe.
-        result = self.policy.cleanup_apply(self.root, approval, evidence_runner=self.runner)
-        self.assertEqual("refused", result["status"])
-        self.assertTrue((backup / "valuable").exists())
-        approval.unlink()
-        outside = self.temp_root / "outside"
-        outside.mkdir()
-        (outside / "valuable").write_text("keep outside", encoding="utf-8")
-        link = backup / "alias"
-        if os.name == "nt":
-            result = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(outside)], capture_output=True)
-            self.assertEqual(0, result.returncode, result.stderr)
-        else:
-            link.symlink_to(outside, target_is_directory=True)
+        backup = self.backup()
         preview = self.preview()
-        self.assertFalse(any(op["kind"] == "backup_remove" for op in preview["operations"]), preview)
-        self.assertTrue(any("symlink" in row["reason"] for row in preview["preserved"]), preview)
-        # Remove only the temporary alias itself, never its referent.
-        if os.name == "nt": link.rmdir()
-        else: link.unlink()
-        self.assertTrue((outside / "valuable").exists())
+        (backup/"approval.json").write_text(json.dumps(preview))
+        self.refused(preview, "cleanup-backup-drift")
+        (backup/"approval.json").unlink()
+        outside = self.root.parent/"outside"
+        outside.mkdir()
+        (outside/"valuable").write_text("keep outside")
+        alias = backup/"alias"
+        self.make_alias(alias, outside)
+        try:
+            self.assertFalse(any(entry["kind"] == "backup" for entry in self.preview()["entries"]))
+            self.assertTrue((outside/"valuable").is_file())
+        finally:
+            self.remove_alias(alias)
 
     def test_cleanup_detached_and_unrecorded_backups_are_preserved(self):
-        detached = self.temp_root / "detached"
+        detached = self.root/".worktrees/detached"
         git(self.root, "worktree", "add", "--detach", str(detached))
-        backup = self.root / ".workflow-backups/unrecorded"
+        backup = self.root/".workflow-backups/unrecorded"
         backup.mkdir(parents=True)
-        (backup / "valuable").write_text("keep", encoding="utf-8")
-        preview = self.preview()
-        self.assertTrue(any(row["reason"] == "detached-worktree" for row in preview["preserved"]))
-        self.assertTrue(any(row["reason"] == "backup-unowned-or-ineligible" for row in preview["preserved"]))
-        self.assertFalse(any(op["kind"] == "backup_remove" for op in preview["operations"]))
+        (backup/"valuable").write_text("preserve")
+        result = self.apply(self.preview())
+        self.assertEqual(2, result["count"])
+        self.assertTrue(detached.is_dir())
+        self.assertTrue((backup/"valuable").is_file())
 
-    def test_cleanup_raw_registered_junction_is_not_hidden_by_canonicalization(self):
-        physical = self.temp_root / "physical tree"
-        alias = self.tree
-        # Git canonicalizes aliases supplied to worktree add. Replace an
-        # already registered fixture directory to exercise the actual boundary.
-        self.assertTrue(physical.is_relative_to(self.temp_root))
-        self.assertTrue(alias.is_relative_to(self.temp_root))
-        alias.rename(physical)
+    def make_alias(self, alias, physical):
         if os.name == "nt":
             result = subprocess.run(["cmd", "/c", "mklink", "/J", str(alias), str(physical)], capture_output=True)
             self.assertEqual(0, result.returncode, result.stderr)
         else:
             alias.symlink_to(physical, target_is_directory=True)
+
+    def remove_alias(self, alias):
+        if os.name == "nt": alias.rmdir()
+        else: alias.unlink()
+
+    def test_cleanup_raw_registered_junction_is_not_hidden_by_canonicalization(self):
+        physical = self.root/".worktrees/physical"
+        self.tree.rename(physical)
+        self.make_alias(self.tree, physical)
         try:
-            with self.assertRaises(self.policy.EvidenceError):
-                self.preview()
+            self.assertEqual(0, self.preview()["count"])
+            self.assertTrue((physical/"tracked").exists())
         finally:
-            if os.name == "nt": alias.rmdir()
-            else: alias.unlink()
+            self.remove_alias(self.tree)
+            physical.rename(self.tree)
 
     def repair_branch_only(self):
         git(self.root, "worktree", "remove", str(self.tree))
-        return git(self.root, "rev-parse", "main")
+        return self.head
 
     def repair_ref_output(self, name):
-        result = subprocess.run(["git", "show-ref", "--verify", "--hash", name], cwd=self.root,
-                                text=True, encoding="utf-8", capture_output=True)
-        return result.stdout.strip() if result.returncode == 0 else None
+        result = subprocess.run(["git", "show-ref", "--verify", "--hash", name], cwd=self.root, capture_output=True, text=True)
+        return result.stdout.strip() if not result.returncode else None
 
     def test_cleanup_review_existing_symbolic_candidate_is_preserved(self):
-        oid = self.repair_branch_only()
+        self.repair_branch_only()
         git(self.root, "symbolic-ref", "refs/heads/phase-owned", "refs/heads/main")
-        preview = self.preview()
-        self.assertEqual([], preview["operations"], preview)
-        self.assertTrue(any("symbolic" in row["reason"] for row in preview["preserved"]), preview)
-        self.assertEqual(oid, self.repair_ref_output("refs/heads/main"))
+        self.assertEqual(0, self.preview()["count"])
+        self.assertEqual(self.head, self.repair_ref_output("refs/heads/main"))
 
     def test_cleanup_review_same_oid_symbolic_swap_is_stale_before_mutation(self):
-        oid = self.repair_branch_only()
+        self.repair_branch_only()
         preview = self.preview()
-        envelope = self.envelope(preview)
         git(self.root, "symbolic-ref", "refs/heads/phase-owned", "refs/heads/main")
-        result = self.apply(envelope)
-        self.assertEqual("refused", result["status"], result)
+        self.refused(preview, "cleanup-symbolic-ref")
         self.assertEqual([], self.mutations)
-        self.assertEqual(oid, self.repair_ref_output("refs/heads/main"))
+        self.assertEqual(self.head, self.repair_ref_output("refs/heads/main"))
 
     def test_cleanup_review_mutation_time_symbolic_swap_never_deletes_referent(self):
-        oid = self.repair_branch_only()
-        envelope = self.envelope()
-        def mutation(argv, cwd):
-            if "update-ref" in argv:
-                git(self.root, "symbolic-ref", "refs/heads/phase-owned", "refs/heads/main")
-            return subprocess.run(argv, cwd=cwd, text=True, encoding="utf-8", capture_output=True)
-        result = self.apply(envelope, mutation)
-        self.assertEqual(oid, self.repair_ref_output("refs/heads/main"), result)
-        if result["status"] == "complete":
-            self.assertIsNone(self.repair_ref_output("refs/heads/phase-owned"), result)
-        else:
-            self.assertEqual("partial", result["status"], result)
+        self.repair_branch_only()
+        def mutate(argv, cwd):
+            git(self.root, "symbolic-ref", "refs/heads/phase-owned", "refs/heads/main")
+            return core.run(argv, cwd, check=False)
+        self.mutate = mutate
+        preview = self.preview()
+        try:
+            result = self.apply(preview)
+            self.assertEqual(1, result["count"])
+            self.assertIsNone(self.repair_ref_output("refs/heads/phase-owned"))
+        except Failure:
+            self.assertTrue((self.root/".git/refs/heads/phase-owned").exists())
+        self.assertEqual(self.head, self.repair_ref_output("refs/heads/main"))
 
     def test_cleanup_review_normal_direct_ref_deletion_control(self):
-        oid = self.repair_branch_only()
-        result = self.apply(self.envelope())
-        self.assertEqual("complete", result["status"], result)
-        self.assertEqual(1, len(result["removed"]), result)
+        self.repair_branch_only()
+        self.assertEqual(1, self.apply(self.preview())["count"])
         self.assertIsNone(self.repair_ref_output("refs/heads/phase-owned"))
-        self.assertEqual(oid, self.repair_ref_output("refs/heads/main"))
+        self.assertEqual(self.head, self.repair_ref_output("refs/heads/main"))
 
     def test_cleanup_review_dangling_symbolic_readback_is_existing(self):
-        oid = self.repair_branch_only()
-        envelope = self.envelope()
-        def mutation(argv, cwd):
-            git(self.root, "symbolic-ref", "refs/heads/phase-owned", "refs/heads/absent-referent")
+        self.repair_branch_only()
+        def mutate(argv, cwd):
+            git(self.root, "symbolic-ref", "refs/heads/phase-owned", "refs/heads/absent")
             return subprocess.CompletedProcess(argv, 0, "", "")
-        result = self.apply(envelope, mutation)
-        self.assertEqual("partial", result["status"], result)
-        self.assertTrue(result["final_state"][0]["exists"], result)
-        self.assertEqual("refs/heads/absent-referent", result["final_state"][0]["identity"]["target"])
-        self.assertEqual(oid, self.repair_ref_output("refs/heads/main"))
+        self.mutate = mutate
+        self.refused(self.preview(), "cleanup-removal-unconfirmed")
+        self.assertEqual("refs/heads/absent", git(self.root, "symbolic-ref", "refs/heads/phase-owned"))
+        self.assertEqual(self.head, self.repair_ref_output("refs/heads/main"))
 
     def test_cleanup_review_mutation_time_moved_oid_is_preserved(self):
-        oid = self.repair_branch_only()
-        tree = git(self.root, "rev-parse", "HEAD^{tree}")
-        moved = git(self.root, "-c", "user.name=Test", "-c", "user.email=t@example.invalid",
-                    "commit-tree", tree, "-p", oid, "-m", "moved fixture tip")
-        envelope = self.envelope()
-        def mutation(argv, cwd):
-            if "update-ref" in argv:
-                git(self.root, "update-ref", "refs/heads/phase-owned", moved, oid)
-            return subprocess.run(argv, cwd=cwd, text=True, encoding="utf-8", capture_output=True)
-        result = self.apply(envelope, mutation)
-        self.assertEqual("partial", result["status"], result)
-        self.assertEqual([], result["removed"])
+        self.repair_branch_only()
+        moved = git(self.root, "commit-tree", git(self.root, "rev-parse", "HEAD^{tree}"), "-p", self.head, "-m", "moved")
+        def mutate(argv, cwd):
+            git(self.root, "update-ref", "refs/heads/phase-owned", moved, self.head)
+            return core.run(argv, cwd, check=False)
+        self.mutate = mutate
+        self.refused(self.preview(), "command-failed")
         self.assertEqual(moved, self.repair_ref_output("refs/heads/phase-owned"))
-        self.assertEqual(oid, self.repair_ref_output("refs/heads/main"))
+        self.assertEqual(self.head, self.repair_ref_output("refs/heads/main"))
 
     def test_cleanup_review_git_no_deref_compare_delete_semantics_control(self):
-        oid = git(self.root, "rev-parse", "main")
-        git(self.root, "branch", "phase-probe", oid)
-        git(self.root, "update-ref", "--no-deref", "-d", "refs/heads/phase-probe", oid)
-        self.assertIsNone(self.repair_ref_output("refs/heads/phase-probe"))
-        git(self.root, "symbolic-ref", "refs/heads/phase-probe-alias", "refs/heads/main")
-        git(self.root, "update-ref", "--no-deref", "-d", "refs/heads/phase-probe-alias", oid)
-        self.assertIsNone(self.repair_ref_output("refs/heads/phase-probe-alias"))
-        self.assertEqual(oid, self.repair_ref_output("refs/heads/main"))
+        for name in ("phase-probe", "phase-probe-alias"):
+            if name.endswith("alias"): git(self.root, "symbolic-ref", "refs/heads/"+name, "refs/heads/main")
+            else: git(self.root, "branch", name, self.head)
+            git(self.root, "update-ref", "--no-deref", "-d", "refs/heads/"+name, self.head)
+            self.assertIsNone(self.repair_ref_output("refs/heads/"+name))
+            self.assertEqual(self.head, self.repair_ref_output("refs/heads/main"))
 
     def repair_two_owned_fixture(self):
-        self.other_tree = self.temp_root / "second owned tree"
+        self.other_tree = self.root/".worktrees/second owned tree"
         git(self.root, "worktree", "add", "-qb", "phase-z-other", str(self.other_tree))
-        self.other_owner = {"branch": "phase-z-other", "worktree": str(self.other_tree),
-                            "base_branch": "main", "session_id": "second-fixture"}
-        backup = self.root / ".workflow-backups/group/owned"
-        backup.mkdir(parents=True)
-        (backup / "payload").write_text("approved backup", encoding="utf-8")
-        self.owner["backups"] = [str(backup)]
-        self.repair_write_two_owners()
-        oid = git(self.root, "rev-parse", "main")
-        self.other_provider_open = False
-        def runner(argv, cwd):
-            if argv[0] == "git":
-                return subprocess.run(argv, cwd=cwd, text=True, encoding="utf-8", capture_output=True)
-            # Provider records outlive local refs; pin both original heads.
-            rows = [{"number": number, "state": "open" if branch == "phase-z-other" and self.other_provider_open else "closed",
-                     "merged_at": "2026-01-01", "head": {"ref": branch, "sha": oid, "repo": {"full_name": "owner/repo"}},
-                     "base": {"repo": {"full_name": "owner/repo"}}}
-                    for number, branch in ((42, "phase-owned"), (43, "phase-z-other"))]
-            return subprocess.CompletedProcess(argv, 0, json.dumps([rows]), "")
-        self.runner = runner
-        return backup
-
-    def repair_write_two_owners(self):
-        (self.state / "sessions.json").write_text(json.dumps({"sessions": [self.owner, self.other_owner]}), encoding="utf-8")
+        self.other_owner = {"branch": "phase-z-other", "worktree": str(self.other_tree), "base_branch": "main", "session_id": "second", "status": "open"}
+        return self.backup()
 
     def test_cleanup_review_nested_backup_two_owned_five_operations_complete(self):
         backup = self.repair_two_owned_fixture()
         preview = self.preview()
-        self.assertEqual(5, len(preview["operations"]), preview)
-        self.assertTrue(any(row["target"] == str(backup.parent) for row in preview["preserved"]), preview)
-        result = self.apply(self.envelope(preview))
-        self.assertEqual("complete", result["status"], result)
-        self.assertEqual(5, len(result["removed"]), result)
+        self.assertEqual(5, preview["count"])
+        self.assertEqual(5, self.apply(preview)["count"])
         self.assertFalse(backup.exists())
         self.assertTrue(backup.parent.is_dir())
-        self.assertTrue(any(row["target"] == str(backup.parent) and row["exists"]
-                            for row in result["final_preserved"]), result)
         self.assertFalse(self.tree.exists())
         self.assertFalse(self.other_tree.exists())
         self.assertIsNone(self.repair_ref_output("refs/heads/phase-owned"))
         self.assertIsNone(self.repair_ref_output("refs/heads/phase-z-other"))
-        self.assertTrue(self.repair_ref_output("refs/heads/main"))
+        self.assertEqual(self.head, self.repair_ref_output("refs/heads/main"))
 
     def test_cleanup_review_nested_backup_real_drift_controls(self):
         for drift in ("dirty", "provider-open", "ownership"):
-            with self.subTest(drift=drift):
-                # Each subcase owns an independent disposable repository.
-                case = CleanupTests(methodName="test_cleanup_review_nested_backup_two_owned_five_operations_complete")
-                case.setUp()
-                try:
-                    backup = case.repair_two_owned_fixture()
-                    preview = case.preview()
-                    def mutation(argv, cwd):
-                        result = subprocess.run(argv, cwd=cwd, text=True, encoding="utf-8", capture_output=True)
-                        if "update-ref" in argv and "refs/heads/phase-owned" in argv:
-                            if drift == "dirty": (case.other_tree / "valuable").write_text("preserve", encoding="utf-8")
-                            if drift == "provider-open": case.other_provider_open = True
-                            if drift == "ownership":
-                                case.other_owner["session_id"] = "changed-owner"
-                                case.repair_write_two_owners()
-                        return result
-                    result = case.apply(case.envelope(preview), mutation)
-                    self.assertEqual("partial", result["status"], result)
-                    self.assertEqual(3, len(result["removed"]), result)
-                    self.assertEqual(1, len(result["failed"]), result)
-                    self.assertEqual("cleanup-state-stale", result["failed"][0]["reason"], result)
-                    self.assertEqual(2, len(case.mutations), case.mutations)
-                    self.assertFalse(backup.exists())
-                    self.assertTrue(backup.parent.is_dir())
-                    self.assertTrue(case.other_tree.is_dir())
-                    self.assertTrue(case.repair_ref_output("refs/heads/phase-z-other"))
-                finally:
-                    case.doCleanups()
+            case = CleanupTests()
+            case.setUp()
+            try:
+                backup = case.repair_two_owned_fixture()
+                def mutate(argv, cwd):
+                    result = core.run(argv, cwd)
+                    if "update-ref" in argv and "refs/heads/phase-owned" in argv:
+                        if drift == "dirty": (case.other_tree/"valuable").write_text("preserve")
+                        if drift == "provider-open": case.other_provider_open = True
+                        if drift == "ownership":
+                            case.other_owner["session_id"] = "changed"
+                            case.write_owner()
+                    return result
+                case.mutate = mutate
+                case.refused(case.preview(), removed=3)
+                self.assertEqual(2, len(case.mutations))
+                self.assertFalse(backup.exists())
+                self.assertTrue(backup.parent.is_dir())
+                self.assertTrue(case.other_tree.is_dir())
+                self.assertEqual(case.head, case.repair_ref_output("refs/heads/phase-z-other"))
+            finally:
+                case.doCleanups()
 
     def test_cleanup_review_unowned_backup_sibling_stops_before_second_tree(self):
         backup = self.repair_two_owned_fixture()
-        envelope = self.envelope()
-        unowned = self.root / ".workflow-backups/new-unowned"
-        def mutation(argv, cwd):
-            result = subprocess.run(argv, cwd=cwd, text=True, encoding="utf-8", capture_output=True)
+        unowned = self.root/".workflow-backups/new-unowned"
+        def mutate(argv, cwd):
+            result = core.run(argv, cwd)
             if "update-ref" in argv and "refs/heads/phase-owned" in argv:
                 unowned.mkdir()
-                (unowned / "valuable").write_text("preserve sibling", encoding="utf-8")
+                (unowned/"valuable").write_text("preserve")
             return result
-        result = self.apply(envelope, mutation)
-        self.assertEqual("partial", result["status"], result)
-        self.assertEqual(3, len(result["removed"]), result)
-        self.assertEqual("cleanup-state-stale", result["failed"][0]["reason"], result)
-        self.assertEqual(2, len(self.mutations), self.mutations)
+        self.mutate = mutate
+        self.refused(self.preview(), "cleanup-backup-drift", removed=3)
+        self.assertEqual(2, len(self.mutations))
         self.assertTrue(self.other_tree.is_dir())
-        self.assertTrue(self.repair_ref_output("refs/heads/phase-z-other"))
-        self.assertTrue((unowned / "valuable").is_file())
+        self.assertEqual(self.head, self.repair_ref_output("refs/heads/phase-z-other"))
+        self.assertTrue((unowned/"valuable").is_file())
         self.assertTrue(backup.parent.is_dir())
 
+    def test_backup_overlapping_ownership_and_content_race_preserve_unapproved_nodes(self):
+        backup = self.backup()
+        self.owner["backups"].append(str(backup.parent))
+        self.write_owner()
+        self.assertFalse(any(entry["kind"] == "backup" for entry in self.preview()["entries"]))
+        self.owner["backups"] = [str(backup)]
+        self.write_owner()
+        preview = self.preview()
+        original_unlink = Path.unlink
+        def race(path, *args, **options):
+            if path == backup/"valuable":
+                (backup/"new valuable").write_text("new unapproved content")
+            return original_unlink(path, *args, **options)
+        with patch.object(Path, "unlink", race):
+            with self.assertRaises(Failure): self.apply(preview)
+        self.assertTrue((backup/"new valuable").is_file())
+        self.assertTrue(self.tree.is_dir())
 
-class CurrentCleanupGuards(unittest.TestCase):
-    """Current approval ABI against real Git, with offline disposition evidence."""
-    def setUp(self):
-        self.temp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
-        git(self.root, "init", "-q", "-b", "integration")
-        git(self.root, "config", "user.name", "Cleanup Fixture")
-        git(self.root, "config", "user.email", "cleanup@example.invalid")
-        (self.root/".gitignore").write_text(".worktrees/\n.planning/worktrees/\n.planning/cleanup/\n.generated/\n")
-        (self.root/"source").write_text("original\n")
-        git(self.root, "add", ".")
-        git(self.root, "commit", "-qm", "baseline")
-        self.head = git(self.root, "rev-parse", "HEAD")
-        self.tree = self.root/".worktrees/owned"
-        git(self.root, "worktree", "add", "-qb", "owned", str(self.tree))
-        self.manifest = self.root/".planning/worktrees/fixture.json"
-        self.manifest.parent.mkdir(parents=True)
-        self.owner = {"path": str(self.tree), "branch": "owned", "merged": True, "head": self.head, "integration_revision": self.head}
-        self.save_owner()
-        self.environment = patch.dict(os.environ, {"ENGINEER_ROOT": str(self.root)})
-        self.environment.start()
-        self.addCleanup(self.environment.stop)
-        self.provider = patch.object(current_cleanup, "provider_evidence", return_value={"offline": "closed"})
-        self.provider.start()
-        self.addCleanup(self.provider.stop)
 
-    def save_owner(self):
-        self.manifest.write_text(json.dumps({"workers": [self.owner]}))
-
-    def preview(self):
-        return current_cleanup.command(Args([]), "preview")
-
-    def apply(self, preview):
-        return current_cleanup.command(Args(["--approval-token", preview["approval_token"], "--confirm"]), "apply")
-
+class CurrentCleanupGuards(CleanupTests):
+    # Inherit the same real fixture, never a second runtime implementation.
     def test_exact_token_removes_only_integrated_owned_resource_once(self):
         preview = self.preview()
-        self.assertEqual(preview["count"], 1)
-        self.assertEqual(self.apply(preview)["count"], 1)
+        self.assertEqual(2, preview["count"])
+        self.assertEqual(2, self.apply(preview)["count"])
         self.assertFalse(self.tree.exists())
-        self.assertNotEqual(subprocess.run(["git", "show-ref", "--verify", "refs/heads/owned"], cwd=self.root, capture_output=True).returncode, 0)
-        with self.assertRaises(Failure):
-            self.apply(preview)
+        self.refused(preview, "cleanup-preview-missing")
 
     def test_changed_ownership_or_ignored_content_preserves_actual_files(self):
         preview = self.preview()
         self.owner["plan"] = "changed-owner"
-        self.save_owner()
-        with self.assertRaises(Failure):
-            self.apply(preview)
+        self.write_owner()
+        self.refused(preview, "cleanup-owner-drift")
+        (self.tree/"ignored").write_text("keep")
+        self.assertEqual(0, self.preview()["count"])
         self.assertTrue(self.tree.exists())
-        (self.tree/".generated").mkdir()
-        (self.tree/".generated/valuable").write_text("keep")
-        self.assertEqual(self.preview()["count"], 0)
 
     def test_symbolic_swap_never_deletes_referent(self):
         preview = self.preview()
         git(self.root, "branch", "valuable", self.head)
-        git(self.root, "symbolic-ref", "refs/heads/owned", "refs/heads/valuable")
-        with self.assertRaises(Failure):
-            self.apply(preview)
-        self.assertEqual(git(self.root, "rev-parse", "refs/heads/valuable"), self.head)
+        git(self.root, "symbolic-ref", "refs/heads/phase-owned", "refs/heads/valuable")
+        self.refused(preview, "cleanup-symbolic-ref")
+        self.assertEqual(self.head, self.repair_ref_output("refs/heads/valuable"))
         self.assertTrue(self.tree.exists())
 
     def test_unmerged_manifest_never_becomes_eligible_from_shared_base(self):
-        self.owner["merged"] = False
-        self.save_owner()
-        self.assertEqual(self.preview()["count"], 0)
+        (self.state/"sessions.json").write_text(json.dumps({"sessions": []}))
+        manifest = self.root/".planning/worktrees/fixture.json"
+        manifest.parent.mkdir(parents=True)
+        manifest.write_text(json.dumps({"workers": [{"path": str(self.tree), "branch": "phase-owned", "merged": False, "head": self.head}]}))
+        self.assertEqual(0, self.preview()["count"])
         self.assertTrue(self.tree.exists())
 
 
 if __name__ == "__main__":
     unittest.main()
+
