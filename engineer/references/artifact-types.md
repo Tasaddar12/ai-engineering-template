@@ -49,7 +49,7 @@ reads is inert — the consumption mechanism is what gives an artifact meaning.
   did its job. Marking a SUMMARY `halted` propagates transitively over `depends_on`: every
   plan that depends on it, directly or through a chain, is reported as **blocked** rather than
   offered to the executor as ordinary incomplete work, and is named with its cause. Any other
-  value — including no `status:` field at all — reads as complete. (#2830)
+  value — including no `status:` field at all — reads as complete.
 
 ### HANDOFF.json / .continue-here.md
 - **Shape**: Structured pause state (JSON machine-readable + Markdown human-readable)

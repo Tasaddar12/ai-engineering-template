@@ -21,8 +21,8 @@ query with`--skills-only`, in the **same bash call** as the launcher so `enginee
 defined when it runs. Substitute your type for`<your-agent-type>`:
 
    ```bash
-   # 1. Launcher: paste the bash block from gsd-run-resolver.md here unless engineer_run
-   #    is already defined in this shell (@~/.claude/engineer/references/gsd-run-resolver.md).
+   # 1. Launcher: paste the bash block from run-resolver.md here unless engineer_run
+   #    is already defined in this shell (@~/.claude/engineer/references/run-resolver.md).
    # 2. Query:
    _AGENT_SKILLS=$(engineer_run query agent-skills <your-agent-type> --skills-only)
    ```
@@ -38,23 +38,23 @@ defined when it runs. Substitute your type for`<your-agent-type>`:
 
 ## What the query returns, per runtime
 
-| Call                                                                          | Claude                               | Codex                                                                                                       |
-| ----------------------------------------------------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| `query agent-skills <type> --skills-only` (the self-load)                     | configured skills, or an empty block | configured skills, or an empty block                                                                        |
+| Call | Claude | Codex |
+| ---- | ------ | ----- |
+| `query agent-skills <type> --skills-only` (the self-load) | configured skills, or an empty block | configured skills, or an empty block |
 | `query agent-skills <type>` (orchestrator-side `${AGENT_SKILLS_*}` injection) | configured skills, or an empty block | configured skills, or — when nothing is configured and the agent is installed — the agent's own **persona** |
 
-On a non-Claude runtime the plain query can answer with the agent's whole persona
-(about 47 KB for the executor). `--skills-only` is what keeps the self-load from
+On a non-Claude runtime the plain query can answer with the agent's whole persona.
+`--skills-only` is what keeps the self-load from
 reading your own persona back into your context as if it were a skills block. Never
 run the query without it from inside an agent.
 
 ## What self-load does and does not cover
 
-| Skill form                                  | Self-loads?   | Notes                                                                                                                                                    |
-| ------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Project-relative path (`skills/my-skill`)   | ✅ everywhere | `Read` the `@`-include                                                                                                                                   |
-| Global personal (`global:<name>`)           | ✅ everywhere | resolves to the runtime global skills dir, then `Read`                                                                                                   |
-| Plugin-provided (`global:<plugin>:<skill>`) | Claude only   | emitted as a Skill-tool directive on Claude; **skipped with a warning on all other runtimes** — the plugin/Skill-tool model has no equivalent elsewhere. |
+| Skill form | Self-loads? | Notes |
+| ---------- | ----------- | ----- |
+| Project-relative path (`skills/my-skill`) | ✅ everywhere | `Read` the `@`-include |
+| Global personal (`global:<name>`) | ✅ everywhere | resolves to the runtime global skills dir, then `Read` |
+| Plugin-provided (`global:<plugin>:<skill>`) | Claude only | emitted as a Skill-tool directive on Claude; **skipped with a warning on all other runtimes** — the plugin/Skill-tool model has no equivalent elsewhere. |
 
 ## Notes
 
