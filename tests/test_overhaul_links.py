@@ -24,3 +24,22 @@ class LinksTests(unittest.TestCase):
         self.assertIsNone(tool.resolve_target(root, source, "engineer/${NAME}.md", True))
         self.assertFalse(tool.resolve_target(root, source, "~/.claude/gsd-core/workflows/old.md", True))
         self.assertIsNone(tool.resolve_target(root, source, "#heading"))
+
+    def test_examples_and_npm_names_do_not_hide_required_prompt_inputs(self):
+        text = '''Use `@scope/pkg-name` with these examples:
+```markdown
+[Illustrative guide](CODE_OF_CONDUCT.md)
+@engineer/references/required.md
+@.planning/phases/03-example/03-01-SUMMARY.md
+```
+[Actual guide](../guide.md)
+'''
+        self.assertEqual(list(tool.targets(text)), [('../guide.md', 7, False), ('engineer/references/required.md', 4, True)])
+
+    def test_relative_include_paths_resolve_from_document(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "agents").mkdir()
+            (root / "guide.md").write_text("Guide", encoding="utf-8")
+            self.assertTrue(tool.resolve_target(root, root / "agents/a.md", "../guide.md", True))
+            self.assertFalse(tool.resolve_target(root, root / "agents/a.md", "../../outside.md", True))
