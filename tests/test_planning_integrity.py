@@ -111,6 +111,56 @@ class IntegrityTests(unittest.TestCase):
         self.assertIn('clean filter', result.stderr)
         self.assertEqual(before, self.git('ls-files', '--stage'))
 
+    def test_unchanged_legacy_working_crlf_uses_git_normalization_without_index_mutation(self):
+        self.git('config', 'core.autocrlf', 'true')
+        self.write(RECORD, '# legacy without metadata\n')
+        self.git('add', RECORD)
+        self.git('commit', '-qm', 'legacy record')
+        self.head = self.git('rev-parse', 'HEAD')
+        path = self.root / RECORD
+        path.write_bytes(b'# legacy without metadata\r\n')
+        self.write('seed', 'source change\n')
+        before = self.git('ls-files', '--stage')
+        working = path.read_bytes()
+        for selection in ('--only -m fixture -- .', '-am"source change"'):
+            result = self.hook('git commit ' + selection)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual(before, self.git('ls-files', '--stage'))
+            self.assertEqual(working, path.read_bytes())
+        path.write_bytes(b'# actually changed legacy\r\n')
+        denied = self.hook('git commit --only -m fixture -- .')
+        self.assertEqual(2, denied.returncode, denied.stderr)
+        self.assertEqual(before, self.git('ls-files', '--stage'))
+
+    def test_windows_attached_quotes_preserve_one_argument_and_native_backslashes(self):
+        bootstrap = ('import importlib.util,sys,pathlib,json; '
+                     'sys.path.insert(0,str(pathlib.Path(sys.argv[1]).parent)); '
+                     's=importlib.util.spec_from_file_location("native_hook",sys.argv[1]); '
+                     'm=importlib.util.module_from_spec(s); s.loader.exec_module(m); '
+                     'print(json.dumps(m.commit_arguments(sys.argv[2],True)))')
+        command = 'git -C "C:\\native path\\repo" commit -qam"fix issue 87" -- "file with spaces"'
+        result = subprocess.run([sys.executable, '-c', bootstrap, str(HOOK), command],
+                                capture_output=True, text=True, check=True)
+        prefix, arguments, additions = json.loads(result.stdout)
+        self.assertEqual(['-C', 'C:\\native path\\repo'], prefix)
+        self.assertEqual(['-qamfix issue 87', '--', 'file with spaces'], arguments)
+        self.assertEqual([], additions)
+
+    def test_git_binary_attribute_keeps_crlf_a_real_prospective_change(self):
+        self.git('config', 'core.autocrlf', 'true')
+        self.write('.gitattributes', '*.md -text\n')
+        path = self.root / RECORD
+        self.write(RECORD, '# legacy without metadata\n')
+        path.write_bytes(b'# legacy without metadata\n')
+        self.git('add', '.gitattributes', RECORD)
+        self.git('commit', '-qm', 'binary legacy record')
+        self.head = self.git('rev-parse', 'HEAD')
+        path.write_bytes(b'# legacy without metadata\r\n')
+        before = self.git('ls-files', '--stage')
+        denied = self.hook('git commit --only -m fixture -- .')
+        self.assertEqual(2, denied.returncode, denied.stderr)
+        self.assertEqual(before, self.git('ls-files', '--stage'))
+
     def test_empty_add_cannot_hide_invalid_index_and_nested_all_is_repository_wide(self):
         self.write(RECORD, INVALID)
         self.git('add', RECORD)
