@@ -1,0 +1,2 @@
+# Independent YAML oracle for test fixtures; the installed runtime is stdlib only.
+PyYAML>=6.0.2,<7
