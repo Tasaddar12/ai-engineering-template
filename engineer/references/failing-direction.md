@@ -37,9 +37,11 @@ The probe never executes command text (PLAN.md is untrusted, LLM-authored). It i
 recognizer: it proves a statement exists and is not a placeholder. It does not judge whether the
 statement names the *right* signal — that judgment is yours, below.
 
-## Process — act on `severity` only
+The supported Python result carries `valid`, `findings` and detailed `commands` rows. Each finding/command retains its `severity` and `reason`; reconcile those actual returned values rather than assuming an old status-only shape.
 
-| `severity` | `status` | Action |
+## Process — act on actual severity and reason
+
+| `severity` | `reason` / condition | Action |
 |---|---|---|
 | `blocker` | `missing` | **BLOCKER** — quote the `command` verbatim: it has no stated failing direction |
 | `blocker` | `empty` | **BLOCKER** — a `<fails_when>` is present but blank |

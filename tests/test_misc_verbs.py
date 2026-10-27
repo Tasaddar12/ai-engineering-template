@@ -81,6 +81,10 @@ def gh(argv, check=True):
         return SimpleNamespace(stdout=json.dumps(state["issue"]), stderr="", returncode=0)
     raise RuntimeError("Unexpected provider operation: "+repr(argv))
 delivery.gh = gh
+def inventory():
+    state = json.loads(state_path.read_text(encoding="utf-8")) if state_path.exists() else {}
+    return {"issues": [state["issue"]] if "issue" in state else [], "pulls": []}
+issues.provider_inventory = inventory
 raise SystemExit(engineer.main(["query", *sys.argv[2:]]))
 '''
 

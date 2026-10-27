@@ -88,9 +88,9 @@ def load_entries(args):
 
 def scope_for(args, kind):
     if kind == "quick":
-        from .verification import quick_dir
+        from .verification import quick_dir, quick_identity
         directory = quick_dir(args.need())
-        identifier = directory.name.split("-")[0]
+        identifier = quick_identity(directory)
     else:
         identifier = records.number(args.need())
         directory = records.phase_dir(identifier)

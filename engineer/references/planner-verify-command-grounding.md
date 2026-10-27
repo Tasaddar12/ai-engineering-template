@@ -1,21 +1,17 @@
 # Verify Command Grounding (#2401)
 
-Use the nearest relevant committed SUMMARY evidence or an explicitly supplied `prior_verify_commands` packet to ground candidate commands. No implicit injection is assumed. Record the source and tested revision, then inspect current configuration before choosing the command.
-or test story is the same one a prior phase already proved, **reuse that command verbatim**
-rather than re-deriving a path. Re-invention is what produced `cd ../../frontend && npm run
-lint` against a directory that holds no `package.json`, and cost two revision cycles.
+## Distinguish candidates from executed evidence
 
-Ground every path you do author: a command's `cd` target or `npm --prefix` target must be a
-directory that exists (or that an earlier task in this phase creates) and, for an npm/make
-command, must hold the matching `package.json`/`Makefile`. `npm --prefix <dir> run <script>` is
-preferred over `cd <dir> && npm run <script>` — it does not depend on the executor's cwd. If
-Read prior commands from committed SUMMARY check evidence or supplied `prior_verify_commands`; verify applicability to this revision and never invent a prior run.
-guessing one.
+Read `prior_verify_candidates` from prior PLAN declarations only as candidate commands. A plan says what should run; it proves no execution. `prior_verify_commands` is reserved for commands backed by committed complete SUMMARY `checks_run` evidence. For each such command preserve the evidence path, actual tested revision, argv, working directory, outcome and limitations. No implicit injection is assumed: missing provenance remains missing.
+
+When the current task exercises the same interface or test story as a proven earlier run, prefer that grounded command after confirming the manifest/lockfile, target, script and environment still apply. Reuse the root-relative command verbatim only when all those inputs match. A remembered successful command or a PLAN candidate is not a passing receipt. Re-root an absolute harvested path before authoring a portable command and label the changed command unexecuted until it actually runs.
+
+Ground every authored target relative to the executor's assigned checkout root. A `cd` or `npm --prefix` directory must exist or be explicitly produced by an earlier task; npm/make targets need the actual matching manifest and script. Prefer `npm --prefix apps/api run test` over a fragile ancestor traversal. If the location is unknown, request bounded discovery and preserve the gap rather than guessing a replacement directory. Record the exact command and intended failure signal in the plan.
 
 **Run a count/match gate before it ships (#4927).** A gate you author — or one a `RESEARCH.md`
 hands you — that counts or matches text (`grep -c`, `grep -q`, `rg`, `test -n "$(grep …)"`) is a
 claim about the tree, and two defects are invisible to reading and take one command to expose. You
-have a shell when you author the plan, so run each such gate against the **current tree** and write
+have a shell when you author the plan, so, when the user permits execution, run each such gate against the **current tree** and write
 the pre-change result next to it as its baseline (`# baseline at HEAD: 0`):
 
 - **It already passes at HEAD.** `grep -c "Agent" .planning/PROJECT.md` returned `6` before any work
@@ -27,7 +23,7 @@ the pre-change result next to it as its baseline (`# baseline at HEAD: 0`):
   `-i` when casing is not part of the contract.
 
 A gate that is meant to prove a *negative* is checked the other way: it must pass after the work
-and its baseline must show the thing was there to remove. Only read-only commands are safe to run
+and its baseline must show the thing was there to remove. Explicit user check deferral takes precedence: author the gate and record its baseline as pending; do not execute it or invent a pre-change result. Only read-only commands are safe to run
 this way — run `grep`/`rg`/`test` gates; do not execute a gate that builds, installs, or writes.
 
 **Root-relative, never absolute (#4767).** The paths in your prompt's `<required_reading>` are

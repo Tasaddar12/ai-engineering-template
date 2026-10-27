@@ -41,9 +41,9 @@ class AgentSourceTests(unittest.TestCase):
         for required in ("source locations are unknown", "one discovery scout", "Distinct additional scouts",
                          "../engineer/references/scout-dispatch.md", "Route by role", "executor", "planner"):
             self.assertIn(required, dispatch)
-        self.assertIn("Only the coordinator dispatches workers", self.read("engineer/references/scout-dispatch.md"))
+        self.assertIn("The coordinator dispatches normal workers", self.read("engineer/references/scout-dispatch.md"))
 
-    def test_worker_local_adapters_reference_scout_contract_without_worker_dispatch(self):
+    def test_worker_local_adapters_allow_only_supported_scout_nesting(self):
         for role in (ROOT / "agents").glob("*.md"):
             if role.stem in {"AGENT", "scout", "coordinator", "targeted-fixer", "code-fixer"}:
                 continue
@@ -51,8 +51,35 @@ class AgentSourceTests(unittest.TestCase):
                 text = role.read_text(encoding="utf-8")
                 self.assertIn("../engineer/references/scout-dispatch.md", text)
                 self.assertIn("coordinator", text)
-                self.assertIn("Only the coordinator dispatches workers", self.read("engineer/references/scout-dispatch.md"))
+                self.assertIn("only named read-only scout packets", text)
+                self.assertIn("exact host registration and capacity", text)
+                self.assertIn("never create generic/source-writing children", text)
+                self.assertIn("The coordinator dispatches normal workers", self.read("engineer/references/scout-dispatch.md"))
                 self.assertNotRegex(text, r"Only the (?:coordinator|orchestrator)\s+dispatches\s+agents")
+
+    def test_scout_fallback_preserves_complete_assignments_and_resume_state(self):
+        text = self.read("engineer/references/scout-dispatch.md")
+        fallback = text.split("scout_request:", 1)[1].split("```", 1)[0]
+        for field in ("parent_assignment_id:", "repository:", "revision:", "reason:",
+                      "stage:", "assignments:", "requested_fields:", "search_scope:",
+                      "constraints:", "resume_with:"):
+            self.assertIn(field, fallback)
+        for duty in ("queued dispatch", "Join ALL", "citations conflict", "domain owner",
+                     "first remaining action", "do not restart the original task"):
+            self.assertIn(duty, text)
+
+    def test_precondition_checkpoint_and_failed_truth_precedence_are_preserved(self):
+        executor = self.read("agents/executor.md")
+        unmet = executor.split("**Unmet:**", 1)[1].split('1. **If', 1)[0]
+        for duty in ("STOP", "partial task commit", "blocking-human", "exact precondition",
+                     "human may satisfy", "fresh continuation", "plan-phase revision"):
+            self.assertIn(duty, unmet)
+        verifier = self.read("agents/verifier.md")
+        tree = verifier.split("## Step 9: Determine Overall Status", 1)[1].split("## Step 9b", 1)[0]
+        for condition in ("truth is FAILED", "artifact is missing or a stub", "PARTIAL or NOT_WIRED",
+                          "blocker anti-pattern", "status: gaps_found", "status: human_needed"):
+            self.assertIn(condition, tree)
+        self.assertLess(tree.index("status: gaps_found"), tree.index("status: human_needed"))
 
     def test_scout_shared_adapter_is_host_agnostic_and_respects_permissions(self):
         text = self.read("agents/scout.md")

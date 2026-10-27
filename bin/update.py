@@ -66,6 +66,22 @@ def load_manifest(target, host):
     return value
 
 
+def matches_recorded_newlines(content, expected):
+    """Recognize only UTF-8 LF/CRLF variants of a previously owned byte hash."""
+    try:
+        text = content.decode("utf-8")
+    except UnicodeError:
+        return False
+    if "\x00" in text or re.search(r"\r(?!\n)", text):
+        return False
+    normalized = content.replace(b"\r\n", b"\n")
+    return expected in (digest(content), digest(normalized), digest(normalized.replace(b"\n", b"\r\n")))
+
+
+def same_block(left, right):
+    return left == right or left is not None and right is not None and same_text(left.encode("utf-8"), right.encode("utf-8"))
+
+
 def record_install(target, host, source, revision, incoming, preexisting=()):
     existing = load_manifest(target, host)
     # A --no-hooks rerun omits registrations from its incoming payload; omission
@@ -80,7 +96,7 @@ def record_install(target, host, source, revision, incoming, preexisting=()):
             content = path.read_bytes()
             # A preexisting equal file is not evidence of installer ownership.
             prior = existing.get("files", {}).get(name)
-            if same_source and prior and prior.get("installed_sha256") == digest(content):
+            if same_source and prior and matches_recorded_newlines(content, prior.get("installed_sha256")):
                 continue
             classification = prior.get("classification", "customized") if prior else "customized" if name in preexisting else "upstream-managed"
             if prior and prior.get("installed_sha256") != digest(content):
@@ -157,15 +173,15 @@ def build_plan(source, target, host="codex", hooks=True, source_url=None, revisi
             if name in ("AGENTS.md", "CLAUDE.md") and not base_payload.get(name):
                 current_block = installer.managed_block(installer.utf8(before, name))
                 new_block = installer.managed_block(installer.utf8(upstream, name))
-                generated_conflict = current_block != new_block
+                generated_conflict = not same_block(current_block, new_block)
             if name in ("AGENTS.md", "CLAUDE.md") and base_payload.get(name):
                 # Surrounding user instructions never turn the managed block into a conflict.
                 current_block = installer.managed_block(installer.utf8(before, name))
                 old_block = installer.managed_block(installer.utf8(base_payload[name], name))
-                if current_block == old_block and known != "customized":
+                if (same_block(current_block, old_block) or same_block(current_block, installer.managed_block(installer.utf8(upstream, name)))) and known != "customized":
                     classification = "upstream-managed"
                     unchanged = True
-                elif current_block != old_block:
+                elif not same_block(current_block, old_block):
                     generated_conflict = True
             elif name in (".gitignore", ".codex/config.toml", ".claude/settings.json"):
                 classification = "upstream-managed"

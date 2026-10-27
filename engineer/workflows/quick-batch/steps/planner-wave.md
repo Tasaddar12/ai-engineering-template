@@ -22,7 +22,7 @@ in wave 0 before any signal exists).
 
 3. Load the exact planner's applicable skills and complete quick-batch planning contract. No unsupported hook helper is invoked.
 
-4. **Concurrency.** Planning is not worktree-isolated — compute with
+4. **Concurrency.** Planning writes owned PLAN artifacts and requires a supported isolated assignment. Create/register that exact artifact assignment through the coordinator; never let concurrent planners write the shared session checkout. Preserve `mutating=false` only for this helper's source-mutation scheduling classification, which does not waive artifact isolation. Compute with
    `mutating=false` (row 12's rule applies to any non-mutating wave, not just
    research):
    ```bash

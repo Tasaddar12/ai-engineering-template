@@ -96,8 +96,15 @@ def review(source, before, defaults):
         for name, default in {**flat_defaults, **REQUIRED}.items():
             cursor = current
             exists = True
-            for part in name.split("."):
+            compact_agent = False
+            for depth, part in enumerate(name.split(".")):
                 if not isinstance(cursor, dict):
+                    # A supported compact Claude role override is authoritative;
+                    # do not replace its scalar with default model/effort fields.
+                    if name.startswith("agents.") and depth == 2 and isinstance(cursor, str):
+                        compact_agent = True
+                        exists = False
+                        break
                     errors.append(name + " parent must be a mapping")
                     exists = False
                     break
@@ -105,6 +112,8 @@ def review(source, before, defaults):
                     exists = False
                     break
                 cursor = cursor[part]
+            if compact_agent:
+                continue
             if exists:
                 valid_type = (cursor is None or isinstance(cursor, str)) if default is None else type(cursor) is type(default)
                 if not valid_type:

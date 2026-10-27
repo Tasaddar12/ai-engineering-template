@@ -70,9 +70,6 @@ Before returning PLANNING COMPLETE:
 | `{phase_dir}` | Phase directory name | `05-user-profiles` |
 | `{phase}` | Phase prefix | `05` |
 | `{standard \| gap_closure}` | Mode flag | `standard` |
-
----
-
 | `{repository_root}` | Coordinator assignment | Absolute assigned checkout |
 | `{branch}` | Coordinator assignment | Assigned branch |
 | `{input_revision}` | Captured Git revision | Full SHA |

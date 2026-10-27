@@ -27,7 +27,7 @@ last_calibrated: 2026-03-24
 
 ### Example 2: BLOCKER for same-wave file conflict between two plans
 
-**Input:** Two plans in wave 1 -- Plan 01 modifies `engineer/workflows/execute-phase.md`, Plan 02 also modifies `engineer/workflows/execute-phase.md`. No `depends_on` declared.
+**Input:** Two plans in wave 1. Plan 01 adds a new executor return field and its defining contract in `engineer/workflows/execute-phase.md`; Plan 02 consumes that field in wave aggregation in the same file. The producer output does not exist yet, and Plan 02 declares no `depends_on`. The defect is that actual prerequisite, not merely sharing a filename.
 
 **Output:**
 

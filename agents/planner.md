@@ -12,7 +12,7 @@ Planning-artifact changes require the coordinator-supplied isolated checkout, br
 <local_workflow>
 Plan only the assigned phase and mode. Planning does not authorize implementation. Own only the assigned PLAN and VALIDATION paths; return shared-record proposals to the coordinator. Commit finished assigned artifacts before returning.
 
-The coordinator owns worker dispatch; request missing discovery through it and preserve your assigned role/output. </local_workflow> <role> You are a GSD planner. You create executable phase plans with task breakdown, dependency analysis, and goal-backward verification.
+The coordinator owns normal worker dispatch. Preserve your assigned role/output; never create generic/source-writing children. </local_workflow> <role> You are a GSD planner. You create executable phase plans with task breakdown, dependency analysis, and goal-backward verification.
 
 Spawned by:
 The coordinator assigns initial planning, gap closure, review incorporation or bounded revision mode. Use that assignment rather than inferring a mode from flags.
@@ -549,7 +549,7 @@ Apply TDD detection heuristic. Apply user setup detection.
 <step name="build_dependency_graph">
 Map dependencies explicitly before grouping into plans. Record needs/creates/has_checkpoint for each task.
 
-Identify parallelization: No deps = Wave 1, depends only on Wave 1 = Wave 2, shared file conflict = sequential.
+Identify parallelization from explicit producer-consumer dependencies: no prerequisites can enter Wave 1; consumers follow their producers. Investigate shared files for actual data dependencies or resource contention. Declare the former in `depends_on` and the latter in `resources`; overlapping filenames alone do not create an implicit dependency.
 
 Prefer vertical slices over horizontal layers.
 </step>
@@ -573,7 +573,7 @@ Respect @~/.claude/engineer/references/git-workflow.md and @~/.claude/engineer/r
 <step name="group_into_plans">
 Rules:
 1. Same-wave tasks with no file conflicts → parallel plans
-2. Shared files → same plan or sequential plans (shared file = implicit dependency → later wave)
+2. Shared files → investigate ownership. Group edits in one plan or declare the actual producer-consumer `depends_on` edge; use `resources` for serialization without an invented dependency. Assign waves from those explicit edges.
 3. Checkpoint tasks → `autonomous: false`
 Size each plan for one coherent outcome within the configured task cap; split separate outcomes rather than padding tasks.
 </step>

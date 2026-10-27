@@ -4,27 +4,27 @@ Read [the engineering rules](../engineer/RULES.md) and [agent adaptation](../eng
 
 ## Roles and evidence flow
 
-| Role | Dispatcher | Input → result → consumer |
+| Role | Dispatcher | Input â†’ result â†’ consumer |
 |---|---|---|
-| [Coordinator](coordinator.md) | Human's selected command/workflow | Authorized outcome and records → assignments, joined evidence, shared-record updates and delivery → human |
-| [Executor](executor.md) | execute-phase / quick coordinator | Assigned PLAN, isolated checkout and owned paths → committed implementation plus SUMMARY → coordinator |
-| [Planner](planner.md) | plan-phase / quick coordinator | Approved CONTEXT, requirements and research → committed PLAN/VALIDATION and shared-record proposals → coordinator and plan-checker |
-| [Plan checker](plan-checker.md) | plan-phase coordinator | Captured plans and authority evidence → PLAN REVIEW, approved or needs-revision → coordinator |
-| [Phase researcher](phase-researcher.md) | plan-phase / next coordinator | Bounded questions and repository scope → committed RESEARCH, sources and unresolved choices → planner via coordinator |
-| [Verifier](verifier.md) | verify-work / execute-phase coordinator | Captured revision, acceptance and receipts → provisional goal-backward report → coordinator for joined verdict |
-| [Code reviewer](code-reviewer.md) | execute-phase / code-review coordinator | Captured revision and explicit diff base → complete review with stable findings → coordinator for capture |
-| [Debugger](debugger.md) | next / verify-work coordinator | Symptom and scoped evidence → demonstrated root cause and bounded correction proposal → coordinator |
-| [Doc writer](doc-writer.md) | execute-phase / documentation coordinator | Assigned documentation paths and source interfaces → committed documents and SUMMARY → coordinator |
-| [Doc verifier](doc-verifier.md) | verification coordinator | Documentation and captured source revision → complete claim JSON with FAIL/UNVERIFIABLE evidence → coordinator |
-| [Integration checker](integration-checker.md) | verification coordinator | Component boundaries and acceptance → traced success/error/empty paths and UNVERIFIED scope → coordinator |
-| [Codebase mapper](codebase-mapper.md) | onboard / research coordinator | Validated source scope and owned map paths → committed repository map → coordinator |
-| [UI researcher](ui-researcher.md) | ui-phase coordinator | Approved UI decisions and assigned output → committed UI-SPEC → coordinator and ui-checker |
-| [UI checker](ui-checker.md) | ui-phase coordinator | Captured UI-SPEC and CONTEXT → evidenced read-only verdict → coordinator |
-| [UI auditor](ui-auditor.md) | ui-review coordinator | Running UI, acceptance and optional external capture_dir → returned UI-REVIEW and external captures → coordinator |
-| [DOM verifier](dom-verifier.md) | verify-work coordinator | Running URL and live-DOM criteria → returned DOM-VERIFY observations → coordinator |
-| [Security auditor](security-auditor.md) | secure-phase coordinator | Threat register and captured implementation → SECURED / OPEN_THREATS / ESCALATE evidence → coordinator, which writes SECURITY |
-| [Nyquist auditor](nyquist-auditor.md) | Validation-gap coordinator | Assigned test gaps, test/fixture paths and optional VALIDATION path → committed behavioral tests and SUMMARY → coordinator |
-| [Pattern mapper](pattern-mapper.md) | plan-phase coordinator | Scoped pattern question and assigned artifact path → committed PATTERNS → planner via coordinator |
+| [Coordinator](coordinator.md) | Human's selected command/workflow | Authorized outcome and records â†’ assignments, joined evidence, shared-record updates and delivery â†’ human |
+| [Executor](executor.md) | execute-phase / quick coordinator | Assigned PLAN, isolated checkout and owned paths â†’ committed implementation plus SUMMARY â†’ coordinator |
+| [Planner](planner.md) | plan-phase / quick coordinator | Approved CONTEXT, requirements and research â†’ committed PLAN/VALIDATION and shared-record proposals â†’ coordinator and plan-checker |
+| [Plan checker](plan-checker.md) | plan-phase coordinator | Captured plans and authority evidence â†’ PLAN REVIEW, approved or needs-revision â†’ coordinator |
+| [Phase researcher](phase-researcher.md) | plan-phase / next coordinator | Bounded questions and repository scope â†’ committed RESEARCH, sources and unresolved choices â†’ planner via coordinator |
+| [Verifier](verifier.md) | verify-work / execute-phase coordinator | Captured revision, acceptance and receipts â†’ provisional goal-backward report â†’ coordinator for joined verdict |
+| [Code reviewer](code-reviewer.md) | execute-phase / code-review coordinator | Captured revision and explicit diff base â†’ complete review with stable findings â†’ coordinator for capture |
+| [Debugger](debugger.md) | next / verify-work coordinator | Symptom and scoped evidence â†’ demonstrated root cause and bounded correction proposal â†’ coordinator |
+| [Doc writer](doc-writer.md) | execute-phase / documentation coordinator | Assigned documentation paths and source interfaces â†’ committed documents and SUMMARY â†’ coordinator |
+| [Doc verifier](doc-verifier.md) | verification coordinator | Documentation and captured source revision â†’ complete claim JSON with FAIL/UNVERIFIABLE evidence â†’ coordinator |
+| [Integration checker](integration-checker.md) | verification coordinator | Component boundaries and acceptance â†’ traced success/error/empty paths and UNVERIFIED scope â†’ coordinator |
+| [Codebase mapper](codebase-mapper.md) | onboard / research coordinator | Validated source scope and owned map paths â†’ committed repository map â†’ coordinator |
+| [UI researcher](ui-researcher.md) | ui-phase coordinator | Approved UI decisions and assigned output â†’ committed UI-SPEC â†’ coordinator and ui-checker |
+| [UI checker](ui-checker.md) | ui-phase coordinator | Captured UI-SPEC and CONTEXT â†’ evidenced read-only verdict â†’ coordinator |
+| [UI auditor](ui-auditor.md) | ui-review coordinator | Running UI, acceptance and optional external capture_dir â†’ returned UI-REVIEW and external captures â†’ coordinator |
+| [DOM verifier](dom-verifier.md) | verify-work coordinator | Running URL and live-DOM criteria â†’ returned DOM-VERIFY observations â†’ coordinator |
+| [Security auditor](security-auditor.md) | secure-phase coordinator | Threat register and captured implementation â†’ SECURED / OPEN_THREATS / ESCALATE evidence â†’ coordinator, which writes SECURITY |
+| [Nyquist auditor](nyquist-auditor.md) | Validation-gap coordinator | Assigned test gaps, test/fixture paths and optional VALIDATION path â†’ committed behavioral tests and SUMMARY â†’ coordinator |
+| [Pattern mapper](pattern-mapper.md) | plan-phase coordinator | Scoped pattern question and assigned artifact path â†’ committed PATTERNS â†’ planner via coordinator |
 | [Code fixer](code-fixer.md) | code-review --fix coordinator | Assigned review findings → committed fixes and REVIEW-FIX report → coordinator |
 
 Pattern-mapper is read-only for source inspection; its explicitly assigned evidence artifact is its sole write scope. Debugger is read-only unless an owned debug-record or source repair assignment supplies write authority. 
@@ -46,7 +46,7 @@ Do not send an alias as a host-native role name. Do not substitute a generic age
 
 The coordinator owns worker lifecycle, integration, shared-record mutations and publication. After dispatching work, it waits before touching that worker's owned paths or integrating its commits. A timeout is not proof that a worker has stopped; reassignment requires confirmed exit.
 
-Other roles may request only workflow-permitted named packets; they must not recreate the coordinator's worker tree.
+ They must not recreate the coordinator's worker tree or dispatch generic/source-changing children.
 
 Use a fresh code-reviewer for every source-changing phase and its independent implementation review. The author may self-check claims but cannot supply its own independent review. Plan-checker evaluates plan outcomes and dependencies; verifier evaluates delivered behavior. Doc-verifier inspects claims without executing the documented commands. Integration-checker traces real boundaries; grep counts do not prove flow.
 
@@ -107,16 +107,18 @@ Only the installer export for planner supplies its default medium effort. Defaul
 
 ### Codex
 
-Use Codex native agent dispatch with the exact role method and resolved model/effort arguments. The runtime owns the supported concrete model names and validates the current host policy. Do not hardcode a model alias into shared instructions or silently swap providers.
+The installer owns generated Codex native TOML role registrations and their model policy; shared Markdown is the method source, not the native registration. Use Codex native agent dispatch with the exact installed role registration and resolved model/effort arguments. The runtime owns the supported concrete model names and validates the current host policy. Do not hardcode a model alias into shared instructions or silently swap providers.
 
-| Role group | Codex resolution policy |
-|---|---|
-| executor | Project agents.executor override, then runtime profile/default |
-| planner | Project agents.planner override, then runtime profile/default |
-| phase-researcher | Project agents.phase-researcher override, then runtime profile/default |
-| plan-checker | Project agents.plan-checker override, then runtime profile/default |
-| Review, documentation, mapping, UI and security roles | Exact role override, then runtime profile/default |
+| Role | Codex native default | Effort |
+|---|---|---|
+| codebase-mapper | Curated Luna | high |
+| doc-writer | Curated Luna | high |
+| doc-verifier | Curated Luna | medium |
+| integration-checker | Curated Luna | medium |
+| executor | Curated Sol | medium |
+| Other registered ordinary roles | Curated Sol | high |
 
+The installer/runtime owns the exact supported concrete model identifiers and generated TOML. Codex uses this curated native policy rather than broad project YAML model overrides. Resolve both actual model and effort at dispatch; these display family names are not literal host arguments.
 Resolve each role separately even if another role in the same batch appears similar. A supported host's default model is a runtime concern, not authority to skip resolution.
 ## Verification and continuation
 

@@ -8,7 +8,7 @@ color: green
 <local_workflow>
 Review the assigned revision without modifying the checkout. Return findings and the complete review to the coordinator for capture. The workflow owns revision loops. A correction-review assignment is bounded to changed findings and affected dependencies.
 
-The coordinator owns worker dispatch; request missing discovery through it and preserve your assigned role/output. </local_workflow> <role> A set of phase plans has been submitted for pre-execution review. Verify they WILL achieve the phase goal — do not credit effort or intent, only verifiable coverage.
+The coordinator owns normal worker dispatch. Preserve your assigned role/output; never create generic/source-writing children. </local_workflow> <role> A set of phase plans has been submitted for pre-execution review. Verify they WILL achieve the phase goal — do not credit effort or intent, only verifiable coverage.
 
 Spawned by `plan-phase` orchestrator (after planner creates PLAN.md) or re-verification (after planner revises).
 
@@ -509,13 +509,13 @@ Unresolved research blocks only the dependent scope whose necessary fact is miss
 issue:
   dimension: research_resolution
   severity: blocker
-  required_property: "RESEARCH.md carries no unresolved open question"
-  description: "RESEARCH.md has unresolved open questions"
+  required_property: "Task 2 has an established cache TTL prerequisite before selecting its expiration behavior"
+  description: "Task 2 chooses an expiration policy while its required cache TTL is still unresolved; unrelated Task 1 may proceed"
   file: "01-RESEARCH.md"
   unresolved_questions:
     - "Hash prefix — keep or change?"
     - "Cache TTL — what duration?"
-  fix_hint: "Resolve questions and mark section as '## Open Questions (RESOLVED)'"
+  fix_hint: "Establish the actual cache TTL through the decision owner, cite that resolution and revise only dependent Task 2; do not blanket-resolve unrelated questions"
 ```
 
 **Example — resolved (PASS):**

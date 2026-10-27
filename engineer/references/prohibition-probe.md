@@ -29,9 +29,7 @@ exists, after which the verifier reliably enforces it.
 
 The technique is adversarial elicitation, not deterministic computation. Unlike the edge
 taxonomy (a closed eight categories a classifier can apply), the recall stage is inherently
-model-driven: it asks an open question and reads prose. There is **no compiled
-separate executable prohibition engine** — the recall stage is an LLM prose pass, and only the
-schema/projection layer is real code (ADR-550 Decision 7b). Building a deterministic
+model-driven: it asks an open question and reads prose. There is **no deterministic recall engine** — the recall stage is an LLM prose pass. The Python runtime implements schema/projection and three-stage configured-check proof; those operations do not infer missing intent (ADR-550 Decision 7b). Building a deterministic
 recall adapter would be the scope-creep the maintainer flags.
 
 ## Inputs
@@ -138,12 +136,7 @@ lifecycle is identical to the edge-probe, the verification tiers differ):
       rule, so a mis-authored fixture makes the prover report "not proven" and hard-gate a legitimately
       wired check. (`no-source-grep` has no filename guard — every supported source file with the violating pattern must be exercised.)
 
-    > **PROPOSED, renamable conventions (zero live consumers).** Both `GSD_PROHIB_SUBJECT` and
-    > `violationFixture` are net-new surface with **no live in-tree consumer yet** — there is no
-    > in-tree configured executable prohibition; test-command fail-first proof is exercised only by explicit
-    > synthetic violation/clean fixtures when configured, and the real dogfood remains the LINT-rule `local/no-source-grep`.
-    > They are therefore **open to maintainer adjustment (rename, or replacing the env var with an
-    > argv) at PR review with zero migration cost.** See the ADR-550 2026-06-15 addendum (#1279).
+    Both `ENGINEER_PROHIB_SUBJECT` and the compatibility `GSD_PROHIB_SUBJECT` are live subject-injection interfaces of the Python proof producer. The descriptor/fixture contract has active consumers; do not rename it as a zero-migration proposal. The producer supplies both variables to the configured check. They carry a path, never a secret value.
   - A **judgment**-tier prohibition routes to a never-silent / never-hard-halt soft gate
     (autonomous emits an `unverified-prohibition — human review recommended` flag).
 
@@ -151,45 +144,67 @@ Splitting these axes keeps the lifecycle enum free of a verification fact and le
 prohibition adapter declare `test | judgment` without forking the shared lifecycle enum that
 the edge-probe's `explicit | backstop` also uses.
 
-## Optional wired-check descriptor (deterministic locate + machine-proof, #1278 + #1346)
+## Required wired-check descriptor and both controls
 
-A `resolved`/`test`-tier prohibition MAY carry an **optional `check` descriptor** that names
-the wired mechanical check, so verify-phase locates it deterministically instead of inventing
-`{kind, target, rule}` each run. The descriptor is captured at spec-phase (soft / optional —
-the author wires it when the negative test or lint rule already exists) and is represented as
-**five flat scalar keys** on the `must_haves.prohibitions` item — never a nested `check: {}`
-object:
+For every resolved test-tier prohibition, establish the real configured negative check and supply a descriptor. Missing/partial descriptors remain representable planning gaps, but cannot green. Both known-bad and known-clean controls are REQUIRED; an always-failing check or one that fails merely because a subject variable is set is not a proof.
 
-- `check_kind` — `test-command` | `lint-rule` (which producer mechanism runs the check).
-- `check_target` — the test file (`test-command`) or the file the rule runs against (`lint-rule`).
-- `check_rule` — the `ruleId` to filter on, **lint-rule only** (absent for `test-command`).
-- `check_violation_fixture` — path to a KNOWN-BAD subject the #1279 prover runs the check against to
-  machine-prove fail-first (rides BOTH kinds; for `test-command` it is injected via `GSD_PROHIB_SUBJECT`).
-- `check_clean_fixture` — **optional** path to a KNOWN-CLEAN control subject (#1346). When present the
-  test-command prover also runs the check against it and requires GREEN, proving the violation's RED is
-  caused by the subject's *content* (not merely by `GSD_PROHIB_SUBJECT` being set). Absent → no control.
+The Python runtime exposes `spec.prohibition-project INPUT.json` and `spec.prohibition-proof DESCRIPTOR.json --subject REALPATH`, with optional `--timeout 30`. The first projects already-selected intent into plan obligations; it does not discover prohibitions. The second executes only the configured argv, without a shell, and observes three stages: violation RED, clean GREEN and real GREEN. It requires fresh non-vacuous reports and actual assertion/rule evidence, not arbitrary process failure.
 
-The flat-scalar shape is load-bearing: the shared `parseMustHavesBlock` is a flat parser and a
-nested object would flatten/mangle the round-trip (ADR-550 2026-06-15 addendum; #644 "no parser
-rewrite" precedent). `projectProhibitions` emits these keys **only for a well-formed descriptor**
-(valid `check_kind` + non-empty `check_target`; `check_rule` only on the lint-rule path;
-`check_violation_fixture` and `check_clean_fixture` only when non-empty), and verify-phase reads them
-back via `descriptorFromProjection` into the `CheckDescriptor` handed to `check prohibition-enforcement`.
-This closes the locate (#1278), the machine-proof-fixture (#1279), and the causation-control (#1346)
-halves with **zero manual descriptor authoring**: a prohibition authored with the scalars greens
-end-to-end through the projection alone.
+```json
+{
+  "kind": "test-command",
+  "target": "tests/test_audit_privacy.py",
+  "violationFixture": "tests/fixtures/audit-with-raw-ssn.json",
+  "cleanFixture": "tests/fixtures/audit-clean.json",
+  "argv": ["python", "{target}"],
+  "reportFormat": "unittest"
+}
+```
 
-**Fail-closed + backward-compat.** A partial descriptor (`lint-rule` missing `check_rule`), an
-unknown `check_kind`, an **absent** descriptor, OR a descriptor with **no `check_violation_fixture`**
-falls through to the producer's fail-closed paths (`located: false`, or located-but-unprovable) —
-never a silent green. A prohibition with no descriptor parses and disposes byte-identically to today.
-`failFirst` is **not** sourced from the descriptor and is **demoted** (machine-proven fail-first
-DELIVERED in #1279 — no path greens on attestation alone, FF-08); the `dispositionForProhibition`
-policy is unchanged. Causation (**#1346**): the test-command proof confirms the fixture exists and the
-check goes RED; supplying `check_clean_fixture` adds an opt-in control that *also* requires GREEN on a
-known-clean subject, proving the red is content-caused. With no clean fixture the control cannot run,
-so that one residual case (a deceptive test reding merely because the env var is set) stays a
-documented constraint — an author opts into the stronger proof by wiring a clean control subject.
+Descriptor fields:
+
+| Field | Contract |
+|---|---|
+| `kind` | `test-command` or `lint-rule`. |
+| `target` | Existing actual project check path. |
+| `rule` | Required exact rule ID for lint-rule. |
+| `violationFixture` | Existing known-bad subject that must produce the intended RED. |
+| `cleanFixture` | Existing known-clean subject that must produce GREEN. |
+| `argv` | Actual configured executable and arguments; no shell string. |
+| `reportFormat` | `unittest`, `junit` or `eslint-json`, matching actual output. |
+| `reportFile` | Optional except required for JUnit; output must be freshly produced. |
+
+All three subject paths must be distinct and the control bytes must differ from the real subject and from each other. This prevents a forged control that simply reuses the product output. Both subject environment variables identify the selected stage's subject. `argv` and `reportFile` may interpolate `{target}`, `{subject}` and `{stage}`; argv may use `{report}` when reportFile is configured. A lint argv MUST inject `{subject}` so the rule actually examines the stage subject, not the same real file three times.
+
+The five flat plan keys remain supported aliases: `check_kind`, `check_target`, `check_rule`, `check_violation_fixture`, `check_clean_fixture`. Aliases and native fields cannot conflict. Preserve the actual Python projection/proof interface, not retired CJS function names. The flat keys record descriptor intent; argv/reporter configuration must still identify a real runnable check.
+
+### Concrete violation, clean and real subjects
+
+For the audit privacy prohibition, a known-bad fixture contains `{"event":"account-opened","ssn":"123-45-6789"}`. A separate known-clean fixture contains `{"event":"fixture-clean","customer_ref":"redacted-control"}`. The actual product output at `artifacts/audit.json` contains its own distinct event/customer-reference data. Never include a real person's identifier; this bad value is synthetic test data.
+
+The existing project negative check must read its injected subject and assert the prohibition, for example:
+
+```python
+import json, os, re, unittest
+from pathlib import Path
+
+class AuditPrivacy(unittest.TestCase):
+    def test_no_raw_ssn(self):
+        subject = Path(os.environ["ENGINEER_PROHIB_SUBJECT"])
+        event = json.loads(subject.read_text(encoding="utf-8"))
+        self.assertNotRegex(json.dumps(event), r"\b\d{3}-\d{2}-\d{4}\b")
+
+if __name__ == "__main__":
+    unittest.main()
+```
+
+The violation run must fail this assertion, the clean run must execute and pass it, and the real run must execute and pass it. Syntax/import errors, zero tests, missing reports, stale reports and timeout never count as RED proof. If this check does not already exist, authoring it requires the ordinary owned implementation assignment; a prose example is not evidence it ran.
+
+For lint-rule proof, use the project's actual semantic rule and an AST-relevant bad/clean pair. A path rule might reject computed `path.join(root, "..", "private", name)` while permitting `path.join(root, "public", name)`; the control must genuinely exercise that configured rule, not just contain a forbidden word in a comment or string. For `local/no-source-grep`, inspect the installed rule's actual AST/path-construction trigger, build the corresponding violating expression and a clean control, inject `{subject}`, and require the exact rule ID in the fresh ESLint JSON. Do not replace semantic proof with grep counts or assume every path literal triggers the rule.
+
+### Fail-closed result consumption
+
+A genuine successful three-stage proof returns `located: true`, `proved: true`, `valid: true`, `disposition: green` and actual `observations`. A missing check, conflicting descriptor, missing control, equal subjects, absent expected assertion/rule, zero tests, invalid report, timeout or actual real failure returns the explicit `unprovable-prohibition` failure (exit 2), `proved: false`, `valid: false`, `disposition: flagged`, its located state and reason/observations. Preserve that evidence; never promote it through a caller-supplied failFirst boolean. Run only when the user permits checks; deferred proof is pending and prevents a required test-tier obligation from passing.
 
 ## Output schema
 
@@ -204,9 +219,9 @@ where `statement` is the must-NOT sentence and `category` is the values/safety/e
 (`values`, `fairness`, `privacy`, `transparency`, `safety`, …). The optional **flat-scalar
 `check_*` descriptor** (#1278) is present only on a resolved `test`-tier prohibition carrying a
 wired check: `check_kind` (`test-command` | `lint-rule`), `check_target`, and `check_rule` (lint-rule
-only). `projectProhibitions` emits these into `must_haves.prohibitions` and `descriptorFromProjection`
-reads them back into a `{ kind, target, rule? }` `CheckDescriptor`; they are flat scalars (never a
-nested `check:{}` object) so they round-trip through the unchanged `parseMustHavesBlock`. Plus a
+only). The Python `spec.prohibition-project` producer preserves these obligation fields;
+`spec.prohibition-proof` consumes the actual configured descriptor and both controls as described
+above. Projection alone does not prove execution or a passing prohibition. Plus a
 coverage summary:
 
 ```
@@ -333,4 +348,4 @@ silently drift.
 
 ## Python runtime boundary
 
-The current Python runtime exposes spec.section and spec.edge-probe, not a separate executable prohibition-enforcement service. Preserve this complete recall, descriptor, fail-first and non-vacuous proof protocol as reviewer/coordinator instructions. Run only the actual configured project check argv when authorized; record the observed violation failure and clean pass. Unavailable proof remains flagged/unverified or a blocking required-evidence gap. Do not claim a helper or fixture suite ran merely because this method describes it.
+The Python implementation is `engineer/bin/lib/probes.py`: `prohibition_project(args)` and `prohibition_proof(args)` own the actual projection and proof operations. `spec.section` and `spec.edge-probe` remain the section/shape interfaces. Model-driven recall and precision stay separate from deterministic projection and observed proof. Preserve all complete worked JSON examples above and the six edge examples in edge-probe.md; do not replace them with a summary. Fixture consistency is evidence only after the actual authorized comparison runs.

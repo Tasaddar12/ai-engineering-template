@@ -72,7 +72,7 @@ class SessionCase(unittest.TestCase):
                          + completed.stderr)
         if completed.returncode:
             failure = json.loads(completed.stderr.splitlines()[-1])
-            payload = {"ok": False, "code": failure["error"], "error": json.dumps(failure)}
+            payload = {**failure, "ok": False, "code": failure["error"], "error": json.dumps(failure)}
         else:
             payload = {"ok": True, **json.loads(completed.stdout)}
         if expect_ok:
@@ -249,8 +249,8 @@ class PhaseLocate(SessionCase):
         failed = self.locate("1", expect_ok=False)
         self.assertEqual(failed["code"], "ambiguous-phase-worktree")
         for session in (first, second):
-            self.assertIn(session["worktree"], failed["error"])
-            self.assertIn(session["branch"], failed["error"])
+            self.assertIn(session["worktree"], [entry["worktree"] for entry in failed["candidates"]])
+            self.assertIn(session["branch"], [entry["branch"] for entry in failed["candidates"]])
 
     def test_duplicate_equivalent_session_labels_fail(self):
         first = self.phase_session("01")
@@ -259,8 +259,8 @@ class PhaseLocate(SessionCase):
         failed = self.locate("1", expect_ok=False)
         self.assertEqual(failed["code"], "ambiguous-phase-session")
         for session in (first, second):
-            self.assertIn(session["worktree"], failed["error"])
-            self.assertIn(session["branch"], failed["error"])
+            self.assertIn(session["worktree"], [entry["worktree"] for entry in failed["candidates"]])
+            self.assertIn(session["branch"], [entry["branch"] for entry in failed["candidates"]])
 
     def test_missing_session_checkout_fails_without_fallback_or_manifest_repair(self):
         session = self.phase_session()
@@ -291,7 +291,7 @@ class PhaseLocate(SessionCase):
         self.change_sessions([entry])
         failed = self.locate("01", expect_ok=False)
         self.assertEqual(failed["code"], "session-branch-mismatch")
-        self.assertIn(session["branch"], failed["error"])
+        self.assertIn(session["branch"], [entry["branch"] for entry in failed["candidates"]])
         self.assertIn("phase-wrong-branch", failed["error"])
 
     def test_selected_session_without_phase_fails_even_when_current_has_phase(self):

@@ -8,7 +8,7 @@ color: orange
 <local_workflow>
 Inspect documentation claims against the captured revision without modifying the checkout. Return complete JSON for host capture; include revision, exact doc path, claim evidence and limitations. Do not create `.planning/tmp` or any result file in the checkout. Missing evidence remains UNVERIFIABLE.
 
-The coordinator owns worker dispatch; request missing discovery through it and preserve your assigned role/output. </local_workflow> <role> A documentation file has been submitted for factual verification against the live codebase. Every checkable claim must be verified — do not assume claims are correct because the doc was recently written.
+The coordinator owns normal worker dispatch. Preserve your assigned role/output; never create generic/source-writing children. </local_workflow> <role> A documentation file has been submitted for factual verification against the live codebase. Every checkable claim must be verified — do not assume claims are correct because the doc was recently written.
 
 Inputs: assigned documentation path, captured revision and any scoped source interfaces. Return the complete JSON result to the coordinator for host capture; no in-checkout output destination is required.
 
@@ -117,7 +117,10 @@ Build a list of `{ line, category, claim }` tuples.
 For each extracted claim tuple, apply the verification method from `<claim_extraction>` for its category:
 Inspect exact documented paths and source definitions. Count every evaluated claim as PASS, FAIL or UNVERIFIABLE, preserving uncertain claims in the totals. Return the full JSON schema with evidence and limitations; do not write it into the checkout.
 
-Use the exact JSON shape from `<output_format>
+Use the exact JSON shape below; return every required key even for missing files or an empty claim set.
+
+</verification_process>
+<output_format>
 Return JSON with this complete shape:
 
 ```json

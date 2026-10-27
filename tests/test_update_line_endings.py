@@ -300,7 +300,9 @@ class ReviewedLineEndings(unittest.TestCase):
         self.install()
         project = ".planning/PROJECT.md"
         raw = installer.payload(self.source, "codex", False)[project]
-        self.write(project, raw.replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
+        normalized = raw.replace(b"\r\n", b"\n")
+        # Force distinct byte representations even when the source checkout is CRLF.
+        self.write(project, normalized if raw != normalized else normalized.replace(b"\n", b"\r\n"))
         entry = self.target / "AGENTS.md"
         content = entry.read_bytes()
         self.write("AGENTS.md", content.replace(installer.AGENT_END.encode(),

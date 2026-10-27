@@ -160,23 +160,23 @@ After completion, create `.planning/phases/XX-name/{phase}-{plan}-SUMMARY.md`
 | `files_modified` | Yes | Files this plan touches. |
 | `autonomous` | Yes | `true` if no checkpoints, `false` if has checkpoints |
 | `requirements` | Yes | **MUST** list requirement IDs from ROADMAP. Every roadmap requirement MUST appear in at least one plan. |
+| `acceptance` | Yes | Required acceptance obligations, including human decisions that implementation cannot prove. |
+| `documentation` | Yes | Required documentation deliverables and the evidence that establishes completion. |
+| `checks` | Yes | Required checks as nonempty argv lists; never shell command strings. |
+| `issue_refs` | Yes | Canonical issue references, or an explicit `Pending` reason until available. |
 | `user_setup` | No | Array of human-required setup items (external services) |
 | `must_haves` | Yes | Goal-backward verification criteria (see below) |
 
-**Ordered groups:**
-- Resolve `depends_on` before dispatch; it names inter-plan dependencies only.
-- Serialize overlapping `files_modified`, `files_deleted` and `resources`.
-- A declared wave label never exempts overlap or an unmet dependency.
-- Inspect `engineer_run query init.execute-phase` output before assigning the integrated revision.
+**Ordered execution groups:**
+1. Read `engineer_run query phase-plan-index <phase>` and the available committed SUMMARYs before assigning work. Use the index's actual plan order, dependencies, file ownership and resource declarations; do not infer the group order from `wave` labels.
+2. Form the first executable group from plans whose inter-plan `depends_on` prerequisites are satisfied, serializing overlapping `files_modified`, `files_deleted` and shared `resources`. A declared wave label never exempts a dependency or overlap.
+3. Integrate and reconcile every plan in that group, including its committed SUMMARY and required evidence, before selecting or dispatching any plan from the next group. If a plan is incomplete or halted, preserve the completed group and stop only its dependent plans.
+4. Repeat the read-index, dispatch, integrate and reconcile sequence for each next group. Never pre-dispatch later groups against an assumed revision.
+5. After all groups finish, inspect `engineer_run query init.execute-phase` on the integrated revision, then have the coordinator run `/verify-work` against that revision. Plan completion is not phase verification.
 
 **Must-haves enable verification:** The `must_haves` field carries goal-backward requirements from planning to execution. After all plans complete, the coordinator runs `/verify-work` on the integrated revision and checks these criteria against the actual codebase.
 
 ---
-
-| `acceptance` | Yes | Explicit acceptance obligations, including required human judgment. |
-| `documentation` | Yes | Documentation deliverables and verification. |
-| `checks` | Yes | Lists of argv lists, for example `[["python", "-m", "unittest"]]`. |
-| `issue_refs` | Yes | Canonical issues or an explicit Pending reason. |
 
 ## Parallel vs Sequential
 

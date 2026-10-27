@@ -69,12 +69,13 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | python -I -c "import json,
    - NEVER invoke /quick or any other workflow command — you are a leaf, not a coordinator
    - NEVER write .planning/quick/batches/${BATCH_ID}.json
    - Do NOT update STATE.md or ROADMAP.md — the orchestrator owns those writes after every item in this dispatch round completes (ADR-1239 single-writer invariant)
-   - Do NOT commit docs artifacts (SUMMARY.md, STATE.md, PLAN.md) — the orchestrator commits them at completion
+   - MUST commit your owned source changes and required complete SUMMARY.md before returning complete. STATE.md, ROADMAP.md and batch records remain coordinator-owned; do not edit or commit them. The coordinator commits its own planning and shared-record artifacts separately.
    </constraints>
    ",
      subagent_type="executor",
-     model="{executor_model}",
-     {harnessFlag}
+     model="{resolved_executor_model}",
+     effort="{resolved_executor_effort}",
+     isolation="worktree",
      description="Execute ${quick_id}: ${description}"
    )
    ```
@@ -84,6 +85,8 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | python -I -c "import json,
    `/quick`'s own `QUICK_WORKTREE_MANIFEST` uses).
 
    **`isolation == "orchestrator-worktree"`:** coordinator calls `engineer_run query worktree.create "${quick_id}" --phase "batch-${BATCH_ID}-wave-${CUR_WAVE}" --base "${EXPECTED_BASE}" --files "${PLAN_FILES[@]}" --deletions "${PLAN_DELETIONS[@]}"`. Read returned path/branch/base, then dispatch the exact executor through the native Claude/Codex Agent with the full project_root_pin bound to that path. No process-spawn helper is required.
+
+   Resolve executor model AND effort immediately before dispatch using `resolve-model executor --raw` and `resolve-effort executor --raw`. Substitute the actual resolved values inline and omit each parameter whose resolution is `inherit`; the placeholders above are explanatory, never literal host arguments.
 
    **Harness registration:** dispatch with literal isolation="worktree" and the complete branch-check guard bound to EXPECTED_BASE. Register actual host metadata through `worktree.record-agent "${quick_id}" --phase "batch-${BATCH_ID}-wave-${CUR_WAVE}" --branch "${WORKER_BRANCH}" --path "${WORKER_PATH}" --base "${EXPECTED_BASE}" --files "${PLAN_FILES[@]}" --deletions "${PLAN_DELETIONS[@]}"`. Missing metadata blocks integration; never register the coordinator branch.
 

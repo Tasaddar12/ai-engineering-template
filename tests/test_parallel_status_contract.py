@@ -33,6 +33,7 @@ DUTIES = {
     "Bounded stall decision": {
         "stall decision": ("second consecutive", "neither progress", "host state change",
                            "mark the row stalled", "coordinator", "decision", "both observation intervals"),
+        "first watch": ("first interval", "watch", "Meaningful progress", "clear", "blocked"),
         "bounded choices": ("Continue one", "status/handoff", "access/decision blocker", "external blocker"),
         "stop safety": ("never proves", "never grants", "wait timeout", "host confirmation",
                         "Do not automatically", "confirmed stopped/interrupted", "dirty work",
@@ -111,6 +112,20 @@ class ParallelStatusContract(unittest.TestCase):
 
     def test_real_contract(self):
         self.assertEqual([], contract_errors(ROOT))
+
+    def test_planner_observer_is_wired_to_native_handles_and_bounded_waits(self):
+        helper = (ROOT / "engineer/workflows/plan-phase/steps/stall-detection-helpers.md").read_text(encoding="utf-8")
+        for duty in ("planner.stall_detection_enabled", "resolve-model", "model AND effort",
+                     "actual native handles", "observation_started_at", "observation_returned_at",
+                     "last-progress time", "60,000 ms", "intermediate observations unavailable",
+                     "Verdict: approved | needs-revision", "positive stopped confirmation"):
+            self.assertIn(duty, helper)
+        self.assertNotIn("engineer_stall_watch()", helper)
+        planner = (ROOT / "engineer/workflows/plan-phase.md").read_text(encoding="utf-8")
+        for route in ("spawn_planner", "spawn_checker", "revision_loop", "handle_preparer_return"):
+            body = steps(planner)[route]
+            self.assertIn("stall-detection-helpers.md", body)
+            self.assertIn("actual native handle and timestamps", body)
 
     def test_each_column(self):
         for field in COLUMNS:

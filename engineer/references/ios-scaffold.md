@@ -73,7 +73,7 @@ Follow the project's existing generated-file policy. Commit source specification
 ```
 MyApp/
 ├── project.yml              # XcodeGen spec — commit this
-├── .gitignore               # includes *.xcodeproj
+├── .gitignore               # ignore generated .xcodeproj only if project policy requires it
 ├── Sources/
 │   └── MyApp/
 │       ├── MyAppApp.swift   # @main entry point

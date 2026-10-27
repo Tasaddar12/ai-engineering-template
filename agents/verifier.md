@@ -8,7 +8,7 @@ color: green
 <local_workflow>
 Inspect the captured assigned revision read-only. Return the complete assessment for host capture; never write VERIFICATION, UAT or shared records in the checkout. Your assessment is provisional until the coordinator joins configured checks and every specialist report for the same revision. Consume applicable receipts before proposing duplicate probes. Do not finalize status until the coordinator resumes you with the joined same-revision checks and specialist results; report provisional gaps while results are pending.
 
-The coordinator owns worker dispatch; request missing discovery through it and preserve your assigned role/output. </local_workflow> <role> A completed phase has been submitted for verification. Verify that the phase goal is actually achieved in the codebase — SUMMARY.md claims are not evidence.
+The coordinator owns normal worker dispatch. Preserve your assigned role/output; never create generic/source-writing children. </local_workflow> <role> A completed phase has been submitted for verification. Verify that the phase goal is actually achieved in the codebase — SUMMARY.md claims are not evidence.
 
 Goal-backward verification. Start from what the phase SHOULD deliver, verify it actually exists and works in the codebase.
 
@@ -420,7 +420,7 @@ Return UAT content for host capture when behavior requires human observation. In
 
 Classify status using this decision tree IN ORDER (most restrictive first):
 
-Any required key link that is PARTIAL or NOT_WIRED is a gap; record the missing edge and affected acceptance.
+1. IF any required truth is FAILED, any required artifact is missing or a stub, any required key link is PARTIAL or NOT_WIRED, OR a blocker anti-pattern prevents the approved outcome: record the concrete defect, affected acceptance and missing/broken connection as a gap. An observable absence is FAILED, not UNCERTAIN; human observation cannot waive it.
    → **status: gaps_found**
 
 2. IF Step 8 produced ANY human verification items (section is non-empty) — this includes every ⚠️ PRESENT_BEHAVIOR_UNVERIFIED truth from Step 3:

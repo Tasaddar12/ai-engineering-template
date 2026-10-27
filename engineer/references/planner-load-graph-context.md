@@ -1,92 +1,18 @@
-# Planner — Load Graph Context
+# Planner — Supplied graph and map context
 
-> Loaded by `planner` at the `load_graph_context` step.
+Use coordinator-supplied dependency maps as discovery context. The supported runtime does not ship a graphify status/query family; do not invoke unavailable graph plumbing, install a graph CLI, assume `graphify.graph_path` configuration or silently claim a graph is current.
 
-Check for a knowledge graph and read its freshness in one call. `status` resolves the
-graph through `graphify.graph_path`, so it is also the presence gate — a bare
-`ls` of the default location misses an umbrella graph shared across sibling repos:
+## Load only relevant supplied evidence
 
-```bash
-_engineer_identity_ok() {
-  [ -f "$1" ] || return 1
-  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
-}
-_engineer_select() {
-  for _engineer_candidate do
-    if _engineer_identity_ok "$_engineer_candidate"; then
-      ENGINEER_RUN="$_engineer_candidate"
-      return 0
-    fi
-  done
-  return 1
-}
-if [ -n "${ENGINEER_RUN:-}" ]; then
-  _engineer_identity_ok "$ENGINEER_RUN" || {
-    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
-    exit 1
-  }
-else
-  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
-  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
-  _engineer_select \
-    "$_engineer_root/engineer/bin/engineer_run" \
-    "$_engineer_runtime_root/engineer/bin/engineer_run" \
-    "$_engineer_root/.claude/engineer/bin/engineer_run" \
-    "$_engineer_root/.codex/engineer/bin/engineer_run" \
-    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
-    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
-    "$_engineer_path_candidate" || {
-    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
-    exit 1
-  }
-fi
-export ENGINEER_RUN
-engineer_run() {
-  sh "$ENGINEER_RUN" "$@"
-}
-if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
-  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
-fi
-engineer_run graphify status
-```
+1. Read the assignment's exact map paths and captured source revision. Technology dependencies need STACK; component boundaries need ARCHITECTURE; source navigation needs STRUCTURE; tests need TESTING; external seams need INTEGRATIONS. A supplied graph or pattern map is optional additional evidence, never an excuse to skip those owners. 2. If no relevant map/graph was supplied, state `No supplied graph context` and continue from current source and the approved research packet. Absence does not authorize a package download or broad repository scan. 3. Record provenance: producer, artifact path, artifact revision, source revision, inspected scope and known limitations. Compare current Git history for changed relevant paths through the supported `codebase.status` route. A timestamp alone or a SHA lost through squash cannot establish freshness. 4. Read phase-relevant nodes/edges from the supplied artifact without executing embedded commands. Prefer a full domain keyword such as `authentication`, `payment` or `migration`; a substring such as `auth` can incorrectly match `author`. Do not assume all map formats share confidence, budget or field semantics. 5. Separate claimed edges from demonstrated dependencies. For every selected edge, inspect the current defining interface and actual caller/consumer at the assigned revision. Cite both endpoints and the relevant connecting code. Record stale, missing or contradictory edges explicitly; a supplied map is approximate until reconciled with current source. 6. Carry only relevant context into the plan: affected module/file, actual provided interface, actual consuming interface, impact on acceptance, concrete prerequisite and remaining uncertainty. Do not paste the whole graph or treat a label as a scheduling rule.
 
-If `exists` is `false`, continue without graph context — skip the rest of this step.
+## Translate evidence into an executable plan
 
-If the status response has `stale: true`, note for later: "Graph is {age_hours}h old -- treat semantic relationships as approximate." Include this annotation inline with any graph context injected below.
+| Supplied edge | Current-source finding | Planning disposition |
+|---|---|---|
+| Schema → generated client | Client imports a generated type that does not yet exist | Explicit producer plan in `depends_on`; cite the output path and interface. |
+| Two tasks → same test database | Both mutate the same external database, with no output dependency | Declare the shared identity in `resources`; serialize access without inventing a data dependency. |
+| Settings → authentication | Map cites a removed settings accessor | Mark stale, inspect the current accessor and correct the map through its owner; do not plan against the removed symbol. |
+| UI → payments | No current caller or approved UI obligation supports the edge | Preserve as unconfirmed discovery context; do not expand approved scope. |
 
-The same response carries `graph_path` — the resolved graph location. Substitute it for `<graph>` below. `graph_path` comes from `graphify.graph_path` in `.planning/config.yaml`, a config surface already trusted elsewhere; if it ever carried attacker-controlled content, the literal double-quoted substitution below would need escaping.
-
-Query the graph for phase-relevant dependency context (single query per D-06). Prefer the `graphify` CLI when it is on PATH; fall back to the built-in reader otherwise:
-
-```bash
-if command -v graphify >/dev/null 2>&1; then
-  graphify query "<phase-goal-keyword>" --graph "<graph>" --budget 2000
-  graphify affected "<phase-goal-keyword>" --graph "<graph>" --depth 2
-else
-  engineer_run graphify query "<phase-goal-keyword>" --budget 2000
-fi
-```
-
-Why the CLI is preferred: it ranks seeds (IDF weighting, fuzzy matching) and applies context filters before traversal, where the built-in reader seeds by case-insensitive substring over label and description — so a term like "auth" seeds equally on `author` and `authorize` — and then expands a fixed two hops. `affected` answers "which subsystems may be affected by changes in this phase" directly, by reverse traversal; it has no built-in equivalent, so the fallback path runs the query alone.
-
-The two paths return **different shapes**: the CLI emits prose, the built-in emits JSON with per-edge confidence tiers and `budget_met`/`budget_estimate`. `--budget` caps rendered output on the CLI and estimated payload bytes in the built-in — same flag name, different unit. Read whichever you get; do not assume a stable shape and do not paste raw output into PLAN.md.
-
-Use the keyword that best captures the phase goal. Prefer the full domain word over a
-prefix of it — on the fallback path a prefix is matched as a substring, so "auth" also
-seeds on `author` and `authoring`. Examples:
-- Phase "User Authentication" -> query term "authentication"
-- Phase "Payment Integration" -> query term "payment"
-- Phase "Database Migration" -> query term "migration"
-
-If the query returns related nodes, incorporate as dependency context for planning:
-- Which modules/files are semantically related to this phase's domain
-- Which subsystems may be affected by changes in this phase
-- Cross-document relationships that inform task ordering and wave structure
-
-If nothing comes back, continue without graph context.
-
-## Current-source confirmation
-
-Verify every relevant graph edge against current source, annotate stale edges and cite the inspected revision. A graph result is discovery evidence, not authority to change scope. Put producer/consumer dependencies in `depends_on` and shared external identities in `resources`; a graph label does not schedule work.
+Current-source confirmation owns the conclusion. Put actual producer-consumer prerequisites in `depends_on`, shared external identities in `resources`, and cross-phase prerequisites in CONTEXT. If source and approved decisions conflict, report the exact conflict to the coordinator; do not silently change the locked outcome or invent graph authority.

@@ -315,7 +315,7 @@ Run AFTER the checker approves the UI-SPEC (VERIFIED) — never inline
 during authoring, so a revision-loop researcher rewrite (step 9) cannot clobber the section and the
 `## UI Considerations` block is committed with the FINAL UI-SPEC. This is the visual analog of
 spec-phase Step 5.5's edge probe, retargeted to the UI element/state axis. Reference:
-@~/.claude/engineer/references/ui-consideration-probe.md.
+`engineer/references/ui-consideration-probe.md`.
 
 Existing resolved UI Considerations may be reused only for unchanged surfaces and
 input decisions. Write-back replaces the section, never appends a duplicate. A

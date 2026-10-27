@@ -76,4 +76,4 @@ See @~/.claude/engineer/references/planner-guidance.md for Granularity Calibrati
 
 ## Evidence selection and continuation
 
-Read complete templates before authoring their artifacts even when general read-depth guidance favors frontmatter. Only the coordinator schedules specialist work. A context handoff records base/head revisions, completed and remaining work, dirty paths, pending gates and first continuation.
+Read complete templates before authoring their artifacts even when general read-depth guidance favors frontmatter. A context handoff records base/head revisions, completed and remaining work, dirty paths, pending gates and first continuation.

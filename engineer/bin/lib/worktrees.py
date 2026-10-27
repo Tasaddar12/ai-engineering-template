@@ -44,19 +44,17 @@ def artifact_assignment(role, files, deletions=()):
                 "CONVENTIONS.md", "TESTING.md", "CONCERNS.md"}
         else:
             valid = False
+            parent = path.parent
+            phase_path = parent.parent == records.planning()/"phases" and parent in records.phases()
+            quick_path = parent.parent == records.planning()/"quick" and (parent/"QUICK.md").is_file()
+            if quick_path:
+                from .verification import quick_identity
+                identity = quick_identity(parent)
+            else:
+                identity = parent.name.split("-")[0]
             for suffix in suffixes.get(role, ()):
-                match = re.fullmatch(r"(\d+(?:\.\d+)?)(?:-\d{2})?-"+suffix+r"\.md", path.name)
-                if not match:
-                    continue
-                parent = path.parent
-                phase_path = parent.parent == records.planning()/"phases" and parent in records.phases()
-                quick_path = parent.parent == records.planning()/"quick" and (parent/"QUICK.md").is_file()
-                valid = (phase_path or quick_path) and match[1] == parent.name.split("-")[0]
-                if valid and suffix in ("PATTERNS", "RESEARCH", "VALIDATION", "UI-SPEC"):
-                    valid = path.name == match[1]+"-"+suffix+".md"
-                if valid and quick_path:
-                    metadata, _ = split_frontmatter(read(parent/"QUICK.md"))
-                    valid = str(metadata.get("id", "")).zfill(3) == match[1]
+                pattern = re.escape(identity)+(r"(?:-\d{2})?" if suffix == "PLAN" else "")+"-"+suffix+r"\.md"
+                valid = (phase_path or quick_path) and re.fullmatch(pattern, path.name) is not None
                 if valid:
                     break
         if not valid:

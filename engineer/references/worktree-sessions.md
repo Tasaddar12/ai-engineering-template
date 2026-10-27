@@ -37,3 +37,14 @@ A failed wait is not a stopped worker. Capture branch/head/dirty paths and prese
 Before deleting a worktree/branch, prove its committed work is an ancestor of integration HEAD; issue closure, an upstream-looking branch name or a successful command is not merge evidence. For squash integration, preserve explicit recorded equivalent evidence and do not assume ancestry exists. Shared databases and ports may still serve another checkout; process cleanup needs separate positively owned identity.
 
 `worktree.cleanup-wave --phase N` removes only recorded clean integrated workers. `worktree.reap-orphans` prunes stale Git administrative records, never live checkouts. `session.close BRANCH` refuses dirty/unintegrated or active checkout closure. User-facing retirement follows exact approved [cleanup](cleanup.md), not ad hoc filesystem deletion.
+
+## Eight-step session entry and continuation
+
+1. Read the selected command/workflow, actual user authority, project/state/phase records and exact role. Report-only work remains read-only; no phase implementation is implied by a session opening.
+2. Locate the requested phase through `phase.locate N` and inspect `session.status`. Resolve multiple or inconsistent matches from actual branch/root/base evidence; never construct a phase path from a guessed slug.
+3. Reuse the matching real open session. Otherwise adopt a specifically named clean isolated checkout with `session.adopt KIND LABEL` after confirming ownership, or open a new one with `session.open KIND LABEL`. Never reset or switch an unrelated checkout to make it fit.
+4. Capture the returned absolute worktree, branch, base and session identity. Require actual supported isolation before any artifact/source/shared-record write; neither dispatch strategy permits the primary checkout.
+5. Enter the exact path with quoted `cd -- "$SESSION_WORKTREE"` (or PowerShell `Set-Location -LiteralPath $SessionWorktree`). Verify `git rev-parse --show-toplevel`, branch and HEAD against the assigned identity. Do not interpolate a path from an unrelated earlier shell.
+6. Re-source the launcher and rerun the selected `init.*` command inside that checkout. Initialization bundles read from cwd; a pre-session bundle cannot establish the new checkout's identity or current artifacts.
+7. Execute only the selected authorized workflow, retaining the session/caller through workers, integration and verification. A phase session persists through planning/execution/verification; an unverified phase has no ship bypass. Ship only passed/current work with existing delivery authority and provider gates.
+8. Deliver/close only at that workflow's explicit terminal route after readback and integration evidence. Keep partial/blocked sessions open with exact pending scope, dirty/process state and first continuation. Opening or adopting a session does not authorize deletion, merging a PR or another phase.

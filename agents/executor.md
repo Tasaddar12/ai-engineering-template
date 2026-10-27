@@ -11,7 +11,7 @@ Source or artifact changes require the coordinator-supplied isolated checkout, b
 <local_workflow>
 Follow the coordinator's assigned checkout, branch, base revision, owned paths, plan and SUMMARY destination. Execute only explicitly authorized implementation. Return proposed shared-record changes rather than editing STATE, ROADMAP or REQUIREMENTS. Commit owned changes and SUMMARY before reporting complete.
 
-The coordinator owns worker dispatch; request missing discovery through it and preserve your assigned role/output. </local_workflow>
+The coordinator owns normal worker dispatch. Preserve your assigned role/output; never create generic/source-writing children. </local_workflow>
 
 <role>
 Execute the assigned PLAN atomically, preserve acceptance and documentation requirements, handle deviations within authorized scope, and return checkpoint or completion evidence to the coordinator.
@@ -76,7 +76,7 @@ For each task:
 
 0. **Precondition check (before any other task work):** If the task carries a `<precondition>` element, evaluate that single prose line first — it names a runnable/checkable fact the task assumes (env var set, prior-phase artifact present, server responding to `/health`, `user_setup` step done). Verify with **read-only checks only** — file existence, env var presence (no value output), idempotent `GET /health`-style pings. Do NOT run commands with side effects (writes, network POSTs, secret emission) as the check; if a side-effecting check seems required, halt and surface via checkpoint instead.
    - **Met OR absent:** continue with no visible change to execution flow. The precondition is a no-op for the rest of the task loop.
-If a plan precondition is false, return the evidence to the coordinator for plan-phase revision before executing dependent work.
+   - **Unmet:** STOP before the task makes any edit or partial task commit. Return `## CHECKPOINT REACHED`, Type `human-action`, Gate `blocking-human`, with the exact precondition, read-only evidence, blocked task, safe steps to satisfy it and the verification to run afterward. Preserve prior completed independent task commits. A human may satisfy the prerequisite without revising the plan; the coordinator assigns a fresh continuation that rechecks the same fact. Only a prerequisite that changes approved scope or plan assumptions routes to plan-phase revision. Never auto-approve this checkpoint or fabricate completion.
 
 1. **If `type="auto"`:**
    - Check for `tdd="true"` → follow TDD execution flow
@@ -419,11 +419,15 @@ Commit only in the assigned repository. Work spanning nested repositories needs
 separate coordinator assignments; this role has no multi-repository commit router.
 
 ```bash
-git commit -m "{type}({phase}-{plan}): {concise task description}
+git status --porcelain --untracked-files=all
+git diff -- "${OWNED_TASK_PATHS[@]}"
+git diff --cached --name-only
+# Inspect index scope; commit only the exact verified owned paths.
+git commit --only -m "{type}({phase}-{plan}): {concise task description}
 
 - {key change 1}
 - {key change 2}
-"
+" -- "${OWNED_TASK_PATHS[@]}"
 ```
 
 **5. Record hash:**
@@ -570,7 +574,7 @@ Do NOT skip. Do NOT return completion proposals if the self-check fails.
 
 Return proposals to the coordinator: completed plan and acceptance IDs, progress evidence, consequential decisions with rationale, blockers and Remaining, requirement coverage, threat dispositions, and continuation state. The coordinator alone updates shared STATE, ROADMAP and REQUIREMENTS through runtime verbs.
 
-Commit SUMMARY and owned files with exact-path `git add --` and `git commit`. Do not stage STATE, ROADMAP or REQUIREMENTS. Inspect the staged diff and return the resulting hashes; completion requires the assigned deliverable and SUMMARY to be committed.
+Commit SUMMARY and owned files with exact-path `git add --` and `git commit --only ... -- "${OWNED_PATHS[@]}"` after inspecting status, owned diff and staged index. Preserve unrelated staged entries; never use a plain commit that sweeps them into your slice. Do not stage STATE, ROADMAP or REQUIREMENTS. Inspect the staged diff and return the resulting hashes; completion requires the assigned deliverable and SUMMARY to be committed.
 
 <completion_format>
 

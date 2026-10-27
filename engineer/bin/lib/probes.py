@@ -368,7 +368,7 @@ def prohibition_proof(args):
                         _test_evidence(report, report_format))
             observation.update(evidence)
         except (ValueError, TypeError, OSError, ET.ParseError) as exc:
-            fail(f"{stage}: malformed or unavailable report: {exc}")
+            fail(f"{stage}: malformed or unavailable report; non-vacuous execution could not be established: {exc}")
         if kind == "test-command":
             if evidence["asserted"] <= 0:
                 fail(f"{stage}: no non-vacuous executed tests")
@@ -396,4 +396,14 @@ def section(args):
     end = re.search(r"(?m)^#{1,"+str(len(match[1]))+r"}\s", content[match.end():])
     body = content[match.end():match.end()+end.start() if end else len(content)]
     items = [m.group(1).strip() for m in re.finditer(r"(?m)^\s*(?:[-*]|\d+[.)])\s+(.+)$", body)]
-    return {"supplied": True, "items": items}
+    for line in body.splitlines():
+        if not line.lstrip().startswith("|"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if not cells or all(re.fullmatch(r":?-+:?", cell) for cell in cells):
+            continue
+        if cells[0].strip("` ").casefold() in ("id", "edge id", "edge case", "prohibition id", "prohibition", "prohibition (must-not statement)", "category", "requirement"):
+            continue
+        if any(cell for cell in cells) and not any("[" in cell and "]" in cell for cell in cells):
+            items.append(" | ".join(cells))
+    return {"supplied": bool(items), "items": items}

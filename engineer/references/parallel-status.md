@@ -8,7 +8,7 @@ Keep one row per assignment, with observed states rather than optimistic complet
 
 | Assignment / PLAN | Worker id | Role | Resolved model | Plan state | Execute state | Verify state | Last observed progress | Stall flag | Blocker | PR/MR |
 |---|---|---|---|---|---|---|---|---|---|---|
-| [exact plan or bounded outcome] | [actual host identity] | [registered role] | [actual resolution or inherited] | queued | pending | pending | [timestamp + cited evidence] | none | [exact dependency] | [verified URL or pending] |
+| [exact plan or bounded outcome] | [actual host identity] | [registered role] | [actual resolution or inherited] | queued | pending | pending | [timestamp + cited evidence] | clear | [exact dependency] | [verified URL or pending] |
 
 Plan and execution states are queued, running, blocked or complete. Verification states are pending, passed, failed or unavailable. Preserve actual start/end timestamps, observed host state, last cited evidence, committed SHA/artifact, check evidence and acceptance status. A worker's completion signal is provisional until its required return contract and owned commits/artifact are inspected. Missing check or acceptance evidence remains pending.
 
@@ -33,6 +33,8 @@ One observation interval is one actual bounded host wait call from its start thr
 
 ## Bounded stall decision
 
+Use the stall flag vocabulary `clear`, `watch`, `stalled` and `blocked`. A first interval without progress or host state change is `watch`, not stalled. Meaningful progress resets the flag to `clear`. An exact missing dependency is `blocked`, with its owner and affected scope; quiet output alone is not a blocker.
+
 On the second consecutive observation interval with neither progress nor host state change, mark the row stalled and require a coordinator decision citing both observation intervals. Choose and record one bounded action:
 
 1. Continue one further bounded wait with an explicit reason and expected evidence.
@@ -49,3 +51,18 @@ Follow [confirmed stop](worker-handoff.md#confirmed-stop-and-reassignment). Requ
 ## Join
 
 Wait for every worker required by the batch. Read actual outcomes, commits, scope and remaining fields; reconcile conflicting evidence against the same captured revision. The coordinator owns shared records, integration and publication. No completion count, quiet process or status label overrides missing evidence.
+
+## Worked lifecycle trace
+
+| Time / observation | Native fact | Assignment state / flag | Required action |
+|---|---|---|---|
+| 10:00 dispatch | Actual handle H accepted, revision R, owned paths P | Execute queued / clear | Record H, R, P and resolved model/effort; capacity includes H immediately. |
+| 10:01 first bounded wait returns | H Running; no new progress since dispatch | Execute running / watch | Record wait start/end and returned state; continue an independent assignment. |
+| 10:02 second bounded wait returns | H Running; no new progress in either interval | Execute running / stalled | Cite both intervals and choose one bounded decision with expected evidence. Do not infer exit. |
+| 10:03 status response | H reports a missing credential; completed commit C exists | Execute blocked / blocked | Surface exact credential action without exposing its value; preserve P ownership and continue independent work. |
+| 10:05 status response | Credential supplied and H resumes, new artifact evidence | Execute running / clear | Record progress and keep the same assignment; do not restart completed work. |
+| 10:06 host returns Complete | C plus committed complete SUMMARY and actual scope | Execute complete / clear; verify pending | Inspect returned contract after terminal confirmation and join every batch result. |
+| 10:07 all writers joined | All owned results reconciled, no active writer | Integrated; verify pending | Integrate in declared order, freeze the new revision and run authorized independent verification. |
+| 10:08 check/specialist joined | Actual pass/failure receipts at frozen revision | Verify passed or failed | Record each result. A repair needs every reader joined, then a new freeze. |
+
+If the first wait returns a new commit, timestamped artifact or material host transition, the flag remains clear; a quiet later interval begins a new watch count. With a blocking API that exposes no intermediate state, record a single dispatch-to-return interval and `intermediate observations unavailable`. Never fabricate watch/stall transitions at timestamps the host did not expose.

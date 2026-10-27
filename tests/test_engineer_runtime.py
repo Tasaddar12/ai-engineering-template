@@ -18,6 +18,7 @@ class RuntimeCase(unittest.TestCase):
         self.root = Path(self.temporary.name)
         self.env = {**os.environ, "ENGINEER_ROOT": str(self.root), "ENGINEER_HOST": "codex"}
         self.git("init", "-b", "main")
+        self.git("config", "core.autocrlf", "false")
         self.git("config", "user.name", "Runtime Test")
         self.git("config", "user.email", "runtime@example.invalid")
         self.put("README.md", "# Fixture\n")
@@ -35,7 +36,7 @@ class RuntimeCase(unittest.TestCase):
 
     def cli(self, *args, status=0, raw=False, stdin=None):
         process = subprocess.run([sys.executable, "-I", str(RUNTIME), "query", *map(str, args)],
-                                 cwd=self.root, env=self.env, input=stdin, text=True, capture_output=True)
+                                 cwd=self.root, env=self.env, input=stdin, text=True, encoding="utf-8", capture_output=True)
         self.assertEqual(status, process.returncode, process.stderr or process.stdout)
         return process.stdout.strip() if raw else json.loads(process.stdout)
 

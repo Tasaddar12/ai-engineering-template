@@ -274,3 +274,52 @@ Bad: generic "test the feature", a guessed command/route, reporting a missing se
 ## Consumer and publication guidance
 
 Select the exact canonical variant through supported issue validation/preview interfaces. The parser reads only the selected File Template fenced body; catalog headings and authoring guidance are not body-required. Validate shape, then separately inspect semantics, safe content, source identity and actual provider evidence. Preserve Pending for unavailable evidence. A variant change needs the user's actual intent and matching consumer contract, not a formatter's convenience.
+
+## Title format and examples
+
+Use `type(scope): description`, choosing `feat`, `fix`, `docs`, `refactor`, `test` or `chore` and a short lowercase affected-area scope consistent with the repository's existing subjects. This is authoring guidance; Git and the provider do not enforce it. Describe the resolution requested, rather than asserting that an unimplemented change already shipped.
+
+```text
+feat(checkout): allow saving an address before placing an order
+fix(search): return an empty result for a blank query
+docs(api): document the supported pagination parameters
+test(import): cover duplicate rows in the CSV preview
+```
+
+## How to fill it
+
+1. Select exactly one canonical variant, copy its fenced body and preserve its heading order, visible field shapes, tables and acceptance fields. Replace every bracketed prompt with facts; remove instructions and examples from the public body.
+2. Preserve an existing issue's original intent, labels and prior body. A product Bug found during UAT remains a Bug. A missing release prerequisite is an engineering problem, not a UAT request without runnable human actions. The word acceptance in a title does not classify an issue.
+3. Use Unknown or Pending with the missing evidence or dependency. Use `N/A` only with an explanation. Never invent reproduction, controls, entry points, observed results or accessible links.
+4. Run `engineer_run query issue.validate --variant "Bug" --body-file PATH`, selecting the actual variant. Supported TODO/phase preview and publication also validate the selected structure. Direct API writes bypass that gate. Structural success does not establish safe content, actual behavior, usable URLs, real UI controls or a human decision.
+5. Review the complete public title and separate body file, sanitize restricted material, then use the exact content-bound preview and publication token. Do not publish private TODO metadata. An uncertain write requires exact-intent recovery before another create.
+6. For UAT and user-facing Bug reproduction, use the complete UAT authoring contract. Verify saved issue links, entry point, delivered labels, exact launcher/key sequence and prepared fixtures against the actual delivered UI. Missing prerequisites remain BLOCKED; demonstrated product failures remain FAIL. Repair authoring/publication mistakes instead of changing acceptance to hide failure.
+7. A UAT issue index keeps the selected variant's headings, step table and Human acceptance fields, but replaces the numbered reply sentence with: "Record action results only in each linked test; no separate index-row replies." Its decision and evidence reference actual linked-test decisions. Do not require duplicate index acceptance.
+8. The maintainer prepares build, access, fixtures and technical evidence in a separate record. Only the actual human's decision, reviewer, date and evidence replace PENDING HUMAN acceptance. A maintainer smoke check is preparation evidence.
+9. For Security risk, preserve the stable canonical key, all aliases, owner, actual lifecycle and evidence. Checklist entries link their owning PLAN assessment/mitigation; standalone issues carry their own actionable assessment, mitigation and secure checks without requiring a PLAN. Keep accepted/deferred distinct from resolved, redact restricted detail, and verify actual provider-rendered anchors.
+10. Search open and closed issues, current/related PRs and existing source links before creating another tracker. Reuse a full-scope actionable match, preserve closed-unresolved authority blockers, and keep in-scope defects in the current change.
+
+The following excerpt is fictional guidance; replace every example before publication:
+
+| Field | Example |
+|---|---|
+| Build and setup | `storefront 2.4.1+build.142`; staging; Chrome 129. |
+| Scope and acceptance | In: blank-query handling. Out: search ranking. A blank query returns HTTP 200 with `[]`. |
+| Command / result | `python -m unittest discover -s tests -p test_workflow_links.py -v` — Pending (not run). |
+| Evidence URL | `https://github.com/example/project/actions/runs/12345` is a fictional URL format, not a verified run. |
+
+## Good and bad examples
+
+**Good:** "An empty search returns HTTP 500. Reproduction: submit an empty query on the test instance. Expected: HTTP 200 with no results. Acceptance: that reproduction returns 200 and the empty-query regression passes at the corrected revision."
+
+**Why it works:** The trigger, observed failure, intended result and regression direction are concrete. A hypothesis about the cause remains separate from observation.
+
+**Bad:** "Search is broken; make it better."
+
+**Why it fails:** It supplies neither a safe reproduction nor observable acceptance and invites unrelated scope expansion.
+
+## Completion and downstream handoff
+
+- The body comes from exactly the selected variant and contains concrete facts, safe evidence and bounded acceptance.
+- Duplicate review, authority, preview identity and readback follow the canonical Git workflow.
+- Hand off the reviewed title/body file and actual verified URL, or the exact publication blocker and preserved request. A local draft alone does not establish provider publication or UAT readiness.

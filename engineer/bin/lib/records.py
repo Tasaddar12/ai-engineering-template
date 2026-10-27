@@ -81,6 +81,12 @@ def find(value):
 
 def roadmap_structure(text):
     """Mask fenced instructional examples while keeping original byte offsets."""
+    marker = "<!-- engineer:active-roadmap -->"
+    if marker in text:
+        prefix, suffix = text.split(marker, 1)
+        text = re.sub(r"[^\n]", " ", prefix+marker)+suffix
+    elif re.match(r"^# Roadmap Template\s*(?:\n|$)", text):
+        return re.sub(r"[^\n]", " ", text)
     return re.sub(r"(?ms)^(`{3,}|~{3,})[^\n]*\n.*?^\1[^\n]*(?:\n|$)",
                   lambda match: re.sub(r"[^\n]", " ", match[0]), text)
 
@@ -100,7 +106,7 @@ def roadmap_phases():
         fields = {}
         for label, value in re.findall(r"(?mi)^\*\*([^*:]+)(?::\*\*|\*\*:)\s*(.*)$", body):
             fields[slug(label).replace("-", "_")] = value.strip()
-        if unfilled and (match[2].strip() == "[Name]" or
+        if unfilled and (match[2].strip().startswith("[") or
                          (match[2].strip() == "Critical Fix (INSERTED)" and fields.get("goal", "").startswith("["))):
             continue
         result.append({"number": number(match.group(1)), "name": match.group(2).strip(),
@@ -258,6 +264,9 @@ def phase_change(args, action):
         if len(set(identities)) != len(identities) or len(set(directory_ids)) != len(directory_ids):
             raise Failure("phase-ambiguous", "Reconcile duplicate canonical phase identities before mutation")
         if action in ("add", "insert"):
+            if not existing and "<!-- engineer:active-roadmap -->" not in text and re.search(r"(?m)^# Roadmap(?: Template|: \[Project Name\])\s*$", text):
+                # Retain the complete copied teaching source as immutable prose.
+                text = text.rstrip()+"\n\n<!-- engineer:active-roadmap -->\n\n## Phases\n\n## Phase Details\n\n## Progress\n\n"
             if action == "add":
                 from .archive import catalog
                 reserved = [int(number(entry["id"]).split(".")[0]) for entry in catalog() if entry["kind"] == "phase"]

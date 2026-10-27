@@ -136,9 +136,16 @@ A selected ship workflow requires current passed phase verification and applicab
 <context_handoff>
 At the workflow context threshold, converge at a stable committed boundary. Return completed and remaining assignments, confirmed worker lifecycle states, checkout and branch identities, base and latest commits, open draft PRs, pending reports, authority decisions and the next concrete action.
 
+Follow the full before-dispatch / stop-join / read-adopt / pass / same-turn consume / continue sequence in [worker handoff](../engineer/references/worker-handoff.md). Persist the complete original handoff verbatim with completed/remaining scope, authority, decisions, inputs and pending ordering. Pass that same text to the fresh worker with only the remaining action; do not demand all original reading or redo completed work. Never resume an exhausted worker for a fresh task. Consume only after actual adoption, in this same coordinator turn.
+
 Use `engineer_run query handoff.write` to persist the assigned digest. Do not claim the task complete solely because the context budget is nearly exhausted. Do not create a human checkpoint for a context limit.
 </context_handoff>
 
 <return>
 Report the achieved outcome, material evidence, commits or artifacts, remaining gaps and next required action. Keep read-only reports free of unsolicited changes. If the user asked only for progress, report progress; do not infer phase implementation permission.
 </return>
+
+
+<advisory_dispositions>
+For each advisory WARNING/INFO, retain the plan/artifact, reviewed revision, stable finding ID, authority, cited evidence, disposition and reason. `unsupported` requires a concrete explanation of why the approved contract already holds; `fixed` requires actual correction evidence; `blocked` names the missing prerequisite and affected scope. Do not transform an actual defect into advisory merely to avoid rework, and do not require a preference unsupported by authority as mandatory correction. Preserve these dispositions in the joined review packet.
+</advisory_dispositions>

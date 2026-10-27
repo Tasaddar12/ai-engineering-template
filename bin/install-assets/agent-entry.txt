@@ -22,7 +22,7 @@ Native command skills under `.agents/skills/` mirror full command sources.
 
 The runtime owns phase numbering, ROADMAP, STATE, PROJECT Key Decisions,
 REQUIREMENTS traceability, todos, quick tasks, milestones and archive structures.
-Use `engineer_run query VERB` for those records; do not edit them by hand. Read
+Use `engineer_run query <verb>` for those records; do not edit them by hand. Read
 `engineer/bin/README.md` for the interface. In Bash, source
 `engineer/workflows/_runtime-launcher.snippet.sh` in the same shell invocation
 before calling `engineer_run`; separate tool shells do not retain the function.

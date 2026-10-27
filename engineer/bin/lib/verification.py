@@ -13,20 +13,34 @@ def quick_dir(identifier):
     candidates = list((records.planning()/"quick").glob("*/QUICK.md"))
     matches = [path for path in candidates if path.parent.name == requested]
     if not matches and re.fullmatch(r"[0-9]+", requested):
-        matches = [path for path in candidates if path.parent.name.split("-")[0] == requested.zfill(3)]
+        matches = [path for path in candidates if not re.match(r"^[0-9]{6}-[0-9]{3}-", path.parent.name) and path.parent.name.split("-")[0] == requested.zfill(3)]
     if len(matches) != 1:
         raise Failure("quick-not-found", str(identifier))
     metadata, _ = split_frontmatter(read(matches[0]))
     identity = str(metadata.get("id", ""))
-    if identity != matches[0].parent.name and identity.zfill(3) != matches[0].parent.name.split("-")[0]:
+    if identity != matches[0].parent.name and (re.match(r"^[0-9]{6}-[0-9]{3}-", matches[0].parent.name) or identity.zfill(3) != matches[0].parent.name.split("-")[0]):
         raise Failure("quick-identity-mismatch", "QUICK.md identity disagrees with its directory")
     return matches[0].parent
+
+
+def quick_identity(directory):
+    """Read the owning QUICK record; dated IDs must never be split on '-'."""
+    metadata, _ = split_frontmatter(read(Path(directory)/"QUICK.md"))
+    identifier = str(metadata.get("id", ""))
+    if not identifier:
+        raise Failure("quick-identity-mismatch", "QUICK.md requires its actual task identity")
+    return identifier.zfill(3) if identifier.isdigit() else identifier
+
+
+def matching_quick(value, directory):
+    identity = quick_identity(directory)
+    return (str(value).zfill(3) if str(value).isdigit() else str(value)) == identity
 
 
 def resolve_file(value=None, quick=None):
     directory = quick_dir(quick) if quick is not None else records.phase_dir(value)
     matches = sorted(directory.glob("*-VERIFICATION.md"))
-    return matches[0] if matches else directory/(directory.name.split("-")[0]+"-VERIFICATION.md")
+    return matches[0] if matches else directory/((quick_identity(directory) if quick is not None else directory.name.split("-")[0])+"-VERIFICATION.md")
 
 
 def status(args):
@@ -34,7 +48,7 @@ def status(args):
     path = resolve_file(value, args.get("quick"))
     metadata, body = split_frontmatter(read(path))
     state = metadata.get("status", "not_started")
-    phase = path.parent.name.split("-")[0]
+    phase = quick_identity(path.parent) if args.has("quick") else path.parent.name.split("-")[0]
     routes = {"passed": ("ship", "Publish verified work", f"/ship {phase}"),
               "gaps_found": ("fix", "Close verification gaps", f"/plan-phase {phase} --gaps"),
               "human_needed": ("human", "Complete human verification", f"/verify-work {phase}")}
@@ -74,7 +88,7 @@ def current_evidence(value=None, quick=None):
     covered = metadata.get("covered_files", [])
     expected = phase_fingerprint(directory, covered, quick)
     reasons = []
-    if quick is not None and str(metadata.get("quick")).zfill(3) != directory.name.split("-")[0]:
+    if quick is not None and not matching_quick(metadata.get("quick"), directory):
         reasons.append("verification quick identity does not match the requested task")
     if quick is None:
         try:
@@ -133,7 +147,7 @@ def fingerprint(args):
         metadata.setdefault("status", "not_started")
         metadata["covered_files"] = covered
         metadata["revision"] = run(["git", "rev-parse", "HEAD"], root()).stdout.strip()
-        metadata.setdefault("quick" if quick is not None else "phase", directory.name.split("-")[0])
+        metadata.setdefault("quick" if quick is not None else "phase", quick_identity(directory) if quick is not None else directory.name.split("-")[0])
         if quick is not None:
             metadata.setdefault("issue_refs", [])
         write(report, join_frontmatter(metadata, body))

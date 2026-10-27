@@ -28,7 +28,7 @@ Each fact has one owner; consumers link to it. Resolve disagreement with approve
 | Complete artifact schema | engineer/templates/ and registry README | Producer and consumer/runtime |
 | Runtime-owned record sections and integrity boundaries | engineer/references/template-contract.md | Artifact producers, validators and record operations |
 | Configuration schema/defaults | engineer/templates/config.yaml and runtime config owner | .planning/config.yaml overrides |
-| Actual runtime CLI and result shape | engineer/bin/README.md and implementation | engineer_run query callers |
+| Actual runtime CLI and result shape | engineer/bin/README.md and implementation | Callers invoke the actual documented query operation and consume its returned fields; prose placeholders are not verbs. |
 | Installed host adaptation | bin/install-assets, installer and native Claude/Codex files | Only supported two hosts |
 | Human workflow guidance | docs/ | Links to authoritative procedure, not duplicate owner |
 | Historical provenance/license | THIRD-PARTY-NOTICES.md and Git import | No invented upstream snapshot pin |

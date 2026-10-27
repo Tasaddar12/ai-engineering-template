@@ -127,7 +127,7 @@ Common types: Tech stack, Timeline, Budget, Dependencies, Compatibility, Perform
 
 **Key Decisions:**
 - Significant choices that affect future work
-- Add decisions as they're made throughout the project
+- The coordinator records consequential decisions when they are made through the supported runtime operation `engineer_run query state.add-decision`; this template is not authority to append or rewrite runtime-owned decision records by hand.
 - Track outcome when known:
   - ✓ Good — decision proved correct
   - ⚠️ Revisit — decision may need reconsideration
@@ -143,14 +143,13 @@ Common types: Tech stack, Timeline, Budget, Dependencies, Compatibility, Perform
 <evolution>
 
 PROJECT.md evolves throughout the project lifecycle.
-These rules are embedded in the generated PROJECT.md (## Evolution section)
-and implemented by workflows/transition.md and workflows/complete-milestone.md.
+The coordinator applies this checklist after phase transitions and milestones. Runtime-owned records and structures are updated only through their supported `engineer_run query` operations; PROJECT narrative prose is updated by the coordinator under the approved scope. Completing one phase does not authorize the next.
 
 **After each phase transition:**
 1. Requirements invalidated? → Move to Out of Scope with reason
 2. Requirements validated? → Move to Validated with phase reference
 3. New requirements emerged? → Add to Active
-4. Decisions to log? → Add to Key Decisions
+4. Decisions to log? → The coordinator records each consequential decision through `engineer_run query state.add-decision` while deciding, then updates any linked rationale here only when appropriate.
 5. "What This Is" still accurate? → Update if drifted
 
 **After each milestone:**
@@ -202,4 +201,4 @@ This ensures Claude reads current PROJECT.md context.
 
 </state_reference>
 
-The coordinator applies the transition checklist and reconciles shared records through the runtime. Completing one phase does not authorize the next. Key Decisions owns consequential decisions; an ADR stores optional linked rationale only.
+Key Decisions owns consequential decisions and their lifecycle; the coordinator uses `state.add-decision` through the runtime rather than appending decisions directly. An ADR stores optional linked rationale only. The coordinator applies the transition checklist and reconciles shared records through the runtime. Completing one phase does not authorize the next.

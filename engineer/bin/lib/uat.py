@@ -23,10 +23,10 @@ def items(path):
         state = re.search(r"(?mi)^(?:result|status):\s*(\S+)", block)
         status = state[1].strip("[]").lower() if state else "pending"
         result.append({"id": match[1], "name": match[2].strip(), "status": status,
-                       "body": block.strip(), "file": str(path), scope: path.parent.name.split("-")[0]})
+                       "body": block.strip(), "file": str(path), scope: verification.quick_identity(path.parent) if scope == "quick" else path.parent.name.split("-")[0]})
     for index, match in enumerate(re.finditer(r"(?m)^- \[([ xX])\]\s*(.+)$", section(body, "Acceptance checklist")), 1):
         result.append({"id": "check-"+str(index), "name": match[2], "status": "passed" if match[1].lower() == "x" else "pending",
-                       "body": match[2], "file": str(path), scope: path.parent.name.split("-")[0]})
+                       "body": match[2], "file": str(path), scope: verification.quick_identity(path.parent) if scope == "quick" else path.parent.name.split("-")[0]})
     return result
 
 
@@ -78,7 +78,7 @@ def resolution(path, gap):
                 return False
         except (ValueError, TypeError):
             return False
-    elif str(plan_meta[identity]).zfill(3) != expected_identity:
+    elif not verification.matching_quick(plan_meta[identity], path.parent):
         return False
     for source in (plan, summary):
         relative = str(source.relative_to(root()))
@@ -96,7 +96,7 @@ def session_status(path):
     identity = "quick" if "quick" in metadata else "phase"
     try:
         value = str(metadata.get(identity, ""))
-        matching = value.zfill(3) == path.parent.name.split("-")[0] if identity == "quick" else records.number(value) == records.number(path.parent.name)
+        matching = verification.matching_quick(value, path.parent) if identity == "quick" else records.number(value) == records.number(path.parent.name)
     except (ValueError, TypeError):
         matching = False
     if not matching:
@@ -144,7 +144,7 @@ def session_status(path):
                                   or (acceptance and acceptance[1] in line)
                                   or not re.search(r"\b(?:test|action)\s*\d+\b|\b[A-Z]+-\d+\b", line) for line in retest_lines)
             if requires_retest:
-                retests = [action for action in actions if action["status"] in ("pass", "passed") and re.search(r"\bre-?test\b", action["name"]+" "+action["body"], re.I)
+                retests = [action for action in actions if not action["id"].startswith("check-") and action["status"] in ("pass", "passed") and re.search(r"\bre-?test\b", action["name"]+" "+action["body"], re.I)
                            and re.search(r"\b(?:test|action)\s*"+re.escape(item["id"])+r"\b", action["name"]+" "+action["body"], re.I)]
                 if not retests:
                     blockers.append({**item, "reason": "Acceptance checklist requires a recorded human retest pass for this historical action"})
@@ -199,6 +199,29 @@ def passed(args):
     return {"passed": not blockers, "blocking_items": blockers}, int(bool(blockers))
 
 
+def current_check_evidence(check):
+    """Resolve native receipts against today's command/configuration/input digest."""
+    try:
+        reference = safe_path(check["ref"])
+        if not reference.is_file():
+            return False
+        from .core import load_json
+        packet = load_json(reference)
+        result = packet["receipt"]["result"]
+        _, configured = verification.configured_checks()
+        matching = [item for item in configured if item["id"] == result["name"]]
+        if len(matching) != 1:
+            return False
+        head = run(["git", "rev-parse", "HEAD"], root()).stdout.strip()
+        actual = verification.read_receipt(reference, verification.check_fingerprint(matching[0]), head)
+        if not actual:
+            return False
+        claimed_revision = check.get("revision")
+        return not claimed_revision or claimed_revision == actual["tested_revision"]
+    except (Failure, ValueError, TypeError, KeyError, OSError):
+        return False
+
+
 def classify(args):
     path = safe_path(args.arg(0, args.get("summary", "")))
     metadata, body = split_frontmatter(read(path))
@@ -206,6 +229,9 @@ def classify(args):
     structured = metadata.get("coverage")
     if isinstance(structured, list):
         automatic, present, errors = [], [], []
+        if not structured:
+            errors.append({"reason": "empty_coverage"})
+            present.append({"description": "No acceptance coverage supplied", "reason": "empty_coverage"})
         for index, item in enumerate(structured):
             valid = isinstance(item, dict) and isinstance(item.get("description"), str) and isinstance(item.get("human_judgment"), bool) and isinstance(item.get("verification"), list)
             if not valid:
@@ -213,7 +239,7 @@ def classify(args):
                 present.append({"description": str(item), "reason": "validation_failed"})
                 continue
             checks = item["verification"]
-            complete = checks and all(isinstance(check, dict) and check.get("status") in ("pass", "passed") and check.get("kind") in ("unit", "integration", "e2e", "automated_ui") and check.get("ref") for check in checks)
+            complete = checks and all(isinstance(check, dict) and check.get("status") in ("pass", "passed") and check.get("kind") in ("unit", "integration", "e2e", "automated_ui") and check.get("ref") and current_check_evidence(check) for check in checks)
             if item["human_judgment"]:
                 reason = "human_judgment"
             elif not checks:
