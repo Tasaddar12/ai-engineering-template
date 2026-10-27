@@ -185,7 +185,8 @@ def _selection(args):
                 stem = records.number(stem)
             if kind == "adr" and re.fullmatch(r"(?i)(?:adr-)?\d+", stem):
                 stem = "ADR-"+str(int(re.sub(r"(?i)^adr-", "", stem))).zfill(3)
-            values = sorted(path for path in base.glob(stem+"*") if path.is_dir() == (kind != "adr"))
+            pattern = stem+"-*" if kind == "phase" and re.fullmatch(r"\d+(?:\.\d+)?", stem) else stem+"*"
+            values = sorted(path for path in base.glob(pattern) if path.is_dir() == (kind != "adr"))
             if len(values) != 1:
                 raise Failure("archive-ambiguous" if values else "archive-not-found", selector)
     paths = [guarded(value) for value in values]

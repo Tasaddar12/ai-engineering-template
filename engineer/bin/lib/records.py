@@ -201,7 +201,11 @@ def phase_completed(phase):
 
 
 def milestone_name():
-    match = re.search(r"(?m)^#{1,3}\s+.*?\b(v\d[^\n]*)", read(planning()/"ROADMAP.md"))
+    text = read(planning()/"ROADMAP.md")
+    matches = re.findall(r"(?m)^###\s+(v\d[^\n]*?)\s*\(In Progress\)\s*$", text)
+    if matches:
+        return matches[-1].strip()
+    match = re.search(r"(?m)^#{1,3}\s+.*?\b(v\d[^\n]*)", text)
     return match.group(1).strip() if match else None
 
 
@@ -220,6 +224,13 @@ def phase_list(args):
 
 
 def phase_change(args, action):
+    for option in ("name", "goal", "depends-on", "requirements"):
+        if any("\n" in value or "\r" in value for value in args.all(option)):
+            raise Failure("invalid-phase-field", "Phase fields must be single-line values")
+    if action in ("add", "insert"):
+        description = args.need(1 if action == "insert" else 0)
+        if not description.strip() or "\n" in description or "\r" in description:
+            raise Failure("invalid-phase-name", "Use a nonempty single-line phase name")
     path = planning()/"ROADMAP.md"
     with planning_lock():
         if action == "set-plans":
@@ -249,9 +260,13 @@ def phase_change(args, action):
             if directory.exists():
                 raise Failure("phase-exists", f"Phase directory already exists: {directory}")
             directory.mkdir(parents=True)
-            block = (f"### Phase {identifier}: {description}\n\n**Goal:** {args.get('goal', description)}\n"
-                     f"**Depends on:** {args.get('depends-on', 'Nothing')}\n"
-                     f"**Requirements:** {', '.join(args.all('requirements'))}\n**Plans:** 0 plans\n\n")
+            display = str(int(identifier.split('.')[0]))+('.'+identifier.split('.')[1] if '.' in identifier else '')
+            label = description+(" (INSERTED)" if action == "insert" else "")
+            grouped = milestone_name() and re.search(r"(?m)^### v\d.*\(In Progress\)", text)
+            level = "####" if grouped else "###"
+            block = (f"{level} Phase {display}: {label}\n\n**Goal**: {args.get('goal', description)}\n"
+                     f"**Depends on**: {args.get('depends-on', 'Nothing')}\n"
+                     f"**Requirements**: {', '.join(args.all('requirements'))}\n**Plans**: 0 plans\n\n")
             if action == "insert":
                 insertion = roadmap_phase(args.need())["end"]
                 text = text[:insertion]+block+text[insertion:]
@@ -260,12 +275,16 @@ def phase_change(args, action):
                 text = text[:progress.start()].rstrip()+"\n\n"+block+text[progress.start():] if progress else text.rstrip()+"\n\n"+block
             write(path, text)
             sync_roadmap()
-            return {"added": True, "phase": identifier, "phase_number": str(int(identifier.split('.')[0])) + ('.'+identifier.split('.')[1] if '.' in identifier else ''),
+            synchronize_progress()
+            return {"added": True, "phase": identifier, "phase_number": display,
+                    **({"warning": "Use a concise phase title and put the full intended outcome in --goal"} if len(description) > 90 or "\n" in description else {}),
                     "padded": identifier, "name": description, "slug": slug(description), "directory": str(directory)}
         require_active(args.need())
         phase = roadmap_phase(args.need())
         before, block, after = text[:phase["start"]], text[phase["start"]:phase["end"]], text[phase["end"]:]
         if action == "remove":
+            if re.search(r"(?m)^- \[x\]\s*\d", block):
+                raise Failure("phase-started", "Retire completed work through reviewed archive instead of removing its identity")
             directory = phase_dir(args.need())
             if list(directory.iterdir()) and not args.has("force"):
                 raise Failure("phase-not-empty", "Use --force to remove a phase with artifacts")
@@ -286,15 +305,25 @@ def phase_change(args, action):
                 content = numbering.references(numbering.remove_dependency(content, removed), removed)
             write(path, content)
             sync_roadmap()
-            return {"removed": True, "phase": phase["number"], "archive": str(archive), "renumbered": renamed}
+            synchronize_progress()
+            return {"removed": str(int(phase["number"])) if "." not in phase["number"] else phase["number"], "phase": phase["number"], "archive": str(archive),
+                    "renumbered": [{key: str(int(value)) if "." not in value else value for key, value in entry.items()} for entry in renamed]}
         if action == "edit":
+            if not any(args.has(key) for key in ("name", "goal", "depends-on", "requirements")):
+                raise Failure("no-changes", "Provide an explicit phase field to edit")
             if args.has("name"):
+                original = phase_dir(args.need())
+                renamed = original.with_name(phase["number"]+"-"+slug(args.get("name")))
+                if renamed != original and renamed.exists():
+                    raise Failure("phase-exists", str(renamed))
                 block = re.sub(r"(^#{2,4}\s+Phase\s+[^:]+:).+", lambda m: m[1]+" "+str(args.get("name")), block, count=1)
+                if renamed != original:
+                    original.rename(renamed)
             for option, label in (("goal", "Goal"), ("depends-on", "Depends on"), ("requirements", "Requirements")):
                 if args.has(option):
                     value = ", ".join(args.all(option))
                     pattern = rf"(?mi)^\*\*{label}(?::\*\*|\*\*:).*$"
-                    line = f"**{label}:** {value}"
+                    line = f"**{label}**: {value}"
                     block = re.sub(pattern, lambda _: line, block) if re.search(pattern, block) else block.rstrip()+"\n"+line+"\n\n"
         elif action == "complete":
             block = re.sub(r"(?m)^(- \[) (\]\s*"+re.escape(phase["number"])+r"-[0-9]{2}\s*:.*)", r"\1x\2", block)
@@ -315,6 +344,7 @@ def phase_change(args, action):
         sync_roadmap()
         progress = synchronize_progress(phase["number"])
         return {"updated": True, "phase": phase["number"], "action": action,
+                **({"changed": {key: args.get(key) for key in ("name", "goal", "depends-on", "requirements") if args.has(key)}} if action == "edit" else {}),
                 "progress": progress,
                 **({"plans_completed": len(re.findall(r"(?m)^- \[x\]\s*\d", block))} if action == "complete" else {}),
                 **({"plans": registered} if action == "set-plans" else {})}
