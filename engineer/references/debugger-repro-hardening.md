@@ -1,6 +1,6 @@
 # Regression-Test Hardening — Shrinking + Oracle + Boundaries
 
-Loaded by `gsd-debugger` via `@-include` from Test-First Debugging (and referenced
+Loaded by `debugger` via `@-include` from Test-First Debugging (and referenced
 from Minimal Reproduction). Extends the regression test from a symptom-check
 into a **root-cause check** — which is exactly what the Phase 1A fix-acceptance
 guardrail needs to bite.
@@ -46,7 +46,7 @@ hardened path. The shrinking step is additive; its absence is logged, never a
 silent pass. The oracle-classification and boundary steps below are prompt-level
 and always apply regardless of framework.
 
-## Bound the property/shrink run (CLAUDE.md gauntlet — unbounded subprocess)
+## Bound the property/shrink run (AGENTS.md gauntlet — unbounded subprocess)
 
 A fast-check/Hypothesis run can execute the property many times against a slow
 path or a custom generator; a pathological input space can run for minutes. Bound it:

@@ -1,4 +1,4 @@
-@~/.claude/gsd-core/references/response-language-directive.md
+@engineer/references/response-language-directive.md
 
 <purpose>
 Insert a decimal phase for urgent work discovered mid-milestone between existing integer phases. Uses decimal numbering (72.1, 72.2, etc.) to preserve the logical sequence of planned phases while accommodating urgent insertions without renumbering the entire roadmap.
@@ -15,7 +15,7 @@ Parse the command arguments:
 - First argument: integer phase number to insert after
 - Remaining arguments: phase description
 
-Example: `/gsd:phase --insert 72 Fix critical auth bug`
+Example: `/phase --insert 72 Fix critical auth bug`
 -> after = 72
 -> description = "Fix critical auth bug"
 
@@ -23,8 +23,8 @@ If arguments missing:
 
 ```
 ERROR: Both phase number and description required
-Usage: /gsd:phase --insert <after> <description>
-Example: /gsd:phase --insert 72 Fix critical auth bug
+Usage: /phase --insert <after> <description>
+Example: /phase --insert 72 Fix critical auth bug
 ```
 
 Exit.
@@ -40,9 +40,50 @@ IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
 $ARGUMENTS
 GSD_ARGS_END
 GSD_ARGS=${GSD_ARGS%$'\n'}
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving gsd_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok gsd_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
+_engineer_identity_ok() {
+  [ -f "$1" ] || return 1
+  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
+}
+_engineer_select() {
+  for _engineer_candidate do
+    if _engineer_identity_ok "$_engineer_candidate"; then
+      ENGINEER_RUN="$_engineer_candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+if [ -n "${ENGINEER_RUN:-}" ]; then
+  _engineer_identity_ok "$ENGINEER_RUN" || {
+    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
+    exit 1
+  }
+else
+  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
+  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
+  _engineer_select \
+    "$_engineer_root/engineer/bin/engineer_run" \
+    "$_engineer_runtime_root/engineer/bin/engineer_run" \
+    "$_engineer_root/.claude/engineer/bin/engineer_run" \
+    "$_engineer_root/.codex/engineer/bin/engineer_run" \
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
+    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
+    "$_engineer_path_candidate" || {
+    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
+    exit 1
+  }
+fi
+export ENGINEER_RUN
+engineer_run() {
+  sh "$ENGINEER_RUN" "$@"
+}
+if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
+  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
+fi
 GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(gsd_run query init.phase-op ${GSD_WS:+--ws=${GSD_WS##* }} "${after_phase}")
+INIT=$(engineer_run query init.phase-op ${GSD_WS:+--ws=${GSD_WS##* }} "${after_phase}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
@@ -54,10 +95,10 @@ Exit.
 </step>
 
 <step name="insert_phase">
-**Delegate the phase insertion to `gsd_run query phase.insert`:**
+**Delegate the phase insertion to `engineer_run query phase.insert`:**
 
 ```bash
-RESULT=$(gsd_run query phase.insert "${after_phase}" "${description}")
+RESULT=$(engineer_run query phase.insert "${after_phase}" "${description}")
 ```
 
 The CLI handles:
@@ -79,7 +120,7 @@ blocks direct STATE.md writes):
    `{decimal_phase}`:
 
    ```bash
-   gsd_run query state.patch '{"Current Phase":"{decimal_phase}","Next recommended run":"/gsd:plan-phase {decimal_phase}"}'
+   engineer_run query state.patch '{"Current Phase":"{decimal_phase}","Next recommended run":"/plan-phase {decimal_phase}"}'
    ```
 
    (Adjust field names to whatever pointers STATE.md exposes — the handler
@@ -90,7 +131,7 @@ blocks direct STATE.md writes):
    and dedupes identical entries:
 
    ```bash
-   gsd_run query state.add-roadmap-evolution \
+   engineer_run query state.add-roadmap-evolution \
      --phase {decimal_phase} \
      --action inserted \
      --after {after_phase} \
@@ -123,7 +164,7 @@ Project state updated: .planning/STATE.md
 
 `/clear` then:
 
-`/gsd:plan-phase {decimal_phase}`
+`/plan-phase {decimal_phase}`
 
 ---
 
@@ -139,21 +180,21 @@ Project state updated: .planning/STATE.md
 
 <anti_patterns>
 
-- Don't use this for planned work at end of milestone (use /gsd:phase without --insert)
+- Don't use this for planned work at end of milestone (use /phase without --insert)
 - Don't insert before Phase 1 (decimal 0.1 makes no sense)
 - Don't renumber existing phases
 - Don't modify the target phase content
-- Don't create plans yet (that's /gsd:plan-phase)
+- Don't create plans yet (that's /plan-phase)
 - Don't commit changes (user decides when to commit)
 </anti_patterns>
 
 <success_criteria>
 Phase insertion is complete when:
 
-- [ ] `gsd_run query phase.insert` executed successfully
+- [ ] `engineer_run query phase.insert` executed successfully
 - [ ] Phase directory created
 - [ ] Roadmap updated with new phase entry (includes "(INSERTED)" marker)
-- [ ] `gsd_run query state.add-roadmap-evolution ...` returned `{ added: true }` or `{ added: false, reason: "duplicate" }`
-- [ ] `gsd_run query state.patch` returned matched next-phase pointer field(s)
+- [ ] `engineer_run query state.add-roadmap-evolution ...` returned `{ added: true }` or `{ added: false, reason: "duplicate" }`
+- [ ] `engineer_run query state.patch` returned matched next-phase pointer field(s)
 - [ ] User informed of next steps and dependency implications
 </success_criteria>

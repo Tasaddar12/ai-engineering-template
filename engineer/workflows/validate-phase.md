@@ -3,12 +3,12 @@ Audit Nyquist validation gaps for a completed phase. Generate missing tests. Upd
 </purpose>
 
 <required_reading>
-@~/.claude/gsd-core/references/ui-brand.md
+@engineer/references/ui-brand.md
 </required_reading>
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd-nyquist-auditor — Validates verification coverage
+- nyquist-auditor — Validates verification coverage
 </available_agent_types>
 
 <process>
@@ -20,13 +20,54 @@ IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
 $ARGUMENTS
 GSD_ARGS_END
 GSD_ARGS=${GSD_ARGS%$'\n'}
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving gsd_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok gsd_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
-RESPONSE_LANGUAGE=$(gsd_run query config-get response_language --raw --default "" 2>/dev/null || echo "")
+_engineer_identity_ok() {
+  [ -f "$1" ] || return 1
+  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
+}
+_engineer_select() {
+  for _engineer_candidate do
+    if _engineer_identity_ok "$_engineer_candidate"; then
+      ENGINEER_RUN="$_engineer_candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+if [ -n "${ENGINEER_RUN:-}" ]; then
+  _engineer_identity_ok "$ENGINEER_RUN" || {
+    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
+    exit 1
+  }
+else
+  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
+  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
+  _engineer_select \
+    "$_engineer_root/engineer/bin/engineer_run" \
+    "$_engineer_runtime_root/engineer/bin/engineer_run" \
+    "$_engineer_root/.claude/engineer/bin/engineer_run" \
+    "$_engineer_root/.codex/engineer/bin/engineer_run" \
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
+    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
+    "$_engineer_path_candidate" || {
+    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
+    exit 1
+  }
+fi
+export ENGINEER_RUN
+engineer_run() {
+  sh "$ENGINEER_RUN" "$@"
+}
+if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
+  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
+fi
+RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --default "" 2>/dev/null || echo "")
 PHASE_ARG=$(echo "$GSD_ARGS" | sed -E 's/--ws[[:space:]]+[A-Za-z0-9._-]+//g' | xargs)
 GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(gsd_run query init.phase-op ${GSD_WS:+--ws=${GSD_WS##* }} "${PHASE_ARG}")
+INIT=$(engineer_run query init.phase-op ${GSD_WS:+--ws=${GSD_WS##* }} "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_AUDITOR=$(gsd_run query agent-skills gsd-nyquist-auditor ${GSD_WS:+--ws=${GSD_WS##* }})
+AGENT_SKILLS_AUDITOR=$(engineer_run query agent-skills nyquist-auditor ${GSD_WS:+--ws=${GSD_WS##* }})
 ```
 
 **If `response_language` is set:** All user-facing output of this workflow — narration between tool calls, status updates, progress notes, findings, questions, prompts, and explanations — MUST be presented in `{response_language}`. Technical terms, code, file paths, and subagent prompts stay in English — only user-facing output is translated.
@@ -34,13 +75,13 @@ AGENT_SKILLS_AUDITOR=$(gsd_run query agent-skills gsd-nyquist-auditor ${GSD_WS:+
 Parse: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`.
 
 ```bash
-AUDITOR_MODEL=$(gsd_run query resolve-model gsd-nyquist-auditor --raw)
-VERIFY_POST_HOOKS_JSON=$(gsd_run loop render-hooks verify:post --raw)
+AUDITOR_MODEL=$(engineer_run query resolve-model nyquist-auditor --raw)
+VERIFY_POST_HOOKS_JSON=$(engineer_run loop render-hooks verify:post --raw)
 ```
 
 Resolve active step hooks from `VERIFY_POST_HOOKS_JSON` where `kind == "step"` and `ref.skill == "validate-phase"`.
 
-If no active validate-phase step hook exists: exit with "Nyquist validation is disabled. Enable via /gsd:settings."
+If no active validate-phase step hook exists: exit with "Nyquist validation is disabled. Enable via /settings."
 
 Display banner: `GSD > VALIDATE PHASE {N}: {name}`
 
@@ -53,7 +94,7 @@ SUMMARY_FILES=$(ls "${PHASE_DIR}"/*-SUMMARY.md 2>/dev/null)
 
 - **State A** (`VALIDATION_FILE` non-empty): Audit existing
 - **State B** (`VALIDATION_FILE` empty, `SUMMARY_FILES` non-empty): Reconstruct from artifacts
-- **State C** (`SUMMARY_FILES` empty): Exit — "Phase {N} not executed. Run /gsd:execute-phase {N} ${GSD_WS} first."
+- **State C** (`SUMMARY_FILES` empty): Exit — "Phase {N} not executed. Run /execute-phase {N} ${GSD_WS} first."
 
 ## 2. Discovery
 
@@ -101,23 +142,23 @@ Call AskUserQuestion with gap table and options:
 2. "Skip — mark manual-only" → add to Manual-Only, Step 6
 3. "Cancel" → exit
 
-## 5. Spawn gsd-nyquist-auditor
+## 5. Spawn nyquist-auditor
 
 Print: `◆ Spawning nyquist auditor... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)`
 
 <!-- #2517 model-omit-on-inherit -->
 
-> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`AUDITOR_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @gsd-core/references/model-profile-resolution.md.
+> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`AUDITOR_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @engineer/references/model-profile-resolution.md.
 
 ```
 Agent(
-  prompt="Read ~/.claude/agents/gsd-nyquist-auditor.md for instructions.\n\n" +
+  prompt="Read ~/.claude/agents/nyquist-auditor.md for instructions.\n\n" +
     "<required_reading>{PLAN, SUMMARY, impl files, VALIDATION.md}</required_reading>" +
     "<gaps>{gap list}</gaps>" +
     "<test_infrastructure>{framework, config, commands}</test_infrastructure>" +
     "<constraints>Never modify impl files. Max 3 debug iterations. Escalate impl bugs.</constraints>" +
     "${AGENT_SKILLS_AUDITOR}",
-  subagent_type="gsd-nyquist-auditor",
+  subagent_type="nyquist-auditor",
   model="{AUDITOR_MODEL}",
   description="Fill validation gaps for Phase {N}"
 )
@@ -133,7 +174,7 @@ Handle return:
 ## 6. Generate/Update VALIDATION.md
 
 **State B (create):**
-1. Read template from `~/.claude/gsd-core/templates/VALIDATION.md`
+1. Read template from `engineer/templates/VALIDATION.md`
 2. Fill: frontmatter (**set `status: validated`**), Test Infrastructure, Per-Task Map, Manual-Only, Sign-Off
 3. Write to `${PHASE_DIR}/${PADDED_PHASE}-VALIDATION.md`
 
@@ -142,7 +183,7 @@ Handle return:
 2. Append to the audit trail through the owning verb — it compares against the LAST `## Validation Audit` block and skips the write entirely when nothing material changed (#5105 R3; #4981: idempotence alone is insufficient for VALIDATION, whose content legitimately changes with the plan/SUMMARY set, so this call is made AFTER the Per-Task Map update above, not instead of it):
 
 ```bash
-gsd_run query verification.append-audit "${PHASE_DIR}/${PADDED_PHASE}-VALIDATION.md" \
+engineer_run query verification.append-audit "${PHASE_DIR}/${PADDED_PHASE}-VALIDATION.md" \
   --heading "Validation Audit" \
   --rows "{\"Gaps found\": {N}, \"Resolved\": {M}, \"Escalated\": {K}}"
 ```
@@ -153,7 +194,7 @@ gsd_run query verification.append-audit "${PHASE_DIR}/${PADDED_PHASE}-VALIDATION
 git add {test_files}
 git commit -m "test(phase-${PHASE}): add Nyquist validation tests"
 
-gsd_run query commit "docs(phase-${PHASE}): add/update validation strategy" \
+engineer_run query commit "docs(phase-${PHASE}): add/update validation strategy" \
   --files "${PHASE_DIR}/${PADDED_PHASE}-VALIDATION.md"
 ```
 
@@ -163,14 +204,14 @@ gsd_run query commit "docs(phase-${PHASE}): add/update validation strategy" \
 ```
 GSD > PHASE {N} IS NYQUIST-COMPLIANT
 All requirements have automated verification.
-▶ Next: /gsd:audit-milestone ${GSD_WS}
+▶ Next: /audit-milestone ${GSD_WS}
 ```
 
 **Partial:**
 ```
 GSD > PHASE {N} VALIDATED (PARTIAL)
 {M} automated, {K} manual-only.
-▶ Retry: /gsd:validate-phase {N} ${GSD_WS}
+▶ Retry: /validate-phase {N} ${GSD_WS}
 ```
 
 Display `/clear` reminder.

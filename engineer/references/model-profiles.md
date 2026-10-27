@@ -6,18 +6,18 @@ Model profiles control which Claude model each GSD agent uses. This allows balan
 
 | Agent | `quality` | `balanced` | `budget` | `adaptive` | `inherit` |
 |-------|-----------|------------|----------|------------|-----------|
-| gsd-planner | opus | opus | sonnet | opus | inherit |
+| planner | opus | opus | sonnet | opus | inherit |
 | gsd-roadmapper | opus | sonnet | sonnet | sonnet | inherit |
-| gsd-executor | opus | sonnet | sonnet | sonnet | inherit |
-| gsd-phase-researcher | opus | sonnet | haiku | sonnet | inherit |
+| executor | opus | sonnet | sonnet | sonnet | inherit |
+| phase-researcher | opus | sonnet | haiku | sonnet | inherit |
 | gsd-project-researcher | opus | sonnet | haiku | sonnet | inherit |
 | gsd-research-synthesizer | sonnet | sonnet | haiku | haiku | inherit |
-| gsd-debugger | opus | sonnet | sonnet | opus | inherit |
-| gsd-codebase-mapper | sonnet | haiku | haiku | haiku | inherit |
-| gsd-verifier | sonnet | sonnet | haiku | sonnet | inherit |
-| gsd-plan-checker | sonnet | sonnet | haiku | haiku | inherit |
-| gsd-integration-checker | sonnet | sonnet | haiku | haiku | inherit |
-| gsd-nyquist-auditor | sonnet | sonnet | haiku | haiku | inherit |
+| debugger | opus | sonnet | sonnet | opus | inherit |
+| codebase-mapper | sonnet | haiku | haiku | haiku | inherit |
+| verifier | sonnet | sonnet | haiku | sonnet | inherit |
+| plan-checker | sonnet | sonnet | haiku | haiku | inherit |
+| integration-checker | sonnet | sonnet | haiku | haiku | inherit |
+| nyquist-auditor | sonnet | sonnet | haiku | haiku | inherit |
 
 ## Per-Phase-Type Model Map (#3023)
 
@@ -35,7 +35,7 @@ Model profiles control which Claude model each GSD agent uses. This allows balan
     "completion": "sonnet"
   },
   "model_overrides": {
-    "gsd-codebase-mapper": "haiku"
+    "codebase-mapper": "haiku"
   }
 }
 ```
@@ -44,11 +44,11 @@ Model profiles control which Claude model each GSD agent uses. This allows balan
 
 | Phase type | Agents |
 |---|---|
-| `planning` | gsd-planner, gsd-roadmapper, gsd-pattern-mapper |
+| `planning` | planner, gsd-roadmapper, pattern-mapper |
 | `discuss` | `gsd-assumptions-analyzer` |
-| `research` | gsd-phase-researcher, gsd-project-researcher, gsd-research-synthesizer, gsd-codebase-mapper, gsd-ui-researcher |
-| `execution` | gsd-executor, gsd-debugger, gsd-doc-writer |
-| `verification` | gsd-verifier, gsd-plan-checker, gsd-integration-checker, gsd-nyquist-auditor, gsd-ui-checker, gsd-ui-auditor, gsd-doc-verifier, gsd-code-reviewer |
+| `research` | phase-researcher, gsd-project-researcher, gsd-research-synthesizer, codebase-mapper, ui-researcher |
+| `execution` | executor, debugger, doc-writer |
+| `verification` | verifier, plan-checker, integration-checker, nyquist-auditor, ui-checker, ui-auditor, doc-verifier, code-reviewer |
 | `completion` | (reserved — no subagent today) |
 
 ### Resolution precedence (highest to lowest)
@@ -66,7 +66,7 @@ pinning composes with tiering instead of replacing it).
 
 - **Profile** is a global tier strategy (everyone runs balanced).
 - **`models`** is coarse phase-level tuning without learning agent names.
-- **`model_overrides`** is per-agent precision (e.g. force `haiku` on `gsd-codebase-mapper` for a fan-out).
+- **`model_overrides`** is per-agent precision (e.g. force `haiku` on `codebase-mapper` for a fan-out).
 
 The three layers compose: `models` defaults a phase, `model_overrides` carves an exception out of it.
 
@@ -109,10 +109,10 @@ To assign different models to different agents, add `model_overrides` with model
 {
   "resolve_model_ids": "omit",
   "model_overrides": {
-    "gsd-planner": "o3",
-    "gsd-executor": "o4-mini",
-    "gsd-debugger": "o3",
-    "gsd-codebase-mapper": "o4-mini"
+    "planner": "o3",
+    "executor": "o4-mini",
+    "debugger": "o3",
+    "codebase-mapper": "o4-mini"
   }
 }
 ```
@@ -169,9 +169,9 @@ When `dynamic_routing.enabled = true` in `.planning/config.json`, the resolver p
 
 | Tier | Agents | Use case |
 |---|---|---|
-| `light` | gsd-codebase-mapper, gsd-pattern-mapper, gsd-research-synthesizer, gsd-plan-checker, gsd-integration-checker, gsd-nyquist-auditor, gsd-ui-checker, gsd-ui-auditor, gsd-doc-verifier | Cheap/fast — pure mappers, scanners, low-stakes audits |
-| `standard` | gsd-executor, gsd-phase-researcher, gsd-project-researcher, gsd-verifier, gsd-doc-writer, gsd-ui-researcher | Default workhorse — research, writing, primary verification |
-| `heavy` | gsd-planner, gsd-roadmapper, gsd-debugger | Deep reasoning — already at top, can't escalate further |
+| `light` | codebase-mapper, pattern-mapper, gsd-research-synthesizer, plan-checker, integration-checker, nyquist-auditor, ui-checker, ui-auditor, doc-verifier | Cheap/fast — pure mappers, scanners, low-stakes audits |
+| `standard` | executor, phase-researcher, gsd-project-researcher, verifier, doc-writer, ui-researcher | Default workhorse — research, writing, primary verification |
+| `heavy` | planner, gsd-roadmapper, debugger | Deep reasoning — already at top, can't escalate further |
 
 **Escalation flow** (orchestrator-driven):
 
@@ -217,7 +217,7 @@ the next spawn. `effort` (claude runtime) has its own cascade
 install time into the `effort:` frontmatter key of
 `~/.claude/agents/gsd-*.md` — Claude Code's Agent tool has no per-spawn
 effort parameter, so per-agent frontmatter is the only channel. An effort
-config change has no effect until `gsd_run effort sync --apply`
+config change has no effect until `engineer_run effort sync --apply`
 re-syncs the agent files. Codex agents instead pin
 `model_reasoning_effort` in `~/.codex/agents/*.toml` at install time.
 
@@ -229,8 +229,8 @@ Override specific agents without changing the entire profile:
 {
   "model_profile": "balanced",
   "model_overrides": {
-    "gsd-executor": "opus",
-    "gsd-planner": "haiku"
+    "executor": "opus",
+    "planner": "haiku"
   }
 }
 ```
@@ -241,7 +241,7 @@ On the Claude runtime, fully-qualified Claude model IDs are honored as explicit 
 
 ## Switching Profiles
 
-Runtime: `/gsd-set-profile <profile>`
+Runtime: `/set-profile <profile>`
 
 Per-project default: Set in `.planning/config.json`:
 ```json
@@ -252,16 +252,16 @@ Per-project default: Set in `.planning/config.json`:
 
 ## Design Rationale
 
-**Why Opus for gsd-planner?**
+**Why Opus for planner?**
 Planning involves architecture decisions, goal decomposition, and task design. This is where model quality has the highest impact.
 
-**Why Sonnet for gsd-executor?**
+**Why Sonnet for executor?**
 Executors follow explicit PLAN.md instructions. The plan already contains the reasoning; execution is implementation.
 
 **Why Sonnet (not Haiku) for verifiers in balanced?**
 Verification requires goal-backward reasoning - checking if code *delivers* what the phase promised, not just pattern matching. Sonnet handles this well; Haiku may miss subtle gaps.
 
-**Why Haiku for gsd-codebase-mapper?**
+**Why Haiku for codebase-mapper?**
 Read-only exploration and pattern extraction. No reasoning required, just structured output from file contents.
 
 **Why `inherit` instead of passing `opus` directly?**

@@ -11,13 +11,13 @@ calibration_source: "Adapted from thinking-partner verification corpus"
 
 ### Example 1: Thorough multi-level artifact verification with real gap discovery
 
-**Input:** Must-have artifact: `gsd-core/workflows/context-bridge.md: >50 lines`
+**Input:** Must-have artifact: `engineer/workflows/context-bridge.md: >50 lines`
 
 **Output:**
 
-> **L1 (Existence):** EXISTS -- `gsd-core/workflows/context-bridge.md` found, 187 lines.
+> **L1 (Existence):** EXISTS -- `engineer/workflows/context-bridge.md` found, 187 lines.
 > **L2 (Substantive):** SUBSTANTIVE -- No TODO/FIXME markers, 4 defined sections (`updateContextTier`, `getContextBudget`, `injectContextWarning`, `resetTierState`), non-trivial logic with config reads and threshold calculations.
-> **L3 (Wired):** WIRED -- Referenced by `gsd-core/workflows/execute-phase.md` at step 3. Called by `agents/gsd-executor.md` via @-reference include. Arguments verified: receives planning directory path matching the expected parameter.
+> **L3 (Wired):** WIRED -- Referenced by `engineer/workflows/execute-phase.md` at step 3. Called by `agents/executor.md` via @-reference include. Arguments verified: receives planning directory path matching the expected parameter.
 > **Status: PASSED**
 
 **Why this is good:** The verifier checked all three levels independently with specific evidence at each level -- file path, line count, exported symbols, import location, and argument verification. It did not stop at "file exists" but traced wiring through to actual usage with correct arguments.
@@ -28,9 +28,9 @@ calibration_source: "Adapted from thinking-partner verification corpus"
 
 **Output:**
 
-> **Method:** Ran `grep -n "scope" gsd-core/bin/validate-commit.js` to locate scope validation logic.
+> **Method:** Ran `grep -n "scope" engineer/bin/validate-commit.js` to locate scope validation logic.
 > **Evidence:** Lines 34-41 show regex `/^(feat|fix|refactor|test|docs|chore|wip)\(/` which requires opening paren after type. However, no test for MISSING closing paren exists -- the regex accepts `feat(: description` (missing scope content and closing paren).
-> **Ran:** `echo "feat(: test" | node gsd-core/bin/validate-commit.js` -- exit code 0 (accepted).
+> **Ran:** `echo "feat(: test" | node engineer/bin/validate-commit.js` -- exit code 0 (accepted).
 > **Status: FAILED** -- Commit messages with empty scope `feat(: desc)` are accepted. The truth "rejects commits missing scope parentheses" does not hold for empty-scope edge case.
 
 **Why this is good:** The verifier did not trust the code's intent -- it ran an actual test with an edge case input and reported the specific failure. Evidence includes the regex, the test command, the exit code, and why the truth does not hold.
@@ -41,9 +41,9 @@ calibration_source: "Adapted from thinking-partner verification corpus"
 
 **Output:**
 
-> **Method:** Ran `grep -n "feedback-loop\|extractFeedback" gsd-core/bin/check-subagent-output.js`.
+> **Method:** Ran `grep -n "feedback-loop\|extractFeedback" engineer/bin/check-subagent-output.js`.
 > **Evidence:** Zero matches. The file `feedback-loop.js` exists (172 lines, substantive), and `tests/feedback-loop.test.js` passes (229 lines). But `check-subagent-output.js` never imports or calls it.
-> **Cross-check:** `grep -rn "require.*feedback-loop" gsd-core/bin/` returns zero results across all scripts.
+> **Cross-check:** `grep -rn "require.*feedback-loop" engineer/bin/` returns zero results across all scripts.
 > **Status: FAILED** -- The artifact exists and is tested, but is completely orphaned. The key_link "imports and calls" does not hold. This is a **missing wiring** gap.
 
 **Why this is good:** The verifier caught a common calibration pattern: code that exists, is tested, but is never actually wired into the system. L1 and L2 pass, but L3 (wiring) fails. This pattern accounts for 37% of all gaps found in calibration corpus.
@@ -54,8 +54,8 @@ calibration_source: "Adapted from thinking-partner verification corpus"
 
 **Output:**
 
-> **Method:** Ran `grep "architecture_graph\|architecture_guard" gsd-core/bin/lib/config-schema.json`.
-> **Evidence:** Zero matches in schema. However, `grep "architecture" gsd-core/bin/lib/config.cjs` shows both flags in CONFIG_DEFAULTS (lines 426, 428).
+> **Method:** Ran `grep "architecture_graph\|architecture_guard" engineer/bin/lib/config-schema.json`.
+> **Evidence:** Zero matches in schema. However, `grep "architecture" engineer/bin/lib/config.cjs` shows both flags in CONFIG_DEFAULTS (lines 426, 428).
 > **Gap:** Defaults exist in code but schema validation doesn't know about them. `configValidate()` would strip these fields on load, making the defaults unreachable.
 > **Status: FAILED** -- Config flags work in code but are invisible to schema validation. This is a **missing wiring** gap between config layers.
 
@@ -67,7 +67,7 @@ calibration_source: "Adapted from thinking-partner verification corpus"
 
 **Output:**
 
-> **Method:** Ran `grep -rn "\/\[a-zA-Z\]\/" gsd-core/bin/` to find inline MSYS regex.
+> **Method:** Ran `grep -rn "\/\[a-zA-Z\]\/" engineer/bin/` to find inline MSYS regex.
 > **Evidence:** 2 matches in `commands/gsd/misc.md` (lines 26, 487). These were NOT in the original plan scope -- Phase 148 extracted code into misc.md AFTER Phase 149's plan was written.
 > **Assessment:** The executor correctly completed all planned tasks. The gap is a **planning ordering issue**, not an execution failure.
 > **Status: PASS_WITH_NOTES** -- Executor did what was planned. Unconsolidated regex noted as follow-up, not as a failure of this phase.
@@ -99,11 +99,11 @@ Based on analysis of verification corpus (80% pass rate, 8 gaps):
 
 ### Example 2: File existence check without substance or wiring verification
 
-**Input:** Must-have artifact: `gsd-core/bin/lib/audit-checks/index.cjs: >100 lines`
+**Input:** Must-have artifact: `engineer/bin/lib/audit-checks/index.cjs: >100 lines`
 
 **Output:**
 
-> **L1 (Existence):** EXISTS -- File found at `gsd-core/bin/lib/audit-checks/index.cjs`, 142 lines.
+> **L1 (Existence):** EXISTS -- File found at `engineer/bin/lib/audit-checks/index.cjs`, 142 lines.
 > **Status: PASSED**
 
 **Why this is bad:** The verifier stopped at Level 1. The file has 142 lines but could contain `// TODO: implement all checks` with stub functions returning empty objects. Level 2 (substantive) and Level 3 (wired) were skipped entirely. A file that exists but is never imported or contains only placeholder code should not pass.

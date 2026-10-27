@@ -171,7 +171,7 @@ Updated after each plan completion.
 
 **Decisions:** Reference to PROJECT.md Key Decisions table, plus recent decisions summary for quick access. Full decision log lives in PROJECT.md.
 
-**Pending Todos:** Ideas captured via /gsd-add-todo
+**Pending Todos:** Ideas captured via /add-todo
 - One bullet per pending todo, rendered by `init.todos`'s `pending_todos_markdown`
   (each bullet capped at 240 characters: `- [date] [area] title — [todo file](path) — Needs ...`;
   the todo-file link is repo-relative, so the cap does not depend on checkout path length)

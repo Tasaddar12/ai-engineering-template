@@ -21,7 +21,7 @@ Plans execute autonomously. Checkpoints formalize interaction points where human
 
 Reach for `gate="blocking-human"` whenever auto-approving the checkpoint would defeat its purpose. If the checkpoint exists because a human must _decide_ something, `blocking` is the wrong gate — auto-mode will decide it for them.
 
-The gate spans two layers, and both must honor it. `gsd-executor` refuses to auto-approve a `gate="blocking-human"` checkpoint and escalates it via `checkpoint_return_format` precisely so a human sees it; `execute-phase`'s `checkpoint_handling` step then decides what the user is actually shown. An orchestrator that dispatches on checkpoint _type_ alone would auto-approve the very checkpoint the executor just refused to auto-approve, nullifying that refusal one layer up and letting an unattended `--auto` / `--chain` run install a package no human ever vetted.
+The gate spans two layers, and both must honor it. `executor` refuses to auto-approve a `gate="blocking-human"` checkpoint and escalates it via `checkpoint_return_format` precisely so a human sees it; `execute-phase`'s `checkpoint_handling` step then decides what the user is actually shown. An orchestrator that dispatches on checkpoint _type_ alone would auto-approve the very checkpoint the executor just refused to auto-approve, nullifying that refusal one layer up and letting an unattended `--auto` / `--chain` run install a package no human ever vetted.
 </overview>
 
 <checkpoint_types>
@@ -33,7 +33,7 @@ The gate spans two layers, and both must honor it. `gsd-executor` refuses to aut
 
 > **Default mode (#3309): `workflow.human_verify_mode = end-of-phase`.** New projects do NOT halt mid-flight at _planner-emitted_ `checkpoint:human-verify` tasks. (The executor-synthesized **tracer feedback gate** is the one runtime checkpoint this mode also governs, with its own precedence chain — see "Tracer feedback gate (#3299)" below.) The planner suppresses those task emissions and embeds the verification details into the relevant `auto` task's `<verify><human-check>` block; the verifier harvests every `<verify><human-check>` at end-of-phase (Step 8) and consolidates them into the existing `human_needed` → `{phase_num}-UAT.md` flow in `workflows/execute-phase.md`. The user reviews everything in one batch.
 >
-> **Why this is the default:** every mid-flight halt costs a full executor cold-start (CLAUDE.md, MEMORY.md, STATE.md, plan re-read on respawn) because subagent context is discarded across the pause. A plan with N human-verify checkpoints pays the cold-start cost N+1 times — measured at "tens of thousands of tokens" per round-trip on real projects.
+> **Why this is the default:** every mid-flight halt costs a full executor cold-start (AGENTS.md, MEMORY.md, STATE.md, plan re-read on respawn) because subagent context is discarded across the pause. A plan with N human-verify checkpoints pays the cold-start cost N+1 times — measured at "tens of thousands of tokens" per round-trip on real projects.
 >
 > Set `workflow.human_verify_mode = mid-flight` in `.planning/config.json` to opt back into the pre-#3309 behavior of halting at every checkpoint. `checkpoint:decision` and `checkpoint:human-action` are unaffected by either value — those gate the work itself, not post-hoc verification.
 
@@ -134,7 +134,7 @@ Row 1 is deliberately **not** scoped to interactive runs. Golden rule 6 above st
 Read `HUMAN_VERIFY_MODE` with an explicit default — `workflow.human_verify_mode` is absent from `SCHEMA_DEFAULTS`, so a bare `config-get` exits non-zero with `Key not found` on any project whose `config.json` predates #3309:
 
 ```bash
-HUMAN_VERIFY_MODE=$(gsd_run query config-get workflow.human_verify_mode --default end-of-phase --raw 2>/dev/null || echo "end-of-phase")
+HUMAN_VERIFY_MODE=$(engineer_run query config-get workflow.human_verify_mode --default end-of-phase --raw 2>/dev/null || echo "end-of-phase")
 ```
 
 </type>
@@ -518,7 +518,7 @@ npm run dev &
 DEV_SERVER_PID=$!
 
 # Wait for ready (max 30s) — uses fetch() for cross-platform compatibility
-gsd_run run-with-timeout 30 -- bash -c 'until node -e "fetch(\"http://localhost:3000\").then(r=>{process.exit(r.ok?0:1)}).catch(()=>process.exit(1))" 2>/dev/null; do sleep 1; done'
+engineer_run query run-with-timeout 30 -- bash -c 'until node -e "fetch(\"http://localhost:3000\").then(r=>{process.exit(r.ok?0:1)}).catch(()=>process.exit(1))" 2>/dev/null; do sleep 1; done'
 ```
 
 **Port conflicts:** Kill stale process (`lsof -ti:3000 | xargs kill`) or use alternate port (`--port 3001`).

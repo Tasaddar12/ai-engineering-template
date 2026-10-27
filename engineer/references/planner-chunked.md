@@ -1,6 +1,6 @@
 # Chunked Mode Return Formats
 
-Used when `plan-phase` spawns `gsd-planner` with `CHUNKED_MODE=true` (triggered by `--chunked`
+Used when `plan-phase` spawns `planner` with `CHUNKED_MODE=true` (triggered by `--chunked`
 flag or `workflow.plan_chunked: true` config). Splits the single long-lived planner Task into
 shorter-lived Tasks to bound the blast radius of Windows stdio hangs.
 
@@ -27,7 +27,7 @@ The orchestrator reads this table, groups rows by `Wave` (ascending, blank treat
 spawns one single-plan Task per row — one Wave at a time, serially across Waves. Within a Wave,
 Tasks are spawned one at a time by default, or together (`run_in_background=true` on each, issued
 in one message) when `planning.chunked_parallel: true` and the host's negotiated dispatch capacity
-supports it (#3777; see `gsd-core/workflows/plan-phase/steps/chunked-planning-mode.md` §8.5.2).
+supports it (#3777; see `engineer/workflows/plan-phase/steps/chunked-planning-mode.md` §8.5.2).
 
 ### single-plan
 

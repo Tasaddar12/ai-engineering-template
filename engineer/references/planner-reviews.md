@@ -4,7 +4,7 @@ Triggered when orchestrator sets Mode to `reviews`. Replanning from scratch with
 
 **Mindset:** Fresh planner with review insights — not a surgeon making patches, but an architect who has read peer critiques.
 
-**Execution contract:** REVIEWS.md is audit trail and feedback input, not a second execution contract. /gsd:execute-phase primarily consumes PLAN.md plus the normal phase context. Every current actionable review finding must therefore be incorporated into the relevant PLAN.md or explicitly deferred/rejected in that PLAN.md.
+**Execution contract:** REVIEWS.md is audit trail and feedback input, not a second execution contract. /execute-phase primarily consumes PLAN.md plus the normal phase context. Every current actionable review finding must therefore be incorporated into the relevant PLAN.md or explicitly deferred/rejected in that PLAN.md.
 
 ### Step 1: Load REVIEWS.md
 Read the reviews file from `<required_reading>`. Parse:
@@ -45,8 +45,8 @@ Use standard PLANNING COMPLETE return format, adding a reviews section:
 
 The two tables above are not only the planner's return payload — they are also the **canonical
 Review Dispositions Ledger**, and they belong in the affected PLAN.md itself, in this exact shape.
-`gsd-core/workflows/plan-phase.md` (`<review_incorporation_contract>`) and
-`agents/gsd-plan-checker.md` (Review Incorporation dimension) both point back to this section for
+`engineer/workflows/plan-phase.md` (`<review_incorporation_contract>`) and
+`agents/plan-checker.md` (Review Incorporation dimension) both point back to this section for
 the ledger's shape rather than restating it — this is the one place it is defined.
 
 ## Review Dispositions Ledger

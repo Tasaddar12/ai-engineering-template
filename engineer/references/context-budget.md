@@ -2,7 +2,7 @@
 
 Standard rules for keeping orchestrator context lean. Reference this in workflows that spawn subagents or read significant content.
 
-See also: `gsd-core/references/universal-anti-patterns.md` for the complete set of universal rules.
+See also: `engineer/references/universal-anti-patterns.md` for the complete set of universal rules.
 
 ---
 
@@ -36,7 +36,7 @@ Monitor context usage and adjust behavior accordingly. The `workflow.context_gua
 | PEAK | 0-30% | Full operations. Read bodies, spawn multiple agents, inline results. | None |
 | GOOD | 30-50% | Normal operations. Prefer frontmatter reads, delegate aggressively. | None |
 | DEGRADING | 50-70% | Economize. Frontmatter-only reads, minimal inlining, warn user about budget. | Emit warning, continue |
-| POOR | 70%+ | Emergency mode. Checkpoint progress immediately. No new reads unless critical. | `warn`: emit warning + recommend `/gsd:pause-work`. `auto`: invoke pause-work before next wave. `off`: proceed anyway. |
+| POOR | 70%+ | Emergency mode. Checkpoint progress immediately. No new reads unless critical. | `warn`: emit warning + recommend `/pause-work`. `auto`: invoke pause-work before next wave. `off`: proceed anyway. |
 
 ## Context Degradation Warning Signs
 
@@ -58,7 +58,7 @@ Tool schemas count against the same context budget as model context, prompts, an
 
 ### Pre-Phase MCP Audit
 
-Before starting a long phase (especially `/gsd:execute-phase`, `/gsd:plan-phase`, or anything that fans out across many subagents), run this audit:
+Before starting a long phase (especially `/execute-phase`, `/plan-phase`, or anything that fans out across many subagents), run this audit:
 
 - [ ] **Browser / playwright tools enabled?** If this phase has no UI work, disable them. They're among the heaviest per-turn schemas.
 - [ ] **Platform-specific tools enabled?** Mac-tools / Windows-tools / OS-specific helpers should be disabled when not actively needed for the phase at hand.
@@ -86,7 +86,7 @@ Trimming MCPs and tuning `model_profile` are independent levers that **compound*
 
 ---
 
-# Phase Sizing (gsd-planner)
+# Phase Sizing (planner)
 
 ## Estimate Emission (#2631, ADR-2629)
 
@@ -122,4 +122,4 @@ Plans should complete within ~50% context (not 80%). No context anxiety, quality
 
 **CONSIDER splitting:** >5 files total, natural semantic boundaries, context cost estimate exceeds 40% for a single plan. See `<planner_authority_limits>` for prohibited split reasons.
 
-See @~/.claude/gsd-core/references/planner-guidance.md for Granularity Calibration table (Coarse/Standard/Fine plans-per-phase).
+See @engineer/references/planner-guidance.md for Granularity Calibration table (Coarse/Standard/Fine plans-per-phase).

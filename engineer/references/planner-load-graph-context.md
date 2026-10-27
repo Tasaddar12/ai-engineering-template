@@ -1,14 +1,55 @@
 # Planner — Load Graph Context
 
-> Loaded by `gsd-planner` at the `load_graph_context` step.
+> Loaded by `planner` at the `load_graph_context` step.
 
 Check for a knowledge graph and read its freshness in one call. `status` resolves the
 graph through `graphify.graph_path`, so it is also the presence gate — a bare
 `ls` of the default location misses an umbrella graph shared across sibling repos:
 
 ```bash
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; if [ -f "$GSD_TOOLS" ]; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif [ -f "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; elif command -v gsd-tools >/dev/null 2>&1; then GSD_TOOLS="$(command -v gsd-tools)"; gsd_run() { "$GSD_TOOLS" "$@"; }; elif [ -f "$HOME/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" ]; then GSD_TOOLS="$HOME/.claude/gsd-core/bin/${_GSD_SHIM_NAME}"; gsd_run() { node "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and gsd-tools is not on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi
-gsd_run graphify status
+_engineer_identity_ok() {
+  [ -f "$1" ] || return 1
+  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
+}
+_engineer_select() {
+  for _engineer_candidate do
+    if _engineer_identity_ok "$_engineer_candidate"; then
+      ENGINEER_RUN="$_engineer_candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+if [ -n "${ENGINEER_RUN:-}" ]; then
+  _engineer_identity_ok "$ENGINEER_RUN" || {
+    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
+    exit 1
+  }
+else
+  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
+  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
+  _engineer_select \
+    "$_engineer_root/engineer/bin/engineer_run" \
+    "$_engineer_runtime_root/engineer/bin/engineer_run" \
+    "$_engineer_root/.claude/engineer/bin/engineer_run" \
+    "$_engineer_root/.codex/engineer/bin/engineer_run" \
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
+    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
+    "$_engineer_path_candidate" || {
+    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
+    exit 1
+  }
+fi
+export ENGINEER_RUN
+engineer_run() {
+  sh "$ENGINEER_RUN" "$@"
+}
+if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
+  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
+fi
+engineer_run graphify status
 ```
 
 If `exists` is `false`, continue without graph context — skip the rest of this step.
@@ -24,7 +65,7 @@ if command -v graphify >/dev/null 2>&1; then
   graphify query "<phase-goal-keyword>" --graph "<graph>" --budget 2000
   graphify affected "<phase-goal-keyword>" --graph "<graph>" --depth 2
 else
-  gsd_run graphify query "<phase-goal-keyword>" --budget 2000
+  engineer_run graphify query "<phase-goal-keyword>" --budget 2000
 fi
 ```
 

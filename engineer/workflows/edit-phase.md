@@ -1,4 +1,4 @@
-@~/.claude/gsd-core/references/response-language-directive.md
+@engineer/references/response-language-directive.md
 
 <purpose>
 Edit any field of an existing phase in ROADMAP.md in place. The phase number and position are always preserved. Guarded against in-progress and completed phases unless --force is passed. Validates depends_on references before writing. Shows a diff and requests confirmation before writing.
@@ -16,17 +16,17 @@ Parse the command arguments:
 - Optional flag: --force (allow editing in_progress/completed phases)
 
 Examples:
-  `/gsd-edit-phase 5`       → phase = 5, force = false
-  `/gsd-edit-phase 5 --force` → phase = 5, force = true
-  `/gsd-edit-phase 12.1`    → phase = 12.1, force = false
+  `/edit-phase 5`       → phase = 5, force = false
+  `/edit-phase 5 --force` → phase = 5, force = true
+  `/edit-phase 12.1`    → phase = 12.1, force = false
 
 If no argument provided:
 
 ```
 ERROR: Phase number required
-Usage: /gsd-edit-phase <phase-number> [--force]
-Example: /gsd-edit-phase 5
-Example: /gsd-edit-phase 5 --force
+Usage: /edit-phase <phase-number> [--force]
+Example: /edit-phase 5
+Example: /edit-phase 5 --force
 ```
 
 Exit.
@@ -40,16 +40,57 @@ IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
 $ARGUMENTS
 GSD_ARGS_END
 GSD_ARGS=${GSD_ARGS%$'\n'}
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving gsd_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok gsd_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
+_engineer_identity_ok() {
+  [ -f "$1" ] || return 1
+  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
+}
+_engineer_select() {
+  for _engineer_candidate do
+    if _engineer_identity_ok "$_engineer_candidate"; then
+      ENGINEER_RUN="$_engineer_candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+if [ -n "${ENGINEER_RUN:-}" ]; then
+  _engineer_identity_ok "$ENGINEER_RUN" || {
+    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
+    exit 1
+  }
+else
+  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
+  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
+  _engineer_select \
+    "$_engineer_root/engineer/bin/engineer_run" \
+    "$_engineer_runtime_root/engineer/bin/engineer_run" \
+    "$_engineer_root/.claude/engineer/bin/engineer_run" \
+    "$_engineer_root/.codex/engineer/bin/engineer_run" \
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
+    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
+    "$_engineer_path_candidate" || {
+    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
+    exit 1
+  }
+fi
+export ENGINEER_RUN
+engineer_run() {
+  sh "$ENGINEER_RUN" "$@"
+}
+if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
+  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
+fi
 GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(gsd_run query init.phase-op ${GSD_WS:+--ws=${GSD_WS##* }} "${target}")
+INIT=$(engineer_run query init.phase-op ${GSD_WS:+--ws=${GSD_WS##* }} "${target}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
 Check `roadmap_exists` from init JSON. If false:
 ```
 ERROR: No roadmap found (.planning/ROADMAP.md)
-Run /gsd:new-project to initialize.
+Run /new-project to initialize.
 ```
 Exit.
 </step>
@@ -58,7 +99,7 @@ Exit.
 Read the current phase section from ROADMAP.md:
 
 ```bash
-PHASE_DATA=$(gsd_run query roadmap get-phase "${target}")
+PHASE_DATA=$(engineer_run query roadmap get-phase "${target}")
 ```
 
 Parse the JSON result. If `found` is false:
@@ -66,7 +107,7 @@ Parse the JSON result. If `found` is false:
 ```
 ERROR: Phase {target} not found in ROADMAP.md
 
-Available phases can be seen with /gsd:progress.
+Available phases can be seen with /progress.
 ```
 
 Exit.
@@ -86,7 +127,7 @@ Also parse the full section text to extract additional fields not in the SDK res
 Determine the phase status from disk. Compare against STATE.md current phase:
 
 ```bash
-ANALYZE=$(gsd_run query roadmap analyze)
+ANALYZE=$(engineer_run query roadmap analyze)
 ```
 
 Find the phase entry in the `phases` array. Extract `disk_status`.
@@ -104,7 +145,7 @@ ERROR: Cannot edit Phase {target} — status is {status}
 Editing an in-progress or completed phase may invalidate executed plans.
 
 To edit anyway, run:
-  /gsd-edit-phase {target} --force
+  /edit-phase {target} --force
 ```
 
 Exit.
@@ -188,7 +229,7 @@ Wait for user input. Use the clarified intent to rewrite all fields:
 If `depends_on` is being updated (or preserved as non-empty), validate that every referenced phase number exists in ROADMAP.md:
 
 ```bash
-ALL_PHASES=$(gsd_run query roadmap analyze)
+ALL_PHASES=$(engineer_run query roadmap analyze)
 ```
 
 Parse the `phases` array to get all valid phase numbers.
@@ -243,7 +284,7 @@ Wait for confirmation. If the user says `n`, exit without writing.
 Before writing, capture the current milestone scope (window scope + phase set) so the write can be verified against it:
 
 ```bash
-SCOPE_BEFORE=$(gsd_run query roadmap milestone-scope)
+SCOPE_BEFORE=$(engineer_run query roadmap milestone-scope)
 ```
 
 Write the updated phase back in place in ROADMAP.md.
@@ -253,7 +294,7 @@ Read the full ROADMAP.md content, locate the phase section by its header (`## Ph
 After writing, re-derive the milestone scope and compare it to the capture:
 
 ```bash
-SCOPE_AFTER=$(gsd_run query roadmap milestone-scope)
+SCOPE_AFTER=$(engineer_run query roadmap milestone-scope)
 ```
 
 If `scope` or `phases` differs from SCOPE_BEFORE, the replacement text introduced a heading that terminates the current milestone window (a level 1-3 heading carrying a version token, a ✅/📋/🚧/🔄 marker, or the word "Milestone"). Restore ROADMAP.md by replacing the new section text with the original section text, then report and stop — do NOT update STATE.md and do NOT retry the write:
@@ -270,7 +311,7 @@ Exit.
 If the milestone scope is unchanged, update STATE.md Roadmap Evolution:
 
 ```bash
-gsd_run query state.add-roadmap-evolution \
+engineer_run query state.add-roadmap-evolution \
   --phase {target} \
   --action edited \
   --note "edited fields: {changed_field_list}"
@@ -289,9 +330,9 @@ Fields changed: {changed_field_list}
 
 ## What's Next
 
-- `/gsd:progress` — view updated roadmap
-- `/gsd:plan-phase {target}` — re-plan this phase (if needed)
-- `/gsd:discuss-phase {target}` — discuss implementation approach
+- `/progress` — view updated roadmap
+- `/plan-phase {target}` — re-plan this phase (if needed)
+- `/discuss-phase {target}` — discuss implementation approach
 
 ---
 ```

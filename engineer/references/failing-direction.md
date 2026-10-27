@@ -1,6 +1,6 @@
 # Check 8f — Stated Failing Direction (#3172)
 
-> Reference file for gsd-plan-checker agent. Loaded on-demand via `@` reference.
+> Reference file for plan-checker agent. Loaded on-demand via `@` reference.
 
 **Question:** For each runnable `<automated>` command, does the plan say what output constitutes
 failure?
@@ -31,10 +31,10 @@ statements.
 
 ## Do not hand-reason this
 
-`gsd-core/workflows/plan-phase.md` runs the deterministic probe **before** spawning this checker
+`engineer/workflows/plan-phase.md` runs the deterministic probe **before** spawning this checker
 and interpolates the result into the verification prompt as `{FAILING_DIRECTIONS}`, inside a
 `<failing_direction_probe>` block. This check reads that already-supplied JSON — it never invokes
-`gsd_run check verify-failure-directions` itself. If `{FAILING_DIRECTIONS}` is absent from the
+`engineer_run check verify-failure-directions` itself. If `{FAILING_DIRECTIONS}` is absent from the
 prompt, treat this check as silent (nothing to check) rather than trying to run the probe.
 
 The probe never executes command text (PLAN.md is untrusted, LLM-authored). It is a **presence**

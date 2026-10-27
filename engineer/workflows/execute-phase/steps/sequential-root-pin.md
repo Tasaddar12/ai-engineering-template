@@ -9,7 +9,7 @@ the `<required_reading>` root substitution, and the wave serialization rules.
 
 ## Root pin — ORCHESTRATOR build-time embed (#4254; NOT a sub-agent runtime step)
 
-Before this dispatch, read `gsd-core/references/worktree-path-safety.md` step 0p
+Before this dispatch, read `engineer/references/worktree-path-safety.md` step 0p
 ("Supplied-root pin") and copy its guard template into this prompt inside a
 `<project_root_pin>` block, substituting `{PINNED_ROOT}` with the literal value of
 `$ORCHESTRATOR_WT` resolved at execute_waves entry, shell-single-quoted per that section's

@@ -1,6 +1,6 @@
 # Prevention / Blameless-Postmortem Output
 
-Loaded by `gsd-debugger` via `@-include` from `archive_session`. Emits the
+Loaded by `debugger` via `@-include` from `archive_session`. Emits the
 forward-looking half of a resolved debug session — not just *what* was wrong and
 the fix, but **why it happened, why it wasn't caught, and the guard that
 prevents its whole class from returning**.

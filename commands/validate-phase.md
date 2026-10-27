@@ -1,5 +1,5 @@
 ---
-name: gsd:validate-phase
+name: validate-phase
 description: Retroactively audit and fill Nyquist validation gaps for a completed phase
 argument-hint: "[phase number]"
 allowed-tools:
@@ -28,7 +28,7 @@ Output: updated VALIDATION.md + generated test files.
 </objective>
 
 <execution_context>
-@~/.claude/gsd-core/workflows/validate-phase.md
+@engineer/workflows/validate-phase.md
 </execution_context>
 
 <context>

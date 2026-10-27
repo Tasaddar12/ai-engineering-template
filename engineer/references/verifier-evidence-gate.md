@@ -96,7 +96,7 @@ blocking. One of:
   the existing Step 9b `deferred:` list) with its reasoning intact. It does
   **not** count toward Step 9 Rule 1's `gaps_found` trigger and does **not**
   revert a completed must-have or, on its own, justify another
-  `/gsd:plan-phase --gaps` cycle.
+  `/plan-phase --gaps` cycle.
 
 This changes nothing else: a carried-forward gap or a regression still
 blocks with or without a pre-existing requirement to point at, and every

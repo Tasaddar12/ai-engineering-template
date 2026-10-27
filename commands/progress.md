@@ -1,5 +1,5 @@
 ---
-name: gsd:progress
+name: progress
 description: Check progress, advance workflow, or dispatch freeform intent — the unified GSD situational command
 argument-hint: "[--forensic | --next [--auto] [--converge] | --do \"task description\"]"
 effort: low
@@ -29,7 +29,7 @@ Three modes:
 
 <flags>
 - **--next**: Detect current project state and automatically invoke the next logical GSD workflow step. Scans all prior phases for incomplete work before routing. `--next --force` bypasses safety gates.
-- **--next --auto**: Like `--next`, but after the determined step completes, automatically re-invokes `/gsd:progress --next --auto` to continue chaining steps until completion or a blocking decision. Enables hands-free plan→execute→verify→complete progression.
+- **--next --auto**: Like `--next`, but after the determined step completes, automatically re-invokes `/progress --next --auto` to continue chaining steps until completion or a blocking decision. Enables hands-free plan→execute→verify→complete progression.
 - **--next --converge**: When the next action is planning (Route 3), route it through the plan-review **convergence** loop instead of the standard planner. Requires `workflow.plan_review_convergence=true` (enable with `gsd config-set workflow.plan_review_convergence true`). `--cross-ai` is an alias. Reviewer flags (`--codex`, `--claude`, `--all`) and `--max-cycles N` are forwarded to the convergence loop.
 - **--do "..."**: Smart dispatcher — match freeform intent to the best GSD command using routing rules, confirm the match, then hand off.
 - **--forensic**: Run 6-check integrity audit after the standard progress report.
@@ -37,10 +37,10 @@ Three modes:
 </flags>
 
 <execution_context>
-@~/.claude/gsd-core/workflows/progress.md
-@~/.claude/gsd-core/workflows/next.md
-@~/.claude/gsd-core/workflows/do.md
-@~/.claude/gsd-core/references/ui-brand.md
+@engineer/workflows/progress.md
+@engineer/workflows/next.md
+@engineer/workflows/do.md
+@engineer/references/ui-brand.md
 </execution_context>
 
 <process>

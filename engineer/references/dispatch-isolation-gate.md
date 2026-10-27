@@ -14,7 +14,7 @@ had in fact negotiated.
 ## Resolve ISOLATION
 
 Run this in the dispatch site's config-gate step, right after `RUNTIME` / `USE_WORKTREES` are
-read. It requires `gsd_run` to be defined (the standard shim preamble).
+read. It requires `engineer_run` to be defined (the standard shim preamble).
 
 ```bash
 # Isolation is a NEGOTIATED CAPABILITY, not a runtime id (#2584). Fail-closed to none.
@@ -26,7 +26,7 @@ read. It requires `gsd_run` to be defined (the standard shim preamble).
 # stdout is NOT a capability verdict, and reporting it as one tells a Claude
 # Code user their runtime "declares no executor-isolation primitive", which is
 # false (#2652 review).
-_ISOLATION_RAW=$(gsd_run query dispatch-isolation --raw 2>/dev/null)
+_ISOLATION_RAW=$(engineer_run query dispatch-isolation --raw 2>/dev/null)
 _ISOLATION_RC=$?
 if [ $_ISOLATION_RC -ne 0 ] || [ -z "$_ISOLATION_RAW" ]; then
   ISOLATION=none
@@ -46,7 +46,7 @@ if [ "$ISOLATION" = "none" ] && [ "$USE_WORKTREES" != "false" ]; then
   if [ "$ISOLATION_RESOLVED" = "true" ]; then
     echo "FATAL: runtime '$RUNTIME' declares no executor-isolation primitive (dispatch.isolation=none) — agents would run unisolated against the main checkout. Set workflow.use_worktrees=false." >&2
   else
-    echo "FATAL: could not resolve this runtime's executor-isolation capability — 'gsd_run query dispatch-isolation' failed or returned nothing, so GSD cannot tell whether isolation is available. Refusing to dispatch rather than guess (a guard that cannot verify must not answer 'safe'). Re-run once the gsd-tools shim resolves, or set workflow.use_worktrees=false to run sequentially on purpose." >&2
+    echo "FATAL: could not resolve this runtime's executor-isolation capability — 'engineer_run query dispatch-isolation' failed or returned nothing, so GSD cannot tell whether isolation is available. Refusing to dispatch rather than guess (a guard that cannot verify must not answer 'safe'). Re-run once the engineer_run shim resolves, or set workflow.use_worktrees=false to run sequentially on purpose." >&2
   fi
   exit 1
 fi
@@ -54,7 +54,7 @@ fi
 # Re-record: the opt-out above is decided in shell, where the resolver cannot see
 # it, so the sentinel still asserts the naturally-resolved mode. See "Re-record
 # after every degrade" below — this is the first of the mandatory calls.
-gsd_run query dispatch-isolation --raw --force-isolation "$ISOLATION" >/dev/null 2>&1 || true
+engineer_run query dispatch-isolation --raw --force-isolation "$ISOLATION" >/dev/null 2>&1 || true
 ```
 
 | `ISOLATION` | Meaning | What a dispatch site does |
@@ -74,7 +74,7 @@ literal.
 ```bash
 HARNESS_FLAG=""
 if [ "$ISOLATION" = "harness-worktree" ]; then
-  HARNESS_FLAG=$(gsd_run query dispatch-isolation --json 2>/dev/null \
+  HARNESS_FLAG=$(engineer_run query dispatch-isolation --json 2>/dev/null \
     | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(j&&j.harnessFlag?j.harnessFlag:"")}catch{process.stdout.write("")}})')
   [ -n "$HARNESS_FLAG" ] || { echo "FATAL: runtime declares dispatch.isolation=harness-worktree but no harnessIsolationFlag — refusing to dispatch an agent that would believe it is isolated." >&2; exit 1; }
 fi
@@ -92,10 +92,10 @@ reporting isolation is the one outcome worse than running sequentially:
 
 ```bash
 if [ "$ISOLATION" = "orchestrator-worktree" ]; then
-  echo "⚠ Runtime '$RUNTIME' declares dispatch.isolation=orchestrator-worktree, which requires GSD-driven process spawning. This dispatch site uses the host subagent tool, so it is running sequentially on the main working tree instead. Parallel wave execution (/gsd:execute-phase) is unaffected." >&2
+  echo "⚠ Runtime '$RUNTIME' declares dispatch.isolation=orchestrator-worktree, which requires GSD-driven process spawning. This dispatch site uses the host subagent tool, so it is running sequentially on the main working tree instead. Parallel wave execution (/execute-phase) is unaffected." >&2
   ISOLATION=none
   USE_WORKTREES=false
-  gsd_run query dispatch-isolation --raw --force-isolation none >/dev/null 2>&1 || true
+  engineer_run query dispatch-isolation --raw --force-isolation none >/dev/null 2>&1 || true
 fi
 ```
 
@@ -115,7 +115,7 @@ as a dropped isolation flag and **denies the dispatch with exit 2**. The task do
 unisolated; it does not run at all.
 
 ```bash
-gsd_run query dispatch-isolation --raw --force-isolation "$ISOLATION" >/dev/null 2>&1 || true
+engineer_run query dispatch-isolation --raw --force-isolation "$ISOLATION" >/dev/null 2>&1 || true
 ```
 
 `--force-isolation` pushes the final, shell-computed value through the same single write path
@@ -126,10 +126,10 @@ write failure must never fail the dispatch, since the guards' sentinel-absent fa
 just less precise.
 
 Wave sites re-record per plan rather than per phase — see
-`gsd-core/workflows/execute-phase/steps/per-plan-worktree-gate.md`.
+`engineer/workflows/execute-phase/steps/per-plan-worktree-gate.md`.
 
 Wave fan-out sites (`execute-phase`) implement both models — see
-`gsd-core/workflows/execute-phase/steps/executor-isolation-dispatch.md`.
+`engineer/workflows/execute-phase/steps/executor-isolation-dispatch.md`.
 
 ## Base divergence
 

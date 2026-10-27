@@ -26,9 +26,9 @@ if [ "$FIX_FLAG" = "true" ]; then
 
   # Load and execute the code-review-fix workflow.
   # The fix workflow is the canonical implementation for all fix logic:
-  # gsd-code-fixer agent dispatch, --auto iteration loop, REVIEW-FIX.md commit,
+  # code-fixer agent dispatch, --auto iteration loop, REVIEW-FIX.md commit,
   # and result presentation. Do not duplicate that logic here.
-  Workflow(workflow="gsd-core/workflows/code-review-fix.md", args="${FIX_ARGS}")
+  Workflow(workflow="engineer/workflows/code-review-fix.md", args="${FIX_ARGS}")
 
   # Exit after fix workflow completes — present_results is for review-only output.
   # The fix workflow has its own present_results step.

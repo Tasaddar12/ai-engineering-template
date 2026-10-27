@@ -13,35 +13,55 @@ Read all files referenced by the invoking prompt's execution_context before star
 Detect the installed GSD version, scope, runtime, and config dir.
 
 First, derive `PREFERRED_CONFIG_DIR` and `PREFERRED_RUNTIME` from the invoking prompt's `execution_context` path — this is the one input only the workflow knows:
-- If the path contains `/gsd-core/workflows/update.md`, strip that suffix and store the remainder as `PREFERRED_CONFIG_DIR`.
+- If the path contains `/engineer/workflows/update.md`, strip that suffix and store the remainder as `PREFERRED_CONFIG_DIR`.
 - Infer `PREFERRED_RUNTIME` from the path: `/.claude/` -> `claude`; `/.codex/` -> `codex`; otherwise leave it empty.
 
-Then resolve the install context via the deterministic projection (#498). **Do NOT re-derive scope, runtime, or version by hand** — `update-context` owns that cascade in tested code (`gsd-core/bin/lib/update-context.cjs`), the same way `check-latest-version` owns the package name (#2992):
+Then resolve the install context via the deterministic projection (#498). **Do NOT re-derive scope, runtime, or version by hand** — `update-context` owns that cascade in tested code (`engineer/bin/lib/update-context.cjs`), the same way `check-latest-version` owns the package name (#2992):
 
 ```bash
-# Resolve gsd-tools.cjs WITHOUT yet knowing GSD_DIR. The running workflow lives
-# at <PREFERRED_CONFIG_DIR>/gsd-core/workflows/update.md, so its sibling
-# bin/gsd-tools.cjs is the authoritative tool for THIS install. Fall back to a
-# global copy, then to gsd-tools on PATH.
-GSD_TOOLS=""
-for cand in \
-  "$PREFERRED_CONFIG_DIR/gsd-core/bin/gsd-tools.cjs" \
-  "$HOME/.claude/gsd-core/bin/gsd-tools.cjs"; do
-  if [ -n "$cand" ] && [ -f "$cand" ]; then GSD_TOOLS="$cand"; break; fi
-done
-# Last resort: the gsd-tools shim on PATH — resolved to its absolute path and
-# invoked via the variable (never a bare `gsd-tools` command; see #2851).
-if [ -z "$GSD_TOOLS" ] && command -v gsd-tools >/dev/null 2>&1; then
-  GSD_TOOLS="$(command -v gsd-tools)"
+_engineer_identity_ok() {
+  [ -f "$1" ] || return 1
+  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
+}
+_engineer_select() {
+  for _engineer_candidate do
+    if _engineer_identity_ok "$_engineer_candidate"; then
+      ENGINEER_RUN="$_engineer_candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+if [ -n "${ENGINEER_RUN:-}" ]; then
+  _engineer_identity_ok "$ENGINEER_RUN" || {
+    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
+    exit 1
+  }
+else
+  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
+  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
+  _engineer_select \
+    "$_engineer_root/engineer/bin/engineer_run" \
+    "$_engineer_runtime_root/engineer/bin/engineer_run" \
+    "$_engineer_root/.claude/engineer/bin/engineer_run" \
+    "$_engineer_root/.codex/engineer/bin/engineer_run" \
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
+    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
+    "$_engineer_path_candidate" || {
+    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
+    exit 1
+  }
 fi
-
-UC=""
-if [ -n "$GSD_TOOLS" ]; then
-  case "$GSD_TOOLS" in
-    *.cjs) UC="$(node "$GSD_TOOLS" update-context --config-dir "$PREFERRED_CONFIG_DIR" --runtime "$PREFERRED_RUNTIME" --json 2>/dev/null)" ;;
-    *)     UC="$("$GSD_TOOLS" update-context --config-dir "$PREFERRED_CONFIG_DIR" --runtime "$PREFERRED_RUNTIME" --json 2>/dev/null)" ;;
-  esac
+export ENGINEER_RUN
+engineer_run() {
+  sh "$ENGINEER_RUN" "$@"
+}
+if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
+  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
+UC="$(engineer_run query update-context --config-dir "$PREFERRED_CONFIG_DIR" --runtime "$PREFERRED_RUNTIME" --json 2>/dev/null)"
 
 if [ -n "$UC" ]; then
   # Field extraction is node-only, NOT `| jq -r '.field'`. #2589 established
@@ -87,7 +107,7 @@ UPDATE_TARGET_UNRESOLVED
 
 GSD could not resolve an installed update target. No update was performed.
 
-Rerun from a valid installed runtime: `/gsd:update`. For a fresh installation, run `npx -y --package=@opengsd/gsd-core@latest -- gsd-core --global`.
+Rerun from a valid installed runtime: `/update`. For a fresh installation, run `npx -y --package=@opengsd/gsd-core@latest -- gsd-core --global`.
 ```
 
 Exit.
@@ -117,14 +137,14 @@ esac
 
 `TAG` is restricted to `latest`/`next` by `check-latest-version.cjs` (it rejects any other value with exit 2), so no arbitrary dist-tag can leak through. Omitting `--next`/`--rc` reproduces the prior behavior exactly: `TAG=latest`.
 
-**Section-manifest gate (#2994):** reuse the `$GSD_TOOLS` already resolved by `get_installed_version` above — do NOT copy the canonical launcher preamble here, it assigns the SAME `$GSD_TOOLS` variable via a different (fixed-candidate) resolution and would silently override the value `backup_custom_files`/`restore_custom_files` (later steps) still depend on. Forward `--next`/`--rc` from `$ARGUMENTS` so `init.update`'s `state:next-channel` fact matches this step's own case-statement:
+**Section-manifest gate (#2994):** reuse the `$ENGINEER_RUN` already resolved by `get_installed_version` above — do NOT copy the canonical launcher preamble here, it assigns the SAME `$ENGINEER_RUN` variable via a different (fixed-candidate) resolution and would silently override the value `backup_custom_files`/`restore_custom_files` (later steps) still depend on. Forward `--next`/`--rc` from `$ARGUMENTS` so `init.update`'s `state:next-channel` fact matches this step's own case-statement:
 
 ```bash
 INIT_UPDATE=""
-if [ -n "$GSD_TOOLS" ]; then
-  case "$GSD_TOOLS" in
-    *.cjs) INIT_UPDATE="$(node "$GSD_TOOLS" query init.update $([ "$TAG" = "next" ] && echo --next) 2>/dev/null)" ;;
-    *)     INIT_UPDATE="$("$GSD_TOOLS" query init.update $([ "$TAG" = "next" ] && echo --next) 2>/dev/null)" ;;
+if [ -n "$ENGINEER_RUN" ]; then
+  case "$ENGINEER_RUN" in
+    *.cjs) INIT_UPDATE="$(engineer_run query init.update $([ "$TAG" = "next" ] && echo --next) 2>/dev/null)" ;;
+    *)     INIT_UPDATE="$(engineer_run query init.update $([ "$TAG" = "next" ] && echo --next) 2>/dev/null)" ;;
   esac
 fi
 if [[ "$INIT_UPDATE" == @file:* ]]; then INIT_UPDATE=$(cat "${INIT_UPDATE#@file:}"); fi
@@ -144,7 +164,7 @@ The `GSD_DIR` value emitted by `get_installed_version` (line 4) resolves to the 
 uc_field() {
   printf '%s' "$2" | node -e "let d='';process.stdin.setEncoding('utf8');process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{const v=JSON.parse(d)[process.argv[1]];process.stdout.write(v==null?'':String(v));}catch{}})" "$1" 2>/dev/null
 }
-if LATEST_RESULT="$(node "$GSD_DIR/gsd-core/bin/check-latest-version.cjs" --json --tag "$TAG" 2>/dev/null)"; then
+if LATEST_RESULT="$(node "$GSD_DIR/engineer/bin/check-latest-version.cjs" --json --tag "$TAG" 2>/dev/null)"; then
   LATEST_STATUS=0
 else
   LATEST_STATUS=$?
@@ -179,8 +199,8 @@ Exit.
 Compare installed vs latest:
 
 <!-- gsd:section id="channel-banner" when="state:next-channel" -->
-If `section_manifest` (from `INIT_UPDATE`) is `null` or `"channel-banner"` is in its `included` list: read and execute `gsd-core/workflows/update/steps/channel-banner.md`. Otherwise (default stable channel) skip — do not read the file; the output must match the prior stable behavior exactly, with no channel line.
-<!-- /gsd:section -->
+If `section_manifest` (from `INIT_UPDATE`) is `null` or `"channel-banner"` is in its `included` list: read and execute `engineer/workflows/update/steps/channel-banner.md`. Otherwise (default stable channel) skip — do not read the file; the output must match the prior stable behavior exactly, with no channel line.
+<!-- /section -->
 
 **If installed == latest:**
 ```
@@ -209,7 +229,7 @@ by re-running the local installer from your dev branch:
 
     node bin/install.js --global --claude
 
-Running /gsd:update would install the npm release (A.B.C) and downgrade
+Running /update would install the npm release (A.B.C) and downgrade
 your dev version — do NOT use it to resolve this warning.
 ```
 
@@ -284,9 +304,9 @@ Your custom files in other locations are preserved:
 - Custom commands not in `commands/gsd/` ✓
 - Custom agents not prefixed with `gsd-` ✓
 - Custom hooks ✓
-- Your CLAUDE.md files ✓
+- Your AGENTS.md files ✓
 
-If you've modified any GSD files directly, they'll be automatically backed up to `gsd-local-patches/` and can be reapplied with `/gsd:update --reapply` after the update.
+If you've modified any GSD files directly, they'll be automatically backed up to `gsd-local-patches/` and can be reapplied with `/update --reapply` after the update.
 ```
 
 **Text mode (`workflow.text_mode: true` in config or `--text` flag):** Set `TEXT_MODE=true` if `--text` is present in `$ARGUMENTS` OR `text_mode` from init JSON is `true`. When TEXT_MODE is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for non-Claude runtimes (OpenAI Codex) where `AskUserQuestion` is not available.
@@ -308,8 +328,8 @@ installer does not know about and will delete during the wipe.
 **Do not use bash path-stripping (`${filepath#$RUNTIME_DIR/}`) or `node -e require()`
 inline** — those patterns fail when `$RUNTIME_DIR` is unset and the stripped
 relative path may not match manifest key format, which causes CUSTOM_COUNT=0
-even when custom files exist (bug #1997). Use `gsd_run query detect-custom-files`
-or the bundled `gsd_run detect-custom-files` path — both resolve paths
+even when custom files exist (bug #1997). Use `engineer_run query detect-custom-files`
+or the bundled `engineer_run detect-custom-files` path — both resolve paths
 reliably with Node.js `path.relative()`.
 
 First, resolve the config directory (`RUNTIME_DIR`) from the install scope
@@ -329,8 +349,8 @@ Otherwise run `detect-custom-files`:
 
 ```bash
 CUSTOM_JSON=''
-if [ -f "$GSD_TOOLS" ] && [ -n "$RUNTIME_DIR" ]; then
-  CUSTOM_JSON=$(node "$GSD_TOOLS" detect-custom-files --config-dir "$RUNTIME_DIR" 2>/dev/null)
+if [ -f "$ENGINEER_RUN" ] && [ -n "$RUNTIME_DIR" ]; then
+  CUSTOM_JSON=$(engineer_run query detect-custom-files --config-dir "$RUNTIME_DIR" 2>/dev/null)
 fi
 if [ -z "$CUSTOM_JSON" ]; then
   CUSTOM_JSON='{"custom_files":[],"custom_count":0}'
@@ -437,7 +457,7 @@ done
 # Clear the shared tool-agnostic cache written by gsd-check-update.js hook (#2784).
 # The hook uses ~/.cache/gsd/gsd-update-check.json (legacy) or a per-package name
 # like gsd-update-check-opengsd-gsd-core.json; the glob clears all variants so the
-# statusline stops showing the stale "⬆ /gsd:update" indicator after update.
+# statusline stops showing the stale "⬆ /update" indicator after update.
 rm -f "$HOME/.cache/gsd/gsd-update-check"*.json
 ```
 
@@ -468,8 +488,8 @@ Run the planner (read-only — it writes nothing without `--apply`):
 
 ```bash
 RESTORE_JSON=''
-if [ -f "$GSD_TOOLS" ] && [ -n "$GSD_DIR" ]; then
-  RESTORE_JSON=$(node "$GSD_TOOLS" restore-custom-files --config-dir "$GSD_DIR" 2>/dev/null)
+if [ -f "$ENGINEER_RUN" ] && [ -n "$GSD_DIR" ]; then
+  RESTORE_JSON=$(engineer_run query restore-custom-files --config-dir "$GSD_DIR" 2>/dev/null)
 fi
 if [ -z "$RESTORE_JSON" ]; then
   RESTORE_JSON='{"entries":[],"eligible_count":0,"skipped_count":0}'
@@ -523,7 +543,7 @@ without an explicit answer either way.
 **If the user chooses to restore:**
 
 ```bash
-node "$GSD_TOOLS" restore-custom-files --config-dir "$GSD_DIR" --apply
+engineer_run query restore-custom-files --config-dir "$GSD_DIR" --apply
 ```
 
 Report `restored_count` restored and, for every entry whose `outcome` is not
@@ -543,7 +563,7 @@ user has a path they can act on:
 ```text
 Left N file(s) in {RESTORE_DIR}.
 Restore them later with:
-  node <config-dir>/gsd-core/bin/gsd-tools.cjs restore-custom-files \
+  python -I <config-dir>/engineer/bin/engineer.py restore-custom-files \
     --config-dir <config-dir> --apply
 ```
 </step>
@@ -557,7 +577,7 @@ Check for gsd-local-patches/backup-meta.json in the config directory.
 
 ```
 Local patches were backed up before the update.
-Run `/gsd:update --reapply` to merge your modifications into the new version.
+Run `/update --reapply` to merge your modifications into the new version.
 ```
 
 **If no patches:** Continue normally.

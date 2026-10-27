@@ -17,7 +17,7 @@ skip, never a hard-fail). Sets `SPECLESS_FALLBACK`, `EDGE_ABSENT`, `PROHIB_ABSEN
 
 ```bash
 # Toggle defaults ON (D-04 / RAIL-05): any value other than literal "false" enables.
-SPECLESS_CFG=$(gsd_run query config-get workflow.specless_probe_fallback 2>/dev/null || echo "true")
+SPECLESS_CFG=$(engineer_run query config-get workflow.specless_probe_fallback 2>/dev/null || echo "true")
 SPECLESS_FALLBACK=true; [[ "$SPECLESS_CFG" == "false" ]] && SPECLESS_FALLBACK=false
 
 # Per-section absence (D-05 / RAIL-03): "not supplied" = header absent OR present-but-empty. The
@@ -26,7 +26,7 @@ SPECLESS_FALLBACK=true; [[ "$SPECLESS_CFG" == "false" ]] && SPECLESS_FALLBACK=fa
 # ad-hoc awk (contract pinned by tests/spec-section.test.cjs). Resolve via the edge-probe install-dir
 # idiom; build only in a source checkout, else fail loud (never silently mis-detect).
 _GSD_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-_gsd_lib() { for _d in "$_GSD_RT/gsd-core/bin/lib" "$_GSD_RT/bin/lib" "$_GSD_RT/.claude/bin/lib" "$HOME/.claude/gsd-core/bin/lib" "$HOME/.claude/bin/lib"; do [ -f "$_d/$1" ] && { echo "$_d/$1"; return; }; done; }
+_gsd_lib() { for _d in "$_GSD_RT/engineer/bin/lib" "$_GSD_RT/bin/lib" "$_GSD_RT/.claude/bin/lib" "$HOME/.claude/engineer/bin/lib" "$HOME/.claude/bin/lib"; do [ -f "$_d/$1" ] && { echo "$_d/$1"; return; }; done; }
 SPEC_SECTION_JS=$(_gsd_lib spec-section.cjs)
 if [ -z "$SPEC_SECTION_JS" ] && [ -f "$_GSD_RT/tsconfig.build.json" ] && [ -f "$_GSD_RT/src/spec-section.cts" ]; then
   npm --prefix "$_GSD_RT" run build:lib 2>/dev/null || true; SPEC_SECTION_JS=$(_gsd_lib spec-section.cjs)
@@ -68,8 +68,8 @@ phase requirement IDs (`{phase_req_ids}`) instead of a SPEC interview. Leave `$C
 # consuming project's git root — falling back to git toplevel / $HOME/.claude (spec-phase.md:198 idiom).
 _GSD_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 EDGE_PROBE_JS=$(for _c in \
-  "$_GSD_RT/gsd-core/bin/lib/edge-probe.cjs" "$_GSD_RT/bin/lib/edge-probe.cjs" \
-  "$_GSD_RT/.claude/bin/lib/edge-probe.cjs" "$HOME/.claude/gsd-core/bin/lib/edge-probe.cjs" \
+  "$_GSD_RT/engineer/bin/lib/edge-probe.cjs" "$_GSD_RT/bin/lib/edge-probe.cjs" \
+  "$_GSD_RT/.claude/bin/lib/edge-probe.cjs" "$HOME/.claude/engineer/bin/lib/edge-probe.cjs" \
   "$HOME/.claude/bin/lib/edge-probe.cjs"; do [ -f "$_c" ] && { echo "$_c"; break; }; done)
 # Build ONLY inside a verified GSD source checkout; --prefix pins npm so we never trigger the
 # consuming project's build:lib. Never silent-skip (RR-04) — fail loud if unresolvable.
@@ -77,8 +77,8 @@ if [ -z "$EDGE_PROBE_JS" ]; then
   if [ -f "$_GSD_RT/tsconfig.build.json" ] && [ -f "$_GSD_RT/src/edge-probe.cts" ]; then
     npm --prefix "$_GSD_RT" run build:lib 2>/dev/null || true
     EDGE_PROBE_JS=$(for _c in \
-      "$_GSD_RT/gsd-core/bin/lib/edge-probe.cjs" "$_GSD_RT/bin/lib/edge-probe.cjs" \
-      "$_GSD_RT/.claude/bin/lib/edge-probe.cjs" "$HOME/.claude/gsd-core/bin/lib/edge-probe.cjs" \
+      "$_GSD_RT/engineer/bin/lib/edge-probe.cjs" "$_GSD_RT/bin/lib/edge-probe.cjs" \
+      "$_GSD_RT/.claude/bin/lib/edge-probe.cjs" "$HOME/.claude/engineer/bin/lib/edge-probe.cjs" \
       "$HOME/.claude/bin/lib/edge-probe.cjs"; do [ -f "$_c" ] && { echo "$_c"; break; }; done)
   fi
   [ -n "$EDGE_PROBE_JS" ] || { echo "ERROR: edge-probe.cjs not found — reinstall GSD or run \`npm run build:lib\`." >&2; exit 1; }
@@ -127,17 +127,17 @@ verification: backstop }` in `must_haves.truths`, NOT a prose note (the verifier
 deterministically on the `verification: backstop` field; a parenthetical is unparseable — the #1110
 fragility; flat scalar `verification:` key, never a nested object, ADR-550 #1278). A `backstop` truth
 the verifier cannot confirm with explicit evidence abstains → `human_needed` (reason
-`insufficient_spec`), never a silent pass (#1154; `gsd-core/references/honest-verifier.md`). **Never
+`insufficient_spec`), never a silent pass (#1154; `engineer/references/honest-verifier.md`). **Never
 auto-dismiss** (a wrong dismissal is the exact silent failure this eliminates). An `unclassified` row
 stays **`unresolved`** (#1110) — never auto-resolved with backstop — and is surfaced to the planner as a flagged
-assumption. Pass `$COVERAGE` (+ the gate's `$SPECLESS_FALLBACK_DISABLED` note) into the gsd-planner
+assumption. Pass `$COVERAGE` (+ the gate's `$SPECLESS_FALLBACK_DISABLED` note) into the planner
 prompt (Step 8). When `EDGE_ABSENT=0`, `$COVERAGE` is empty and this does not run.
 
 ## B. Prohibition recall (LLM prose pass) — run when `PROHIB_ABSENT=1`
 
-There is NO compiled prohibition engine and NO `node` invocation (ADR-550 D7b) — the gsd-planner runs
+There is NO compiled prohibition engine and NO `node` invocation (ADR-550 D7b) — the planner runs
 this in-prompt. Full two-stage protocol, canon-referral rule, and status×verification schema live in
-`~/.claude/gsd-core/references/prohibition-probe.md` (do not inline it). Summary:
+`engineer/references/prohibition-probe.md` (do not inline it). Summary:
 
 - **Stage 1 — Recall (adversarial).** Per requirement: *"What could this feature silently become that
   the author would NOT want, but the spec does not forbid?"* Over-produce (~10 raw must-NOT candidates).

@@ -1,7 +1,7 @@
-@~/.claude/gsd-core/references/response-language-directive.md
+@engineer/references/response-language-directive.md
 
 <purpose>
-Review source files changed during a phase for bugs, security issues, and code quality problems. Computes file scope (--files override > SUMMARY.md > phase evaluation scope), checks config gate, spawns gsd-code-reviewer agent, commits REVIEW.md, and presents results to user. When --fix is passed, delegates to code-review-fix.md after review to auto-apply findings via gsd-code-fixer.
+Review source files changed during a phase for bugs, security issues, and code quality problems. Computes file scope (--files override > SUMMARY.md > phase evaluation scope), checks config gate, spawns code-reviewer agent, commits REVIEW.md, and presents results to user. When --fix is passed, delegates to code-review-fix.md after review to auto-apply findings via code-fixer.
 </purpose>
 
 <required_reading>
@@ -9,8 +9,8 @@ Read all files referenced by the invoking prompt's execution_context before star
 </required_reading>
 
 <available_agent_types>
-- gsd-code-reviewer: Reviews source files for bugs and quality issues
-- gsd-code-fixer: Applies fixes to code review findings (used via dispatch_fix → code-review-fix.md when --fix is passed)
+- code-reviewer: Reviews source files for bugs and quality issues
+- code-fixer: Applies fixes to code review findings (used via dispatch_fix → code-review-fix.md when --fix is passed)
 </available_agent_types>
 
 <process>
@@ -23,7 +23,48 @@ IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
 $ARGUMENTS
 GSD_ARGS_END
 GSD_ARGS=${GSD_ARGS%$'\n'}
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving gsd_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok gsd_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
+_engineer_identity_ok() {
+  [ -f "$1" ] || return 1
+  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
+}
+_engineer_select() {
+  for _engineer_candidate do
+    if _engineer_identity_ok "$_engineer_candidate"; then
+      ENGINEER_RUN="$_engineer_candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+if [ -n "${ENGINEER_RUN:-}" ]; then
+  _engineer_identity_ok "$ENGINEER_RUN" || {
+    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
+    exit 1
+  }
+else
+  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
+  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
+  _engineer_select \
+    "$_engineer_root/engineer/bin/engineer_run" \
+    "$_engineer_runtime_root/engineer/bin/engineer_run" \
+    "$_engineer_root/.claude/engineer/bin/engineer_run" \
+    "$_engineer_root/.codex/engineer/bin/engineer_run" \
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
+    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
+    "$_engineer_path_candidate" || {
+    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
+    exit 1
+  }
+fi
+export ENGINEER_RUN
+engineer_run() {
+  sh "$ENGINEER_RUN" "$@"
+}
+if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
+  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
+fi
 PHASE_ARG="${1}"
 
 # Parse all code-review flags into a structured IR via code-review-flags.cjs.
@@ -35,13 +76,13 @@ PHASE_ARG="${1}"
 # gsd-resolve-lib begin code-review-flags.cjs (#5640): load helpers from the installed runtime, not the cwd
 _gsd_lib_probe="code-review-flags.cjs"
 _gsd_rt="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-_gsd_gr="$(command -v gsd_run 2>/dev/null || true)"
-case "$_gsd_gr" in /*) ;; *) _gsd_gr="" ;; esac # a gsd_run shell function prints its bare name: not a path
+_gsd_gr="$(command -v engineer_run 2>/dev/null || true)"
+case "$_gsd_gr" in /*) ;; *) _gsd_gr="" ;; esac # a engineer_run shell function prints its bare name: not a path
 [ -n "$_gsd_gr" ] && _gsd_gr="$(dirname "$(node -p "require('fs').realpathSync(process.argv[1])" "$_gsd_gr" 2>/dev/null || echo "$_gsd_gr")")/lib"
 GSD_LIB_DIR=""
 _gsd_pick() { for _gsd_d; do if [ -n "$_gsd_d" ] && [ -f "$_gsd_d/$_gsd_lib_probe" ]; then GSD_LIB_DIR="$_gsd_d"; return 0; fi; done; return 1; }
-_gsd_pick "${GSD_TOOLS:+${GSD_TOOLS%/*}/lib}" "$_gsd_rt/gsd-core/bin/lib" "$_gsd_rt/.claude/gsd-core/bin/lib" "$_gsd_rt/.codex/gsd-core/bin/lib" "$_gsd_gr" "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/gsd-core/bin/lib" "${CODEX_HOME:-$HOME/.codex}/gsd-core/bin/lib" || true
-if [ -z "$GSD_LIB_DIR" ]; then echo "ERROR: code-review-flags.cjs not found in the GSD runtime. Looked in: ${GSD_TOOLS:+${GSD_TOOLS%/*}/lib, }${_gsd_rt}/gsd-core/bin/lib (and its .claude and .codex forms), ${_gsd_gr:-next to gsd_run (not on PATH)}, ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/gsd-core/bin/lib, ${CODEX_HOME:-$HOME/.codex}/gsd-core/bin/lib. Reinstall: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi
+_gsd_pick "${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib}" "$_gsd_rt/engineer/bin/lib" "$_gsd_rt/.claude/engineer/bin/lib" "$_gsd_rt/.codex/engineer/bin/lib" "$_gsd_gr" "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib" "${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib" || true
+if [ -z "$GSD_LIB_DIR" ]; then echo "ERROR: code-review-flags.cjs not found in the GSD runtime. Looked in: ${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib, }${_gsd_rt}/engineer/bin/lib (and its .claude and .codex forms), ${_gsd_gr:-next to engineer_run (not on PATH)}, ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib, ${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib. Reinstall: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi
 export GSD_LIB_DIR
 # gsd-resolve-lib end
 FLAGS_JSON=$(node -e "
@@ -64,12 +105,12 @@ FIX_PARAM=""
 if [ "$FIX_FLAG" = "true" ]; then FIX_PARAM="--fix"; fi
 
 GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(gsd_run query init.code-review ${GSD_WS:+--ws=${GSD_WS##* }} "${PHASE_ARG}" $FIX_PARAM)
+INIT=$(engineer_run query init.code-review ${GSD_WS:+--ws=${GSD_WS##* }} "${PHASE_ARG}" $FIX_PARAM)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_REVIEWER=$(gsd_run query agent-skills gsd-code-reviewer ${GSD_WS:+--ws=${GSD_WS##* }})
+AGENT_SKILLS_REVIEWER=$(engineer_run query agent-skills code-reviewer ${GSD_WS:+--ws=${GSD_WS##* }})
 # #2072: resolve the routed model so model_overrides / models.verification are honored
-# (the resolver maps gsd-code-reviewer → phaseType "verification"); thread it below.
-REVIEWER_MODEL=$(gsd_run query resolve-model gsd-code-reviewer --raw)
+# (the resolver maps code-reviewer → phaseType "verification"); thread it below.
+REVIEWER_MODEL=$(engineer_run query resolve-model code-reviewer --raw)
 ```
 
 Parse from init JSON: `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `padded_phase`, `commit_docs`, `fallow_enabled`, `fallow_scope`, `fallow_profile`, `fallow_mcp`, `fallow_max_crap`.
@@ -87,7 +128,7 @@ fi
 **Phase validation (before config gate):**
 If `phase_found` is false, report error and exit:
 ```
-Error: Phase ${PHASE_ARG} not found. Run /gsd:progress to see available phases.
+Error: Phase ${PHASE_ARG} not found. Run /progress to see available phases.
 ```
 
 This runs BEFORE config gate check so user errors are surfaced immediately regardless of config state.
@@ -104,7 +145,7 @@ fi
 Check if code review is active via `workflow.code_review` (the capability's on/off toggle — independent of `workflow.code_review_point`, the loop-point selector; a manual invocation must work regardless of which automatic point is currently configured):
 
 ```bash
-CODE_REVIEW_ENABLED=$(gsd_run query config-get workflow.code_review --raw 2>/dev/null || echo "true")
+CODE_REVIEW_ENABLED=$(engineer_run query config-get workflow.code_review --raw 2>/dev/null || echo "true")
 ```
 
 If `CODE_REVIEW_ENABLED` is not `"true"`:
@@ -283,7 +324,7 @@ the reviewer lanes that need an anchor sha.
 # Exit 69 (UNAVAILABLE) is the resolver saying "could not look" (`status: unresolvable`): its JSON
 # carries the reason and is kept. Any other non-zero status means the command did not run: no JSON.
 SCOPE_RC=0
-SCOPE_JSON=$(gsd_run check evaluation-scope --phase "${PADDED_PHASE}" ${LAST_REVIEW_COMMIT:+--since "$LAST_REVIEW_COMMIT"} --raw 2>/dev/null) || SCOPE_RC=$?
+SCOPE_JSON=$(engineer_run check evaluation-scope --phase "${PADDED_PHASE}" ${LAST_REVIEW_COMMIT:+--since "$LAST_REVIEW_COMMIT"} --raw 2>/dev/null) || SCOPE_RC=$?
 if [ "$SCOPE_RC" -ne 0 ] && [ "$SCOPE_RC" -ne 69 ]; then SCOPE_JSON=""; fi
 # One field of the resolver's JSON; arrays print one element per line, an absent field prints nothing.
 scope_field() {
@@ -325,7 +366,7 @@ if [ ${#REVIEW_FILES[@]} -eq 0 ]; then
   else
     # Fail closed — the resolver found no reviewable files. Do not use arbitrary HEAD~N.
     echo "Warning: No evaluation scope found for '${PADDED_PHASE}' (${SCOPE_STATUS}${SCOPE_REASON:+: ${SCOPE_REASON}}). Cannot determine reliable scope."
-    echo "Use --files flag to specify files explicitly: /gsd:code-review ${PHASE_ARG} --files=file1,file2,..."
+    echo "Use --files flag to specify files explicitly: /code-review ${PHASE_ARG} --files=file1,file2,..."
   fi
 elif [ -z "$FILES_OVERRIDE" ] && [ -n "$SCOPE_FILES" ]; then
   # #4460: gated on FILES_OVERRIDE being unset — without this, REVIEW_FILES is
@@ -445,8 +486,8 @@ fi
 Determine review depth via the path-scoped depth resolver (`code-review-depth.cjs`). This step runs after `compute_file_scope` because rule matching needs the final `REVIEW_FILES` set.
 
 ```bash
-CONFIG_DEPTH=$(gsd_run query config-get workflow.code_review_depth --raw 2>/dev/null || echo "")
-DEPTH_OVERRIDES=$(gsd_run query config-get workflow.code_review_depth_overrides --default '[]' 2>/dev/null || echo '[]')
+CONFIG_DEPTH=$(engineer_run query config-get workflow.code_review_depth --raw 2>/dev/null || echo "")
+DEPTH_OVERRIDES=$(engineer_run query config-get workflow.code_review_depth_overrides --default '[]' 2>/dev/null || echo '[]')
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 
 # Files travel on stdin, never argv — a 50+-file scope with long paths approaches the
@@ -465,13 +506,13 @@ DEPTH_PAYLOAD=$(printf '%s\n' "${REVIEW_FILES[@]}" | FLAG_DEPTH="$DEPTH_OVERRIDE
 # gsd-resolve-lib begin code-review-depth.cjs (#5640): load helpers from the installed runtime, not the cwd
 _gsd_lib_probe="code-review-depth.cjs"
 _gsd_rt="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-_gsd_gr="$(command -v gsd_run 2>/dev/null || true)"
-case "$_gsd_gr" in /*) ;; *) _gsd_gr="" ;; esac # a gsd_run shell function prints its bare name: not a path
+_gsd_gr="$(command -v engineer_run 2>/dev/null || true)"
+case "$_gsd_gr" in /*) ;; *) _gsd_gr="" ;; esac # a engineer_run shell function prints its bare name: not a path
 [ -n "$_gsd_gr" ] && _gsd_gr="$(dirname "$(node -p "require('fs').realpathSync(process.argv[1])" "$_gsd_gr" 2>/dev/null || echo "$_gsd_gr")")/lib"
 GSD_LIB_DIR=""
 _gsd_pick() { for _gsd_d; do if [ -n "$_gsd_d" ] && [ -f "$_gsd_d/$_gsd_lib_probe" ]; then GSD_LIB_DIR="$_gsd_d"; return 0; fi; done; return 1; }
-_gsd_pick "${GSD_TOOLS:+${GSD_TOOLS%/*}/lib}" "$_gsd_rt/gsd-core/bin/lib" "$_gsd_rt/.claude/gsd-core/bin/lib" "$_gsd_rt/.codex/gsd-core/bin/lib" "$_gsd_gr" "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/gsd-core/bin/lib" "${CODEX_HOME:-$HOME/.codex}/gsd-core/bin/lib" || true
-if [ -z "$GSD_LIB_DIR" ]; then echo "ERROR: code-review-depth.cjs not found in the GSD runtime. Looked in: ${GSD_TOOLS:+${GSD_TOOLS%/*}/lib, }${_gsd_rt}/gsd-core/bin/lib (and its .claude and .codex forms), ${_gsd_gr:-next to gsd_run (not on PATH)}, ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/gsd-core/bin/lib, ${CODEX_HOME:-$HOME/.codex}/gsd-core/bin/lib. Reinstall: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi
+_gsd_pick "${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib}" "$_gsd_rt/engineer/bin/lib" "$_gsd_rt/.claude/engineer/bin/lib" "$_gsd_rt/.codex/engineer/bin/lib" "$_gsd_gr" "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib" "${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib" || true
+if [ -z "$GSD_LIB_DIR" ]; then echo "ERROR: code-review-depth.cjs not found in the GSD runtime. Looked in: ${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib, }${_gsd_rt}/engineer/bin/lib (and its .claude and .codex forms), ${_gsd_gr:-next to engineer_run (not on PATH)}, ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib, ${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib. Reinstall: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi
 export GSD_LIB_DIR
 # gsd-resolve-lib end
 DEPTH_JSON=$(echo "$DEPTH_PAYLOAD" | node -e "
@@ -597,8 +638,8 @@ Defaults are fail-closed and opt-in:
 - `mcp=false`
 
 <!-- gsd:section id="structural-pre-pass" when="state:fallow-enabled" -->
-If `section_manifest` is `null` or `"structural-pre-pass"` is in its `included` list: read and execute `gsd-core/workflows/code-review/steps/structural-pre-pass.md`. Otherwise skip — do not read the file.
-<!-- /gsd:section -->
+If `section_manifest` is `null` or `"structural-pre-pass"` is in its `included` list: read and execute `engineer/workflows/code-review/steps/structural-pre-pass.md`. Otherwise skip — do not read the file.
+<!-- /section -->
 
 When disabled, set:
 ```bash
@@ -608,12 +649,12 @@ FALLOW_JSON_PATH=""
 
 <step name="dispatch_reviewer_lanes">
 Optional external source-reviewer lanes (#4209, DISP-01..05). A canonical reviewer-lane flag
-(e.g. `--codex`, `--agy`) requests that lane independently review the SAME already-resolved
-scope alongside the internal `gsd-code-reviewer` agent below. **No canonical flag present is
+(e.g. `--codex`) requests that lane independently review the SAME already-resolved
+scope alongside the internal `code-reviewer` agent below. **No canonical flag present is
 the default and by far the common case:** this step is then inert — and the internal reviewer
 dispatch in `spawn_reviewer` stays unchanged from before #4209 (COMP-01).
 
-This step is itself opt-in at the capability layer (see `gsd-core/references/loop-hook-dispatch.md`
+This step is itself opt-in at the capability layer (see `engineer/references/loop-hook-dispatch.md`
 for the `supportsReviewerLanes` trait), not just the CLI-flag layer. The trait check itself lives
 inside `review-lane dispatch-step` (`--cap-id`/`--point`, below) — NOT here.
 
@@ -626,7 +667,7 @@ guard's own rule earlier in this file), so every value this step computes and ev
 reads it must run as a single shell control-flow decision, start to finish:
 ```bash
 CODE_REVIEW_POINT_STDERR=$(mktemp)
-CODE_REVIEW_POINT=$(gsd_run query config-get workflow.code_review_point --raw 2>"$CODE_REVIEW_POINT_STDERR") || {
+CODE_REVIEW_POINT=$(engineer_run query config-get workflow.code_review_point --raw 2>"$CODE_REVIEW_POINT_STDERR") || {
   # #4209 RQ-03: `config-get` already resolves capabilities/code-review/capability.json's own
   # declared schema default (execute:post) in the normal case — this fallback is reached only
   # when the config-get COMMAND ITSELF fails, an already-anomalous state that must be visible,
@@ -645,10 +686,10 @@ rm -f "$CODE_REVIEW_POINT_STDERR"
 # against the merged first-party+installed-overlay roster — the SAME roster-merge logic
 # `dispatch-step` and `plan`/`invoke` already share, not a second copy re-derived here.
 EXPLICIT_JOINED_STDERR=$(mktemp)
-EXPLICIT_JOINED=$(gsd_run review-lane explicit-from-argv -- "$@" 2>"$EXPLICIT_JOINED_STDERR") || {
+EXPLICIT_JOINED=$(engineer_run review-lane explicit-from-argv -- "$@" 2>"$EXPLICIT_JOINED_STDERR") || {
   # A resolution failure (e.g. an install layout `initialize` didn't anticipate) must be visible,
   # not a silent downgrade to "no reviewer-lane flags were passed" — but it also must not hard-fail
-  # the whole `/gsd:code-review` run for users who never asked for a reviewer lane in the first
+  # the whole `/code-review` run for users who never asked for a reviewer lane in the first
   # place, so this stays a warning, not a halt. Detected by EXIT STATUS, not by stderr being
   # non-empty — a benign Node warning on an otherwise-successful resolution writes to stderr too,
   # and treating that as failure would misreport a run that actually worked.
@@ -681,7 +722,7 @@ elif [ ${#EXPLICIT_REVIEWER_SLUGS[@]} -gt 0 ]; then
   # $TMPDIR entry is cheaper than a cleanup mechanism (e.g. a trap) that could fire before a
   # later step reads it. Not a regression to fix; matches established precedent.
   LANE_RUN_DIR=$(mktemp -d "${TMPDIR:-/tmp}/gsd-review-lanes-XXXXXX")
-  DISPATCH_JSON=$(printf '%s\n' "${REVIEW_FILES[@]}" | gsd_run review-lane dispatch-step \
+  DISPATCH_JSON=$(printf '%s\n' "${REVIEW_FILES[@]}" | engineer_run review-lane dispatch-step \
     --repo-root "$REPO_ROOT" --depth "$REVIEW_DEPTH" --base-sha "$DIFF_BASE" \
     --run-dir "$LANE_RUN_DIR" --explicit "$EXPLICIT_JOINED" \
     --cap-id code-review --point "$CODE_REVIEW_POINT" --raw)
@@ -777,13 +818,13 @@ if [ -n "$FALLOW_JSON_PATH" ] && [ -f "$FALLOW_JSON_PATH" ]; then
   # gsd-resolve-lib begin fallow-runner.cjs (#5640): load helpers from the installed runtime, not the cwd
   _gsd_lib_probe="fallow-runner.cjs"
   _gsd_rt="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-  _gsd_gr="$(command -v gsd_run 2>/dev/null || true)"
-  case "$_gsd_gr" in /*) ;; *) _gsd_gr="" ;; esac # a gsd_run shell function prints its bare name: not a path
+  _gsd_gr="$(command -v engineer_run 2>/dev/null || true)"
+  case "$_gsd_gr" in /*) ;; *) _gsd_gr="" ;; esac # a engineer_run shell function prints its bare name: not a path
   [ -n "$_gsd_gr" ] && _gsd_gr="$(dirname "$(node -p "require('fs').realpathSync(process.argv[1])" "$_gsd_gr" 2>/dev/null || echo "$_gsd_gr")")/lib"
   GSD_LIB_DIR=""
   _gsd_pick() { for _gsd_d; do if [ -n "$_gsd_d" ] && [ -f "$_gsd_d/$_gsd_lib_probe" ]; then GSD_LIB_DIR="$_gsd_d"; return 0; fi; done; return 1; }
-  _gsd_pick "${GSD_TOOLS:+${GSD_TOOLS%/*}/lib}" "$_gsd_rt/gsd-core/bin/lib" "$_gsd_rt/.claude/gsd-core/bin/lib" "$_gsd_rt/.codex/gsd-core/bin/lib" "$_gsd_gr" "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/gsd-core/bin/lib" "${CODEX_HOME:-$HOME/.codex}/gsd-core/bin/lib" || true
-  if [ -z "$GSD_LIB_DIR" ]; then echo "ERROR: fallow-runner.cjs not found in the GSD runtime (looked in ${_gsd_rt}/gsd-core/bin/lib (and its .claude and .codex forms), ${_gsd_gr:-next to gsd_run (not on PATH)}, ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/gsd-core/bin/lib, ${CODEX_HOME:-$HOME/.codex}/gsd-core/bin/lib); continuing without it." >&2; fi
+  _gsd_pick "${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib}" "$_gsd_rt/engineer/bin/lib" "$_gsd_rt/.claude/engineer/bin/lib" "$_gsd_rt/.codex/engineer/bin/lib" "$_gsd_gr" "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib" "${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib" || true
+  if [ -z "$GSD_LIB_DIR" ]; then echo "ERROR: fallow-runner.cjs not found in the GSD runtime (looked in ${_gsd_rt}/engineer/bin/lib (and its .claude and .codex forms), ${_gsd_gr:-next to engineer_run (not on PATH)}, ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib, ${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib); continuing without it." >&2; fi
   export GSD_LIB_DIR
   # gsd-resolve-lib end
   FALLOW_SRC="$FALLOW_JSON_PATH" FALLOW_OUT="$FALLOW_NORMALIZED_PATH" node -e "
@@ -808,24 +849,24 @@ read from the loop point the review step is registered at (`workflow.code_review
 advisory by construction: any failure leaves the prompt without them and never blocks the review. The fragments are handed over once,
 below, beside — never instead of — `${AGENT_SKILLS_REVIEWER}`:
 ```bash
-REVIEWER_POINT=$(gsd_run query config-get workflow.code_review_point --raw 2>/dev/null) || REVIEWER_POINT="execute:post"
+REVIEWER_POINT=$(engineer_run query config-get workflow.code_review_point --raw 2>/dev/null) || REVIEWER_POINT="execute:post"
 case "$REVIEWER_POINT" in execute:post|execute:wave:post) ;; *) REVIEWER_POINT="execute:post" ;; esac
-REVIEWER_HOOKS_JSON=$(gsd_run loop render-hooks "${REVIEWER_POINT}" --raw 2>/dev/null) || REVIEWER_HOOKS_JSON=""
+REVIEWER_HOOKS_JSON=$(engineer_run loop render-hooks "${REVIEWER_POINT}" --raw 2>/dev/null) || REVIEWER_HOOKS_JSON=""
 if [[ "$REVIEWER_HOOKS_JSON" == @file:* ]]; then REVIEWER_HOOKS_JSON=$(cat "${REVIEWER_HOOKS_JSON#@file:}" 2>/dev/null || true); fi
 # A literal closing tag inside a fragment is escaped so third-party text cannot end the block early.
 REVIEWER_CONTRIBUTIONS=$(printf '%s' "$REVIEWER_HOOKS_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const h=(JSON.parse(s).activeHooks||[]).filter(x=>x&&x.kind==="contribution"&&x.into==="code-reviewer"&&x.fragment&&typeof x.fragment.inline==="string"&&x.fragment.inline!=="").map(x=>x.fragment.inline.split("</capability_review_rules>").join("<\\/capability_review_rules>"));if(h.length)process.stdout.write("<capability_review_rules>\n"+h.join("\n\n")+"\n</capability_review_rules>")}catch(e){}})' 2>/dev/null || true)
 ```
 
-Spawn the gsd-code-reviewer agent:
+Spawn the code-reviewer agent:
 
 Print: `◆ Spawning code reviewer... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)`
 
 <!-- #2517 model-omit-on-inherit -->
 
-> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`REVIEWER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @gsd-core/references/model-profile-resolution.md.
+> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`REVIEWER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @engineer/references/model-profile-resolution.md.
 
 ```
-Agent(subagent_type="gsd-code-reviewer", model="{REVIEWER_MODEL}", prompt="
+Agent(subagent_type="code-reviewer", model="{REVIEWER_MODEL}", prompt="
 <required_reading>
 ${FILES_TO_READ}
 </required_reading>
@@ -858,7 +899,7 @@ If the Agent() call fails (agent error, timeout, or exception):
 ```
 Error: Code review agent failed: ${error_message}
 
-No REVIEW.md created. You can retry with /gsd:code-review ${PHASE_ARG} or check agent logs.
+No REVIEW.md created. You can retry with /code-review ${PHASE_ARG} or check agent logs.
 ```
 
 Do NOT proceed to commit_review step. Do NOT create a partial or empty REVIEW.md. Exit workflow.
@@ -888,7 +929,7 @@ if [ -f "${REVIEW_PATH}" ]; then
     echo "REVIEW.md created at ${REVIEW_PATH}"
     
     if [ "$COMMIT_DOCS" = "true" ]; then
-      gsd_run query commit \
+      engineer_run query commit \
         "docs(${PADDED_PHASE}): add code review report" \
         --files "${REVIEW_PATH}"
     fi
@@ -898,14 +939,14 @@ if [ -f "${REVIEW_PATH}" ]; then
   fi
 else
   echo "Warning: Agent completed but REVIEW.md not found at ${REVIEW_PATH}. This may indicate an agent issue."
-  echo "No REVIEW.md to commit. Please retry with /gsd:code-review ${PHASE_ARG}"
+  echo "No REVIEW.md to commit. Please retry with /code-review ${PHASE_ARG}"
 fi
 ```
 </step>
 
 <!-- gsd:section id="dispatch-fix" when="flag:--fix" -->
-If `section_manifest` is `null` or `"dispatch-fix"` is in its `included` list: read and execute `gsd-core/workflows/code-review/steps/dispatch-fix.md`. Otherwise skip — do not read the file; proceed to `present_results`.
-<!-- /gsd:section -->
+If `section_manifest` is `null` or `"dispatch-fix"` is in its `included` list: read and execute `engineer/workflows/code-review/steps/dispatch-fix.md`. Otherwise skip — do not read the file; proceed to `present_results`.
+<!-- /section -->
 
 <step name="present_results">
 Read the REVIEW.md YAML frontmatter to extract finding counts.
@@ -967,7 +1008,7 @@ If total findings > 0:
 Full report: ${REVIEW_PATH}
 
 Next steps:
-  /gsd:code-review ${PHASE_NUMBER} --fix  — Auto-fix issues
+  /code-review ${PHASE_NUMBER} --fix  — Auto-fix issues
   cat ${REVIEW_PATH}                     — View full report
 ```
 

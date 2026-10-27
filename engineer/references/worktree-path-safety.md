@@ -118,7 +118,7 @@ fi
 ## Worktree branch check (run once at spawn-time)
 
 The spawn-time HEAD/base guard now lives in the canonical fragment
-`gsd-core/references/worktree-branch-check.md`, which the orchestrator embeds directly
+`engineer/references/worktree-branch-check.md`, which the orchestrator embeds directly
 into your prompt at dispatch. Run that block FIRST, before any reset/checkout or staging.
 If your prompt contains a `<worktree_branch_check>` embed instruction rather than the block itself, complete that read-and-embed step before any reset/checkout or staging.
 

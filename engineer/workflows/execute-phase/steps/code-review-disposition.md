@@ -16,7 +16,7 @@ and a phase can reach `phase.complete` with a Critical standing and no trace it 
 
 **Why a sibling artifact rather than a section inside REVIEW.md.** `--auto`'s re-review loop
 rewrites REVIEW.md on every iteration, so a ledger kept inside it would not survive the next pass;
-and REVIEW.md has a single writer, `gsd-code-reviewer`, which this step is not.
+and REVIEW.md has a single writer, `code-reviewer`, which this step is not.
 
 **Advisory — it never blocks.** Every failure path reports and steps over.
 
@@ -187,7 +187,7 @@ REVIEW_STATUS=$(echo "$REVIEW_FM" | LC_ALL=C grep -m1 "^status:" | cut -d: -f2- 
 # anchored to column 0 because it IS top-level.
 # The awk selects the `findings:` block and stops at the next column-0 key, so the reads below can
 # only see keys nested under it. Block 2 derives REVIEW_TOTAL through the same filter.
-# `blocker:` is the documented tier-equivalent of `critical:` (gsd-code-reviewer.md § "Label
+# `blocker:` is the documented tier-equivalent of `critical:` (code-reviewer.md § "Label
 # equivalence") — accept either, exactly as code-review.md's present_results already does.
 REVIEW_FINDINGS_FM=$(echo "$REVIEW_FM" | LC_ALL=C awk '/^findings:[[:space:]]*$/{f=1; next} f&&/^[^[:space:]]/{exit} f' || true)
 REVIEW_CRITICAL=$(echo "$REVIEW_FINDINGS_FM" | LC_ALL=C grep -E -m1 "^[[:space:]]*(critical|blocker):" | cut -d: -f2- | LC_ALL=C sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' || true)
@@ -264,7 +264,7 @@ case "$REVIEW_STATUS" in
       # rather than half-filled. Half-true is worse than withheld.
       echo "Code review found issues."
     fi
-    echo "Consider running: /gsd:code-review ${PHASE_NUMBER:-} --fix"
+    echo "Consider running: /code-review ${PHASE_NUMBER:-} --fix"
     ;;
 esac
 ```
@@ -280,7 +280,7 @@ happened to any of them. On the same condition as the message above — REVIEW_S
 not "skipped" and not empty — write `${DISPOSITION_FILE}`: one row per finding ID, defaulting to
 `open`, reconciling `fixed`/`skipped` from REVIEW-FIX.md and preserving any disposition already
 recorded, its stated reason included. It is a sibling artifact because `--auto` rewrites
-REVIEW.md every iteration and `gsd-code-reviewer` is its single writer. Advisory like the rest of
+REVIEW.md every iteration and `code-reviewer` is its single writer. Advisory like the rest of
 the step — never blocks:
 
 ## Design notes for the embedded record-builder
@@ -333,7 +333,7 @@ only on the same character, at least as long as the one that opened it.
 
 SEVERITY COMES FROM THE SECTION FIRST, the recorded ledger value second, the id prefix
 third (the full precedence is at sev(), below the identity check). The section heading is the
-reviewer's OWN statement of a finding's severity -- gsd-code-reviewer.md emits findings under
+reviewer's OWN statement of a finding's severity -- code-reviewer.md emits findings under
 '## Critical Issues' / '## Warnings' / '## Info' -- and this walker already visits every line,
 so the signal was in hand and discarded. Deriving from the prefix alone means a reviewer who
 mis-numbers a Critical as WR-04 while filing it under '## Critical Issues' gets a ledger row
@@ -425,7 +425,7 @@ what had to go, not the strip itself.
 
 TITLE COMPARISON, and its FALSE-POSITIVE mode, which was previously unacknowledged.
 The strict instinct is right -- ids are reused across re-reviews, so a stale REVIEW-FIX.md
-must not mark a brand-new CR-01 as already fixed -- but gsd-code-fixer.md writes
+must not mark a brand-new CR-01 as already fixed -- but code-fixer.md writes
 '### {finding_id}: {title}' under no contract that the title is copied byte-for-byte from
 REVIEW.md. A fixer that REFLOWS a long title produced a spurious stale note, left a
 genuinely-fixed row 'open', and told the reader the fix report named a different finding.
@@ -705,7 +705,7 @@ if [ -f "$REVIEW_FILE" ] && [ -r "$REVIEW_FILE" ]; then
   # still computed an `unparsed:` shortfall from that same untrusted number. It fails in the SAFE
   # direction (over-reports a possible gap rather than hiding one), which is why it is not a blocker;
   # it is still two trust models for one field, one fence apart, and the weaker one is downstream.
-  # `blocker:` is the documented tier-equivalent of `critical:` (gsd-code-reviewer.md 'Label
+  # `blocker:` is the documented tier-equivalent of `critical:` (code-reviewer.md 'Label
   # equivalence') -- the same alternation block 1 reads, because a mirror that drops it would diverge
   # on exactly the reviews that use it.
   # TRIM THE ENDS, NEVER `tr -d ' '`, AND THE DIFFERENCE DECIDES A SUPPRESSION. `tr -d` deletes
@@ -768,7 +768,7 @@ fi
 # ledger is still brought up to date -- freezing it would leave findings showing open that the
 # review no longer reports, and an unconditional skip would make the reconciliation path
 # unreachable on exactly the run that needs it.
-# A FIX REPORT IS THE SECOND REASON TO PROCEED: a direct `/gsd:code-review N --auto` writes no gate
+# A FIX REPORT IS THE SECOND REASON TO PROCEED: a direct `/code-review N --auto` writes no gate
 # ledger and a converged loop leaves `status: clean`, so a fully fixed phase recorded nothing.
 _fix_any=0
 [ -f "${_pd}/${PADDED}-REVIEW-FIX.md" ] && _fix_any=1
@@ -789,7 +789,48 @@ case "$REVIEW_STATUS" in
     echo "Code review status ${_st}; reconciling the fix report and any existing disposition ledger."
     ;;
 esac
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving gsd_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok gsd_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
+_engineer_identity_ok() {
+  [ -f "$1" ] || return 1
+  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
+}
+_engineer_select() {
+  for _engineer_candidate do
+    if _engineer_identity_ok "$_engineer_candidate"; then
+      ENGINEER_RUN="$_engineer_candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+if [ -n "${ENGINEER_RUN:-}" ]; then
+  _engineer_identity_ok "$ENGINEER_RUN" || {
+    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
+    exit 1
+  }
+else
+  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
+  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
+  _engineer_select \
+    "$_engineer_root/engineer/bin/engineer_run" \
+    "$_engineer_runtime_root/engineer/bin/engineer_run" \
+    "$_engineer_root/.claude/engineer/bin/engineer_run" \
+    "$_engineer_root/.codex/engineer/bin/engineer_run" \
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
+    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
+    "$_engineer_path_candidate" || {
+    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
+    exit 1
+  }
+fi
+export ENGINEER_RUN
+engineer_run() {
+  sh "$ENGINEER_RUN" "$@"
+}
+if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
+  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
+fi
 # Built before the command for READABILITY, not as a fix. ShellCheck's SC2097/SC2098 here is a FALSE
 # POSITIVE: prefix assignments take effect left to right (driven, bash and dash).
 FIX_REPORT_FILE="${_pd}/${PADDED}-REVIEW-FIX.md"
@@ -806,7 +847,7 @@ FIX_REPORT_FILE="${FIX_REPORT_FILE}" node -e "
   // Captures the id AND the title: the title is what tells a stale fix report apart from a
   // current one, because finding ids are reused across re-reviews.
   const ID_RE = /^###\s+((?:CR|BL|WR|IN)-\d+)\s*:\s*(.*)\$/;
-  // BL- is Critical-tier-equivalent to CR- (gsd-code-reviewer.md 'Label equivalence').
+  // BL- is Critical-tier-equivalent to CR- (code-reviewer.md 'Label equivalence').
   const sectionSev = new Map();
   // PREFIX severity -- the LAST resort, an inference from the id alone. Used only when neither
   // the current review's section nor a severity this ledger already RECORDED is available; the
@@ -1010,10 +1051,10 @@ FIX_REPORT_FILE="${FIX_REPORT_FILE}" node -e "
   })();
 " || echo "Code review disposition record skipped (non-blocking)."
 
-COMMIT_DOCS=$(gsd_run query config-get commit_docs --raw 2>/dev/null || echo "true")
+COMMIT_DOCS=$(engineer_run query config-get commit_docs --raw 2>/dev/null || echo "true")
 # `-f` FOLLOWS a symlink, so this could hand the commit helper a link the script above just
 # refused to write through -- the guard and its consumer disagreeing about the same path.
 if [ "$COMMIT_DOCS" = "true" ] && [ -f "${DISPOSITION_FILE}" ] && [ ! -L "${DISPOSITION_FILE}" ]; then
-  gsd_run query commit "docs(${PADDED}): record code review disposition" --files "${DISPOSITION_FILE}" || true
+  engineer_run query commit "docs(${PADDED}): record code review disposition" --files "${DISPOSITION_FILE}" || true
 fi
 ```

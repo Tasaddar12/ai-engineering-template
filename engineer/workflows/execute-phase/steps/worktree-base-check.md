@@ -21,5 +21,5 @@ either: HEAD is compared against the observation, in both modes. Without the set
 base is `origin/HEAD` and parallel execution returns once HEAD is merged/pushed so it matches
 (#3659). The `worktree-branch-check` exit-42 guard inside each executor remains in place as the
 backstop on a host that does not honor the setting; step 0.5 of
-`gsd-core/references/execute-phase-wave-guard.md` carries the measurement detail.
+`engineer/references/execute-phase-wave-guard.md` carries the measurement detail.
 </step>

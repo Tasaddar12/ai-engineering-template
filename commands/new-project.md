@@ -1,5 +1,5 @@
 ---
-name: gsd:new-project
+name: new-project
 description: Initialize a new project with deep context gathering and PROJECT.md
 argument-hint: "[--auto]"
 allowed-tools:
@@ -32,15 +32,15 @@ Initialize a new project through unified flow: questioning → research (optiona
 - `.planning/ROADMAP.md` — phase structure
 - `.planning/STATE.md` — project memory
 
-**After this command:** Run `/gsd:plan-phase 1` to start execution.
+**After this command:** Run `/plan-phase 1` to start execution.
 </objective>
 
 <execution_context>
-@~/.claude/gsd-core/workflows/new-project.md
-@~/.claude/gsd-core/references/questioning.md
-@~/.claude/gsd-core/references/ui-brand.md
-@~/.claude/gsd-core/templates/project.md
-@~/.claude/gsd-core/templates/requirements.md
+@engineer/workflows/new-project.md
+@engineer/references/questioning.md
+@engineer/references/ui-brand.md
+@engineer/templates/project.md
+@engineer/templates/requirements.md
 </execution_context>
 
 <process>

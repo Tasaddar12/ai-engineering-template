@@ -4,8 +4,8 @@ Apply response_language to all user-facing prose — narration between tool call
 
 Runs once per DAG layer, for every item in that layer that produced a
 PLAN.md this round (row 17 of the design's behavior table). Per item, max 2
-iterations — identical cap to `/gsd:quick --validate`'s own loop
-(`gsd-core/workflows/quick/steps/plan-checker-loop.md`), just run per item
+iterations — identical cap to `/quick --validate`'s own loop
+(`engineer/workflows/quick/steps/plan-checker-loop.md`), just run per item
 instead of once for the whole batch.
 
 For each item in the current layer:
@@ -60,7 +60,7 @@ that require a ROADMAP phase goal.
 - ## ISSUES FOUND — structured issue list
 </expected_output>
 ",
-  subagent_type="gsd-plan-checker",
+  subagent_type="plan-checker",
   model="{checker_model}",
   description="Check ${quick_id}: ${description}"
 )
@@ -69,7 +69,7 @@ that require a ROADMAP phase goal.
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: after calling Agent() above, wait for it to return before continuing.
 
 **Handle checker return** (same INFO/WARNING/BLOCKER counting rule as
-`/gsd:quick`'s own loop — an entry with a missing/unrecognized severity
+`/quick`'s own loop — an entry with a missing/unrecognized severity
 counts as BLOCKER, fail closed; pure INFO entries are advisory only and never
 enter the revision loop):
 
@@ -98,16 +98,16 @@ Make targeted updates to address checker issues.
 
 `required_property` + evidence + severity BIND. `fix_hint` is ONE non-binding example route: a
 smaller or different mechanism reaching the same property resolves it — say which. Re-check
-capability guidance (CLAUDE.md, project skills) and the constraints this plan already encodes
+capability guidance (AGENTS.md, project skills) and the constraints this plan already encodes
 BEFORE editing; if a hint would contradict one, or the property is unreachable without breaking
 one, return `## REVISION_CONFLICT` with the conflict and the alternatives rather than applying or
-working around it. Full contract: `gsd-core/references/planner-revision.md`.
+working around it. Full contract: `engineer/references/planner-revision.md`.
 
 Do NOT replan from scratch unless issues are fundamental. Keep `depends_on`/`files_modified`
 frontmatter current with the revised plan. Return what changed.
 </instructions>
 ",
-  subagent_type="gsd-planner",
+  subagent_type="planner",
   model="{planner_model}",
   description="Revise ${quick_id}: ${description}"
 )

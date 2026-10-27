@@ -1,6 +1,6 @@
 # Semantic Knowledge-Base Recall via MemPalace
 
-Loaded by `gsd-debugger` via `@-include` from the `knowledge_base_protocol`
+Loaded by `debugger` via `@-include` from the `knowledge_base_protocol`
 Matching Logic. Replaces keyword-overlap matching with **semantic recall** so a
 prior session that resolved "requests hang under load" surfaces for a new "API
 times out when many users connect" — same root cause, no shared keywords.
@@ -41,7 +41,7 @@ secret, and MemPalace is a cross-session, cross-project store.
 
 ## Invocation (the agent has no MCP tools — use the CLI)
 
-The `gsd-debugger` `tools:` frontmatter grants no MCP tools, so query and index
+The `debugger` `tools:` frontmatter grants no MCP tools, so query and index
 via the **Bash CLI** (the headless/autonomous path): `mempalace search
 "<symptoms>" --wing <wing>` to recall, and the matching index command on
 archive. If an `mempalace_search(query, wing)` MCP tool is registered in the

@@ -62,7 +62,7 @@ Display iteration progress before each revision spawn:
 
 When re-spawning the producing agent for revision, pass the checker's YAML-formatted issues. The checker's output contains a `## Issues` heading followed by a YAML block. Parse this block and pass it verbatim to the revision agent.
 
-The field names are the plan-checker's schema (`agents/gsd-plan-checker.md` → `<issue_structure>`):
+The field names are the plan-checker's schema (`agents/plan-checker.md` → `<issue_structure>`):
 `plan`, `dimension`, `severity`, `required_property`, `description`, `task`, `fix_hint`. There is no
 `suggested_fix` field and no `finding` or `affected_field` field — those names were drift, and every
 producer now emits the schema above.
@@ -122,7 +122,7 @@ so they restate the operative rules inline; this section is the authority they m
    `## Plan-Revision Conflicts` inside that slot:
 
 ```markdown
-- [ ] REVISION_CONFLICT {dimension}/{plan} — required_property: {property} | conflicts with: {locked decision D-nn / CLAUDE.md rule / plan constraint} | alternatives: {the agent's alternatives}
+- [ ] REVISION_CONFLICT {dimension}/{plan} — required_property: {property} | conflicts with: {locked decision D-nn / AGENTS.md rule / plan constraint} | alternatives: {the agent's alternatives}
 ```
 
    A checkbox, not a table row: `- [ ] REVISION_CONFLICT` is open and `- [x] REVISION_CONFLICT`
@@ -140,7 +140,7 @@ so they restate the operative rules inline; this section is the authority they m
    newline can forge an extra conflict-shaped record inside the owned slot. One conflict is exactly
    one line beginning `- [ ]`. Never append agent text verbatim, and never append a fenced block.
 3. **Resolve** — present the conflict and its alternatives to the user and ask which to take
-   (pattern: `gsd-core/references/gate-prompts.md`): adopt a named alternative / override the
+   (pattern: `engineer/references/gate-prompts.md`): adopt a named alternative / override the
    named constraint and apply the hint / amend the constraint itself. Each option resolves the
    conflict. Accepting the output with the blocker still open is NOT offered here — the blocking
    `required_property` still fails, and that choice belongs to the cap escalation.
@@ -167,7 +167,7 @@ revisions.
 
 **No workflow hands a conflict to a loop and returns.** Asking the user is the route everywhere;
 recording is in addition to asking, never instead of it. `plan-phase` in particular never invokes
-`/gsd:plan-review-convergence` — it runs *inside* that loop, so invoking it would be a cycle, and
+`/plan-review-convergence` — it runs *inside* that loop, so invoking it would be a cycle, and
 "was I invoked by convergence?" is not a question the orchestrator can answer at runtime.
 
 ### After 3 Iterations
@@ -175,7 +175,7 @@ recording is in addition to asking, never instead of it. `plan-phase` in particu
 If issues persist after 3 revision cycles:
 
 1. Present remaining issues to the user
-2. Use gate prompt (pattern: yes-no from `gsd-core/references/gate-prompts.md`):
+2. Use gate prompt (pattern: yes-no from `engineer/references/gate-prompts.md`):
    question: "Issues remain after 3 revision attempts. Proceed with current output?"
    header: "Proceed?"
    options:
@@ -188,9 +188,9 @@ If issues persist after 3 revision cycles:
 
 | Workflow | Producer Agent | Checker Agent | Notes |
 |----------|---------------|---------------|-------|
-| plan-phase | gsd-planner | gsd-plan-checker | Revision prompt via planner-revision.md |
-| execute-phase | gsd-executor | gsd-verifier | Post-execution verification |
-| discuss-phase | orchestrator | gsd-plan-checker | Inline revision by orchestrator |
+| plan-phase | planner | plan-checker | Revision prompt via planner-revision.md |
+| execute-phase | executor | verifier | Post-execution verification |
+| discuss-phase | orchestrator | plan-checker | Inline revision by orchestrator |
 
 ---
 

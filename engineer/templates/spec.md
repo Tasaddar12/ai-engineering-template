@@ -8,8 +8,8 @@ Template for `.planning/phases/XX-name/{phase_num}-SPEC.md` — locks requiremen
 
 **Downstream consumers:**
 - `discuss-phase` — reads SPEC.md at startup; treats Requirements, Boundaries, and Acceptance Criteria as locked; skips "what/why" questions
-- `gsd-planner` — reads locked requirements to constrain plan scope
-- `gsd-verifier` — uses acceptance criteria as explicit pass/fail checks
+- `planner` — reads locked requirements to constrain plan scope
+- `verifier` — uses acceptance criteria as explicit pass/fail checks
 
 ---
 
@@ -122,7 +122,7 @@ Status: ✓ = met minimum, ⚠ = below minimum (planner treats as assumption)
 
 *Phase: [XX-name]*
 *Spec created: [date]*
-*Next step: /gsd:discuss-phase [X] — implementation decisions (how to build what's specified above)*
+*Next step: /discuss-phase [X] — implementation decisions (how to build what's specified above)*
 ```
 
 <good_examples>
@@ -218,7 +218,7 @@ The database has a `posts` table and `follows` table. No feed query or feed UI e
 
 *Phase: 03-post-feed*
 *Spec created: 2025-01-20*
-*Next step: /gsd:discuss-phase 3 — implementation decisions (card layout, loading skeleton, etc.)*
+*Next step: /discuss-phase 3 — implementation decisions (card layout, loading skeleton, etc.)*
 ```
 
 **Example 2: CLI tool (Database backup)**
@@ -306,7 +306,7 @@ No backup tooling exists. The project uses PostgreSQL. Developers currently use 
 
 *Phase: 02-backup-command*
 *Spec created: 2025-01-20*
-*Next step: /gsd:discuss-phase 2 — implementation decisions (progress reporting, flag design, etc.)*
+*Next step: /discuss-phase 2 — implementation decisions (progress reporting, flag design, etc.)*
 ```
 
 </good_examples>

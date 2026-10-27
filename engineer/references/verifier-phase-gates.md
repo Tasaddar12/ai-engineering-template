@@ -1,11 +1,11 @@
 # Verifier Phase Gates
 
-> Loaded eagerly by `agents/gsd-verifier.md` (`<required_reading>`). Carries the three
+> Loaded eagerly by `agents/verifier.md` (`<required_reading>`). Carries the three
 > verification-time gates that lived in the retired `verify-phase` workflow
 > (#1892 / epic #1891 F7): decision-coverage validation (#2492), the test-quality audit,
 > and infrastructure-phase human-verification scoping (#2504) — plus the backstop-abstention
 > reporting contract (#3206). Run each gate at its named
-> agent step; `gsd_run` is the launcher shim defined in the agent's own Step 1 block.
+> agent step; `engineer_run` is the launcher shim defined in the agent's own Step 1 block.
 
 ## verify_decisions — Decision Coverage Gate (run after Step 6, requirements coverage)
 
@@ -31,10 +31,10 @@ phase.
 no `<decisions>` block.
 
 ```bash
-GATE_CFG=$(gsd_run query config-get workflow.context_coverage_gate 2>/dev/null || echo "true")
+GATE_CFG=$(engineer_run query config-get workflow.context_coverage_gate 2>/dev/null || echo "true")
 if [ "$GATE_CFG" != "false" ]; then
   CONTEXT_PATH=$(ls "${PHASE_DIR}"/*-CONTEXT.md 2>/dev/null | head -1)  # #2962: not a for-glob (zsh aborts)
-  DECISION_RESULT=$(gsd_run query check.decision-coverage-verify "${PHASE_DIR}" "${CONTEXT_PATH}") && DECISION_EXIT=0 || DECISION_EXIT=$?
+  DECISION_RESULT=$(engineer_run query check.decision-coverage-verify "${PHASE_DIR}" "${CONTEXT_PATH}") && DECISION_EXIT=0 || DECISION_EXIT=$?
 fi
 ```
 
@@ -194,9 +194,9 @@ When a non-inferable (`verification: backstop`) truth abstains for lack of expli
   in the infrastructure-phase gate above: an abstention is an evidence gap, not a user-facing step,
   so the infra auto-pass-UAT shortcut never absorbs it.
 
-Full protocol and rationale: `gsd-core/references/honest-verifier.md`.
+Full protocol and rationale: `engineer/references/honest-verifier.md`.
 
 ## Lazy references
 
-- **Per-stack verification patterns:** before Step 4 (artifact verification) on an unfamiliar stack, Read `~/.claude/gsd-core/references/verification-patterns.md` — the grep catalog for React/Next.js components, API routes, database schema, and the universal stub patterns. Read it lazily (only the sections for the stack under verification); it is too large to load wholesale on every run.
-- **Canonical report shape:** the emitted VERIFICATION.md follows `@~/.claude/gsd-core/templates/verification-report.md` — the template whose Guidelines and row shapes `src/uat.cts` treats as canonical when consuming verification output.
+- **Per-stack verification patterns:** before Step 4 (artifact verification) on an unfamiliar stack, Read `engineer/references/verification-patterns.md` — the grep catalog for React/Next.js components, API routes, database schema, and the universal stub patterns. Read it lazily (only the sections for the stack under verification); it is too large to load wholesale on every run.
+- **Canonical report shape:** the emitted VERIFICATION.md follows `@engineer/templates/verification-report.md` — the template whose Guidelines and row shapes `src/uat.cts` treats as canonical when consuming verification output.

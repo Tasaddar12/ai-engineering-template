@@ -1,9 +1,9 @@
 # Planner Preconditions — `<precondition>` Element
 
-> Progressive-disclosure reference for `agents/gsd-planner.md`. The planner agent
+> Progressive-disclosure reference for `agents/planner.md`. The planner agent
 > reads this file when it needs the full emission rules for the `<precondition>`
 > task element (issue #1949, *The Pragmatic Programmer* Topic 23 — Design by
-> Contract). The slim pointer in `agents/gsd-planner.md` → `<task_breakdown>`
+> Contract). The slim pointer in `agents/planner.md` → `<task_breakdown>`
 > routes here; the canonical schema row lives in `docs/reference/plan-md.md`.
 
 ## The contract triad
@@ -152,5 +152,5 @@ The following are explicitly NOT part of v1:
   `<precondition>` appears in the task-element table).
 - Tracer-bullet proposal (#1945) — the architectural-end companion to this
   front-of-task contract.
-- `agents/gsd-executor.md` → `<execution_flow>` → precondition check step — the
+- `agents/executor.md` → `<execution_flow>` → precondition check step — the
   assertion surface that consumes what this reference defines.

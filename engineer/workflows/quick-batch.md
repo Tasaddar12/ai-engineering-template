@@ -1,10 +1,10 @@
-@~/.claude/gsd-core/references/response-language-directive.md
+@engineer/references/response-language-directive.md
 <purpose>
-Batch several `/gsd:quick`-shaped tasks together (#3676, epic #3344, ADR-1239
+Batch several `/quick`-shaped tasks together (#3676, epic #3344, ADR-1239
 "Quick-batch binding"). ONE coordinator (this workflow) owns every shared
 write — `BATCH.json`, STATE.md, worktree create/merge/cleanup — and never
 delegates them to a leaf. Leaves (planner/researcher/checker/executor/
-verifier) return structured results only; they never invoke `/gsd:quick`,
+verifier) return structured results only; they never invoke `/quick`,
 never touch `BATCH.json`, and never write STATE.md/ROADMAP.md themselves
 (single-writer invariant).
 
@@ -20,19 +20,60 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <available_agent_types>
 Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd-phase-researcher — Researches technical approaches for an item
-- gsd-planner — Creates a plan for one item (`quick-batch` mode)
-- gsd-plan-checker — Reviews one item's plan before execution
-- gsd-executor — Executes one item's plan, commits, creates SUMMARY.md
-- gsd-verifier — Verifies one item's goal achievement
+- phase-researcher — Researches technical approaches for an item
+- planner — Creates a plan for one item (`quick-batch` mode)
+- plan-checker — Reviews one item's plan before execution
+- executor — Executes one item's plan, commits, creates SUMMARY.md
+- verifier — Verifies one item's goal achievement
 </available_agent_types>
 
 <process>
 **Step 1: Parse arguments, resolve mode**
 
 ```bash
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving gsd_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok gsd_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
-RESPONSE_LANGUAGE=$(gsd_run query config-get response_language --raw --default "" 2>/dev/null || echo "")
+_engineer_identity_ok() {
+  [ -f "$1" ] || return 1
+  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
+}
+_engineer_select() {
+  for _engineer_candidate do
+    if _engineer_identity_ok "$_engineer_candidate"; then
+      ENGINEER_RUN="$_engineer_candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+if [ -n "${ENGINEER_RUN:-}" ]; then
+  _engineer_identity_ok "$ENGINEER_RUN" || {
+    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
+    exit 1
+  }
+else
+  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
+  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
+  _engineer_select \
+    "$_engineer_root/engineer/bin/engineer_run" \
+    "$_engineer_runtime_root/engineer/bin/engineer_run" \
+    "$_engineer_root/.claude/engineer/bin/engineer_run" \
+    "$_engineer_root/.codex/engineer/bin/engineer_run" \
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
+    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
+    "$_engineer_path_candidate" || {
+    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
+    exit 1
+  }
+fi
+export ENGINEER_RUN
+engineer_run() {
+  sh "$ENGINEER_RUN" "$@"
+}
+if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
+  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
+fi
+RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --default "" 2>/dev/null || echo "")
 ```
 
 **If `response_language` is set:** all user-facing questions/prompts/explanations MUST be presented in `{response_language}`. Technical terms, code, file paths, and subagent prompts stay in English.
@@ -41,7 +82,7 @@ Validate the command's `<arguments>` block through the CLI's own grammar — nev
 
 ```bash
 QB_PARSE_FILE=$(mktemp)
-gsd_run quick-batch parse-args --raw --stdin > "$QB_PARSE_FILE" 2>&1 <<'GSD_QUICK_BATCH_ARGS_END'
+engineer_run quick-batch parse-args --raw --stdin > "$QB_PARSE_FILE" 2>&1 <<'GSD_QUICK_BATCH_ARGS_END'
 <the exact contents of the `<arguments>` block, verbatim>
 GSD_QUICK_BATCH_ARGS_END
 QB_PARSE_RC=$?
@@ -65,31 +106,31 @@ GSD_ARGS=${GSD_ARGS%$'\n'}
 VALIDATE_PARAM=""; if [ "$VALIDATE_MODE" = true ]; then VALIDATE_PARAM="--validate"; fi
 RESEARCH_PARAM=""; if [ "$RESEARCH_MODE" = true ]; then RESEARCH_PARAM="--research"; fi
 GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(gsd_run query init.quick-batch ${GSD_WS:+--ws=${GSD_WS##* }} $VALIDATE_PARAM $RESEARCH_PARAM)
+INIT=$(engineer_run query init.quick-batch ${GSD_WS:+--ws=${GSD_WS##* }} $VALIDATE_PARAM $RESEARCH_PARAM)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_PLANNER=$(gsd_run query agent-skills gsd-planner ${GSD_WS:+--ws=${GSD_WS##* }})
-AGENT_SKILLS_EXECUTOR=$(gsd_run query agent-skills gsd-executor ${GSD_WS:+--ws=${GSD_WS##* }})
-AGENT_SKILLS_CHECKER=$(gsd_run query agent-skills gsd-plan-checker ${GSD_WS:+--ws=${GSD_WS##* }})
-AGENT_SKILLS_VERIFIER=$(gsd_run query agent-skills gsd-verifier ${GSD_WS:+--ws=${GSD_WS##* }})
-AGENT_SKILLS_RESEARCHER=$(gsd_run query agent-skills gsd-phase-researcher ${GSD_WS:+--ws=${GSD_WS##* }})
+AGENT_SKILLS_PLANNER=$(engineer_run query agent-skills planner ${GSD_WS:+--ws=${GSD_WS##* }})
+AGENT_SKILLS_EXECUTOR=$(engineer_run query agent-skills executor ${GSD_WS:+--ws=${GSD_WS##* }})
+AGENT_SKILLS_CHECKER=$(engineer_run query agent-skills plan-checker ${GSD_WS:+--ws=${GSD_WS##* }})
+AGENT_SKILLS_VERIFIER=$(engineer_run query agent-skills verifier ${GSD_WS:+--ws=${GSD_WS##* }})
+AGENT_SKILLS_RESEARCHER=$(engineer_run query agent-skills phase-researcher ${GSD_WS:+--ws=${GSD_WS##* }})
 ```
 
 Parse `$INIT` for: `planner_model`, `executor_model`, `checker_model`, `verifier_model`, `researcher_model`, `commit_docs`, `quick_dir`, `quick_batches_dir`, `roadmap_exists`, `planning_exists`.
 
 <!-- #2517 model-omit-on-inherit -->
 
-> **Model omission (#2517).** Every `Agent()` dispatch below (planner, researcher, plan-checker, executor, verifier) MUST omit the `model` parameter entirely when the value it would carry (`planner_model`, `checker_model`, `executor_model`, `verifier_model`, `researcher_model`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes, where the installer writes `resolve_model_ids:"omit"`. Omitting it inherits the orchestrator's model. See @gsd-core/references/model-profile-resolution.md.
+> **Model omission (#2517).** Every `Agent()` dispatch below (planner, researcher, plan-checker, executor, verifier) MUST omit the `model` parameter entirely when the value it would carry (`planner_model`, `checker_model`, `executor_model`, `verifier_model`, `researcher_model`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes, where the installer writes `resolve_model_ids:"omit"`. Omitting it inherits the orchestrator's model. See @engineer/references/model-profile-resolution.md.
 
 ```bash
 STATE_PATH="${quick_dir%/quick}/STATE.md"
 PROJECT_PATH="${quick_dir%/quick}/PROJECT.md"
-USE_WORKTREES=$(gsd_run query config-get workflow.use_worktrees --raw 2>/dev/null || echo "true")
-RUNTIME=$(gsd_run query config-get runtime --default claude --raw 2>/dev/null || echo "claude")
+USE_WORKTREES=$(engineer_run query config-get workflow.use_worktrees --raw 2>/dev/null || echo "true")
+RUNTIME=$(engineer_run query config-get runtime --default claude --raw 2>/dev/null || echo "claude")
 ```
 
-**If `roadmap_exists` is false:** Error — quick-batch requires an active project with ROADMAP.md. Run `/gsd:new-project` first.
+**If `roadmap_exists` is false:** Error — quick-batch requires an active project with ROADMAP.md. Run `/new-project` first.
 
-If the project uses git submodules, parse `SUBMODULE_PATHS` from `.gitmodules` exactly as `/gsd:quick` does (a fail-loud commit-time guard, applied per item at commit time — see `gsd-core/workflows/quick.md` Step 2 for the identical block, reused verbatim below):
+If the project uses git submodules, parse `SUBMODULE_PATHS` from `.gitmodules` exactly as `/quick` does (a fail-loud commit-time guard, applied per item at commit time — see `engineer/workflows/quick.md` Step 2 for the identical block, reused verbatim below):
 
 ```bash
 if [ -f .gitmodules ]; then
@@ -104,21 +145,21 @@ value alone; `--jobs N` is capped by it (`min(taskCount, N, capacity)` — the
 `quick-batch effective-concurrency` verb, called per-wave below, does the
 arithmetic; this is only the raw resolve):
 ```bash
-CAPACITY=$(gsd_run query dispatch-capacity --raw 2>/dev/null || echo 1)
+CAPACITY=$(engineer_run query dispatch-capacity --raw 2>/dev/null || echo 1)
 ```
 
 **Resolve isolation now (row 6, 20-22).** Read
-@gsd-core/references/dispatch-isolation-gate.md and run its `Resolve
+@engineer/references/dispatch-isolation-gate.md and run its `Resolve
 ISOLATION`, `Single-agent dispatch sites`, and `Resolve the harness flag`
 blocks in order; they set `ISOLATION`/`HARNESS_FLAG` via `query
 dispatch-isolation`. `ISOLATION` gates every worktree decision below —
 substitute `{harnessFlag}` in Step 6's `Agent()` with `$HARNESS_FLAG`+comma
 when `ISOLATION = "harness-worktree"`, else empty.
 
-If `USE_WORKTREES` is not `"false"`, sweep orphaned worktrees before dispatching anything (mirrors `/gsd:quick`'s own startup sweep):
+If `USE_WORKTREES` is not `"false"`, sweep orphaned worktrees before dispatching anything (mirrors `/quick`'s own startup sweep):
 ```bash
 if [ "$USE_WORKTREES" != "false" ]; then
-  gsd_run query worktree.reap-orphans 2>/dev/null || true
+  engineer_run query worktree.reap-orphans 2>/dev/null || true
 fi
 ```
 
@@ -132,13 +173,13 @@ Display banner:
 
 **Step 2: Resume or create**
 
-If `$RESUME_BATCH_ID` is set: read and execute `gsd-core/workflows/quick-batch/steps/resume-mode.md`.
+If `$RESUME_BATCH_ID` is set: read and execute `engineer/workflows/quick-batch/steps/resume-mode.md`.
 It loads the batch via `quick-batch
 resume`, refuses closed on an unknown batch id or a diverged base revision,
 and sets `$BATCH_ID`/`$BATCH_MANIFEST_JSON` for the steps below. Task-list
 parsing and `quick-batch create` are skipped entirely.
 
-Otherwise: read and execute `gsd-core/workflows/quick-batch/steps/batch-init.md`.
+Otherwise: read and execute `engineer/workflows/quick-batch/steps/batch-init.md`.
 It parses the task list (inline or `--file`) and creates the
 batch via `quick-batch create`, setting the same `$BATCH_ID`/
 `$BATCH_MANIFEST_JSON` pair.
@@ -148,25 +189,25 @@ Either path converges on the same post-condition — continue to Step 3.
 ---
 
 <!-- gsd:section id="research-phase" when="flag:--research" -->
-If `section_manifest` is `null` or `"research-phase"` is in its `included` list: read and execute `gsd-core/workflows/quick-batch/steps/research-phase.md`. Otherwise skip — do not read the file.
-<!-- /gsd:section -->
+If `section_manifest` is `null` or `"research-phase"` is in its `included` list: read and execute `engineer/workflows/quick-batch/steps/research-phase.md`. Otherwise skip — do not read the file.
+<!-- /section -->
 
 ---
 
 **Step 4: Per-DAG-layer planning**
 
-Read and execute `gsd-core/workflows/quick-batch/steps/planner-wave.md`. It
+Read and execute `engineer/workflows/quick-batch/steps/planner-wave.md`. It
 dispatches a planner per eligible item (one `Agent()` per message, full task
 catalog in every prompt), persists parsed `depends_on`/`files_modified` via
 `quick-batch update` after each layer, and — when `$VALIDATE_MODE` — runs the
-per-item plan-checker loop (`gsd-core/workflows/quick-batch/steps/plan-checker-loop.md`)
+per-item plan-checker loop (`engineer/workflows/quick-batch/steps/plan-checker-loop.md`)
 before advancing to the next layer.
 
 ---
 
 **Step 6: Worktree create + executor dispatch**
 
-Read and execute `gsd-core/workflows/quick-batch/steps/worktree-dispatch.md`.
+Read and execute `engineer/workflows/quick-batch/steps/worktree-dispatch.md`.
 Worktree create/executor dispatch is serialized per item (one `git worktree
 add` in flight at a time); already-created worktrees run concurrently up to
 the effective MUTATING-wave concurrency.
@@ -175,21 +216,21 @@ the effective MUTATING-wave concurrency.
 
 **Step 7: Deterministic merge**
 
-Read and execute `gsd-core/workflows/quick-batch/steps/merge-wave.md`. Merges
+Read and execute `engineer/workflows/quick-batch/steps/merge-wave.md`. Merges
 apply strictly in the wave's original dispatch order (`quick-batch
 merge-eligible`), never completion order.
 
 ---
 
 <!-- gsd:section id="verification-wave" when="flag:--validate" -->
-If `section_manifest` is `null` or `"verification-wave"` is in its `included` list: read and execute `gsd-core/workflows/quick-batch/steps/verification-wave.md`. Otherwise skip — do not read the file.
-<!-- /gsd:section -->
+If `section_manifest` is `null` or `"verification-wave"` is in its `included` list: read and execute `engineer/workflows/quick-batch/steps/verification-wave.md`. Otherwise skip — do not read the file.
+<!-- /section -->
 
 ---
 
 **Step 9: Completion**
 
-Read and execute `gsd-core/workflows/quick-batch/steps/completion.md`. Calls
+Read and execute `engineer/workflows/quick-batch/steps/completion.md`. Calls
 `completeQuickItem` (via `quick-batch complete`) only for a genuinely
 complete item, updates STATE.md, and prints the final batch report.
 

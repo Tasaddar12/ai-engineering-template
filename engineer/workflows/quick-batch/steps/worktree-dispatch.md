@@ -4,25 +4,66 @@ This is the batch's MUTATING wave — worktree create/executor dispatch/merge
 are the operations `isolation == "none"` caps to concurrency 1 (row 6),
 unlike planning/research above.
 
-**Auto-degrade on stale fork base (row 38, mirrors `/gsd:quick`'s own #1941
+**Auto-degrade on stale fork base (row 38, mirrors `/quick`'s own #1941
 guard):**
 ```bash
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving gsd_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok gsd_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
+_engineer_identity_ok() {
+  [ -f "$1" ] || return 1
+  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
+}
+_engineer_select() {
+  for _engineer_candidate do
+    if _engineer_identity_ok "$_engineer_candidate"; then
+      ENGINEER_RUN="$_engineer_candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+if [ -n "${ENGINEER_RUN:-}" ]; then
+  _engineer_identity_ok "$ENGINEER_RUN" || {
+    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
+    exit 1
+  }
+else
+  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
+  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
+  _engineer_select \
+    "$_engineer_root/engineer/bin/engineer_run" \
+    "$_engineer_runtime_root/engineer/bin/engineer_run" \
+    "$_engineer_root/.claude/engineer/bin/engineer_run" \
+    "$_engineer_root/.codex/engineer/bin/engineer_run" \
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
+    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
+    "$_engineer_path_candidate" || {
+    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
+    exit 1
+  }
+fi
+export ENGINEER_RUN
+engineer_run() {
+  sh "$ENGINEER_RUN" "$@"
+}
+if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
+  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
+fi
 if [ "$ISOLATION" = "harness-worktree" ] && [ "${USE_WORKTREES:-true}" != "false" ]; then
-  _QB_SHOULD_DEGRADE=$(gsd_run query worktree.base-check --mode "$ISOLATION" --pick shouldDegrade 2>/dev/null || true)
+  _QB_SHOULD_DEGRADE=$(engineer_run query worktree.base-check --mode "$ISOLATION" --pick shouldDegrade 2>/dev/null || true)
   if [ "$_QB_SHOULD_DEGRADE" = "true" ]; then
     echo "⚠ [#1941] Worktree fork base diverged — auto-degrading quick-batch to sequential mode." >&2
     USE_WORKTREES=false
     ISOLATION=none
   fi
 fi
-gsd_run query dispatch-isolation --raw --force-isolation "$ISOLATION" >/dev/null 2>&1 || true
+engineer_run query dispatch-isolation --raw --force-isolation "$ISOLATION" >/dev/null 2>&1 || true
 ```
 
 **Effective concurrency for this MUTATING wave** (`mutating` forces
 `isolation == none` to 1 regardless of `--jobs`/capacity — row 6):
 ```bash
-QB_EXEC_CONC_JSON=$(gsd_run quick-batch effective-concurrency --jobs "$JOBS" --task-count "$ITEM_COUNT" --capacity "$CAPACITY" --isolation "$ISOLATION" --mutating --raw)
+QB_EXEC_CONC_JSON=$(engineer_run quick-batch effective-concurrency --jobs "$JOBS" --task-count "$ITEM_COUNT" --capacity "$CAPACITY" --isolation "$ISOLATION" --mutating --raw)
 EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(String(j.concurrency))}catch{process.stdout.write("1")}})')
 ```
 
@@ -32,7 +73,7 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.
 1. Re-derive eligibility (also reconciles crash-window/blocked-propagation —
    safe to call repeatedly, idempotent when nothing changed):
    ```bash
-   QB_ELIG_JSON=$(gsd_run quick-batch resume --batch "$BATCH_ID" --raw)
+   QB_ELIG_JSON=$(engineer_run quick-batch resume --batch "$BATCH_ID" --raw)
    ```
    Parse `eligible` (quick ids ready to execute — every dependency already
    `complete`) and refresh `$BATCH_MANIFEST_JSON` from its `manifest`.
@@ -52,7 +93,7 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.
    ids are actually safe to spawn — never re-derive that split inline:
    ```bash
    EXECUTED_IDS_JSON="[]" # JSON array of quick_ids whose SUMMARY.md already exists on disk this round
-   QB_FILTER_JSON=$(gsd_run quick-batch filter-executed --eligible "$ELIGIBLE_IDS_JSON" --executed "$EXECUTED_IDS_JSON" --raw)
+   QB_FILTER_JSON=$(engineer_run quick-batch filter-executed --eligible "$ELIGIBLE_IDS_JSON" --executed "$EXECUTED_IDS_JSON" --raw)
    ```
    Parse `spawnEligible` (safe to spawn this round) and `alreadyExecuted`
    (diagnostic only — report these as "already executed, routing to merge"
@@ -62,7 +103,7 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.
    NEVER re-dispatch it into a second worktree for any id `filter-executed`
    returns in `alreadyExecuted`. It is not lost: Step 7's own mergeable-wave
    criterion
-   (`gsd-core/workflows/quick-batch/steps/merge-wave.md` Step 1) already
+   (`engineer/workflows/quick-batch/steps/merge-wave.md` Step 1) already
    picks up any `pending` item with an on-disk `SUMMARY.md` that isn't yet
    merged, independent of this eligible/spawn list — dropping it here only
    prevents the duplicate dispatch, it does not remove it from the batch.
@@ -71,7 +112,7 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.
    cap fan-out at `$EXEC_CONCURRENCY` minus current in-flight count (row
    27/39):
    ```bash
-   QB_SPAWN_JSON=$(gsd_run quick-batch spawn-plan --eligible "$ELIGIBLE_IDS_JSON" --capacity "$EXEC_CONCURRENCY" --in-flight "$IN_FLIGHT_COUNT" --raw)
+   QB_SPAWN_JSON=$(engineer_run quick-batch spawn-plan --eligible "$ELIGIBLE_IDS_JSON" --capacity "$EXEC_CONCURRENCY" --in-flight "$IN_FLIGHT_COUNT" --raw)
    ```
    Parse `spawn` (dispatch these now) and `pending` (leave `pending` in
    `BATCH.json` — already the case, no write needed; NEVER mark these
@@ -84,12 +125,12 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.
    For each item in `spawn`, in order:
 
    ```bash
-   SLUG=$(gsd_run query generate-slug "$description" --raw)
+   SLUG=$(engineer_run query generate-slug "$description" --raw)
    ITEM_DIR="${quick_dir}/${quick_id}-${SLUG}"
    ```
 
    **`isolation == "harness-worktree"`:** one `Agent()` per message,
-   `run_in_background: true`. Same prompt shape as `/gsd:quick`'s own
+   `run_in_background: true`. Same prompt shape as `/quick`'s own
    executor dispatch (Step 6 of `quick.md`) — required_reading, agent skills,
    `<submodule_commit_guard>` using this project's `$SUBMODULE_PATHS`
    (identical block, verbatim) — with these differences:
@@ -101,25 +142,25 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.
    <required_reading>
    - ${ITEM_DIR}/${quick_id}-PLAN.md (Plan)
    - ${STATE_PATH} (Project state — READ ONLY, do not write it)
-   - ./CLAUDE.md or ./.claude/CLAUDE.md (if exists)
+   - ./AGENTS.md or ./.claude/AGENTS.md (if exists)
    </required_reading>
 
    ${AGENT_SKILLS_EXECUTOR}
 
    <submodule_commit_guard>
-   (same SUBMODULE_PATHS fail-loud guard as /gsd:quick — see gsd-core/workflows/quick.md Step 6)
+   (same SUBMODULE_PATHS fail-loud guard as /quick — see engineer/workflows/quick.md Step 6)
    </submodule_commit_guard>
 
    <constraints>
    - Execute all tasks in the plan; commit each task atomically
    - Create summary at: ${ITEM_DIR}/${quick_id}-SUMMARY.md with `status: complete` in frontmatter
-   - NEVER invoke /gsd:quick or any other GSD command — you are a leaf, not a coordinator
+   - NEVER invoke /quick or any other GSD command — you are a leaf, not a coordinator
    - NEVER write .planning/quick-batches/${BATCH_ID}/BATCH.json
    - Do NOT update STATE.md or ROADMAP.md — the orchestrator owns those writes after every item in this dispatch round completes (ADR-1239 single-writer invariant)
    - Do NOT commit docs artifacts (SUMMARY.md, STATE.md, PLAN.md) — the orchestrator commits them at completion
    </constraints>
    ",
-     subagent_type="gsd-executor",
+     subagent_type="executor",
      model="{executor_model}",
      {harnessFlag}
      description="Execute ${quick_id}: ${description}"
@@ -128,12 +169,12 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.
    Record `{agent_id, worktree_path, branch, expected_base, allowed_bases}`
    from the executor's return into `$QUICK_BATCH_WORKTREE_MANIFEST` (a JSON
    file, initialized `{"worktrees":[]}` before the first round — same shape
-   `/gsd:quick`'s own `QUICK_WORKTREE_MANIFEST` uses).
+   `/quick`'s own `QUICK_WORKTREE_MANIFEST` uses).
 
    **`isolation == "orchestrator-worktree"`:** GSD creates the worktree
-   (`gsd_run query worktree.create --manifest "$QUICK_BATCH_WORKTREE_MANIFEST" --agent-id ... --path ... --branch ... --base ... --files "$PLAN_FILES" --deletions "$PLAN_DELETIONS"`) then
+   (`engineer_run query worktree.create --manifest "$QUICK_BATCH_WORKTREE_MANIFEST" --agent-id ... --path ... --branch ... --base ... --files "$PLAN_FILES" --deletions "$PLAN_DELETIONS"`) then
    process-spawns the executor via `dispatch-isolation --json --cwd-target
-   --prompt`, exactly as `gsd-core/workflows/execute-phase/steps/executor-isolation-dispatch.md`'s
+   --prompt`, exactly as `engineer/workflows/execute-phase/steps/executor-isolation-dispatch.md`'s
    "orchestrator-worktree" section
    describes — reuse that mechanism verbatim, substituting this item's
    `${quick_id}`/`${ITEM_DIR}`/`${quick_id}-PLAN.md` for its
@@ -149,10 +190,10 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.
    EPHEMERAL `$QUICK_BATCH_WORKTREE_MANIFEST` above, ALSO persist the same
    triple durably onto this item in `BATCH.json`:
    ```bash
-   gsd_run quick-batch update --batch "$BATCH_ID" --updates '[{"quickId":"'"$quick_id"'","dispatchedWorktree":"'"$worktree_path"'","dispatchedBranch":"'"$branch"'","dispatchedBase":"'"$expected_base"'"}]'
+   engineer_run quick-batch update --batch "$BATCH_ID" --updates '[{"quickId":"'"$quick_id"'","dispatchedWorktree":"'"$worktree_path"'","dispatchedBranch":"'"$branch"'","dispatchedBase":"'"$expected_base"'"}]'
    ```
    The ephemeral manifest is a per-process `mktemp` file (same shape
-   `/gsd:quick`'s own `QUICK_WORKTREE_MANIFEST` uses) — it does NOT survive
+   `/quick`'s own `QUICK_WORKTREE_MANIFEST` uses) — it does NOT survive
    a coordinator crash/restart. A RESUMED coordinator's Step 7
    (`merge-wave.md`) reads this durable BATCH.json triple as its fallback
    for any item the crash-window guard above correctly did NOT re-dispatch

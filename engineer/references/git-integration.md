@@ -51,7 +51,7 @@ Phases:
 What to commit:
 
 ```bash
-gsd_run query commit "docs: initialize [project-name] ([N] phases)" --files .planning/
+engineer_run query commit "docs: initialize [project-name] ([N] phases)" --files .planning/
 ```
 
 </format>
@@ -64,7 +64,7 @@ Each task gets its own commit immediately after completion.
 > **Parallel agents:** When running as a parallel executor (spawned by execute-phase),
 > run commits normally — let pre-commit hooks run. Do NOT pass `--no-verify` by default
 > (#2924). Hooks should fire on the introducing commit; silent bypass violates project
-> CLAUDE.md guidance. If a project explicitly opts out via
+> AGENTS.md guidance. If a project explicitly opts out via
 > `workflow.worktree_skip_hooks=true`, the orchestrator surfaces that flag in the
 > executor prompt; absent that signal, hooks run normally.
 
@@ -136,7 +136,7 @@ SUMMARY: .planning/phases/XX-name/{phase}-{plan}-SUMMARY.md
 What to commit:
 
 ```bash
-gsd_run query commit "docs({phase}-{plan}): complete [plan-name] plan" --files .planning/phases/XX-name/{phase}-{plan}-PLAN.md .planning/phases/XX-name/{phase}-{plan}-SUMMARY.md .planning/STATE.md .planning/ROADMAP.md
+engineer_run query commit "docs({phase}-{plan}): complete [plan-name] plan" --files .planning/phases/XX-name/{phase}-{plan}-PLAN.md .planning/phases/XX-name/{phase}-{plan}-SUMMARY.md .planning/STATE.md .planning/ROADMAP.md
 ```
 
 **Note:** Code files NOT included - already committed per-task.
@@ -156,7 +156,7 @@ Current: [task name]
 What to commit:
 
 ```bash
-gsd_run query commit "docs(pause): [phase-name] paused at task [X]/[Y]" --files .planning/
+engineer_run query commit "docs(pause): [phase-name] paused at task [X]/[Y]" --files .planning/
 ```
 
 </format>
@@ -277,9 +277,9 @@ Set `commit_docs: false` so planning docs stay local and are not committed to an
 
 ### How It Works
 
-1. **Auto-detection:** During `/gsd:new-project`, directories with their own `.git` folder are detected and offered for selection as sub-repos. On subsequent runs, `loadConfig` auto-syncs the `sub_repos` list with the filesystem — adding newly created repos and removing deleted ones. This means `config.json` may be rewritten automatically when repos change on disk.
+1. **Auto-detection:** During `/new-project`, directories with their own `.git` folder are detected and offered for selection as sub-repos. On subsequent runs, `loadConfig` auto-syncs the `sub_repos` list with the filesystem — adding newly created repos and removing deleted ones. This means `config.json` may be rewritten automatically when repos change on disk.
 2. **File grouping:** Code files are grouped by their sub-repo prefix (e.g., `backend/src/api/users.ts` belongs to the `backend/` repo).
-3. **Independent commits:** Each sub-repo receives its own atomic commit via `gsd_run commit-to-subrepo`. File paths are made relative to the sub-repo root before staging.
+3. **Independent commits:** Each sub-repo receives its own atomic commit via `engineer_run commit-to-subrepo`. File paths are made relative to the sub-repo root before staging.
 4. **Planning stays local:** The `.planning/` directory is not committed; it acts as cross-repo coordination.
 
 ### Commit Routing
@@ -287,7 +287,7 @@ Set `commit_docs: false` so planning docs stay local and are not committed to an
 Instead of the standard `commit` command, use `commit-to-subrepo` when `sub_repos` is configured:
 
 ```bash
-gsd_run query commit-to-subrepo "feat(02-01): add user API" \
+engineer_run query commit-to-subrepo "feat(02-01): add user API" \
   --files backend/src/api/users.ts backend/src/types/user.ts frontend/src/components/UserForm.tsx
 ```
 
@@ -297,10 +297,10 @@ Files that don't match any configured sub-repo are reported as unmatched.
 
 ### Milestone Tagging Across Sub-Repos
 
-A GSD milestone version names planned work in `.planning/`; it is not any repository's release version. With `git.repo_tagging: "per_repo"` and a non-empty `sub_repos`, `/gsd:complete-milestone` records one release map entry per repository (status, release, reference, environment, tag choice) instead of creating one `v[X.Y]` tag in the current directory:
+A GSD milestone version names planned work in `.planning/`; it is not any repository's release version. With `git.repo_tagging: "per_repo"` and a non-empty `sub_repos`, `/complete-milestone` records one release map entry per repository (status, release, reference, environment, tag choice) instead of creating one `v[X.Y]` tag in the current directory:
 
-1. `gsd_run query milestone release-tags --map <tags.json> --dry-run` checks every requested tag (repository listed in `sub_repos`, ref resolves, tag name valid, no tag at a different commit) before anything is written.
-2. After one consolidated confirmation, `gsd_run query milestone release-tags --map <tags.json>` creates the annotated tags, each with the target repository as its working directory. Re-running the same map is idempotent (`already_tagged`).
+1. `engineer_run query milestone release-tags --map <tags.json> --dry-run` checks every requested tag (repository listed in `sub_repos`, ref resolves, tag name valid, no tag at a different commit) before anything is written.
+2. After one consolidated confirmation, `engineer_run query milestone release-tags --map <tags.json>` creates the annotated tags, each with the target repository as its working directory. Re-running the same map is idempotent (`already_tagged`).
 3. `milestone complete <version> --release-map <file>` archives the map by recorded value.
 4. Nothing is pushed by default. Each repository's tag has its own confirmation naming the repository and its remote.
 

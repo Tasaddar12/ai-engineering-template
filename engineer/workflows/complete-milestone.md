@@ -37,15 +37,56 @@ When a milestone completes:
 
 <process>
 
-**Compact Content Gate.** Read and follow `gsd-core/references/compact-content-gate.md` now — it states the `workflow.compact_content` check and the resolution rule this spine defers to. When it directs a Read, read `gsd-core/workflows/complete-milestone/detail/elaboration.md` in full before continuing past this point; its content elaborates on the audit-acknowledge branch and the handle_branches step below.
+**Compact Content Gate.** Read and follow `engineer/references/compact-content-gate.md` now — it states the `workflow.compact_content` check and the resolution rule this spine defers to. When it directs a Read, read `engineer/workflows/complete-milestone/detail/elaboration.md` in full before continuing past this point; its content elaborates on the audit-acknowledge branch and the handle_branches step below.
 
 <step name="pre_close_artifact_audit">
 Before proceeding with milestone close, run the comprehensive open artifact audit.
 
 ```bash
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving gsd_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok gsd_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
-RESPONSE_LANGUAGE=$(gsd_run query config-get response_language --raw --default "" 2>/dev/null || echo "")
-gsd_run query audit-open
+_engineer_identity_ok() {
+  [ -f "$1" ] || return 1
+  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
+}
+_engineer_select() {
+  for _engineer_candidate do
+    if _engineer_identity_ok "$_engineer_candidate"; then
+      ENGINEER_RUN="$_engineer_candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+if [ -n "${ENGINEER_RUN:-}" ]; then
+  _engineer_identity_ok "$ENGINEER_RUN" || {
+    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
+    exit 1
+  }
+else
+  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
+  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
+  _engineer_select \
+    "$_engineer_root/engineer/bin/engineer_run" \
+    "$_engineer_runtime_root/engineer/bin/engineer_run" \
+    "$_engineer_root/.claude/engineer/bin/engineer_run" \
+    "$_engineer_root/.codex/engineer/bin/engineer_run" \
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
+    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
+    "$_engineer_path_candidate" || {
+    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
+    exit 1
+  }
+fi
+export ENGINEER_RUN
+engineer_run() {
+  sh "$ENGINEER_RUN" "$@"
+}
+if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
+  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
+fi
+RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --default "" 2>/dev/null || echo "")
+engineer_run query audit-open
 ```
 
 **If `response_language` is set:** All user-facing output of this workflow — narration between tool calls, status updates, progress notes, findings, questions, prompts, and explanations — MUST be presented in `{response_language}`. Technical terms, code, file paths, and subagent prompts stay in English — only user-facing output is translated.
@@ -57,7 +98,7 @@ Display the full audit report to the user.
 Then ask:
 ```
 These items are open. Choose an action:
-[R] Resolve — stop and fix items, then re-run /gsd:complete-milestone
+[R] Resolve — stop and fix items, then re-run /complete-milestone
 [A] Acknowledge all — document as deferred and proceed with close
 [C] Cancel — exit without closing
 ```
@@ -67,9 +108,9 @@ These items are open. Choose an action:
 If output shows all clear (no open items): set `closeout_type=verified_closeout` — but if any items are `acknowledged.total` from a PRIOR close, note that carried-forward suppression explicitly rather than implying everything was fixed this time.
 
 <!-- gsd:protected -->
-SECURITY: Audit JSON output is structured data from the `audit-open` query handler (same JSON contract as legacy `gsd_run audit-open`) — validated and sanitized at source. The `audit-open acknowledge` writer is the only path that sets the `audit_acknowledged` suppression marker — it snapshots each artifact's current state itself from the identifiers passed on the command line, so this workflow never hand-authors the marker. When writing the STATE.md disclosure table, item identifiers, statuses, and deferred-item text are sanitized via `sanitizeForDisplay()` before inclusion. Never inject raw user-supplied content into STATE.md without sanitization.
+SECURITY: Audit JSON output is structured data from the `audit-open` query handler (same JSON contract as legacy `engineer_run query audit-open`) — validated and sanitized at source. The `audit-open acknowledge` writer is the only path that sets the `audit_acknowledged` suppression marker — it snapshots each artifact's current state itself from the identifiers passed on the command line, so this workflow never hand-authors the marker. When writing the STATE.md disclosure table, item identifiers, statuses, and deferred-item text are sanitized via `sanitizeForDisplay()` before inclusion. Never inject raw user-supplied content into STATE.md without sanitization.
 
-Exact per-category bash (including the `@file:` large-payload handling, the `todos` 5-per-scan cap, and the phase-scoped `--archived-milestone` handling) and the exact STATE.md table shape: `gsd-core/workflows/complete-milestone/detail/elaboration.md` § 1.
+Exact per-category bash (including the `@file:` large-payload handling, the `todos` 5-per-scan cap, and the phase-scoped `--archived-milestone` handling) and the exact STATE.md table shape: `engineer/workflows/complete-milestone/detail/elaboration.md` § 1.
 </step>
 
 <step name="verify_readiness">
@@ -82,7 +123,7 @@ $ARGUMENTS
 GSD_ARGS_END
 GSD_ARGS=${GSD_ARGS%$'\n'}
 GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT_MANAGER=$(gsd_run query init.manager ${GSD_WS:+--ws=${GSD_WS##* }})
+INIT_MANAGER=$(engineer_run query init.manager ${GSD_WS:+--ws=${GSD_WS##* }})
 if [[ "$INIT_MANAGER" == @file:* ]]; then INIT_MANAGER=$(cat "${INIT_MANAGER#@file:}"); fi
 ```
 
@@ -102,7 +143,7 @@ ALL_PHASES_VERIFIED=$(printf '%s' "$INIT_MANAGER" | jq -r '[
 
 If not all_phases_verified, verified_closeout must not proceed. Set `closeout_type=override_closeout`, show each phase whose `phase_complete !== true` or `verification_status !== 'passed'`, and require an explicit user choice:
 1. **Proceed anyway** — record verification overrides in MILESTONES.md/STATE.md
-2. **Run verification first** — `/gsd:verify-work {phase}` or `/gsd:execute-phase {phase}`
+2. **Run verification first** — `/verify-work {phase}` or `/execute-phase {phase}`
 3. **Abort** — return to development
 
 Only set `closeout_type=verified_closeout` when `ALL_PHASES_VERIFIED` is `true`.
@@ -141,7 +182,7 @@ Requirements: {N}/{M} v1 requirements checked off
 
 MUST present 3 options:
 1. **Proceed anyway** — mark milestone complete with known gaps
-2. **Run audit first** — `/gsd:audit-milestone` to assess gap severity
+2. **Run audit first** — `/audit-milestone` to assess gap severity
 3. **Abort** — return to development
 
 If user selects "Proceed anyway": set `closeout_type=override_closeout`; note incomplete requirements in MILESTONES.md under `### Known Gaps` with REQ-IDs and descriptions.
@@ -219,7 +260,7 @@ shopt -s nullglob 2>/dev/null; setopt NULL_GLOB 2>/dev/null
 # For each phase in milestone, extract one-liner
 for summary in .planning/phases/*-*/*-SUMMARY.md; do
   [ -e "$summary" ] || continue
-  gsd_run query summary-extract "$summary" --fields one_liner --pick one_liner
+  engineer_run query summary-extract "$summary" --fields one_liner --pick one_liner
 done
 ```
 
@@ -238,7 +279,7 @@ Key accomplishments for this milestone:
 
 <step name="create_milestone_entry">
 
-**Note:** MILESTONES.md entry is now created automatically by `gsd_run query milestone.complete` in the archive_milestone step. The entry includes version, date, phase/plan/task counts, and accomplishments extracted from SUMMARY.md files.
+**Note:** MILESTONES.md entry is now created automatically by `engineer_run query milestone.complete` in the archive_milestone step. The entry includes version, date, phase/plan/task counts, and accomplishments extracted from SUMMARY.md files.
 
 If additional details are needed (e.g., user-provided "Delivered" summary, git range, LOC stats), add them manually after the CLI creates the base entry.
 
@@ -252,14 +293,14 @@ $ARGUMENTS
 GSD_ARGS_END
 GSD_ARGS=${GSD_ARGS%$'\n'}
 GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT_EARLY=$(gsd_run query init.complete-milestone ${GSD_WS:+--ws=${GSD_WS##* }})
+INIT_EARLY=$(engineer_run query init.complete-milestone ${GSD_WS:+--ws=${GSD_WS##* }})
 if [[ "$INIT_EARLY" == @file:* ]]; then INIT_EARLY=$(cat "${INIT_EARLY#@file:}"); fi
 node -e "const m=JSON.parse(process.argv[1]).section_manifest; console.log('PROJECT_MD_REVIEW=' + (m==null||m.included.includes('project-md-evolution-review') ? 'run' : 'skip'))" "$INIT_EARLY"
 ```
 
 <!-- gsd:section id="project-md-evolution-review" when="state:flat-mode" -->
-If the line above printed `PROJECT_MD_REVIEW=run` (the manifest is `null` or lists `"project-md-evolution-review"` in `included`): read and execute `gsd-core/workflows/complete-milestone/steps/project-md-evolution-review.md`. If it printed `PROJECT_MD_REVIEW=skip` (a workstream is active) — do not read the file; PROJECT.md is shared across workstreams, so a workstream's milestone close never rewrites it (#2308, #5195); proceed to `archive_milestone`.
-<!-- /gsd:section -->
+If the line above printed `PROJECT_MD_REVIEW=run` (the manifest is `null` or lists `"project-md-evolution-review"` in `included`): read and execute `engineer/workflows/complete-milestone/steps/project-md-evolution-review.md`. If it printed `PROJECT_MD_REVIEW=skip` (a workstream is active) — do not read the file; PROJECT.md is shared across workstreams, so a workstream's milestone close never rewrites it (#2308, #5195); proceed to `archive_milestone`.
+<!-- /section -->
 
 <step name="archive_milestone">
 
@@ -273,12 +314,12 @@ AskUserQuestion: "Archive completed quick tasks into this milestone too?" with o
 
 If "Yes": set `ARCHIVE_QUICK_FLAG="--archive-quick"`. If "Skip" (or `.planning/quick/` is empty): set `ARCHIVE_QUICK_FLAG=""`.
 
-**Per-repository release mapping (opt-in, #3628).** Set `PER_REPO_TAGGING=true` only when `INIT_EARLY` has `repo_tagging` equal to `per_repo` AND a non-empty `sub_repos`; otherwise it is `false` and this paragraph changes nothing. Shell state does not persist between commands, so later steps recompute it from their own `init.complete-milestone` JSON (`INIT_REORG`). When `true`, read and execute `gsd-core/workflows/complete-milestone/steps/release-map.md` Part 1 now (collect, validate, one consolidated confirmation, create the tags, record the outcome in `release-map.json`), and append `--release-map "${TMPDIR:-/tmp}/gsd-release-map-v[X.Y]/release-map.json"` to EVERY `milestone complete` call below (including the `--no-archive-phases` form); when `false`, append nothing. A GSD milestone version may differ from every repository's release version.
+**Per-repository release mapping (opt-in, #3628).** Set `PER_REPO_TAGGING=true` only when `INIT_EARLY` has `repo_tagging` equal to `per_repo` AND a non-empty `sub_repos`; otherwise it is `false` and this paragraph changes nothing. Shell state does not persist between commands, so later steps recompute it from their own `init.complete-milestone` JSON (`INIT_REORG`). When `true`, read and execute `engineer/workflows/complete-milestone/steps/release-map.md` Part 1 now (collect, validate, one consolidated confirmation, create the tags, record the outcome in `release-map.json`), and append `--release-map "${TMPDIR:-/tmp}/gsd-release-map-v[X.Y]/release-map.json"` to EVERY `milestone complete` call below (including the `--no-archive-phases` form); when `false`, append nothing. A GSD milestone version may differ from every repository's release version.
 
-**Delegate archival to `gsd_run query milestone.complete`:**
+**Delegate archival to `engineer_run query milestone.complete`:**
 
 ```bash
-ARCHIVE=$(gsd_run query milestone.complete "v[X.Y]" --name "[Milestone Name]" --confirm $ARCHIVE_QUICK_FLAG)
+ARCHIVE=$(engineer_run query milestone.complete "v[X.Y]" --name "[Milestone Name]" --confirm $ARCHIVE_QUICK_FLAG)
 ```
 
 `--confirm` is required (#3726): the archive is irreversible (ROADMAP/REQUIREMENTS archived, phase
@@ -303,12 +344,12 @@ Verify: `✅ Milestone archived to .planning/milestones/`
 
 Verify after `--archive-quick` was passed: `✅ Quick tasks archived to .planning/milestones/v[X.Y]-quick/`
 
-**Phase archival (default-on):** `milestone complete` archives phase directories to `milestones/v[X.Y]-phases/` by default (#1871), so the next `/gsd:new-milestone` never inherits un-archived dirs. No manual `mkdir`/`mv` or `--archive-phases` flag is needed.
+**Phase archival (default-on):** `milestone complete` archives phase directories to `milestones/v[X.Y]-phases/` by default (#1871), so the next `/new-milestone` never inherits un-archived dirs. No manual `mkdir`/`mv` or `--archive-phases` flag is needed.
 
 If the user explicitly wants to keep phase directories in place as raw execution history, invoke `milestone complete` with `--no-archive-phases`:
 
 ```bash
-gsd_run query milestone complete v[X.Y] --no-archive-phases --confirm
+engineer_run query milestone complete v[X.Y] --no-archive-phases --confirm
 ```
 
 (When `PER_REPO_TAGGING` is `true`, this form takes the same `--release-map` argument.)
@@ -337,7 +378,7 @@ $ARGUMENTS
 GSD_ARGS_END
 GSD_ARGS=${GSD_ARGS%$'\n'}
 GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT_REORG=$(gsd_run query init.complete-milestone ${GSD_WS:+--ws=${GSD_WS##* }})
+INIT_REORG=$(engineer_run query init.complete-milestone ${GSD_WS:+--ws=${GSD_WS##* }})
 if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
 _gsd_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
 ROADMAP_PATH=$(_gsd_field "$INIT_REORG" roadmap_path)
@@ -359,7 +400,7 @@ $ARGUMENTS
 GSD_ARGS_END
 GSD_ARGS=${GSD_ARGS%$'\n'}
 GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT_REORG=$(gsd_run query init.complete-milestone ${GSD_WS:+--ws=${GSD_WS##* }})
+INIT_REORG=$(engineer_run query init.complete-milestone ${GSD_WS:+--ws=${GSD_WS##* }})
 if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
 _gsd_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
 ROADMAP_PATH=$(_gsd_field "$INIT_REORG" roadmap_path)
@@ -402,7 +443,7 @@ $ARGUMENTS
 GSD_ARGS_END
 GSD_ARGS=${GSD_ARGS%$'\n'}
 GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT_REORG=$(gsd_run query init.complete-milestone ${GSD_WS:+--ws=${GSD_WS##* }})
+INIT_REORG=$(engineer_run query init.complete-milestone ${GSD_WS:+--ws=${GSD_WS##* }})
 if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
 _gsd_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
 STATE_PATH=$(_gsd_field "$INIT_REORG" state_path)
@@ -413,7 +454,7 @@ PROJECT_PATH=$(_gsd_field "$INIT_REORG" project_path)
 # #5195: PROJECT.md is shared across workstreams. Stage it only when init's own section manifest says this run edited it (the evolution review is included in flat mode only) — the same source the review step is gated on, so the two cannot disagree.
 _gsd_has_section() { node -e "const m=JSON.parse(process.argv[1]).section_manifest; process.exit(m==null||m.included.includes(process.argv[2])?0:1)" "$1" "$2"; }
 _gsd_has_section "$INIT_REORG" project-md-evolution-review || PROJECT_PATH=""
-gsd_run query commit "chore: archive v[X.Y] milestone files" --files "${ARCHIVE_DIR}/v[X.Y]-ROADMAP.md" "${ARCHIVE_DIR}/v[X.Y]-REQUIREMENTS.md" "${ARCHIVE_DIR}/v[X.Y]-MILESTONE-AUDIT.md" "$MILESTONES_PATH" ${PROJECT_PATH:+"$PROJECT_PATH"} "$STATE_PATH" "$ROADMAP_PATH"
+engineer_run query commit "chore: archive v[X.Y] milestone files" --files "${ARCHIVE_DIR}/v[X.Y]-ROADMAP.md" "${ARCHIVE_DIR}/v[X.Y]-REQUIREMENTS.md" "${ARCHIVE_DIR}/v[X.Y]-MILESTONE-AUDIT.md" "$MILESTONES_PATH" ${PROJECT_PATH:+"$PROJECT_PATH"} "$STATE_PATH" "$ROADMAP_PATH"
 ```
 
 This creates a durable checkpoint in git history. If anything fails after this point, the working tree can be reconstructed from git.
@@ -428,7 +469,7 @@ $ARGUMENTS
 GSD_ARGS_END
 GSD_ARGS=${GSD_ARGS%$'\n'}
 GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT_REORG=$(gsd_run query init.complete-milestone ${GSD_WS:+--ws=${GSD_WS##* }})
+INIT_REORG=$(engineer_run query init.complete-milestone ${GSD_WS:+--ws=${GSD_WS##* }})
 if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
 _gsd_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
 REQUIREMENTS_PATH=$(_gsd_field "$INIT_REORG" requirements_path)
@@ -448,7 +489,7 @@ ls .planning/RETROSPECTIVE.md 2>/dev/null || true
 
 **If exists:** Read the file, append new milestone section before the "## Cross-Milestone Trends" section.
 
-**If doesn't exist:** Create from template at `~/.claude/gsd-core/templates/retrospective.md`.
+**If doesn't exist:** Create from template at `engineer/templates/retrospective.md`.
 
 **Gather retrospective data:**
 
@@ -493,7 +534,7 @@ If the "## Cross-Milestone Trends" section exists, update the tables with new da
 
 **Commit:**
 ```bash
-gsd_run query commit "docs: update retrospective for v${VERSION}" --files .planning/RETROSPECTIVE.md
+engineer_run query commit "docs: update retrospective for v${VERSION}" --files .planning/RETROSPECTIVE.md
 ```
 
 </step>
@@ -524,22 +565,22 @@ See: .planning/PROJECT.md (updated [today])
 
 Check the project's `branching_strategy` (from `init.execute-phase`/`init.complete-milestone`). `"none"` skips straight to `git_tag`. For `"phase"` or `"milestone"`, list the matching branches (by the configured prefix template); no branches found also skips to `git_tag`. Resolve the base branch through the single shared resolver, never a bare `main`/`master` fallback (Issue #1146):
 ```bash
-BASE_BRANCH=$(gsd_run query git.base-branch)
+BASE_BRANCH=$(engineer_run query git.base-branch)
 ```
 
 If branches exist, present them and ask (AskUserQuestion): **Squash merge** (recommended) / **Merge with history** / **Delete without merging** / **Keep branches**. All three merge/delete options iterate every matching branch (phase strategy) or the one milestone branch, checking out `BASE_BRANCH` first and returning to the original branch after; both merge options strip `.planning/` from staging first when `commit_docs` is false. "Keep branches" just reports them as preserved for manual handling.
 
-Exact bash for each of the four options (squash, history-preserving merge, delete, keep): `gsd-core/workflows/complete-milestone/detail/elaboration.md` § 2.
+Exact bash for each of the four options (squash, history-preserving merge, delete, keep): `engineer/workflows/complete-milestone/detail/elaboration.md` § 2.
 
 </step>
 
 <!-- gsd:section id="git-tag" when="state:git-create-tag" -->
-If `PER_REPO_TAGGING` is `true`, skip this section: the per-repository tags were created in `archive_milestone`, and no `v[X.Y]` tag is created in the current directory. Otherwise, if `section_manifest` is `null` or `"git-tag"` is in its `included` list: read and execute `gsd-core/workflows/complete-milestone/steps/git-tag.md`. Otherwise skip — do not read the file; proceed to `git_commit_milestone`.
-<!-- /gsd:section -->
+If `PER_REPO_TAGGING` is `true`, skip this section: the per-repository tags were created in `archive_milestone`, and no `v[X.Y]` tag is created in the current directory. Otherwise, if `section_manifest` is `null` or `"git-tag"` is in its `included` list: read and execute `engineer/workflows/complete-milestone/steps/git-tag.md`. Otherwise skip — do not read the file; proceed to `git_commit_milestone`.
+<!-- /section -->
 
 <step name="push_release_tags">
 
-Recompute `PER_REPO_TAGGING` and `git_create_tag` from the latest `init.complete-milestone` JSON (`INIT_REORG`). If `PER_REPO_TAGGING` is `true` and `git_create_tag` is not `false`: read and execute `gsd-core/workflows/complete-milestone/steps/release-map.md` Part 2 (a separate push confirmation per repository naming the repository and its remote; nothing is pushed by default). Otherwise skip this step.
+Recompute `PER_REPO_TAGGING` and `git_create_tag` from the latest `init.complete-milestone` JSON (`INIT_REORG`). If `PER_REPO_TAGGING` is `true` and `git_create_tag` is not `false`: read and execute `engineer/workflows/complete-milestone/steps/release-map.md` Part 2 (a separate push confirmation per repository naming the repository and its remote; nothing is pushed by default). Otherwise skip this step.
 
 </step>
 
@@ -581,7 +622,7 @@ Tag: v[X.Y]
 
 `/clear` then:
 
-`/gsd:new-milestone`
+`/new-milestone`
 
 ---
 ```
@@ -638,6 +679,6 @@ Milestone completion is successful when:
 - [ ] Known gaps recorded in MILESTONES.md if user proceeded with incomplete requirements
 - [ ] RETROSPECTIVE.md updated with milestone section
 - [ ] Cross-milestone trends updated
-- [ ] User knows next step (/gsd:new-milestone)
+- [ ] User knows next step (/new-milestone)
 
 </success_criteria>

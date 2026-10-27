@@ -1,6 +1,6 @@
 # Verify Command Path Resolvability (#2401)
 
-> Reference file for gsd-plan-checker agent. Loaded on-demand via `@` reference.
+> Reference file for plan-checker agent. Loaded on-demand via `@` reference.
 
 **Question:** Does each `<automated>` command's target directory actually resolve from the
 executor's cwd (the project root)? Format sanity above asks whether the *pattern* can match;
@@ -11,11 +11,11 @@ checker flagged a bad `cd ../../frontend` (correct), then prescribed two success
 replacement paths — the second citing a `package.json` that did not exist. Consume the
 deterministic probe result, never re-derive it yourself.
 
-`gsd-core/workflows/plan-phase.md` — and, since #4767, quick mode's
+`engineer/workflows/plan-phase.md` — and, since #4767, quick mode's
 `quick/steps/plan-checker-loop.md` (via `--dir`) — already runs the probe **before** spawning this
 checker and interpolates the result into the verification prompt as `{VERIFY_PATHS}`, inside a
 `<verify_command_path_probe>` block. This dimension reads that already-supplied JSON — it never
-invokes `gsd_run check verify-command-paths` itself. If `{VERIFY_PATHS}` is absent from the
+invokes `engineer_run check verify-command-paths` itself. If `{VERIFY_PATHS}` is absent from the
 prompt, treat this dimension as silent (nothing to check) rather than trying to run the probe.
 
 The probe never executes command text (PLAN.md is untrusted, LLM-authored). It recognizes two

@@ -1,6 +1,6 @@
 # Bug-Taxonomy Classification + Strategy Routing
 
-Loaded by `gsd-debugger` via `@-include` from Phase 1.75 (classify the failure)
+Loaded by `debugger` via `@-include` from Phase 1.75 (classify the failure)
 and the Technique Selection table. Classifies the failure early and **routes**
 which investigation technique to use, **replacing** (not appending to) the flat
 "pick something from the menu" habit with selection-by-class.
@@ -84,7 +84,7 @@ environment, per `debugger-rca-branching.md`).
   hypothesis — concurrency bugs almost always AND-gate (code race +
   environment/config amplification), so branch across categories.
 
-## Bound the Heisenbug-chase runs (CLAUDE.md gauntlet — unbounded subprocess)
+## Bound the Heisenbug-chase runs (AGENTS.md gauntlet — unbounded subprocess)
 
 `rr record` on a real application, stability-stress runs, and statistical
 sampling (N repeated executions) can each run minutes-to-hours. Bound them:

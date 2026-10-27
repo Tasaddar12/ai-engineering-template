@@ -1,7 +1,7 @@
 # Prohibition-Probe — Spec-Completeness Must-NOT Reference
 
 Shared reference for the spec/requirements phase. Companion to
-`@~/.claude/gsd-core/references/edge-probe.md`: `edge-probe` reaches the
+`@engineer/references/edge-probe.md`: `edge-probe` reaches the
 **data/behavior-shape axis** (boundaries, adjacency, encoding, ordering) — the things a
 feature must *do*. This reference reaches the orthogonal **must-NOT axis** (product, values,
 safety, ethics) — the things a feature must *never silently become*. The edge-probe caught
@@ -79,12 +79,12 @@ Some kept candidates are not bespoke at all — they are **canon** security/comp
 constraints that a dedicated tool already owns. Do NOT mint a prohibition for them. Instead
 emit a one-line breadcrumb and stop:
 
-- OWASP / prototype-pollution / path-traversal / injection → breadcrumb to `/gsd:secure-phase`
+- OWASP / prototype-pollution / path-traversal / injection → breadcrumb to `/secure-phase`
   and `eslint` (security plugins), not a minted prohibition.
-- GDPR / data-retention / consent → breadcrumb to `/gsd:secure-phase`.
-- Generic fairness/bias canon → breadcrumb to `/gsd:secure-phase`.
+- GDPR / data-retention / consent → breadcrumb to `/secure-phase`.
+- Generic fairness/bias canon → breadcrumb to `/secure-phase`.
 
-The breadcrumb reads like: *"prototype-pollution is canon — covered by /gsd:secure-phase +
+The breadcrumb reads like: *"prototype-pollution is canon — covered by /secure-phase +
 eslint; not minted here."* This keeps the surfaced list to the ~2–3 **bespoke** items that
 no other tool would catch — the manipulative-framing prohibition, the product-specific
 fairness constraint — which is the whole value of the probe. Minting canon items both
@@ -327,6 +327,6 @@ The `privacy` row is `test`-tier — "no raw SSN in the audit log" is a mechanic
 while `fairness` and `transparency` are `judgment`-tier. The byVerification rollup
 `{ test: 1, judgment: 2 }` is the count-preserved breakdown of the three `resolved`-status
 items. Each worked-example block above is kept byte-for-byte (parsed-JSON) identical to its
-fixture under `gsd-core/references/prohibition-probe-fixtures/` by
+fixture under `engineer/references/prohibition-probe-fixtures/` by
 `tests/prohibition-probe.docs-fixtures.test.cjs`, so the doc and the reference data cannot
 silently drift.

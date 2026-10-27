@@ -27,7 +27,7 @@ last_calibrated: 2026-03-24
 
 ### Example 2: BLOCKER for same-wave file conflict between two plans
 
-**Input:** Two plans in wave 1 -- Plan 01 modifies `gsd-core/workflows/execute-phase.md`, Plan 02 also modifies `gsd-core/workflows/execute-phase.md`. No `depends_on` declared.
+**Input:** Two plans in wave 1 -- Plan 01 modifies `engineer/workflows/execute-phase.md`, Plan 02 also modifies `engineer/workflows/execute-phase.md`. No `depends_on` declared.
 
 **Output:**
 
@@ -36,7 +36,7 @@ last_calibrated: 2026-03-24
 >   - dimension: dependency_correctness
 >     severity: blocker
 >     required_property: "Same-wave plans never modify the same file without a declared dependency"
->     description: "Plans 01 and 02 both modify gsd-core/workflows/execute-phase.md in wave 1 with no depends_on relationship. Concurrent execution will cause merge conflicts or lost changes."
+>     description: "Plans 01 and 02 both modify engineer/workflows/execute-phase.md in wave 1 with no depends_on relationship. Concurrent execution will cause merge conflicts or lost changes."
 >     fix_hint: "Either move Plan 02 to wave 2 with depends_on: ['01'] or consolidate the file changes into a single plan"
 > ```
 

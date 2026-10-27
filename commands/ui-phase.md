@@ -1,5 +1,5 @@
 ---
-name: gsd:ui-phase
+name: ui-phase
 description: Generate UI design contract (UI-SPEC.md) for frontend phases
 argument-hint: "[phase]"
 allowed-tools:
@@ -21,13 +21,13 @@ The text inside `<arguments>` is exactly what the user typed after the command n
 
 <objective>
 Create a UI design contract (UI-SPEC.md) for a frontend phase.
-Orchestrates gsd-ui-researcher and gsd-ui-checker.
+Orchestrates ui-researcher and ui-checker.
 Flow: Validate → Research UI → Verify UI-SPEC → Done
 </objective>
 
 <execution_context>
-@~/.claude/gsd-core/workflows/ui-phase.md
-@~/.claude/gsd-core/references/ui-brand.md
+@engineer/workflows/ui-phase.md
+@engineer/references/ui-brand.md
 </execution_context>
 
 <context>

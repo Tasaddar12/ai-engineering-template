@@ -1,6 +1,6 @@
 # Verify Command Grounding (#2401)
 
-> Reference file for gsd-planner agent. Loaded on-demand via `@` reference.
+> Reference file for planner agent. Loaded on-demand via `@` reference.
 
 **Inherit the command that already worked.** The planning context carries
 `prior_verify_commands` — the `<automated>` commands from the most recent prior phase that had

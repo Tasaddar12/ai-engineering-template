@@ -1,5 +1,5 @@
 ---
-name: gsd:new-milestone
+name: new-milestone
 description: Start a new milestone cycle — update PROJECT.md and route to requirements
 argument-hint: "[milestone name, e.g., 'v1.1 Notifications'] [--ws <name>] [--reset-phase-numbers]"
 allowed-tools:
@@ -28,15 +28,15 @@ Brownfield equivalent of new-project. Project exists, PROJECT.md has history. Ga
 - `.planning/ROADMAP.md` — phase structure (continues numbering)
 - `.planning/STATE.md` — reset for new milestone
 
-**After:** `/gsd:plan-phase [N]` to start execution.
+**After:** `/plan-phase [N]` to start execution.
 </objective>
 
 <execution_context>
-@~/.claude/gsd-core/workflows/new-milestone.md
-@~/.claude/gsd-core/references/questioning.md
-@~/.claude/gsd-core/references/ui-brand.md
-@~/.claude/gsd-core/templates/project.md
-@~/.claude/gsd-core/templates/requirements.md
+@engineer/workflows/new-milestone.md
+@engineer/references/questioning.md
+@engineer/references/ui-brand.md
+@engineer/templates/project.md
+@engineer/templates/requirements.md
 </execution_context>
 
 <context>

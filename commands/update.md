@@ -1,5 +1,5 @@
 ---
-name: gsd:update
+name: update
 description: Update GSD to latest version with changelog display
 argument-hint: "[--sync | --reapply | --next | --rc]"
 allowed-tools:
@@ -29,7 +29,7 @@ Routes to the update workflow which handles:
 </objective>
 
 <execution_context>
-@~/.claude/gsd-core/workflows/update.md
+@engineer/workflows/update.md
 </execution_context>
 
 <flags>
@@ -48,6 +48,6 @@ Parse the first token of the `<arguments>` block:
 </process>
 
 <execution_context_extended>
-@~/.claude/gsd-core/workflows/sync-skills.md
-@~/.claude/gsd-core/workflows/reapply-patches.md
+@engineer/workflows/sync-skills.md
+@engineer/workflows/reapply-patches.md
 </execution_context_extended>

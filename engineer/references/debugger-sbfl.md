@@ -1,6 +1,6 @@
 # Spectrum-Based Fault Localization (SBFL) Pre-filter
 
-Loaded by `gsd-debugger` via `@-include`. A deterministic ranked "where to look
+Loaded by `debugger` via `@-include`. A deterministic ranked "where to look
 first" list derived from existing test pass/fail coverage, computed before LLM
 reasoning over an unranked search space.
 
@@ -103,7 +103,7 @@ formation, fix-and-verify, or the knowledge base. Coverage acquisition is the
 agent's adaptive job (use whatever coverage the project produces); the formula
 above is the canonical ranking.
 
-**Bound the coverage run** (CLAUDE.md gauntlet — unbounded subprocess): a
+**Bound the coverage run** (AGENTS.md gauntlet — unbounded subprocess): a
 coverage run is often 2–3× slower than a plain test run due to instrumentation,
 so cap it (60s for npm-tier suites; scale with suite size) and **degrade to
 skip with a logged note on timeout** — never let coverage acquisition hang the

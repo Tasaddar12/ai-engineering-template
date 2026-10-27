@@ -1,7 +1,7 @@
-@~/.claude/gsd-core/references/response-language-directive.md
+@engineer/references/response-language-directive.md
 
 <purpose>
-Auto-fix issues from REVIEW.md. Validates phase, checks config gate, verifies REVIEW.md exists and has fixable issues, spawns gsd-code-fixer agent, handles --auto iteration loop (capped at 3), commits REVIEW-FIX.md once at the end, and presents results.
+Auto-fix issues from REVIEW.md. Validates phase, checks config gate, verifies REVIEW.md exists and has fixable issues, spawns code-fixer agent, handles --auto iteration loop (capped at 3), commits REVIEW-FIX.md once at the end, and presents results.
 </purpose>
 
 <required_reading>
@@ -9,8 +9,8 @@ Read all files referenced by the invoking prompt's execution_context before star
 </required_reading>
 
 <available_agent_types>
-- gsd-code-fixer: Applies fixes to code review findings
-- gsd-code-reviewer: Reviews source files for bugs and issues
+- code-fixer: Applies fixes to code review findings
+- code-reviewer: Reviews source files for bugs and issues
 </available_agent_types>
 
 <process>
@@ -23,17 +23,58 @@ IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
 $ARGUMENTS
 GSD_ARGS_END
 GSD_ARGS=${GSD_ARGS%$'\n'}
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving gsd_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok gsd_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
+_engineer_identity_ok() {
+  [ -f "$1" ] || return 1
+  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
+}
+_engineer_select() {
+  for _engineer_candidate do
+    if _engineer_identity_ok "$_engineer_candidate"; then
+      ENGINEER_RUN="$_engineer_candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+if [ -n "${ENGINEER_RUN:-}" ]; then
+  _engineer_identity_ok "$ENGINEER_RUN" || {
+    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
+    exit 1
+  }
+else
+  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
+  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
+  _engineer_select \
+    "$_engineer_root/engineer/bin/engineer_run" \
+    "$_engineer_runtime_root/engineer/bin/engineer_run" \
+    "$_engineer_root/.claude/engineer/bin/engineer_run" \
+    "$_engineer_root/.codex/engineer/bin/engineer_run" \
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
+    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
+    "$_engineer_path_candidate" || {
+    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
+    exit 1
+  }
+fi
+export ENGINEER_RUN
+engineer_run() {
+  sh "$ENGINEER_RUN" "$@"
+}
+if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
+  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
+fi
 PHASE_ARG="${1}"
 GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(gsd_run query init.phase-op ${GSD_WS:+--ws=${GSD_WS##* }} "${PHASE_ARG}")
+INIT=$(engineer_run query init.phase-op ${GSD_WS:+--ws=${GSD_WS##* }} "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_FIXER=$(gsd_run query agent-skills gsd-code-fixer ${GSD_WS:+--ws=${GSD_WS##* }})
-AGENT_SKILLS_REVIEWER=$(gsd_run query agent-skills gsd-code-reviewer ${GSD_WS:+--ws=${GSD_WS##* }})
+AGENT_SKILLS_FIXER=$(engineer_run query agent-skills code-fixer ${GSD_WS:+--ws=${GSD_WS##* }})
+AGENT_SKILLS_REVIEWER=$(engineer_run query agent-skills code-reviewer ${GSD_WS:+--ws=${GSD_WS##* }})
 # #2072: resolve the routed models so model_overrides / models.<phaseType> are honored
-# (gsd-code-reviewer → "verification", gsd-code-fixer → "execution"); thread them below.
-REVIEWER_MODEL=$(gsd_run query resolve-model gsd-code-reviewer --raw)
-FIXER_MODEL=$(gsd_run query resolve-model gsd-code-fixer --raw)
+# (code-reviewer → "verification", code-fixer → "execution"); thread them below.
+REVIEWER_MODEL=$(engineer_run query resolve-model code-reviewer --raw)
+FIXER_MODEL=$(engineer_run query resolve-model code-fixer --raw)
 ```
 
 Parse from init JSON: `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `padded_phase`, `commit_docs`.
@@ -51,7 +92,7 @@ fi
 **Phase validation (before config gate):**
 If `phase_found` is false, report error and exit:
 ```
-Error: Phase ${PHASE_ARG} not found. Run /gsd:progress to see available phases.
+Error: Phase ${PHASE_ARG} not found. Run /progress to see available phases.
 ```
 
 This runs BEFORE config gate check so user errors are surfaced immediately regardless of config state.
@@ -89,7 +130,7 @@ FIX_REPORT_PATH="${PHASE_DIR}/${PADDED_PHASE}-REVIEW-FIX.md"
 Check if code review is active via the capability registry:
 
 ```bash
-EXECUTE_POST_HOOKS_JSON=$(gsd_run loop render-hooks execute:post --raw)
+EXECUTE_POST_HOOKS_JSON=$(engineer_run loop render-hooks execute:post --raw)
 ```
 
 Resolve active step hooks from `EXECUTE_POST_HOOKS_JSON` where `kind == "step"` and `ref.skill == "code-review"`.
@@ -110,7 +151,7 @@ Verify that REVIEW.md exists:
 
 ```bash
 if [ ! -f "${REVIEW_PATH}" ]; then
-  echo "Error: No REVIEW.md found for Phase ${PHASE_ARG}. Run /gsd:code-review ${PHASE_ARG} first."
+  echo "Error: No REVIEW.md found for Phase ${PHASE_ARG}. Run /code-review ${PHASE_ARG} first."
   exit 1
 fi
 ```
@@ -195,7 +236,7 @@ If REVIEW.md contains a `files_reviewed_list` frontmatter field, use that as the
 </step>
 
 <step name="spawn_fixer">
-Spawn the gsd-code-fixer agent with config (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze):
+Spawn the code-fixer agent with config (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze):
 
 ```bash
 # Build config for agent
@@ -207,10 +248,10 @@ Use Agent() to spawn agent:
 
 <!-- #2517 model-omit-on-inherit -->
 
-> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`FIXER_MODEL`, `REVIEWER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @gsd-core/references/model-profile-resolution.md.
+> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`FIXER_MODEL`, `REVIEWER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @engineer/references/model-profile-resolution.md.
 
 ```text
-Agent(subagent_type="gsd-code-fixer", model="{FIXER_MODEL}", prompt="
+Agent(subagent_type="code-fixer", model="{FIXER_MODEL}", prompt="
 <required_reading>
 ${REVIEW_PATH}
 </required_reading>
@@ -244,7 +285,7 @@ Check if FIX_REPORT_PATH exists:
 Either way:
 ```
 Some fix commits may already exist in git history — check git log for fix(${PADDED_PHASE}) commits.
-You can retry with /gsd:code-review ${PHASE_ARG} --fix.
+You can retry with /code-review ${PHASE_ARG} --fix.
 ```
 
 Exit workflow (skip auto loop).
@@ -296,9 +337,9 @@ if [ "$AUTO_MODE" = "true" ]; then
       done
     fi
     
-    # Spawn gsd-code-reviewer agent to re-review (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
+    # Spawn code-reviewer agent to re-review (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
     # (This overwrites REVIEW_PATH with latest review state)
-    Agent(subagent_type="gsd-code-reviewer", model="{REVIEWER_MODEL}", prompt="
+    Agent(subagent_type="code-reviewer", model="{REVIEWER_MODEL}", prompt="
 <config>
 depth: ${REVIEW_DEPTH}
 phase_dir: ${PHASE_DIR}
@@ -334,7 +375,7 @@ ${AGENT_SKILLS_REVIEWER}")
     # Still has issues — spawn fixer again (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
     echo "Issues remain. Applying fixes for iteration ${ITERATION}..."
     
-    Agent(subagent_type="gsd-code-fixer", model="{FIXER_MODEL}", prompt="
+    Agent(subagent_type="code-fixer", model="{FIXER_MODEL}", prompt="
 <required_reading>
 ${REVIEW_PATH}
 </required_reading>
@@ -428,7 +469,7 @@ if [ -f "${FIX_REPORT_PATH}" ]; then
       if [ "$AUTO_MODE" = "true" ] && [ -f "${REVIEW_PATH}" ]; then
         COMMIT_FILES+=("${REVIEW_PATH}")
       fi
-      gsd_run query commit \
+      engineer_run query commit \
         "docs(${PADDED_PHASE}): add code review fix report" \
         --files "${COMMIT_FILES[@]}"
     fi
@@ -448,7 +489,7 @@ This commit happens ONCE at the end of the workflow, after all iterations (if --
 
 <step name="record_disposition">
 **Reconcile the per-finding disposition ledger, now that REVIEW-FIX.md exists.** Read and execute
-`gsd-core/workflows/execute-phase/steps/code-review-disposition.md`. It consumes `PHASE_DIR` and
+`engineer/workflows/execute-phase/steps/code-review-disposition.md`. It consumes `PHASE_DIR` and
 `PHASE_NUMBER` and derives everything else, and it is advisory throughout: it never blocks.
 
 This is the step's second and final call site, and without it REQ-REVIEW-10 is unreachable in every
@@ -530,7 +571,7 @@ if [ ! -f "${FIX_REPORT_PATH}" ]; then
   echo "The fixer agent may have failed before completing."
   echo "Check git log for any fix(${PADDED_PHASE}) commits."
   echo ""
-  echo "Retry: /gsd:code-review ${PHASE_ARG} --fix"
+  echo "Retry: /code-review ${PHASE_ARG} --fix"
   echo ""
   echo "═══════════════════════════════════════════════════════════════"
   exit 1
@@ -588,7 +629,7 @@ if [ "$FIX_STATUS" = "all_fixed" ]; then
   echo "Full report: ${FIX_REPORT_PATH}"
   echo ""
   echo "Next step:"
-  echo "  /gsd:verify-work  — Verify phase completion"
+  echo "  /verify-work  — Verify phase completion"
   echo ""
 fi
 ```
@@ -602,8 +643,8 @@ if [ "$FIX_STATUS" = "partial" ] || [ "$FIX_STATUS" = "none_fixed" ]; then
   echo ""
   echo "Next steps:"
   echo "  cat ${FIX_REPORT_PATH}                     — View fix report"
-  echo "  /gsd:code-review ${PHASE_NUMBER}           — Re-review code"
-  echo "  /gsd:verify-work                           — Verify phase completion"
+  echo "  /code-review ${PHASE_NUMBER}           — Re-review code"
+  echo "  /verify-work                           — Verify phase completion"
   echo ""
 fi
 ```

@@ -2,7 +2,7 @@
 
 Triggered when `<planning_context>` declares `**Mode:** quick-batch`
 (#3676, epic #3344, ADR-1239 "Quick-batch binding"). One dispatch = one
-item's plan — the SAME single-plan, 1-3-task scope as `/gsd:quick`'s own
+item's plan — the SAME single-plan, 1-3-task scope as `/quick`'s own
 `quick`/`quick-full` modes, with one fixed difference: **`depends_on` and
 `files_modified` frontmatter are ALWAYS required, regardless of whether
 `--validate` was requested.** This reuses the EXISTING frontmatter grammar
@@ -10,7 +10,7 @@ item's plan — the SAME single-plan, 1-3-task scope as `/gsd:quick`'s own
 schema table above); it is not a new schema.
 
 **Why always, not gated on `--validate`.** The coordinating workflow
-(`gsd-core/workflows/quick-batch.md`) recomputes every item's execution wave
+(`engineer/workflows/quick-batch.md`) recomputes every item's execution wave
 from these two fields after each DAG layer's planners return (`quick-batch
 update`, wrapping `updateBatchItems`) — without them, every item stays in
 wave 0 forever and the batch cannot parallelize independent items or
@@ -63,7 +63,7 @@ deletion as undeclared — there is no "authorize everything" fallback.
 
 ### What quick-batch mode does NOT need
 
-Same exclusions as `/gsd:quick`'s own modes: no `requirements` (no ROADMAP
+Same exclusions as `/quick`'s own modes: no `requirements` (no ROADMAP
 linkage — a quick-batch item is not a phase), no `estimate` block, no
 `user_setup` unless genuinely needed. `must_haves` is required only when the
 calling prompt's own `<constraints>` says so (mirrors `--validate`'s

@@ -1,10 +1,10 @@
 # Planner Coupling — Same-Wave Shared Mutable State
 
-> Progressive-disclosure reference for `agents/gsd-planner.md`. The planner agent
+> Progressive-disclosure reference for `agents/planner.md`. The planner agent
 > reads this file when assigning waves (issue #3724). The slim pointer in
-> `agents/gsd-planner.md` → `assign_waves` routes here; the canonical schema row
+> `agents/planner.md` → `assign_waves` routes here; the canonical schema row
 > for `coupling_justified` lives in `docs/reference/plan-md.md`. The verifying
-> side is `agents/gsd-plan-checker.md` Dimension 3b (#1954).
+> side is `agents/plan-checker.md` Dimension 3b (#1954).
 
 ## The rule
 

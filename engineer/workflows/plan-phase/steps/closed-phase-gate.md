@@ -20,7 +20,7 @@ if [ "${phase_status}" = "Complete" ]; then
     # new phase or issue against the closed phase's commits.
     cat <<EOF >&2
 Phase ${phase_number} (${phase_name}) is already CLOSED (VERIFICATION status: passed).
-/gsd:plan-phase --reviews cannot replan a closed phase. If the review surfaced
+/plan-phase --reviews cannot replan a closed phase. If the review surfaced
 real concerns, open a follow-up phase or file an issue against the closed
 phase's commits. There is no --force override for --reviews on a closed phase.
 EOF
@@ -31,7 +31,7 @@ EOF
 Phase ${phase_number} (${phase_name}) is already CLOSED (VERIFICATION status: passed).
 Replanning a closed phase will overwrite plan docs that no longer match the
 shipped code. If you intentionally want to replan over closed work, re-run
-with: /gsd:plan-phase ${phase_number} --force
+with: /plan-phase ${phase_number} --force
 
 Otherwise, to view what shipped, see: ${verification_path}
 EOF
