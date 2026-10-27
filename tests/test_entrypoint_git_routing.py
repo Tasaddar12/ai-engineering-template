@@ -41,9 +41,9 @@ class EntrypointGitRouting(unittest.TestCase):
 
     def test_source_entrypoints_require_complete_routing(self):
         self.assertFalse((ROOT / "CLAUDE.md").exists())
-        self.assert_routing(ROOT / "AGENTS.md", ".ai")
+        self.assert_routing(ROOT / "AGENTS.md", "engineer")
         # Asset links are authored relative to the eventual project root.
-        asset = ROOT / ".ai/install-assets/agent-entry.txt"
+        asset = ROOT / "bin/install-assets/agent-entry.txt"
         content = asset.read_text(encoding="utf-8")
         with self.subTest(entrypoint=asset):
             source = ROOT / "AGENTS.md"
@@ -56,12 +56,12 @@ class EntrypointGitRouting(unittest.TestCase):
         self.target = self.base / f"fresh {host} project"
         result = self.install("--host", host, "--no-hooks")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assert_routing(self.target / entrypoint, "." + host)
+        self.assert_routing(self.target / entrypoint, "." + host + "/engineer")
         for name in ("issue.md", "pull-request.md"):
-            source_path = f".ai/templates/{name}"
+            source_path = f"engineer/templates/{name}"
             expected = test_install.installer.render_asset(
                 source_path, (ROOT / source_path).read_bytes(), host)
-            installed = self.target / ("." + host) / "templates" / name
+            installed = self.target / ("." + host) / "engineer/templates" / name
             self.assertEqual(installed.read_bytes(), expected, installed)
 
     def test_fresh_codex_install_routes_to_installed_policy_and_templates(self):

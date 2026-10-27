@@ -11,7 +11,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-WORKFLOWS = ROOT / ".ai" / "workflows"
+WORKFLOWS = ROOT / "engineer/workflows"
 
 
 def read(path):
@@ -59,8 +59,8 @@ class UnattendedFlow(unittest.TestCase):
         self.assertNotIn("workflows/ship.md", text)
 
     def test_ship_is_described_as_merging_on_instruction(self):
-        for path in (ROOT / ".ai" / "commands" / "ship.md", ROOT / ".agents" / "skills" / "ship" / "SKILL.md",
-                     ROOT / "AGENTS.md", ROOT / ".ai" / "install-assets" / "agent-entry.txt"):
+        for path in (ROOT / "commands" / "ship.md", ROOT / "skills" / "ship" / "SKILL.md",
+                     ROOT / "AGENTS.md", ROOT / "bin/install-assets" / "agent-entry.txt"):
             with self.subTest(file=str(path.relative_to(ROOT))):
                 text = read(path)
                 self.assertNotIn("It does not merge", text)
@@ -73,7 +73,7 @@ class UnattendedFlow(unittest.TestCase):
         self.assertIn("debugger", checks)
 
     def test_the_rules_route_every_issue_without_stopping(self):
-        rules = read(ROOT / ".ai" / "RULES.md")
+        rules = read(ROOT / "engineer/RULES.md")
         section = re.search(r"^## Issues found while working\n(.*?)^## ", rules,
                             re.MULTILINE | re.DOTALL)
         self.assertIsNotNone(section, "RULES.md has no 'Issues found while working' section")
@@ -81,7 +81,7 @@ class UnattendedFlow(unittest.TestCase):
         for route in ("**In scope**", "**Out of scope**", "**Needs a human**",
                       "Never stop an authorized run to ask", "Never create todos"):
             self.assertIn(route, body)
-        self.assertNotIn("phase_run query todo.add", body)
+        self.assertNotIn("engineer_run query todo.add", body)
 
     def test_no_issue_along_the_way_stops_to_ask(self):
         execute = read(WORKFLOWS / "execute-phase.md")
@@ -109,7 +109,7 @@ class UnattendedFlow(unittest.TestCase):
         self.assertIn("closing report", aggregate)
 
     def test_the_orchestrator_is_never_told_to_stop_at_the_limit(self):
-        hook = read(ROOT / ".ai" / "hooks" / "context-handoff.sh")
+        hook = read(ROOT / "hooks" / "context-handoff.sh")
         # The advisory an agent without identity receives -- the one the
         # orchestrator used to obey -- not the comments explaining its history.
         advisory = re.search(r'^unknown_stop="(.*?)"$', hook, re.MULTILINE | re.DOTALL)

@@ -6,16 +6,16 @@ from pathlib import Path
 from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parents[1]
-CANONICAL = ".ai/references/git-workflow.md"
+CANONICAL = "engineer/references/git-workflow.md"
 PRODUCERS = (
-    ".ai/templates/phase-prompt.md", ".ai/templates/summary.md",
-    ".ai/templates/issue.md", ".ai/templates/pull-request.md",
-    ".ai/agents/phase-preparer.md", ".ai/agents/coder.md",
-    ".ai/agents/phase-checker.md", ".ai/agents/verifier.md",
-    ".ai/agents/code-reviewer.md", ".ai/workflows/plan-phase.md",
-    ".ai/workflows/execute-phase.md", ".ai/workflows/verify-work.md",
-    ".ai/workflows/quick.md", ".ai/workflows/ship.md",
-    ".ai/runtime/TEMPLATE-CONTRACT.md",
+    "engineer/templates/phase-prompt.md", "engineer/templates/summary.md",
+    "engineer/templates/issue.md", "engineer/templates/pull-request.md",
+    "agents/planner.md", "agents/executor.md",
+    "agents/plan-checker.md", "agents/verifier.md",
+    "agents/code-reviewer.md", "engineer/workflows/plan-phase.md",
+    "engineer/workflows/execute-phase.md", "engineer/workflows/verify-work.md",
+    "engineer/workflows/quick.md", "engineer/workflows/ship.md",
+    "engineer/references/template-contract.md",
 )
 PATHS = (CANONICAL,) + PRODUCERS
 PLAN_FIELDS = ("Threat ID", "Category", "Component", "Severity", "Disposition", "Mitigation Plan")
@@ -27,23 +27,23 @@ CHECKLIST_FIELDS = ("Entry identity", "Canonical risk key", "Aliases / occurrenc
 AUDIT_LINK = "../references/git-workflow.md#issue-link-audit"
 TRACK_LINK = "git-workflow.md#canonical-threat-tracking"
 TRACK_STEPS = (
-    (".ai/workflows/plan-phase.md", "handle_preparer_return"),
-    (".ai/workflows/execute-phase.md", "aggregate_results"),
-    (".ai/workflows/quick.md", "reconcile_plan_threats"),
-    (".ai/workflows/quick.md", "reconcile_summary_threats"),
-    (".ai/workflows/ship.md", "preflight_checks"),
-    (".ai/workflows/ship.md", "generate_pr_body"),
-    (".ai/workflows/ship.md", "merge_and_close"),
+    ("engineer/workflows/plan-phase.md", "handle_preparer_return"),
+    ("engineer/workflows/execute-phase.md", "aggregate_results"),
+    ("engineer/workflows/quick.md", "reconcile_plan_threats"),
+    ("engineer/workflows/quick.md", "reconcile_summary_threats"),
+    ("engineer/workflows/ship.md", "preflight_checks"),
+    ("engineer/workflows/ship.md", "generate_pr_body"),
+    ("engineer/workflows/ship.md", "merge_and_close"),
 )
 AUDIT_STEPS = (
-    (".ai/workflows/verify-work.md", "spawn_verifier"),
-    (".ai/workflows/execute-phase.md", "code_review_gate"),
-    (".ai/workflows/execute-phase.md", "review_phase_issues"),
-    (".ai/workflows/ship.md", "preflight_checks"),
-    (".ai/workflows/ship.md", "generate_pr_body"),
-    (".ai/workflows/ship.md", "create_pr"),
-    (".ai/workflows/ship.md", "refresh_issue_link_audit"),
-    (".ai/workflows/ship.md", "merge_and_close"),
+    ("engineer/workflows/verify-work.md", "spawn_verifier"),
+    ("engineer/workflows/execute-phase.md", "code_review_gate"),
+    ("engineer/workflows/execute-phase.md", "review_phase_issues"),
+    ("engineer/workflows/ship.md", "preflight_checks"),
+    ("engineer/workflows/ship.md", "generate_pr_body"),
+    ("engineer/workflows/ship.md", "create_pr"),
+    ("engineer/workflows/ship.md", "refresh_issue_link_audit"),
+    ("engineer/workflows/ship.md", "merge_and_close"),
 )
 # Short cues within real sections replace embedded original paragraphs.
 ROUTING_DUTIES = {
@@ -152,33 +152,33 @@ def reaches_canonical(root, source):
 def artifact_errors(root):
     content = {name: (root / name).read_text(encoding="utf-8") for name in PATHS}
     errors = []
-    plan = file_template(content[".ai/templates/phase-prompt.md"])
+    plan = file_template(content["engineer/templates/phase-prompt.md"])
     if "<threat_model>" not in plan or PLAN_FIELDS not in table_headers(plan):
         errors.append("PLAN register")
     if not all(t in plan for t in ("[Threat ID]", "canonical issue URL", "Pending: dependency")):
         errors.append("PLAN identity")
-    summary = file_template(content[".ai/templates/summary.md"])
+    summary = file_template(content["engineer/templates/summary.md"])
     flags = section(summary, "## Threat Flags")
     if FLAG_FIELDS not in table_headers(flags) or "omit this section" not in flags:
         errors.append("conditional discovery")
     for name, artifact in (("SUMMARY", summary),
-                            ("PR", file_template(content[".ai/templates/pull-request.md"]))):
+                            ("PR", file_template(content["engineer/templates/pull-request.md"]))):
         if OUTCOME_FIELDS not in table_headers(artifact) or PLAN_FIELDS in table_headers(artifact):
             errors.append(name + " outcomes")
-    coder = content[".ai/agents/coder.md"]
+    coder = content["agents/executor.md"]
     if not all(t in coder for t in ("**Threat model reference:**", "<threat_model>", "`mitigate`", "Rule 2")):
         errors.append("coder mitigation")
     discovery = coder.split("**Threat surface scan:**", 1)[-1].split("**Remaining work:**", 1)[0]
     if FLAG_FIELDS not in table_headers(discovery) or "Omit section if nothing found" not in discovery:
         errors.append("coder discovery")
-    preparer = content[".ai/agents/phase-preparer.md"]
+    preparer = content["agents/planner.md"]
     threat = preparer.split("<threat_model>", 1)[-1].split("</threat_model>", 1)[0]
     if PLAN_FIELDS not in table_headers(threat) or "## Trust Boundaries" not in threat:
         errors.append("preparer register")
     if not all(t in preparer for t in ("Security review: not applicable", "Every threat has a Severity")):
         errors.append("preparer assessment")
-    gate = section(content[".ai/agents/phase-checker.md"], "## Dimension 7d: Security Planning Gate")
-    errors += duty_errors(gate, {"checker security gate": ("phase-preparer.md#security-planning-gate",
+    gate = section(content["agents/plan-checker.md"], "## Dimension 7d: Security Planning Gate")
+    errors += duty_errors(gate, {"checker security gate": ("planner.md#security-planning-gate",
                              "dispositions", "BLOCKER", "non-applicability", "absent setting")})
     for name in PRODUCERS:
         if not reaches_canonical(root, name):
@@ -187,7 +187,7 @@ def artifact_errors(root):
         body = steps(content[name]).get(step, "")
         if TRACK_LINK not in body or re.search(r"^\*\*Only when", body, re.M):
             errors.append(step + ": mandatory tracking")
-    order = list(steps(content[".ai/workflows/quick.md"]))
+    order = list(steps(content["engineer/workflows/quick.md"]))
     for before, after in (("plan", "reconcile_plan_threats"), ("reconcile_plan_threats", "check_plan"),
                           ("execute", "reconcile_summary_threats"), ("reconcile_summary_threats", "verify")):
         if before not in order or after not in order or order.index(before) >= order.index(after):
@@ -205,7 +205,7 @@ def routing_errors(root):
         errors.append("entry fields")
     if routing.find("Checklist lookup") >= routing.find("Then perform"):
         errors.append("lookup ordering")
-    template = section((root / ".ai/templates/issue.md").read_text(encoding="utf-8"), "### Security risk")
+    template = section((root / "engineer/templates/issue.md").read_text(encoding="utf-8"), "### Security risk")
     errors += duty_errors(template, {
         "template routing": ("mandatory default", "stable `###` heading", "heading-anchor URLs",
                              "Existing actionable", "Distinct unplanned", "owning PLANs"),
@@ -220,14 +220,14 @@ def routing_errors(root):
         "template assessment": ("Only checklist", "PLAN assessment:", "PLAN mitigation:", "rather than repeating"),
         "no PLAN required": ("Standalone issues require no PLAN",),
     })
-    execution = steps((root / ".ai/workflows/execute-phase.md").read_text(encoding="utf-8"))["aggregate_results"]
+    execution = steps((root / "engineer/workflows/execute-phase.md").read_text(encoding="utf-8"))["aggregate_results"]
     errors += duty_errors(execution, {
         "execution default": ("canonical default", "new planned risk", "accepted/deferred",
                               "canonical trackers", "standalone tracking", "distinct unplanned"),
     })
     if "may use" in execution:
         errors.append("execution default")
-    runtime = section((root / ".ai/runtime/TEMPLATE-CONTRACT.md").read_text(encoding="utf-8"),
+    runtime = section((root / "engineer/references/template-contract.md").read_text(encoding="utf-8"),
                       "### Risk-routing destinations")
     errors += duty_errors(runtime, {"runtime planned scope": ("new planned risks", "accepted/deferred", "mandatory")})
     return errors
@@ -239,15 +239,15 @@ def audit_errors(root):
     for name, step in AUDIT_STEPS:
         if AUDIT_LINK not in steps((root / name).read_text(encoding="utf-8")).get(step, ""):
             errors.append(step + ": audit hook")
-    verifier = (root / ".ai/agents/verifier.md").read_text(encoding="utf-8")
+    verifier = (root / "agents/verifier.md").read_text(encoding="utf-8")
     context = section(verifier, "## Step 1: Load Context")
     if AUDIT_LINK not in context or "owning non-author verifier" not in context:
         errors.append("verifier audit")
-    workflow = steps((root / ".ai/workflows/verify-work.md").read_text(encoding="utf-8"))
+    workflow = steps((root / "engineer/workflows/verify-work.md").read_text(encoding="utf-8"))
     prompt = workflow["spawn_verifier"].split('prompt="', 1)[1]
     if not all(t in prompt for t in (AUDIT_LINK, "Own the independent", "source/body/link snapshot", "provider readback")):
         errors.append("verify assignment")
-    ship = steps((root / ".ai/workflows/ship.md").read_text(encoding="utf-8"))
+    ship = steps((root / "engineer/workflows/ship.md").read_text(encoding="utf-8"))
     dispatch = ship.get("refresh_issue_link_audit", "")
     if not all(t in dispatch for t in ('subagent_type="verifier"', "fresh non-author", "{current_source_revision}",
                                        "{provider_head_sha}", "{current_body_and_links}",
@@ -258,7 +258,7 @@ def audit_errors(root):
             errors.append(step + ": refresh")
     if not all(t in " ".join(ship["create_pr"].split()) for t in ("Recheck", "after publication", "linked issue states")):
         errors.append("publication recheck")
-    reviewer = (root / ".ai/agents/code-reviewer.md").read_text(encoding="utf-8")
+    reviewer = (root / "agents/code-reviewer.md").read_text(encoding="utf-8")
     local = reviewer.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0]
     if AUDIT_LINK not in local or "supplement" not in local or "verifier" not in local:
         errors.append("reviewer supplement")
@@ -296,15 +296,15 @@ class ThreatTrackingContract(unittest.TestCase):
 
     def test_register_and_discovery_mutations(self):
         for name, token, expected in (
-            (".ai/templates/phase-prompt.md", "| Mitigation Plan |", "PLAN register"),
-            (".ai/templates/phase-prompt.md", "Pending: dependency", "PLAN identity"),
-            (".ai/templates/summary.md", "| Flag | File | Description |", "conditional discovery"),
-            (".ai/templates/summary.md", "omit this section", "conditional discovery"),
-            (".ai/agents/coder.md", "**Threat model reference:**", "coder mitigation"),
-            (".ai/agents/coder.md", "Omit section if nothing found", "coder discovery"),
-            (".ai/agents/phase-preparer.md", "| Mitigation Plan |", "preparer register"),
-            (".ai/agents/phase-preparer.md", "Every threat has a Severity", "preparer assessment"),
-            (".ai/agents/phase-checker.md", "BLOCKER", "checker security gate"),
+            ("engineer/templates/phase-prompt.md", "| Mitigation Plan |", "PLAN register"),
+            ("engineer/templates/phase-prompt.md", "Pending: dependency", "PLAN identity"),
+            ("engineer/templates/summary.md", "| Flag | File | Description |", "conditional discovery"),
+            ("engineer/templates/summary.md", "omit this section", "conditional discovery"),
+            ("agents/executor.md", "**Threat model reference:**", "coder mitigation"),
+            ("agents/executor.md", "Omit section if nothing found", "coder discovery"),
+            ("agents/planner.md", "| Mitigation Plan |", "preparer register"),
+            ("agents/planner.md", "Every threat has a Severity", "preparer assessment"),
+            ("agents/plan-checker.md", "BLOCKER", "checker security gate"),
         ):
             with self.subTest(expected=expected, token=token):
                 root = self.fixture()
@@ -312,7 +312,7 @@ class ThreatTrackingContract(unittest.TestCase):
                 self.assertIn(expected, artifact_errors(root))
 
     def test_outcomes_are_separate_from_register(self):
-        for name, label in ((".ai/templates/summary.md", "SUMMARY"), (".ai/templates/pull-request.md", "PR")):
+        for name, label in (("engineer/templates/summary.md", "SUMMARY"), ("engineer/templates/pull-request.md", "PR")):
             for field in OUTCOME_FIELDS:
                 with self.subTest(name=name, field=field):
                     root = self.fixture()
@@ -331,7 +331,7 @@ class ThreatTrackingContract(unittest.TestCase):
                 path.write_text(text.replace(body, body.replace(TRACK_LINK, "missing.md"), 1), encoding="utf-8")
                 self.assertIn(step + ": mandatory tracking", artifact_errors(root))
         root = self.fixture()
-        self.mutate(root, ".ai/workflows/quick.md", '<step name="reconcile_summary_threats">',
+        self.mutate(root, "engineer/workflows/quick.md", '<step name="reconcile_summary_threats">',
                     '<step name="reconcile_summary_threats">\n**Only when OPTIONAL.**')
         self.assertIn("reconcile_summary_threats: mandatory tracking", artifact_errors(root))
 
@@ -340,7 +340,7 @@ class ThreatTrackingContract(unittest.TestCase):
                                    ("reconcile_summary_threats", "verify")):
             with self.subTest(step=required):
                 root = self.fixture()
-                path = root / ".ai/workflows/quick.md"
+                path = root / "engineer/workflows/quick.md"
                 text = path.read_text(encoding="utf-8")
                 block = re.search(r'^<step name="' + required + r'">.*?^</step>\n',
                                   text, re.M | re.S).group(0)
@@ -350,8 +350,8 @@ class ThreatTrackingContract(unittest.TestCase):
                 self.assertIn("quick ordering", artifact_errors(root))
 
     def test_register_cannot_be_duplicated_into_outcomes(self):
-        for name, label in ((".ai/templates/summary.md", "SUMMARY"),
-                            (".ai/templates/pull-request.md", "PR")):
+        for name, label in (("engineer/templates/summary.md", "SUMMARY"),
+                            ("engineer/templates/pull-request.md", "PR")):
             with self.subTest(artifact=label):
                 root = self.fixture()
                 path = root / name
@@ -363,7 +363,7 @@ class ThreatTrackingContract(unittest.TestCase):
 
     def test_canonical_link_loss(self):
         root = self.fixture()
-        name = ".ai/templates/phase-prompt.md"
+        name = "engineer/templates/phase-prompt.md"
         self.mutate(root, name, TRACK_LINK, "missing.md")
         # The integrity-contract link is a legitimate alternate route. Removing
         # only the direct canonical link must preserve that reachability.
@@ -405,7 +405,7 @@ class ThreatTrackingContract(unittest.TestCase):
         for token in ("PLAN assessment:", "PLAN mitigation:"):
             with self.subTest(token=token):
                 root = self.fixture()
-                self.mutate(root, ".ai/templates/issue.md", token)
+                self.mutate(root, "engineer/templates/issue.md", token)
                 self.assertIn("template assessment", routing_errors(root))
 
     def test_standalone_assessment_and_no_plan_support(self):
@@ -416,16 +416,16 @@ class ThreatTrackingContract(unittest.TestCase):
                                 ("Only checklist", "template assessment")):
             with self.subTest(token=token):
                 root = self.fixture()
-                self.mutate(root, ".ai/templates/issue.md", token, heading="### Security risk")
+                self.mutate(root, "engineer/templates/issue.md", token, heading="### Security risk")
                 self.assertIn(expected, routing_errors(root))
 
     def test_execution_and_runtime_default_seams(self):
         for name, token, expected in (
-            (".ai/workflows/execute-phase.md", "canonical default", "execution default"),
-            (".ai/workflows/execute-phase.md", "accepted/deferred", "execution default"),
-            (".ai/workflows/execute-phase.md", "standalone tracking", "execution default"),
-            (".ai/runtime/TEMPLATE-CONTRACT.md", "new planned risks", "runtime planned scope"),
-            (".ai/runtime/TEMPLATE-CONTRACT.md", "accepted/deferred", "runtime planned scope"),
+            ("engineer/workflows/execute-phase.md", "canonical default", "execution default"),
+            ("engineer/workflows/execute-phase.md", "accepted/deferred", "execution default"),
+            ("engineer/workflows/execute-phase.md", "standalone tracking", "execution default"),
+            ("engineer/references/template-contract.md", "new planned risks", "runtime planned scope"),
+            ("engineer/references/template-contract.md", "accepted/deferred", "runtime planned scope"),
         ):
             with self.subTest(token=token, name=name):
                 root = self.fixture()
@@ -434,7 +434,7 @@ class ThreatTrackingContract(unittest.TestCase):
                             heading="### Risk-routing destinations" if "TEMPLATE-CONTRACT" in name else None)
                 self.assertIn(expected, routing_errors(root))
         root = self.fixture()
-        self.mutate(root, ".ai/workflows/execute-phase.md", "canonical default", "optional path; may use",
+        self.mutate(root, "engineer/workflows/execute-phase.md", "canonical default", "optional path; may use",
                     step="aggregate_results")
         self.assertIn("execution default", routing_errors(root))
 
@@ -458,13 +458,13 @@ class ThreatTrackingContract(unittest.TestCase):
 
     def test_verifier_and_ship_dispatch_packets(self):
         for name, token, expected in (
-            (".ai/agents/verifier.md", "owning non-author verifier", "verifier audit"),
-            (".ai/workflows/verify-work.md", "Own the independent", "verify assignment"),
-            (".ai/workflows/ship.md", 'subagent_type="verifier"', "ship dispatch"),
-            (".ai/workflows/ship.md", "{current_source_revision}", "ship dispatch"),
-            (".ai/workflows/ship.md", "{current_body_and_links}", "ship dispatch"),
-            (".ai/workflows/ship.md", "{timestamped_provider_readback_or_Pending_dependency}", "ship dispatch"),
-            (".ai/workflows/ship.md", "after publication", "publication recheck"),
+            ("agents/verifier.md", "owning non-author verifier", "verifier audit"),
+            ("engineer/workflows/verify-work.md", "Own the independent", "verify assignment"),
+            ("engineer/workflows/ship.md", 'subagent_type="verifier"', "ship dispatch"),
+            ("engineer/workflows/ship.md", "{current_source_revision}", "ship dispatch"),
+            ("engineer/workflows/ship.md", "{current_body_and_links}", "ship dispatch"),
+            ("engineer/workflows/ship.md", "{timestamped_provider_readback_or_Pending_dependency}", "ship dispatch"),
+            ("engineer/workflows/ship.md", "after publication", "publication recheck"),
         ):
             with self.subTest(token=token):
                 root = self.fixture()

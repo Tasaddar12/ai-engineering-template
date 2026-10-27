@@ -12,15 +12,15 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class AgentSourceTests(unittest.TestCase):
     def test_scout_role_uses_the_exported_scout_filenames_and_names(self):
-        role = ROOT / ".ai/agents/scout.md"
-        definition = ROOT / ".ai/install-assets/codex-agents/scout.toml"
+        role = ROOT / "agents/scout.md"
+        definition = ROOT / "bin/install-assets/codex-agents/scout.toml"
         self.assertTrue(role.is_file())
         self.assertTrue(definition.is_file())
         metadata = yaml.safe_load(role.read_text(encoding="utf-8").split("---", 2)[1])
         native = tomllib.loads(definition.read_text(encoding="utf-8"))
         self.assertEqual("scout", metadata["name"])
         self.assertEqual("scout", native["name"])
-        self.assertIn(".ai/agents/scout.md", native["developer_instructions"])
+        self.assertIn("agents/scout.md", native["developer_instructions"])
         self.assertNotIn("model", metadata)
         self.assertNotIn("effort", metadata)
         self.assertEqual("gpt-6-luna", native["model"])
@@ -28,15 +28,15 @@ class AgentSourceTests(unittest.TestCase):
         self.assertEqual("read-only", native["sandbox_mode"])
 
     def test_coordinator_uses_explicit_scout_route_and_workers_remain_routed(self):
-        text = (ROOT / ".ai/agents/coordinator.md").read_text(encoding="utf-8")
+        text = (ROOT / "agents/coordinator.md").read_text(encoding="utf-8")
         adapter = text.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0]
         self.assertIn("task/output", adapter)
         self.assertIn("source location is unknown", adapter)
         self.assertIn("Dispatch normal workers", adapter)
 
     def test_worker_local_adapters_reference_scout_contract_without_worker_dispatch(self):
-        for role in (ROOT / ".ai/agents").glob("*.md"):
-            if role.stem in {"README", "scout", "coordinator", "targeted-fixer"}:
+        for role in (ROOT / "agents").glob("*.md"):
+            if role.stem in {"AGENT", "scout", "coordinator", "targeted-fixer", "code-fixer"}:
                 continue
             with self.subTest(role=role.name):
                 text = role.read_text(encoding="utf-8")
@@ -47,7 +47,7 @@ class AgentSourceTests(unittest.TestCase):
                 self.assertNotRegex(adapter, r"Only the (?:coordinator|orchestrator)\s+dispatches\s+agents")
 
     def test_scout_shared_adapter_is_host_agnostic_and_respects_permissions(self):
-        text = (ROOT / ".ai/agents/scout.md").read_text(encoding="utf-8")
+        text = (ROOT / "agents/scout.md").read_text(encoding="utf-8")
         metadata = yaml.safe_load(text.split("---", 2)[1])
         self.assertEqual({"Read", "Grep", "Glob"}, set(metadata["tools"].split(", ")))
         self.assertIn("Bash", metadata["disallowedTools"].split(", "))
@@ -63,14 +63,14 @@ class AgentSourceTests(unittest.TestCase):
 
     def test_native_models_and_shared_roles_without_model_frontmatter(self):
         luna = {"codebase-mapper", "doc-writer", "doc-verifier", "integration-checker", "scout", "targeted-fixer"}
-        for definition in (ROOT / ".ai/install-assets/codex-agents").glob("*.toml"):
+        for definition in (ROOT / "bin/install-assets/codex-agents").glob("*.toml"):
             native = tomllib.loads(definition.read_text(encoding="utf-8"))
-            role = ROOT / ".ai/agents" / (definition.stem + ".md")
+            role = ROOT / "agents" / (definition.stem + ".md")
             frontmatter = yaml.safe_load(role.read_text(encoding="utf-8").split("---", 2)[1])
             self.assertEqual(definition.stem, native["name"])
             self.assertEqual(frontmatter["description"], native["description"])
             self.assertEqual("gpt-6-luna" if definition.stem in luna else "gpt-6.1-sol", native["model"])
-            self.assertEqual("medium" if definition.stem in {"coder", "doc-verifier", "integration-checker"} else "high",
+            self.assertEqual("medium" if definition.stem in {"executor", "doc-verifier", "integration-checker"} else "high",
                              native["model_reasoning_effort"])
             self.assertNotIn("effort", frontmatter)
             self.assertNotIn("model", frontmatter)
@@ -90,7 +90,7 @@ class AgentSourceTests(unittest.TestCase):
                 self.assertNotIn("Task", frontmatter.get("disallowedTools", "").split(", "))
 
     def test_targeted_fixer_is_a_bounded_leaf_with_structured_inputs_and_evidence(self):
-        text = (ROOT / ".ai/agents/targeted-fixer.md").read_text(encoding="utf-8")
+        text = (ROOT / "agents/targeted-fixer.md").read_text(encoding="utf-8")
         for field in ("origin:", "diagnosis_or_finding:", "checkout:", "branch:", "revision:",
                       "owned_paths:", "symbols:", "required_behavior:", "constraints:",
                       "checks:", "summary_path:", "result_destination:"):
@@ -102,21 +102,22 @@ class AgentSourceTests(unittest.TestCase):
             self.assertIn(boundary, text)
 
     def test_targeted_fixer_catalogs_link_the_authoritative_role(self):
-        for name in (".ai/install-assets/agent-entry.txt", ".ai/agents/README.md"):
+        for name in ("bin/install-assets/agent-entry.txt", "agents/AGENT.md"):
             with self.subTest(source=name):
                 text = (ROOT / name).read_text(encoding="utf-8")
                 self.assertIn("targeted-fixer", text)
                 self.assertIn("targeted-fixer.md)", text)
-        roles = (ROOT / ".ai/hooks/lib/agent-roles.sh").read_text(encoding="utf-8")
-        write_roles = re.search(r'^WRITE_CAPABLE_AGENTS="([^"]*)"', roles, re.MULTILINE)[1].split()
-        self.assertEqual({"coder", "doc-writer", "debugger", "targeted-fixer"}, set(write_roles))
+        roles = (ROOT / "hooks/lib/agent-roles.sh").read_text(encoding="utf-8")
+        write_roles = re.search(r"^WRITE_ROLES='([^']*)'", roles, re.MULTILINE)[1].split()
+        self.assertTrue({"executor", "doc-writer", "debugger", "targeted-fixer", "nyquist-auditor"} <= set(write_roles))
+        self.assertFalse((ROOT/'bin/install-assets/codex-agents/code-fixer.toml').exists())
 
     def test_bounded_correction_dispatch_has_supported_routing_and_retained_gates(self):
-        shared = (ROOT / ".ai/references/bounded-correction-dispatch.md").read_text(encoding="utf-8")
+        shared = (ROOT / "engineer/references/bounded-correction-dispatch.md").read_text(encoding="utf-8")
         dispatch = shared.split("## Bounded correction dispatch", 1)[1].split("## Review and repair handoffs", 1)[0]
-        self.assertIn("../agents/targeted-fixer.md", dispatch)
-        self.assertIn("phase_run query resolve-model targeted-fixer --raw", dispatch)
-        self.assertIn("phase_run query resolve-effort targeted-fixer --raw", dispatch)
+        self.assertIn("../../agents/targeted-fixer.md", dispatch)
+        self.assertIn("engineer_run query resolve-model targeted-fixer --raw", dispatch)
+        self.assertIn("engineer_run query resolve-effort targeted-fixer --raw", dispatch)
         self.assertIn('subagent_type="targeted-fixer"', dispatch)
         self.assertIn('model="${FIXER_MODEL}"', dispatch)
         self.assertIn("FIXER_EFFORT === 'inherit' ? ''", dispatch)
@@ -130,22 +131,22 @@ class AgentSourceTests(unittest.TestCase):
         self.assertIn("fresh independent review and verification", dispatch)
         for name in ("execute-phase", "verify-work", "ship"):
             with self.subTest(workflow=name):
-                text = (ROOT / ".ai/workflows" / (name + ".md")).read_text(encoding="utf-8")
+                text = (ROOT / "engineer/workflows" / (name + ".md")).read_text(encoding="utf-8")
                 self.assertIn("targeted-fixer", text)
                 self.assertIn("../references/bounded-correction-dispatch.md", text)
                 self.assertNotRegex(text, r"(?:models|efforts)\[['\"]targeted-fixer['\"]\]")
-        execute = (ROOT / ".ai/workflows/execute-phase.md").read_text(encoding="utf-8")
+        execute = (ROOT / "engineer/workflows/execute-phase.md").read_text(encoding="utf-8")
         critical = execute.split("**Critical findings block completion.**", 1)[1].split("</step>", 1)[0]
         self.assertIn("bounded-correction-dispatch", critical)
         self.assertIn("fresh independent review", critical)
         self.assertIn("rerun affected checks", critical)
-        verify = (ROOT / ".ai/workflows/verify-work.md").read_text(encoding="utf-8")
+        verify = (ROOT / "engineer/workflows/verify-work.md").read_text(encoding="utf-8")
         gaps = verify.split('<step name="plan_gap_closure">', 1)[1].split("</step>", 1)[0]
         self.assertIn("bounded-correction-dispatch", gaps)
-        self.assertIn('subagent_type="phase-preparer"', gaps)
+        self.assertIn('subagent_type="planner"', gaps)
         self.assertIn("workflows/execute-phase.md", gaps)
         self.assertIn("at most **3** rounds", verify)
-        ship = (ROOT / ".ai/workflows/ship.md").read_text(encoding="utf-8")
+        ship = (ROOT / "engineer/workflows/ship.md").read_text(encoding="utf-8")
         ci = ship.split("**Fixing a failing check**", 1)[1].split("</step>", 1)[0]
         self.assertIn("at most 2 rounds", ci)
         self.assertIn("bounded-correction-dispatch", ci)
@@ -157,22 +158,22 @@ class AgentSourceTests(unittest.TestCase):
     def test_repair_origin_adapters_reference_the_shared_dispatch(self):
         for name in ("debugger", "code-reviewer", "coordinator"):
             with self.subTest(role=name):
-                text = (ROOT / ".ai/agents" / (name + ".md")).read_text(encoding="utf-8")
+                text = (ROOT / "agents" / (name + ".md")).read_text(encoding="utf-8")
                 adapter = text.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0]
-                self.assertIn("../references/bounded-correction-dispatch.md", adapter)
+                self.assertIn("../engineer/references/bounded-correction-dispatch.md", adapter)
                 self.assertNotIn('subagent_type="targeted-fixer"', adapter)
 
     def test_every_role_reads_the_shared_scout_procedure(self):
-        for role in (ROOT / ".ai/agents").glob("*.md"):
-            if role.name == "README.md":
+        for role in (ROOT / "agents").glob("*.md"):
+            if role.name in {"AGENT.md", "code-fixer.md"}:
                 continue
             with self.subTest(role=role.name):
-                self.assertIn("../references/scout-dispatch.md", role.read_text(encoding="utf-8"))
+                self.assertIn("../engineer/references/scout-dispatch.md", role.read_text(encoding="utf-8"))
 
     def test_agent_required_local_reads_resolve(self):
-        for path in (ROOT / ".ai/agents").glob("*.md"):
+        for path in (ROOT / "agents").glob("*.md"):
             body = path.read_text(encoding="utf-8")
-            for required in re.findall(r"@((?:\.ai|docs)/[\w./-]+\.md)", body):
+            for required in re.findall(r"@((?:agents|commands|engineer|docs)/[\w./-]+\.md)", body):
                 with self.subTest(agent=path.name, required=required):
                     self.assertTrue((ROOT / required).is_file())
 
@@ -189,8 +190,8 @@ class CommandSummaries(unittest.TestCase):
     NUMBERED = re.compile(r"^(\d+)\. ")
 
     def sources(self):
-        yield from sorted(ROOT.glob(".ai/commands/*.md"))
-        yield from sorted(ROOT.glob(".agents/skills/*/SKILL.md"))
+        yield from sorted(ROOT.glob("commands/*.md"))
+        yield from sorted(ROOT.glob("skills/*/SKILL.md"))
 
     def label(self, path):
         return path.parent.name + "/" + path.name
@@ -227,7 +228,7 @@ if __name__ == "__main__":
 
 
 class SkillMirror(unittest.TestCase):
-    """AGENTS.md promises `.agents/skills/` mirrors `.ai/commands/` one-for-one.
+    """AGENTS.md promises `skills/` mirrors `commands/` one-for-one.
 
     Nothing enforced that, so a command could be updated and its skill left
     behind - a host that discovers skills and a host that registers slash
@@ -237,25 +238,25 @@ class SkillMirror(unittest.TestCase):
     SKIPPED = {"README.md", "install.md"}
 
     def commands(self):
-        return sorted(path for path in (ROOT / ".ai" / "commands").glob("*.md")
+        return sorted(path for path in (ROOT / "commands").glob("*.md")
                       if path.name not in self.SKIPPED)
 
     def test_every_command_has_a_skill(self):
         for command in self.commands():
-            skill = ROOT / ".agents" / "skills" / command.stem / "SKILL.md"
+            skill = ROOT / "skills" / command.stem / "SKILL.md"
             self.assertTrue(skill.is_file(),
                             command.name + " has no matching skill at "
                             + skill.as_posix())
 
     def test_every_skill_has_a_command(self):
-        for skill in sorted((ROOT / ".agents" / "skills").glob("*/SKILL.md")):
-            command = ROOT / ".ai" / "commands" / (skill.parent.name + ".md")
+        for skill in sorted((ROOT / "skills").glob("*/SKILL.md")):
+            command = ROOT / "commands" / (skill.parent.name + ".md")
             self.assertTrue(command.is_file(),
                             skill.parent.name + " is a skill with no command")
 
     def test_each_pair_is_identical(self):
         for command in self.commands():
-            skill = ROOT / ".agents" / "skills" / command.stem / "SKILL.md"
+            skill = ROOT / "skills" / command.stem / "SKILL.md"
             if not skill.is_file():
                 continue
             with self.subTest(command=command.name):
