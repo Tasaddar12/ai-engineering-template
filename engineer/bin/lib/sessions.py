@@ -124,6 +124,8 @@ def session_command(args, action):
     if kind not in ("phase", "quick", "milestone", "onboard"):
         raise Failure("invalid-session-kind", kind, 2)
     label = phase_identity(label) if kind == "phase" else slug(label)
+    if action == "adopt" and kind == "phase" and not phase_in(root(), label):
+        raise Failure("phase-not-found", label)
     opened = [s for s in data["sessions"] if s.get("status") != "closed"]
     matching = [s for s in opened if s["kind"] == kind and (phase_identity(s["label"]) if kind == "phase" else s["label"]) == label]
     if action == "adopt":
