@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 import re
+import sys
 import tomllib
 from . import config
 from .core import Failure, read, root
@@ -26,9 +27,12 @@ def agents_dir():
 
 
 def resolve_agent(name):
+    if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", name):
+        raise Failure("invalid-agent-name", str(name), 2)
     aliases = {"coder": "executor", "phase-preparer": "planner", "phase-checker": "plan-checker", "researcher": "phase-researcher", "gsd-executor": "executor"}
     name = aliases.get(name, name.removeprefix("gsd-"))
-    if not (agents_dir()/(name+".md")).is_file():
+    directories = [agents_dir(), root()/".claude/agents", root()/".codex/agents"]
+    if not any((directory/(name+suffix)).is_file() for directory in directories for suffix in (".md", ".toml")):
         raise Failure("agent-not-found", f"Required agent role is missing: {name}")
     return name
 
@@ -53,7 +57,13 @@ def resolve(name, kind, host=None):
             if kind == "effort":
                 validate_effort(value)
             return value
-        return "inherit"
+        entry = config.lookup(config.load(), "agents."+role, {})
+        if isinstance(entry, str):
+            entry = {"model": entry}
+        value = entry.get(kind, "inherit")
+        if kind == "effort":
+            validate_effort(value)
+        return value
     entry = config.lookup(config.load(), "agents."+role, {})
     if isinstance(entry, str):
         entry = {"model": entry}
@@ -65,7 +75,10 @@ def resolve(name, kind, host=None):
 
 
 def native_file(role):
-    return NAMESPACE/"agents"/(role+".toml") if NAMESPACE.name == ".codex" else NAMESPACE/"bin/install-assets/codex-agents"/(role+".toml")
+    if NAMESPACE.name == ".codex":
+        return NAMESPACE/"agents"/(role+".toml")
+    candidates = [root()/".codex/agents"/(role+".toml"), NAMESPACE/"bin/install-assets/codex-agents"/(role+".toml")]
+    return next((path for path in candidates if path.is_file()), candidates[-1])
 
 
 def validate_effort(value):
@@ -74,7 +87,7 @@ def validate_effort(value):
 
 
 def resolution(args, kind):
-    name = resolve_agent(args.need())
+    name = resolve_agent(args.arg(0, args.get("name")))
     host = args.get("host", resolve_host())
     model, effort = resolve(name, "model", host), resolve(name, "effort", host)
     fixed = name in ("scout", "targeted-fixer")
@@ -92,7 +105,8 @@ def resolution(args, kind):
 
 
 def classify(args):
-    body = " ".join(args.all("_body") or args.pos)
+    body = sys.stdin.read() if args.has("stdin") else " ".join(args.all("_body") or args.pos)
+    body += " "+str(args.get("error", args.get("text", "")))
     patterns = [("quota", r"usage limit|quota exceeded|insufficient_quota|RESOURCE_EXHAUSTED", False),
                 ("rate_limit", r"\b429\b|rate.?limit|too many requests", True),
                 ("context_exhausted", r"context (?:window|length|limit)|maximum context|token limit", False),
@@ -100,9 +114,10 @@ def classify(args):
     for category, pattern, retryable in patterns:
         if re.search(pattern, body, re.I):
             delay = re.search(r"(?:retry|try again|wait)(?:[^\d]{0,30})(\d+)\s*(seconds?|minutes?|s|m)?", body, re.I)
-            return {"kind": category, "classification": category, "retryable": retryable,
+            classes = {"quota": "quota-exceeded", "rate_limit": "rate-limited", "context_exhausted": "context-exhausted", "crash": "crash"}
+            return {"kind": category, "classification": category, "class": classes[category], "retryable": retryable,
                     "wait_hint": delay.group(0) if delay else None}
-    return {"kind": "unknown", "classification": "unknown", "retryable": False, "wait_hint": None}
+    return {"kind": "unknown", "classification": "unknown", "class": "unknown", "retryable": False, "wait_hint": None}
 
 
 def agent_skills(args):
@@ -113,7 +128,7 @@ def agent_skills(args):
         names = [part.strip() for part in names.split(",") if part.strip()]
     blocks = []
     for skill in names:
-        candidates = [root()/"skills"/skill/"SKILL.md", NAMESPACE/"skills"/skill/"SKILL.md", root()/".agents/skills"/skill/"SKILL.md"]
+        candidates = [root()/"skills"/skill/"SKILL.md", NAMESPACE/"skills"/skill/"SKILL.md"]
         path = next((p for p in candidates if p.is_file()), None)
         if path:
             blocks.append(read(path))
