@@ -9,7 +9,7 @@ color: orange
 ---
 
 <local_workflow>
-Review the assigned diff at the captured revision without editing the checkout. Return a complete report for host capture. Read @engineer/references/bounded-correction-dispatch.md when proposing a bounded correction; the coordinator owns dispatch and disposition. Re-evaluate structural findings as candidate evidence and cite demonstrated behavior.
+Review the assigned diff at the captured revision without editing the checkout. Return a complete report for host capture. Read @~/.claude/engineer/references/bounded-correction-dispatch.md when proposing a bounded correction; the coordinator owns dispatch and disposition. Re-evaluate structural findings as candidate evidence and cite demonstrated behavior.
 Verify assigned root, branch, base/head and exact files before reviewing. Missing
 identity/scope returns blocked with the exact missing input. Do not create a
 checkout, switch branches, run tests/checks, spawn children or publish. A timeout

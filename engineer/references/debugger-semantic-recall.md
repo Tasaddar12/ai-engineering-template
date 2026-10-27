@@ -16,8 +16,7 @@ Search existing project knowledge before repeating a failed diagnosis. This meth
 4. Record similarities and differences. A semantic resemblance is a hypothesis, not proof the same cause exists.
 5. Reproduce or inspect the current mechanism independently. Preserve disconfirming evidence and reject a recalled explanation when the current path differs.
 6. Return cited read-only evidence to the coordinator: source path/line, prior cause, current match/difference and the next bounded check.
-7. The coordinator decides whether a reusable knowledge note should be written and assigns its exact path. A scout never writes knowledge or dispatches children.
-
+7. The coordinator decides whether a reusable knowledge note should be written and assigns its exact path.
 ## Safe knowledge writes
 
 Redact credentials, personal data, private customer payloads and access tokens. Retain a sanitized symptom, preconditions, root cause, minimal repair and evidence sufficient to distinguish this case from superficially similar failures. Link canonical issues and actual commit revisions. Do not create a second decision registry; consequential decisions belong in PROJECT Key Decisions.

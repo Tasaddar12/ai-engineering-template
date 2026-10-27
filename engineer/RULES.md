@@ -73,11 +73,10 @@ Record consequential decisions while deciding through `engineer_run query state.
 
 The orchestrator routes; it does not do work it dispatched. Read exact role boundaries, assign repository/branch/revision, required inputs, owned paths, exclusions, checks and output. Use exact final roles from [the role catalog](../agents/AGENT.md), including the surviving executor/planner/phase-researcher/plan-checker roles and specialized reviewers. Resolve model/effort inline with `resolve-model` and `resolve-effort`; omit inherited values. Only Claude and Codex adapters are supported.
 
-Send one discovery scout when source location is unknown. Additional scouts need separate named questions and distinct evidence packets. Scouts return read-only cited evidence and never dispatch children. Follow [scout dispatch](references/scout-dispatch.md).
 
 After dispatch, wait before touching owned files or integrating changes. Confirm worker exit positively before reassigning its paths; a host wait timeout, lack of output or a guessed stall does not establish stop. Preserve uncertain worker ownership and continue independent work. Follow [worker handoff](references/worker-handoff.md) and [parallel status](references/parallel-status.md).
 
-A source-changing worker returns complete only after owned commits and required SUMMARY. A read-only reviewer/verifier/scout returns its assigned cited packet or report without a completion commit/SUMMARY. An explicit maintenance assignment may use a different output contract; follow the user's contract without manufacturing adopting-project records.
+A source-changing worker returns complete only after owned commits and required SUMMARY. An explicit maintenance assignment may use a different output contract; follow the user's contract without manufacturing adopting-project records.
 
 Durable handoffs preserve exact base/head, completed/remaining outcomes, dirty paths, approved decisions, pending gates, user ordering, process state and the first bounded continuation. Do not compress away facts necessary to resume correctly.
 
@@ -131,6 +130,6 @@ Reusable rules belong under [rules](rules/README.md), with exact scope, authorit
 
 ## Complete template use
 
-Read each complete template before authoring its artifact, including frontmatter, guidance, detailed examples and consumer contracts. Preserve required sections and explain not applicable sections explicitly. Do not replace methods with summaries, copy a compact variant or omit fields to fit a context budget. Follow [template use](templates/TEMPLATE.md).
+Read each complete template before authoring its artifact, including frontmatter, guidance, detailed examples and consumer contracts. Preserve required sections and explain not applicable sections explicitly. Do not replace methods with summaries, copy a compact variant or omit fields to fit a context budget. Follow [template use](templates/README.md).
 
 Current PLAN records require acceptance, documentation, checks as argv lists and issue_refs; SUMMARY records report only requirements actually completed by delivered evidence. Read [the runtime template contract](references/template-contract.md) for runtime-owned record sections and integrity boundaries. Keep adopting identity blank in reusable templates. Use `.planning/` for project records; `engineer/` for reusable rules, workflows, templates and tooling.

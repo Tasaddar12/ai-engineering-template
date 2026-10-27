@@ -3,7 +3,7 @@ Retroactive 6-pillar visual audit of implemented frontend code. Standalone comma
 </purpose>
 
 <required_reading>
-@engineer/references/ui-brand.md
+@~/.claude/engineer/references/ui-brand.md
 </required_reading>
 
 <available_agent_types>
