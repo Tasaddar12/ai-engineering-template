@@ -198,6 +198,18 @@ class PhaseIssues(fixtures.IssueFixture):
             self.phase(entries)
             self.assertFalse(self.handoff()["ready"])
 
+    def test_unknown_relationship_cannot_close_unresolved_uat(self):
+        self.phase([self.entry(variant="UAT", relationship="references", url="https://github.com/acme/project/issues/1")])
+        self.assertFalse(self.handoff()["ready"])
+        self.rows = [self.issue(body=self.uat_body())]
+        self.fails(lambda: phase_issues.audit_pr("1", "Closes #1 https://github.com/acme/project/issues/1"), "phase-issues")
+
+    def test_actual_closing_reference_requires_resolved_explicit_relationship(self):
+        entry = self.entry(variant="UAT", url="https://github.com/acme/project/issues/1")
+        self.phase([entry])
+        self.rows = [self.issue(body=self.uat_body())]
+        self.fails(lambda: phase_issues.audit_pr("1", "Closes #1 https://github.com/acme/project/issues/1"), "phase-issue-links")
+
     def test_canonical_identity_rejects_pr_wrong_origin_and_number(self):
         for changes in ({"url": "https://github.com/acme/project/pull/1"}, {"url": "https://github.com/other/project/issues/1"}, {"issueNumber": 2}, {"issueRepo": "github.com/other/project"}):
             self.phase([self.entry(**dict({"url": "https://github.com/acme/project/issues/1", "issueNumber": 1}, **changes))])

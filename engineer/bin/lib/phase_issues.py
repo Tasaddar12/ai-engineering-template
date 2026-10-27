@@ -6,6 +6,10 @@ from . import delivery, records, repository
 from .core import Failure, digest, planning_lock, read, safe_path, write
 from .text import join_frontmatter, split_frontmatter
 
+CLOSING_RELATIONSHIPS = {"closes", "close", "fixes", "resolving"}
+RELATIONSHIPS = CLOSING_RELATIONSHIPS | {"followup"}
+FINDING_STATES = {"unresolved", "resolved", "fixed", "dismissed", "accepted", "deferred", "pending-human"}
+
 
 def source_record(path):
     from .issues import read_record
@@ -50,6 +54,8 @@ def handoff(args):
                 errors.append({"file": str(path), "id": entry["id"], "reason": "Duplicate finding identity"})
                 continue
             seen.add(entry["id"])
+            if entry.get("relationship", "followup") not in RELATIONSHIPS or entry.get("state") not in FINDING_STATES:
+                errors.append({"file": str(path), "id": entry["id"], "reason": "Unknown finding state or relationship"})
             url = entry.get("url", entry.get("issue_url", entry.get("issueURL")))
             if url:
                 try:
@@ -125,15 +131,15 @@ def audit_pr(phase, body, quick=None):
         origin = repository.identity()
         reference = r"(?:"+re.escape(url)+r"|"+re.escape(origin["owner"]+"/"+origin["repository"])+r"#"+str(number)+r"|#"+str(number)+r")(?!\d)"
         closing = re.search(r"(?im)\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+"+reference, closing_body)
-        if relationship in ("closes", "close", "fixes", "resolving") and (item.get("state") not in ("resolved", "fixed") or not item.get("evidence")):
+        if closing and (relationship not in CLOSING_RELATIONSHIPS or item.get("state") not in ("resolved", "fixed") or not item.get("evidence")):
             failures.append({"id": item["id"], "reason": "Unresolved, accepted or deferred findings cannot authorize issue closure"})
         if url not in body:
             failures.append({"id": item["id"], "reason": "Declared issue URL missing from PR body"})
-        elif relationship == "followup" and closing:
+        elif relationship not in CLOSING_RELATIONSHIPS and closing:
             failures.append({"id": item["id"], "reason": "Follow-up issue must not be closed by this PR"})
         elif relationship in ("closes", "close", "fixes", "resolving") and not closing:
             failures.append({"id": item["id"], "reason": "Closing relationship is missing"})
-        if relationship in ("closes", "close", "fixes", "resolving") and str(item.get("variant", "")).upper() == "UAT":
+        if closing and (str(item.get("variant", "")).upper() == "UAT" or re.search(r"human acceptance|Status:\s*(?:PENDING|ACCEPTED)|\bUAT\b", issue.get("body", ""), re.I)):
             if not accepted_human(issue.get("body", "")):
                 failures.append({"id": item["id"], "reason": "UAT requires explicit accepted human evidence"})
     if failures:

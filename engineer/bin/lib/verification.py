@@ -96,7 +96,7 @@ def current_evidence(value=None, quick=None):
         commits = run(["git", "rev-list", "--reverse", str(revision)+".."+head], root(), check=False)
         changed = []
         for commit in commits.stdout.splitlines():
-            delta = run(["git", "diff-tree", "--no-commit-id", "--name-only", "-r", "-m", commit], root(), check=False)
+            delta = run(["git", "diff-tree", "--no-renames", "--no-commit-id", "--name-only", "-r", "-m", commit], root(), check=False)
             if delta.returncode:
                 changed.append("<unreadable-commit>")
             changed.extend(delta.stdout.splitlines())

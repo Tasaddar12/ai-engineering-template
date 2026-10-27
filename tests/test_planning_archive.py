@@ -282,6 +282,39 @@ class PlanningArchive(unittest.TestCase):
         self.assertEqual("archive-evidence-required", self.cli("planning.archive", "phase", "1", ok=False)["code"])
         self.assertEqual(before, self.snapshot())
 
+    def test_new_report_after_source_edit_and_revert_cannot_borrow_digest(self):
+        report = ".planning/phases/01-foundation/01-VERIFICATION.md"
+        original = self.read("foundation.txt")
+        self.write("foundation.txt", "Intervening unverified implementation.\n")
+        self.commit("Intervening source mutation")
+        self.write("foundation.txt", original)
+        self.commit("Restore source bytes without rerunning verification")
+        self.write(report, self.read(report)+"\nNew verdict borrowing the old revision.\n")
+        self.commit("New stale verdict after edit and revert")
+        self.assertFalse(archive.historical_phase_evidence(self.root/".planning/phases/01-foundation"))
+
+    def test_multi_phase_transaction_removes_all_roadmap_entries_and_recovers(self):
+        roadmap = ROADMAP.replace("- [ ]", "- [x]").replace("0/1 | Not started | -", "1/1 | Complete | 2026-01-02")
+        self.write(".planning/ROADMAP.md", roadmap)
+        for suffix in ("PLAN", "SUMMARY"):
+            text = self.read(".planning/phases/01-foundation/01-01-"+suffix+".md")
+            self.write(".planning/phases/02-feature/02-01-"+suffix+".md", text.replace("01-foundation", "02-feature"))
+        selected = ["--paths", ".planning/phases/01-foundation", "--paths", ".planning/phases/02-feature"]
+        # This regression isolates the transaction from the independently tested
+        # historical evidence gate; both phases still have actual complete plans.
+        with patch.object(archive, "historical_phase_evidence", return_value=True):
+            preview = archive.archive(Args(selected))
+            result = archive.archive(Args([*selected, "--apply", "--expect", preview["digest"]]))
+        final = self.read(".planning/ROADMAP.md")
+        self.assertNotIn("Phase 1:", final)
+        self.assertNotIn("Phase 2:", final)
+        self.assertNotIn("| 1. Foundation", final)
+        self.assertNotIn("| 2. Feature", final)
+        self.assertEqual(2, len(result["entries"]))
+        preview = archive.recover(Args([result["recovery_id"]]))
+        archive.recover(Args([result["recovery_id"], "--apply", "--expect", preview["recoveryDigest"]]))
+        self.assertEqual(roadmap, self.read(".planning/ROADMAP.md"))
+
     def test_active_phase_denied_even_with_legacy_evidence(self):
         self.write(".planning/legacy.md", "---\narchive_kind: phase\narchive_id: 02-feature\narchive_status: complete\narchive_reason: Reviewed legacy completion evidence.\n---\n")
         before = self.snapshot()

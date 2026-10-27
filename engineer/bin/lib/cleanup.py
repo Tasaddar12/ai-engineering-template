@@ -314,22 +314,11 @@ def remove_backup_nodes(entry):
         if target.exists() or target.is_symlink():
             raise Failure("cleanup-removal-unconfirmed", "Backup removal lacks absent-path readback")
         return
-    validate_backup(entry)
-    for row in sorted(entry["tree"], key=lambda row: len(Path(row["path"]).parts), reverse=True):
-        path = base/row["path"]
-        if not path.is_relative_to(target) or aliased_path(path) or path.resolve() != path:
-            raise Failure("cleanup-backup-race", "Backup path changed before removal")
-        info = path.lstat()
-        if [info.st_dev, info.st_ino] != row["identity"] or info.st_mode != row["mode"]:
-            raise Failure("cleanup-backup-race", "Backup node identity changed before removal")
-        if row["directory"]:
-            path.rmdir()  # Fails on newly introduced content; never recursively follows it.
-        else:
-            if info.st_size != row["size"] or info.st_mtime_ns != row["mtime_ns"] or hashlib.sha256(path.read_bytes()).hexdigest() != row["digest"]:
-                raise Failure("cleanup-backup-race", "Backup content changed before removal")
-            path.unlink()
-    if target.exists() or target.is_symlink():
-        raise Failure("cleanup-removal-unconfirmed", "Backup removal lacks absent-path readback")
+    # POSIX unlinkat is name-based even with an open directory descriptor;
+    # no stdlib primitive atomically compares an inode and deletes that inode.
+    # Refuse before mutating any node rather than expose approved-path races.
+    raise Failure("cleanup-backup-unsupported", "This platform cannot pin backup nodes against replacement during deletion; backup preserved")
+
 
 
 def validate_entry(entry, require_worktree=True):
