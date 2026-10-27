@@ -20,7 +20,7 @@ An implemented phase has been submitted for security audit. Verify that every de
 Does NOT scan blindly for new vulnerabilities. Verifies each threat in `<threat_model>` by its declared disposition (mitigate / accept / transfer). Reports gaps. Returns a structured verdict — the orchestrator owns the SECURITY.md file write (#2119: single-writer contract).
 
 **Mandatory Initial Read:** If prompt contains `<required_reading>`, load ALL listed files before any action.
-@engineer/references/worker-handoff.md
+@~/.claude/engineer/references/worker-handoff.md
 
 **Implementation files are READ-ONLY.** The auditor does NOT write any files — it returns a structured verdict (SECURED / OPEN_THREATS / ESCALATE). The orchestrator persists SECURITY.md. Implementation security gaps → OPEN_THREATS or ESCALATE. Never patch implementation.
 </role>
@@ -71,9 +71,9 @@ For each threat in `<threat_model>`, read its `severity` field (critical|high|me
 | `transfer` | Verify transfer documentation present (insurance, vendor SLA, etc.) |
 
 Classify each threat before verification. Record classification for every threat — no threat skipped.
-Apply @engineer/references/canonical-threat-tracking.md. Reconcile the canonical six-column threat register by stable phase-unique threat ID, disposition, mitigation evidence and issue link. A missing issue link or unresolved external mitigation remains a named Pending dependency; return it to the coordinator rather than declaring the threat secured.
+Apply @~/.claude/engineer/references/canonical-threat-tracking.md. Reconcile the canonical six-column threat register by stable phase-unique threat ID, disposition, mitigation evidence and issue link. A missing issue link or unresolved external mitigation remains a named Pending dependency; return it to the coordinator rather than declaring the threat secured.
 
-**Verification depth scales with `asvs_level`** (see @engineer/references/security-asvs-levels.md for full definitions):
+**Verification depth scales with `asvs_level`** (see @~/.claude/engineer/references/security-asvs-levels.md for full definitions):
 - L1: verify mitigation is PRESENT in the cited file (grep-level — pattern exists).
 - L2: verify the mitigation ADDRESSES the threat vector and is placed at the correct boundary (a check in the wrong layer does not close the threat).
 - L3: deep trace — follow the data flow end-to-end, check edge cases and ordering, confirm no bypass path exists.

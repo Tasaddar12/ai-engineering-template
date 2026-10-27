@@ -37,10 +37,10 @@ Three modes:
 </flags>
 
 <execution_context>
-@engineer/workflows/progress.md
-@engineer/workflows/next.md
-@engineer/workflows/do.md
-@engineer/references/ui-brand.md
+@~/.claude/engineer/workflows/progress.md
+@~/.claude/engineer/workflows/next.md
+@~/.claude/engineer/workflows/do.md
+@~/.claude/engineer/references/ui-brand.md
 </execution_context>
 
 <process>

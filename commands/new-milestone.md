@@ -32,11 +32,11 @@ Brownfield equivalent of new-project. Project exists, PROJECT.md has history. Ga
 </objective>
 
 <execution_context>
-@engineer/workflows/new-milestone.md
-@engineer/references/questioning.md
-@engineer/references/ui-brand.md
-@engineer/templates/project.md
-@engineer/templates/requirements.md
+@~/.claude/engineer/workflows/new-milestone.md
+@~/.claude/engineer/references/questioning.md
+@~/.claude/engineer/references/ui-brand.md
+@~/.claude/engineer/templates/project.md
+@~/.claude/engineer/templates/requirements.md
 </execution_context>
 
 <context>
