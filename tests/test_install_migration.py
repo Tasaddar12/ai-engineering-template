@@ -42,7 +42,7 @@ class MigrationTests(unittest.TestCase):
         self.assertEqual("haiku", metadata["model"])
         self.assertNotIn("effort", metadata)
         self.assertIn("Bash", metadata["disallowedTools"].split(", "))
-        expected = installer.render_asset(".ai/agents/scout.md", custom.encode(), "claude").decode()
+        expected = installer.render_asset("agents/scout.md", custom.encode(), "claude").decode()
         self.assertEqual(expected, exported)
         self.assertIn("Custom scout evidence instruction sentinel.", exported)
         self.assertEqual(custom.encode(), (backup / "files/.ai/agents/scout.md").read_bytes())
@@ -66,7 +66,7 @@ class MigrationTests(unittest.TestCase):
             self.assertEqual(effort, metadata.get("effort"))
             self.assertIn("Custom body sentinel.", exported)
             self.assertEqual(originals_by_role[name], (backup / "files/.ai/agents" / (name + ".md")).read_bytes())
-            self.assertEqual(installer.render_asset(".ai/agents/" + name + ".md", originals_by_role[name], "claude").decode(), exported)
+            self.assertEqual(installer.render_asset("agents/" + name + ".md", originals_by_role[name], "claude").decode(), exported)
         self.assertEqual(config, (self.target / ".planning/config.yaml").read_bytes())
         before = self.snapshot()
         with self.assertRaisesRegex(ValueError, "requires an existing .ai directory"):
@@ -81,7 +81,7 @@ class MigrationTests(unittest.TestCase):
         backup = installer.backup_migration(self.target, originals)
         self.apply(changes)
         exported = (self.target / ".claude/agents/targeted-fixer.md").read_bytes()
-        self.assertEqual(installer.render_asset(".ai/agents/targeted-fixer.md", custom.encode(), "claude"), exported)
+        self.assertEqual(installer.render_asset("agents/targeted-fixer.md", custom.encode(), "claude"), exported)
         metadata = yaml.safe_load(exported.decode().split("---", 2)[1])
         self.assertEqual("haiku", metadata["model"])
         self.assertNotIn("effort", metadata)
@@ -90,7 +90,9 @@ class MigrationTests(unittest.TestCase):
         self.assertEqual(custom.encode(), (backup / "files/.ai/agents/targeted-fixer.md").read_bytes())
 
     def test_migration_payload_excludes_source_only_maintenance_history(self):
-        self.assertTrue((self.source / ".ai/maintenance/agent-scout-SUMMARY.md").is_file())
+        fixture = self.source / ".ai/maintenance/agent-scout-SUMMARY.md"
+        fixture.parent.mkdir(parents=True, exist_ok=True)
+        fixture.write_bytes(b"Source-only maintenance fixture")
         for host in ("codex", "claude"):
             with self.subTest(host=host):
                 changes, _, _ = self.plan(host, hooks=False)
@@ -118,7 +120,7 @@ class MigrationTests(unittest.TestCase):
                 self.write(".ai/agents/executor.md", legacy)
                 self.write(".ai/RULES.md", rules)
                 changes, originals, notes = self.plan(host, hooks=False)
-                self.assertIn("Scout activation is pending", " ".join(notes))
+                self.assertTrue(notes["preserved_project_records"])
                 migration_backup = installer.backup_migration(self.target, originals)
                 self.apply(changes)
                 namespace = "." + host
@@ -131,25 +133,25 @@ class MigrationTests(unittest.TestCase):
                 migrated_rules = (self.target / namespace / "engineer/RULES.md").read_bytes()
                 self.assertIn(b"Custom approval instruction sentinel.", migrated_rules)
 
-                changes, originals, _ = update.plan_update(self.source, self.target, host, False, installer)
-                update_backup = installer.backup_migration(self.target, originals)
-                self.apply(changes)
-                self.assertEqual(migrated, (update_backup / "files" / namespace / "agents/executor.md").read_bytes())
-                self.assertEqual(migrated_rules, (update_backup / "files" / namespace / "engineer/RULES.md").read_bytes())
-                for role in (self.target / namespace / "agents").glob("*.md"):
-                    text = role.read_text(encoding="utf-8")
-                    if not text.startswith("---\n") or role.stem in {"scout", "targeted-fixer"}:
-                        continue
-                    metadata = yaml.safe_load(text.split("---", 2)[1])
-                    self.assertIn("Agent", metadata["tools"].split(", "))
-                    self.assertNotIn("Agent", metadata.get("disallowedTools", "").split(", "))
-                    self.assertNotIn("Task", metadata.get("disallowedTools", "").split(", "))
-                    self.assertIn("scout-dispatch.md", text)
-                    adapter = text.split("<local_workflow>", 1)[1].split("</local_workflow>", 1)[0]
-                    self.assertNotRegex(adapter, r"Only the (?:coordinator|orchestrator)\s+dispatches\s+agents")
-                current_rules = (self.target / namespace / "engineer/RULES.md").read_text(encoding="utf-8")
-                self.assertIn("scout-dispatch.md", current_rules)
-                self.assertNotIn("not spawn agents", current_rules)
+                update.record_install(self.target, host, str(self.source), "migrated", installer.payload(self.source, host, False),
+                                      {namespace + "/agents/executor.md", namespace + "/engineer/RULES.md"})
+                plan = update.build_plan(self.source, self.target, host, False, str(self.source), "reviewed", self.source)
+                before_update = self.snapshot()
+                with self.assertRaisesRegex(ValueError, "Unresolved conflict"):
+                    update.apply_plan(plan, self.source, self.source)
+                self.assertEqual(before_update, self.snapshot())
+                replacements = [namespace + "/agents/executor.md", namespace + "/engineer/RULES.md"]
+                if host == "codex":
+                    replacements.append(namespace + "/agents/executor.toml")
+                for name in replacements:
+                    plan["resolutions"][name] = {"action": "write", "classification": "upstream-managed"}
+                update.apply_plan(plan, self.source, self.source)
+                for name, original in ((namespace + "/agents/executor.md", migrated), (namespace + "/engineer/RULES.md", migrated_rules)):
+                    saved = list((self.target / ".workflow-backups").glob("*/files/" + name))
+                    self.assertTrue(any(path.read_bytes() == original for path in saved))
+                expected = installer.payload(self.source, host, False)
+                self.assertEqual(expected[namespace + "/agents/executor.md"], executor.read_bytes())
+                self.assertEqual(expected[namespace + "/engineer/RULES.md"], (self.target / namespace / "engineer/RULES.md").read_bytes())
 
     def test_no_hooks_migration_canonicalizes_existing_codex_settings(self):
         original = (b'\xef\xbb\xbf# custom\r\n"agents"."max_threads" = 3 # legacy\r\n'
@@ -160,19 +162,20 @@ class MigrationTests(unittest.TestCase):
         self.assertIn(path, backups)
         self.apply(changes)
         content = path.read_bytes()
-        self.assertTrue(content.startswith(b'\xef\xbb\xbf# custom\r\n# legacy\r\n'))
+        self.assertTrue(content.startswith(b'\xef\xbb\xbf# custom\r\n'))
+        self.assertIn(b'# legacy\r\n', content)
         self.assertIn(b'model = "keep"\r\n', content)
         self.assertIn(b'[hooks]\r\nStop = []\r\n', content)
         parsed = tomllib.loads(content.decode("utf-8-sig"))
         self.assertEqual(12, parsed["agents"]["max_concurrent_threads_per_session"])
         self.assertNotIn("max_threads", parsed["agents"])
-        incoming = installer.host_payload({}, "codex", False)[".codex/config.toml"]
+        incoming = installer.host_payload("codex", False)[".codex/config.toml"]
         self.assertEqual(content, installer.merge_codex_config(content, incoming, path))
         rules = self.target / ".codex/engineer/RULES.md"
-        self.assertEqual(b"# Rules\nCustom approval rule. Read .codex/commands/worktree.md\n",
+        self.assertEqual(b"# Rules\r\nCustom approval rule. Read .codex/commands/worktree.md\r\n",
                          rules.read_bytes())
         before = self.snapshot()
-        with self.assertRaisesRegex(ValueError, r"Existing files conflict;.*") as caught:
+        with self.assertRaisesRegex(ValueError, r"conflict at") as caught:
             installer.plan_install(self.source, self.target, "codex", hooks=False)
         self.assertIn(".codex/engineer/RULES.md", str(caught.exception).replace("\\", "/"))
         self.assertEqual(before, self.snapshot())
@@ -182,7 +185,7 @@ class MigrationTests(unittest.TestCase):
             with self.subTest(content=content):
                 self.write(".codex/config.toml", content)
                 before = self.snapshot()
-                with self.assertRaisesRegex(ValueError, "nothing was installed"):
+                with self.assertRaisesRegex(ValueError, "inline agents|invalid TOML"):
                     self.plan("codex", hooks=False)
                 self.assertEqual(before, self.snapshot())
 
@@ -190,7 +193,7 @@ class MigrationTests(unittest.TestCase):
         content = (b'[Rules](<../../../.ai/RULES.md> "Project rules")\n'
                    b'[Local](<notes with spaces.md>)\n')
         moved = installer.render_asset(".agents/skills/custom/SKILL.md", content, "claude")
-        self.assertEqual((b'[Rules](<../../RULES.md> "Project rules")\n'
+        self.assertEqual((b'[Rules](<../../engineer/RULES.md> "Project rules")\n'
                           b'[Local](<notes with spaces.md>)\n'), moved)
 
     def test_escaped_windows_routes_relocate_without_rewriting_urls(self):
@@ -208,6 +211,23 @@ class MigrationTests(unittest.TestCase):
             b'args: [.ai/agents, .ai/commands, .agents/skills, .ai/agents-custom]\n', "claude"))
         self.assertEqual([".claude/agents", ".claude/commands", ".claude/skills", ".claude/agents-custom"],
                          directories["args"])
+
+    def test_legacy_role_names_relocate_to_canonical_native_dispatch_names(self):
+        body = b"---\nname: coder\ndescription: Local execution\n---\nKeep this complete custom method.\n"
+        self.write(".ai/agents/coder.md", body)
+        changes, originals, _ = self.plan("claude", hooks=False)
+        self.assertEqual(body, originals[self.target / ".ai/agents/coder.md"])
+        self.apply(changes)
+        exported = (self.target / ".claude/agents/executor.md").read_text()
+        self.assertIn("name: executor\n", exported)
+        self.assertIn("Keep this complete custom method.", exported)
+        self.assertFalse((self.target / ".claude/agents/coder.md").exists())
+
+    def test_escaped_windows_runtime_entry_points_use_the_new_canonical_entry(self):
+        config = b'entry: ".ai\\\\runtime\\\\phase.py"\nurl: https://example.invalid/.ai/runtime/phase.py\n'
+        parsed = yaml.safe_load(migration.relocate_paths(config, "codex"))
+        self.assertEqual(".codex\\engineer\\bin\\engineer.py", parsed["entry"])
+        self.assertEqual("https://example.invalid/.ai/runtime/phase.py", parsed["url"])
 
     @classmethod
     def setUpClass(cls):
@@ -261,10 +281,14 @@ class MigrationTests(unittest.TestCase):
     def apply(self, changes):
         for path, content in changes:
             if content is None:
-                path.rmdir() if path.is_dir() else path.unlink()
+                if path.is_dir():
+                    path.rmdir()
+                elif path.exists():
+                    path.unlink()
             else:
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(content)
+        migration.finish_migration(self.target, "claude" if (self.target / ".claude/engineer/bin/engineer.py").exists() else "codex")
 
     def test_claude_migration_preserves_custom_roles(self):
         """Agent bodies and frontmatter survive relocation untouched."""
@@ -281,7 +305,7 @@ class MigrationTests(unittest.TestCase):
         self.assertIn(self.target / ".ai/agents/executor.md", backups)
         self.apply(changes)
         executor = (self.target / ".claude/agents/executor.md").read_bytes()
-        expected = legacy.replace(b"\r\n", b"\n").replace(b"\n---\n", b"\nmodel: sonnet\n---\n")
+        expected = legacy.replace(b"\r\n---\r\n", b"\r\nmodel: sonnet\n---\r\n")
         self.assertEqual(expected, executor)
         self.assertEqual("sonnet", yaml.safe_load(executor.decode().split("---", 2)[1])["model"])
         for role, content in (("verifier", custom), ("debugger", unusual), ("custom", unrelated)):
@@ -311,7 +335,7 @@ class MigrationTests(unittest.TestCase):
                     if name.startswith((".git/", ".worktrees/", ".ai-venv/")):
                         self.assertEqual(original, (self.target / name).read_bytes(), name)
                 self.assertEqual(before[".planning/config.yaml"].replace(b".ai/runtime/", namespace.encode() + b"/engineer/bin/"), (self.target / ".planning/config.yaml").read_bytes())
-                self.assertIn("original versions remain in backup", " ".join(notes))
+                self.assertTrue(notes["preserved_project_records"])
                 self.assertIn(b"Customer preface\r\n", (self.target / ("AGENTS.md" if host == "codex" else "CLAUDE.md")).read_bytes())
                 self.assertIn(b"Customer footer\r\n", (self.target / ("AGENTS.md" if host == "codex" else "CLAUDE.md")).read_bytes())
                 skills = ".agents/skills" if host == "codex" else ".claude/skills"
@@ -331,7 +355,7 @@ class MigrationTests(unittest.TestCase):
     def test_collision_refuses_without_any_target_changes(self):
         self.write(".codex/engineer/RULES.md", b"Independent existing host workflow")
         before = self.snapshot()
-        with self.assertRaisesRegex(ValueError, "destination conflicts"):
+        with self.assertRaisesRegex(ValueError, "native collision"):
             self.plan()
         self.assertEqual(before, self.snapshot())
 
@@ -380,7 +404,7 @@ class MigrationTests(unittest.TestCase):
         # assertion here is "relocated, not duplicated"; a hardcoded count means
         # the next hook added to an already-registered event fails this test for
         # a reason that has nothing to do with migration.
-        expected = collections.Counter(event for event, _, _ in installer.MANAGED_HOOKS)
+        expected = {event: len(groups) for event, groups in installer.hook_settings("codex")["hooks"].items()}
         for event, count in expected.items():
             self.assertEqual(count, len(result["hooks"][event]),
                              f"{event} registrations were duplicated rather than relocated")
@@ -402,7 +426,7 @@ class MigrationTests(unittest.TestCase):
         (self.target / ".workflow-backups").unlink()
         self.write(".codex/runtime", b"a file, not a directory")
         before = self.snapshot()
-        with self.assertRaisesRegex(ValueError, "parent is not a directory"):
+        with self.assertRaisesRegex(ValueError, "legacy input must be a directory|file used as parent"):
             self.plan()
         self.assertEqual(before, self.snapshot())
 

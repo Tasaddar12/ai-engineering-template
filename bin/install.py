@@ -99,7 +99,10 @@ def same_text(a, b):
     try:
         if a is None or b is None or b"\0" in a or b"\0" in b:
             return False
-        return a.decode("utf-8").replace("\r\n", "\n") == b.decode("utf-8").replace("\r\n", "\n")
+        left, right = a.decode("utf-8"), b.decode("utf-8")
+        if re.search(r"\r(?!\n)", left) or re.search(r"\r(?!\n)", right):
+            return False
+        return left.replace("\r\n", "\n") == right.replace("\r\n", "\n")
     except UnicodeError:
         return False
 
@@ -116,16 +119,32 @@ def render_asset(relative, data, host):
     if "\x00" in text:
         return data
     namespace = "." + host
+    if "skills/" in relative:
+        skill_namespace = "../../" if host == "claude" else "../../../.codex/"
+        def skill_link(match):
+            suffix = match[1]
+            if suffix.split("/", 1)[0] in ("templates", "workflows", "references", "guides", "rules", "RULES.md"):
+                suffix = "engineer/" + suffix
+            elif suffix.startswith("runtime/"):
+                suffix = "engineer/bin/" + suffix[len("runtime/"):]
+            return skill_namespace + suffix
+        text = re.sub(r"(?:\.\./)+\.ai/([\w./-]+)", skill_link, text)
     for prefix in ("engineer", "agents", "commands", "hooks", "scripts", "bin"):
         text = re.sub(r"(?<![\w./-])" + prefix + r"/", namespace + "/" + prefix + "/", text)
     text = text.replace(".agents/skills/", skill_root(host) + "/").replace(".claude/skills/", skill_root(host) + "/")
     if host == "claude":
         text = text.replace("AGENTS.md", "CLAUDE.md")
+        text = text.replace(".claude/agents/code-fixer.md", ".claude/engineer/references/code-fixer.md")
+        if relative.startswith("agents/"):
+            text = text.replace("](code-fixer.md)", "](../engineer/references/code-fixer.md)")
+        if relative == "agents/code-fixer.md":
+            text = text.replace("../engineer/", "../")
     if re.search(r"(?:^|/)agents/[^/]+\.md$", relative) and text.startswith("---"):
         bits = text.split("---", 2)
         if len(bits) == 3:
-            header = re.sub(r"^(?:model|effort|maxTurns):.*\n", "", bits[1], flags=re.M)
+            header = re.sub(r"^(?:model|effort|maxTurns|model_reasoning_effort):[^\r\n]*(?:\r?\n|$)", "", bits[1], flags=re.M)
             role = Path(relative).stem
+            header = re.sub(r"^name: (?:coder|phase-preparer|phase-checker|researcher)[ \t]*$", "name: " + role, header, flags=re.M)
             if host == "claude":
                 defaults = {"scout": ("haiku", None), "targeted-fixer": ("haiku", None), "executor": ("sonnet", None), "planner": ("opus", "medium")}
                 model, effort = defaults.get(role, (None, None))
@@ -155,7 +174,10 @@ def hook_settings(host):
         for matcher, script, timeout in records:
             root = '"$(git rev-parse --show-toplevel)/.' + host + '/hooks/'
             command = 'bash ' + root + ("python-hook.sh\" " + script if script.endswith(".py") else script + '"')
-            group = {"hooks": [{"type": "command", "command": command, "timeout": timeout}]}
+            handler = {"type": "command", "command": command, "timeout": timeout}
+            if host == "codex":
+                handler["commandWindows"] = "python (Join-Path (git rev-parse --show-toplevel) '.codex/hooks/" + script.removesuffix(".sh").removesuffix(".py") + ".py'); exit $LASTEXITCODE"
+            group = {"hooks": [handler]}
             if matcher:
                 group["matcher"] = matcher
             groups.append(group)
@@ -172,8 +194,10 @@ def managed_command(command):
 
 
 def merge_events(existing, incoming):
+    validate_events(existing)
+    validate_events(incoming)
     result = {}
-    for event in existing.keys() | incoming.keys():
+    for event in sorted(existing.keys() | incoming.keys()):
         keep = []
         for group in existing.get(event, []):
             handlers = group.get("hooks", [])
@@ -186,9 +210,43 @@ def merge_events(existing, incoming):
     return {event: groups for event, groups in result.items() if groups}
 
 
+def validate_events(events):
+    if not isinstance(events, dict):
+        raise ValueError("host settings hooks must be a mapping")
+    for event, groups in sorted(events.items()):
+        if not isinstance(groups, list):
+            raise ValueError("host settings event groups must be arrays: " + event)
+        for group in groups:
+            if not isinstance(group, dict) or not isinstance(group.get("hooks"), list):
+                raise ValueError("host settings hook group must contain a hooks array")
+            for handler in group["hooks"]:
+                if not isinstance(handler, dict) or not isinstance(handler.get("type"), str):
+                    raise ValueError("host settings hook handler must have a type")
+                if handler["type"] == "command" and (not isinstance(handler.get("command"), str) or not handler["command"]):
+                    raise ValueError("host settings command hook must have a command")
+
+
+def unique_json(pairs):
+    value = {}
+    for key, child in pairs:
+        if key in value:
+            raise ValueError("host settings duplicate key: " + key)
+        value[key] = child
+    return value
+
+
+def settings_json(raw):
+    value = json.loads(raw, object_pairs_hook=unique_json,
+                       parse_constant=lambda word: (_ for _ in ()).throw(ValueError("host settings invalid constant: " + word)))
+    if not isinstance(value, dict):
+        raise ValueError("host settings must be an object")
+    validate_events(value.get("hooks", {}))
+    return value
+
+
 def hooks_toml(events):
     lines = []
-    for event, groups in events.items():
+    for event, groups in sorted(events.items()):
         for group in groups:
             lines.append("[[hooks." + event + "]]")
             if "matcher" in group:
@@ -265,7 +323,17 @@ def merge_codex_config(original, incoming, label="config.toml"):
         current = tomllib.loads(text)
         desired = tomllib.loads(incoming.decode())
     except tomllib.TOMLDecodeError as exc:
-        raise ValueError(label + " invalid TOML: " + str(exc)) from exc
+        raise ValueError("host settings " + label + " invalid TOML: " + str(exc)) from exc
+    validate_events(current.get("hooks", {}))
+    if not isinstance(current.get("agents", {}), dict):
+        raise ValueError(label + " agents must be a table; nothing was installed")
+    for _, line, inside in toml_lines(text):
+        if not inside and re.match(r'\s*agents\s*=\s*\{', line):
+            raise ValueError(label + " inline agents table is unsupported; nothing was installed")
+    for key_name in ("max_threads", "max_concurrent_threads_per_session"):
+        value = current.get("agents", {}).get(key_name)
+        if value is not None and (type(value) is not int or value < 1):
+            raise ValueError(label + " concurrency must be a positive integer; nothing was installed")
     lines = text.splitlines(keepends=True)
     remove, replace = set(), {}
     group = ""
@@ -288,15 +356,18 @@ def merge_codex_config(original, incoming, label="config.toml"):
                 remove.add(i)
     text = "".join(replace.get(i, line) for i, line in enumerate(lines) if i not in remove)
     if not cap_done:
+        newline = "\r\n" if "\r\n" in text else "\n"
         headers = [(i, line) for i, line, inside in toml_lines(text) if not inside and re.match(r'\s*\[(?:agents|"agents"|\'agents\')\]\s*(?:#.*)?$', line.rstrip())]
         if headers:
             lines = text.splitlines(keepends=True)
             index = headers[0][0] + 1
-            lines.insert(index, "max_concurrent_threads_per_session = 12\n")
+            if index and not lines[index - 1].endswith(("\n", "\r")):
+                lines[index - 1] += newline
+            lines.insert(index, "max_concurrent_threads_per_session = 12" + newline)
             text = "".join(lines)
         else:
             # A dotted declaration before all tables avoids reopening a parent table.
-            text = "agents.max_concurrent_threads_per_session = 12\n" + text
+            text = "agents.max_concurrent_threads_per_session = 12" + newline + text
     if "hooks" in desired:
         old_hooks = current.get("hooks", {})
         merged = merge_events(old_hooks, desired["hooks"])
@@ -374,22 +445,38 @@ def payload(source, host, hooks=True):
         raise ValueError("source requires engineer/bin/engineer.py")
     result = {}
     for relative, data in inventory(source).items():
-        if relative.startswith("bin/install-assets/") or (relative.startswith("agents/") and Path(relative).stem.startswith("gsd-")):
+        if relative.startswith("bin/install-assets/") or relative in {"skills/SKILL", "bin/generate-assets.py"} or (relative.startswith("agents/") and Path(relative).stem.startswith("gsd-")):
             continue
         dest = skill_root(host) + relative[len("skills"):] if relative.startswith("skills/") else "." + host + "/" + relative
+        if host == "claude" and relative == "agents/code-fixer.md":
+            dest = ".claude/engineer/references/code-fixer.md"
         result[dest] = render_asset(relative, data, host)
         if host == "codex" and relative.startswith("agents/") and relative.endswith(".md") and Path(relative).stem not in {"AGENT", "code-fixer"}:
             role = Path(relative).stem
             description = re.search(r"^description: (.+)$", data.decode("utf-8"), flags=re.M)
             result[".codex/agents/" + role + ".toml"] = agent_native(role, description[1] if description else role, result[dest].decode("utf-8"))
+    # A copied source can omit native skills or carry only its placeholder. Every
+    # command still exports its complete method, never a shortened redirect.
+    for command in sorted((source / "commands").glob("*.md")):
+        key = skill_root(host) + "/" + command.stem + "/SKILL.md"
+        if key not in result:
+            result[key] = render_asset("commands/" + command.name, command.read_bytes(), host)
     result.update(host_payload(host, hooks))
+    entry_asset = source / "bin/install-assets/agent-entry.txt"
+    if entry_asset.is_file():
+        text = render_asset("agent-entry.txt", entry_asset.read_bytes(), host)
+        entry_name = "CLAUDE.md" if host == "claude" else "AGENTS.md"
+        result[entry_name] = AGENT_MARKER.encode() + b"\n" + text.rstrip() + b"\n" + AGENT_END.encode() + b"\n"
     for name in ("PROJECT", "REQUIREMENTS", "ROADMAP", "STATE"):
         path = source / "bin/install-assets" / (name + ".txt")
         if path.is_file():
             result[".planning/" + name + ".md"] = path.read_bytes()
     config = source / "engineer/templates/config.yaml"
     if config.is_file():
-        result[".planning/config.yaml"] = config.read_bytes()
+        result[".planning/config.yaml"] = config.read_bytes().replace(b"  isolation: worktree", b"  isolation: auto")
+    for name in ("todos/pending/.gitkeep", "todos/completed/.gitkeep", "milestones/.gitkeep"):
+        result[".planning/" + name] = b""
+    result[".planning/todos/README.md"] = b"# Project todos\n\nCapture actual project ideas through engineer_run query todo.add.\n"
     return result
 
 
@@ -404,9 +491,9 @@ def merge_file(name, before, candidate, host, hooks=True):
         return merge_codex_config(before, candidate, name)
     if name == ".claude/settings.json":
         try:
-            old = json.loads(utf8(before, name))
+            old = settings_json(utf8(before, name))
         except (ValueError, TypeError) as exc:
-            raise ValueError("invalid Claude settings") from exc
+            raise ValueError("invalid host settings for Claude: " + str(exc)) from exc
         old["hooks"] = merge_events(old.get("hooks", {}), json.loads(candidate).get("hooks", {}))
         return json_bytes(old)
     return candidate
@@ -414,20 +501,28 @@ def merge_file(name, before, candidate, host, hooks=True):
 
 def plan_install(source, target, host="codex", hooks=True, **kwargs):
     target = Path(target).resolve()
-    if (target / ".ai").exists() or linked(target / ".ai"):
+    if linked(target / ".ai"):
+        raise ValueError("linked path refused: .ai")
+    if (target / ".ai").exists():
         raise ValueError("legacy .ai requires explicit migration first")
     other = ".claude" if host == "codex" else ".codex"
     if (target / other / "engineer/bin/engineer.py").exists():
         raise ValueError("second host installation conflicts")
     changes, originals = [], {}
+    ownership = load_module("update").load_manifest(target, host)["files"]
     for name, candidate in payload(source, host, hooks).items():
         path = destination(target, name)
+        if path.exists() and not path.is_file():
+            raise ValueError("directory occupies installed file: " + name)
         before = path.read_bytes() if path.is_file() else None
         if before is not None:
             if name.startswith(".planning/"):
                 continue
             if name in ("AGENTS.md", "CLAUDE.md", ".gitignore", ".codex/config.toml", ".claude/settings.json"):
                 candidate = merge_file(name, before, candidate, host, hooks)
+                record = ownership.get(name)
+                if record and digest(before) != record.get("installed_sha256") and not same_text(before, candidate):
+                    raise ValueError("customized managed entry or host registration; reconcile with reviewed update: " + name)
             elif not same_text(before, candidate):
                 raise ValueError("conflict at " + name + "; use reviewed update")
         if before is None or not same_text(before, candidate):
@@ -459,6 +554,11 @@ def backup_migration(target, originals):
 
 
 def write_changes(target, changes):
+    # Validate the entire batch before creating a parent or writing the first file.
+    for path, data in changes:
+        checked = destination(target, path.relative_to(Path(target).resolve()).as_posix())
+        if checked.exists() and not checked.is_file():
+            raise ValueError("directory occupies installed file: " + str(checked))
     for path, data in changes:
         relative = path.relative_to(Path(target).resolve()).as_posix()
         checked = destination(target, relative)
@@ -475,7 +575,7 @@ def write_changes(target, changes):
 def fetch(source, revision, destination_root):
     if not revision:
         raise ValueError("a pinned --ref is required")
-    subprocess.run(["git", "clone", "--quiet", "--no-checkout", "--", str(source), str(destination_root)], check=True, capture_output=True)
+    subprocess.run(["git", "clone", "--quiet", "--no-checkout", "--config", "core.autocrlf=false", "--config", "core.eol=lf", "--", str(source), str(destination_root)], check=True, capture_output=True)
     resolved = subprocess.run(["git", "rev-parse", "--verify", revision + "^{commit}"], cwd=destination_root, check=True, capture_output=True, text=True).stdout.strip()
     subprocess.run(["git", "checkout", "--quiet", "--detach", resolved], cwd=destination_root, check=True, capture_output=True)
     return resolved
@@ -521,6 +621,8 @@ def main(argv=None):
             preexisting = {name for name in payload(source, args.host, not args.no_hooks) if (target / name).is_file()}
             if args.dry_run:
                 print("Would change " + str(len(changes)) + " paths")
+                for path, _ in changes:
+                    print("write " + path.relative_to(target).as_posix())
                 return 0
             if originals:
                 backup_migration(target, originals)
@@ -537,7 +639,7 @@ def main(argv=None):
             print("Installed " + args.host + " workflow at " + str(target) + " from " + revision + "; human must review and commit")
         return 0
     except (ValueError, OSError, subprocess.SubprocessError) as exc:
-        print(str(exc), file=sys.stderr)
+        print(str(exc) + "; nothing was installed", file=sys.stderr)
         return 2
 
 

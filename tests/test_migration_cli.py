@@ -57,7 +57,7 @@ class MigrationCliTests(unittest.TestCase):
                 self.assertFalse((self.target / ".ai").exists())
                 namespace = "." + host
                 self.assertEqual(originals[".ai/assets/data.bin"], (self.target / namespace / "assets/data.bin").read_bytes())
-                self.assertEqual(originals[".ai/runtime/custom.py"], (self.target / namespace / "runtime/custom.py").read_bytes())
+                self.assertEqual(originals[".ai/runtime/custom.py"], (self.target / namespace / "engineer/bin/custom.py").read_bytes())
                 for relative, content in originals.items():
                     if relative.startswith(".planning/") and not relative.endswith("config.yaml"):
                         self.assertEqual(content, (self.target / relative).read_bytes(), relative)
@@ -82,7 +82,7 @@ class MigrationCliTests(unittest.TestCase):
                     self.assertEqual(hashlib.sha256(saved).hexdigest(), digest)
                     self.assertEqual(originals[relative], saved)
                 for relative in originals:
-                    if relative != "README.md":
+                    if relative.startswith(".ai/") or relative in {"AGENTS.md", ".gitignore", ".planning/config.yaml"}:
                         self.assertIn(relative, manifest)
                 ignored = support.command("git", "check-ignore", ".workflow-backups/", cwd=self.target)
                 self.assertIn(".workflow-backups/", ignored)
@@ -92,7 +92,7 @@ class MigrationCliTests(unittest.TestCase):
                     expected = namespace + "/" + directory + "/private/example"
                     self.assertIn(expected, support.command("git", "check-ignore", expected, cwd=self.target))
                 listed = json.loads(support.command(
-                    sys.executable, namespace + "/runtime/phase.py", "query", "phases.list",
+                    sys.executable, namespace + "/engineer/bin/engineer.py", "query", "phases.list",
                     cwd=self.target))
                 self.assertTrue(listed["ok"])
                 self.assertEqual([], listed["phases"])
@@ -100,7 +100,7 @@ class MigrationCliTests(unittest.TestCase):
     def test_native_collision_leaves_all_originals_and_no_backup(self):
         self.seed_project()
         native = self.target / ".claude/engineer/RULES.md"
-        native.parent.mkdir()
+        native.parent.mkdir(parents=True)
         native.write_bytes(b"An existing second workflow must not be overwritten.\n")
         before = self.snapshot()
         result = self.install("--host", "claude", "--migrate-existing")

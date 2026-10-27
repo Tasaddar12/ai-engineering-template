@@ -16,6 +16,15 @@ Hook JSON is untrusted input. A malformed event must not become a tool denial fr
 
 `context-handoff.py` obtains configured limits through the runtime, which reads `.planning/config.yaml`. It uses a bounded transcript tail when the event carries no direct token usage. Missing context evidence or an unavailable runtime is an advisory diagnostic, not permission to infer completion.
 
+Planning integrity checks a temporary prospective `.planning/` snapshot through
+the copied runtime's `ENGINEER_ROOT` interface. Ordinary commits use exact staged
+Git blobs; `--all` uses tracked worktree bytes, and `--only` combines selected
+worktree paths with unchanged `HEAD` planning records. Explicit `--include`
+paths are overlaid on the index snapshot. The hook never updates the Git index
+or executes the submitted commit. A missing runtime, ambiguous path selection,
+malformed strict result or failed snapshot inspection returns 2; warn-only
+validation and advisory hooks retain their separate failure behavior.
+
 `scripts/cleanup.py` is deliberately absent from registrations. Use `preview`, inspect its exact entries, then `apply --approval-token TOKEN --confirm`. The runtime revalidates ownership, clean state, ancestry and captured HEAD separately before every deletion. No implicit force option exists.
 
 Tests are under `tests/hooks/` and `tests/test_worktree_path_guard.py`. Execute them only at the workflow's authorized validation point.

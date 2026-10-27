@@ -28,7 +28,7 @@ class WorktreePathGuard(unittest.TestCase):
     def test_writer_without_isolation_warns_and_records_exact_dispatch(self):
         event = {"tool_name": "Agent", "session_id": "session", "tool_use_id": "call-1", "tool_input": {"subagent_type": "executor", "agent_id": "worker"}}
         warning = guard.inspect(event)
-        self.assertTrue(any("isolation=worktree" in text for text in warning))
+        self.assertTrue(any('isolation="worktree"' in text for text in warning))
         record = json.loads((self.root / ".planning/handoffs/.active-session.jsonl").read_text())
         self.assertEqual("worker", record["agent_id"])
         self.assertEqual("executor", record["role"])
@@ -53,6 +53,29 @@ class WorktreePathGuard(unittest.TestCase):
     def test_apply_patch_paths_receive_the_same_containment_advice(self):
         event = {"tool_name": "apply_patch", "tool_input": {"patch": "*** Begin Patch\n*** Update File: ../outside.py\n*** End Patch"}}
         self.assertTrue(any("outside" in value for value in guard.inspect(event)))
+
+    def test_read_only_roles_without_isolation_remain_quiet(self):
+        for role in ("scout", "code-reviewer", "doc-verifier", "dom-verifier"):
+            self.assertEqual([], guard.inspect({"tool_name": "Agent", "tool_input": {"role": role}}))
+
+    def test_plugin_prefixed_writer_records_canonical_and_actual_dispatch_role(self):
+        event = {"tool_name": "Agent", "session_id": "prefixed", "tool_input": {"agent_type": "plugin:workflow:executor", "agent_id": "worker"}}
+        self.assertTrue(any("executor" in message for message in guard.inspect(event)))
+        record = json.loads((self.root / ".planning/handoffs/.active-prefixed.jsonl").read_text())
+        self.assertEqual("executor", record["role"])
+        self.assertEqual("plugin:workflow:executor", record["raw_role"])
+
+    def test_all_patch_operations_and_notebook_paths_receive_advice(self):
+        for operation in ("Add", "Update", "Delete"):
+            event = {"tool_name": "apply_patch", "tool_input": {"input": "*** " + operation + " File: ../outside.txt\n"}}
+            self.assertTrue(any("outside" in value for value in guard.inspect(event)))
+        event = {"tool_name": "NotebookEdit", "tool_input": {"notebook_path": "../outside.ipynb"}}
+        self.assertTrue(any("outside" in value for value in guard.inspect(event)))
+
+    def test_absolute_reparse_path_reports_link_even_when_destination_resolves_inside(self):
+        event = {"tool_name": "Edit", "tool_input": {"file_path": str(self.root / "linked/file.py")}}
+        with patch.object(guard, "reparse", side_effect=lambda path: path.name == "linked"):
+            self.assertTrue(any("reparse" in value for value in guard.inspect(event)))
 
     def test_malformed_json_never_blocks(self):
         with patch("sys.stdin", new=io.StringIO("not-json")), patch("sys.stderr", new=io.StringIO()):

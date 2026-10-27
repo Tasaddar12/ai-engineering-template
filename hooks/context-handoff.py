@@ -1,14 +1,17 @@
 """Emit configured context handoff advice without stopping orchestrators or tools."""
 import json
+import math
 from pathlib import Path
 import re
 import sys
-from hook_common import read_event, root_for, query, advisory, roles
+from hook_common import read_event, root_for, query, advisory, roles, role_name
 
 
 def context_tokens(event):
-    direct = event.get("context_tokens") or event.get("tokens_used")
-    if isinstance(direct, (int, float)):
+    direct = event.get("context_tokens", event.get("tokens_used"))
+    if direct is not None:
+        if type(direct) not in (int, float) or not math.isfinite(direct) or direct < 0:
+            raise ValueError("invalid observed context tokens")
         return int(direct)
     usage = event.get("usage", {})
     transcript = event.get("transcript_path")
@@ -22,18 +25,26 @@ def context_tokens(event):
             for line in reversed(lines):
                 try:
                     record = json.loads(line)
-                    usage = record.get("message", {}).get("usage") or record.get("usage") or {}
+                    if not isinstance(record, dict):
+                        continue
+                    message = record.get("message")
+                    usage = (message.get("usage") if isinstance(message, dict) else None) or record.get("usage") or {}
                     if usage:
                         break
                 except (ValueError, TypeError):
                     continue
-    return sum(int(usage.get(key, 0) or 0) for key in ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens", "output_tokens"))
+    if not isinstance(usage, dict):
+        raise ValueError("usage meter must be an object")
+    values = [usage.get(key, 0) or 0 for key in ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens", "output_tokens")]
+    if any(type(value) not in (int, float) or not math.isfinite(value) or value < 0 for value in values):
+        raise ValueError("invalid observed usage meter")
+    return sum(int(value) for value in values)
 
 
 def main():
     try:
         event = read_event()
-        role = event.get("agent_type") or event.get("role")
+        role = role_name(event.get("agent_type") or event.get("role"))
         agent = event.get("agent_id")
         # Missing identity is the foreground coordinator, not permission to stop it.
         if not agent or role in ("coordinator", "orchestrator"):
@@ -41,10 +52,14 @@ def main():
         root = root_for(event)
         limits = query(root, "handoff.limits")
         limits = limits.get("limits", limits)
+        if type(limits.get("enabled", True)) is not bool:
+            raise ValueError("handoff enabled flag must be boolean")
         if not limits.get("enabled", True):
             return 0
         used = context_tokens(event)
-        threshold = int(limits.get("threshold_tokens", 250000))
+        threshold = limits.get("threshold_tokens", 250000)
+        if type(threshold) is not int or threshold <= 0:
+            raise ValueError("handoff threshold must be a positive integer")
         if used < threshold:
             return 0
         name = re.sub(r"[^A-Za-z0-9_.-]", "_", str(event.get("session_id", "session")) + "-" + str(agent))

@@ -7,6 +7,7 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -33,7 +34,7 @@ def compare_content(current, candidate):
 
 
 def destination(target, name):
-    allowed = name in ("AGENTS.md", "CLAUDE.md", ".gitignore") or name.startswith((".claude/", ".codex/", ".agents/skills/"))
+    allowed = name in ("AGENTS.md", "CLAUDE.md", ".gitignore", ".planning/config.yaml", ".planning/PROJECT.md", ".planning/STATE.md", ".planning/ROADMAP.md", ".planning/REQUIREMENTS.md") or name.startswith((".claude/", ".codex/", ".agents/skills/"))
     if not allowed:
         raise ValueError("project code is outside workflow ownership: " + str(name))
     return installer.destination(target, name)
@@ -48,12 +49,17 @@ def load_manifest(target, host):
     if not path.exists():
         return {"schema": 1, "host": host, "files": {}, "current": {}}
     value = json.loads(path.read_bytes())
-    if value.get("host") != host or not isinstance(value.get("files"), dict):
+    if not isinstance(value, dict) or value.get("schema") != 1 or value.get("host") != host or not isinstance(value.get("files"), dict) or not isinstance(value.get("current"), dict):
         raise ValueError("invalid workflow ownership manifest")
     for name, record in value["files"].items():
         destination(target, name)
-        if record.get("classification") not in ("upstream-managed", "customized", "unproven"):
+        if name.startswith(".planning/"):
+            raise ValueError("project records cannot be owned by workflow manifest: " + name)
+        if not isinstance(record, dict) or record.get("classification") not in ("upstream-managed", "customized", "unproven"):
             raise ValueError("Invalid ownership classification: " + name)
+        for key in ("installed_sha256", "upstream_sha256"):
+            if record.get(key) is not None and (not isinstance(record[key], str) or not re.fullmatch(r"[a-f0-9]{64}", record[key])):
+                raise ValueError("invalid ownership byte hash: " + name)
     return value
 
 
@@ -113,21 +119,37 @@ def build_plan(source, target, host="codex", hooks=True, source_url=None, revisi
     manifest_file = manifest_path(target, host)
     manifest_raw = manifest_file.read_bytes() if manifest_file.exists() else None
     manifest = load_manifest(target, host)
-    incoming = {name: data for name, data in installer.payload(source, host, hooks).items() if not name.startswith(".planning/")}
+    incoming = {name: data for name, data in installer.payload(source, host, hooks).items()
+                if not name.startswith(".planning/") or name in {".planning/config.yaml", ".planning/PROJECT.md", ".planning/REQUIREMENTS.md", ".planning/ROADMAP.md", ".planning/STATE.md"}}
     base_payload = installer.payload(baseline, host, hooks) if baseline else {}
     owned = manifest["files"]
     entries = []
-    for name in sorted(incoming.keys() | owned.keys()):
+    installed = {name: data for name, data in inventory(target, "installed").items()
+                 if not name.endswith(("/workflow-ownership.json", "/settings.local.json"))}
+    for name in sorted(incoming.keys() | owned.keys() | installed.keys()):
         path = destination(target, name)
+        if path.exists() and not path.is_file():
+            raise ValueError("directory occupies installed file: " + name)
         before = path.read_bytes() if path.is_file() else None
         upstream = incoming.get(name)
         record = owned.get(name, {})
         known = record.get("classification", "unproven")
         unchanged = digest(before) == record.get("installed_sha256") and bool(record)
         classification = known if unchanged else "customized" if record else "unproven"
+        if not record and before is None and upstream is not None:
+            classification = "upstream-managed"
+        project = (name.startswith(".planning/") and name != ".planning/config.yaml" or
+                   name in installed and name not in incoming and name not in owned)
+        if project:
+            classification = "project"
         candidate = upstream
+        generated_conflict = False
         if before is not None and upstream is not None and name in ("AGENTS.md", "CLAUDE.md", ".gitignore", ".codex/config.toml", ".claude/settings.json"):
             candidate = installer.merge_file(name, before, upstream, host, hooks)
+            if name in ("AGENTS.md", "CLAUDE.md") and not base_payload.get(name):
+                current_block = installer.managed_block(installer.utf8(before, name))
+                new_block = installer.managed_block(installer.utf8(upstream, name))
+                generated_conflict = current_block != new_block
             if name in ("AGENTS.md", "CLAUDE.md") and base_payload.get(name):
                 # Surrounding user instructions never turn the managed block into a conflict.
                 current_block = installer.managed_block(installer.utf8(before, name))
@@ -135,17 +157,29 @@ def build_plan(source, target, host="codex", hooks=True, source_url=None, revisi
                 if current_block == old_block and known != "customized":
                     classification = "upstream-managed"
                     unchanged = True
+                elif current_block != old_block:
+                    generated_conflict = True
             elif name in (".gitignore", ".codex/config.toml", ".claude/settings.json"):
                 classification = "upstream-managed"
                 unchanged = True
-        comparison = compare_content(before, candidate)
-        conflict = comparison != "unchanged" and (classification != "upstream-managed" or upstream is None)
-        # Retired files require an explicit reviewed deletion; never prune user files implicitly.
-        action = "keep" if upstream is None or conflict or comparison == "unchanged" else "write"
+        required, optional, config_error = {}, {}, None
+        if name == ".planning/config.yaml":
+            support = installer.load_module("config_support")
+            candidate, required, optional, config_error = support.review(source, before, upstream)
+            classification = "project"
+        comparison = compare_content(before, upstream if project else candidate)
+        conflict = ("invalid project configuration: " + config_error if config_error else
+                    "generated-file conflict" if generated_conflict else
+                    "reviewed resolution required" if comparison != "unchanged" and classification != "project" and (classification != "upstream-managed" or upstream is None) else None)
+        if project:
+            candidate = before
+        action = "keep" if project or upstream is None or conflict or compare_content(before, candidate) == "unchanged" else "write"
         entries.append({"path": name, "classification": classification, "conflict": conflict,
-                        "action": action, "comparison": comparison, "candidate_comparison": compare_content(before, upstream),
+                        "action": action, "comparison": comparison, "candidate_comparison": compare_content(before, candidate),
                         "before_sha256": digest(before), "candidate_sha256": digest(candidate),
                         "upstream_sha256": digest(upstream), "candidate_base64": encoded(candidate),
+                        "required_config": required, "optional_defaults": optional,
+                        "generated_conflict": generated_conflict, "config_error": config_error,
                         "diff": text_diff(name, before, candidate)})
     return {"schema": SCHEMA, "target": str(target), "host": host, "hooks": hooks,
             "source": str(source_url or source), "revision": revision,
@@ -155,8 +189,10 @@ def build_plan(source, target, host="codex", hooks=True, source_url=None, revisi
 
 
 def apply_plan(plan, source, baseline=None):
-    if plan.get("schema") != SCHEMA:
+    if not isinstance(plan, dict) or plan.get("schema") != SCHEMA:
         raise ValueError("unsupported schema; create a new plan")
+    if not {"target", "host", "hooks", "source", "revision", "entries", "resolutions"} <= plan.keys() or not isinstance(plan["entries"], list) or not isinstance(plan["resolutions"], dict):
+        raise ValueError("invalid review plan schema; create a new plan")
     expected = build_plan(source, plan["target"], plan["host"], plan["hooks"], plan["source"], plan["revision"], baseline)
     reviewed = dict(plan)
     resolutions = reviewed.pop("resolutions", {})
@@ -170,14 +206,24 @@ def apply_plan(plan, source, baseline=None):
         raise ValueError("resolution names a path outside the reviewed plan")
     for entry in plan["entries"]:
         resolution = resolutions.get(entry["path"], {})
+        if not isinstance(resolution, dict):
+            raise ValueError("reviewed resolution must be an object: " + entry["path"])
         if entry["conflict"] and not resolution:
-            raise ValueError("conflict requires reviewed resolution: " + entry["path"])
+            raise ValueError("Unresolved conflict requires reviewed resolution: " + entry["path"])
         action = resolution.get("action", entry["action"])
         classification = resolution.get("classification", entry["classification"])
         if action == "remove":
             action = "delete"
-        if action not in ("write", "keep", "delete") or classification not in ("upstream-managed", "customized", "unproven"):
+        if action not in ("write", "keep", "delete") or classification not in ("upstream-managed", "customized", "unproven", "project"):
             raise ValueError("invalid resolution for " + entry["path"])
+        if entry["config_error"]:
+            raise ValueError("invalid project configuration: " + entry["path"])
+        if entry["generated_conflict"] and action != "keep":
+            raise ValueError("generated-file conflict must be reconciled before a new preview: " + entry["path"])
+        if entry["classification"] == "project" and entry["path"] != ".planning/config.yaml" and action != "keep":
+            raise ValueError("project additions and records cannot be replaced by an update")
+        if resolution and set(resolution) - {"action", "classification"}:
+            raise ValueError("unknown reviewed resolution fields: " + entry["path"])
         if action == "write" and entry["candidate_base64"] is None:
             raise ValueError("retired path has no write candidate")
         if action == "delete" and entry["candidate_base64"] is not None:
@@ -192,6 +238,7 @@ def apply_plan(plan, source, baseline=None):
             if before is not None:
                 originals[path] = before
     # Complete every guard before backups or source mutations.
+    installer.destination(plan["target"], ".workflow-backups/preflight")
     if originals:
         installer.backup_migration(plan["target"], originals)
     if tree_digest(source) != plan["source_inventory_sha256"] or tree_digest(baseline) != plan["baseline_inventory_sha256"]:
@@ -205,8 +252,13 @@ def apply_plan(plan, source, baseline=None):
             raise ValueError("installed bytes changed during backup: " + entry["path"])
     installer.write_changes(plan["target"], changes)
     manifest = load_manifest(plan["target"], plan["host"])
-    manifest["current"] = {"source": plan["source"], "revision": plan["revision"]}
+    next_revision = {"source": plan["source"], "revision": plan["revision"]}
+    if manifest.get("current") != next_revision:
+        manifest["previous"] = manifest.get("current", {})
+        manifest["current"] = next_revision
     for entry in plan["entries"]:
+        if entry["classification"] == "project":
+            continue
         resolution = resolutions.get(entry["path"], {})
         action = resolution.get("action", entry["action"])
         if action in ("delete", "remove"):
@@ -220,7 +272,7 @@ def apply_plan(plan, source, baseline=None):
             manifest["files"][entry["path"]] = {"classification": classification,
                 "installed_sha256": digest(path.read_bytes()), "upstream_sha256": entry["upstream_sha256"]}
     manifest_path(plan["target"], plan["host"]).write_bytes(installer.json_bytes(manifest))
-    return [str(path) for path, _ in changes]
+    return [path.relative_to(Path(plan["target"])).as_posix() for path, _ in changes]
 
 
 def plan_update(source, target, host, hooks, installer_module=None, baseline=None, prune=False, previous=None):
@@ -249,7 +301,7 @@ def main(argv=None):
     parser.add_argument("--target")
     parser.add_argument("--source")
     parser.add_argument("--ref")
-    parser.add_argument("--host", choices=installer.HOSTS, default="codex")
+    parser.add_argument("--host", choices=installer.HOSTS)
     parser.add_argument("--no-hooks", action="store_true")
     parser.add_argument("--plan", type=Path)
     parser.add_argument("--apply", type=Path)
@@ -259,7 +311,7 @@ def main(argv=None):
         if args.apply:
             raw = args.apply.read_bytes()
             if not args.reviewed_plan_sha256 or digest(raw) != args.reviewed_plan_sha256:
-                raise ValueError("--reviewed-plan-sha256 must match the exact reviewed plan bytes")
+                raise ValueError("exact --reviewed-plan-sha256 must match the reviewed plan bytes")
             plan = json.loads(raw)
             with tempfile.TemporaryDirectory(prefix="engineer-update-") as temp:
                 source = Path(temp) / "source"
@@ -272,10 +324,15 @@ def main(argv=None):
                     baseline = Path(temp) / "baseline"
                     fetch(old["source"], old["revision"], baseline)
                 changed = apply_plan(plan, source, baseline)
-                print("Applied " + str(len(changed)) + " reviewed changes")
+                print(json.dumps({"changed": changed}))
         else:
             if not args.target or not args.source or not args.ref:
                 raise ValueError("preview requires --target, --source and pinned --ref")
+            if args.host is None:
+                hosts = [host for host in installer.HOSTS if (Path(args.target) / ("." + host) / "engineer/bin/engineer.py").is_file()]
+                if len(hosts) != 1:
+                    raise ValueError("preview requires exactly one installed host or explicit --host")
+                args.host = hosts[0]
             with tempfile.TemporaryDirectory(prefix="engineer-update-") as temp:
                 source = Path(temp) / "source"
                 revision = fetch(args.source, args.ref, source)

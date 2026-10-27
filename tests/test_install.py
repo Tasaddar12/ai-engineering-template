@@ -100,8 +100,8 @@ class CodexConcurrencySettings(unittest.TestCase):
 
 class InstallerTests(unittest.TestCase):
     def test_standalone_cleanup_payload_for_both_hosts_without_global_guard(self):
-        cleanup_paths = ("hooks/cleanup.py", "runtime/lib/cleanup.py", "commands/cleanup.md",
-                         "workflows/cleanup.md", "references/cleanup.md")
+        cleanup_paths = ("scripts/cleanup.py", "engineer/bin/lib/cleanup.py", "commands/cleanup.md",
+                         "engineer/workflows/cleanup.md", "engineer/references/cleanup.md")
         for host in ("codex", "claude"):
             with self.subTest(host=host):
                 self.target = self.base / host
@@ -127,17 +127,17 @@ class InstallerTests(unittest.TestCase):
                 advisory = [hook["command"] for group in hooks["PreToolUse"]
                             for hook in group["hooks"]]
                 self.assertTrue(advisory)
-                self.assertTrue(any("worktree-guard.sh" in command for command in advisory))
-                self.assertTrue(all("worktree-guard.sh" in command or "planning-integrity.sh" in command
+                self.assertTrue(any("worktree-path-guard.py" in command for command in advisory))
+                self.assertTrue(all("worktree-path-guard.py" in command or "planning-integrity.sh" in command
                                     for command in advisory))
 
     def test_claude_role_defaults_replace_stale_metadata_and_preserve_body(self):
         for name, model, effort in (("scout", "haiku", None), ("targeted-fixer", "haiku", None),
                                     ("executor", "sonnet", None), ("planner", "opus", "medium")):
             with self.subTest(role=name):
-                source = (ROOT / ".ai/agents" / (name + ".md")).read_text(encoding="utf-8")
+                source = (ROOT / "agents" / (name + ".md")).read_text(encoding="utf-8")
                 stale = source.replace("---\n", "---\nmodel: wrong\nmodel: stale\neffort: max\nmodel_reasoning_effort: high\n", 1)
-                exported = installer.render_asset(".ai/agents/" + name + ".md", stale.encode(), "claude").decode()
+                exported = installer.render_asset("agents/" + name + ".md", stale.encode(), "claude").decode()
                 header = exported.split("---", 2)[1]
                 metadata = yaml.safe_load(header)
                 self.assertEqual(model, metadata["model"])
@@ -146,13 +146,13 @@ class InstallerTests(unittest.TestCase):
                 self.assertEqual(int(effort is not None), header.count("\neffort:"))
                 self.assertNotIn("model_reasoning_effort", metadata)
                 # Metadata normalization must not alter the complete relocated role body.
-                clean = installer.render_asset(".ai/agents/" + name + ".md", source.encode(), "claude").decode()
+                clean = installer.render_asset("agents/" + name + ".md", source.encode(), "claude").decode()
                 self.assertEqual(clean.split("---", 2)[2], exported.split("---", 2)[2])
                 original = yaml.safe_load(source.split("---", 2)[1])
                 for key, value in original.items():
                     self.assertEqual(value, metadata[key])
-                self.assertEqual(stale.split("---", 2)[1], installer.render_asset(
-                    ".ai/agents/" + name + ".md", stale.encode(), "codex").decode().split("---", 2)[1])
+                codex = yaml.safe_load(installer.render_asset("agents/" + name + ".md", stale.encode(), "codex").decode().split("---", 2)[1])
+                self.assertTrue({"model", "effort", "model_reasoning_effort", "maxTurns"}.isdisjoint(codex))
 
     def test_fresh_payload_excludes_source_only_maintenance_history_for_both_hosts(self):
         self.assertTrue((self.source / ".ai/maintenance/agent-scout-SUMMARY.md").is_file())
@@ -164,27 +164,19 @@ class InstallerTests(unittest.TestCase):
                 self.assertFalse((self.target / ("." + host) / "maintenance").exists())
                 self.assertFalse(any("maintenance/" in name for name in installer.payload(self.source, host)))
 
-    def test_migration_output_requires_update_pinned_to_same_source_revision_and_host(self):
-        alias = self.base / "target-path-alias"
-        alias.mkdir()
+    def test_migration_records_pinned_source_revision_and_selected_host(self):
         for host in ("codex", "claude"):
-            with self.subTest(host=host):
-                self.target = alias / ".." / host
-                legacy = self.target / ".ai"
-                legacy.mkdir(parents=True)
-                (legacy / "RULES.md").write_text("Custom legacy rules\n")
-                result = self.install("--host", host, "--migrate-existing", "--no-hooks")
-                self.assertEqual(0, result.returncode, result.stderr)
-                self.assertIn("scout activation pending required --update", result.stdout)
-                followup = next(line for line in result.stdout.splitlines() if line.startswith("Required next command"))
-                self.assertNotEqual(self.target, self.target.resolve())
-                self.assertIn(str(self.target.resolve() / ("." + host) / "install.py"), followup)
-                self.assertIn(str(self.source), followup)
-                self.assertIn("--ref " + self.revision, followup)
-                self.assertIn("--host " + host, followup)
-                self.assertIn("--update", followup)
-                self.assertIn("--no-hooks", followup)
-                self.assertNotIn("--ref main", followup)
+            self.target = self.base / host
+            legacy = self.target / ".ai"
+            legacy.mkdir(parents=True)
+            (legacy / "RULES.md").write_text("Custom legacy rules\n")
+            result = self.install("--host", host, "--migrate-existing", "--no-hooks")
+            self.assertEqual(0, result.returncode, result.stderr)
+            manifest = json.loads((self.target / ("." + host) / "workflow-ownership.json").read_bytes())
+            self.assertEqual(host, manifest["host"])
+            self.assertEqual(self.revision, manifest["current"]["revision"])
+            self.assertEqual(str(self.source), manifest["current"]["source"])
+            self.assertEqual(b"Custom legacy rules\n", (self.target / ("." + host) / "engineer/RULES.md").read_bytes())
 
     @classmethod
     def setUpClass(cls):
@@ -239,6 +231,8 @@ type: execute
 wave: 1
 depends_on: []
 files_modified: []
+files_deleted: []
+resources: []
 autonomous: true
 requirements: [REQ-01]
 acceptance: []
@@ -336,7 +330,7 @@ issue_refs: []
                 identity = json.loads(command(sys.executable, runtime, "query",
                                               "runtime-identity", cwd=self.target))
                 self.assertTrue(identity["ok"])
-                self.assertEqual("ai-phase-runtime", identity["packageName"])
+                self.assertEqual("engineer-runtime", identity["packageName"])
                 listed = json.loads(command(sys.executable, runtime, "query", "phases.list",
                                             cwd=self.target))
                 self.assertTrue(listed["ok"])
@@ -374,19 +368,21 @@ issue_refs: []
         listed = json.loads(command(sys.executable, ".codex/engineer/bin/engineer.py", "query",
                                     "phases.list", cwd=self.target))
         self.assertEqual([], listed["phases"])
-        self.assertIn("Onboarding pending", (self.target / ".planning/PROJECT.md").read_text(encoding="utf-8"))
+        for name in ("PROJECT", "REQUIREMENTS", "ROADMAP", "STATE"):
+            pinned = subprocess.run(["git", "show", self.revision + ":bin/install-assets/" + name + ".txt"], cwd=self.source,
+                                    check=True, capture_output=True).stdout
+            self.assertEqual(pinned,
+                             (self.target / ".planning" / (name + ".md")).read_bytes())
         for omitted in ("README.md", "tests", ".github", ".planning/maintenance", ".ai-venv",
-                        "docs", ".ai/install-assets",
-                        ".planning/phases/99-source", ".planning/specs/SPEC-source.md",
-                        ".planning/decisions/ADR-source.md", ".planning/codebase/source-map.md"):
+                        "docs", ".ai/install-assets", ".planning/phases/99-source",
+                        ".planning/specs/SPEC-source.md", ".planning/decisions/ADR-source.md",
+                        ".planning/codebase/source-map.md"):
             self.assertFalse((self.target / omitted).exists(), omitted)
         self.assertEqual([], list(self.target.glob("*.log")))
-        for name in ("AGENTS.md", ".codex/engineer/RULES.md", ".codex/README.md", ".planning/PROJECT.md",
-                     ".planning/REQUIREMENTS.md", ".planning/ROADMAP.md", ".planning/STATE.md"):
-            body = (self.target / name).read_text(encoding="utf-8")
-            for source_claim in ("This repository is a reusable engineering workflow template",
-                                 "This is a reusable template", "CHANGEME", "AUTH-01", "Critical Fix"):
-                self.assertNotIn(source_claim, body, name)
+        for name in ("PROJECT", "REQUIREMENTS", "ROADMAP", "STATE"):
+            body = (self.target / ".planning" / (name + ".md")).read_text(encoding="utf-8")
+            self.assertNotIn("Source-only project history", body)
+            self.assertNotIn("ai-engineering-template", body)
         # Capture and milestone destinations exist before the first todo is written.
         for scaffold in (".planning/todos/README.md", ".planning/todos/pending/.gitkeep",
                          ".planning/todos/completed/.gitkeep", ".planning/milestones/.gitkeep"):
@@ -400,7 +396,7 @@ issue_refs: []
         guide = (self.target / ".codex/commands/install.md").read_text(encoding="utf-8")
         self.assertIn("/main/bin/install.py", guide)
         # Local-only workflow scratch stays out of the project's history.
-        for ignored in (".codex-venv/probe.txt", ".workflow-backups/probe.txt",
+        for ignored in (".workflow-backups/probe.txt",
                         ".planning/handoffs/sess--agent-a1.json"):
             (self.target / ignored).parent.mkdir(parents=True, exist_ok=True)
             (self.target / ignored).write_text("local")
@@ -470,11 +466,11 @@ issue_refs: []
                 self.assertFalse((self.target / ".ai").exists())
                 self.assertFalse((self.target / other).exists())
                 self.assertFalse((self.target / ("CLAUDE.md" if host == "codex" else "AGENTS.md")).exists())
-                for relative in ("RULES.md", "runtime/phase.py", "agents/executor.md",
-                                 "commands/onboard.md", "templates/context.md"):
+                for relative in ("engineer/RULES.md", "engineer/bin/engineer.py", "agents/executor.md",
+                                 "commands/onboard.md", "engineer/templates/context.md"):
                     self.assertTrue((self.target / namespace / relative).is_file(), relative)
                 body = (self.target / entry).read_text(encoding="utf-8")
-                self.assertIn(namespace + "/RULES.md", body)
+                self.assertIn(namespace + "/engineer/RULES.md", body)
                 self.assertNotIn("@AGENTS.md", body)
                 config = (self.target / ".planning/config.yaml").read_text(encoding="utf-8")
                 self.assertIn("verification:", config)
@@ -482,14 +478,14 @@ issue_refs: []
                 listed = json.loads(command(sys.executable, namespace + "/engineer/bin/engineer.py",
                                             "query", "phases.list", cwd=self.target))
                 self.assertEqual([], listed["phases"])
-                self.assertIn(namespace + "-venv/", (self.target / ".gitignore").read_text())
+                self.assertIn(".planning/handoffs/", (self.target / ".gitignore").read_text())
                 skills = self.target / (".agents/skills" if host == "codex" else ".claude/skills")
                 full = (skills / "onboard/SKILL.md").read_text(encoding="utf-8")
-                self.assertIn("<objective>", full)
+                self.assertIn("<process>", full)
                 self.assertNotIn("Read and follow the complete skill at", full)
                 self.assertFalse((self.target / namespace / "roles").exists())
                 for workflow in ("execute-phase.md", "plan-phase.md", "onboard.md"):
-                    self.assertTrue((self.target / namespace / "workflows" / workflow).is_file(),
+                    self.assertTrue((self.target / namespace / "engineer/workflows" / workflow).is_file(),
                                     workflow)
                 if host == "codex":
                     self.assertFalse((self.target / ".codex/skills").exists())
@@ -498,11 +494,8 @@ issue_refs: []
                     self.assertFalse((self.target / ".agents").exists())
 
     def test_native_agent_models_and_direct_roles_install_without_hooks(self):
-        astra = {"coordinator", "researcher", "planner", "executor"}
-        sol = {"debugger", "code-reviewer", "verifier", "plan-checker"}
-        roles = {"coordinator", "codebase-mapper", "researcher", "planner",
-                 "plan-checker", "executor", "doc-writer", "doc-verifier",
-                 "integration-checker", "code-reviewer", "debugger", "verifier", "scout", "targeted-fixer"}
+        roles = {p.stem for p in (self.source / "agents").glob("*.md")
+                 if p.stem not in {"AGENT", "code-fixer"}}
         for host in ("codex", "claude"):
             with self.subTest(host=host):
                 self.target = self.base / host
@@ -512,10 +505,17 @@ issue_refs: []
                 methods = {}
                 for role in agents.glob("*.md"):
                     text = role.read_text(encoding="utf-8")
-                    if text.startswith("---\n"):
+                    if text.startswith("---\n") and role.stem != "code-fixer":
                         metadata = yaml.safe_load(text.split("---", 2)[1])
                         methods[metadata["name"]] = (role, metadata)
                 self.assertEqual(roles, set(methods))
+                method_path = (self.target / ".claude/engineer/references/code-fixer.md" if host == "claude"
+                               else agents / "code-fixer.md")
+                self.assertEqual(installer.render_asset("agents/code-fixer.md", (self.source / "agents/code-fixer.md").read_bytes(), host),
+                                 method_path.read_bytes())
+                self.assertFalse((agents / "code-fixer.toml").exists())
+                if host == "claude":
+                    self.assertFalse((agents / "code-fixer.md").exists())
                 for name, (role, metadata) in methods.items():
                     if host == "claude" and name in {"scout", "targeted-fixer", "executor", "planner"}:
                         self.assertEqual({"scout": "haiku", "targeted-fixer": "haiku",
@@ -526,7 +526,7 @@ issue_refs: []
                                      metadata.get("effort"), name)
                     self.assertNotIn("model_reasoning_effort", metadata, name)
                     # Full source methods survive relocation, not compact substitutes.
-                    self.assertEqual(installer.render_asset(".ai/agents/" + role.name,
+                    self.assertEqual(installer.render_asset("agents/" + role.name,
                         (self.source / "agents" / role.name).read_bytes(), host),
                         role.read_bytes())
                 if host == "codex":
@@ -536,7 +536,7 @@ issue_refs: []
                         name = config["name"]
                         self.assertEqual(definition.stem, name)
                         self.assertEqual(methods[name][1]["description"], config["description"])
-                        expected = "gpt-6.1-sol" if name in astra | sol else "gpt-6-luna"
+                        expected = "gpt-6-luna" if name in {"scout", "targeted-fixer"} else "gpt-6.1-sol"
                         self.assertEqual(expected, config["model"])
                         checkers = {"executor", "doc-verifier", "integration-checker"}
                         effort = "medium" if name in checkers else "high"
@@ -666,14 +666,16 @@ issue_refs: []
                                            cwd=worktree))
                 self.assertTrue(added["ok"])
                 self.assertEqual("01", added["padded"])
-                self.assertEqual(".planning/phases/01-installed-runtime", added["directory"])
+                created = Path(added["directory"])
+                created = created if created.is_absolute() else worktree / created
+                self.assertEqual(worktree / ".planning/phases/01-installed-runtime", created)
                 self.assertTrue((worktree / added["directory"]).is_dir())
                 roadmap = (worktree / ".planning/ROADMAP.md").read_text(encoding="utf-8")
-                self.assertIn("### Phase 1: Installed runtime", roadmap)
+                self.assertRegex(roadmap, r"### Phase 0?1: Installed runtime")
                 listed = json.loads(command(sys.executable, runtime, "query", "phases.list",
                                             cwd=worktree))
-                self.assertEqual(["Installed runtime"],
-                                 [phase["name"] for phase in listed["phases"]])
+                self.assertEqual(["01"], [phase["phase_number"] for phase in listed["phases"]])
+                self.assertEqual(["Installed runtime"], [phase["name"] for phase in listed["phases"]])
                 self.assertFalse((worktree / ".ai").exists())
                 self.assertFalse((self.target / ".planning/phases/01-installed-runtime").exists())
 
@@ -837,7 +839,7 @@ issue_refs: []
             cwd.mkdir()
             environment = dict(os.environ, CLAUDE_PROJECT_DIR=str(self.target))
             settings = read_settings(self.target / name)
-            destination = self.target / ("." + host) / "RULES.md"
+            destination = self.target / ("." + host) / "engineer/RULES.md"
             with self.subTest(host=host, destination=destination):
                 argv = self.launcher_argv(host, settings["hooks"]["PostToolUse"][0]["hooks"][0])
                 tool_input = ({"command": f"*** Begin Patch\n*** Add File: {destination.as_posix()}\n+x\n*** End Patch"}
@@ -850,8 +852,8 @@ issue_refs: []
                                           capture_output=True)
                 self.assertEqual(0, observed.returncode, observed.stderr)
                 self.assertNotIn(b"permissionDecision", observed.stdout)
-                self.assertIn(b"NOTICE", observed.stdout)
-                self.assertIn(("." + host + "/RULES.md").encode(), observed.stdout)
+                self.assertIn(b"NOTICE", observed.stderr)
+                self.assertIn(("." + host + "/engineer/RULES.md").encode(), observed.stderr)
 
             # The installed dispatch guard must preserve warning-and-continue
             # behavior and actionable isolation guidance from nested directories.
@@ -957,7 +959,7 @@ issue_refs: []
         self.target.mkdir()
         (self.target / "AGENTS.md").write_bytes(b"# Product instructions\n")
         self.assertEqual(0, self.install().returncode)
-        for name in ("AGENTS.md", ".gitignore", ".codex/engineer/RULES.md", ".codex/engineer/guides/ARTIFACT-GUIDE.md"):
+        for name in ("AGENTS.md", ".gitignore", ".codex/engineer/RULES.md", ".codex/engineer/references/checkpoints.md"):
             path = self.target / name
             path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
         before = self.snapshot()
@@ -965,20 +967,38 @@ issue_refs: []
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(before, self.snapshot())
 
-    def test_installed_guidance_links_resolve_in_both_destinations(self):
-        import test_workflow_links
-
+    def test_installed_guidance_references_resolve_in_both_destinations(self):
+        import re
         for host in ("codex", "claude"):
-            with self.subTest(host=host):
-                self.target = self.base / host
-                result = self.install("--host", host)
-                self.assertEqual(0, result.returncode, result.stderr)
-                with patch.object(test_workflow_links, "ROOT", self.target.resolve()):
-                    paths = list(test_workflow_links.guidance_files())
-                    self.assertTrue(any(("." + host) in path.parts for path in paths))
-                    test_workflow_links.WorkflowNavigationTests().test_local_guidance_links_resolve_with_portable_case()
-                guide = (self.target / ("." + host) / "commands/install.md").read_text(encoding="utf-8")
-                self.assertIn("/main/bin/install.py", guide)
+            self.target = self.base / host
+            result = self.install("--host", host)
+            self.assertEqual(0, result.returncode, result.stderr)
+            namespace = "." + host
+            for name, data in installer.payload(self.source, host).items():
+                if not name.endswith((".md", ".toml")):
+                    continue
+                text = data.decode("utf-8")
+                self.assertNotRegex(text, r"(?m)^@(?:engineer|agents|commands|hooks|scripts|bin)/")
+                for reference in re.findall(r"(?m)^@(" + re.escape(namespace) + r"/[A-Za-z0-9_./-]+)", text):
+                    self.assertTrue((self.target / reference).is_file(), (name, reference))
+
+    def test_missing_or_placeholder_skill_tree_exports_complete_command_mirrors(self):
+        with tempfile.TemporaryDirectory(prefix="native-skills-source-") as folder:
+            source = Path(folder)
+            for directory in ("agents", "commands", "engineer", "hooks", "scripts", "bin"):
+                shutil.copytree(self.source / directory, source / directory)
+            for placeholder in (False, True):
+                if placeholder:
+                    (source / "skills").mkdir()
+                    (source / "skills/SKILL").write_text("placeholder")
+                for host in ("codex", "claude"):
+                    payload = installer.payload(source, host, False)
+                    for command_path in (source / "commands").glob("*.md"):
+                        name = installer.skill_root(host) + "/" + command_path.stem + "/SKILL.md"
+                        self.assertEqual(installer.render_asset("commands/" + command_path.name,
+                                                              command_path.read_bytes(), host), payload[name])
+                        self.assertNotIn(b"Read and follow the complete skill at", payload[name])
+                    self.assertNotIn("." + host + "/skills/SKILL", payload)
 
     def test_existing_ai_is_preserved_and_requires_explicit_migration(self):
         (self.target / ".ai/runtime").mkdir(parents=True)
@@ -993,6 +1013,7 @@ issue_refs: []
 
     def test_conflicts_abort_before_any_copy(self):
         (self.target / ".codex").mkdir(parents=True)
+        (self.target / ".codex/engineer").mkdir()
         (self.target / ".codex/engineer/RULES.md").write_text("Custom engineering rules")
         (self.target / "AGENTS.md").write_text("Keep instructions")
         before = self.snapshot()
