@@ -143,3 +143,26 @@ class FinalRuntimeContracts(RuntimeCase):
         self.assertEqual("001-VERIFICATION.md", Path(legacy["path"]).name)
         dated = self.cli("quick.create", "Dated task")
         self.cli("verification.status", "--quick", dated["id"].split("-", 1)[0], status=1, raw=True)
+
+
+    def test_literal_command_targets_return_the_selected_method_packet(self):
+        directory = self.phase()
+        self.put("apps/api/package.json", '{"scripts":{"test":"fixture"}}')
+        path = self.plan(directory, '<task><files>future/app.py</files><verify><automated>npm --prefix apps/api run absent</automated></verify></task>')
+        result = self.cli("check.verify-command-paths", "--plan", path)
+        self.assertEqual("script_missing", result["commands"][0]["reason"])
+        self.assertEqual("warning", result["commands"][0]["severity"])
+        path.write_text(path.read_text(encoding="utf-8").replace("npm --prefix apps/api run absent", "cd missing &amp;&amp; test"), encoding="utf-8")
+        result = self.cli("check.verify-command-paths", "--plan", path, status=1)
+        self.assertEqual("directory_missing", result["commands"][0]["reason"])
+        self.assertEqual("blocker", result["commands"][0]["severity"])
+        path.write_text(path.read_text(encoding="utf-8").replace("cd missing &amp;&amp; test", "cd $TARGET"), encoding="utf-8")
+        result = self.cli("check.verify-command-paths", "--plan", path)
+        self.assertEqual("dynamic_path", result["commands"][0]["reason"])
+
+    def test_phase_identity_keeps_the_canonical_decimal_contract(self):
+        directory = self.phase()
+        path = self.plan(directory)
+        text = path.read_text(encoding="utf-8")
+        path.write_text(text.replace('phase: "01"', 'phase: "03A"'), encoding="utf-8")
+        self.assertFalse(self.cli("frontmatter.validate", path, "--schema", "plan", status=1)["valid"])
