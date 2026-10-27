@@ -2,7 +2,7 @@
 
 Reusable prompt patterns for structured gate checks in workflows and agents.
 
-**For checkpoint format details, see `engineer/references/ui-brand.md`** -- a checkpoint is a `### CHECKPOINT: {Type}` heading followed by its content, then a `---` break and the bolded action prompt. Never a fixed-width drawn border: it wraps in a narrow pane.
+A checkpoint uses `### CHECKPOINT: {Type}`, concrete prepared content, a `---` break and a bold action/resume prompt. Keep lines readable in a narrow pane; never use fixed-width drawn borders. Record the actual answer and scope before continuing.
 
 ## Rules
 

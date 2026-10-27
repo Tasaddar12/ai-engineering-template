@@ -1,7 +1,7 @@
 ---
 phase: "{N}"
 slug: "{phase-slug}"
-# status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase §6)
+# status lifecycle: draft until architecture and actual checks are established; validated retains observed compliant/incomplete result
 # audit-milestone §5.5 distinguishes NOT-VALIDATED (draft) from PARTIAL (validated + nyquist_compliant: false) (#2117)
 status: draft
 nyquist_compliant: false
@@ -20,7 +20,7 @@ created: "{date}"
 | Property | Value |
 |----------|-------|
 | **Framework** | {pytest 7.x / jest 29.x / vitest / go test / other} |
-| **Config file** | {path or "none — Wave 0 installs"} |
+| **Config file** | {path or "none — prerequisite tooling needs authorization"} |
 | **Quick run command** | `{quick command}` |
 | **Full suite command** | `{full command}` |
 | **Estimated runtime** | ~{N} seconds |
@@ -50,7 +50,7 @@ created: "{date}"
 
 - [ ] `{tests/test_file.py}` — stubs for REQ-{XX}
 - [ ] `{tests/conftest.py}` — shared fixtures
-- [ ] `{framework install}` — if no framework detected
+- [ ] `{framework setup}` — only if authorized when no framework exists
 
 *If none: "Existing infrastructure covers all phase requirements."*
 
@@ -69,7 +69,7 @@ created: "{date}"
 ## Validation Sign-Off
 
 - [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no every consecutive 3-task window without automated verify
+- [ ] Sampling continuity: at least 2 automated verifications in every consecutive 3-task window within a wave
 - [ ] Wave 0 covers all MISSING references
 - [ ] No watch-mode flags
 - [ ] Feedback latency < {N}s

@@ -1,3 +1,5 @@
+> Examples and grep patterns discover possible implementation, not behavioral proof. Source inspection never passes required human UAT. Reuse only valid revision/input-bound receipts; missing execution evidence remains a gap.
+
 # Verification Patterns
 
 How to verify different types of artifacts are real implementations, not stubs or placeholders.
@@ -235,7 +237,7 @@ model Order {
 ```bash
 # Migrations exist and are applied
 ls prisma/migrations/ 2>/dev/null | wc -l  # Should be > 0
-npx prisma migrate status 2>/dev/null | grep -v "pending"
+prisma migrate status 2>/dev/null | grep -v "pending"
 
 # Client is generated
 [ -d "node_modules/.prisma/client" ]
@@ -244,7 +246,7 @@ npx prisma migrate status 2>/dev/null | grep -v "pending"
 **Functional verification:**
 ```bash
 # Can query the table (automated)
-npx prisma db execute --stdin <<< "SELECT COUNT(*) FROM $table_name"
+prisma db execute --stdin <<< "SELECT COUNT(*) FROM $table_name"
 ```
 
 </database_schema>
@@ -575,11 +577,11 @@ Run these checks against each must-have artifact. Aggregate results into VERIFIC
 
 Some things can't be verified programmatically. Flag these for human testing:
 
-**Always human:**
+**Human when the acceptance obligation requires actual judgment:**
 - Visual appearance (does it look right?)
-- User flow completion (can you actually do the thing?)
-- Real-time behavior (WebSocket, SSE)
-- External service integration (Stripe, email sending)
+- User flow quality/judgment beyond available exercised behavioral evidence
+- Real-time perceptual behavior (WebSocket, SSE) that available checks do not establish
+- Required human review of external service behavior beyond actual integration evidence
 - Error message clarity (is the message helpful?)
 - Performance feel (does it feel fast?)
 
@@ -619,7 +621,11 @@ Key principles:
 - Claude sets up verification environment BEFORE presenting checkpoints
 - Users never run CLI commands (visit URLs only)
 - Server lifecycle: start before checkpoint, handle port conflicts, keep running for duration
-- CLI installation: auto-install where safe, checkpoint for user choice otherwise
+- CLI installation: install only when explicitly authorized where safe, checkpoint for user choice otherwise
 - Error handling: fix broken environment before checkpoint, never present checkpoint with failed setup
 
 </checkpoint_automation_reference>
+
+## Evidence reuse and human routing
+
+Reuse a passing receipt only when its command/configuration, input digest and revision ancestry remain current. Do not rerun unchanged checks merely to duplicate evidence. Rerun affected checks after a source/input change. Route to a human when acceptance explicitly requires judgment, the behavior cannot be exercised with available tools, or a backstop truth lacks sufficient specification. Record the exact reason and prepared entry point/fixtures. Do not invent UX checks for infrastructure, install a tool silently or pass acceptance by source inspection.

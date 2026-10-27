@@ -282,9 +282,9 @@ Wave 3 runs after Waves 1 and 2. Pauses at checkpoint, orchestrator presents to 
 
 **When to split:**
 
-- Different subsystems (auth vs API vs UI)
+- Distinct independently verifiable outcomes or actual producer/consumer dependencies
 - Exceeds the configured task cap
-- Risk of context overflow
+- Actual bounded assignment cannot preserve its required inputs/evidence; coordinator proposes an outcome split
 - TDD candidates - separate plans
 
 **Vertical slices preferred:**

@@ -1,6 +1,6 @@
 # State Template
 
-Template for `.planning/STATE.md` â€” the project's living memory.
+Template for `.planning/STATE.md` — the project's living memory.
 
 ---
 
@@ -34,9 +34,9 @@ See: .planning/PROJECT.md (updated [date])
 Phase: [X] of [Y] ([Phase name])
 Plan: [A] of [B] in current phase
 Status: [Ready to plan / Planning / Ready to execute / In progress / Phase complete]
-Last activity: [YYYY-MM-DD] â€” [What happened]
+Last activity: [YYYY-MM-DD] — [What happened]
 
-Progress: [â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘] 0%
+Progress: [░░░░░░░░░░] 0%
 
 ## Accumulated Context
 
@@ -50,7 +50,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-[From .planning/todos/pending/ â€” ideas captured during sessions]
+[From .planning/todos/pending/ — ideas captured during sessions]
 
 None yet.
 
@@ -130,13 +130,13 @@ Claude reads PROJECT.md directly for requirements, constraints, and decisions.
 
 ### Current Position
 Where we are right now:
-- Phase X of Y â€” which phase
-- Plan A of B â€” which plan within phase
-- Status â€” current state
-- Last activity â€” what happened most recently
-- Progress bar â€” visual indicator of overall completion
+- Phase X of Y — which phase
+- Plan A of B — which plan within phase
+- Status — current state
+- Last activity — what happened most recently
+- Progress bar — visual indicator of overall completion
 
-Progress calculation: (completed plans) / (total plans across all phases) Ã— 100%
+Progress calculation: (completed plans) / (total plans across all phases) × 100%
 
 ### Accumulated Context
 
@@ -144,10 +144,10 @@ Progress calculation: (completed plans) / (total plans across all phases) Ã— 
 
 **Pending Todos:** Ideas captured only when explicitly requested via /capture
 - One bullet per pending todo, rendered by `init.todos`'s `pending_todos_markdown`
-  (each bullet capped at 240 characters: `- [date] [area] title â€” [todo file](path) â€” Needs ...`;
+  (each bullet capped at 240 characters: `- [date] [area] title — [todo file](path) — Needs ...`;
   the todo-file link is repo-relative, so the cap does not depend on checkout path length)
 - `None yet.` when there are no pending todos
-- No collapse-by-count fallback â€” every pending todo gets its own line, always
+- No collapse-by-count fallback — every pending todo gets its own line, always
   (see #2618 design doc for why a "count if many" fallback was rejected)
 
 **Blockers/Concerns:** From "Next Phase Readiness" sections
@@ -171,7 +171,7 @@ It's a DIGEST, not an archive. If accumulated context grows too large:
 - Keep only 3-5 recent decisions in summary (full log in PROJECT.md)
 - Keep only active blockers; retire resolved entries through their owning runtime operation
 
-The goal is "read once, know where we are" â€” if it's too long, that fails.
+The goal is "read once, know where we are" — if it's too long, that fails.
 
 </size_constraint>
 

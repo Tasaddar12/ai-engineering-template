@@ -15,7 +15,7 @@ score: N/M must-haves verified
 covered_files: # #4155 — see agents/verifier.md's "Create VERIFICATION.md" step for what belongs here and how to compute it
   - .planning/phases/XX-name/{phase_num}-{plan}-PLAN.md
   - .planning/phases/XX-name/{phase_num}-{plan}-SUMMARY.md
-  - src/{changed-file}.cts
+  - src/{changed-file}.py
 covered_digest: "v4:sha256:{digest from verification.fingerprint}"
 behavior_unverified: 0 # Count of ⚠️ PRESENT_BEHAVIOR_UNVERIFIED truths (present + wired, behavior not exercised)
 behavior_unverified_items: # Only if behavior_unverified > 0 — the truths above as structured items; emitted regardless of overall status
@@ -194,7 +194,7 @@ None — all verifiable items checked programmatically.
 **Per-truth states (Observable Truths `Status` column):**
 - `✓ VERIFIED` — supporting artifacts pass all checks; for a behavior-dependent truth, a behavioral test exercised the asserted behavior
 - `⚠️ PRESENT_BEHAVIOR_UNVERIFIED` — present + wired, but a state transition or cancellation/cleanup/ordering invariant was not exercised by any test. Counts toward `behavior_unverified`, routes to human verification, and is *excluded* from the verified score. Per-truth only — on its own the overall `status:` becomes `human_needed` (unless a higher-precedence `gaps_found` also applies); the item is preserved in `behavior_unverified_items` regardless.
-- `✓ VERIFIED (coincidental-reliance)` — an **advisory** qualifier on a truth that *is* verified but holds for an incidental reason rather than a guaranteed one (#1955): `undeclared-precondition` (state nothing in the phase's artifacts or a declared prerequisite guarantees), `incidental-ordering` (an order or side effect nothing in the code enforces), or `fixture-only` (the test's own setup establishes the precondition; the production path has no equivalent). The base `✓ VERIFIED` token is kept verbatim and leading, so it counts toward the verified score exactly as before — the advisory changes no score and no status, and never produces a human-verification item. Each flagged truth is listed in `coincidental_reliance_items` with the reason and what to harden. Not applied to a truth that never reached `✓ VERIFIED`, nor to a `PASSED (override)` truth.
+- `✓ VERIFIED (coincidental-reliance)` — an **advisory** qualifier on a truth that *is* verified but holds for an incidental reason rather than a guaranteed one (#1955): `undeclared-precondition` (state nothing in the phase's artifacts or a declared prerequisite guarantees), `incidental-ordering` (an order or side effect nothing in the code enforces), or `fixture-only` (the test's own setup establishes the precondition; the production path has no equivalent). The base `✓ VERIFIED` token is kept verbatim and leading, so it counts toward the verified score exactly as before — the advisory changes no score and no status, and never produces a human-verification item. Each flagged truth is listed in `coincidental_reliance_items` with the reason and what to harden. Not applied to a truth that never reached `✓ VERIFIED`, nor to a failed or unverified decision-referenced obligation.
 
   **Filling this column — apply the reliance check to every `✓ VERIFIED` truth before writing the row.** Ask why the truth holds and classify the evidence you already recorded, not your confidence in it. Flag it when the evidence names one of the three reasons above. Do NOT flag: a precondition the code establishes or explicitly defaults; ordering the code enforces (await, explicit sequencing); a fixture merely supplying input the real caller also supplies; unease naming no specific state, ordering, or fixture. The check is endogenous and so weaker than an exogenous tag (`engineer/references/honest-verifier.md`) — which is why it is advisory and never a gate. The usual fix is to promote the hidden assumption into a declared precondition.
 - `✗ FAILED` — artifact missing, stub, or unwired
@@ -208,14 +208,14 @@ None — all verifiable items checked programmatically.
 
 **Severity levels:**
 - 🛑 Blocker: Prevents goal achievement, must fix
-- ⚠️ Warning: Indicates incomplete but doesn't block
+- ⚠️ Warning: Evidenced non-blocking concern; missing mandatory behavior/evidence remains a blocker
 - ℹ️ Info: Notable but not problematic
 
-**Fix plan generation:**
-- Only generate if gaps_found
-- Group related fixes into single plans
-- Keep to 2-3 tasks per plan
-- Include verification task in each plan
+**Fix-plan handoff:**
+- Return gaps with exact authority, source paths, observed evidence and first continuation.
+- The verifier does not author PLANs; the coordinator assigns the phase-preparer.
+- Group related corrections by coherent outcome and real dependencies within the configured cap.
+- Preserve required verification obligations; no review count or decision reference waives them.
 
 ---
 

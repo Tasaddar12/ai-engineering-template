@@ -4,38 +4,23 @@
 > inlines this file from its `<examples>` block via `@`; the calibrated few-shot
 > set lives separately in `engineer/references/few-shot-examples/plan-checker.md`.
 
-## Scope Exceeded (most common miss)
+## Outcome-scoped sizing warning
 
-**Plan 01 analysis:**
-```
-Tasks: 5
-Files modified: 12
-  - prisma/schema.prisma
-  - src/app/api/auth/login/route.ts
-  - src/app/api/auth/logout/route.ts
-  - src/app/api/auth/refresh/route.ts
-  - src/middleware.ts
-  - src/lib/auth.ts
-  - src/lib/jwt.ts
-  - src/components/LoginForm.tsx
-  - src/components/LogoutButton.tsx
-  - src/app/login/page.tsx
-  - src/app/dashboard/page.tsx
-  - src/types/auth.ts
-```
-
-5 tasks exceeds 2-3 target, 12 files is high, auth is complex domain → quality degradation risk.
+**Plan 01 analysis:** five tasks touch twelve files while delivering one account recovery outcome. Inspect the configured task cap and `estimate_scope`; file count alone does not prove excessive scope. Preserve D-07's approved outcome and contract-first thin slice.
 
 ```yaml
 issue:
+  id: PC-01-01-SCOPE
+  authority: "Configured task cap and approved D-07 outcome boundary"
   dimension: scope_sanity
-  severity: blocker
-  required_property: "Each plan stays within the per-plan context budget"
-  description: "Plan 01 has 5 tasks with 12 files - exceeds context budget"
-  plan: "01"
+  severity: warning
+  required_property: "A coherent independently verifiable outcome within the configured cap"
+  description: "Explain the estimate_scope and actual producer/consumer dependencies; file count is only a signal"
+  plan: "01-01"
   metrics:
     tasks: 5
     files: 12
-    estimated_context: "~80%"
-  fix_hint: "Split into: 01 (schema + API), 02 (middleware + lib), 03 (UI components)"
+  fix_hint: "Preserve the complete authorized outcome; propose a dependency/outcome split to the coordinator only if needed"
 ```
+
+A demonstrated cap violation or missing acceptance is assessed against its actual authority. Do not invent a fixed 2-3-task rule, context percentage guarantee or layer-by-layer split.

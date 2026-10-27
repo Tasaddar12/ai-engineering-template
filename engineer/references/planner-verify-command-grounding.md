@@ -1,10 +1,6 @@
 # Verify Command Grounding (#2401)
 
-> Reference file for planner agent. Loaded on-demand via `@` reference.
-
-**Inherit the command that already worked.** The planning context carries
-`prior_verify_commands` — the `<automated>` commands from the most recent prior phase that had
-any, surfaced **at every context window**, not only on 1M-class models. When this phase's build
+Use the nearest relevant committed SUMMARY evidence or an explicitly supplied `prior_verify_commands` packet to ground candidate commands. No implicit injection is assumed. Record the source and tested revision, then inspect current configuration before choosing the command.
 or test story is the same one a prior phase already proved, **reuse that command verbatim**
 rather than re-deriving a path. Re-invention is what produced `cd ../../frontend && npm run
 lint` against a directory that holds no `package.json`, and cost two revision cycles.
@@ -13,7 +9,7 @@ Ground every path you do author: a command's `cd` target or `npm --prefix` targe
 directory that exists (or that an earlier task in this phase creates) and, for an npm/make
 command, must hold the matching `package.json`/`Makefile`. `npm --prefix <dir> run <script>` is
 preferred over `cd <dir> && npm run <script>` — it does not depend on the executor's cwd. If
-`prior_verify_commands` is empty and you cannot ground a path, say so in the plan instead of
+Read prior commands from committed SUMMARY check evidence or supplied `prior_verify_commands`; verify applicability to this revision and never invent a prior run.
 guessing one.
 
 **Run a count/match gate before it ships (#4927).** A gate you author — or one a `RESEARCH.md`

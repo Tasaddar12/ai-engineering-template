@@ -143,3 +143,9 @@ Full-template requirements above remain mandatory even when a parser does not ye
 7. Resource cleanup is separate: fresh exact deletion preview/token approval and integration evidence are required.
 
 All command arguments here are examples of the owning interface; read [the current API](../bin/README.md) for exact positional/options/results before invoking. Report checks actually run, pending evidence and implementation limits honestly.
+
+## Historical gap reconciliation and final human evidence
+
+A historical `result: issue` may stop blocking only through the preserved resolved-gap path: valid stable gap_id, resolved_by and resolved_at; an executed resolving PLAN; a complete matching committed SUMMARY with specific evidence for that gap; and final actual Human acceptance of the covered build. Every remaining required current action must pass. Skipped, not-testable, blocked and pending required actions remain blocking.
+
+If explicit human retest is required, record that actual retest pass; never assume it from a SUMMARY. Diagnosis, a relabeled status, a checked item or a resolving commit alone is insufficient. This narrow historical effective-resolution path preserves the original issue evidence and does not manufacture final human acceptance.

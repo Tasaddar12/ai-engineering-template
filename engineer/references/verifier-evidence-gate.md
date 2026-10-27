@@ -5,115 +5,39 @@ actually close. Applies **only** when `is_re_verification = true` (Step 0) —
 a first pass has no prior contract to be out-of-contract from, so this gate
 is a pure no-op there.
 
-## The problem this closes
+## Revision-scoped convergence
 
-Steps 4-7c re-verify at full, unbounded scope on every re-verification pass —
-that is documented, intended design, not the bug. The bug is narrower: Step
-7's `Categorize:` line lets the verifier's own free-form judgment label
-*anything* it believes "prevents goal" a 🛑 Blocker, and Step 9 Rule 1
-promotes any 🛑 Blocker straight into `status: gaps_found` — with no
-distinction between a blocker tied to what the gap-closure round was actually
-supposed to fix and a blocker that is simply a new opinion formed on this
-pass. Reported real-world instance: a re-verification cycle promoted four
-"architectural and security observations" to blockers, none backed by a
-failing test, none traceable to a requirement/decision/prior gap, reverting a
-completed, all-green gap-closure round and recommending another `--gaps`
-cycle — with no bound on how many times that could repeat.
+Re-verification begins from the previous exact covered revision, stable findings and approved correction scope. Use commit ancestry and a revision diff, never verification timestamps or approximate text overlap, to determine what changed.
 
-Truths, artifacts, and key links (Steps 3-6) can **never** produce this
-failure mode: Step 0 re-verification mode reuses the must-haves extracted in
-Step 2 verbatim ("Skip to Step 3") rather than re-establishing them, so
-whatever a truth/artifact/link *is* was fixed before this re-verification
-round started. Only Step 7's blanket per-file scan is unbounded by that
-must-haves contract — which is exactly the mechanism the issue's diagnosis
-names. This gate therefore touches Step 7 only.
+```bash
+git merge-base --is-ancestor "$PREVIOUS_REVISION" "$CURRENT_REVISION"
+git diff --name-status "$PREVIOUS_REVISION" "$CURRENT_REVISION" --
+```
 
-## Definitions
+If history is missing or ambiguous, record that limitation and request the coordinator's valid comparison base; do not invent regression provenance.
 
-**Self-evidencing blocker (unaffected by this gate).** The debt-marker gate
-(`TBD`/`FIXME`/`XXX` with no `issue #123`/`PR #123`/`#123`/`DEF-*` reference
-on the same line) is the *only* Step 7 category with zero judgment
-component — a regex match plus the absence of a follow-up reference, nothing
-inferred. Its own textual presence in the file is the deterministic evidence.
-It keeps blocking unconditionally, exactly as before. Do **not** extend this
-carve-out to any other Step 7 category (stub classification, hollow props,
-empty implementations, console-log-only): every one of those already
-requires judgment per Step 7's own "Stub classification" paragraph ("a grep
-match is a STUB only when the value flows to rendering... and no other code
-path populates it with real data") — that judgment is exactly what this gate
-exists to check.
+## Finding classification
 
-**New-scope finding.** Any Step 7 🛑 Blocker other than a self-evidencing one
-(above) is a new-scope finding **unless** either of the following holds, in
-which case it is in-contract and blocks unconditionally, evidence or not:
+| Finding | Required evidence | Disposition |
+|---------|-------------------|-------------|
+| Carried-forward stable finding | Exact ID, authority and unresolved obligation | Recheck its correction and preserve remaining gap |
+| Demonstrated regression | Covered revision diff plus reproducible failure | Blocking finding |
+| New demonstrated defect | Named failing check or reproducible behavior | Blocking within applicable authority; route scope to coordinator |
+| Unsupported architectural preference | No violated contract or reproducible defect | Advisory with rationale |
+| Missing required verification | Absent/invalid evidence | Remains a gap; never passed |
 
-1. **Carried-forward gap** — it matches an item in the previous
-   VERIFICATION.md's `gaps:` list, using the same 80%-token-overlap matching
-   algorithm Step 3b already uses for override matching (normalize to
-   lowercase, strip punctuation, collapse whitespace, tokenize, intersect).
-2. **Regression** — the flagged file was modified since the previous
-   VERIFICATION.md's `verified:` timestamp. Check file-level, not
-   line-level — an LLM agent re-deriving precise line provenance mid-pass is
-   unreliable; file-level modification is a single, robust command:
+A changed file alone does not prove a regression; trace the affected behavior and its evidence. A previously untouched file can still contain a real newly demonstrated defect. Do not suppress evidence because the finding is new.
 
-   ```bash
-   git log --since="$PREV_VERIFIED_TS" --oneline -- "$file"
-   ```
+## Bounded recheck
 
-   A non-empty result means the file changed since the prior pass — the
-   gap-closure round could plausibly have introduced this finding, so it's
-   self-evidencing as a regression and blocks. **Fail closed**: if git
-   history is unavailable, ambiguous, or the timestamp can't be parsed,
-   treat the file as modified (blocks). The imprecision this trades away
-   (a big file with one unrelated hunk touched treats every pattern in it as
-   "new") only ever makes *more* things block, never fewer — consistent with
-   `<adversarial_stance>`.
+1. Read the correction packet and exact stable finding dispositions.
+2. Compare covered inputs, commands and configuration with current source.
+3. Reuse passing receipts only when their command/config/input digest and history remain valid.
+4. Rerun affected checks and required independent semantic verification at the frozen revision.
+5. Preserve failures, missing evidence and required human judgments. Never upgrade missing verification to passed because all known findings were fixed.
+6. Return advisory preferences separately with their limits; do not invent blockers to prolong review or waive demonstrated failures to force convergence.
 
-A finding that is neither a carried-forward gap nor on a file modified since
-the prior pass predates the gap-closure round entirely and was never flagged
-as a gap then — this is the literal "some findings predated the gap
-implementation and had previously been explicitly treated as non-blocking"
-case from the issue.
-
-**Deterministic evidence** — required for a new-scope finding to stay
-blocking. One of:
-
-- A **named test that FAILS when actually run** (red). Run exactly one test,
-  the same discipline Step 7b already uses for behavioral spot-checks —
-  never the full suite. Record the exact command and the failing output.
-- **Another concrete, reproducible artifact** — a command + output that
-  demonstrates the defect (a crash, a probe failure, a reproducible bad
-  response). An assertion, opinion, or architectural preference with no test
-  and no reproducible command output is not evidence, however well-reasoned.
-
-## The gate
-
-- New-scope finding **with** deterministic evidence → 🛑 Blocker, unchanged.
-  This includes evidenced security findings — they are preserved and still
-  block.
-- New-scope finding **without** deterministic evidence → downgrade out of
-  the blocker set. Record it in the `advisory:` frontmatter list (parallel to
-  the existing Step 9b `deferred:` list) with its reasoning intact. It does
-  **not** count toward Step 9 Rule 1's `gaps_found` trigger and does **not**
-  revert a completed must-have or, on its own, justify another
-  `/plan-phase --gaps` cycle.
-
-This changes nothing else: a carried-forward gap or a regression still
-blocks with or without a pre-existing requirement to point at, and every
-non-Step-7 trigger (FAILED truth, MISSING/STUB artifact, NOT_WIRED link) is
-untouched, since those can never be new-scope in the first place.
-
-## What this deliberately does NOT implement
-
-The issue as filed proposed a broader rule: a finding is advisory whenever
-it is untraceable to a requirement/decision/prior-gap (conditions A and B),
-regardless of evidence. The maintainer approved **condition C only** —
-evidence, not contract-traceability, is the bar. A finding with no
-pre-existing requirement to point at but with a real failing test still
-blocks. Do not implement A/B: that would demote a genuine, reproducible
-defect to advisory purely for being newly discovered, which is exactly the
-deferral this project's no-defer rule forbids. This gate narrows *when a
-blocker needs proof*, not *what counts as in scope*.
+This gate limits unsupported opinions, not acceptance requirements. A demonstrated failure blocks; an unsupported preference is advisory; neither alters the approved scope without the coordinator's recorded decision.
 
 ## Advisory frontmatter
 
@@ -154,7 +78,6 @@ re-verification begins.
   reproducible command demonstrating a failure. → **advisory**, does not
   block, does not revert the 4 closed gaps.
 - Finding: `TBD: handle the timeout case` left in a file the gap-closure plan
-  edited this pass. → self-evidencing debt marker, unaffected by this gate,
-  blocks exactly as it always has.
+   edited in the covered revision diff. Record the marker, its owning rule and concrete missing obligation; marker text alone is not behavioral failure evidence.
 - Finding: a previously-closed gap's file now fails the SAME named test that
   originally proved it broken. → carried-forward gap, blocks.

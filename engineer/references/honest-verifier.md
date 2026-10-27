@@ -19,6 +19,14 @@ D7a). The honest verifier consumes that tag so the verifier **abstains** instead
 false-passing — converting a silent false-pass (the worst failure: you don't know to look) into an
 explicit, actionable "write a held-out test." Measured: the confident-false-pass rate on the blind
 spot drops **100% → 17%** (N17).
+## Evidence cases
+
+| Observation | Disposition |
+|-------------|-------------|
+| Required behavior exercised successfully at covered revision | VERIFIED |
+| Required behavior demonstrably fails | FAILED |
+| Source present and wired but behavior not exercised | PRESENT_BEHAVIOR_UNVERIFIED |
+| Backstop obligation lacks sufficient specification/evidence | human_needed, reason insufficient_spec |
 
 ## The two properties that define the design
 
@@ -55,18 +63,11 @@ This is the verify-time half of ADR-550 Decision 4 (the never-silent-pass dispos
 edge `backstop` truth tier instead of the prohibition judgment tier — the same machinery, opposite
 polarity (must-HAVE under-specified vs must-NOT irreducible).
 
-## Deterministic engine surface
+## Truth normalization
 
-The CI-testable surface is the **deterministic disposition + projection**, never the LLM's judgment
-(ADR-550 D5 — a test asserting the model's verdict is vacuous and rejected). In `probe-core`:
+A truth is either a plain string or an object with a `statement` string and optional flat scalar `verification: backstop`. Read both forms directly; no parser service or model-specific SDK is required.
 
-- `truthStatement(t)` / `truthVerification(t)` — normalizers; read a truth's statement and tier from
-  either the plain-string or object form (a truth-reader MUST normalize, never assume a string).
-- `projectTruths(items)` — conservative serializer: a `backstop` truth → flat-scalar object
-  `{ statement, verification: backstop }`; every inferable truth → a bare string.
-- `dispositionForUnverifiableTruth(truth, { evidence })` → `{ status, flagged, tier, reason }`:
-  `backstop` + no evidence → `unverified`/`flagged`/`insufficient_spec`; `backstop` + evidence →
-  `green`; non-`backstop` → `green` (over-abstention guard).
+A backstop truth with no explicit behavioral evidence remains unverified, flagged with `reason: insufficient_spec`, and routes to human-needed. A backstop with real evidence is evaluated normally. A non-backstop truth still requires its ordinary verification; normalization never grants a pass.
 
 ## Capable-tier requirement (a documented cost)
 
@@ -103,3 +104,7 @@ Abstention is **model-tier dependent** and this is a standing cost, not an assum
   (insufficient *evidence* vs insufficient *spec*); both feed the same `human_needed` sink.
 - **vs prohibition judgment-tier (#644):** that disposes **must-NOT** constraints; honest-verifier
   disposes **non-inferable positive truths**. Opposite polarity, same never-silent disposition.
+
+## Negative constraints and incidental success
+
+A prohibition needs evidence that the forbidden path is resisted, including an adversarial fixture or equivalent behavioral check. A positive happy path does not prove a negative constraint. If behavior succeeds only because of fixture ordering, an undeclared precondition or incidental timing, record the reliance, its hardening step and the missing evidence. Never invent a finding solely to disconfirm; preserve the observed result and its limits.

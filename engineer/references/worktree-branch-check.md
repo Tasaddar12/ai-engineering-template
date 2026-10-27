@@ -1,18 +1,8 @@
 # Worktree branch check (spawn-time guard)
 
-Canonical, fail-closed, **verify-only** guard embedded into every worktree sub-agent
-prompt at dispatch. This is the single source of truth for the `worktree_branch_check`
-block — do not inline a copy elsewhere. History of coordinated edits: #2924, #2015, #3174, #48.
+Fail-closed verify-only guard for `harness-worktree` dispatch. The coordinator's root pin covers `orchestrator-worktree`; do not apply a harness namespace assumption to a coordinator-created checkout.
 
-**Contract for orchestrators:** before dispatch, capture `EXPECTED_BASE=$(git rev-parse HEAD)`,
-then embed the block below into the sub-agent prompt verbatim, substituting `{EXPECTED_BASE}`
-with that captured SHA. Orchestrators that intentionally create a docs-only pre-dispatch
-plan commit may also substitute `{EXPECTED_BASE_ALTERNATE}` with that commit's immediate
-parent so runtimes that fork from either side of the docs-only commit pass the same
-fail-closed guard (#1265). Otherwise substitute `{EXPECTED_BASE_ALTERNATE}` with an empty
-string. The sub-agent only *verifies* and fails closed; the orchestrator (the worktree
-lifecycle owner) performs any base recovery — the sub-agent never rewrites a worktree it
-did not create (#48).
+Before harness dispatch, capture the exact expected base. Substitute the actual SHA and an alternate only when the coordinator explicitly created a bookkeeping-only commit whose immediate parent is an accepted base. A worker verifies identity and never resets, moves refs or rewrites a checkout it did not create. A mismatch returns exit 42 for coordinator recovery.
 
 <worktree_branch_check>
 FIRST ACTION: HEAD assertion MUST run before anything else, and this block is
@@ -27,11 +17,11 @@ commit.
 HEAD_REF=$(git symbolic-ref --quiet HEAD || echo "DETACHED")
 ACTUAL_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 if [ "$HEAD_REF" = "DETACHED" ] || echo "$ACTUAL_BRANCH" | grep -Eq '^(main|master|develop|trunk|release/.*)$'; then
-  echo "FATAL: worktree HEAD on '$ACTUAL_BRANCH' (expected agent-* or worktree-agent-*); refusing to commit or self-recover via 'git update-ref' (#2924)." >&2
+  echo "FATAL: worktree HEAD on '$ACTUAL_BRANCH' (expected an assigned isolated worker branch); refusing to commit or self-recover via 'git update-ref' (#2924)." >&2
   exit 42
 fi
-if ! echo "$ACTUAL_BRANCH" | grep -Eq '^((worktree-)?agent-|worktree-wf_)[A-Za-z0-9._/-]+$'; then
-  echo "FATAL: worktree HEAD '$ACTUAL_BRANCH' is not in the agent-* / worktree-agent-* / worktree-wf_* namespace; refusing to commit (#2924)." >&2
+if ! echo "$ACTUAL_BRANCH" | grep -Eq '^(codex/)?((worktree-)?agent-|worktree-wf_|phase-|quick-|review-|verify-)[A-Za-z0-9._/-]+$'; then
+  echo "FATAL: worktree HEAD '$ACTUAL_BRANCH' is not in an accepted assigned worker namespace; refusing to commit (#2924)." >&2
   exit 42
 fi
 ACTUAL_BASE=$(git rev-parse HEAD)

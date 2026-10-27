@@ -1,6 +1,6 @@
 # Planner — Tracer-First Decomposition (Vertical Slices)
 
-> Loaded by `planner` for the **default** tracer-first decomposition: every phase LEADS with one thin end-to-end `type="tracer"` slice, then expansion tasks. `--no-tracer` (`TRACER_MODE=false`) restores standard horizontal-layer planning. The MVP enrichment (user-story framing) and Walking Skeleton mode apply *on top* when `MVP_MODE=true` / `WALKING_SKELETON=true`.
+> Default to a thin real end-to-end `type="tracer"` slice followed by outcome expansions. A tracer exception must be explicit and recorded in the PLAN with its authority and rationale; a mode flag alone does not grant the exception.
 
 ## Core Rule
 
@@ -14,7 +14,7 @@
 **Required** under tracer-first:
 - The leading `tracer` task produces a working end-to-end path — production-quality, not a prototype. Stubs are allowed ONLY where they can later be filled without an architectural change; the happy path must be real.
 - Each subsequent expansion task either adds a new slice OR refines an existing slice (validation, error states, edge cases).
-- *(MVP enrichment, `MVP_MODE=true`)* The phase goal is framed as a user story: "**As a** [user], **I want to** [do X], **so that** [Y]."
+- When the assignment supplies a user story, retain its actor, action and purpose as the acceptance frame.
 
 ## Task Order Pattern
 
@@ -27,25 +27,25 @@ For a feature `F`:
 
 Tasks 2-4 are not always all needed; gate by the phase's acceptance criteria.
 
-## Walking Skeleton Mode (`WALKING_SKELETON=true`)
+## Minimal full-stack capability
 
-When the orchestrator sets `WALKING_SKELETON=true` (Phase 1 of a new project under `--mvp`), the plan changes shape:
+When the assignment requests a minimal full-stack capability, select the smallest meaningful user outcome that exercises real persistence, API and interface behavior. Use the project's actual build and deployment conventions. Record the framework, data, auth, directory and run/deployment decisions in CONTEXT, and consequential choices in PROJECT Key Decisions. Do not create a separate skeleton artifact or infer deployment authority.
 
-- The "feature" is the application itself. Pick the smallest meaningful capability that proves the full stack works (e.g., "user can sign up and see their name on a dashboard").
-- The plan **must include**:
-  - Project scaffold (framework init, routing, build, lint)
-  - One real DB read/write
-  - One real UI interaction wired to the API
-  - Deployment to a dev environment (or a documented local-run command that exercises the full stack)
-- The plan **must produce** `SKELETON.md` in the phase directory alongside `PLAN.md`. Use the template at `@engineer/references/skeleton-template.md`. `SKELETON.md` records the architectural decisions that subsequent phases will build on (chosen framework, DB, deployment target, auth approach, directory layout).
+The bounded plan includes:
 
-`SKELETON.md` is the architectural backbone for every later vertical slice; treat it as a contract, not a scratchpad.
+- Project scaffold using the existing framework/build/lint conventions.
+- One real persistence read/write with its authorized safe fixture.
+- One real interface interaction wired through the API to persistence.
+- A documented local run command exercising the full stack, or an explicitly authorized dev deployment.
+- Framework, data, auth, directory and run/deployment choices in CONTEXT, with consequential decisions in PROJECT Key Decisions.
+
+A documented local command supplies the demonstration when deployment is not authorized. Preserve complete acceptance, documentation, checks argv and issue references.
 
 ## Anti-Patterns to Reject
 
 - **Layer cake disguised as slices.** Three "vertical" tasks where Task 1 is "all the schemas", Task 2 is "all the endpoints", Task 3 is "all the UI" — that is horizontal planning with new labels. Reject.
-- **Skeleton bloat.** Walking Skeleton is the *thinnest* working stack, not "Phase 1 of a normal app." If Skeleton has more than ~5 tasks, you are not skeletonizing.
-- **Premature SPIDR splitting.** SPIDR splitting is the `mvp-phase` command's job (Phase 2 of the PRD), not the planner's. If the phase scope feels too large, surface it via the verification loop, do not split silently.
+- **Skeleton bloat.** Walking Skeleton is the *thinnest* working stack, not "Phase 1 of a normal app." Honor the configured cap and thin coherent outcome; task count alone does not prove scope.
+- **Unauthorized splitting.** Scope splitting belongs to the coordinator. Return a bounded outcome/dependency proposal; do not silently split or defer authorized scope.
 
 ## Acceptance Test for Your Plan
 

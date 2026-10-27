@@ -74,9 +74,7 @@ full-table scan amplifies the race window) · environment (none) · data (none).
 AND-gate: **yes** — the corruption only occurs when a writer races AND the scan
 holds the read transaction open long enough for the interleaving. Collapse to a
 set: `root_causes: [missing async lock, missing index]`. Eliminated: timezone
-(reproduced in UTC), env-var (unset in repro). The fix must address BOTH;
-addressing only the lock leaves the index-driven amplification, and the
-corruption recurs under load.
+Record both the triggering condition and the latent vulnerability in the RCA. Choose the smallest sufficient repair that prevents the observed failure while preserving authorized behavior. Do not automatically broaden the repair to unrelated conditions; explain what remains and why.
 
 ## Backward compatibility
 

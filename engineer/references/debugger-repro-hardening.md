@@ -17,15 +17,14 @@ wrong thing. Three additions, all extending existing steps, close those gaps.
 
 ## 1. Shrinking-based repro minimization (input-space bugs)
 
-**When** the bug triggers on a *class* of inputs (not a single hardcoded
-value), wrap the failing input in a property and let the framework's **shrinker**
-auto-minimize the counterexample:
+**When** the bug triggers on a *class* of inputs rather than one hardcoded value, reduce a representative failing case. A shrinker is optional and requires an existing configured property-testing framework. Preserve the original failing seed/input before reducing it.
 
 - **JS/TS** — `fast-check`: declare the property with an `fc.*` generator over
   the input space; on failure the shrinker walks the counterexample down to a
   minimal failing input.
-- **Python** — `Hypothesis`: `@given(...)` over the input strategy;
-  `shrink()` minimizes automatically; the example database caches it.
+- **Python** — an existing `Hypothesis` configuration uses `@given(...)` over the input strategy and stores its minimized case in the example database.
+
+Use only an already configured framework shrinker. Otherwise reduce the reproduction manually; do not install a framework solely for shrinking.
 
 **Store the minimized counterexample as the regression seed**, not the original
 noisy repro. The minimized seed is comprehensible, exposes the precise defect

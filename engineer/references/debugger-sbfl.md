@@ -57,8 +57,8 @@ section as a first-class hypothesis candidate:
 - timestamp: <now>
   checked: SBFL Ochiai ranking (Phase 1.25)
   found: top-N suspicious locations —
-    1. path/to/file.cts:LINE (score 0.89) — <symbol>
-    2. path/to/other.cts:LINE (score 0.77) — <symbol>
+    1. path/to/file.py:LINE (score 0.89) — <symbol>
+    2. path/to/other.py:LINE (score 0.77) — <symbol>
     ...
   implication: investigate these before forming broader hypotheses
 ```

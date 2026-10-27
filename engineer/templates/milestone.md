@@ -23,11 +23,10 @@ Add this entry to `.planning/MILESTONES.md` when completing a milestone:
 
 **Stats:**
 - [X] files created/modified
-- [Y] lines of code (primary language)
-- [Z] phases, [N] plans, [M] tasks
-- [D] days from start to ship (or milestone to milestone)
+- [Y] lines changed (actual Git diff)
+- [Z] phases and [N] plans from milestone_phases
 
-**Git range:** `feat(XX-XX)` → `feat(YY-YY)`
+**Git range:** `[first SHA]` → `[last SHA]`
 
 **What's next:** [Brief description of next milestone goals, or "Project complete"]
 
@@ -57,14 +56,13 @@ If MILESTONES.md doesn't exist, create it with header:
 - Minor bug fixes that don't constitute a release
 
 **Stats to include:**
-- Count modified files: `git diff --stat feat(XX-XX)..feat(YY-YY) | tail -1`
-- Count lines changed: `find . -name "*.swift" -o -name "*.ts" | xargs wc -l` (or relevant extension)
-- Phase/plan/task counts from ROADMAP
-- Timeline from first phase commit to last phase commit
+- Count modified files: `git diff --stat FIRST_SHA LAST_SHA`
+- Count lines changed: `git diff --numstat FIRST_SHA LAST_SHA`
+- Phase/plan counts from milestone_phases
 
 **Git range format:**
 - First commit of milestone → last commit of milestone
-- Example: `feat(01-01)` → `feat(04-01)` for phases 1-4
+- Example: `[first SHA]` → `docs(04)` for phases 1-4
 </guidelines>
 
 <example>
@@ -85,11 +83,10 @@ If MILESTONES.md doesn't exist, create it with header:
 
 **Stats:**
 - 23 files modified
-- 650 lines of Swift added
-- 2 phases, 3 plans, 12 tasks
-- 8 days from v1.0 to v1.1
+- 650 lines changed
+- 2 phases, 3 plans (milestone_phases)
 
-**Git range:** `feat(05-01)` → `feat(06-02)`
+**Git range:** `[first SHA]` → `docs(06)`
 
 **What's next:** v2.0 SwiftUI redesign with widget support
 
@@ -110,11 +107,10 @@ If MILESTONES.md doesn't exist, create it with header:
 
 **Stats:**
 - 47 files created
-- 2,450 lines of Swift
-- 4 phases, 7 plans, 28 tasks
-- 12 days from start to ship
+- 2,450 lines changed
+- 4 phases, 7 plans (milestone_phases)
 
-**Git range:** `feat(01-01)` → `feat(04-01)`
+**Git range:** `[first SHA]` → `docs(04)`
 
 **What's next:** Security audit and hardening for v1.1
 ```

@@ -64,7 +64,7 @@ strongest applicable:
   surfaces the prior guard when a similar symptom appears.
 
 State the guard concretely (which file, which rule, which test name) — not "add
-a test" but "the regression test at `tests/foo.test.cjs:42` now covers this
+a test" but "the regression test at `tests/test_foo.py:42` now covers this
 class." **Verify the artifact exists before recording it** (the test passes, the
 type compiles, the lint rule is registered) — a stale or unverified path is worse
 than none, since a future Phase-0 match would surface it as if it were real.

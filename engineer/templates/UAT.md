@@ -10,7 +10,7 @@ Template for `.planning/phases/XX-name/{phase_num}-UAT.md` — persistent UAT se
 1. Read every source SUMMARY and the actual delivered entry points. Include at least one existing source path; do not generate speculative product features.
 2. Give each acceptance obligation an ID and concrete action. State a one-sentence expected result, exact entry point, fixtures and cleanup/preconditions.
 3. Separate acceptance obligations from actions. Several actions can support one acceptance obligation; passing one action does not pass unrelated obligations.
-4. Present the reply format `N PASS`, `N FAIL: observed behavior`, `N BLOCKED: reason`. Record the human's observed words verbatim for failures and acceptance.
+4. Present the reply format `N PASS`, `N FAIL <observation>`, `N BLOCKED <reason>`. Record the human's observed words verbatim for failures and acceptance.
 5. Record pending without brackets. Require a reason for skips and blocks; preserve unresolved actions and accurate counters.
 6. Diagnosis adds root cause and repair evidence while the record stays partial. Do not treat diagnosis as acceptance.
 7. Reconcile a resolved gap only when `resolved_by` names an executed plan with an existing matching SUMMARY. Preserve history, `resolved_at` and stable gap IDs. A later regression receives a fresh ID.
@@ -216,7 +216,7 @@ blocked: [N]
 **During testing:**
 
 - Present test from Current Test section
-- User responds `N PASS`, `N FAIL: observed behavior`, or `N BLOCKED: reason`
+- User responds `N PASS`, `N FAIL <observation>`, or `N BLOCKED <reason>`
 - Update the identified action result (pass/issue/blocked; skipped needs an explicit reason)
 - Update Summary counts
 - If issue: append to Gaps section (YAML format), infer severity
@@ -271,7 +271,7 @@ Default: **major** (safe default, user can clarify if wrong)
 ---
 status: partial
 phase: 04-comments
-source: 04-01-SUMMARY.md, 04-02-SUMMARY.md
+source: ["04-01-SUMMARY.md", "04-02-SUMMARY.md"]
 started: 2025-01-15T10:30:00Z
 updated: 2025-01-15T10:45:00Z
 ---
@@ -348,3 +348,9 @@ decision: ""
 ```
 
 </good_example>
+
+## Historical gap reconciliation and final human evidence
+
+A historical `result: issue` may stop blocking only through the preserved resolved-gap path: valid stable gap_id, resolved_by and resolved_at; an executed resolving PLAN; a complete matching committed SUMMARY with specific evidence for that gap; and final actual Human acceptance of the covered build. Every remaining required current action must pass. Skipped, not-testable, blocked and pending required actions remain blocking.
+
+If explicit human retest is required, record that actual retest pass; never assume it from a SUMMARY. Diagnosis, a relabeled status, a checked item or a resolving commit alone is insufficient. This narrow historical effective-resolution path preserves the original issue evidence and does not manufacture final human acceptance.

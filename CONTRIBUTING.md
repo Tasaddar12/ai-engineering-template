@@ -92,7 +92,7 @@ Keep the role, scope, conditions, stop gates, exceptions, and required evidence 
 **Good**
 
 ```text
-Read `engineer/runtime/README.md`. Trace `planning.validate` to its implementation. Return the file:line definition and supported invocation; do not edit files.
+Read `engineer/bin/README.md`. Trace `planning.validate` to its implementation. Return the file:line definition and supported invocation; do not edit files.
 ```
 
 **Bad**
@@ -122,7 +122,7 @@ Look around the runtime and report anything useful.
 - Do not change a skill mirror without checking the corresponding command.
 - Do not claim a workflow is installed, a command is registered, or a check passed without evidence.
 
-See [shared rules](engineer/RULES.md), [command catalog](commands/README.md), [agent catalog](agents/README.md), [runtime guide](engineer/runtime/README.md), and [fact ownership](engineer/truth-map.md).
+See [shared rules](engineer/RULES.md), [command catalog](commands/README.md), [agent catalog](agents/README.md), [runtime guide](engineer/bin/README.md), and [fact ownership](engineer/truth-map.md).
 
 ## Respect phase authority
 

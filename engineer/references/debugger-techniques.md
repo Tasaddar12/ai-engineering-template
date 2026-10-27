@@ -83,7 +83,7 @@ Apply first 10: broken → bug in first 10.
 3. Test: Does it still reproduce? YES = keep removed. NO = put back.
 4. Repeat until bare minimum
 5. Bug is now obvious in stripped-down code
-6. **Shrinking (input-space bugs)** — when the bug triggers on a class of inputs, wrap it in a property (fast-check for JS/TS, Hypothesis for Python) and let the shrinker auto-minimize the counterexample; store the **minimized** input as the regression seed. See `engineer/references/debugger-repro-hardening.md`.
+6. **Optional shrinking:** use framework shrinking only when a property-testing framework is already configured; otherwise reduce the case manually while preserving its failing input.
 
 **Example:**
 ```jsx
@@ -209,6 +209,7 @@ app.use(bodyParser.json({ limit: '50mb' })); // Uncomment, test → BREAKS
 
 **How:** Binary search through git history.
 
+Before `git bisect`, obtain a coordinator-assigned diagnostic checkout and exact good/bad revisions. Verify its identity, keep the active worker checkout untouched, and preserve intermediate evidence. The coordinator owns cleanup.
 ```bash
 git bisect start
 git bisect bad              # Current commit is broken

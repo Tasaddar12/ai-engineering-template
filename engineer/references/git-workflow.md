@@ -47,7 +47,7 @@ Push only when delivery is authorized. Open a draft on the first push and keep i
 2. Search existing open and closed canonical trackers for the same behavior and full remediation scope. A similar title alone is not equivalence.
 3. Prepare the complete variant in [issue.md](../templates/issue.md) and validate safe content, exact source references, authority, reproduction, acceptance and relationships.
 4. Use `phase.issue-declare N ARTIFACT.md` to inspect the declared entries and snapshotDigest when the workflow requires it. Apply entries only with the current expected digest.
-5. Preview the exact title/body/labels with `phase.issue-preview N ARTIFACT.md FINDING_ID --title TITLE --body-file FILE`; a todo uses `todo.issue-preview`.
+5. Preview the exact title/body/labels with `phase.issue-preview N ARTIFACT.md FINDING_ID --title TITLE --body-file FILE --variant "Bug" --no-match`; use the selected exact canonical variant, or --existing-issue for a verified reused tracker; a todo uses `todo.issue-preview`.
 6. Inspect the returned source, finding, title/body, snapshotDigest and content-bound preview token. Publish/update with identical inputs and `--preview-token TOKEN`. The token is consumed before provider mutation; an uncertain provider response requires inspection before retry.
 7. Read back actual provider title, body, labels, state, number and URL before recording the canonical link locally. Validate content and relationship, not merely HTTP success.
 8. Keep neutral references distinct from closing references. Use a closing keyword only for an actually resolved full scope, and preserve required human acceptance.
@@ -132,3 +132,7 @@ After an uncertain mutation, inspect provider state using the stable source iden
 ## Supported repository topology
 
 The runtime operates on the current Git project and explicit isolated worktrees. Upstream multi-repository `sub_repos` commit automation and dynamic model routing are intentionally unsupported. A discovered submodule is not authority to mutate or publish another repository; assign it explicitly if the user requests that work.
+
+## Canonical variant arguments
+
+Select Bug, Enhancement, Decision required, Security risk or UAT exactly. Issue validation/preview/publication bind `--variant NAME`; all preview/publish requests declare either an actual verified `--existing-issue` relationship or `--no-match` after deterministic lookup. Security tracking uses --variant "Security risk" for both planned checklist and standalone issues. Do not use no-match to bypass unavailable/ambiguous lookup or an unresolved closed match. The complete selected fence owns structural headings; independent semantic/provider/human evidence remains mandatory.

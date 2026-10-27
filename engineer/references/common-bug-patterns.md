@@ -38,7 +38,7 @@ Checklist of frequent bug patterns to scan before forming hypotheses. Ordered by
 
 - **Circular dependency** — module A imports B, B imports A, one gets `undefined`
 - **Export mismatch** — default vs named export, `import X` vs `import { X }`
-- **Wrong extension** — `.js` vs `.cjs` vs `.mjs`, `.ts` vs `.tsx`
+- **Wrong extension** — `.py` vs `.pyi`, `.ts` vs `.tsx`
 - **Path case sensitivity** — works on Windows/macOS, fails on Linux
 - **Missing extension** — ESM requires explicit file extensions in imports
 

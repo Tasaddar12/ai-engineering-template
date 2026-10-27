@@ -7,6 +7,8 @@ calibration_source: "Adapted from thinking-partner verification corpus"
 
 # Verifier Few-Shot Examples
 
+These are fictional calibration scenarios, not claims that the named application tools exist in this repository or that any command has run in the current assignment.
+
 ## Positive Examples
 
 ### Example 1: Thorough multi-level artifact verification with real gap discovery
@@ -24,13 +26,13 @@ calibration_source: "Adapted from thinking-partner verification corpus"
 
 ### Example 2: Correct FAILED classification with grep evidence
 
-**Input:** Must-have truth: `validate-commit.js rejects commits missing scope parentheses`
+**Input:** Must-have truth: `validate_commit.py rejects commits missing scope parentheses`
 
 **Output:**
 
-> **Method:** Ran `grep -n "scope" engineer/bin/validate-commit.js` to locate scope validation logic.
+> **Method:** Ran `grep -n "scope" example-project/tools/validate_commit.py` to locate scope validation logic.
 > **Evidence:** Lines 34-41 show regex `/^(feat|fix|refactor|test|docs|chore|wip)\(/` which requires opening paren after type. However, no test for MISSING closing paren exists -- the regex accepts `feat(: description` (missing scope content and closing paren).
-> **Ran:** `echo "feat(: test" | node engineer/bin/validate-commit.js` -- exit code 0 (accepted).
+> **Ran:** `echo "feat(: test" | python example-project/tools/validate_commit.py` -- exit code 0 (accepted).
 > **Status: FAILED** -- Commit messages with empty scope `feat(: desc)` are accepted. The truth "rejects commits missing scope parentheses" does not hold for empty-scope edge case.
 
 **Why this is good:** The verifier did not trust the code's intent -- it ran an actual test with an edge case input and reported the specific failure. Evidence includes the regex, the test command, the exit code, and why the truth does not hold.
@@ -55,7 +57,7 @@ calibration_source: "Adapted from thinking-partner verification corpus"
 **Output:**
 
 > **Method:** Ran `grep "architecture_graph\|architecture_guard" engineer/bin/lib/config-schema.json`.
-> **Evidence:** Zero matches in schema. However, `grep "architecture" engineer/bin/lib/config.cjs` shows both flags in CONFIG_DEFAULTS (lines 426, 428).
+> **Evidence:** Zero matches in schema. However, `grep "architecture" example-project/config.py` shows both flags in CONFIG_DEFAULTS (lines 426, 428).
 > **Gap:** Defaults exist in code but schema validation doesn't know about them. `configValidate()` would strip these fields on load, making the defaults unreachable.
 > **Status: FAILED** -- Config flags work in code but are invisible to schema validation. This is a **missing wiring** gap between config layers.
 
@@ -99,11 +101,11 @@ Based on analysis of verification corpus (80% pass rate, 8 gaps):
 
 ### Example 2: File existence check without substance or wiring verification
 
-**Input:** Must-have artifact: `engineer/bin/lib/audit-checks/index.cjs: >100 lines`
+**Input:** Must-have artifact: `example-project/audit_checks.py: >100 lines`
 
 **Output:**
 
-> **L1 (Existence):** EXISTS -- File found at `engineer/bin/lib/audit-checks/index.cjs`, 142 lines.
+> **L1 (Existence):** EXISTS -- File found at `example-project/audit_checks.py`, 142 lines.
 > **Status: PASSED**
 
 **Why this is bad:** The verifier stopped at Level 1. The file has 142 lines but could contain `// TODO: implement all checks` with stub functions returning empty objects. Level 2 (substantive) and Level 3 (wired) were skipped entirely. A file that exists but is never imported or contains only placeholder code should not pass.

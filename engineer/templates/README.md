@@ -1,6 +1,6 @@
 # Canonical Artifact Registry
 
-This directory contains the template files for every artifact that engineering workflows officially produce. The table below is the authoritative index: **if a `.planning/` root file is not listed here, `gsd-health` will flag it as W019** (unrecognized artifact).
+This directory contains the template files for every artifact that engineering workflows officially produce. The table below is the authoritative index: the registry describes artifact identity and producers; the Python runtime planning validator reports supported current schema findings.
 
 Agents should query this file before treating a `.planning/` file as authoritative. If the file name does not appear below, it is not a canonical engineering artifact.
 
@@ -24,10 +24,10 @@ These files live directly at `.planning/` — not inside phase subdirectories.
 | `AGENTS.md` | *(inline)* | `/profile` | Auto-assembled Claude Code context file |
 | `RETROSPECTIVE.md` | *(inline)* | `/complete-milestone` | Living milestone retrospective updated at each milestone close |
 | `WINDOWS.md` | *(none)* | broken-windows ledger (the Python runtime artifact registry) | Tracked known-broken items pending resolution (#3224) |
-| `STATE-ARCHIVE.md` | *(none)* | `state.cts`'s `cmdStatePrune` | Pruned historical STATE.md entries |
+| `STATE-ARCHIVE.md` | *(none)* | guarded state retirement operations | Pruned historical STATE.md entries |
 | `milestone.lock` | *(none)* | the Python runtime artifact registry | Persistent milestone (phase + session) claim, unlike the transient `STATE.md.lock`/`WAITING.json` (#3311) |
 | `state.json` | *(none)* | the Python runtime artifact registry | Machine-readable state contract published at step boundaries (#3227) |
-| `skill-manifest.json` | *(none)* | `init.cts`'s `cmdSkillManifest --write` | Project-scoped skill manifest (#3964) |
+| `skill-manifest.json` | *(none)* | the installed skill manifest producer | Project-scoped skill manifest (#3964) |
 | `PATTERNS.md` | *(inline)* | `/extract-learnings` (graduation, `workflows/graduation.md`, `patterns` target) | Graduated cross-phase patterns -- distinct from the per-phase `NN-PATTERNS.md` below (#4282) |
 
 ### Version-stamped artifacts (pattern: `vX.Y-*.md`)
@@ -42,7 +42,7 @@ These files are archived to `.planning/milestones/` by `/complete-milestone`. Fi
 
 ## Phase Subdirectory Artifacts (`.planning/phases/NN-name/`)
 
-These files live inside a phase directory. They are NOT checked by W019 (which only inspects the `.planning/` root).
+These files live inside a phase directory and are inspected by the current runtime according to their artifact schema.
 
 | File Pattern | Template | Produced by | Purpose |
 |-------------|----------|-------------|---------|
@@ -63,7 +63,7 @@ These files live inside a phase directory. They are NOT checked by W019 (which o
 
 ## Milestone Archive (`.planning/milestones/`)
 
-Files archived by `/complete-milestone`. These are never checked by W019.
+Files archived by `/complete-milestone`. Archive manifests preserve their source identities and evidence.
 
 | File Pattern | Source |
 |-------------|--------|
@@ -93,3 +93,15 @@ When a new workflow produces a `.planning/` root file:
 | `.planning/decisions/ADR-*.md` | `ADR.md` | coordinator | Optional rationale linked from PROJECT Key Decisions |
 | Canonical issue | `issue.md` | coordinator | Defect, threat, UAT and scope tracking |
 | Draft pull request | `pull-request.md` | coordinator | Reviewable delivery and exact validation evidence |
+
+## Quick records
+
+| Path | Template | Producer | Purpose |
+|------|----------|----------|---------|
+| `.planning/quick/NNN-slug/NNN-VERIFICATION.md` | `verification-report.md` adapted with quick identity | quick coordinator | Genuine quick evidence; quick: NNN, status, covered_files, fingerprint, revision, issue_refs |
+
+Quick verification uses --quick ID on status/resolve-file/fingerprint/current and ready/merge gates. Never invent a phase identifier.
+
+## Runtime ownership and optional upstream artifacts
+
+The registry preserves upstream artifact categories and the current project's complete templates. A registry row is not a claim that every upstream producer or optional artifact has a Python implementation. Use the retained command catalog and current runtime API before invoking a producer. In particular retired profile/intelligence/AI-integration artifacts do not grant new workflow or host integrations. Add or change a current parser schema together with its full template and consumers; never treat registry membership as behavioral verification.
