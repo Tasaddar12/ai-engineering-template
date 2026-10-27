@@ -147,10 +147,17 @@ def command(args, action):
                 if action == "cleanup-wave" and not entry.get("merged"):
                     results.append({**entry, "preserved": True, "reason": "worker is not recorded as integrated"})
                     continue
-                target = Path(entry["path"]).resolve()
+                from .cleanup import aliased_path, direct_head
+                raw_target = Path(entry["path"])
+                if aliased_path(raw_target):
+                    raise Failure("unsafe-worktree-path", "Symlink and junction resources are preserved")
+                target = raw_target.resolve()
                 if not target.is_relative_to(root()) or target == root():
                     raise Failure("unsafe-worktree-path", str(target))
-                dirty = run(["git", "status", "--porcelain"], target).stdout
+                registered = [item for item in list_worktrees() if Path(item["path"]).resolve() == target]
+                if len(registered) != 1 or registered[0].get("locked") or registered[0].get("branch") != entry["branch"]:
+                    raise Failure("worker-registration-drift", entry["plan"])
+                dirty = run(["git", "status", "--porcelain", "--untracked-files=all"], target).stdout
                 if dirty:
                     raise Failure("dirty-worker", str(target))
                 actual_branch = run(["git", "branch", "--show-current"], target).stdout.strip()
@@ -202,12 +209,20 @@ def command(args, action):
                         entry["artifacts"] = list(entry["files"])
                     write_json(path, data)
                 if action == "cleanup-wave":
+                    if run(["git", "status", "--porcelain", "--untracked-files=all", "--ignored=matching"], target).stdout:
+                        raise Failure("dirty-worker", "Ignored worker content must be preserved")
                     if head != entry.get("head", head):
                         raise Failure("worker-head-drift", entry["plan"])
                     if run(["git", "merge-base", "--is-ancestor", head, "HEAD"], root(), check=False).returncode:
                         raise Failure("worker-not-integrated", entry["plan"])
+                    if direct_head(entry["branch"]) != head:
+                        raise Failure("worker-head-drift", entry["plan"])
                     run(["git", "worktree", "remove", str(target)], root())
-                    run(["git", "branch", "-d", entry["branch"]], root())
+                    if target.exists() or any(Path(item["path"]).resolve() == target for item in list_worktrees()):
+                        raise Failure("worker-removal-unconfirmed", entry["plan"])
+                    if direct_head(entry["branch"]) != head:
+                        raise Failure("worker-head-drift", entry["plan"])
+                    run(["git", "update-ref", "--no-deref", "-d", "refs/heads/"+entry["branch"], head], root())
                     entry["cleaned"] = True
                 results.append(entry.copy())
                 write_json(path, data)
