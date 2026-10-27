@@ -308,14 +308,7 @@ All `init.*` results include these keys:
 | `researcher_model/effort`, `checker_model/effort`, `reviewer_model/effort`, `fixer_model/effort` | aliases for phase-researcher, plan-checker, code-reviewer, code-fixer |
 | `fix` | explicit `--fix` echo |
 
-Role maps cover executor, planner, verifier, phase-researcher, plan-checker,
-code-reviewer, code-fixer, doc-writer, doc-verifier, integration-checker,
-security-auditor, nyquist-auditor, ui-researcher, ui-checker, ui-auditor,
-and codebase-mapper. A missing required role fails explicitly.
-Codex reads native TOML model/effort definitions from
-`bin/install-assets/codex-agents` in source, or the installed `.codex/agents`.
-Claude reads `agents.<final-role>` configuration.
-
+Role maps cover executor, planner, verifier, phase-researcher, plan-checker, code-reviewer, code-fixer, doc-writer, doc-verifier, integration-checker, security-auditor, nyquist-auditor, ui-researcher, ui-checker, ui-auditor, scout, code-fixer, and codebase-mapper. A missing required role fails explicitly. Codex reads native TOML model/effort definitions from `bin/install-assets/codex-agents` in source, or the installed `.codex/agents`. Claude reads `agents.<final-role>` configuration.
 `init.phase-op`, `init.plan-phase`, `init.execute-phase`, `init.verify-work`,
 `init.ship`, and `init.code-review` add this shared phase packet:
 
