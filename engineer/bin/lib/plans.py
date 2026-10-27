@@ -11,8 +11,10 @@ def tasks(content):
     result = []
     for match in re.finditer(r"<task\b([^>]*)>(.*?)</task>", content, re.S):
         attrs = dict(re.findall(r'([\w-]+)=["\']([^"\']*)["\']', match.group(1)))
-        task = {"type": attrs.get("type", "auto"), "tdd": attrs.get("tdd", "false").lower() == "true"}
-        for name in ("name", "files", "read_first", "action", "verify", "done"):
+        task = {"type": attrs.get("type", "auto"), "tdd": attrs.get("tdd", "false").lower() == "true",
+                "gate": attrs.get("gate"), "auto_select": attrs.get("auto_select"),
+                "options": [{"id": item[1], "body": item[2].strip()} for item in re.finditer(r"<option\b[^>]*\bid=[\"']([^\"']+)[\"'][^>]*>(.*?)</option>", match.group(2), re.S)]}
+        for name in ("name", "files", "read_first", "action", "verify", "done", "decision", "resume-signal", "how-to-verify"):
             child = re.search(rf"<{name}\b[^>]*>(.*?)</{name}>", match.group(2), re.S)
             task[name] = child.group(1).strip() if child else ""
         result.append(task)
@@ -37,6 +39,14 @@ def validate(args):
         findings.append("Plan has no tasks")
     for index, task in enumerate(parsed, 1):
         if task["type"].startswith("checkpoint:"):
+            if task["type"] == "checkpoint:decision":
+                ids = [option["id"] for option in task["options"]]
+                if not ids or len(ids) != len(set(ids)):
+                    findings.append(f"Task {index}: decision options require unique declared IDs")
+                if task["auto_select"] is not None and task["auto_select"] not in ids:
+                    findings.append(f"Task {index}: auto_select must name an actual declared option ID")
+            elif task["auto_select"] is not None:
+                findings.append(f"Task {index}: auto_select requires checkpoint:decision")
             continue
         for key in ("files", "action", "verify", "done"):
             if not task[key]:
@@ -56,13 +66,22 @@ def plan_paths(args):
 
 
 def check(args, kind):
-    findings, known = [], set()
+    findings, known, commands = [], set(), []
     paths = plan_paths(args)
     if not paths:
         raise Failure("plans-not-found", "No PLAN files found")
     for path in paths:
         for index, task in enumerate(tasks(read(path)), 1):
-            command = task["verify"]
+            verify = task["verify"]
+            automated = re.findall(r"<automated\b[^>]*>(.*?)</automated>", verify, re.S)
+            command = "\n".join(value.strip() for value in automated) if automated else verify
+            if kind == "failure-directions" and automated:
+                rows = failing_directions(verify)
+                for row in rows:
+                    entry = {"plan": str(path), "task": index, **row}
+                    commands.append(entry)
+                    if entry["severity"] != "none":
+                        findings.append(entry)
             created = set(re.split(r"[,\s]+", task["files"].strip())) - {""}
             if kind == "failure-directions":
                 reasons = []
@@ -96,4 +115,26 @@ def check(args, kind):
                     if not exists:
                         findings.append({"plan": str(path), "task": index, "path": token, "error": "unresolvable-path"})
             known.update(created)
-    return {"valid": not findings, "findings": findings}, int(bool(findings))
+    blocking = any(item.get("severity", "blocker") == "blocker" for item in findings)
+    return {"valid": not blocking, "findings": findings, "commands": commands, "readError": None}, int(blocking)
+
+
+def failing_directions(verify):
+    """Bind the first fails_when to the nearest preceding automated command."""
+    rows, current = [], None
+    for match in re.finditer(r"<(automated|fails_when)\b[^>]*>(.*?)</\1>", verify, re.S):
+        value = match[2].strip()
+        if match[1] == "automated":
+            sentinel = bool(re.match(r"MISSING\s*[—–-]\s*Wave\s+0\b", value, re.I))
+            current = {"command": value, "fails_when": None, "status": "sentinel" if sentinel else "missing", "severity": "none" if sentinel else "blocker", "reason": "non-runnable Wave 0 placeholder" if sentinel else "No stated failing direction"}
+            rows.append(current)
+        elif current is None:
+            rows.append({"command": None, "fails_when": value, "status": "orphan", "severity": "warning", "reason": "No preceding automated command"})
+        elif current["fails_when"] is None:
+            current["fails_when"] = value
+            if current["status"] == "sentinel":
+                continue
+            placeholder = re.fullmatch(r"(?i)(?:TBD|TODO|FIXME|N/?A|\[.*\]|\.\.\.)[.!]?", value)
+            status = "empty" if not value else "placeholder" if placeholder else "ok"
+            current.update(status=status, severity="none" if status == "ok" else "blocker", reason="Stated failing direction" if status == "ok" else "Blank failing direction" if status == "empty" else "Placeholder failing direction")
+    return rows

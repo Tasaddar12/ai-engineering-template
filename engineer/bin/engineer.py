@@ -6,6 +6,9 @@ import sys
 
 # Read-only installed queries must not create bytecode in the managed tree.
 sys.dont_write_bytecode = True
+for stream in (sys.stdout, sys.stderr):
+    if hasattr(stream, "reconfigure"):
+        stream.reconfigure(encoding="utf-8", errors="replace")
 from pathlib import Path
 
 # An explicit source path also supports Python's isolated (-I) invocation.
@@ -114,6 +117,8 @@ def registry():
         verbs["cleanup."+action] = lambda a, action=action: cleanup.command(a, action)
     for kind in ("code-review", "complete-milestone", "execute-phase", "new-milestone", "new-project", "onboard", "phase-op", "plan-phase", "progress", "quick", "quick-batch", "todos", "verify-work", "ship"):
         verbs["init."+kind] = lambda a, kind=kind: bundles.init(a, kind)
+    for alias in ("help", "verbs", "--help", "-h"):
+        verbs[alias] = lambda a: {"usage": "engineer_run query <verb>", "verbs": sorted(VERBS)}
     return verbs
 
 
@@ -142,7 +147,7 @@ def main(argv=None):
     try:
         before = planning_integrity.capture()
         if name in ("help", "verbs", "--help", "-h"):
-            result = {"usage": "engineer_run query <verb>", "verbs": sorted([*VERBS, "help", "verbs"])}
+            result = {"usage": "engineer_run query <verb>", "verbs": sorted(VERBS)}
         elif name not in VERBS:
             raise Failure("unknown-verb", f"Unknown runtime verb: {name}", 2)
         else:

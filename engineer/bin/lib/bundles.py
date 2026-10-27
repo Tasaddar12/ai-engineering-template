@@ -125,7 +125,7 @@ def init(args, kind):
     packet.update(info)
     directory = Path(info["phase_dir"])
     packet["expected_phase_dir"] = str(directory)
-    specs = list(directory.glob("*-SPEC.md"))
+    specs = [path for path in directory.glob("*-SPEC.md") if not path.name.endswith(("-UI-SPEC.md", "-AI-SPEC.md"))]
     packet["has_spec"] = bool(specs)
     packet["spec_path"] = str(specs[0]) if specs else None
     research = list(directory.glob("*-RESEARCH.md"))
@@ -170,6 +170,7 @@ def init(args, kind):
         packet["phase_status"] = "Unknown"
     packet["granularity"] = settings.get("granularity", "standard")
     packet["prior_verify_commands"] = []
+    packet["prior_verify_candidates"] = []
     from .plans import tasks
     for prior in reversed(records.phases()):
         if tuple(map(int, prior.name.split("-")[0].split("."))) >= tuple(map(int, info["number"].split("."))):
@@ -183,7 +184,19 @@ def init(args, kind):
                 if command:
                     commands.append({"phase": prior.name.split("-")[0], "plan": plan.stem.removesuffix("-PLAN"), "task": task["name"], "command": command})
         if commands:
-            packet["prior_verify_commands"] = commands
+            packet["prior_verify_candidates"] = commands
+            for summary in sorted(prior.glob("*-SUMMARY.md")):
+                relative = summary.relative_to(root()).as_posix()
+                if run(["git", "ls-files", "--error-unmatch", "--", relative], root(), check=False).returncode or run(["git", "status", "--porcelain", "--", relative], root()).stdout:
+                    continue
+                metadata, _ = split_frontmatter(read(summary))
+                if metadata.get("status") != "complete":
+                    continue
+                for evidence in metadata.get("checks_run", []):
+                    if isinstance(evidence, dict) and evidence.get("status") in ("pass", "passed") and evidence.get("command") and evidence.get("revision"):
+                        revision = str(evidence["revision"])
+                        if run(["git", "merge-base", "--is-ancestor", revision, "HEAD"], root(), check=False).returncode == 0:
+                            packet["prior_verify_commands"].append({"phase": prior.name.split("-")[0], "plan": summary.stem.removesuffix("-SUMMARY"), "command": evidence["command"], "revision": revision, "evidence": relative})
             break
     threats = {}
     for plan in index["plans"]:
@@ -192,6 +205,14 @@ def init(args, kind):
         declared = threat_model.get("threats", []) if isinstance(threat_model, dict) else threat_model if isinstance(threat_model, list) else []
         identifiers = {str(item["id"]) for item in declared if isinstance(item, dict) and "id" in item}
         identifiers.update(re.findall(r'<threat\b[^>]*\bid=["\']([^"\']+)', body))
+        table = re.search(r"(?ms)^\|\s*Threat ID\s*\|\s*Category\s*\|\s*Component\s*\|\s*Severity\s*\|\s*Disposition\s*\|\s*Mitigation Plan\s*\|\s*\n((?:\|[^\n]*\n?)*)", body)
+        if table:
+            for row in table[1].splitlines():
+                cells = [cell.strip() for cell in row.strip().strip("|").split("|")]
+                if len(cells) == 6 and not re.fullmatch(r":?-+:?", cells[0]):
+                    identifier = cells[0].strip("` ")
+                    if identifier and not identifier.startswith("["):
+                        identifiers.add(identifier)
         for identifier in identifiers:
             threats.setdefault(identifier, []).append(plan["id"])
     packet["threat_id_duplicates"] = [{"id": identifier, "plans": ids} for identifier, ids in threats.items() if len(ids) > 1]

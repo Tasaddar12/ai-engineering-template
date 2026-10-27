@@ -7,7 +7,7 @@ from .text import scalar, yaml_load, yaml_dump
 
 DEFAULTS = {
     "mode": "interactive", "commit_docs": True, "response_language": None,
-    "context_window": 200000, "model_profile": "balanced",
+    "context_window": 200000,
     "workflow": {
         "text_mode": False, "auto_advance": False, "discuss_mode": "discuss",
         "isolation": "auto", "agent_hint_routing": True,
@@ -16,7 +16,7 @@ DEFAULTS = {
         "mvp_mode": False, "plan_chunked": False, "security_asvs_level": 1,
         "security_block_on": "high", "security_enforcement": True,
         "specless_probe_fallback": True, "ui_interaction_capture": False,
-        "ui_phase": "auto", "nyquist_validation": True, "tdd_mode": False,
+        "ui_phase": "auto", "ui_safety_gate": True, "nyquist_validation": True, "tdd_mode": False,
         "research": True, "plan_check": True, "verifier": True,
     },
     "executor": {"stall_detect_interval_minutes": 5, "stall_threshold_minutes": 10},

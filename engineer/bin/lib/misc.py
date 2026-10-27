@@ -98,11 +98,55 @@ def timeout(args):
     seconds = float(args.get("timeout", args.get("seconds", 300)))
     if not argv:
         raise Failure("missing-command", "Pass the command after --", 2)
+    import os
+    import signal
+    import sys
+    import threading
+    if seconds <= 0:
+        raise Failure("invalid-timeout", "Timeout must be positive", 2)
+    options = {"start_new_session": True} if os.name != "nt" else {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+    process = subprocess.Popen(argv, cwd=root(), stdout=subprocess.PIPE, stderr=subprocess.PIPE, **options)
+    captured = {"stdout": [], "stderr": []}
+
+    def stream(pipe, name):
+        import codecs
+        decoder = codecs.getincrementaldecoder("utf-8")("replace")
+        while chunk := pipe.read1(4096):
+            value = decoder.decode(chunk)
+            captured[name].append(value)
+            # Keep stdout a single JSON result while forwarding both child streams live.
+            sys.stderr.write(value)
+            sys.stderr.flush()
+        tail = decoder.decode(b"", final=True)
+        captured[name].append(tail)
+        if tail:
+            sys.stderr.write(tail)
+            sys.stderr.flush()
+        pipe.close()
+
+    readers = [threading.Thread(target=stream, args=(getattr(process, name), name), daemon=True) for name in captured]
+    for reader in readers:
+        reader.start()
+    expired = False
     try:
-        result = run(argv, root(), check=False, timeout=seconds)
-        return {"exit_code": result.returncode, "stdout": result.stdout, "stderr": result.stderr, "timed_out": False}, result.returncode
-    except subprocess.TimeoutExpired as exc:
-        return {"exit_code": 124, "stdout": str(exc.stdout or ""), "stderr": str(exc.stderr or ""), "timed_out": True}, 124
+        process.wait(timeout=seconds)
+    except subprocess.TimeoutExpired:
+        expired = True
+        # Terminate only this newly owned process tree/group, never a port owner.
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"], capture_output=True, check=False)
+        else:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        if process.poll() is None:
+            process.kill()
+        process.wait()
+    for reader in readers:
+        reader.join(timeout=5)
+    code = 124 if expired else process.returncode
+    return {"exit_code": code, "stdout": "".join(captured["stdout"]), "stderr": "".join(captured["stderr"]), "timed_out": expired}, code
 
 
 def progress_bar(args):
