@@ -1,18 +1,7 @@
-**If `needs_codebase_map` is true** (from init — existing code detected but no codebase map):
+# Map existing code within onboarding
 
-**Text mode (`workflow.text_mode: true` in config or `--text` flag):** Set `TEXT_MODE=true` if `--text` is present in `$ARGUMENTS` OR `text_mode` from init JSON is `true`. When TEXT_MODE is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for non-Claude runtimes (OpenAI Codex) where `AskUserQuestion` is not available.
-Use AskUserQuestion:
+When init.onboard reports a brownfield project or source inspection establishes existing code, inspect relevant committed maps and `engineer_run query codebase.status`. Show what actual source is present and offer an inline map refresh if useful; do not exit onboarding to a removed command. Reuse current relevant evidence instead of remapping the entire repository by default.
 
-- header: "Codebase"
-- question: "I detected existing code in this directory. Would you like to map the codebase first?"
-- options:
-  - "Map codebase first" — Run /map-codebase to understand existing architecture (Recommended)
-  - "Skip mapping" — Proceed with project initialization
+Resolve codebase-mapper model/effort inline and omit inherited fields. Dispatch `Agent(subagent_type="codebase-mapper", ...)` in the onboarding session's isolated worker checkout. Assign complete STACK.md and ARCHITECTURE.md outputs, with exact relevant source scope, source revision, full map template contracts and explicit ownership. Additional relevant maps require distinct named questions and outputs. The mapper must inspect source, preserve complete contracts/examples and commit its owned evidence; it does not invent an adopting-project identity or write shared roadmap/state records.
 
-**If "Map codebase first":**
-
-```
-Run `/map-codebase` first, then return to `/new-project`
-```
-
-Exit command.
+ORCHESTRATOR RULE: after dispatch, wait for confirmed worker stop before touching its paths or integrating its commit. Inspect the actual committed maps and run codebase.status when checks are permitted to confirm freshness from Git evidence. If inspection/check execution is deferred, record the pending freshness proof rather than claiming the map is current. Continue onboarding with cited source facts and explicit limitations.
