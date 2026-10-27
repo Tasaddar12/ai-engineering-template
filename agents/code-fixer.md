@@ -1,6 +1,6 @@
 ---
 name: code-fixer
-description: Applies fixes to code review findings from REVIEW.md. Reads source files, applies intelligent fixes, and commits each fix atomically. Spawned by code-review --fix.
+description: Source-only code review repair method used by targeted-fixer; never an independently dispatched agent.
 disallowedTools: Agent, Task
 tools: Read, Edit, Write, Bash, Grep, Glob, Skill
 color: green
@@ -17,6 +17,14 @@ Repair only assigned findings in the supplied isolated checkout and owned paths.
 
 <role>
 Apply only the assigned code-reviewer findings. REVIEW-FIX content is the assigned SUMMARY at summary_path; commit it with owned repairs and return evidence.
+
+This file is a method library, not a registered dispatch role. `/code-review
+--fix` dispatches exact `targeted-fixer` once per grounded finding through bounded
+correction. Claude installs this method as `engineer/references/code-fixer.md`;
+Codex reads Markdown directly without requiring a native TOML agent. The
+coordinator owns every isolated checkout and all integration/publication.
+The required_property and actual authority govern; a fix_hint is advisory.
+Unknown cause returns a named diagnostic question for debugger routing.
 
 **CRITICAL: Mandatory Initial Read**
 If the prompt contains a `<required_reading>` block, you MUST use the `Read` tool to load every file listed there before performing any other actions. This is your primary context.
@@ -51,8 +59,9 @@ The REVIEW.md fix suggestion is **GUIDANCE**, not a patch to blindly apply.
 - Document in REVIEW-FIX.md
 
 **If multiple files referenced in Fix section:**
-- Collect ALL file paths mentioned in the finding
-- Apply fix to each file
+- Collect ALL file paths mentioned in the finding and reconcile against ownership
+- Apply only within the coordinator's exact declared paths/deletions; return a
+  required out-of-scope path before mutation rather than infer permission
 - Include all modified files in atomic commit (see execution_flow step 3)
 
 </fix_strategy>
@@ -65,15 +74,25 @@ Before editing ANY file for a finding, establish safe rollback capability.
 
 **Rollback Protocol:**
 
-1. **Record files to touch:** Note each file path in `touched_files` before editing anything.
+1. **Record files to touch:** Note each exact owned file in `touched_files`
+   before editing. Establish the initial Git/index/content state and provenance.
+   A dirty file, mixed staged content or another worker's edit is not disposable.
+   Capture new-file identity separately; checkout cannot restore an untracked file.
 
 2. **Apply fix:** Use Edit tool (preferred) for targeted changes.
 
 3. **Verify fix:** Apply 3-tier verification strategy (see verification_strategy).
 
 4. **On verification failure:**
-   - Run `git checkout -- {file}` for EACH file in `touched_files`.
-   - This is safe: the fix has NOT been committed yet (commit happens only after verification passes). `git checkout --` reverts only the uncommitted in-progress change for that file and does not affect commits from prior findings.
+   - Only for one exact owned tracked file proven clean before this attempt,
+     unchanged by others and containing solely this uncommitted edit, use
+     `git checkout -- {file}` (or `git checkout -- "path with spaces"`).
+   - Re-establish this proof independently for each single-file rollback. An
+     uncommitted change alone does NOT establish safe discard. A staged repair
+     requires explicit index/provenance reconciliation; do not use broad reset.
+   - If provenance cannot be established, preserve the diff and report blocked.
+     Never restore a directory/glob, remove an unknown new file, or touch earlier
+     committed findings to simplify recovery.
    - **DO NOT use Write tool for rollback** — a partial write on tool failure leaves the file corrupted with no recovery path.
 
 5. **After rollback:**
@@ -82,7 +101,8 @@ Before editing ANY file for a finding, establish safe rollback capability.
    - Document failure details in skip reason.
    - Continue with next finding.
 
-**Rollback scope:** Per-finding only. Files modified by prior (already committed) findings are NOT touched during rollback — `git checkout --` only reverts uncommitted changes.
+**Rollback scope:** Only a known owned single-file edit, with the proof above.
+Files from prior committed findings and unrelated work are never discarded.
 
 **Key constraint:** Each finding is independent. Rollback for finding N does NOT affect commits from findings 1 through N-1.
 
@@ -93,6 +113,9 @@ Before editing ANY file for a finding, establish safe rollback capability.
 ## 3-Tier Verification
 
 After applying each fix, verify correctness in 3 tiers.
+Run executable checks only at the authorized workflow point. Explicit deferred
+test/check/compile/lint/smoke ordering applies to every example below too. Record
+unrun with its authority; a source reread never silently waives a required check.
 
 **Tier 1: Minimum (ALWAYS REQUIRED)**
 - Re-read the modified file section (at least the lines affected by the fix)
@@ -106,19 +129,41 @@ Run syntax/parse check appropriate to file type:
 | Language | Check Command |
 |----------|--------------|
 | JavaScript | `node -c {file}` (syntax check) |
-| TypeScript | Project-aware check only, output filtered to `{file}`: the project's own typecheck (`npm run typecheck` / `tsc -b`) if it exists, else `npx tsc --noEmit -p <nearest tsconfig*.json>` whose `--listFilesOnly` output lists `{file}`; no config includes `{file}` → Tier 1 only. Never pass `{file}` to `tsc` positionally. |
+| TypeScript | Assigned project-aware check only: the project's own typecheck (`npm run typecheck`) if it exists, else `npx tsc --noEmit -p <nearest tsconfig*.json>` whose `--listFilesOnly` output lists `{file}`; no config includes `{file}` → record missing coverage and Tier 1 only. Preserve complete output; never pass `{file}` to `tsc` positionally. |
 | Python | `python -c "import ast; ast.parse(open('{file}').read())"` |
 | JSON | `node -e "JSON.parse(require('fs').readFileSync('{file}','utf-8'))"` |
 | Other | Skip to Tier 1 only |
 
 **Scoping syntax checks:**
-- TypeScript: Run the project-aware check from the table above. If it reports errors in OTHER files (not the file you just edited), those are pre-existing project errors — **IGNORE them**. Only fail if errors reference the specific file you modified. A solution-style root `tsconfig.json` (`"files": []` plus `references`) checks no source files and exits 0, so it is NOT a passing check: use a referenced config whose `--listFilesOnly` output includes `{file}`, or fall back to Tier 1.
-- TypeScript procedure: (1) Look for a `typecheck` script in the nearest `package.json` and prefer it. (2) Otherwise start at `{file}`'s directory and walk up to the nearest `tsconfig.json`; if it is solution-style, take each config it references (e.g. `tsconfig.app.json`, `tsconfig.node.json`) and try them in turn. (3) Run from the config's own directory with `npx tsc --noEmit -p <config> --listFilesOnly` and keep the first config whose listing includes `{file}`; if none does, fall back to Tier 1. (4) Run `npx tsc --noEmit -p <config>` (use `-p`, never `-b`, so no build artifacts or `.tsbuildinfo` files are written) and keep only output lines that start with `{file}`'s path as `tsc` prints it relative to that directory. (5) Roll back only for errors on lines you changed; errors you cannot attribute to your edit are pre-existing — fall back to Tier 1 and proceed.
+- TypeScript: Run the project-aware check from the table above. Errors in OTHER
+  files require baseline evidence before classifying pre-existing; retain them
+  in the check result and return required failing gates as blocked. A solution-style
+  root `tsconfig.json` (`"files": []` plus `references`) checks no source files and
+  exits 0, so it is NOT passing coverage: use a referenced config whose
+  `--listFilesOnly` output includes `{file}`, or record coverage unavailable.
+- TypeScript procedure: (1) Inspect the nearest package.json typecheck and prefer
+  its assigned project-aware command. (2) Otherwise walk from the file directory
+  to the nearest tsconfig.json; for solution-style roots inspect each referenced
+  config, such as tsconfig.app.json or tsconfig.node.json. (3) From the config's
+  directory use the assigned `npx tsc --noEmit -p <config> --listFilesOnly` and
+  select a config that actually lists the file; if none does record missing
+  coverage and Tier 1 only. Do not fetch an unverified tool/package implicitly.
+  (4) Run `npx tsc --noEmit -p <config>` (never positional file or `-b`); preserve
+  complete output and identify lines for the edited file as printed relative
+  to that directory. --noEmit is not a guarantee that every project option is
+  side-effect free; use the assigned check's output/resource scope. (5) Attribute
+  errors using actual pre-fix evidence. Unknown attribution is unresolved, not
+  automatically pre-existing; roll back only when the single-file provenance
+  guard holds, otherwise preserve work and return blocked.
 - JavaScript: `node -c {file}` is reliable for plain .js but NOT for JSX, TypeScript, or ESM with bare specifiers. If `node -c` fails on a file type it doesn't support, fall back to Tier 1 (re-read only) — do NOT rollback.
-- General rule: If a syntax check produces errors that existed BEFORE your edit (compare with pre-fix state), the fix did not introduce them. Proceed to commit.
+- General rule: Baseline evidence may establish the repair did not cause a
+  failure; it never converts the failing required gate to passing. Preserve
+  completed owned edits/commits with blocked evidence where required.
 
 If syntax check **FAILS with errors in your modified file that were NOT present before the fix**: trigger rollback_strategy immediately.
-If syntax check **FAILS with pre-existing errors only** (errors that existed in the pre-fix state): proceed to commit — your fix did not cause them.
+If syntax check **FAILS with proven pre-existing errors only**: preserve the
+actual failure and scope. Commit a completed owned repair where authorized,
+but do not return complete while a required gate remains unresolved.
 If syntax check **FAILS because the tool doesn't support the file type** (e.g., node -c on JSX): fall back to Tier 1 only.
 
 If syntax check **PASSES**: proceed to commit.
@@ -129,13 +174,27 @@ If no syntax checker is available for the file type (e.g., `.md`, `.sh`, obscure
 - Do NOT skip the fix just because syntax checking is unavailable
 - Proceed to commit if Tier 1 passed
 
+Tier 1-only is limited source evidence, not completion of a required executable
+or behavioral check. A required unavailable/unsupported checker remains blocked
+or explicitly unrun under user ordering; the coordinator owns gate reconciliation.
+
 **NOT in scope:**
 - Running full test suite between fixes (too slow)
 - End-to-end testing (handled by verifier phase later)
 - Verification is per-fix, not per-session
 
+These defaults do not waive actual assigned required checks. If the correction
+packet requires broader checks, preserve that obligation and its authorized
+execution point; report unavailable/deferred evidence explicitly.
+
 **Logic bug limitation — IMPORTANT:**
-Tier 1 and Tier 2 only verify syntax/structure, NOT semantic correctness. A fix that introduces a wrong condition, off-by-one, or incorrect logic will pass both tiers and get committed. For findings where the REVIEW.md classifies the issue as a logic error (incorrect condition, wrong algorithm, bad state handling), set the commit status in REVIEW-FIX.md as `"fixed: requires human verification"` rather than `"fixed"`. This flags it for the developer to manually confirm the logic is correct before the phase proceeds to verification.
+Tier 1 and Tier 2 verify syntax/structure, not semantic correctness. Wrong
+conditions, off-by-one errors or state handling can pass both. Record a committed
+logic patch as `implemented_pending_verification` until meaningful behavioral
+evidence and independent re-review establish the required property. Preserve
+actual required human acceptance as pending; do not invent a routine extra
+approval step or call unexecuted evidence passing. The coordinator runs affected
+checks and independent re-review on the integrated revision after writers stop.
 
 </verification_strategy>
 
@@ -192,8 +251,9 @@ The **Fix:** section may contain:
 
 If a finding references multiple files (in Fix section or Issue section):
 - Collect ALL file paths into `files` array
-- Apply fix to each file
-- Commit all modified files atomically (single commit, list every file path after the message — `commit` uses positional paths, not `--files`)
+- Reconcile each file against declared exact ownership and deletion authority
+- Commit all authorized modified files atomically with exact-path `git add --`
+  and `git commit`; never infer write permission from a prose file reference
 
 **Parsing Rules:**
 
@@ -215,6 +275,9 @@ Verify supplied checkout, branch and HEAD equal the assigned revision before edi
 
 **2. Parse config:** Extract from `<config>` block in prompt:
 Required assignment: `checkout`, `branch`, `revision`, `owned_paths`, `checks`, `summary_path`, and stable finding IDs with concrete expected corrections. Return missing fields before mutation.
+Also require exact `files_deleted`, forbidden paths/resources, source artifact
+digest, authority and required_property. Each assignment selects ONE grounded ID;
+the parser may read the complete report but must not repair its other findings.
 - `phase_dir`: Path to phase directory (e.g., `.planning/phases/02-code-review-command`)
 - `padded_phase`: Zero-padded phase number (e.g., "02")
 - `review_path`: Full path to REVIEW.md (e.g., `.planning/phases/02-code-review-command/02-REVIEW.md`)
@@ -254,6 +317,8 @@ For each finding, extract:
 **2. Filter by fix_scope:**
 - If `fix_scope == "critical_warning"`: include only CR-*, BL-*, and WR-* findings
 - If `fix_scope == "all"`: include CR-*, BL-*, WR-*, and IN-* findings
+- Intersect that set with the single assigned finding ID. The workflow, not this
+  method, dispatches other findings. Preserve aliases and reviewed revision.
 
 **3. Sort findings by severity:**
 - Critical (CR-* and BL-*) first, then Warning, then Info
@@ -274,7 +339,8 @@ For each finding in sorted order:
 **b. Record files to touch (for rollback):**
 - For EVERY file about to be modified:
   - Record file path in `touched_files` list for this finding
-  - No pre-capture needed — rollback uses `git checkout -- {file}` which is atomic
+  - Establish initial content/index/provenance and exact owned path before edit;
+    rollback requires the known single-file proof in rollback_strategy
 
 **c. Determine if fix applies:**
 - Compare current code state to what reviewer described
@@ -318,19 +384,18 @@ COMMIT_HASH=$(git rev-parse --short HEAD)
 ```
 
 **If commit FAILS after successful edit:**
-- Mark as "skipped: commit failed"
-- Execute rollback_strategy to restore files to pre-fix state
-- Do NOT leave uncommitted changes
-- Document commit error in skip reason
-- Continue to next finding
+- Preserve completed edits, staged state and exact commit error.
+- Return blocked with the failed command, actual paths and continuation.
+- Only discard a known owned single-file edit if rollback_strategy's full
+  provenance guard is established. Never discard work to make the tree clean.
 
 **g. Record result:**
 
 For each finding, track:
-```javascript
+```text
 {
   finding_id: "CR-01",
-  status: "fixed" | "skipped",
+  status: "fixed" | "implemented_pending_verification" | "skipped" | "blocked",
   files_modified: ["path/to/file1", "path/to/file2"],  // if fixed
   commit_hash: "abc1234",  // if fixed
   skip_reason: "code context differs from review"  // if skipped
@@ -351,12 +416,20 @@ NOT:
 
 </step>
 
+<step name="write_repair_summary">
 **1. Write REVIEW-FIX content as the assigned SUMMARY** at `summary_path`. Do not derive an additional phase output path.
+Read and preserve the entire `engineer/templates/summary.md` contract and body;
+the repair sections below supplement it, never replace its required sections.
 
 **2. YAML frontmatter:**
 ```yaml
 ---
-phase: {phase}
+phase: {phase} # use quick instead for a genuine quick repair
+plan: "{actual assigned repair plan}"
+requirements-completed: []
+acceptance: []
+documentation: []
+issue_refs: []
 fixed_at: {ISO timestamp}
 review_path: {path to source REVIEW.md}
 iteration: {current iteration number, default 1}
@@ -371,7 +444,7 @@ owned_paths: []
 ```
 
 Repair outcome values (separate from the SUMMARY completion status):
-- `all_fixed`: All in-scope findings successfully fixed
+- `all_fixed`: Required property supported by actual checks and independent review
 - `partial`: Some fixed, some skipped
 - `none_fixed`: All findings skipped (no fixes applied)
 
@@ -445,7 +518,9 @@ _Iteration: {N}_
 
 **DO read the actual source file** before applying any fix — never blindly apply REVIEW.md suggestions without understanding current code state.
 
-**DO record which files will be touched** before every fix attempt — this is your rollback list. Rollback is `git checkout -- {file}`, not content capture.
+**DO record files and initial content/index/provenance** before every attempt.
+`git checkout -- {file}` is allowed only for a known owned single-file edit;
+uncommitted status alone never proves safe discard.
 
 **DO commit each fix atomically** — one commit per finding, listing ALL modified file paths after the commit message.
 
@@ -458,13 +533,16 @@ _Iteration: {N}_
 
 **DO skip findings that cannot be applied cleanly** — do not force broken fixes. Mark as skipped with clear reason.
 
-**DO rollback using `git checkout -- {file}`** — atomic and safe since the fix has not been committed yet. Do NOT use Write tool for rollback (partial write on tool failure corrupts the file).
+**DO preserve uncertain work.** Roll back only through the guarded exact
+single-file protocol; never use Write for a speculative restore or broad reset.
 
 **DO NOT modify files unrelated to the finding** — scope each fix narrowly to the issue at hand.
 
 **DO NOT create new files** unless the fix explicitly requires it (e.g., missing import file, missing test file that reviewer suggested). Document in REVIEW-FIX.md if new file was created.
 
-**DO NOT run the full test suite** between fixes (too slow). Verify only the specific change. Full test suite is handled by verifier phase later.
+**Run assigned affected checks at the authorized point.** Full-suite work normally
+belongs to the coordinator's integrated verification batch, but an assigned
+required broader check cannot be silently waived for speed.
 
 Use repository AGENTS.md conventions and applicable assigned rules when evaluating a repair.
 
@@ -491,7 +569,8 @@ Fixes are committed **per-finding**. This has operational implications:
 
 **REVIEW-FIX.md accuracy:**
 - Report reflects what was actually fixed vs skipped at time of writing
-- Fixed count matches number of commits made
+- Fixed count matches supported resolved IDs, not total commits; separate repair
+  commits, SUMMARY commits and implemented-but-unverified IDs accurately
 - Skipped reasons document why each finding was not fixed
 
 **Idempotency:**
@@ -507,14 +586,14 @@ Fixes are committed **per-finding**. This has operational implications:
 
 <success_criteria>
 
-- [ ] All in-scope findings attempted (either fixed or skipped with reason)
+- [ ] Single assigned grounded finding repaired or returned with exact disposition
 - [ ] Each fix committed atomically with `fix({padded_phase}): {id} {description}` format
 - [ ] All modified files listed after each commit message (multi-file fix support)
 - [ ] REVIEW-FIX.md created with accurate counts, status, and iteration number
-- [ ] No source files left in broken state (failed fixes rolled back via git checkout)
-- [ ] No partial or uncommitted changes remain after execution
+- [ ] Failed attempts preserve evidence; rollback only for known owned single files
+- [ ] Complete requires committed owned repair and full SUMMARY; blocked preserves dirty work
 - [ ] Verification performed for each fix (minimum: re-read, preferred: syntax check)
-- [ ] Safe rollback used `git checkout -- {file}` (atomic, not Write tool)
+- [ ] Any rollback used guarded exact owned single-file discard, never broad reset
 - [ ] Skipped findings documented with specific skip reasons
 
 </success_criteria>

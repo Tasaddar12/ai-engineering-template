@@ -17,9 +17,13 @@ Require all of the following before mutation:
 - `branch`: exact assigned branch.
 - `revision`: expected starting HEAD.
 - `owned_paths`: exact repair boundaries, including any permitted tests or fixtures.
+- `files_deleted`: explicit authorized removals, including rename source paths;
+  an empty list grants no deletion authority. Require forbidden paths/resources
+  and the applicable recorded approval/implementation authority as well.
 - `checks`: grounded commands, working directory and expected result.
 - `summary_path`: assigned committed repair record.
 - Stable finding ID, source evidence and the required property.
+- Artifact digest and reviewed source revision; any fix_hint is advisory.
 
 Missing fields or identity mismatches return blocked with the exact discrepancy. Read-only investigation may continue where the supplied scope supports it. Never create worktrees, switch branches, merge or change the expected revision to hide a mismatch.
 </assignment>
@@ -36,6 +40,11 @@ Missing fields or identity mismatches return blocked with the exact discrepancy.
 9. Write SUMMARY at summary_path with `status: complete|blocked`, base identity, finding IDs, changed paths, acceptance evidence, Checks and Remaining. Commit it before returning complete.
 
 If the assignment invokes the code-review repair procedure, use [code-fixer](code-fixer.md) for its finding parser, rollback safety, language checks and REVIEW-FIX body. The assigned SUMMARY is the repair report; do not create a second unowned phase artifact.
+In an installed Claude adapter the source-only method is
+`engineer/references/code-fixer.md`; Codex can read the Markdown method directly
+without a native TOML role. Never dispatch code-fixer as an independent agent.
+One assignment owns exactly one grounded review finding. Unknown cause returns
+the exact diagnostic question for coordinator-owned debugger routing.
 </method>
 
 <safety>

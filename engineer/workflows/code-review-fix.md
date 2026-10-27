@@ -1,675 +1,265 @@
+---
+workflow: code-review-fix
+roles: [coordinator, targeted-fixer, code-reviewer, debugger]
+produces: [per-repair SUMMARY.md, REVIEW-FIX.md, refreshed REVIEW.md]
+---
+
 @engineer/references/response-language-directive.md
 
 <purpose>
-Auto-fix issues from REVIEW.md. Validates phase, checks config gate, verifies REVIEW.md exists and has fixable issues, spawns code-fixer agent, handles --auto iteration loop (capped at 3), commits REVIEW-FIX.md once at the end, and presents results.
+Repair grounded REVIEW findings independently, one finding per isolated worker
+and repair commit, using the complete code-fixer method. Re-review the repaired
+revision and preserve accurate partial-failure/disposition evidence. --auto is
+only a capped repair loop; it never chains phases or grants merge authority.
 </purpose>
 
 <required_reading>
-Read all files referenced by the invoking prompt's execution_context before starting.
+Read code-review.md initialization/scope contracts; engineer/RULES.md; complete
+bounded-correction-dispatch, worker-handoff, worktree-sessions, worktree-path-safety,
+git-workflow, template-contract, verification-evidence references; the complete
+agents/targeted-fixer.md and agents/code-fixer.md methods; full SUMMARY template;
+source REVIEW and owning CONTEXT/PLAN/QUICK. Use the identity-checked Python
+runtime selected by the invoking workflow. All runtime verbs use query and dotted
+names. No missing helper, host-native adapter or provider lane is a prerequisite.
 </required_reading>
-
-<available_agent_types>
-- code-fixer: Applies fixes to code review findings
-- code-reviewer: Reviews source files for bugs and issues
-</available_agent_types>
 
 <process>
+<step name="initialize_and_authorize">
+Consume the structured invocation from dispatch-fix; a direct invocation must
+repeat the identity validation and session/revision/scope steps of code-review.md.
+Validate actual phase/quick before config gating. Read
+`config-get workflow.code_review --raw`; explicitly disabled skips; errors remain
+errors. Missing REVIEW is an explicit prerequisite failure; do not silently run a
+new review or begin blind repair.
 
-<step name="initialize">
-Parse arguments and load project state:
+Require the user's explicit --fix invocation or the already recorded applicable
+implementation instruction. Preserve its exact scope/limits in owning CONTEXT or
+quick record through the proper owner. A review, plan/design approval, readiness
+or report request does not authorize repairs. Existing authority is persistent;
+do not ask again at each finding/pass. New acceptance/locked decision conflicts
+block only their dependent correction. Continue independent authorized findings.
 
-```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
-$ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-_engineer_identity_ok() {
-  [ -f "$1" ] || return 1
-  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
-}
-_engineer_select() {
-  for _engineer_candidate do
-    if _engineer_identity_ok "$_engineer_candidate"; then
-      ENGINEER_RUN="$_engineer_candidate"
-      return 0
-    fi
-  done
-  return 1
-}
-if [ -n "${ENGINEER_RUN:-}" ]; then
-  _engineer_identity_ok "$ENGINEER_RUN" || {
-    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
-    exit 1
-  }
-else
-  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
-  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
-  _engineer_select \
-    "$_engineer_root/engineer/bin/engineer_run" \
-    "$_engineer_runtime_root/engineer/bin/engineer_run" \
-    "$_engineer_root/.claude/engineer/bin/engineer_run" \
-    "$_engineer_root/.codex/engineer/bin/engineer_run" \
-    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
-    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
-    "$_engineer_path_candidate" || {
-    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
-    exit 1
-  }
-fi
-export ENGINEER_RUN
-engineer_run() {
-  sh "$ENGINEER_RUN" "$@"
-}
-if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
-  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
-fi
-PHASE_ARG="${1}"
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.phase-op ${GSD_WS:+--ws=${GSD_WS##* }} "${PHASE_ARG}")
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_FIXER=$(engineer_run query agent-skills code-fixer ${GSD_WS:+--ws=${GSD_WS##* }})
-AGENT_SKILLS_REVIEWER=$(engineer_run query agent-skills code-reviewer ${GSD_WS:+--ws=${GSD_WS##* }})
-# #2072: resolve the routed models so model_overrides / models.<phaseType> are honored
-# (code-reviewer → "verification", code-fixer → "execution"); thread them below.
-REVIEWER_MODEL=$(engineer_run query resolve-model code-reviewer --raw)
-FIXER_MODEL=$(engineer_run query resolve-model code-fixer --raw)
-```
+Use the owning phase/quick isolated session and real session base. Read REVIEW
+frontmatter through `frontmatter.get PATH`; validate the complete body using the
+code-fixer fence-aware parser. status clean/skipped yields no fixes; malformed or
+unknown status blocks mutation (never warn-and-proceed). Extract exact original
+files_reviewed_list, depth, base_revision, head/revision and digest. An absent file
+list or revision is a missing input; reconcile through a fresh scoped review,
+never silently fall back to the entire repository/phase. Require a current
+report before repair; inspect source drift and re-ground every finding.
 
-Parse from init JSON: `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `padded_phase`, `commit_docs`.
-
-**Input sanitization (defense-in-depth):**
-```bash
-# Validate PADDED_PHASE matches the canonical phase-number grammar (src/phase-id.cts): digits,
-# an optional single uppercase letter, then dotted segments (e.g., "02", "03.1", "23.1.2", "12A")
-if ! [[ "$PADDED_PHASE" =~ ^[0-9]+[A-Z]?(\.[0-9]+)*$ ]]; then
-  echo "Error: Invalid phase number format: '${PADDED_PHASE}'. Expected digits with an optional letter suffix (e.g., 02, 03.1, 23.1.2, 12A)."
-  # Exit workflow
-fi
-```
-
-**Phase validation (before config gate):**
-If `phase_found` is false, report error and exit:
-```
-Error: Phase ${PHASE_ARG} not found. Run /progress to see available phases.
-```
-
-This runs BEFORE config gate check so user errors are surfaced immediately regardless of config state.
-
-Parse optional flags from $ARGUMENTS:
-
-```bash
-FIX_ALL=false
-AUTO_MODE=false
-for arg in "$@"; do
-  if [[ "$arg" == "--all" ]]; then FIX_ALL=true; fi
-  if [[ "$arg" == "--auto" ]]; then AUTO_MODE=true; fi
-done
-```
-
-Compute scope variable:
-
-```bash
-if [ "$FIX_ALL" = "true" ]; then
-  FIX_SCOPE="all"
-else
-  FIX_SCOPE="critical_warning"
-fi
-```
-
-Compute review and fix report paths:
-
-```bash
-REVIEW_PATH="${PHASE_DIR}/${PADDED_PHASE}-REVIEW.md"
-FIX_REPORT_PATH="${PHASE_DIR}/${PADDED_PHASE}-REVIEW-FIX.md"
-```
+Default scope is Critical (CR/BL IDs) and Warning; all adds Info. Sort severity
+then document order, deduplicate stable IDs and preserve aliases. Parse full Fix
+content including inline/fenced/prose and every referenced file, but those
+references are discovery evidence, NOT new write authority. Include classification,
+required_property, authority and source revision in every packet. Fix suggestions
+are advisory; unknown causal diagnosis routes an exact debugger assignment before
+repair, not a speculative targeted-fixer patch.
 </step>
 
-<step name="check_config_gate">
-Check if code review is active via the capability registry:
+<step name="dispatch_per_finding">
+Freeze producer output and wait for confirmed stop before assigning paths. Join
+review evidence; reject unsupported claims with cited counterevidence. For each
+grounded selected finding prepare the complete bounded correction packet:
 
-```bash
-EXECUTE_POST_HOOKS_JSON=$(engineer_run loop render-hooks execute:post --raw)
+- Actual repository/session/branch, input SHA and artifact digest.
+- Stable ID, classification/severity, source evidence, authority, required_property.
+- Exact owned source/test/fixture paths, explicit files_deleted and forbidden
+  paths/resources; smallest full contract reading set and consuming template.
+- Concrete affected check argv, cwd/expected result, reusable receipts, pending
+  decisions and actual user check-ordering constraints.
+- Required committed SUMMARY destination and first bounded continuation.
+
+Do not let the worker rediscover the repository. Collect multi-file evidence and
+resolve scope before dispatch. An essential path outside authority blocks that
+repair until coordinator reconciliation; --all selects severity, not unlimited
+ownership. Assign one worker per finding per pass, sequentially when dependencies,
+shared resources or paths overlap. Retry only with changed hypothesis/input and
+preserve earlier attempt evidence; never repeat the identical failed attempt.
+
+Always create and own the isolated repair checkout in the coordinator. Inspect
+`dispatch-isolation --force-isolation orchestrator-worktree --raw`; this explicit
+mode is supported on both Claude and Codex and pins this procedure to coordinator
+ownership. Do not ask the worker to create/switch/merge a checkout. Create via:
+
+```sh
+engineer_run query worktree.create REPAIR_ID --phase OWNER_KEY --base INPUT_SHA --branch REPAIR_BRANCH --files PATH1 PATH2 --deletions DELETED_PATH
+engineer_run query resolve-model targeted-fixer --raw
+engineer_run query resolve-effort targeted-fixer --raw
 ```
 
-Resolve active step hooks from `EXECUTE_POST_HOOKS_JSON` where `kind == "step"` and `ref.skill == "code-review"`.
+OWNER_KEY is the actual phase worker group, or a collision-free quick-ID group
+(the --phase option is a manifest grouping key, not a fictional phase record).
+REPAIR_ID must uniquely identify the finding/pass and match its assigned SUMMARY
+basename. For a phase repair, allocate a unique numeric plan identity through
+the owning runtime/planner contract so phase/plan/basename agree; do not use a
+CR-01 string where the SUMMARY schema requires a numeric plan. If that allocation
+cannot be established, return the missing input before worker creation.
+--files enumerates exact actual paths; omit --deletions unless explicitly
+authorized and list each exact removal, including old rename paths. Never send
+empty ownership (the runtime otherwise permits broad changes). Record returned
+path/branch/base; verify branch/root/HEAD before dispatch. Commit coordinator-owned
+worker bookkeeping as required before integration; do not bury unrelated changes.
 
-If no active code-review step hook exists:
-```
-Code review fix skipped (code-review capability inactive)
-```
-Exit workflow.
-
-Default is active through the Capability Registry schema — only skip when the registry resolves no active code-review step hook. This check runs AFTER phase validation so invalid phase errors are shown first.
-
-Note: This reuses the code-review capability activation rather than introducing a separate code-review-fix capability. Rationale: fixes are meaningless without review, so a single activation boundary makes sense. If independent control is needed later, a separate key can be added in v2.
-</step>
-
-<step name="check_review_exists">
-Verify that REVIEW.md exists:
-
-```bash
-if [ ! -f "${REVIEW_PATH}" ]; then
-  echo "Error: No REVIEW.md found for Phase ${PHASE_ARG}. Run /code-review ${PHASE_ARG} first."
-  exit 1
-fi
-```
-
-Do NOT auto-run code-review. Require explicit user action to ensure review intent is clear.
-</step>
-
-<step name="check_review_status">
-Parse REVIEW.md frontmatter to check status and extract context for --auto loop:
-
-```bash
-# Parse status field
-REVIEW_STATUS=$(REVIEW_PATH="${REVIEW_PATH}" node -e "
-  const fs = require('fs');
-  const content = fs.readFileSync(process.env.REVIEW_PATH, 'utf-8');
-  const match = content.replace(/\r\n/g, '\n').match(/^---\n([\s\S]*?)\n---/);
-  if (match && /status:\s*(\S+)/.test(match[1])) {
-    console.log(match[1].match(/status:\s*(\S+)/)[1]);
-  } else {
-    console.log('unknown');
-  }
-" 2>/dev/null)
-```
-
-If status is "clean" or "skipped":
-```
-No issues to fix in Phase ${PHASE_ARG} REVIEW.md (status: ${REVIEW_STATUS}).
-```
-Exit workflow.
-
-If status is "unknown":
-```
-Warning: Could not parse REVIEW.md status. Proceeding with fix attempt.
-```
-
-Extract review depth for --auto re-review:
-
-```bash
-REVIEW_DEPTH=$(REVIEW_PATH="${REVIEW_PATH}" node -e "
-  const fs = require('fs');
-  const content = fs.readFileSync(process.env.REVIEW_PATH, 'utf-8');
-  const match = content.replace(/\r\n/g, '\n').match(/^---\n([\s\S]*?)\n---/);
-  if (match && /depth:\s*(\S+)/.test(match[1])) {
-    console.log(match[1].match(/depth:\s*(\S+)/)[1]);
-  } else {
-    console.log('standard');
-  }
-" 2>/dev/null)
-```
-
-Extract original review file list for --auto re-review scope persistence:
-
-```bash
-# Extract review file list — portable bash 3.2+ (no mapfile, handles spaces in paths)
-REVIEW_FILES_ARRAY=()
-while IFS= read -r line; do
-  [ -n "$line" ] && REVIEW_FILES_ARRAY+=("$line")
-done < <(REVIEW_PATH="${REVIEW_PATH}" node -e "
-  const fs = require('fs');
-  const content = fs.readFileSync(process.env.REVIEW_PATH, 'utf-8');
-  const match = content.replace(/\r\n/g, '\n').match(/^---\n([\s\S]*?)\n---/);
-  if (match) {
-    const fm = match[1];
-    // Try YAML array format: files_reviewed_list: [file1, file2]
-    const bracketMatch = fm.match(/files_reviewed_list:\s*\[([^\]]+)\]/);
-    if (bracketMatch) {
-      bracketMatch[1].split(',').map(f => f.trim()).filter(Boolean).forEach(f => console.log(f));
-    } else {
-      // Try YAML list format: files_reviewed_list:\n  - file1\n  - file2
-      let inList = false;
-      for (const line of fm.split('\n')) {
-        if (/files_reviewed_list:/.test(line)) { inList = true; continue; }
-        if (inList && /^\s+-\s+(.+)/.test(line)) { console.log(line.match(/^\s+-\s+(.+)/)[1].trim()); }
-        else if (inList && /^\S/.test(line)) { break; }
-      }
-    }
-  }
-" 2>/dev/null)
-```
-
-If REVIEW.md contains a `files_reviewed_list` frontmatter field, use that as the re-review scope. If not present, fall back to re-reviewing the full phase (same behavior as initial code-review).
-</step>
-
-<step name="spawn_fixer">
-Spawn the code-fixer agent with config (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze):
-
-```bash
-# Build config for agent
-echo "Applying fixes from ${REVIEW_PATH}..."
-echo "Fix scope: ${FIX_SCOPE}"
-```
-
-Use Agent() to spawn agent:
-
-<!-- #2517 model-omit-on-inherit -->
-
-> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`FIXER_MODEL`, `REVIEWER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @engineer/references/model-profile-resolution.md.
+Use the full SUMMARY schema: actual phase or quick identity, plan/repair identity,
+status, requirements-completed, acceptance, documentation, issue_refs and every
+required body section, plus the complete REVIEW-FIX body from code-fixer. Choose
+a valid unique basename matching identity; do not overwrite an earlier execution
+SUMMARY or copy fictional template values. The source-only code-fixer method is
+agents/code-fixer.md; installed Claude reads engineer/references/code-fixer.md;
+Codex reads the method Markdown directly. It is never independently dispatched.
 
 ```text
-Agent(subagent_type="code-fixer", model="{FIXER_MODEL}", prompt="
-<required_reading>
-${REVIEW_PATH}
-</required_reading>
-
-<config>
-phase_dir: ${PHASE_DIR}
-padded_phase: ${PADDED_PHASE}
-review_path: ${REVIEW_PATH}
-fix_scope: ${FIX_SCOPE}
-fix_report_path: ${FIX_REPORT_PATH}
-iteration: 1
-</config>
-
-Read REVIEW.md findings, apply fixes, commit each atomically, write REVIEW-FIX.md. Do NOT commit REVIEW-FIX.md (orchestrator handles that).
-${AGENT_SKILLS_FIXER}")
+Agent(subagent_type="targeted-fixer", model="{resolved_model}", effort="{resolved_effort}", prompt="
+Follow the complete targeted-fixer role and code-fixer method.
+checkout: {coordinator_created_absolute_root}
+branch: {returned_branch}; revision: {returned_base}
+owned_paths: {exact_authorized_paths}; files_deleted: {exact_authorized_deletions}
+forbidden_paths/resources: {explicit_boundaries}
+summary_path: {unique_actual_repair_SUMMARY}
+finding: {one_stable_ID_and_complete_grounded_packet}
+checks: {actual_argv_cwd_expected_result_and_execution_order}
+Verify identity before editing. Satisfy required_property; fix_hint is advisory.
+Commit this finding's repair atomically and commit complete SUMMARY before complete.
+Never create/switch/merge a checkout, publish, spawn children or edit shared records.
+Return actual check evidence and unresolved obligations; unrun is never passing.
+")
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+Resolve model/effort inline, omit inherited values, and wait for confirmed stop.
+During the assignment do not touch its owned files or integrate its incomplete
+work. Host timeout is not exit. On failure preserve worktree, commits and dirty
+paths, return exact process state and use the confirmed-stop/continuation contract.
+A missing report does not prove no repair commit exists: inspect actual history.
+</step>
 
-**Agent failure handling:**
+<step name="integrate_and_verify">
+After each assigned writer stops inspect actual committed paths, ownership,
+deletions, branch ancestry, full SUMMARY and actual evidence. Integrate only
+complete valid repairs from the owning session via
+`worktree.merge-wave --phase OWNER_KEY`. Dirty/incomplete workers, undeclared
+paths/deletions and conflicts block integration; preserve them, never bypass
+with reset/clean/hand merge. Required checks judge the integrated tree.
 
-If Agent() fails:
-```
-Error: Code fix agent failed: ${error_message}
-```
+Capture the new frozen HEAD. Run affected configured checks using
+`verification.run-checks --checks CHECK_ID...`; omit selection only when the full
+configured set is required. The API selects configured IDs, not arbitrary shell
+commands. Check returned revision, receipts, exact argv/cwd/input fingerprints,
+exit status and nonempty required coverage. An empty checks list/all([]) is not
+passing evidence for required checks. Reuse only receipts whose revision ancestry
+and exact inputs/configuration match; use --force when fresh execution is needed.
+Additional assigned checks preserve exact argv/root/SHA/output separately.
 
-Check if FIX_REPORT_PATH exists:
-- If yes: "Partial success — some fixes may have been committed."
-- If no: "No fixes applied."
+User ordering takes precedence: if all tests/checks/compile/lint/smoke are deferred
+until all draft PRs exist, do not execute them here, including example syntax
+checks. Record unrun with that authority and carry pending gates to the final
+batch. Never silently downgrade required checks to a source reread or mark all_fixed
+while required check/review evidence is missing.
 
-Either way:
-```
-Some fix commits may already exist in git history — check git log for fix(${PADDED_PHASE}) commits.
-You can retry with /code-review ${PHASE_ARG} --fix.
-```
-
-Exit workflow (skip auto loop).
+Obtain fresh independent code-reviewer evidence on the repaired frozen revision
+using code-review.md's exact dispatch/model/effort/capture contract. Keep the
+original complete review scope/depth plus explicitly authorized affected paths;
+never lose scope between iterations or make the fixer verify itself. Review is
+read-only; coordinator writes updated REVIEW. Re-review is required after EVERY
+repair pass, including a non-auto single pass and the last auto pass. Confirm
+writers stopped and join all checks/review results before accepting the batch.
+A logic fix needs behavioral evidence or remains unverified; human judgment is
+required only where actual acceptance requires it, never invented routinely.
 </step>
 
 <step name="auto_iteration_loop">
-Only runs if AUTO_MODE is true. If AUTO_MODE is false, skip this step entirely.
+Initial repair pass is iteration 1. Always re-review it. With auto=false, stop
+further repairs after that single pass and record remaining findings. With
+auto=true, continue only when current required findings remain grounded and
+within existing authority; at most THREE repair passes total, each followed by
+checks (when authorized) and independent re-review. New claims require evidence,
+classification and exact scope, not automatic permission to widen a repair.
 
-```bash
-if [ "$AUTO_MODE" = "true" ]; then
-  # Iteration semantics: the initial fix pass (step 5) is iteration 1.
-  # This loop runs iterations 2..MAX_ITERATIONS (re-review + re-fix cycles).
-  # Total fix passes = MAX_ITERATIONS. Loop uses -lt (not -le) intentionally.
-  ITERATION=1
-  MAX_ITERATIONS=3
-  # #3190's convergence-vs-degradation distinction still governs whether the .iterN.md backups are
-  # spent scratch or a post-mortem trail — but the removal moved to `cleanup_iteration_backups`,
-  # after `record_disposition` has read them, so nothing in THIS loop consumes the flag any more.
-  # It is re-derived there from the final REVIEW.md's status, which is exactly the condition the
-  # `break` below fires on. A variable set here and read nowhere would just be a decoy.
+Before replacing REVIEW/aggregate REVIEW-FIX, capture immutable pass evidence
+externally or explicitly assigned .iterN.md backups with source SHA/digest. Keep
+original IDs/aliases even if the final clean review no longer lists early fixes.
+On the final pass, test convergence before reporting the cap: a proven clean
+final review with required checks passing is convergence, including pass 3.
+A non-clean/unknown review, missing report, failed/unrun required check, process
+uncertainty or blocked decision remains partial/blocked, never convergence.
 
-  while [ $ITERATION -lt $MAX_ITERATIONS ]; do
-    ITERATION=$((ITERATION + 1))
-    
-    echo ""
-    echo "═══════════════════════════════════════════════════════"
-    echo "  --auto: Starting iteration ${ITERATION}/${MAX_ITERATIONS}"
-    echo "═══════════════════════════════════════════════════════"
-    echo ""
-    
-    # Re-review using same depth and file scope as original review
-    echo "Re-reviewing phase ${PHASE_ARG} at ${REVIEW_DEPTH} depth..."
-    
-    # Backup previous REVIEW.md and REVIEW-FIX.md before overwriting
-    if [ -f "${REVIEW_PATH}" ]; then
-      cp "${REVIEW_PATH}" "${REVIEW_PATH%.md}.iter${ITERATION}.md" 2>/dev/null || true
-    fi
-    if [ -f "${FIX_REPORT_PATH}" ]; then
-      cp "${FIX_REPORT_PATH}" "${FIX_REPORT_PATH%.md}.iter${ITERATION}.md" 2>/dev/null || true
-    fi
-    
-    # If original review had explicit file list, pass it safely to re-review agent
-    FILES_CONFIG=""
-    if [ ${#REVIEW_FILES_ARRAY[@]} -gt 0 ]; then
-      FILES_CONFIG="files:"
-      for f in "${REVIEW_FILES_ARRAY[@]}"; do
-        FILES_CONFIG="${FILES_CONFIG}
-  - ${f}"
-      done
-    fi
-    
-    # Spawn code-reviewer agent to re-review (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
-    # (This overwrites REVIEW_PATH with latest review state)
-    Agent(subagent_type="code-reviewer", model="{REVIEWER_MODEL}", prompt="
-<config>
-depth: ${REVIEW_DEPTH}
-phase_dir: ${PHASE_DIR}
-review_path: ${REVIEW_PATH}
-${FILES_CONFIG}
-</config>
-
-Re-review the phase at ${REVIEW_DEPTH} depth. Write findings to ${REVIEW_PATH}.
-Do NOT commit the output — the orchestrator handles that.
-${AGENT_SKILLS_REVIEWER}")
-    # ORCHESTRATOR RULE — CODEX RUNTIME: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result before proceeding.
-    
-    # Check new REVIEW.md status
-    NEW_STATUS=$(REVIEW_PATH="${REVIEW_PATH}" node -e "
-      const fs = require('fs');
-      const content = fs.readFileSync(process.env.REVIEW_PATH, 'utf-8');
-      const match = content.replace(/\r\n/g, '\n').match(/^---\n([\s\S]*?)\n---/);
-      if (match && /status:\s*(\S+)/.test(match[1])) {
-        console.log(match[1].match(/status:\s*(\S+)/)[1]);
-      } else {
-        console.log('unknown');
-      }
-    " 2>/dev/null)
-    
-    if [ "$NEW_STATUS" = "clean" ]; then
-      # Convergence: the re-review came back clean. This leaves REVIEW.md at `status: clean`, which
-      # is what `cleanup_iteration_backups` re-derives the decision from.
-      echo ""
-      echo "✓ All issues resolved after iteration ${ITERATION}."
-      break
-    fi
-    
-    # Still has issues — spawn fixer again (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
-    echo "Issues remain. Applying fixes for iteration ${ITERATION}..."
-    
-    Agent(subagent_type="code-fixer", model="{FIXER_MODEL}", prompt="
-<required_reading>
-${REVIEW_PATH}
-</required_reading>
-
-<config>
-phase_dir: ${PHASE_DIR}
-padded_phase: ${PADDED_PHASE}
-review_path: ${REVIEW_PATH}
-fix_scope: ${FIX_SCOPE}
-fix_report_path: ${FIX_REPORT_PATH}
-iteration: ${ITERATION}
-</config>
-
-Read REVIEW.md findings, apply fixes, commit each atomically, write REVIEW-FIX.md (overwrite previous). Do NOT commit REVIEW-FIX.md.
-${AGENT_SKILLS_FIXER}")
-    # ORCHESTRATOR RULE — CODEX RUNTIME: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result before proceeding.
-    
-    # Check if fixer succeeded
-    if [ ! -f "${FIX_REPORT_PATH}" ]; then
-      echo "Warning: Iteration ${ITERATION} fixer failed to produce fix report. Stopping auto-loop."
-      break
-    fi
-  done
-  
-  # After loop completes. The iteration COUNTER alone does not distinguish degradation from success:
-  # a loop that converges on the final iteration exits with ITERATION == MAX_ITERATIONS and printed
-  # "Reached maximum iterations. Remaining issues documented in REVIEW-FIX.md" over a run in which
-  # every finding was fixed — telling the operator the opposite of what happened, on the one path
-  # where the cap and convergence coincide. Convergence is re-derived from the review the loop left
-  # behind, the same signal cleanup_iteration_backups reads, so the two cannot disagree.
-  if [ $ITERATION -ge $MAX_ITERATIONS ]; then
-    LOOP_END_STATUS=$(REVIEW_PATH="${REVIEW_PATH}" node -e "
-      const fs = require('fs');
-      try {
-        const content = fs.readFileSync(process.env.REVIEW_PATH, 'utf-8');
-        const match = content.replace(/\r\n/g, '\n').match(/^---\n([\s\S]*?)\n---/);
-        console.log(match && /status:\s*(\S+)/.test(match[1]) ? match[1].match(/status:\s*(\S+)/)[1] : 'unknown');
-      } catch (e) { console.log('unknown'); }
-    " 2>/dev/null)
-    if [ "$LOOP_END_STATUS" = "clean" ]; then
-      # SILENT on convergence, deliberately. The loop's own break already printed "All issues
-      # resolved after iteration N" on its way out, and reaching the cap does not make that less
-      # true — adding a second success line here printed both, which is noise the first cut shipped.
-      # What this branch exists for is to NOT print the degradation warning; saying nothing is the
-      # whole behaviour.
-      :
-    else
-      echo ""
-      echo "⚠ Reached maximum iterations (${MAX_ITERATIONS}). Remaining issues documented in REVIEW-FIX.md."
-    fi
-  fi
-
-  # #3190's cleanup of the .iterN.md backups now runs in `cleanup_iteration_backups`, AFTER
-  # `record_disposition` — see that step for why. Removing them here deleted the only record of
-  # what the earlier iterations fixed before anything had read it.
-fi
-```
-
-Key design decisions for --auto (addresses ALL review HIGH concerns):
-1. **Re-review scope**: Uses REVIEW_FILES_ARRAY from original REVIEW.md frontmatter, falling back to full phase scope. Scope is NOT lost between iterations. Uses portable while-read loop (bash 3.2+ compatible, handles spaces in paths).
-2. **Artifact semantics**: REVIEW.md is overwritten by each re-review (latest review state). REVIEW-FIX.md is overwritten by each fixer iteration (latest fix state with iteration count). There is ONE final version of each artifact, not per-iteration copies.
-   Backup files (.iterN.md) preserve history for post-mortem analysis if iterations degrade. On successful convergence (#3190) the backups are spent scratch and removed; on degradation (hit MAX_ITERATIONS / fixer failure) they are retained for post-mortem. The removal happens in `cleanup_iteration_backups`, after `record_disposition` has read them — they are the only surviving record of what an earlier iteration fixed, since this artifact keeps one final version rather than per-iteration copies.
-3. **Commit timing**: Fix commits happen per-finding inside the agent. REVIEW-FIX.md is NOT committed until step 7 (after ALL iterations complete). Only ONE docs commit, not one per iteration. In --auto that single commit also stages the converged REVIEW.md alongside REVIEW-FIX.md (#3190), so the two committed artifacts agree — the initial code-review commit held iteration-1 REVIEW.md content, and the --auto re-review loop overwrote it each iteration.
+At the cap preserve remaining findings and post-mortem evidence. No iteration
+count permits unresolved required failures to pass. The bounded dispatch contract
+can continue a separately grounded correction with changed input/authority, but
+--auto itself never silently exceeds three passes.
 </step>
 
-<step name="commit_fix_report">
-After ALL iterations complete (or single pass in non-auto mode), validate and commit REVIEW-FIX.md:
+<step name="record_and_commit">
+Coordinator writes one final aggregate REVIEW-FIX.md after all passes. Retain
+all per-finding committed SUMMARYs; the aggregate does not replace them. Use the
+complete REVIEW-FIX body in code-fixer (Fixed Issues, Checks, Remaining, Skipped
+Issues, each ID/files/commit/applied correction and exact skip reason). Add:
 
-```bash
-if [ -f "${FIX_REPORT_PATH}" ]; then
-  # Validate REVIEW-FIX.md has valid YAML frontmatter with status field
-  # #3190: export FIX_REPORT_PATH (the var the body reads), not REVIEW_PATH.
-  HAS_STATUS=$(FIX_REPORT_PATH="${FIX_REPORT_PATH}" node -e "
-    const fs = require('fs');
-    const content = fs.readFileSync(process.env.FIX_REPORT_PATH, 'utf-8');
-    const match = content.replace(/\r\n/g, '\n').match(/^---\n([\s\S]*?)\n---/);
-    if (match && /status:/.test(match[1])) { console.log('valid'); } else { console.log('invalid'); }
-  " 2>/dev/null)
-  
-  if [ "$HAS_STATUS" = "valid" ]; then
-    echo "REVIEW-FIX.md created at ${FIX_REPORT_PATH}"
-    
-    if [ "$COMMIT_DOCS" = "true" ]; then
-      # #3190: --auto's re-review loop overwrote REVIEW.md each iteration
-      # (auto_iteration_loop), but the only prior REVIEW.md commit is the
-      # initial code-review pass (iteration-1 content). Stage the converged
-      # REVIEW.md alongside REVIEW-FIX.md in this single docs commit so the two
-      # committed artifacts agree. Non-auto single-pass runs never rewrite
-      # REVIEW.md, so it is left untouched (guarded on AUTO_MODE).
-      COMMIT_FILES=("${FIX_REPORT_PATH}")
-      if [ "$AUTO_MODE" = "true" ] && [ -f "${REVIEW_PATH}" ]; then
-        COMMIT_FILES+=("${REVIEW_PATH}")
-      fi
-      engineer_run query commit \
-        "docs(${PADDED_PHASE}): add code review fix report" \
-        --files "${COMMIT_FILES[@]}"
-    fi
-  else
-    echo "Warning: REVIEW-FIX.md has invalid frontmatter (no status field). Not committing."
-    echo "Agent may have produced malformed output. Review manually: ${FIX_REPORT_PATH}"
-  fi
-else
-  echo "Warning: REVIEW-FIX.md not found at ${FIX_REPORT_PATH}."
-  echo "Agent may have failed before writing report."
-  echo "Check git log for any fix(${PADDED_PHASE}) commits that were applied."
-fi
+```yaml
+---
+phase: "actual owning phase" # use quick instead for genuine quick work
+review_path: "actual report"
+review_revision: "original reviewed SHA"
+base_revision: "actual session base"
+revision: "actual repaired SHA"
+iteration: 1
+findings_in_scope: 1
+fixed: 0
+skipped: 0
+blocked: 1
+status: blocked
+repair_outcome: none_fixed
+issue_refs: []
+---
 ```
 
-This commit happens ONCE at the end of the workflow, after all iterations (if --auto) complete. Not per-iteration.
+This is a template, not fabricated evidence. status complete requires full
+supported repair obligations; repair_outcome is all_fixed/partial/none_fixed.
+A committed patch may be implemented_pending_checks without counting it verified
+fixed. Record original review digest, exact files/depth and each pass/check/review
+revision. Each original and new stable ID gets fixed with supporting evidence,
+unsupported with counterevidence, skipped with reason, or blocked with exact
+owner/input. Required defects cannot be made complete by calling them deferred.
+
+Read back and validate frontmatter/body/counts. Commit aggregate once after all
+passes, together with the latest coordinator-written REVIEW so committed artifacts
+agree. Use `engineer_run query commit MESSAGE --files REPORT REVIEW` and canonical
+Why/Changes/Verification body. A missing/malformed report blocks that success;
+preserve actual existing repair commits and report partial progress.
+
+For phase disposition reconciliation read execute-phase/steps/code-review-disposition.md
+only after aggregate and pass evidence are committed. It is advisory, must consume
+all passes before backups are retired and must not execute unsupported/legacy
+helpers. The current Python registry has no per-review disposition-ledger writer:
+report this exact unavailable interface and retain explicit aggregate entries
+containing stable ID/aliases, source and repair revision, disposition/reason and
+commit/check/re-review evidence. Do not claim the advisory ledger was updated.
+Its future runtime-owned writer must join every pass idempotently with source
+digest binding before retiring backups. Genuine quick has no
+fictional phase ledger. Never hand-edit runtime-owned structures.
 </step>
 
-<step name="record_disposition">
-**Reconcile the per-finding disposition ledger, now that REVIEW-FIX.md exists.** Read and execute
-`engineer/workflows/execute-phase/steps/code-review-disposition.md`. It consumes `PHASE_DIR` and
-`PHASE_NUMBER` and derives everything else, and it is advisory throughout: it never blocks.
+<step name="retain_evidence_and_present">
+No broad cleanup/globs or suppressed recursive removal. After disposition reads
+all passes, proven-converged scratch may be retired only as an exact owned list
+with required deletion authority; otherwise retain backups. On degradation,
+unknown status or failure preserve the post-mortem trail. Worker cleanup belongs
+to coordinator lifecycle/integration evidence, never fixer teardown. Windows
+reparse points must never be recursively removed.
 
-This is the step's second and final call site, and without it REQ-REVIEW-10 is unreachable in every
-shipped path. `execute-phase.md`'s `code_review_gate` runs the same step immediately after review,
-where `<NN>-REVIEW-FIX.md` cannot yet exist — the gate invokes review with neither `--fix` nor
-`--auto` — so every row it writes is `open` by construction. The reconciliation logic that turns
-those rows into `fixed` / `skipped` is reachable only once a fix report is on disk, which is here.
-Wired anywhere earlier and it reads a report that has not been written; wired into `code-review.md`
-instead, it is unreachable — that workflow delegates through `code-review/steps/dispatch-fix.md`,
-which exits the workflow after invoking this one, so there is no point in it that is after
-REVIEW-FIX.md exists. Placing it here also covers a direct invocation of this workflow, which a
-wiring in `code-review.md` would miss.
+Present source/repaired SHA, scope, depth, pass count, each finding's disposition,
+repair/SUMMARY commits, integrated status, actual checks/re-review outcomes,
+report paths, preserved worktrees and remaining first action. Distinguish all
+fixed from partial/none fixed and missing evidence; do not infer success from
+commit counts. Missing report means inspect actual commits, not assert no edits.
 
-Placed AFTER `commit_fix_report` deliberately: the fix report must be on disk and committed before
-the ledger claims anything about it, and the step's own reconciliation reads
-`${PHASE_DIR}/${PADDED_PHASE}-REVIEW-FIX.md` directly.
-
-Safe to run twice. The step is idempotent — a re-render that changes nothing reports `unchanged` and
-rewrites no file — so a phase that reaches the gate and then a fix run ends with one ledger reflecting
-both, not two competing ones.
+In-scope required gaps stay blocking. Out-of-scope work is Deferred with evidence
+or an authorized canonical issue request; no todos. Unknown cause goes to debugger.
+Public issue writes follow exact canonical variants, verified existing/no-match,
+current digest/content-bound preview and actual provider readback. Pending access,
+authority or human acceptance remains explicit. Preserve security tracking and
+independent non-author issue-link audit. Publish only within existing delivery
+scope; leave drafts open unless explicitly instructed to merge. No extra routine
+approval menus, implicit phase chaining or automatic merge.
 </step>
-
-<step name="cleanup_iteration_backups">
-Only runs if AUTO_MODE is true. If AUTO_MODE is false, skip this step entirely.
-
-**Removes the `.iterN.md` scratch — deliberately AFTER `record_disposition`, not at the end of the
-loop.** #3190's rule is unchanged: on convergence the backups are spent scratch and go; on degradation
-they are retained for post-mortem. What changed is the timing, and it was load-bearing. This workflow
-keeps ONE final version of `REVIEW.md` and `REVIEW-FIX.md` rather than per-iteration copies, so the
-backups are the only surviving record of what an earlier iteration fixed — and the re-review drops a
-finding once it is fixed, so the final review does not carry it either. Deleting them inside the loop
-meant the disposition ledger reached a converged `--auto` run with every early fix already erased, and
-recorded those findings as `open (not in the current review)`: indistinguishable from never triaged,
-which is the one distinction #3829 exists to make.
-
-Convergence is re-derived here rather than carried. Shell state does not survive the loop's fence, so
-a flag set there would be gone by this step — and once nothing in the loop consumed it, keeping it
-would have left a variable set in one place and read in none. The loop breaks on exactly one
-condition, a re-review returning clean, and that leaves `REVIEW.md` at `status: clean`: the final
-review's status IS the converged case. Hitting `MAX_ITERATIONS` leaves the last re-review non-clean,
-and the backups are kept.
-
-```bash
-if [ "$AUTO_MODE" = "true" ]; then
-  FINAL_STATUS=$(REVIEW_PATH="${REVIEW_PATH}" node -e "
-    const fs = require('fs');
-    try {
-      const content = fs.readFileSync(process.env.REVIEW_PATH, 'utf-8');
-      const match = content.replace(/\r\n/g, '\n').match(/^---\n([\s\S]*?)\n---/);
-      console.log(match && /status:\s*(\S+)/.test(match[1]) ? match[1].match(/status:\s*(\S+)/)[1] : 'unknown');
-    } catch (e) { console.log('unknown'); }
-  " 2>/dev/null)
-  # Anything but a proven-clean final review RETAINS the backups. An unreadable or unparseable
-  # review is not evidence of convergence, and retaining costs a few scratch files where deleting
-  # costs the post-mortem trail the retention rule exists for.
-  if [ "$FINAL_STATUS" = "clean" ]; then
-    rm -f "${REVIEW_PATH%.md}.iter"*.md "${FIX_REPORT_PATH%.md}.iter"*.md 2>/dev/null || true
-  else
-    echo "Iteration backups retained (final review status: ${FINAL_STATUS}) — post-mortem trail."
-  fi
-fi
-```
-</step>
-
-<step name="present_results">
-Parse REVIEW-FIX.md frontmatter and present formatted summary to user.
-
-First check if fix report exists:
-
-```bash
-if [ ! -f "${FIX_REPORT_PATH}" ]; then
-  echo ""
-  echo "═══════════════════════════════════════════════════════════════"
-  echo ""
-  echo "  ⚠ No fix report generated"
-  echo ""
-  echo "───────────────────────────────────────────────────────────────"
-  echo ""
-  echo "The fixer agent may have failed before completing."
-  echo "Check git log for any fix(${PADDED_PHASE}) commits."
-  echo ""
-  echo "Retry: /code-review ${PHASE_ARG} --fix"
-  echo ""
-  echo "═══════════════════════════════════════════════════════════════"
-  exit 1
-fi
-```
-
-Extract frontmatter fields:
-
-```bash
-# Extract only the YAML frontmatter block (between first two --- lines)
-# #3190: export FIX_REPORT_PATH (the var the body reads), not REVIEW_PATH.
-FIX_FRONTMATTER=$(FIX_REPORT_PATH="${FIX_REPORT_PATH}" node -e "
-  const fs = require('fs');
-  const content = fs.readFileSync(process.env.FIX_REPORT_PATH, 'utf-8');
-  const match = content.replace(/\r\n/g, '\n').match(/^---\n([\s\S]*?)\n---/);
-  if (match) process.stdout.write(match[1]);
-" 2>/dev/null)
-
-# Parse fields from frontmatter only (not full file)
-FIX_STATUS=$(echo "$FIX_FRONTMATTER" | grep "^status:" | cut -d: -f2 | xargs)
-FINDINGS_IN_SCOPE=$(echo "$FIX_FRONTMATTER" | grep "^findings_in_scope:" | cut -d: -f2 | xargs)
-FIXED_COUNT=$(echo "$FIX_FRONTMATTER" | grep "^fixed:" | cut -d: -f2 | xargs)
-SKIPPED_COUNT=$(echo "$FIX_FRONTMATTER" | grep "^skipped:" | cut -d: -f2 | xargs)
-ITERATION_COUNT=$(echo "$FIX_FRONTMATTER" | grep "^iteration:" | cut -d: -f2 | xargs)
-```
-
-Display formatted inline summary:
-
-```bash
-echo ""
-echo "═══════════════════════════════════════════════════════════════"
-echo ""
-echo "  Code Review Fix Complete: Phase ${PHASE_NUMBER} (${PHASE_NAME})"
-echo ""
-echo "───────────────────────────────────────────────────────────────"
-echo ""
-echo "  Fix Scope:       ${FIX_SCOPE}"
-echo "  Findings:        ${FINDINGS_IN_SCOPE}"
-echo "  Fixed:           ${FIXED_COUNT}"
-echo "  Skipped:         ${SKIPPED_COUNT}"
-if [ "$AUTO_MODE" = "true" ]; then
-  echo "  Iterations:      ${ITERATION_COUNT}"
-fi
-echo "  Status:          ${FIX_STATUS}"
-echo ""
-echo "───────────────────────────────────────────────────────────────"
-echo ""
-```
-
-If status is "all_fixed":
-```bash
-if [ "$FIX_STATUS" = "all_fixed" ]; then
-  echo "✓ All issues resolved."
-  echo ""
-  echo "Full report: ${FIX_REPORT_PATH}"
-  echo ""
-  echo "Next step:"
-  echo "  /verify-work  — Verify phase completion"
-  echo ""
-fi
-```
-
-If status is "partial" or "none_fixed":
-```bash
-if [ "$FIX_STATUS" = "partial" ] || [ "$FIX_STATUS" = "none_fixed" ]; then
-  echo "⚠ Some issues could not be fixed automatically."
-  echo ""
-  echo "Full report: ${FIX_REPORT_PATH}"
-  echo ""
-  echo "Next steps:"
-  echo "  cat ${FIX_REPORT_PATH}                     — View fix report"
-  echo "  /code-review ${PHASE_NUMBER}           — Re-review code"
-  echo "  /verify-work                           — Verify phase completion"
-  echo ""
-fi
-```
-
-```bash
-echo "═══════════════════════════════════════════════════════════════"
-```
-</step>
-
 </process>
-
-<platform_notes>
-**Windows:** This workflow uses bash features (arrays, variable expansion, while loops). On Windows, it requires Git Bash or WSL. Native PowerShell is not supported. The CI matrix (Ubuntu/macOS/Windows) runs under Git Bash on Windows runners, which provides bash compatibility.
-</platform_notes>
-
-<success_criteria>
-- [ ] Phase validated before config gate check
-- [ ] Capability gate checked (execute:post code-review hook)
-- [ ] REVIEW.md existence verified (error if missing)
-- [ ] REVIEW.md status checked (skip if clean/skipped)
-- [ ] Agent spawned with correct config (review_path, fix_scope, fix_report_path)
-- [ ] Agent failure handled with partial-success awareness (some fix commits may exist)
-- [ ] --auto iteration loop respects 3-iteration cap
-- [ ] --auto re-review uses persisted file scope (not lost between iterations)
-- [ ] REVIEW-FIX.md committed ONCE after all iterations (not per-iteration)
-- [ ] Missing fix report handled with explicit error message in present_results
-- [ ] Results presented inline with next step suggestion
-</success_criteria>
