@@ -9,7 +9,7 @@ Orchestrator stays lean: parse gaps, spawn agents, collect results, update UAT.
 </purpose>
 
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
 - debugger — Diagnoses and fixes issues
 </available_agent_types>
 
@@ -60,9 +60,9 @@ gaps = [
 **Read worktree config:**
 
 ```bash
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/engineer/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/engineer/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/engineer/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/engineer/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/engineer/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving gsd_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok gsd_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
-USE_WORKTREES=$(gsd_run query config-get workflow.use_worktrees --raw 2>/dev/null || echo "true")
-RUNTIME=$(gsd_run query config-get runtime --default claude --raw 2>/dev/null || echo "claude")
+_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/engineer/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/engineer/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/engineer/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/engineer/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/engineer/bin/${_GSD_SHIM_NAME}"; then engineer_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then engineer_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f engineer_run; _G="$(command -v engineer_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; engineer_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving engineer_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok engineer_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
+USE_WORKTREES=$(engineer_run query config-get workflow.use_worktrees --raw 2>/dev/null || echo "true")
+RUNTIME=$(engineer_run query config-get runtime --default claude --raw 2>/dev/null || echo "claude")
 ```
 
 **Resolve isolation now (#2584/#2652).** Read @~/.claude/engineer/references/dispatch-isolation-gate.md
@@ -102,13 +102,13 @@ $ARGUMENTS
 GSD_ARGS_END
 GSD_ARGS=${GSD_ARGS%$'\n'}
 GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-AGENT_SKILLS_DEBUGGER=$(gsd_run query agent-skills debugger ${GSD_WS:+--ws=${GSD_WS##* }})
+AGENT_SKILLS_DEBUGGER=$(engineer_run query agent-skills debugger ${GSD_WS:+--ws=${GSD_WS##* }})
 EXPECTED_BASE=$(git rev-parse HEAD)
 ```
 
 **Pre-dispatch worktree base-check (#2649, mirrors execute-phase #683/#1369 and quick #1941).**
 Claude Code's `isolation="worktree"` forks new worktrees from `origin/HEAD`, not the live local
-HEAD. If local HEAD has advanced without an intervening `git push` (the documented GSD steady
+HEAD. If local HEAD has advanced without an intervening `git push` (the documented Engineer steady
 state — commit every step, push only on request), `origin/HEAD` is pinned to a stale ancestor
 and the debug agent's `worktree_branch_check` guard halts with a base-mismatch fatal *after* the
 worktree already exists, with no automatic degrade. Run the same pre-dispatch check the four
@@ -118,9 +118,9 @@ stays active as a backstop in both cases.
 
 ```bash
 if [ "$ISOLATION" = "harness-worktree" ]; then
-  _DIAG_SHOULD_DEGRADE=$(gsd_run query worktree.base-check --mode "$ISOLATION" --pick shouldDegrade 2>/dev/null || true)
+  _DIAG_SHOULD_DEGRADE=$(engineer_run query worktree.base-check --mode "$ISOLATION" --pick shouldDegrade 2>/dev/null || true)
   if [ "$_DIAG_SHOULD_DEGRADE" = "true" ]; then
-    _DIAG_DEGRADE_MSG=$(gsd_run query worktree.base-check --mode "$ISOLATION" --pick message 2>/dev/null || true)
+    _DIAG_DEGRADE_MSG=$(engineer_run query worktree.base-check --mode "$ISOLATION" --pick message 2>/dev/null || true)
     [ -n "$_DIAG_DEGRADE_MSG" ] && printf '%s\n' "$_DIAG_DEGRADE_MSG" >&2
     echo "⚠ [#2649] Worktree fork base diverged from orchestrator HEAD — auto-degrading to sequential mode for diagnosis to avoid a base-mismatch halt." >&2
     ISOLATION=none
@@ -130,10 +130,10 @@ fi
 
 # Re-record after the base-check degrade, immediately before the spawn below, so the
 # #3045 sentinel matches the dispatch the guard is about to see (#3045).
-gsd_run query dispatch-isolation --raw --force-isolation "$ISOLATION" >/dev/null 2>&1 || true
+engineer_run query dispatch-isolation --raw --force-isolation "$ISOLATION" >/dev/null 2>&1 || true
 
 # Model resolution for the debugger spawns below (#3602).
-DEBUGGER_MODEL=$(gsd_run query resolve-model debugger --raw)
+DEBUGGER_MODEL=$(engineer_run query resolve-model debugger --raw)
 ```
 
 **Spawn debug agents — parallel only when each one is isolated:**
@@ -278,7 +278,7 @@ Update status in frontmatter to "diagnosed".
 
 Commit the updated UAT.md:
 ```bash
-gsd_run query commit "docs({phase_num}): add root causes from diagnosis" --files ".planning/phases/XX-name/{phase_num}-UAT.md"
+engineer_run query commit "docs({phase_num}): add root causes from diagnosis" --files ".planning/phases/XX-name/{phase_num}-UAT.md"
 ```
 </step>
 
@@ -287,7 +287,7 @@ gsd_run query commit "docs({phase_num}): add root causes from diagnosis" --files
 
 Display:
 ```
-### GSD ► DIAGNOSIS COMPLETE
+### Engineer ► DIAGNOSIS COMPLETE
 
 | Gap (Truth) | Root Cause | Files |
 |-------------|------------|-------|

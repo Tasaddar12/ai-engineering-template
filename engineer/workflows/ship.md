@@ -14,7 +14,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 </required_reading>
 
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
 - gsd-mempalace-curator — Ship-time MemPalace curation (diary, KG mirror, cross-project tunnels, wing-scoped prune); dispatched at ship:post when the mempalace capability is enabled.
 </available_agent_types>
 

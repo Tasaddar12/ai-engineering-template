@@ -12,7 +12,7 @@ User tests, Claude records. One test at a time. Plain text responses.
 </purpose>
 
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
 - planner — Creates detailed plans from phase scope
 - plan-checker — Reviews plan quality before execution
 </available_agent_types>
@@ -909,7 +909,7 @@ Exact Agent() prompt fields (revision_context, required_reading): `engineer/work
 **Present completion and next steps:**
 
 ```
-### GSD ► FIXES READY ✓
+### Engineer ► FIXES READY ✓
 
 **Phase {X}: {Name}** — {N} gap(s) diagnosed, {M} fix plan(s) created
 

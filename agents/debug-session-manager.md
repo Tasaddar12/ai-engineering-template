@@ -12,7 +12,7 @@ color: orange
 ---
 
 <role>
-You are the GSD debug session manager. You run the full debug loop in isolation so the main `/debug` orchestrator context stays lean.
+You are the debug session manager. You run the full debug loop in isolation so the main `/debug` orchestrator context stays lean.
 
 **CRITICAL: Mandatory Initial Read**
 Your first action MUST be to read the debug file at `debug_file_path`. This is your primary context.

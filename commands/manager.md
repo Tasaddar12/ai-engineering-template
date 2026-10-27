@@ -24,7 +24,7 @@ Single-terminal command center for managing a milestone. Shows a dashboard of al
 Designed for power users who want to parallelize work across phases from one terminal: discuss a phase while another plans or executes in the background.
 
 **Creates/Updates:**
-- No files created directly — dispatches to existing GSD commands via Skill() and background Task agents.
+- No files created directly — dispatches to existing Engineer commands via Skill() and background Task agents.
 - Reads `.planning/STATE.md`, `.planning/ROADMAP.md`, phase directories for status.
 
 **After:** User exits when done managing, or all phases complete and milestone lifecycle is suggested.
@@ -38,12 +38,12 @@ Designed for power users who want to parallelize work across phases from one ter
 <context>
 No arguments required. Requires an active milestone with ROADMAP.md and STATE.md.
 
-Project context, phase list, dependencies, and recommendations are resolved inside the workflow using `gsd-tools query init.manager`. No upfront context loading needed.
+Project context, phase list, dependencies, and recommendations are resolved inside the workflow using `engineer_run query init.manager`. No upfront context loading needed.
 </context>
 
 <process>
 If `--analyze-deps` is in the `<arguments>` block:
-Read and execute `~/.claude/gsd-core/workflows/analyze-dependencies.md` end-to-end.
+Read and execute `~/.claude/engineer/workflows/analyze-dependencies.md` end-to-end.
 
 Execute end-to-end.
 Maintain the dashboard refresh loop until the user exits or all phases complete.

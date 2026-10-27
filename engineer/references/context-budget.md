@@ -50,7 +50,7 @@ When delegating to agents, the orchestrator cannot verify semantic correctness o
 
 ## MCP Tool Schema Cost (Harness Concern)
 
-Every enabled MCP server injects its tool schema into **every turn**, regardless of whether you call any of its tools. Heavyweight servers can cost 20k+ tokens per turn each — often dwarfing whatever GSD itself can save through `model_profile` tuning. This is a Claude Code harness concern, not a GSD concern: GSD does **not** manage MCP enablement. The toggle lives in `.claude/settings.json` under `enabledMcpjsonServers` and `disabledMcpjsonServers`.
+Every enabled MCP server injects its tool schema into **every turn**, regardless of whether you call any of its tools. Heavyweight servers can cost 20k+ tokens per turn each — often dwarfing whatever Engineer itself can save through `model_profile` tuning. This is a Claude Code harness concern, not an Engineer concern: Engineer does **not** manage MCP enablement. The toggle lives in `.claude/settings.json` under `enabledMcpjsonServers` and `disabledMcpjsonServers`.
 
 ### Why this is the biggest cost lever you don't own
 
@@ -78,7 +78,7 @@ The keys live in `.claude/settings.json` (project) or `~/.claude/settings.json` 
 }
 ```
 
-Either list works — `enabledMcpjsonServers` is an explicit allow-list, `disabledMcpjsonServers` is a block-list against the default. See the [Claude Code MCP documentation](https://docs.anthropic.com/en/docs/claude-code/mcp) for the canonical reference; this section just flags it as a context-budget lever GSD users routinely overlook.
+Either list works — `enabledMcpjsonServers` is an explicit allow-list, `disabledMcpjsonServers` is a block-list against the default. See the [Claude Code MCP documentation](https://docs.anthropic.com/en/docs/claude-code/mcp) for the canonical reference; this section just flags it as a context-budget lever Engineer users routinely overlook.
 
 ### Composition with model_profile
 

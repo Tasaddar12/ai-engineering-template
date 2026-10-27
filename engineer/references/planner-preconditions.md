@@ -10,13 +10,13 @@
 
 Every task in a PLAN.md participates in a three-sided contract:
 
-| Contract side | GSD element | When it binds |
+| Contract side | Engineer element | When it binds |
 |---|---|---|
 | **Precondition** | `<precondition>` (optional element on `<task>`) | Before the task begins. What must already be true for the task to run safely. |
 | **Postcondition** | `<verify>` + `<done>` + `<acceptance_criteria>` | After the task ends. What the task guarantees on return. |
 | **Invariant** | `must_haves.truths` (plan frontmatter) | Across the whole plan/phase. What always holds. |
 
-GSD already models postconditions and invariants well. `<precondition>` closes
+Engineer already models postconditions and invariants well. `<precondition>` closes
 the missing side: it states, in runnable/checkable terms, what must be true
 *before* a task begins — so an autonomous executor stops the instant an
 assumption is false, instead of building ten atomic commits on top of a

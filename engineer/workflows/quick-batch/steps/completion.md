@@ -86,7 +86,7 @@ by status:
 
 ```
 ---
-GSD > QUICK BATCH COMPLETE
+Engineer > QUICK BATCH COMPLETE
 
 Batch ${BATCH_ID}: ${ITEM_COUNT} item(s)
   Complete: ${complete_count}

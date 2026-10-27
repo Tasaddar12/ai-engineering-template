@@ -1,12 +1,12 @@
 # Debug Workflow
 
-Invoked by `/debug` (`commands/gsd/debug.md`).
+Invoked by `/debug` (`commands/debug.md`).
 
 Systematic debugging using the scientific method with subagent isolation.
 Orchestrates symptom gathering, session creation, and delegation to `debug-session-manager`.
 
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
 - debug-session-manager — manages debug checkpoint/continuation loop in isolated context
 - debugger — investigates bugs using scientific method
 </available_agent_types>

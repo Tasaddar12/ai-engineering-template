@@ -19,7 +19,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 </required_reading>
 
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
 - phase-researcher — Researches technical approaches for an item
 - planner — Creates a plan for one item (`quick-batch` mode)
 - plan-checker — Reviews one item's plan before execution
@@ -165,7 +165,7 @@ fi
 
 Display banner:
 ```
-### GSD ► QUICK BATCH
+### Engineer ► QUICK BATCH
 ◆ jobs=${JOBS} validate=${VALIDATE_MODE} research=${RESEARCH_MODE}${RESUME_BATCH_ID:+ resume=${RESUME_BATCH_ID}}
 ```
 

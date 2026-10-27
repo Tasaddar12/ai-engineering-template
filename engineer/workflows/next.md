@@ -1,7 +1,7 @@
 @~/.claude/engineer/references/response-language-directive.md
 
 <purpose>
-Detect current project state and automatically advance to the next logical GSD workflow step.
+Detect current project state and automatically advance to the next logical Engineer workflow step.
 Reads project state to determine: discuss → plan → execute → verify → complete progression.
 </purpose>
 
@@ -73,7 +73,7 @@ Extract:
 
 If no `.planning/` directory exists:
 ```
-No GSD project detected. Run `/new-project` to get started.
+No Engineer project detected. Run `/new-project` to get started.
 ```
 Exit.
 </step>
@@ -359,7 +359,7 @@ fi
 Display the determination:
 
 ```
-## GSD Next
+## Engineer Next
 
 **Current:** Phase [N] — [name] | [progress]%
 **Status:** [status description]

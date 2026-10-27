@@ -7,7 +7,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 </required_reading>
 
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
 - gsd-project-researcher — Researches project-level technical decisions
 - gsd-research-synthesizer — Synthesizes findings from parallel research agents
 - gsd-roadmapper — Creates phased execution roadmaps
@@ -90,7 +90,7 @@ Parse JSON for: `researcher_model`, `synthesizer_model`, `roadmapper_model`, `co
 
 **If `agents_installed` is false:** Display a warning before proceeding:
 ```text
-⚠ GSD agents not installed. The following agents are missing from your agents directory:
+⚠ Engineer agents not installed. The following agents are missing from your agents directory:
   {missing_agents joined with newline}
 
 Runtime checked: {agent_runtime}
@@ -170,7 +170,7 @@ Exact detection commands and the surfaced-findings banner: `engineer/workflows/n
 **Display stage banner:**
 
 ```
-### GSD ► QUESTIONING
+### Engineer ► QUESTIONING
 ```
 
 **Open the conversation:**
@@ -593,7 +593,7 @@ questions: [
     question: "Use token-minimized instruction content where available? (smaller context footprint)",
     multiSelect: false,
     options: [
-      { label: "No (Recommended)", description: "Full instruction detail loaded every time. Best while evaluating GSD or on a large context window." },
+      { label: "No (Recommended)", description: "Full instruction detail loaded every time. Best while evaluating Engineer or on a large context window." },
       { label: "Yes", description: "Terser instructions where a compact variant exists; canonical detail loads only when actually needed. Frees up context for long sessions or large codebases." }
     ]
   }
@@ -697,7 +697,7 @@ directory name already relative to the workspace root (e.g. `"backend"`).
 Use AskUserQuestion:
 
 - header: "Multi-Repo Workspace"
-- question: "I detected separate git repos in this workspace. Which directories contain code that GSD should commit to?"
+- question: "I detected separate git repos in this workspace. Which directories contain code that Engineer should commit to?"
 - multiSelect: true
 - options: one option per detected directory
   - "[directory name]" — Separate git repo
@@ -733,7 +733,7 @@ Use AskUserQuestion:
 Display stage banner:
 
 ```
-### GSD ► RESEARCHING
+### Engineer ► RESEARCHING
 
 Researching [domain] ecosystem...
 ```
@@ -809,7 +809,7 @@ Exact agent prompts (all four researcher dimensions): `engineer/workflows/new-pr
 Display research complete banner and key findings:
 
 ```
-### GSD ► RESEARCH COMPLETE ✓
+### Engineer ► RESEARCH COMPLETE ✓
 
 ## Key Findings
 
@@ -827,7 +827,7 @@ Files: `.planning/research/`
 Display stage banner:
 
 ```
-### GSD ► DEFINING REQUIREMENTS
+### Engineer ► DEFINING REQUIREMENTS
 ```
 
 **Load context:**
@@ -994,7 +994,7 @@ When `TEXT_MODE=true` (per the workflow's existing TEXT_MODE handling for non-Cl
 Display stage banner:
 
 ```
-### GSD ► CREATING ROADMAP
+### Engineer ► CREATING ROADMAP
 
 ◆ Spawning roadmapper... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
@@ -1148,7 +1148,7 @@ Use AskUserQuestion:
 engineer_run query generate-claude-md --output "$INSTRUCTION_FILE"
 ```
 
-This ensures new projects get the default GSD workflow-enforcement guidance and current project context in `$INSTRUCTION_FILE`.
+This ensures new projects get the default Engineer workflow-enforcement guidance and current project context in `$INSTRUCTION_FILE`.
 
 **Commit roadmap (after approval or auto mode):**
 
@@ -1161,7 +1161,7 @@ engineer_run query commit "docs: create roadmap ([N] phases)" --files .planning/
 Present completion summary:
 
 ```
-### GSD ► PROJECT INITIALIZED ✓
+### Engineer ► PROJECT INITIALIZED ✓
 
 **[Project Name]**
 
@@ -1274,7 +1274,7 @@ PHASE1_HAS_UI=$(echo "$PHASE1_SECTION" | grep -qi "UI hint.*yes" && echo "true" 
 - [ ] ROADMAP.md created with phases, requirement mappings, success criteria
 - [ ] STATE.md initialized
 - [ ] REQUIREMENTS.md traceability updated
-- [ ] `$INSTRUCTION_FILE` generated with GSD workflow guidance (runtime-derived via the shared `getProjectInstructionFile` policy — `AGENTS.md` for codex, `.claude/CLAUDE.md` for claude; an existing hand-crafted file without GSD markers is left untouched unless `--force`)
+- [ ] `$INSTRUCTION_FILE` generated with Engineer workflow guidance (runtime-derived via the shared `getProjectInstructionFile` policy — `AGENTS.md` for codex, `.claude/CLAUDE.md` for claude; an existing hand-crafted file without Engineer markers is left untouched unless `--force`)
 - [ ] User knows next step is `/discuss-phase 1`
 
 **Atomic commits:** Each phase commits its artifacts immediately. If context is lost, artifacts persist.

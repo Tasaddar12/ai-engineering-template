@@ -2,7 +2,7 @@
 
 <purpose>
 Socratic ideation workflow. Guides the developer through exploring an idea via probing questions,
-offers mid-conversation research when useful, then routes crystallized outputs to GSD artifacts.
+offers mid-conversation research when useful, then routes crystallized outputs to Engineer artifacts.
 </purpose>
 
 <required_reading>
@@ -13,7 +13,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 </required_reading>
 
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
 - phase-researcher — Researches specific questions and returns concise findings
 </available_agent_types>
 
@@ -37,7 +37,7 @@ What's on your mind? This could be a feature idea, an architectural question,
 a problem you're trying to solve, or something you're not sure about yet.
 ```
 
-Bootstrap the GSD launcher once for this session — later steps reach the launcher through the PATH this persists, and Step 5's commit must not depend on the optional research offer having run:
+Bootstrap the Engineer launcher once for this session — later steps reach the launcher through the PATH this persists, and Step 5's commit must not depend on the optional research offer having run:
 
 ```bash
 _GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then engineer_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then engineer_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f engineer_run; _G="$(command -v engineer_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; engineer_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving engineer_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok engineer_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
@@ -75,7 +75,7 @@ If yes, spawn a research agent:
 
 
 Resolve the researcher's **tier** and its model before dispatching. `--pick tier` returns the effective
-tier GSD resolved (`opus` | `sonnet` | `haiku` | `fable` | `inherit` | `unknown`) and is what arms the tier-floor
+tier Engineer resolved (`opus` | `sonnet` | `haiku` | `fable` | `inherit` | `unknown`) and is what arms the tier-floor
 guard below. `--pick model` answers a different question — which model id to hand `Agent()` — and is
 **not** a tier signal: it is blank on runtimes installed with `resolve_model_ids: "omit"`, and a
 runtime-substituted name (`gpt-5.6-luna` on codex) where a tier map exists. `--raw` would drop both:
@@ -144,7 +144,7 @@ Two guards ride with it:
   `refute` and `abstain` are unaffected — the floor suppresses unearned confidence, it does not
   suppress corrections.
 
-  **Why the tier and not the model id.** `--pick tier` reports the tier GSD resolved, which is
+  **Why the tier and not the model id.** `--pick tier` reports the tier Engineer resolved, which is
   computed *above* the `resolve_model_ids: "omit"` gate in `resolveModelInternal`
   (`src/model-resolver.cts`). The model id is not usable as a tier signal: it is blank on every
   runtime the installer configures with `omit`, and where a runtime tier map exists it is a

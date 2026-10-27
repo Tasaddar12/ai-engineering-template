@@ -144,13 +144,13 @@ implementation and any third-party port emit.
 
 | Host structure | "requirement" | a `resolved`/`explicit` edge becomes | a `resolved`/`backstop` edge becomes |
 |----------------|---------------|--------------------------|---------------------------|
-| GSD SPEC | a SPEC Requirement | an Acceptance Criterion that `plan-phase` lifts into `must_haves.truths` | a non-inferable check in `must_haves.truths` (needs a held-out/PBT test) |
+| Engineer SPEC | a SPEC Requirement | an Acceptance Criterion that `plan-phase` lifts into `must_haves.truths` | a non-inferable check in `must_haves.truths` (needs a held-out/PBT test) |
 | Gherkin feature | a Scenario | an additional `Then` assertion / Scenario Outline row | a tagged scenario routed to a property test |
 | OpenAPI operation | an operation | a response/constraint example + schema rule | a contract/property test on the operation |
 | Docstring contract | a documented behavior | an assertion in the contract test | a property-based test for the function |
 
 The portable invariant: a `resolved`/`explicit` edge produces **the unit your verifier
-iterates over** (GSD: a `must_haves.truth`); a `resolved`/`backstop` edge produces a test
+iterates over** (Engineer: a `must_haves.truth`); a `resolved`/`backstop` edge produces a test
 added to that same set as a non-inferable check. An `unresolved` edge is an explicit
 assumption the downstream planner must surface, not silently drop.
 

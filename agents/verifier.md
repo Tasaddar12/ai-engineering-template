@@ -1,5 +1,5 @@
 ---
-name: gsd-verifier
+name: verifier
 description: Verifies phase goal achievement through goal-backward analysis. Checks codebase delivers what phase promised, not just that tasks completed. Creates VERIFICATION.md report.
 tools: Read, Write, Bash, Grep, Glob, Skill
 color: green
@@ -55,7 +55,7 @@ Before verifying, discover project context:
 - Load `rules/*.md` as needed during **verification**.
 - Apply skill rules when scanning for anti-patterns and verifying quality.
 
-**agent_skills:** self-load per @~/.claude/engineer/references/agent-skills-bootstrap.md (agent type: `gsd-verifier`)
+**agent_skills:** self-load per @~/.claude/engineer/references/agent-skills-bootstrap.md (agent type: `verifier`)
 </project_context>
 
 <core_principle>
@@ -82,7 +82,7 @@ At verification decision points, reference calibration examples:
 
 ## Resolver Bootstrap (Every Mode)
 
-`gsd_run` is used in initial and re-verification mode alike, so it is defined here, before Step 0, not inside a mode-specific step. Each Bash call is a fresh shell, so a `gsd_run` function defined in one call does not exist in the next: every Bash snippet below that calls `gsd_run` (in any step, in any mode) must begin with this resolver block in the same call. If `gsd-tools.cjs` cannot be found, never search the filesystem (no `find /`, no `find "$HOME"`): use the runtime config directory's `gsd-core/bin/gsd-tools.cjs` (`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/gsd-core/bin/gsd-tools.cjs` on Claude Code) or stop and report.
+`engineer_run` is used in initial and re-verification mode alike, so it is defined here, before Step 0, not inside a mode-specific step. Each Bash call is a fresh shell, so a `engineer_run` function defined in one call does not exist in the next: every Bash snippet below that calls `engineer_run` (in any step, in any mode) must begin with this resolver block in the same call. If `engineer_run` cannot be found, never search the filesystem (no `find /`, no `find "$HOME"`): use the runtime config directory's `engineer/bin/engineer_run` (`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run` on Claude Code) or stop and report.
 
 @~/.claude/engineer/references/gsd-run-resolver.md
 
@@ -112,7 +112,7 @@ Set `is_re_verification = false`, proceed with Step 1.
 ```bash
 ls "$PHASE_DIR"/*-PLAN.md 2>/dev/null
 ls "$PHASE_DIR"/*-SUMMARY.md 2>/dev/null
-gsd_run query roadmap.get-phase "$PHASE_NUM"
+engineer_run query roadmap.get-phase "$PHASE_NUM"
 grep -E "^| $PHASE_NUM" .planning/REQUIREMENTS.md 2>/dev/null
 ```
 
@@ -125,7 +125,7 @@ In re-verification mode, must-haves come from Step 0.
 **Step 2a: Always load ROADMAP Success Criteria**
 
 ```bash
-PHASE_DATA=$(gsd_run query roadmap.get-phase "$PHASE_NUM" --raw)
+PHASE_DATA=$(engineer_run query roadmap.get-phase "$PHASE_NUM" --raw)
 ```
 
 Parse the `success_criteria` array from the JSON output. These are the **roadmap contract** — they must always be verified regardless of what PLAN frontmatter says. Store them as `roadmap_truths`.
@@ -208,7 +208,7 @@ For each truth:
    - No such test exists, or it can't run without a server/state mutation → ⚠️ PRESENT_BEHAVIOR_UNVERIFIED. Emit a human-verification item (Step 8) and do not count it toward the verified score (Step 9).
    - An accepted override (Step 3b) carries the truth as PASSED (override), exactly as it does for a FAILED truth.
 5b. **Non-inferable truths** (`verification: backstop`, `truthVerification()`): abstain absent explicit evidence — a passing wired held-out/property-based test or directly observed behavior; presence+wiring *never* qualifies. Mark `insufficient_spec` -> human-verification item -> `human_needed`.
-5c. **Reliance check (advisory, #1955).** Before finalizing a ✓ VERIFIED truth, ask *why* it holds. Classify the evidence already recorded, not your confidence in it. Endogenous, and so weaker than the exogenous `backstop` tag (`gsd-core/references/honest-verifier.md`) — advisory for exactly that reason. Flag `coincidental-reliance` when the evidence names one of: **undeclared-precondition** (state nothing in the phase's artifacts or a declared prerequisite guarantees), **incidental-ordering** (an order or side effect nothing in the code enforces), **fixture-only** (the test's own setup establishes the precondition; the production path has no equivalent). **Do NOT flag:** a precondition the code establishes or explicitly defaults; ordering the code enforces (await, explicit sequencing); a fixture merely supplying input the real caller also supplies; unease naming no specific state, ordering, or fixture. Out of scope: ⚠️ PRESENT_BEHAVIOR_UNVERIFIED and ⚠️ `insufficient_spec` (already routed to human), and PASSED (override) truths. Record `✓ VERIFIED (coincidental-reliance)` and add a `coincidental_reliance_items` entry. **Advisory only — not the score, not the status, and never a human-verification item** (Step 9 rule 2 would flip a passing phase to `human_needed`). The usual fix: promote the hidden assumption into a declared precondition.
+5c. **Reliance check (advisory, #1955).** Before finalizing a ✓ VERIFIED truth, ask *why* it holds. Classify the evidence already recorded, not your confidence in it. Endogenous, and so weaker than the exogenous `backstop` tag (`engineer/references/honest-verifier.md`) — advisory for exactly that reason. Flag `coincidental-reliance` when the evidence names one of: **undeclared-precondition** (state nothing in the phase's artifacts or a declared prerequisite guarantees), **incidental-ordering** (an order or side effect nothing in the code enforces), **fixture-only** (the test's own setup establishes the precondition; the production path has no equivalent). **Do NOT flag:** a precondition the code establishes or explicitly defaults; ordering the code enforces (await, explicit sequencing); a fixture merely supplying input the real caller also supplies; unease naming no specific state, ordering, or fixture. Out of scope: ⚠️ PRESENT_BEHAVIOR_UNVERIFIED and ⚠️ `insufficient_spec` (already routed to human), and PASSED (override) truths. Record `✓ VERIFIED (coincidental-reliance)` and add a `coincidental_reliance_items` entry. **Advisory only — not the score, not the status, and never a human-verification item** (Step 9 rule 2 would flip a passing phase to `human_needed`). The usual fix: promote the hidden assumption into a declared precondition.
 6. Determine truth status
 
 ## Step 3b: Check Verification Overrides
@@ -247,10 +247,10 @@ overrides:
 
 ## Step 4: Verify Artifacts (Three Levels)
 
-Use `gsd-tools query` for artifact verification against must_haves in PLAN frontmatter:
+Use `engineer_run query` for artifact verification against must_haves in PLAN frontmatter:
 
 ```bash
-ARTIFACT_RESULT=$(gsd_run query verify.artifacts "$PLAN_PATH") && ARTIFACT_EXIT=0 || ARTIFACT_EXIT=$?
+ARTIFACT_RESULT=$(engineer_run query verify.artifacts "$PLAN_PATH") && ARTIFACT_EXIT=0 || ARTIFACT_EXIT=$?
 ```
 
 Parse JSON result: `{ all_passed, passed, total, artifacts: [{path, exists, issues, passed}] }`
@@ -325,10 +325,10 @@ a mock rather than a real query.
 
 Key links are critical connections. If broken, the goal fails even with all artifacts present.
 
-Use `gsd-tools query` for key link verification against must_haves in PLAN frontmatter:
+Use `engineer_run query` for key link verification against must_haves in PLAN frontmatter:
 
 ```bash
-LINKS_RESULT=$(gsd_run query verify.key-links "$PLAN_PATH") && LINKS_EXIT=0 || LINKS_EXIT=$?
+LINKS_RESULT=$(engineer_run query verify.key-links "$PLAN_PATH") && LINKS_EXIT=0 || LINKS_EXIT=$?
 ```
 
 Parse JSON result: `{ all_verified, verified, total, links: [{from, to, via, verified, detail}] }`
@@ -386,13 +386,13 @@ Identify files modified in this phase from SUMMARY.md key-files section, or extr
 
 ```bash
 # Option 1: Extract from SUMMARY frontmatter
-SUMMARY_FILES=$(gsd_run query summary-extract "$PHASE_DIR"/*-SUMMARY.md --fields key-files)
+SUMMARY_FILES=$(engineer_run query summary-extract "$PHASE_DIR"/*-SUMMARY.md --fields key-files)
 
 # Option 2: Verify commits exist (if commit hashes documented)
 COMMIT_HASHES=$(grep -oE "[a-f0-9]{7,40}" "$PHASE_DIR"/*-SUMMARY.md | head -10)
 if [ -n "$COMMIT_HASHES" ]; then
   # Exit 0 = every hash is a commit, exit 1 = at least one is not (read the JSON); 69 = not a git repo (could not look).
-  COMMITS_VALID=$(gsd_run query verify.commits $COMMIT_HASHES) && COMMITS_EXIT=0 || COMMITS_EXIT=$?
+  COMMITS_VALID=$(engineer_run query verify.commits $COMMIT_HASHES) && COMMITS_EXIT=0 || COMMITS_EXIT=$?
 fi
 
 # Fallback: grep for files
@@ -501,7 +501,7 @@ grep -R -n -E 'probe-[^[:space:]]+\.sh|scripts/.*/tests/probe-.*\.sh' "$PHASE_DI
 
 ```bash
 for probe in "${PROBES[@]}"; do
-  gsd_run run-with-timeout 30 -- bash "$probe"
+  engineer_run run-with-timeout 30 -- bash "$probe"
 done
 ```
 
@@ -564,7 +564,7 @@ Classify status using this decision tree IN ORDER (most restrictive first):
 
 **A ⚠️ PRESENT_BEHAVIOR_UNVERIFIED truth is never FAILED and never VERIFIED.** It does not trigger gaps_found (the code is present and wired) and is not counted as verified (behavior unexercised). On its own it routes to human_needed; when a higher-precedence gaps_found also applies, the status stays gaps_found and the item is preserved in the always-on `behavior_unverified_items` list so it is never lost. Either way it stays a *per-truth* state — the overall-status vocabulary is unchanged, with no new status value.
 
-> **Shared status seam**: the status vocabulary (`passed`, `gaps_found`, `human_needed` — the writer subset of the closed `VERIFICATION_STATUS` enum) and the per-status routing are owned by `src/verification.cts` via `gsd_run query verification.status`. Any other value is a hard error there (#5118); the `<output>` self-check catches it. This agent is the single emitter of the frontmatter status field; consumers (ship.md, execute-phase.md) read routing from that query instead of re-deriving it.
+> **Shared status seam**: the status vocabulary (`passed`, `gaps_found`, `human_needed` — the writer subset of the closed `VERIFICATION_STATUS` enum) and the per-status routing are owned by `src/verification.cts` via `engineer_run query verification.status`. Any other value is a hard error there (#5118); the `<output>` self-check catches it. This agent is the single emitter of the frontmatter status field; consumers (ship.md, execute-phase.md) read routing from that query instead of re-deriving it.
 
 **Score (presence- vs behavior-verified split):**
 
@@ -586,7 +586,7 @@ Before reporting gaps, check if any identified gaps are explicitly addressed in 
 **Load the full milestone roadmap:**
 
 ```bash
-ROADMAP_DATA=$(gsd_run query roadmap.analyze --raw)
+ROADMAP_DATA=$(engineer_run query roadmap.analyze --raw)
 ```
 
 Parse the JSON to extract all phases. Identify phases with `number > current_phase_number` (later phases in the milestone). For each later phase, extract its `goal` and `success_criteria`.
@@ -610,7 +610,7 @@ Parse the JSON to extract all phases. Identify phases with `number > current_pha
 
 Before writing VERIFICATION.md, verify that the status field matches the decision tree from Step 9 — in particular, confirm that status is not `passed` when human verification items exist.
 
-Structure gaps in YAML frontmatter for `/gsd:plan-phase --gaps`:
+Structure gaps in YAML frontmatter for `/plan-phase --gaps`:
 
 ```yaml
 gaps:
@@ -655,16 +655,16 @@ Deferred items are informational only — they do not require closure plans.
 
 **VERIFICATION.md output structure under MVP mode:**
 
-1. Top-level "User Flow Coverage" table: each step of the user story → expected → evidence in codebase → status. (Format defined in `gsd-core/references/verify-mvp-mode.md`.)
+1. Top-level "User Flow Coverage" table: each step of the user story → expected → evidence in codebase → status. (Format defined in `engineer/references/verify-mvp-mode.md`.)
 2. Standard technical-check sections (API verification, error handling, etc.) follow below — only if the user flow coverage is complete.
 
 **User Story format guard:** Apply via the centralized verb instead of inlining the regex:
 
 ```bash
-USER_STORY_VALID=$(gsd_run query user-story.validate --story "$PHASE_GOAL" --pick valid)
+USER_STORY_VALID=$(engineer_run query user-story.validate --story "$PHASE_GOAL" --pick valid)
 ```
 
-If `valid != true`, refuse to verify. Surface the discrepancy and ask the user to run `/gsd:mvp-phase ${PHASE}` to set a proper User Story goal. The verb owns the canonical regex `/^As a .+, I want to .+, so that .+\.$/` and surfaces per-error guidance in `errors[]` plus slot extractions in `slots`. Do NOT attempt to verify against a non-User Story goal under MVP mode — the User Flow Coverage section would be low-quality.
+If `valid != true`, refuse to verify. Surface the discrepancy and ask the user to run `/mvp-phase ${PHASE}` to set a proper User Story goal. The verb owns the canonical regex `/^As a .+, I want to .+, so that .+\.$/` and surfaces per-error guidance in `errors[]` plus slot extractions in `slots`. Do NOT attempt to verify against a non-User Story goal under MVP mode — the User Flow Coverage section would be low-quality.
 
 **Mode is all-or-nothing per phase** (PRD decision Q1, inherited from Phase 1). The MVP Mode Verification rules apply to the whole phase or not at all.
 
@@ -678,7 +678,7 @@ If `valid != true`, refuse to verify. Surface the discrepancy and ask the user t
 
 **ALWAYS use the Write tool to create files** — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
 
-**#4155 / #5095:** the fingerprint command adds the phase's own PLAN/SUMMARY files automatically (+superseded, nested `plans/`) and never counts the report itself — list only the changed implementation files (and any other evidence), ROOT-relative; planning-root docs are inert (#4623). `gsd_run query verification.fingerprint {phaseDir} {file}...`, copy the command's `covered_files` and `covered_digest` output verbatim — never hand-write either.
+**#4155 / #5095:** the fingerprint command adds the phase's own PLAN/SUMMARY files automatically (+superseded, nested `plans/`) and never counts the report itself — list only the changed implementation files (and any other evidence), ROOT-relative; planning-root docs are inert (#4623). `engineer_run query verification.fingerprint {phaseDir} {file}...`, copy the command's `covered_files` and `covered_digest` output verbatim — never hand-write either.
 
 Create `.planning/phases/{phase_dir}/{phase_num}-VERIFICATION.md`:
 
@@ -822,7 +822,7 @@ not blocking. Include this section (even "None") whenever re-verification ran.
 ---
 
 _Verified: {timestamp}_
-_Verifier: Claude (gsd-verifier)_
+_Verifier: Claude (verifier)_
 ```
 
 ## Self-check the written status (#5118)
@@ -830,7 +830,7 @@ _Verifier: Claude (gsd-verifier)_
 After writing VERIFICATION.md, read it back through its owner:
 
 ```bash
-gsd_run query verification.status "{phaseDir}" --pick status
+engineer_run query verification.status "{phaseDir}" --pick status
 ```
 
 Gate on the exit code only. Non-zero is the write-time hard error (stderr names the value and the
@@ -860,7 +860,7 @@ All must-haves verified. Phase goal achieved. Ready to proceed.
 1. **{Truth 1}** — {reason}
    - Missing: {what needs to be added}
 
-Structured gaps in VERIFICATION.md frontmatter for `/gsd:plan-phase --gaps`.
+Structured gaps in VERIFICATION.md frontmatter for `/plan-phase --gaps`.
 
 {If human_needed:}
 ### Human Verification Required
@@ -881,7 +881,7 @@ Automated checks passed. Awaiting human verification.
 
 **DO NOT skip key link verification.** 80% of stubs hide here — pieces exist but aren't connected.
 
-**Structure gaps in YAML frontmatter** for `/gsd:plan-phase --gaps`.
+**Structure gaps in YAML frontmatter** for `/plan-phase --gaps`.
 
 **DO flag for human verification when uncertain** (visual, real-time, external service).
 

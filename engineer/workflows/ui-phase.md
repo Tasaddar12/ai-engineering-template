@@ -9,7 +9,7 @@ UI-SPEC.md locks spacing, typography, color, copywriting, and design system deci
 </required_reading>
 
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
 - ui-researcher — Researches UI/UX approaches
 - ui-checker — Reviews UI implementation quality
 </available_agent_types>
@@ -170,7 +170,7 @@ If "Update": continue to step 5.
 
 Display:
 ```
-### GSD ► UI DESIGN CONTRACT — PHASE {N}
+### Engineer ► UI DESIGN CONTRACT — PHASE {N}
 
 ◆ Spawning UI researcher... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
@@ -237,7 +237,7 @@ Display blocker details and options. Exit workflow.
 
 Display:
 ```
-### GSD ► VERIFYING UI-SPEC
+### Engineer ► VERIFYING UI-SPEC
 
 ◆ Spawning UI checker... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
@@ -380,7 +380,7 @@ author an explicit `elements` array on that element instead of relying on the pr
 **Runtime coverage compute — resolve and invoke ui-consideration-probe.cjs:**
 
 ```bash
-# Resolve the compiled ui-consideration-probe.cjs against the GSD install dir via RUNTIME_DIR
+# Resolve the compiled ui-consideration-probe.cjs against the Engineer install dir via RUNTIME_DIR
 # (#448) — NOT the consuming project's git root — falling back to git toplevel / $HOME/.claude.
 # Mirrors spec-phase.md Step 5.5's edge-probe resolution idiom verbatim (same candidate paths).
 _GSD_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
@@ -393,10 +393,10 @@ UI_PROBE_JS=$(for _c in \
   [ -f "$_c" ] && { echo "$_c"; break; }
 done)
 
-# Graceful degradation — never a silent skip. Build ONLY when $_GSD_RT is a verified GSD source
+# Graceful degradation — never a silent skip. Build ONLY when $_GSD_RT is a verified Engineer source
 # checkout (has tsconfig.build.json + src/ui-consideration-probe.cts), pinned with --prefix so we
 # never trigger the CONSUMING project's own build during a ui-phase. Real installs ship the
-# compiled .cjs via prepublishOnly, so this path only matters in a GSD dev checkout.
+# compiled .cjs via prepublishOnly, so this path only matters in an Engineer dev checkout.
 if [ -z "$UI_PROBE_JS" ]; then
   if [ -f "$_GSD_RT/tsconfig.build.json" ] && [ -f "$_GSD_RT/src/ui-consideration-probe.cts" ]; then
     npm --prefix "$_GSD_RT" run build:lib 2>/dev/null || true
@@ -410,7 +410,7 @@ if [ -z "$UI_PROBE_JS" ]; then
     done)
   fi
   if [ -z "$UI_PROBE_JS" ]; then
-    echo "ERROR: ui-consideration-probe.cjs not found — reinstall GSD or run \`npm run build:lib\` in your GSD checkout." >&2
+    echo "ERROR: ui-consideration-probe.cjs not found — reinstall Engineer or run \`npm run build:lib\` in your Engineer checkout." >&2
     exit 1
   fi
 fi
@@ -518,7 +518,7 @@ STATE coverage and REFERENCES those rows rather than restating the copy (de-dup)
 
 Display:
 ```
-### GSD ► UI-SPEC READY ✓
+### Engineer ► UI-SPEC READY ✓
 
 **Phase {N}: {Name}** — UI design contract approved
 

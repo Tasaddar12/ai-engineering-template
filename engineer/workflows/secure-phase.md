@@ -7,7 +7,7 @@ Verify threat mitigations for a completed phase. Confirm PLAN.md threat register
 </required_reading>
 
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
 - security-auditor — Verifies threat mitigation coverage
 </available_agent_types>
 
@@ -85,7 +85,7 @@ Resolve active step hooks from `VERIFY_POST_HOOKS_JSON` where `kind == "step"` a
 
 If no active secure-phase step hook exists: exit with "Security enforcement disabled. Enable via /settings."
 
-Display banner: `GSD > SECURE PHASE {N}: {name}`
+Display banner: `Engineer > SECURE PHASE {N}: {name}`
 
 ## 1. Detect Input State
 
@@ -196,7 +196,7 @@ engineer_run query verification.append-audit "${PHASE_DIR}/${PADDED_PHASE}-SECUR
 **ENFORCING GATE:** If `threats_open > 0` after all options exhausted (user did not accept, not all verified closed):
 
 ```
-GSD > PHASE {N} SECURITY BLOCKED
+Engineer > PHASE {N} SECURITY BLOCKED
 {K} blocking threats open — phase advancement blocked until threats_open: 0
 ▶ Fix mitigations then re-run: /secure-phase {N}
 ▶ Or document accepted risks in SECURITY.md and re-run.
@@ -215,7 +215,7 @@ engineer_run query commit "docs(phase-${PHASE}): add/update security threat veri
 
 **Secured (threats_open: 0):**
 ```
-GSD > PHASE {N} THREAT-SECURE
+Engineer > PHASE {N} THREAT-SECURE
 threats_open: 0 — no blocking threats remain (threats_open: 0).
 ▶ /validate-phase {N}    validate test coverage
 ▶ /verify-work {N}       run UAT

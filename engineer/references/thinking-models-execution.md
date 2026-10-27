@@ -2,7 +2,7 @@
 
 Structured reasoning models for the **executor** agent. Apply these at decision points during task execution, not continuously. Each model counters a specific documented failure mode.
 
-Source: Curated from [thinking-partner](https://github.com/mattnowdev/thinking-partner) model catalog (150+ models). Selected for direct applicability to GSD execution workflow.
+Source: Curated from [thinking-partner](https://github.com/mattnowdev/thinking-partner) model catalog (150+ models). Selected for direct applicability to Engineer execution workflow.
 
 ## Conflict Resolution
 

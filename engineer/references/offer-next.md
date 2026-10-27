@@ -47,13 +47,13 @@ Phase {X} verified, continuing chain
 
 Execute the transition workflow inline (do NOT use Agent — orchestrator context is ~10-15%, transition needs phase completion data already in context):
 
-Read and follow `~/.claude/gsd-core/workflows/transition.md`, passing through the `--auto` flag so it propagates to the next phase invocation.
+Read and follow `~/.claude/engineer/workflows/transition.md`, passing through the `--auto` flag so it propagates to the next phase invocation.
 
 **If neither `--auto` nor `AUTO_MODE` is true:**
 
 **STOP. Do not auto-advance. Do not execute transition. Do not plan next phase. Present options to the user and wait.**
 
-**IMPORTANT: There is NO `/gsd-transition` command. Never suggest it. The transition workflow is internal only.**
+**IMPORTANT: There is NO `/transition` command. Never suggest it. The transition workflow is internal only.**
 
 Check whether CONTEXT.md already exists for the next phase:
 

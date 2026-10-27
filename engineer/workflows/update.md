@@ -1,5 +1,5 @@
 <purpose>
-Check for GSD updates via npm, display changelog for versions between installed and latest, obtain user confirmation, and execute clean installation with cache clearing.
+Check for Engineer updates via npm, display changelog for versions between installed and latest, obtain user confirmation, and execute clean installation with cache clearing.
 </purpose>
 
 <required_reading>
@@ -10,7 +10,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 **If `response_language` is configured:** All user-facing output of this workflow — narration between tool calls, status updates, progress notes, findings, questions, prompts, and explanations — MUST be presented in that language. Technical terms, code, file paths, and subagent prompts stay in English — only user-facing output is translated.
 
 <step name="get_installed_version">
-Detect the installed GSD version, scope, runtime, and config dir.
+Detect the installed Engineer version, scope, runtime, and config dir.
 
 First, derive `PREFERRED_CONFIG_DIR` and `PREFERRED_RUNTIME` from the invoking prompt's `execution_context` path — this is the one input only the workflow knows:
 - If the path contains `/engineer/workflows/update.md`, strip that suffix and store the remainder as `PREFERRED_CONFIG_DIR`.
@@ -94,7 +94,7 @@ Parse output:
 - Line 1 = installed version (`0.0.0` means unknown version)
 - Line 2 = install scope (`LOCAL`, `GLOBAL`, or `UNKNOWN`)
 - Line 3 = target runtime (`claude`, `codex`); empty when no installed target is resolved
-- Line 4 = resolved GSD config dir (e.g. `/Users/me/.claude`); empty when no installed target is resolved. Capture this as `GSD_DIR` and pass it to subsequent steps so they don't re-derive the runtime path.
+- Line 4 = resolved Engineer config dir (e.g. `/Users/me/.claude`); empty when no installed target is resolved. Capture this as `GSD_DIR` and pass it to subsequent steps so they don't re-derive the runtime path.
 
 `update-context` reproduces the previous detection cascade — preferred-config-dir fast path, local-over-global with same-path dedup (so `CWD=$HOME` does not misdetect as LOCAL), env-var overrides (`CLAUDE_CONFIG_DIR`, `CODEX_HOME`), and semver validation — but as a tested projection rather than ~280 lines of inline bash. Branch coverage lives in `tests/update-context.test.cjs`.
 
@@ -105,7 +105,7 @@ If multiple runtime installs are detected and the invoking runtime cannot be det
 ```text
 UPDATE_TARGET_UNRESOLVED
 
-GSD could not resolve an installed update target. No update was performed.
+Engineer could not resolve an installed update target. No update was performed.
 
 Rerun from a valid installed runtime: `/update`. For a fresh installation, run `npx -y --package=@opengsd/gsd-core@latest -- gsd-core --global`.
 ```
@@ -204,7 +204,7 @@ If `section_manifest` (from `INIT_UPDATE`) is `null` or `"channel-banner"` is in
 
 **If installed == latest:**
 ```
-## GSD Update
+## Engineer Update
 
 **Installed:** X.Y.Z
 **Latest:** X.Y.Z
@@ -216,7 +216,7 @@ Exit.
 
 **If installed > latest:**
 ```
-## GSD Update
+## Engineer Update
 
 **Installed:** X.Y.Z
 **Latest:** A.B.C
@@ -249,7 +249,7 @@ curl -fsSL "https://raw.githubusercontent.com/open-gsd/gsd-core/main/CHANGELOG.m
 
 GSD_CHANGESET_CLI="$GSD_DIR/scripts/changeset/cli.cjs"
 if [ ! -f "$GSD_CHANGESET_CLI" ]; then
-  CHANGELOG_PREVIEW="(Changelog CLI not found at $GSD_CHANGESET_CLI — reinstall GSD to restore preview. Update will still proceed.)"
+  CHANGELOG_PREVIEW="(Changelog CLI not found at $GSD_CHANGESET_CLI — reinstall Engineer to restore preview. Update will still proceed.)"
 else
   EXTRACT_JSON=$(node "$GSD_CHANGESET_CLI" extract \
     --from "$INSTALLED_VERSION" \
@@ -278,7 +278,7 @@ rm -f "$CHANGELOG_TMP"
 3. Display preview and ask for confirmation, using `$CHANGELOG_PREVIEW` from the extract step above:
 
 ```
-## GSD Update Available
+## Engineer Update Available
 
 **Installed:** {INSTALLED_VERSION}
 **Latest:** {LATEST_VERSION}
@@ -291,8 +291,8 @@ rm -f "$CHANGELOG_TMP"
 
 ---
 
-⚠️  **Note:** The installer performs a clean install of GSD folders:
-- `commands/gsd/` will be wiped and replaced
+⚠️  **Note:** The installer performs a clean install of Engineer folders:
+- `commands/` will be wiped and replaced
 - `gsd-core/` will be wiped and replaced
 - `agents/gsd-*` files will be replaced
 
@@ -301,12 +301,12 @@ global: `~/.claude/` or `~/.codex/`
 local: `./.claude/` or `./.codex/`)
 
 Your custom files in other locations are preserved:
-- Custom commands not in `commands/gsd/` ✓
+- Custom commands not in `commands/` ✓
 - Custom agents not prefixed with `gsd-` ✓
 - Custom hooks ✓
 - Your CLAUDE.md files ✓
 
-If you've modified any GSD files directly, they'll be automatically backed up to `gsd-local-patches/` and can be reapplied with `/update --reapply` after the update.
+If you've modified any Engineer files directly, they'll be automatically backed up to `gsd-local-patches/` and can be reapplied with `/update --reapply` after the update.
 ```
 
 **Text mode (`workflow.text_mode: true` in config or `--text` flag):** Set `TEXT_MODE=true` if `--text` is present in `$ARGUMENTS` OR `text_mode` from init JSON is `true`. When TEXT_MODE is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for non-Claude runtimes (OpenAI Codex) where `AskUserQuestion` is not available.
@@ -321,7 +321,7 @@ Use AskUserQuestion:
 
 <step name="backup_custom_files">
 Before running the installer, detect and back up any user-added files inside
-GSD-managed directories. These are files that exist on disk but are NOT listed
+Engineer-managed directories. These are files that exist on disk but are NOT listed
 in `gsd-file-manifest.json` — i.e., files the user added themselves that the
 installer does not know about and will delete during the wipe.
 
@@ -393,7 +393,7 @@ JSEOF
 Then inform the user:
 
 ```
-⚠️  Found N custom file(s) inside GSD-managed directories.
+⚠️  Found N custom file(s) inside Engineer-managed directories.
     These have been backed up to gsd-user-files-backup/ before the update.
     You'll be offered a restore once the new version is installed.
 ```
@@ -468,7 +468,7 @@ The SessionStart hook (`gsd-check-update.js`) writes to the detected runtime's c
 Format completion message (changelog was already shown in confirmation step):
 
 ```
-### GSD Updated: v1.5.10 → v1.5.15
+### Engineer Updated: v1.5.10 → v1.5.15
 
 ⚠️  Restart your runtime to pick up the new commands.
 

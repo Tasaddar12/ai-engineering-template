@@ -9,7 +9,7 @@ Output: .planning/codebase/ folder with 7 structured documents about the codebas
 </purpose>
 
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
 - codebase-mapper — Maps project structure and dependencies
 </available_agent_types>
 
@@ -500,5 +500,5 @@ End workflow.
 - All 7 codebase documents exist
 - No empty documents (each should have >20 lines)
 - Clear completion summary with line counts
-- User offered clear next steps in GSD style
+- User offered clear next steps in Engineer style
 </success_criteria>

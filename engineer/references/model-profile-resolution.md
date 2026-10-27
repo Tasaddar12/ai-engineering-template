@@ -1,6 +1,6 @@
 # Model Profile Resolution
 
-Resolve each agent's model through `gsd-tools`, then pass it to the `Agent()` spawn — or
+Resolve each agent's model through `engineer_run`, then pass it to the `Agent()` spawn — or
 omit the parameter entirely when nothing resolved.
 
 ## Resolution Pattern

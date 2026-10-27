@@ -31,7 +31,7 @@ SPEC_SECTION_JS=$(_gsd_lib spec-section.cjs)
 if [ -z "$SPEC_SECTION_JS" ] && [ -f "$_GSD_RT/tsconfig.build.json" ] && [ -f "$_GSD_RT/src/spec-section.cts" ]; then
   npm --prefix "$_GSD_RT" run build:lib 2>/dev/null || true; SPEC_SECTION_JS=$(_gsd_lib spec-section.cjs)
 fi
-[ -n "$SPEC_SECTION_JS" ] || { echo "ERROR: spec-section.cjs not found - reinstall GSD or run build:lib." >&2; exit 1; }
+[ -n "$SPEC_SECTION_JS" ] || { echo "ERROR: spec-section.cjs not found - reinstall Engineer or run build:lib." >&2; exit 1; }
 # supplied => header present AND >=1 row; missing $SPEC_FILE => supplied:false => fallback fires.
 EDGE_ABSENT=1;   node "$SPEC_SECTION_JS" "$SPEC_FILE" edges       2>/dev/null | grep -q '"supplied":true' && EDGE_ABSENT=0
 PROHIB_ABSENT=1; node "$SPEC_SECTION_JS" "$SPEC_FILE" prohibitions 2>/dev/null | grep -q '"supplied":true' && PROHIB_ABSENT=0
@@ -64,14 +64,14 @@ phase requirement IDs (`{phase_req_ids}`) instead of a SPEC interview. Leave `$C
 `EDGE_ABSENT=0` — a SPEC-supplied section is never re-run (section-level precedence).
 
 ```bash
-# Resolve the compiled edge-probe.cjs against the GSD install dir via RUNTIME_DIR (#448) — NOT the
+# Resolve the compiled edge-probe.cjs against the Engineer install dir via RUNTIME_DIR (#448) — NOT the
 # consuming project's git root — falling back to git toplevel / $HOME/.claude (spec-phase.md:198 idiom).
 _GSD_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 EDGE_PROBE_JS=$(for _c in \
   "$_GSD_RT/engineer/bin/lib/edge-probe.cjs" "$_GSD_RT/bin/lib/edge-probe.cjs" \
   "$_GSD_RT/.claude/bin/lib/edge-probe.cjs" "$HOME/.claude/engineer/bin/lib/edge-probe.cjs" \
   "$HOME/.claude/bin/lib/edge-probe.cjs"; do [ -f "$_c" ] && { echo "$_c"; break; }; done)
-# Build ONLY inside a verified GSD source checkout; --prefix pins npm so we never trigger the
+# Build ONLY inside a verified Engineer source checkout; --prefix pins npm so we never trigger the
 # consuming project's build:lib. Never silent-skip (RR-04) — fail loud if unresolvable.
 if [ -z "$EDGE_PROBE_JS" ]; then
   if [ -f "$_GSD_RT/tsconfig.build.json" ] && [ -f "$_GSD_RT/src/edge-probe.cts" ]; then
@@ -81,7 +81,7 @@ if [ -z "$EDGE_PROBE_JS" ]; then
       "$_GSD_RT/.claude/bin/lib/edge-probe.cjs" "$HOME/.claude/engineer/bin/lib/edge-probe.cjs" \
       "$HOME/.claude/bin/lib/edge-probe.cjs"; do [ -f "$_c" ] && { echo "$_c"; break; }; done)
   fi
-  [ -n "$EDGE_PROBE_JS" ] || { echo "ERROR: edge-probe.cjs not found — reinstall GSD or run \`npm run build:lib\`." >&2; exit 1; }
+  [ -n "$EDGE_PROBE_JS" ] || { echo "ERROR: edge-probe.cjs not found — reinstall Engineer or run \`npm run build:lib\`." >&2; exit 1; }
 fi
 
 # THE ONE DIVERGENCE (D-02): source requirements from THIS phase. Populate the heredoc from

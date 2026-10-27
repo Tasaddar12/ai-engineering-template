@@ -21,7 +21,7 @@ The text inside `<arguments>` is exactly what the user typed after the command n
 </runtime_note>
 
 <objective>
-Guide brownfield onboarding for an existing codebase by routing through the existing GSD primitives in the safe order: codebase map → docs ingest → project initialization → onboarding summary.
+Guide brownfield onboarding for an existing codebase by routing through the existing Engineer primitives in the safe order: codebase map → docs ingest → project initialization → onboarding summary.
 
 **Creates or confirms:**
 - `.planning/codebase/` — evidence-backed codebase map from `/map-codebase`

@@ -109,7 +109,7 @@ Exit.
 
 Present banner:
 ```
-### GSD ► ADD TESTS — Phase ${phase_number}: ${phase_name}
+### Engineer ► ADD TESTS — Phase ${phase_number}: ${phase_name}
 ```
 </step>
 
@@ -323,7 +323,7 @@ For each approved E2E test:
 Create a test coverage report and present to user:
 
 ```
-### GSD ► TEST GENERATION COMPLETE
+### Engineer ► TEST GENERATION COMPLETE
 
 ## Results
 

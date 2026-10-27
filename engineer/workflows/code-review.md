@@ -82,7 +82,7 @@ case "$_gsd_gr" in /*) ;; *) _gsd_gr="" ;; esac # a engineer_run shell function 
 GSD_LIB_DIR=""
 _gsd_pick() { for _gsd_d; do if [ -n "$_gsd_d" ] && [ -f "$_gsd_d/$_gsd_lib_probe" ]; then GSD_LIB_DIR="$_gsd_d"; return 0; fi; done; return 1; }
 _gsd_pick "${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib}" "$_gsd_rt/engineer/bin/lib" "$_gsd_rt/.claude/engineer/bin/lib" "$_gsd_rt/.codex/engineer/bin/lib" "$_gsd_gr" "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib" "${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib" || true
-if [ -z "$GSD_LIB_DIR" ]; then echo "ERROR: code-review-flags.cjs not found in the GSD runtime. Looked in: ${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib, }${_gsd_rt}/engineer/bin/lib (and its .claude and .codex forms), ${_gsd_gr:-next to engineer_run (not on PATH)}, ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib, ${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib. Reinstall: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi
+if [ -z "$GSD_LIB_DIR" ]; then echo "ERROR: code-review-flags.cjs not found in the Engineer runtime. Looked in: ${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib, }${_gsd_rt}/engineer/bin/lib (and its .claude and .codex forms), ${_gsd_gr:-next to engineer_run (not on PATH)}, ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib, ${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib. Reinstall: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi
 export GSD_LIB_DIR
 # gsd-resolve-lib end
 FLAGS_JSON=$(node -e "
@@ -512,7 +512,7 @@ case "$_gsd_gr" in /*) ;; *) _gsd_gr="" ;; esac # a engineer_run shell function 
 GSD_LIB_DIR=""
 _gsd_pick() { for _gsd_d; do if [ -n "$_gsd_d" ] && [ -f "$_gsd_d/$_gsd_lib_probe" ]; then GSD_LIB_DIR="$_gsd_d"; return 0; fi; done; return 1; }
 _gsd_pick "${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib}" "$_gsd_rt/engineer/bin/lib" "$_gsd_rt/.claude/engineer/bin/lib" "$_gsd_rt/.codex/engineer/bin/lib" "$_gsd_gr" "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib" "${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib" || true
-if [ -z "$GSD_LIB_DIR" ]; then echo "ERROR: code-review-depth.cjs not found in the GSD runtime. Looked in: ${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib, }${_gsd_rt}/engineer/bin/lib (and its .claude and .codex forms), ${_gsd_gr:-next to engineer_run (not on PATH)}, ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib, ${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib. Reinstall: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi
+if [ -z "$GSD_LIB_DIR" ]; then echo "ERROR: code-review-depth.cjs not found in the Engineer runtime. Looked in: ${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib, }${_gsd_rt}/engineer/bin/lib (and its .claude and .codex forms), ${_gsd_gr:-next to engineer_run (not on PATH)}, ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib, ${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib. Reinstall: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi
 export GSD_LIB_DIR
 # gsd-resolve-lib end
 DEPTH_JSON=$(echo "$DEPTH_PAYLOAD" | node -e "
@@ -824,7 +824,7 @@ if [ -n "$FALLOW_JSON_PATH" ] && [ -f "$FALLOW_JSON_PATH" ]; then
   GSD_LIB_DIR=""
   _gsd_pick() { for _gsd_d; do if [ -n "$_gsd_d" ] && [ -f "$_gsd_d/$_gsd_lib_probe" ]; then GSD_LIB_DIR="$_gsd_d"; return 0; fi; done; return 1; }
   _gsd_pick "${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib}" "$_gsd_rt/engineer/bin/lib" "$_gsd_rt/.claude/engineer/bin/lib" "$_gsd_rt/.codex/engineer/bin/lib" "$_gsd_gr" "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib" "${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib" || true
-  if [ -z "$GSD_LIB_DIR" ]; then echo "ERROR: fallow-runner.cjs not found in the GSD runtime (looked in ${_gsd_rt}/engineer/bin/lib (and its .claude and .codex forms), ${_gsd_gr:-next to engineer_run (not on PATH)}, ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib, ${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib); continuing without it." >&2; fi
+  if [ -z "$GSD_LIB_DIR" ]; then echo "ERROR: fallow-runner.cjs not found in the Engineer runtime (looked in ${_gsd_rt}/engineer/bin/lib (and its .claude and .codex forms), ${_gsd_gr:-next to engineer_run (not on PATH)}, ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib, ${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib); continuing without it." >&2; fi
   export GSD_LIB_DIR
   # gsd-resolve-lib end
   FALLOW_SRC="$FALLOW_JSON_PATH" FALLOW_OUT="$FALLOW_NORMALIZED_PATH" node -e "

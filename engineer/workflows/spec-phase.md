@@ -262,7 +262,7 @@ classifier.
 **Runtime coverage compute — resolve and invoke edge-probe.cjs:**
 
 ```bash
-# Resolve the compiled edge-probe.cjs against the GSD install dir via RUNTIME_DIR (#448)
+# Resolve the compiled edge-probe.cjs against the Engineer install dir via RUNTIME_DIR (#448)
 # — NOT the consuming project's git root — falling back to git toplevel / $HOME/.claude.
 # Mirrors the ui-safety-gate.cjs resolution idiom at autonomous.md:290 / plan-phase.md:631.
 _GSD_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
@@ -276,10 +276,10 @@ EDGE_PROBE_JS=$(for _c in \
 done)
 
 # Graceful degradation — never silent skip (RR-04). Build ONLY when $_GSD_RT is a verified
-# GSD source checkout (has tsconfig.build.json + src/edge-probe.cts), and pin npm to it with
+# Engineer source checkout (has tsconfig.build.json + src/edge-probe.cts), and pin npm to it with
 # --prefix so we never trigger the CONSUMING project's own build:lib (its cwd package scripts:
 # codegen/migrations/writes) during a spec workflow. Real installs ship the compiled .cjs via
-# prepublishOnly, so this build path only matters in a GSD dev checkout (review High).
+# prepublishOnly, so this build path only matters in an Engineer dev checkout (review High).
 if [ -z "$EDGE_PROBE_JS" ]; then
   if [ -f "$_GSD_RT/tsconfig.build.json" ] && [ -f "$_GSD_RT/src/edge-probe.cts" ]; then
     npm --prefix "$_GSD_RT" run build:lib 2>/dev/null || true
@@ -293,7 +293,7 @@ if [ -z "$EDGE_PROBE_JS" ]; then
     done)
   fi
   if [ -z "$EDGE_PROBE_JS" ]; then
-    echo "ERROR: edge-probe.cjs not found — reinstall GSD or run \`npm run build:lib\` in your GSD checkout." >&2
+    echo "ERROR: edge-probe.cjs not found — reinstall Engineer or run \`npm run build:lib\` in your Engineer checkout." >&2
     exit 1
   fi
 fi

@@ -20,7 +20,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 </required_reading>
 
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
 - phase-researcher — Researches technical approaches for a phase
 - pattern-mapper — Analyzes codebase for existing patterns, produces PATTERNS.md
 - planner — Creates detailed plans from phase scope
@@ -438,7 +438,7 @@ If user selects "Skip research": skip to step 6.
 
 Display banner:
 ```
-### GSD ► RESEARCHING PHASE {X}
+### Engineer ► RESEARCHING PHASE {X}
 
 ◆ Spawning researcher... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
@@ -447,7 +447,7 @@ Display banner:
 
 ```bash
 if engineer_run query teams-status --active >/dev/null 2>&1; then
-  echo "⚠️  CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS detected. GSD's multi-agent orchestration is not validated under claude-code agent-teams and may stall (a subagent's completion can fail to route to the orchestrator). Recommend disabling agent-teams for GSD workflows. See https://github.com/open-gsd/gsd-core/issues/1355" >&2
+  echo "⚠️  CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS detected. Engineer's multi-agent orchestration is not validated under claude-code agent-teams and may stall (a subagent's completion can fail to route to the orchestrator). Recommend disabling agent-teams for Engineer workflows. See https://github.com/open-gsd/gsd-core/issues/1355" >&2
 fi
 ```
 
@@ -536,7 +536,7 @@ If an active security contribution hook exists, read `SECURITY_ASVS` from the ho
 Display banner:
 
 ```
-### GSD ► SECURITY THREAT MODEL REQUIRED (ASVS L{SECURITY_ASVS})
+### Engineer ► SECURITY THREAT MODEL REQUIRED (ASVS L{SECURITY_ASVS})
 
 Each PLAN.md must include a <threat_model> block.
 Block on: {SECURITY_BLOCK} severity threats.
@@ -722,7 +722,7 @@ Pattern mapper activation is owned by the `pattern-mapper` capability's `plan:pr
 
 Display banner:
 ```
-### GSD ► PATTERN MAPPING PHASE {X}
+### Engineer ► PATTERN MAPPING PHASE {X}
 
 ◆ Spawning pattern mapper... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
@@ -793,7 +793,7 @@ independent of the teams-status guard above, AC2).
 
 Display banner:
 ```
-### GSD ► PLANNING PHASE {X}
+### Engineer ► PLANNING PHASE {X}
 
 ◆ Spawning planner... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
@@ -1055,7 +1055,7 @@ When the planner returns `## ⚠ Source Audit: Unplanned Items Found`, items fro
 
 Display banner:
 ```
-### GSD ► VERIFYING PLANS
+### Engineer ► VERIFYING PLANS
 
 ◆ Spawning plan checker... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
@@ -1559,7 +1559,7 @@ Output this markdown directly (not as a code block):
 
 `${GAPS_EXEC_FLAG}` projects the just-completed planning mode onto the follow-up execute command (#3297): it expands to `--gaps-only` for a `--gaps` planning run (so the handoff points at execute-phase's gap-closure scope — only the newly created `gap_closure: true` plans — not the whole phase) and to empty for a standard or `--reviews` run (whole-phase scope, unchanged). Substitute it verbatim; when empty, collapse the extra space.
 
-### GSD ► PHASE {X} PLANNED ✓
+### Engineer ► PHASE {X} PLANNED ✓
 
 **Phase {X}: {Name}** — {N} plan(s) in {M} wave(s)
 

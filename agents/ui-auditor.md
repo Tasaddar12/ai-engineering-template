@@ -1,6 +1,6 @@
 ---
-name: gsd-ui-auditor
-description: Retroactive 6-pillar visual audit of implemented frontend code. Produces scored UI-REVIEW.md. Spawned by /gsd:ui-review orchestrator.
+name: ui-auditor
+description: Retroactive 6-pillar visual audit of implemented frontend code. Produces scored UI-REVIEW.md. Spawned by /ui-review orchestrator.
 tools: Read, Write, Bash, Grep, Glob, Skill
 color: pink
 # hooks:
@@ -14,7 +14,7 @@ color: pink
 <role>
 An implemented frontend has been submitted for adversarial visual and interaction audit. Score what was actually built against the design contract or 6-pillar standards — do not average scores upward to soften findings.
 
-Spawned by `/gsd:ui-review` orchestrator.
+Spawned by `/ui-review` orchestrator.
 
 **CRITICAL: Mandatory Initial Read**
 If the prompt contains a `<required_reading>` block, you MUST use the `Read` tool to load every file listed there before performing any other actions. This is your primary context.
@@ -50,14 +50,14 @@ Before auditing, discover project context:
 
 **Project skills:** Check `.claude/skills/` or `.agents/skills/` directory if either exists:
 
-**agent_skills:** self-load per @~/.claude/engineer/references/agent-skills-bootstrap.md (agent type: `gsd-ui-auditor`)
+**agent_skills:** self-load per @~/.claude/engineer/references/agent-skills-bootstrap.md (agent type: `ui-auditor`)
 1. List available skills (subdirectories)
 2. Read `SKILL.md` for each skill
 3. Do NOT load full `AGENTS.md` files (100KB+ context cost)
 </project_context>
 
 <upstream_input>
-**UI-SPEC.md** (if exists) — Design contract from `/gsd:ui-phase`
+**UI-SPEC.md** (if exists) — Design contract from `/ui-phase`
 
 | Section | How You Use It |
 |---------|----------------|
@@ -139,7 +139,7 @@ No dev server: code-review-only audit (Tailwind class audit, string audit for ge
 
 ### Interaction capture (default-off — `workflow.ui_interaction_capture`)
 
-The static captures show only the first paint of `/` (`npx playwright screenshot` has no click, fill, hover, press, snapshot or console verb), yet the Experience Design pillar is scored on interaction. When the `<config>` block carries `interaction_capture: true` (`workflow.ui_interaction_capture`, read by `/gsd:ui-review`) **and** a Chrome binary resolves, the `chrome-devtools` CLI (`chrome-devtools-mcp`) adds post-interaction captures over `Bash` alone: no MCP server, no `tools:` change. Key off, or no Chrome: one status line, then the audit as before.
+The static captures show only the first paint of `/` (`npx playwright screenshot` has no click, fill, hover, press, snapshot or console verb), yet the Experience Design pillar is scored on interaction. When the `<config>` block carries `interaction_capture: true` (`workflow.ui_interaction_capture`, read by `/ui-review`) **and** a Chrome binary resolves, the `chrome-devtools` CLI (`chrome-devtools-mcp`) adds post-interaction captures over `Bash` alone: no MCP server, no `tools:` change. Key off, or no Chrome: one status line, then the audit as before.
 
 ```bash
 # INTERACTION_CAPTURE: the <config> block's `interaction_capture` (absent = off); SCREENSHOT_DIR/DEV_URL: above.
@@ -265,7 +265,7 @@ fi
 
 Carry `$INTERACTION_STATUS` into the report's `**Interaction captures:**` field. **Never report an interaction state you did not capture** — key off or section skipped, interaction findings are code-derived and say so.
 
-<!-- /gsd:ui-interaction-capture -->
+<!-- /ui-interaction-capture -->
 
 </screenshot_approach>
 

@@ -1,5 +1,5 @@
 <purpose>
-Execute small, ad-hoc tasks with GSD guarantees (atomic commits, STATE.md tracking). Quick mode spawns planner (quick mode) + executor(s), tracks tasks in `.planning/quick/`, and updates STATE.md's "Quick Tasks Completed" table.
+Execute small, ad-hoc tasks with Engineer guarantees (atomic commits, STATE.md tracking). Quick mode spawns planner (quick mode) + executor(s), tracks tasks in `.planning/quick/`, and updates STATE.md's "Quick Tasks Completed" table.
 
 With `--full` flag: enables the complete quality pipeline — discussion + research + plan-checking + verification. One flag for everything.
 
@@ -17,7 +17,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 </required_reading>
 
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
 - phase-researcher — Researches technical approaches for a phase
 - planner — Creates detailed plans from phase scope
 - plan-checker — Reviews plan quality before execution
@@ -110,49 +110,49 @@ Display banner based on active flags:
 
 If `$FULL_MODE` (all phases enabled — `--full` or all granular flags):
 ```
-### GSD ► QUICK TASK (FULL)
+### Engineer ► QUICK TASK (FULL)
 
 ◆ Discussion + research + plan checking + verification enabled
 ```
 
 If `$DISCUSS_MODE` and `$VALIDATE_MODE` (no research):
 ```
-### GSD ► QUICK TASK (DISCUSS + VALIDATE)
+### Engineer ► QUICK TASK (DISCUSS + VALIDATE)
 
 ◆ Discussion + plan checking + verification enabled
 ```
 
 If `$DISCUSS_MODE` and `$RESEARCH_MODE` (no validate):
 ```
-### GSD ► QUICK TASK (DISCUSS + RESEARCH)
+### Engineer ► QUICK TASK (DISCUSS + RESEARCH)
 
 ◆ Discussion + research enabled
 ```
 
 If `$RESEARCH_MODE` and `$VALIDATE_MODE` (no discuss):
 ```
-### GSD ► QUICK TASK (RESEARCH + VALIDATE)
+### Engineer ► QUICK TASK (RESEARCH + VALIDATE)
 
 ◆ Research + plan checking + verification enabled
 ```
 
 If `$DISCUSS_MODE` only:
 ```
-### GSD ► QUICK TASK (DISCUSS)
+### Engineer ► QUICK TASK (DISCUSS)
 
 ◆ Discussion phase enabled — surfacing gray areas before planning
 ```
 
 If `$RESEARCH_MODE` only:
 ```
-### GSD ► QUICK TASK (RESEARCH)
+### Engineer ► QUICK TASK (RESEARCH)
 
 ◆ Research phase enabled — investigating approaches before planning
 ```
 
 If `$VALIDATE_MODE` only:
 ```
-### GSD ► QUICK TASK (VALIDATE)
+### Engineer ► QUICK TASK (VALIDATE)
 
 ◆ Plan checking + verification enabled
 ```
@@ -786,7 +786,7 @@ Display completion output:
 ```
 ---
 
-GSD > QUICK TASK COMPLETE (VALIDATED)
+Engineer > QUICK TASK COMPLETE (VALIDATED)
 
 Quick Task ${quick_id}: ${DESCRIPTION}
 
@@ -804,7 +804,7 @@ Ready for next task: /quick ${GSD_WS}
 ```
 ---
 
-GSD > QUICK TASK COMPLETE
+Engineer > QUICK TASK COMPLETE
 
 Quick Task ${quick_id}: ${DESCRIPTION}
 

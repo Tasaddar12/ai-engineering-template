@@ -12,7 +12,7 @@ For each item in the current layer:
 
 Display banner:
 ```
-### GSD ► CHECKING PLAN ${quick_id}
+### Engineer ► CHECKING PLAN ${quick_id}
 ◆ Spawning plan checker... (runs in a subagent — no output until it returns, ~1–5 min)
 ```
 

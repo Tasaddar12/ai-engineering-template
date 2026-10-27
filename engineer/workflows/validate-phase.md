@@ -7,7 +7,7 @@ Audit Nyquist validation gaps for a completed phase. Generate missing tests. Upd
 </required_reading>
 
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
 - nyquist-auditor — Validates verification coverage
 </available_agent_types>
 
@@ -83,7 +83,7 @@ Resolve active step hooks from `VERIFY_POST_HOOKS_JSON` where `kind == "step"` a
 
 If no active validate-phase step hook exists: exit with "Nyquist validation is disabled. Enable via /settings."
 
-Display banner: `GSD > VALIDATE PHASE {N}: {name}`
+Display banner: `Engineer > VALIDATE PHASE {N}: {name}`
 
 ## 1. Detect Input State
 
@@ -202,14 +202,14 @@ engineer_run query commit "docs(phase-${PHASE}): add/update validation strategy"
 
 **Compliant:**
 ```
-GSD > PHASE {N} IS NYQUIST-COMPLIANT
+Engineer > PHASE {N} IS NYQUIST-COMPLIANT
 All requirements have automated verification.
 ▶ Next: /audit-milestone ${GSD_WS}
 ```
 
 **Partial:**
 ```
-GSD > PHASE {N} VALIDATED (PARTIAL)
+Engineer > PHASE {N} VALIDATED (PARTIAL)
 {M} automated, {K} manual-only.
 ▶ Retry: /validate-phase {N} ${GSD_WS}
 ```

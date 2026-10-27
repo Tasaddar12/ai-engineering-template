@@ -22,7 +22,7 @@ defined when it runs. Substitute your type for`<your-agent-type>`:
 
    ```bash
    # 1. Launcher: paste the bash block from gsd-run-resolver.md here unless engineer_run
-   #    is already defined in this shell (@~/.claude/references/gsd-run-resolver.md).
+   #    is already defined in this shell (@~/.claude/engineer/references/gsd-run-resolver.md).
    # 2. Query:
    _AGENT_SKILLS=$(engineer_run query agent-skills <your-agent-type> --skills-only)
    ```

@@ -1,6 +1,6 @@
-# GSD Artifact Types
+# Engineer Artifact Types
 
-This reference documents all artifact types in the GSD planning taxonomy. Each type has a defined
+This reference documents all artifact types in the Engineer planning taxonomy. Each type has a defined
 shape, lifecycle, location, and consumption mechanism. A well-formatted artifact that no workflow
 reads is inert — the consumption mechanism is what gives an artifact meaning.
 

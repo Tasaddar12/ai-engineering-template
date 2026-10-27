@@ -46,7 +46,7 @@ if [ "$ISOLATION" = "none" ] && [ "$USE_WORKTREES" != "false" ]; then
   if [ "$ISOLATION_RESOLVED" = "true" ]; then
     echo "FATAL: runtime '$RUNTIME' declares no executor-isolation primitive (dispatch.isolation=none) — agents would run unisolated against the main checkout. Set workflow.use_worktrees=false." >&2
   else
-    echo "FATAL: could not resolve this runtime's executor-isolation capability — 'engineer_run query dispatch-isolation' failed or returned nothing, so GSD cannot tell whether isolation is available. Refusing to dispatch rather than guess (a guard that cannot verify must not answer 'safe'). Re-run once the engineer_run shim resolves, or set workflow.use_worktrees=false to run sequentially on purpose." >&2
+    echo "FATAL: could not resolve this runtime's executor-isolation capability — 'engineer_run query dispatch-isolation' failed or returned nothing, so Engineer cannot tell whether isolation is available. Refusing to dispatch rather than guess (a guard that cannot verify must not answer 'safe'). Re-run once the engineer_run shim resolves, or set workflow.use_worktrees=false to run sequentially on purpose." >&2
   fi
   exit 1
 fi
@@ -59,8 +59,8 @@ engineer_run query dispatch-isolation --raw --force-isolation "$ISOLATION" >/dev
 
 | `ISOLATION` | Meaning | What a dispatch site does |
 |---|---|---|
-| `harness-worktree` | The host's own harness creates and binds a worktree per agent. | Pass the host's declared `harnessFlag` on the dispatch. GSD runs no git. |
-| `orchestrator-worktree` | No harness primitive, but a headless exec accepting a working directory. | GSD creates the worktree and process-spawns the agent into it. GSD performs every git operation. |
+| `harness-worktree` | The host's own harness creates and binds a worktree per agent. | Pass the host's declared `harnessFlag` on the dispatch. Engineer runs no git. |
+| `orchestrator-worktree` | No harness primitive, but a headless exec accepting a working directory. | Engineer creates the worktree and process-spawns the agent into it. Engineer performs every git operation. |
 | `none` | No isolation primitive. | Run inline, sequentially. |
 
 Fail-closed is the invariant: an undeclared, unknown, or unresolvable declaration degrades to
@@ -92,7 +92,7 @@ reporting isolation is the one outcome worse than running sequentially:
 
 ```bash
 if [ "$ISOLATION" = "orchestrator-worktree" ]; then
-  echo "⚠ Runtime '$RUNTIME' declares dispatch.isolation=orchestrator-worktree, which requires GSD-driven process spawning. This dispatch site uses the host subagent tool, so it is running sequentially on the main working tree instead. Parallel wave execution (/execute-phase) is unaffected." >&2
+  echo "⚠ Runtime '$RUNTIME' declares dispatch.isolation=orchestrator-worktree, which requires Engineer-driven process spawning. This dispatch site uses the host subagent tool, so it is running sequentially on the main working tree instead. Parallel wave execution (/execute-phase) is unaffected." >&2
   ISOLATION=none
   USE_WORKTREES=false
   engineer_run query dispatch-isolation --raw --force-isolation none >/dev/null 2>&1 || true

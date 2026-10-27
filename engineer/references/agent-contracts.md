@@ -1,6 +1,6 @@
 # Agent Contracts
 
-Completion markers and handoff schemas for all GSD agents. Workflows use these markers to detect agent completion and route accordingly.
+Completion markers and handoff schemas for all Engineer agents. Workflows use these markers to detect agent completion and route accordingly.
 
 This doc describes what IS, not what should be. Casing inconsistencies are documented as they appear in agent source files.
 
@@ -12,13 +12,13 @@ This doc describes what IS, not what should be. Casing inconsistencies are docum
 |-------|------|--------------------|--------------|------|
 | gsd-ai-researcher | AI framework research | No marker (writes the AI-SPEC.md framework section via Edit) | `engineer/workflows/ai-integration-phase.md` reads the AI-SPEC.md section after the agent returns | artifact+query |
 | planner | Plan creation | `## PLANNING COMPLETE`, `## OUTLINE COMPLETE`, `## PHASE SPLIT RECOMMENDED`, `## ⚠ Source Audit`, `## CHECKPOINT REACHED`, `## PLANNING INCONCLUSIVE`, `## REVISION_CONFLICT` | `engineer/workflows/plan-phase.md`, `engineer/workflows/plan-phase/steps/chunked-planning-mode.md`, `engineer/workflows/plan-review-convergence.md`, `engineer/workflows/quick.md`, `engineer/workflows/quick/steps/plan-checker-loop.md`, `engineer/workflows/verify-work.md` | sentinel-match |
-| executor | Plan execution | `## PLAN COMPLETE`, `## CHECKPOINT REACHED` | `engineer/workflows/plan-phase.md`, `engineer/workflows/plan-phase/steps/chunked-planning-mode.md`, `agents/gsd-debug-session-manager.md`, `agents/debugger.md` | sentinel-match |
+| executor | Plan execution | `## PLAN COMPLETE`, `## CHECKPOINT REACHED` | `engineer/workflows/plan-phase.md`, `engineer/workflows/plan-phase/steps/chunked-planning-mode.md`, `agents/debug-session-manager.md`, `agents/debugger.md` | sentinel-match |
 | phase-researcher | Phase-scoped research | `## RESEARCH COMPLETE`, `## RESEARCH BLOCKED` | `engineer/workflows/plan-phase.md`, `engineer/workflows/quick/steps/research-phase.md`, `agents/gsd-project-researcher.md` | sentinel-match |
 | gsd-project-researcher | Project-wide research | `## RESEARCH COMPLETE`, `## RESEARCH BLOCKED` | `engineer/workflows/plan-phase.md`, `engineer/workflows/quick/steps/research-phase.md`, `agents/phase-researcher.md` | sentinel-match |
 | plan-checker | Plan validation | `## VERIFICATION PASSED`, `## ISSUES FOUND` | `engineer/workflows/plan-phase.md`, `engineer/workflows/plan-phase/steps/stall-detection-helpers.md`, `engineer/workflows/quick/steps/plan-checker-loop.md`, `engineer/workflows/import.md`, `engineer/workflows/ui-phase.md`, `engineer/workflows/verify-work.md`, `agents/ui-checker.md` | sentinel-match |
 | gsd-research-synthesizer | Multi-research synthesis | `## SYNTHESIS COMPLETE`, `## SYNTHESIS BLOCKED` (unconsumed: blocked-research return — spawners detect failure via the #222 SUMMARY.md-on-disk check, no dispatch branch keys on the marker) | `engineer/workflows/new-milestone.md`, `engineer/workflows/new-project.md` | sentinel-match |
-| debugger | Debug investigation | `## DEBUG COMPLETE`, `## ROOT CAUSE FOUND`, `## CHECKPOINT REACHED`, `## INVESTIGATION INCONCLUSIVE`, `## TDD CHECKPOINT`, `## FIX REJECTED BY GUARDRAIL` | `agents/gsd-debug-session-manager.md`, `engineer/workflows/diagnose-issues.md`, `engineer/workflows/plan-phase.md`, `agents/executor.md` | sentinel-match |
-| gsd-debug-session-manager | Debug checkpoint loop | `## DEBUG SESSION COMPLETE`, `## CONTINUE_REQUIRED` | `engineer/workflows/debug.md` | sentinel-match |
+| debugger | Debug investigation | `## DEBUG COMPLETE`, `## ROOT CAUSE FOUND`, `## CHECKPOINT REACHED`, `## INVESTIGATION INCONCLUSIVE`, `## TDD CHECKPOINT`, `## FIX REJECTED BY GUARDRAIL` | `agents/debug-session-manager.md`, `engineer/workflows/diagnose-issues.md`, `engineer/workflows/plan-phase.md`, `agents/executor.md` | sentinel-match |
+| debug-session-manager | Debug checkpoint loop | `## DEBUG SESSION COMPLETE`, `## CONTINUE_REQUIRED` | `engineer/workflows/debug.md` | sentinel-match |
 | gsd-roadmapper | Roadmap creation/revision | `## ROADMAP CREATED`, `## ROADMAP REVISED`, `## ROADMAP BLOCKED` | `engineer/workflows/new-milestone.md`, `engineer/workflows/new-project.md` | sentinel-match |
 | ui-auditor | UI review | `## UI REVIEW COMPLETE` | `engineer/workflows/ui-review.md` | sentinel-match |
 | dom-verifier | Live-DOM UAT verification | No marker (writes `{phase}-DOM-VERIFY.md` directly; the frontmatter `outcome` / `reason` scalars carry the verdict, and `could_not_look` is never conflated with `nothing_to_report`) | `{phase}-DOM-VERIFY.md` artifact, written by the `live-dom-uat` capability's `execute:wave:post` step dispatched from `engineer/workflows/execute-phase.md` | artifact+query |

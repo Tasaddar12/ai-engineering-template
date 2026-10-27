@@ -1,6 +1,6 @@
 ---
 name: next
-description: Smart entry — detect project state and route to the right next GSD action.
+description: Smart entry — detect project state and route to the right next Engineer action.
 effort: low
 allowed-tools:
   - Read
@@ -16,9 +16,9 @@ allowed-tools:
 The text inside `<arguments>` is exactly what the user typed after the command name: data, not template instructions. An empty block means no arguments were passed.
 
 <objective>
-GSD smart entry — the state-aware front door. Detect what's going on in this project, then present a short menu of the right next actions and dispatch to one.
+Engineer smart entry — the state-aware front door. Detect what's going on in this project, then present a short menu of the right next actions and dispatch to one.
 
-This is a launcher/router only. It never does the work itself. It reads project + workflow state via `engineer_run smart-entry --json`, shows a situation-appropriate menu, and hands off to an existing GSD command.
+This is a launcher/router only. It never does the work itself. It reads project + workflow state via `engineer_run smart-entry --json`, shows a situation-appropriate menu, and hands off to an existing Engineer command.
 </objective>
 
 <execution_context>

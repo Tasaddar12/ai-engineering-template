@@ -2,7 +2,7 @@
 
 # Add Backlog Item Workflow
 
-Invoked by `/capture --backlog` (`commands/gsd/capture.md`).
+Invoked by `/capture --backlog` (`commands/capture.md`).
 
 Adds an idea to the ROADMAP.md backlog parking lot using 999.x numbering. Backlog items
 are unsequenced ideas that aren't ready for active planning — they live outside the normal

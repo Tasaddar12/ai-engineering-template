@@ -1,6 +1,6 @@
 # Model Profiles
 
-Model profiles control which Claude model each GSD agent uses. This allows balancing quality vs token spend, or inheriting the currently selected session model.
+Model profiles control which Claude model each Engineer agent uses. This allows balancing quality vs token spend, or inheriting the currently selected session model.
 
 ## Profile Definitions
 
@@ -97,11 +97,11 @@ The three layers compose: `models` defaults a phase, `model_overrides` carves an
 **inherit** - Follow the current session model
 - All agents resolve to `inherit`
 - Best when you switch models interactively
-- Use when: you want GSD to follow your currently selected runtime model
+- Use when: you want Engineer to follow your currently selected runtime model
 
 ## Using Non-Claude Runtimes (Codex)
 
-When installed for a non-Claude runtime, the GSD installer sets `resolve_model_ids: "omit"` in `~/.gsd/defaults.json`. This returns an empty model parameter for all agents, so each agent uses the runtime's default model. No manual setup is needed.
+When installed for a non-Claude runtime, the Engineer installer sets `resolve_model_ids: "omit"` in `~/.gsd/defaults.json`. This returns an empty model parameter for all agents, so each agent uses the runtime's default model. No manual setup is needed.
 
 To assign different models to different agents, add `model_overrides` with model IDs your runtime recognizes:
 
@@ -121,13 +121,13 @@ The same tiering logic applies: stronger models for planning and debugging, chea
 
 ## Advisor Tool (Claude Code)
 
-Claude Code (v2.1.98+) can pair the session's executor model with a stronger **advisor** model that it consults mid-generation for strategy and course-correction (Anthropic's [advisor tool](https://platform.claude.com/docs/en/agents-and-tools/tool-use/advisor-tool)). This is a host-runtime feature, not a GSD setting — GSD selects each agent's *executor* model through the profile/tier system above; Claude Code supplies the advisor.
+Claude Code (v2.1.98+) can pair the session's executor model with a stronger **advisor** model that it consults mid-generation for strategy and course-correction (Anthropic's [advisor tool](https://platform.claude.com/docs/en/agents-and-tools/tool-use/advisor-tool)). This is a host-runtime feature, not an Engineer setting — Engineer selects each agent's *executor* model through the profile/tier system above; Claude Code supplies the advisor.
 
-Set it once at the session level with `/advisor <model>` (or the `advisorModel` setting / `--advisor` flag). **Subagents inherit the session advisor automatically**, so every GSD subagent an orchestrator spawns gets the same advisor with no per-agent configuration. It composes cleanly with GSD's tiering: the profile keeps executors cheap where the work is mechanical, and the advisor adds a stronger reviewer inline on the turns that benefit.
+Set it once at the session level with `/advisor <model>` (or the `advisorModel` setting / `--advisor` flag). **Subagents inherit the session advisor automatically**, so every Engineer subagent an orchestrator spawns gets the same advisor with no per-agent configuration. It composes cleanly with Engineer's tiering: the profile keeps executors cheap where the work is mechanical, and the advisor adds a stronger reviewer inline on the turns that benefit.
 
 ### Candidate pairings
 
-Per Anthropic's advisor-tool docs the advisor must be at least as capable as the executor. Candidate pairings by profile — evaluate on your own workload; the quality/cost characterizations below are Anthropic-reported, not GSD guarantees:
+Per Anthropic's advisor-tool docs the advisor must be at least as capable as the executor. Candidate pairings by profile — evaluate on your own workload; the quality/cost characterizations below are Anthropic-reported, not Engineer guarantees:
 
 | Profile | Typical executors | Candidate advisor | Rationale (per Anthropic docs) |
 |---|---|---|---|
@@ -144,7 +144,7 @@ Fable 5 is a valid advisor for Haiku 4.5, Sonnet 4.6/5, and Opus 4.8 executors, 
 
 ### Constraint: session-level only (today)
 
-The advisor is a single session-wide setting inherited by all subagents; there is **no per-agent advisor selection**, so GSD cannot vary the advisor by role the way it varies the executor model (e.g. "no advisor on the Haiku mapper, a Fable 5 advisor on the Sonnet executor"). Per-agent advisor control is tracked upstream at [anthropics/claude-code#73072](https://github.com/anthropics/claude-code/issues/73072); until it lands, pick one session advisor that fits the most valuable agents in your run.
+The advisor is a single session-wide setting inherited by all subagents; there is **no per-agent advisor selection**, so Engineer cannot vary the advisor by role the way it varies the executor model (e.g. "no advisor on the Haiku mapper, a Fable 5 advisor on the Sonnet executor"). Per-agent advisor control is tracked upstream at [anthropics/claude-code#73072](https://github.com/anthropics/claude-code/issues/73072); until it lands, pick one session advisor that fits the most valuable agents in your run.
 
 ## Dynamic Routing with Failure-Tier Escalation (#3024)
 
@@ -235,7 +235,7 @@ Override specific agents without changing the entire profile:
 }
 ```
 
-Overrides take precedence over the profile. Valid values: `opus`, `sonnet`, `haiku`, `fable`, `inherit`, or any fully-qualified model ID (e.g., `"o3"`, `"openai/o3"`). `fable` is a Claude Code Agent-tool alias, not a GSD profile tier — it has no column in the profile table above.
+Overrides take precedence over the profile. Valid values: `opus`, `sonnet`, `haiku`, `fable`, `inherit`, or any fully-qualified model ID (e.g., `"o3"`, `"openai/o3"`). `fable` is a Claude Code Agent-tool alias, not an Engineer profile tier — it has no column in the profile table above.
 
 On the Claude runtime, fully-qualified Claude model IDs are honored as explicit generation pins (#4192): an ID that names the current tier default (e.g. `"claude-sonnet-5"`) resolves to its tier alias — the same model in the form the Agent tool always accepts — while any other ID (e.g. `"claude-opus-4-7"`) resolves verbatim, with a warn-once stderr note that setups accepting only tier aliases will not honor a full ID. To pin a generation for a whole tier rather than one agent, set `model_profile_overrides.claude.<tier>` (see docs/CONFIGURATION.md — Runtime-Aware Profiles).
 
@@ -265,7 +265,7 @@ Verification requires goal-backward reasoning - checking if code *delivers* what
 Read-only exploration and pattern extraction. No reasoning required, just structured output from file contents.
 
 **Why `inherit` instead of passing `opus` directly?**
-Claude Code's `"opus"` alias maps to a specific model version. Organizations may block older opus versions while allowing newer ones. GSD returns `"inherit"` for opus-tier agents, causing them to use whatever opus version the user has configured in their session. This avoids version conflicts and silent fallbacks to Sonnet.
+Claude Code's `"opus"` alias maps to a specific model version. Organizations may block older opus versions while allowing newer ones. Engineer returns `"inherit"` for opus-tier agents, causing them to use whatever opus version the user has configured in their session. This avoids version conflicts and silent fallbacks to Sonnet.
 
 **Why `inherit` profile?**
-Some runtimes let users switch models at runtime (`/model`). The `inherit` profile keeps all GSD subagents aligned to that live selection.
+Some runtimes let users switch models at runtime (`/model`). The `inherit` profile keeps all Engineer subagents aligned to that live selection.

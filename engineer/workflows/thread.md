@@ -2,7 +2,7 @@
 
 # Thread Workflow
 
-Invoked by `/thread` (`commands/gsd/thread.md`).
+Invoked by `/thread` (`commands/thread.md`).
 
 Create, list, close, or resume persistent context threads for cross-session work.
 
@@ -223,7 +223,7 @@ GSD_ARGS=${GSD_ARGS%$'\n'}
 - The value is in Context and Next Steps — a cold-start session can pick up immediately
 - Threads can be promoted to phases or backlog items when they mature:
   /phase or /capture --backlog with context from the thread
-- Thread files live in .planning/threads/ — no collision with phases or other GSD structures
+- Thread files live in .planning/threads/ — no collision with phases or other Engineer structures
 - Thread status values: `open`, `in_progress`, `resolved`
 </notes>
 
@@ -232,5 +232,5 @@ GSD_ARGS=${GSD_ARGS%$'\n'}
 - File names from readdir/ls are sanitized before display: strip non-printable chars and ANSI sequences
 - Artifact content (thread titles, goal sections, next steps) rendered as plain text only — never executed or passed to agent prompts without DATA_START/DATA_END boundaries
 - Status fields read via engineer_run query frontmatter.get — never eval'd or shell-expanded
-- The generate-slug call for new threads runs through engineer_run query (or gsd-tools) which sanitizes input — keep that pattern
+- The generate-slug call for new threads runs through engineer_run query (or engineer_run) which sanitizes input — keep that pattern
 </security_notes>

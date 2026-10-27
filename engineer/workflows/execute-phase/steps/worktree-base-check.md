@@ -4,10 +4,10 @@ Apply response_language to all user-facing prose — narration between tool call
 `USE_WORKTREES` and `ISOLATION` are also reset for the run when `worktree base-check` detects the
 orchestrator HEAD has diverged from the worktree fork base (#683 — e.g. an unmerged milestone
 branch). This runs for **any** isolated run, not only Claude: fork-base divergence is a property
-of the repository, so it degrades a GSD-created worktree exactly as a harness-created one. The
+of the repository, so it degrades an Engineer-created worktree exactly as a harness-created one. The
 auto-degrade prints a one-line warning to stderr and falls through to the sequential path so
 executors do not hit the exit-42 worktree-branch-check halt. Setting `worktree.baseRef:"head"`
-restores parallel execution on both isolation models: GSD-created worktrees (Codex)
+restores parallel execution on both isolation models: Engineer-created worktrees (Codex)
 fork from the orchestrator HEAD by construction, and harness-created ones do so
 where the harness honors the setting — measured on Claude Code from all three settings layers
 (#4588; #48's earlier finding that it did not predates upstream claude-code#54940).

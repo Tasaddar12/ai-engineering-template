@@ -154,7 +154,7 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.
    <constraints>
    - Execute all tasks in the plan; commit each task atomically
    - Create summary at: ${ITEM_DIR}/${quick_id}-SUMMARY.md with `status: complete` in frontmatter
-   - NEVER invoke /quick or any other GSD command — you are a leaf, not a coordinator
+   - NEVER invoke /quick or any other Engineer command — you are a leaf, not a coordinator
    - NEVER write .planning/quick-batches/${BATCH_ID}/BATCH.json
    - Do NOT update STATE.md or ROADMAP.md — the orchestrator owns those writes after every item in this dispatch round completes (ADR-1239 single-writer invariant)
    - Do NOT commit docs artifacts (SUMMARY.md, STATE.md, PLAN.md) — the orchestrator commits them at completion
@@ -171,7 +171,7 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.
    file, initialized `{"worktrees":[]}` before the first round — same shape
    `/quick`'s own `QUICK_WORKTREE_MANIFEST` uses).
 
-   **`isolation == "orchestrator-worktree"`:** GSD creates the worktree
+   **`isolation == "orchestrator-worktree"`:** Engineer creates the worktree
    (`engineer_run query worktree.create --manifest "$QUICK_BATCH_WORKTREE_MANIFEST" --agent-id ... --path ... --branch ... --base ... --files "$PLAN_FILES" --deletions "$PLAN_DELETIONS"`) then
    process-spawns the executor via `dispatch-isolation --json --cwd-target
    --prompt`, exactly as `engineer/workflows/execute-phase/steps/executor-isolation-dispatch.md`'s

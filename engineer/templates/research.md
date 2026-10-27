@@ -568,7 +568,7 @@ function useVehicleControls(rigidBodyRef) {
 - When "how do experts do this" matters more than "which library"
 
 **Structure:**
-- Use XML tags for section markers (matches GSD templates)
+- Use XML tags for section markers (matches Engineer templates)
 - Seven core sections: summary, standard_stack, architecture_patterns, dont_hand_roll, common_pitfalls, code_examples, sources
 - All sections required (drives comprehensive research)
 

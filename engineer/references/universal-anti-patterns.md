@@ -21,7 +21,7 @@ Rules that apply to ALL workflows and agents. Individual workflows may have addi
 
 ## Subagent Rules
 
-10. **NEVER** use non-GSD agent types (`general-purpose`, `Explore`, `Plan`, `Bash`, `feature-dev`, etc.) -- ALWAYS use `subagent_type: "gsd-{agent}"` (e.g., `phase-researcher`, `executor`, `planner`). GSD agents have project-aware prompts, audit logging, and workflow context. Generic agents bypass all of this.
+10. **NEVER** use non-Engineer agent types (`general-purpose`, `Explore`, `Plan`, `Bash`, `feature-dev`, etc.) -- ALWAYS use `subagent_type: "gsd-{agent}"` (e.g., `phase-researcher`, `executor`, `planner`). Engineer agents have project-aware prompts, audit logging, and workflow context. Generic agents bypass all of this.
 11. **Do not** re-litigate decisions that are already locked in CONTEXT.md (or PROJECT.md ## Context section) -- respect locked decisions unconditionally.
 
 ## Questioning Anti-Patterns
@@ -50,9 +50,9 @@ Reference: `engineer/references/questioning.md` for the full anti-pattern list.
 22. **Config fallback awareness**: Config loading returns `null` silently on invalid JSON. If your workflow depends on config values, check for null and warn the user: "config.json is invalid or missing -- running with defaults."
 23. **Partial state recovery**: If STATE.md references a phase directory that doesn't exist, do not proceed silently. Warn the user and suggest diagnosing the mismatch.
 
-## GSD-Specific Rules
+## Engineer-Specific Rules
 
-24. **Do not** check for `mode === 'auto'` or `mode === 'autonomous'` -- GSD uses `yolo` config flag. Check `yolo: true` for autonomous mode, absence or `false` for interactive mode.
+24. **Do not** check for `mode === 'auto'` or `mode === 'autonomous'` -- Engineer uses `yolo` config flag. Check `yolo: true` for autonomous mode, absence or `false` for interactive mode.
 25. **Prefer `engineer_run query`** for orchestration when a handler exists; when shelling out to the legacy CLI, go through the same `engineer_run` launcher rather than naming the shim file. The shim is not on PATH under any name ending in `.cjs`, and an agent that meets the bare filename falls back to searching the filesystem for it — on Git Bash for Windows that is a full-drive `find.exe` traversal (#3809). `engineer_run` resolves the CommonJS shim itself across every runtime home.
 26. **Plan files MUST follow `{padded_phase}-{NN}-PLAN.md` pattern** (e.g., `01-01-PLAN.md`). Never use `PLAN-01.md`, `plan-01.md`, or any other variation -- engineer_run detection depends on this exact pattern.
 27. **Do not start executing the next plan before writing the SUMMARY.md for the current plan** -- downstream plans may reference it via `@` includes.

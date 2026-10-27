@@ -1,5 +1,5 @@
 <overview>
-Git integration for GSD framework.
+Git integration for Engineer framework.
 </overview>
 
 <core_principle>
@@ -29,7 +29,7 @@ The git log should read like a changelog of what shipped, not a diary of plannin
 [ -d .git ] && echo "GIT_EXISTS" || echo "NO_GIT"
 ```
 
-If NO_GIT: Run `git init` silently. GSD projects always get their own repo.
+If NO_GIT: Run `git init` silently. Engineer projects always get their own repo.
 </git_check>
 
 <commit_formats>
@@ -258,7 +258,7 @@ Each plan produces 2-4 commits (tasks + metadata). Clear, granular, bisectable.
 
 ## Multi-Repo Workspace Support (sub_repos)
 
-For workspaces with separate git repos (e.g., `backend/`, `frontend/`, `shared/`), GSD routes commits to each repo independently.
+For workspaces with separate git repos (e.g., `backend/`, `frontend/`, `shared/`), Engineer routes commits to each repo independently.
 
 ### Configuration
 
@@ -297,7 +297,7 @@ Files that don't match any configured sub-repo are reported as unmatched.
 
 ### Milestone Tagging Across Sub-Repos
 
-A GSD milestone version names planned work in `.planning/`; it is not any repository's release version. With `git.repo_tagging: "per_repo"` and a non-empty `sub_repos`, `/complete-milestone` records one release map entry per repository (status, release, reference, environment, tag choice) instead of creating one `v[X.Y]` tag in the current directory:
+A Engineer milestone version names planned work in `.planning/`; it is not any repository's release version. With `git.repo_tagging: "per_repo"` and a non-empty `sub_repos`, `/complete-milestone` records one release map entry per repository (status, release, reference, environment, tag choice) instead of creating one `v[X.Y]` tag in the current directory:
 
 1. `engineer_run query milestone release-tags --map <tags.json> --dry-run` checks every requested tag (repository listed in `sub_repos`, ref resolves, tag name valid, no tag at a different commit) before anything is written.
 2. After one consolidated confirmation, `engineer_run query milestone release-tags --map <tags.json>` creates the annotated tags, each with the target repository as its working directory. Re-running the same map is idempotent (`already_tagged`).

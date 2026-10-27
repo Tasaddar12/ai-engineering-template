@@ -76,7 +76,7 @@ if [ -z "$BUILD_CMD" ]; then
       # #4784 review F2: the command string is re-parsed by `bash -c`, so an
       # apostrophe in a repo/scheme name would terminate the quote (unbalanced-
       # quote failure; a crafted path shape reaches command injection). Escape
-      # for the single-quoted span at the only boundary GSD owns.
+      # for the single-quoted span at the only boundary Engineer owns.
       XCODEPROJ=$(printf '%s' "$XCODEPROJ" | sed "s/'/'\\\\''/g")
       XCODE_SCHEME=$(printf '%s' "$XCODE_SCHEME" | sed "s/'/'\\\\''/g")
     fi

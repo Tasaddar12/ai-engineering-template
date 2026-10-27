@@ -11,7 +11,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 </required_reading>
 
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
 - gsd-project-researcher — Researches project-level technical decisions
 - gsd-research-synthesizer — Synthesizes findings from parallel research agents
 - gsd-roadmapper — Creates phased execution roadmaps
@@ -184,7 +184,7 @@ AskUserQuestion(
 Before writing any files, present a summary of what was gathered and ask for confirmation.
 
 ```
-### GSD ► MILESTONE SUMMARY
+### Engineer ► MILESTONE SUMMARY
 
 **Milestone v[X.Y]: [Name]**
 
@@ -362,7 +362,7 @@ Extract from init JSON: `researcher_model`, `synthesizer_model`, `roadmapper_mod
 
 **If `agents_installed` is false:** Display a warning before proceeding:
 ```
-⚠ GSD agents not installed. The following agents are missing from your agents directory:
+⚠ Engineer agents not installed. The following agents are missing from your agents directory:
   {missing_agents joined with newline}
 
 Subagent spawns (gsd-project-researcher, gsd-research-synthesizer, gsd-roadmapper) will fail
@@ -399,7 +399,7 @@ AskUserQuestion: "Research the domain ecosystem for new features before defining
 **If user chose "Research first":**
 
 ```
-### GSD ► RESEARCHING
+### Engineer ► RESEARCHING
 
 ◆ Spawning 4 researchers in parallel... (each runs in a subagent — no output until they return, ~1–5 min; expected, not a freeze)
   → Stack, Features, Architecture, Pitfalls
@@ -490,7 +490,7 @@ This guarantees `gsd-roadmapper` (which lists SUMMARY.md as required reading) ne
 
 Display key findings from SUMMARY.md:
 ```
-### GSD ► RESEARCH COMPLETE ✓
+### Engineer ► RESEARCH COMPLETE ✓
 
 **Stack additions:** [from SUMMARY.md]
 **Feature table stakes:** [from SUMMARY.md]
@@ -502,7 +502,7 @@ Display key findings from SUMMARY.md:
 ## 9. Define Requirements
 
 ```
-### GSD ► DEFINING REQUIREMENTS
+### Engineer ► DEFINING REQUIREMENTS
 ```
 
 Read PROJECT.md: core value, current milestone goals, validated requirements (what exists).
@@ -578,7 +578,7 @@ engineer_run query commit "docs: define milestone v[X.Y] requirements" --files "
 ## 10. Create Roadmap
 
 ```
-### GSD ► CREATING ROADMAP
+### Engineer ► CREATING ROADMAP
 
 ◆ Spawning roadmapper... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
@@ -722,7 +722,7 @@ Print a summary:
 ## 11. Done
 
 ```
-### GSD ► MILESTONE INITIALIZED ✓
+### Engineer ► MILESTONE INITIALIZED ✓
 
 **Milestone v[X.Y]: [Name]**
 

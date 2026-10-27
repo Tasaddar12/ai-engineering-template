@@ -222,13 +222,13 @@ both the reference implementation and any third-party port emit.
 
 | Host structure | "requirement" | a `resolved`/`test` prohibition becomes | a `resolved`/`judgment` prohibition becomes |
 |----------------|---------------|------------------------------------------|----------------------------------------------|
-| GSD SPEC | a SPEC Requirement | a SPEC acceptance criterion (marked prohibition) that `plan-phase` lifts into `must_haves.prohibitions` | a `must_haves.prohibitions` item routed to judgment review |
+| Engineer SPEC | a SPEC Requirement | a SPEC acceptance criterion (marked prohibition) that `plan-phase` lifts into `must_haves.prohibitions` | a `must_haves.prohibitions` item routed to judgment review |
 | Gherkin feature | a Scenario | a negative `Then` assertion / tagged negative scenario | a tagged scenario routed to manual review |
 | OpenAPI operation | an operation | a contract test asserting the forbidden behavior never occurs | a documented constraint flagged for review |
 | Docstring contract | a documented behavior | a negative assertion in the contract test | a documented must-NOT for reviewers |
 
 The portable invariant: a `resolved`/`test` prohibition produces **a checkable negative the
-verifier iterates over** (GSD: a `must_haves.prohibitions` item with a test); a
+verifier iterates over** (Engineer: a `must_haves.prohibitions` item with a test); a
 `resolved`/`judgment` prohibition produces a recorded intent routed to judgment review. An
 `unresolved` prohibition is an explicit assumption the downstream planner must surface, not
 silently drop.

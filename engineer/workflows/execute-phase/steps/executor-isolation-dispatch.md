@@ -91,7 +91,7 @@ if [ "$ISOLATION" = "none" ] && [ "$USE_WORKTREES" != "false" ]; then
   if [ "$ISOLATION_RESOLVED" = "true" ]; then
     echo "FATAL: runtime '$RUNTIME' declares no executor-isolation primitive (dispatch.isolation=none) — executors would run unisolated against the main checkout. Set workflow.use_worktrees=false." >&2
   else
-    echo "FATAL: could not resolve this runtime's executor-isolation capability — 'engineer_run query dispatch-isolation' failed or returned nothing, so GSD cannot tell whether isolation is available. Refusing to dispatch rather than guess (a guard that cannot verify must not answer 'safe'). Re-run once the engineer_run shim resolves, or set workflow.use_worktrees=false to run sequentially on purpose." >&2
+    echo "FATAL: could not resolve this runtime's executor-isolation capability — 'engineer_run query dispatch-isolation' failed or returned nothing, so Engineer cannot tell whether isolation is available. Refusing to dispatch rather than guess (a guard that cannot verify must not answer 'safe'). Re-run once the engineer_run shim resolves, or set workflow.use_worktrees=false to run sequentially on purpose." >&2
   fi
   exit 1
 fi
@@ -135,8 +135,8 @@ invocation detail is descriptor data, surfaced by `dispatch-isolation --json` as
 
 | `ISOLATION` | Fan-out | What the scheduler does |
 |---|---|---|
-| `harness-worktree` | host-driven | Pass the host's own declared isolation flag (`harnessFlag`) on each executor dispatch and let the harness create + bind the worktree. GSD runs no git. |
-| `orchestrator-worktree` | GSD-driven | GSD creates the worktree (`worktree create`), then process-spawns the executor bound to it via the resolved `exec` argv/cwd. GSD performs all git operations. |
+| `harness-worktree` | host-driven | Pass the host's own declared isolation flag (`harnessFlag`) on each executor dispatch and let the harness create + bind the worktree. Engineer runs no git. |
+| `orchestrator-worktree` | Engineer-driven | Engineer creates the worktree (`worktree create`), then process-spawns the executor bound to it via the resolved `exec` argv/cwd. Engineer performs all git operations. |
 | `none` | none | Plans run inline, sequentially (unchanged). |
 
 Fail-closed is the invariant: an undeclared, unknown, or unresolvable isolation declaration
@@ -163,9 +163,9 @@ HARNESS_FLAG=$(engineer_run query dispatch-isolation --json --phase "${PHASE_NUM
 Substitute `$HARNESS_FLAG`'s value for the `{harnessFlag}` placeholder in the `Agent()` dispatch
 in `execute-phase.md` step 3 (on Claude Code it is literally `isolation="worktree"`).
 
-## orchestrator-worktree — GSD creates the worktree and spawns the executor
+## orchestrator-worktree — Engineer creates the worktree and spawns the executor
 
-The host has no harness-native isolation primitive, so **GSD** creates each worktree and process-spawns the executor into it. Fan-out is OS-level (N processes), not the host's subagent tool. Per the Codex `workspace-write` sandbox constraint, **the orchestrator performs every git operation** — create, merge, cleanup; the spawned executor only edits files and commits inside its own worktree.
+The host has no harness-native isolation primitive, so **Engineer** creates each worktree and process-spawns the executor into it. Fan-out is OS-level (N processes), not the host's subagent tool. Per the Codex `workspace-write` sandbox constraint, **the orchestrator performs every git operation** — create, merge, cleanup; the spawned executor only edits files and commits inside its own worktree.
 
 **Resume-first guard (#4624).** The launching turn may end while external workers are still live — that is expected here, not an error. So before dispatching ANY plan in this section, sweep for workers a previous session left behind:
 
@@ -236,7 +236,7 @@ Do NOT update STATE.md or ROADMAP.md — the orchestrator owns those writes afte
 </objective>
 
 <execution_context>
-You are the executor agent running in a git worktree GSD created for you.
+You are the executor agent running in a git worktree Engineer created for you.
 Your working directory IS that worktree. Do not cd elsewhere, and do not run
 any git command that targets the main checkout. Use normal git commits WITH
 hooks. Do NOT use --no-verify.
@@ -379,7 +379,7 @@ fi
 
 `--deletions` carries the plan's declared `files_deleted` (`PLAN_DELETIONS`, extracted alongside `PLAN_FILES`) so this backend also routes through the deletions guard's opt-in (#3003). Unlike `--files` this one is **not** advisory: omitting it leaves the guard blocking on any deletion at all, which would make a plan that declares a removal merge on the harness path and fail here. Every dispatch surface that records a worktree must pass it.
 
-`worktree create` records the entry in `$WAVE_WORKTREE_MANIFEST` itself, so **do not** call `worktree.record-agent` for these plans — that verb is the harness-path counterpart, used because the harness creates the worktree behind GSD's back. Double-recording is deduped by path+branch, but the create verb is the single writer here.
+`worktree create` records the entry in `$WAVE_WORKTREE_MANIFEST` itself, so **do not** call `worktree.record-agent` for these plans — that verb is the harness-path counterpart, used because the harness creates the worktree behind Engineer's back. Double-recording is deduped by path+branch, but the create verb is the single writer here.
 
 Spawn `EXEC_JSON`'s `command` + `args` as a background process with its working directory set to `EXEC_JSON.cwd`, capturing the PID (`WORKER_PID=$!`) and redirecting stdout+stderr into a per-worker log placed BESIDE the worktree — `${WT_PATH}.worker.log`, not inside it: cleanup removes the worktree, and the log plus the lifecycle record must survive it. The `cwd` is returned for **every** host, including those whose descriptor has no cwd flag (`cwdFlag: null`) and therefore bind through the process's own working directory — always set it, never assume the flag did the job. Launch from a shell that has `cd`'d into it (`cd "$cwd" && command args &`).
 
@@ -407,7 +407,7 @@ engineer_run query worktree.worker-complete --path "$WT_PATH" --exit-code "$WORK
 
 `{worker_note}` carries the blocker description and the log path for a preserved worktree (`$WT_PATH.worker.log`), or is empty for a clean finish.
 
-The executor never touches `STATE.md`/`ROADMAP.md`, and that guard needs no new code — `execute-plan` auto-detects worktree mode via the `IS_WORKTREE` (`.git`-is-a-file) primitive, which a GSD-created worktree trips identically to a harness-created one.
+The executor never touches `STATE.md`/`ROADMAP.md`, and that guard needs no new code — `execute-plan` auto-detects worktree mode via the `IS_WORKTREE` (`.git`-is-a-file) primitive, which an Engineer-created worktree trips identically to a harness-created one.
 
 Merge-back, validation, and cleanup are the **existing** gauntlet, unchanged: the serialized `worktree.cleanup-wave` merge loop that stops the wave and retains the worktree on conflict, and manifest-only cleanup (never glob-inferred). Because the manifest shape is identical, the orchestrator path reuses it verbatim.
 

@@ -25,7 +25,7 @@ Flag handling rule:
 - The optional flags documented below are available behaviors, not implied active behaviors
 - A flag is active only when its literal token appears in the `<arguments>` block
 - If a documented flag is absent from the `<arguments>` block, treat it as inactive
-- `--force`: skip preservation prompts, regenerate all docs regardless of existing content or GSD markers
+- `--force`: skip preservation prompts, regenerate all docs regardless of existing content or Engineer markers
 - `--verify-only`: check existing docs for accuracy against codebase, no generation (full verification requires Phase 4 verifier)
 - If `--force` and `--verify-only` both appear in the `<arguments>` block, `--force` takes precedence
 </objective>
@@ -38,7 +38,7 @@ Flag handling rule:
 Arguments: see the `<arguments>` block above.
 
 **Available optional flags (documentation only — not automatically active):**
-- `--force` — Regenerate all docs. Overwrites hand-written and GSD docs alike. No preservation prompts.
+- `--force` — Regenerate all docs. Overwrites hand-written and Engineer docs alike. No preservation prompts.
 - `--verify-only` — Check existing docs for accuracy against the codebase. No files are written. Reports VERIFY marker count. Full codebase fact-checking requires the doc-verifier agent (Phase 4).
 
 **Active flags must be derived from the `<arguments>` block:**

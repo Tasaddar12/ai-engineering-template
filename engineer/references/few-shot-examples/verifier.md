@@ -68,7 +68,7 @@ calibration_source: "Adapted from thinking-partner verification corpus"
 **Output:**
 
 > **Method:** Ran `grep -rn "\/\[a-zA-Z\]\/" engineer/bin/` to find inline MSYS regex.
-> **Evidence:** 2 matches in `commands/gsd/misc.md` (lines 26, 487). These were NOT in the original plan scope -- Phase 148 extracted code into misc.md AFTER Phase 149's plan was written.
+> **Evidence:** 2 matches in `commands/misc.md` (lines 26, 487). These were NOT in the original plan scope -- Phase 148 extracted code into misc.md AFTER Phase 149's plan was written.
 > **Assessment:** The executor correctly completed all planned tasks. The gap is a **planning ordering issue**, not an execution failure.
 > **Status: PASS_WITH_NOTES** -- Executor did what was planned. Unconsolidated regex noted as follow-up, not as a failure of this phase.
 

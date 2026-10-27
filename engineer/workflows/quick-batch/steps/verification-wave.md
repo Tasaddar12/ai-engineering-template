@@ -7,7 +7,7 @@ recorded by the merge) that has not yet been verified:
 
 Display banner:
 ```
-### GSD ► VERIFYING ${quick_id}
+### Engineer ► VERIFYING ${quick_id}
 ◆ Spawning verifier... (runs in a subagent — no output until it returns, ~1–5 min)
 ```
 

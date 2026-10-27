@@ -1,6 +1,6 @@
 ---
 name: quick
-description: Execute a quick task with GSD guarantees (atomic commits, state tracking) but skip optional agents
+description: Execute a quick task with Engineer guarantees (atomic commits, state tracking) but skip optional agents
 argument-hint: "[list | status <slug> | resume <slug> | --full] [--validate] [--discuss] [--research] [task description]"
 allowed-tools:
   - Read
@@ -21,7 +21,7 @@ The text inside `<arguments>` is exactly what the user typed after the command n
 <objective>
 Clarifying questions establish the task scope by default, with research as needed to support the plan. No --discuss or --research flag is required.
 
-Execute small, ad-hoc tasks with GSD guarantees (atomic commits, STATE.md tracking).
+Execute small, ad-hoc tasks with Engineer guarantees (atomic commits, STATE.md tracking).
 
 Quick mode is the same system with a shorter path:
 - Spawns planner (quick mode) + executor(s)

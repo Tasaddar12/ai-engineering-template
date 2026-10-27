@@ -13,7 +13,7 @@ silently mark the wrong threat.
 Report the full `threat_id_duplicates` list verbatim — each ID with its claiming plan files:
 
 ```
-### GSD ► THREAT ID DUPLICATES — EXECUTION BLOCKED (#4683)
+### Engineer ► THREAT ID DUPLICATES — EXECUTION BLOCKED (#4683)
 
 {for each {id, plans}: "{id} — claimed by {plans.join(', ')}"}
 

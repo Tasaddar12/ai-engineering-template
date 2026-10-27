@@ -40,7 +40,7 @@ Read STATE.md before any operation to load project context.
 </required_reading>
 
 <available_agent_types>
-These are the valid GSD subagent types registered in .claude/agents/ (or equivalent for your runtime).
+These are the valid Engineer subagent types registered in .claude/agents/ (or equivalent for your runtime).
 Always use the exact name from this list — do not fall back to 'general-purpose' or other built-in types:
 
 - executor — Executes plan tasks, commits, creates SUMMARY.md
@@ -765,7 +765,7 @@ WAVE_PRE_HOOKS_JSON=$(engineer_run loop render-hooks execute:wave:pre --raw)
 
    > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above to spawn executor agent(s), stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available. While waiting, run the step-4 completion surveillance; if the child's session ends abnormally — including `turn_aborted` — reconcile artifacts per `execute-phase/steps/completion-reconciliation.md` before classifying the plan (#4217).
 
-   **Orchestrator-managed worktree dispatch** (`ISOLATION=orchestrator-worktree`): read and execute `execute-phase/steps/executor-isolation-dispatch.md`. GSD creates each worktree (`worktree create`) and spawns the executor into it; the orchestrator performs every git operation. Merge-back and cleanup are the existing manifest-scoped gauntlet, unchanged.
+   **Orchestrator-managed worktree dispatch** (`ISOLATION=orchestrator-worktree`): read and execute `execute-phase/steps/executor-isolation-dispatch.md`. Engineer creates each worktree (`worktree create`) and spawns the executor into it; the orchestrator performs every git operation. Merge-back and cleanup are the existing manifest-scoped gauntlet, unchanged.
 
    **Sequential mode** (`USE_WORKTREES_FOR_PLAN` is `false` — either project-level `USE_WORKTREES=false`, or per-plan submodule intersection forced it false in step 2.5):
 
@@ -1430,7 +1430,7 @@ For 1M+ context models, consider:
 <failure_handling>
 
 - **Quota / rate-limit (any runtime — #3095):** Agent return body contains a sentinel like `usage limit`, `rate limit`, `429`, `too many requests`, `RESOURCE_EXHAUSTED`, `usage_limit_reached`. Route via `engineer_run query agent.classify-failure` → `class: "quota-exceeded"`. Do not offer retry-now; the right action is wait-for-reset and resume.
-- **classifyHandoffIfNeeded false failure:** Agent reports "failed" but error is `classifyHandoffIfNeeded is not defined` → Claude Code bug, not GSD. Spot-check (SUMMARY exists, commits present) → if pass, treat as success
+- **classifyHandoffIfNeeded false failure:** Agent reports "failed" but error is `classifyHandoffIfNeeded is not defined` → Claude Code bug, not Engineer. Spot-check (SUMMARY exists, commits present) → if pass, treat as success
 - **Agent fails mid-plan:** Missing SUMMARY.md → report, ask user how to proceed
 - **Dependency chain breaks:** Wave 1 fails → Wave 2 dependents likely fail → user chooses attempt or skip
 - **All agents in wave fail:** Systemic issue → stop, report for investigation

@@ -1,5 +1,5 @@
 <purpose>
-Retroactive 6-pillar visual audit of implemented frontend code. Standalone command that works on any project — GSD-managed or not. Produces scored UI-REVIEW.md with actionable findings.
+Retroactive 6-pillar visual audit of implemented frontend code. Standalone command that works on any project — Engineer-managed or not. Produces scored UI-REVIEW.md with actionable findings.
 </purpose>
 
 <required_reading>
@@ -7,7 +7,7 @@ Retroactive 6-pillar visual audit of implemented frontend code. Standalone comma
 </required_reading>
 
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
 - ui-auditor — Audits UI against design requirements
 </available_agent_types>
 
@@ -84,7 +84,7 @@ UI_AUDITOR_MODEL=$(engineer_run query resolve-model ui-auditor --raw)
 
 Display banner:
 ```
-### GSD ► UI AUDIT — PHASE {N}: {name}
+### Engineer ► UI AUDIT — PHASE {N}: {name}
 ```
 
 ## 1. Detect Input State
@@ -181,7 +181,7 @@ Agent(
 Display score summary:
 
 ```
-### GSD ► UI AUDIT COMPLETE ✓
+### Engineer ► UI AUDIT COMPLETE ✓
 
 **Phase {N}: {Name}** — Overall: {score}/24
 

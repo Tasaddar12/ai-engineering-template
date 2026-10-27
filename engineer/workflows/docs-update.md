@@ -3,7 +3,7 @@ Generate, update, and verify all project documentation — both canonical doc ty
 </purpose>
 
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
 - doc-writer — Writes and updates project documentation files
 - doc-verifier — Verifies factual claims in docs against the live codebase
 </available_agent_types>
@@ -362,12 +362,12 @@ Check for hand-written docs in the queue and gather user decisions before dispat
 Present the following choice using `AskUserQuestion` if available, or inline prompt otherwise:
 
 ```
-{filename} appears to be hand-written (no GSD marker found).
+{filename} appears to be hand-written (no Engineer marker found).
 
 How should this file be handled?
   [1] preserve    -- Skip entirely. Leave unchanged.
   [2] supplement  -- Append only missing sections. Existing content untouched.
-  [3] regenerate  -- Overwrite with a fresh GSD-generated doc.
+  [3] regenerate  -- Overwrite with a fresh Engineer-generated doc.
 ```
 
 Record each decision. Update the doc queue:
@@ -1002,10 +1002,10 @@ End workflow.
 - [ ] CHANGELOG.md was NOT generated or queued
 - [ ] Each doc was generated in correct mode (create for new, update for existing)
 - [ ] Wave 1 docs (README, ARCHITECTURE, CONFIGURATION) completed before Wave 2 started
-- [ ] Generated docs contain zero GSD methodology content
+- [ ] Generated docs contain zero Engineer methodology content
 - [ ] docs/DEPLOYMENT.md and docs/CONFIGURATION.md use VERIFY markers for undiscoverable claims (if generated)
 - [ ] All generated files committed (if commit_docs is true)
-- [ ] Hand-written docs (no GSD marker) prompted for preserve/supplement/regenerate before dispatch (unless --force)
+- [ ] Hand-written docs (no Engineer marker) prompted for preserve/supplement/regenerate before dispatch (unless --force)
 - [ ] --force flag skipped preservation prompts and regenerated all docs
 - [ ] --verify-only flag reported doc status without generating files
 - [ ] Per-package READMEs generated for monorepo workspaces (if applicable)
