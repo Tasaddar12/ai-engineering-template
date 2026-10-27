@@ -94,7 +94,7 @@ class MigrationCliTests(unittest.TestCase):
                 listed = json.loads(support.command(
                     sys.executable, namespace + "/engineer/bin/engineer.py", "query", "phases.list",
                     cwd=self.target))
-                self.assertTrue(listed["ok"])
+                self.assertEqual(0, listed["count"])
                 self.assertEqual([], listed["phases"])
 
     def test_native_collision_leaves_all_originals_and_no_backup(self):

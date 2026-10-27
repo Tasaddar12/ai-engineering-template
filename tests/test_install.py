@@ -57,6 +57,26 @@ class CodexConcurrencySettings(unittest.TestCase):
                             self.assertEqual(expected, merged)
                             self.assertEqual(merged, installer.merge_codex_config(merged, incoming, "project config"))
 
+    def test_matching_hook_registrations_preserve_original_layout(self):
+        for newline in (b"\n", b"\r\n"):
+            with self.subTest(newline=newline):
+                incoming = installer.host_payload("codex")[".codex/config.toml"]
+                original = b"\xef\xbb\xbf# User settings\n" + incoming
+                original = original.replace(b"\n", newline)
+                self.assertEqual(original, installer.merge_codex_config(original, incoming))
+
+    def test_append_preserves_bom_crlf_and_trailing_user_whitespace(self):
+        original = b"\xef\xbb\xbf# User instructions\r\nretain trailing spaces  \r\n\r\n"
+        incoming = (installer.AGENT_MARKER + "\nManaged instructions\n" + installer.AGENT_END + "\n").encode()
+        merged = installer.merge_entry(original, incoming)
+        self.assertTrue(merged.startswith(original))
+        self.assertEqual(merged, installer.merge_entry(merged, incoming))
+        ignore = b"\xef\xbb\xbf/build\r\n# Keep trailing spaces  \r\n\r\n"
+        merged_ignore = installer.merge_file(".gitignore", ignore, installer.IGNORE_BLOCK.encode(), "codex")
+        self.assertTrue(merged_ignore.startswith(ignore))
+        self.assertEqual(merged_ignore, installer.merge_file(".gitignore", merged_ignore,
+                                                          installer.IGNORE_BLOCK.encode(), "codex"))
+
     def test_hook_removal_ignores_embedded_multiline_table_examples(self):
         for delimiter in (b'"""', b"'''"):
             with self.subTest(delimiter=delimiter):
@@ -329,11 +349,13 @@ issue_refs: []
                 runtime = "." + host + "/engineer/bin/engineer.py"
                 identity = json.loads(command(sys.executable, runtime, "query",
                                               "runtime-identity", cwd=self.target))
-                self.assertTrue(identity["ok"])
+                self.assertEqual("2.0", identity["contract"])
+                self.assertEqual(host, identity["host"])
+                self.assertEqual((self.target / ("." + host)).resolve(), Path(identity["namespace"]).resolve())
                 self.assertEqual("engineer-runtime", identity["packageName"])
                 listed = json.loads(command(sys.executable, runtime, "query", "phases.list",
                                             cwd=self.target))
-                self.assertTrue(listed["ok"])
+                self.assertEqual(0, listed["count"])
                 self.assertEqual([], listed["phases"])
                 verbs = json.loads(command(sys.executable, runtime, "query", "help",
                                            cwd=self.target))["verbs"]
@@ -394,7 +416,8 @@ issue_refs: []
         self.assertFalse((self.target / ".ai").exists())
         self.assertIn(".agents/skills/", (self.target / "AGENTS.md").read_text())
         guide = (self.target / ".codex/commands/install.md").read_text(encoding="utf-8")
-        self.assertIn("/main/bin/install.py", guide)
+        self.assertIn("/<PIN>/bin/install.py", guide)
+        self.assertIn("exact Git commit", guide)
         # Local-only workflow scratch stays out of the project's history.
         for ignored in (".workflow-backups/probe.txt",
                         ".planning/handoffs/sess--agent-a1.json"):
@@ -484,7 +507,7 @@ issue_refs: []
                 self.assertIn("<process>", full)
                 self.assertNotIn("Read and follow the complete skill at", full)
                 self.assertFalse((self.target / namespace / "roles").exists())
-                for workflow in ("execute-phase.md", "plan-phase.md", "onboard.md"):
+                for workflow in ("execute-phase.md", "plan-phase.md", "new-project.md"):
                     self.assertTrue((self.target / namespace / "engineer/workflows" / workflow).is_file(),
                                     workflow)
                 if host == "codex":
@@ -664,7 +687,7 @@ issue_refs: []
                 added = json.loads(command(sys.executable, runtime, "query", "phase.add",
                                            "Installed runtime", "--goal", "Prove the install",
                                            cwd=worktree))
-                self.assertTrue(added["ok"])
+                self.assertTrue(added["added"])
                 self.assertEqual("01", added["padded"])
                 created = Path(added["directory"])
                 created = created if created.is_absolute() else worktree / created
