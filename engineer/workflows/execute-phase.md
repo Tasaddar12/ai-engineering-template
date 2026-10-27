@@ -13,24 +13,15 @@ Execute all plans in a phase using wave-based parallel execution. Orchestrator s
 Orchestrator coordinates, not executes. Each subagent loads the full execute-plan context. Orchestrator: discover plans → analyze deps → group waves → spawn agents → handle checkpoints → collect results.
 </core_principle>
 
-<!-- #2508 runtime-aware-dispatch -->
-
-> **Runtime-aware dispatch (#2508 Phase 4).** GSD workflows dispatch specialized subagents by role. Before dispatching on a built-in-only runtime (kimi-code — three built-ins only), resolve the role to a built-in via `gsd_run query resolve-dispatch-type --requested <role> --raw`. On named-dispatch runtimes (Claude/OpenCode/…) the role is returned unchanged; on kimi-code it maps to `coder`/`explore`/`plan` by role-suffix. The persona rides `${AGENT_SKILLS_<ROLE>}` (Phase 3) regardless. See @gsd-core/references/runtime-aware-dispatch.md.
-
 <runtime_compatibility>
 **Subagent spawning is runtime-specific:**
 
 - **Claude Code:** Uses `Agent(subagent_type="gsd-executor", ...)` — backgrounded by default; verify completion
-- **Copilot:** Subagent spawning does not reliably return completion signals. **Default to
-  sequential inline execution**: read and follow execute-plan.md directly for each plan
-  instead of spawning parallel agents. Only attempt parallel spawning if the user
-  explicitly requests it — and in that case, rely on the spot-check fallback in step 3
-  to detect completion.
 - **Codex:** native subagent sessions can end abnormally (`turn_aborted`) after the plan
   work is already committed. Completion is decided by the step-4 artifact reconciliation
   (SUMMARY + matching recent commits), not by the session's terminal state (#4217).
-- **Other runtimes:** If `Agent`/`agent` tool is genuinely unavailable (e.g. a backgrounded
-  Claude Code agent per #853, or a non-Claude runtime), use sequential inline execution as
+- If `Agent`/`agent` tool is genuinely unavailable (e.g. a backgrounded
+  Claude Code agent per #853), use sequential inline execution as
   the fallback for executor parallelization only. If `Agent` IS available (top-level Claude
   Code), you MUST spawn gsd-executor agents — inline execution is not authorized. Check for
   actual tool availability, not runtime name.
@@ -177,14 +168,6 @@ When `CONTEXT_WINDOW < 200000` (sub-200K models), subagent prompts are thinned t
 **If `state_exists` is false but `.planning/` exists:** Offer reconstruct or continue.
 
 When `parallelization` is false, plans within a wave execute sequentially.
-
-**Runtime detection for Copilot:**
-Check if the current runtime is Copilot by testing for the `@gsd-executor` agent pattern
-or absence of the `Agent()` subagent API. If running under Copilot, force sequential inline
-execution regardless of the `parallelization` setting — Copilot's subagent completion
-signals are unreliable (see `<runtime_compatibility>`). Set `COPILOT_SEQUENTIAL=true`
-internally and skip the `execute_waves` step in favor of `check_interactive_mode`'s
-inline path for each plan.
 
 **REQUIRED — Sync chain flag with intent.** If user invoked manually (no `--auto`), clear the ephemeral chain flag from any previous interrupted `--auto` chain. This prevents stale `_auto_chain_active: true` from causing unwanted auto-advance. This does NOT touch `workflow.auto_advance` (the user's persistent settings preference). You MUST execute this bash block before any config reads:
 
@@ -1086,7 +1069,7 @@ the next wave builds on a broken foundation.
    RETRY_AFTER=$(echo "$CLASS_JSON" | jq -r '.retryAfterSeconds // empty')
    if [ -n "$RETRY_AFTER" ]; then RETRY_HINT="  Provider hinted retry-after: ${RETRY_AFTER}s"; else RETRY_HINT=""; fi
    ```
-   One classifier branch handles sentinels across Claude/Copilot/Codex/Antigravity. Reference: `docs/research/provider-rate-limit-signals.md`.
+   One classifier branch handles sentinels across Claude/Codex. Reference: `docs/research/provider-rate-limit-signals.md`.
    **Abnormal ends reconcile first (#4217):** an abnormal session end (`turn_aborted`-class) routes through the step-4 artifact reconciliation BEFORE classifying the failure — artifacts decide.
    **Step 7.1 — `class == "quota-exceeded"`:** follow the quota-recovery fragment below.
    **Step 7.2 — `class == "classify-handoff-bug"`:**
@@ -1186,6 +1169,9 @@ If `section_manifest` is `null` or `"partial-wave"` is in its `included` list: r
 
 <!-- /gsd:section -->
 
+<step name="codebase_drift_gate">
+Read and execute `@~/.claude/gsd-core/workflows/execute-phase/steps/codebase-drift-gate.md` in full.
+</step>
 <step name="verify_phase_goal">
 Verify phase achieved its GOAL, not just completed tasks: read and execute
 `gsd-core/workflows/execute-phase/steps/verify-phase-goal.md` — the ONE verification action, the

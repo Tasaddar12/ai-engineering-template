@@ -7,11 +7,11 @@ branch). This runs for **any** isolated run, not only Claude: fork-base divergen
 of the repository, so it degrades a GSD-created worktree exactly as a harness-created one. The
 auto-degrade prints a one-line warning to stderr and falls through to the sequential path so
 executors do not hit the exit-42 worktree-branch-check halt. Setting `worktree.baseRef:"head"`
-restores parallel execution on both isolation models: GSD-created worktrees (Codex, OpenCode,
-Kimi, Kimi Code) fork from the orchestrator HEAD by construction, and harness-created ones do so
+restores parallel execution on both isolation models: GSD-created worktrees (Codex)
+fork from the orchestrator HEAD by construction, and harness-created ones do so
 where the harness honors the setting — measured on Claude Code from all three settings layers
-(#4588; #48's earlier finding that it did not predates upstream claude-code#54940), unmeasured on
-Cursor. On a harness-created run with no observation, a Claude Code `WorktreeCreate` hook in any
+(#4588; #48's earlier finding that it did not predates upstream claude-code#54940).
+On a harness-created run with no observation, a Claude Code `WorktreeCreate` hook in any
 of those three settings files, or one of them that does not parse, withholds that trust and the
 check compares against `origin/HEAD` as before. The #4868 prior-worktree observation is withheld
 there rather than consulted — a worktree at HEAD does not record which creator left it, so one the

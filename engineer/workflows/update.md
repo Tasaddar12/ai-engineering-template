@@ -14,7 +14,7 @@ Detect the installed GSD version, scope, runtime, and config dir.
 
 First, derive `PREFERRED_CONFIG_DIR` and `PREFERRED_RUNTIME` from the invoking prompt's `execution_context` path — this is the one input only the workflow knows:
 - If the path contains `/gsd-core/workflows/update.md`, strip that suffix and store the remainder as `PREFERRED_CONFIG_DIR`.
-- Infer `PREFERRED_RUNTIME` from the path: `/.claude/` -> `claude`; `/.codex/` -> `codex`; `/.gemini/antigravity-ide/`, `/.gemini/antigravity-cli/`, `/.gemini/antigravity/`, `/.agents/` or `/.agent/` -> `antigravity` (`.agents` is the canonical local Antigravity install dir (#791); `.agent` is the legacy form (#503); see bin/install.js `getDirName('antigravity')`); `/.windsurf/`, `/.devin/` -> `windsurf`; `/.config/kilo/` or `/.kilo/` -> `kilo`; `/.config/opencode/` or `/.opencode/` -> `opencode`; otherwise leave it empty.
+- Infer `PREFERRED_RUNTIME` from the path: `/.claude/` -> `claude`; `/.codex/` -> `codex`; otherwise leave it empty.
 
 Then resolve the install context via the deterministic projection (#498). **Do NOT re-derive scope, runtime, or version by hand** — `update-context` owns that cascade in tested code (`gsd-core/bin/lib/update-context.cjs`), the same way `check-latest-version` owns the package name (#2992):
 
@@ -73,10 +73,10 @@ echo "$GSD_DIR"
 Parse output:
 - Line 1 = installed version (`0.0.0` means unknown version)
 - Line 2 = install scope (`LOCAL`, `GLOBAL`, or `UNKNOWN`)
-- Line 3 = target runtime (`claude`, `opencode`, `kilo`, `codex`, `antigravity`, `windsurf`); empty when no installed target is resolved
-- Line 4 = resolved GSD config dir (e.g. `/Users/me/.claude`, `/Users/me/.gemini/antigravity`); empty when no installed target is resolved. Capture this as `GSD_DIR` and pass it to subsequent steps so they don't re-derive the runtime path.
+- Line 3 = target runtime (`claude`, `codex`); empty when no installed target is resolved
+- Line 4 = resolved GSD config dir (e.g. `/Users/me/.claude`); empty when no installed target is resolved. Capture this as `GSD_DIR` and pass it to subsequent steps so they don't re-derive the runtime path.
 
-`update-context` reproduces the previous detection cascade — preferred-config-dir fast path, local-over-global with same-path dedup (so `CWD=$HOME` does not misdetect as LOCAL), env-var overrides (`CLAUDE_CONFIG_DIR`, `OPENCODE_CONFIG_DIR`, `KILO_CONFIG`, `XDG_CONFIG_HOME`, `CODEX_HOME`, …), and semver validation — but as a tested projection rather than ~280 lines of inline bash. Branch coverage lives in `tests/update-context.test.cjs`.
+`update-context` reproduces the previous detection cascade — preferred-config-dir fast path, local-over-global with same-path dedup (so `CWD=$HOME` does not misdetect as LOCAL), env-var overrides (`CLAUDE_CONFIG_DIR`, `CODEX_HOME`), and semver validation — but as a tested projection rather than ~280 lines of inline bash. Branch coverage lives in `tests/update-context.test.cjs`.
 
 If multiple runtime installs are detected and the invoking runtime cannot be determined from execution_context, ask the user which runtime to update before running install.
 
@@ -136,7 +136,7 @@ Extract `section_manifest` from `INIT_UPDATE` — gates the `channel-banner` sec
 <step name="check_latest_version">
 Check npm for latest version via the deterministic script. **Do NOT run `npm view` or `npm search` directly** — the package name must come from the script, not from a free choice at execution time. (#2992: LLM-driven prescriptions of npm package names produced wrong-package queries; moving the package name into a script constant closes that gap.)
 
-The `GSD_DIR` value emitted by `get_installed_version` (line 4) resolves to the runtime-specific config dir (`~/.claude/`, `~/.gemini/antigravity/`, `~/.codex/`, etc.), so the script invocation works for every runtime — not just Claude. An unresolved target exits in `get_installed_version` before this step.
+The `GSD_DIR` value emitted by `get_installed_version` (line 4) resolves to the runtime-specific config dir (`~/.claude/`, `~/.codex/`), so the script invocation works for every runtime — not just Claude. An unresolved target exits in `get_installed_version` before this step.
 
 `LATEST_RESULT` is a JSON document with the documented shape `{ ok: bool, version: string, reason: string, detail?: string }`. Parse it with the Node-only `uc_field` helper. When the script cannot run or returns nothing, preserve its failure as a meaningful diagnostic (#2993 CR feedback):
 
@@ -277,8 +277,8 @@ rm -f "$CHANGELOG_TMP"
 - `agents/gsd-*` files will be replaced
 
 (Paths are relative to detected runtime install location:
-global: `~/.claude/`, `~/.config/opencode/`, `~/.opencode/`, `~/.gemini/antigravity/`, `~/.config/kilo/`, or `~/.codex/`
-local: `./.claude/`, `./.config/opencode/`, `./.opencode/`, `./.agents/`, `./.kilo/`, or `./.codex/`)
+global: `~/.claude/` or `~/.codex/`
+local: `./.claude/` or `./.codex/`)
 
 Your custom files in other locations are preserved:
 - Custom commands not in `commands/gsd/` ✓
@@ -289,7 +289,7 @@ Your custom files in other locations are preserved:
 If you've modified any GSD files directly, they'll be automatically backed up to `gsd-local-patches/` and can be reapplied with `/gsd:update --reapply` after the update.
 ```
 
-**Text mode (`workflow.text_mode: true` in config or `--text` flag):** Set `TEXT_MODE=true` if `--text` is present in `$ARGUMENTS` OR `text_mode` from init JSON is `true`. When TEXT_MODE is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for non-Claude runtimes (OpenAI Codex, Antigravity, etc.) where `AskUserQuestion` is not available.
+**Text mode (`workflow.text_mode: true` in config or `--text` flag):** Set `TEXT_MODE=true` if `--text` is present in `$ARGUMENTS` OR `text_mode` from init JSON is `true`. When TEXT_MODE is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for non-Claude runtimes (OpenAI Codex) where `AskUserQuestion` is not available.
 Use AskUserQuestion:
 - Question: "Proceed with update?"
 - Options:
@@ -316,7 +316,7 @@ First, resolve the config directory (`RUNTIME_DIR`) from the install scope
 detected in `get_installed_version`:
 
 ```bash
-# RUNTIME_DIR is the resolved config directory (e.g. ~/.config/opencode, ~/.gemini/antigravity).
+# RUNTIME_DIR is the resolved config directory.
 # get_installed_version emits it as GSD_DIR for a resolved LOCAL or GLOBAL install.
 # The unresolved-target gate exits before this step; the empty guard remains defensive.
 RUNTIME_DIR="$GSD_DIR"
@@ -419,46 +419,8 @@ fi
 if [ -n "$CLAUDE_CONFIG_DIR" ]; then
   CACHE_DIRS+=( "$(expand_home "$CLAUDE_CONFIG_DIR")" )
 fi
-if [ -n "$KILO_CONFIG_DIR" ]; then
-  CACHE_DIRS+=( "$(expand_home "$KILO_CONFIG_DIR")" )
-elif [ -n "$KILO_CONFIG" ]; then
-  CACHE_DIRS+=( "$(dirname "$(expand_home "$KILO_CONFIG")")" )
-elif [ -n "$XDG_CONFIG_HOME" ]; then
-  CACHE_DIRS+=( "$(expand_home "$XDG_CONFIG_HOME")/kilo" )
-fi
-if [ -n "$OPENCODE_CONFIG_DIR" ]; then
-  CACHE_DIRS+=( "$(expand_home "$OPENCODE_CONFIG_DIR")" )
-elif [ -n "$OPENCODE_CONFIG" ]; then
-  CACHE_DIRS+=( "$(dirname "$(expand_home "$OPENCODE_CONFIG")")" )
-elif [ -n "$XDG_CONFIG_HOME" ]; then
-  CACHE_DIRS+=( "$(expand_home "$XDG_CONFIG_HOME")/opencode" )
-fi
 if [ -n "$CODEX_HOME" ]; then
   CACHE_DIRS+=( "$(expand_home "$CODEX_HOME")" )
-fi
-if [ -n "$CURSOR_CONFIG_DIR" ]; then
-  CACHE_DIRS+=( "$(expand_home "$CURSOR_CONFIG_DIR")" )
-fi
-if [ -n "$WINDSURF_CONFIG_DIR" ]; then
-  CACHE_DIRS+=( "$(expand_home "$WINDSURF_CONFIG_DIR")" )
-fi
-if [ -n "$AUGMENT_CONFIG_DIR" ]; then
-  CACHE_DIRS+=( "$(expand_home "$AUGMENT_CONFIG_DIR")" )
-fi
-if [ -n "$TRAE_CONFIG_DIR" ]; then
-  CACHE_DIRS+=( "$(expand_home "$TRAE_CONFIG_DIR")" )
-fi
-if [ -n "$QWEN_CONFIG_DIR" ]; then
-  CACHE_DIRS+=( "$(expand_home "$QWEN_CONFIG_DIR")" )
-fi
-if [ -n "$HERMES_HOME" ]; then
-  CACHE_DIRS+=( "$(expand_home "$HERMES_HOME")" )
-fi
-if [ -n "$CODEBUDDY_CONFIG_DIR" ]; then
-  CACHE_DIRS+=( "$(expand_home "$CODEBUDDY_CONFIG_DIR")" )
-fi
-if [ -n "$CLINE_CONFIG_DIR" ]; then
-  CACHE_DIRS+=( "$(expand_home "$CLINE_CONFIG_DIR")" )
 fi
 
 for dir in "${CACHE_DIRS[@]}"; do
@@ -467,7 +429,7 @@ for dir in "${CACHE_DIRS[@]}"; do
   fi
 done
 
-for dir in .claude .config/opencode .opencode .gemini/antigravity-ide .gemini/antigravity-cli .gemini/antigravity .agents .agent .config/kilo .kilo .codex .cursor .codeium/windsurf .augment .trae .qwen .hermes .codebuddy .cline; do
+for dir in .claude .codex; do
   rm -f "./$dir/cache/gsd-update-check"*.json
   rm -f "$HOME/$dir/cache/gsd-update-check"*.json
 done

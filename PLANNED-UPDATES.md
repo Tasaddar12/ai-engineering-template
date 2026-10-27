@@ -16,6 +16,28 @@ runtime driven from bash.
   `c0b2a05` (templates, workflows, references) and `4713ffba` (agents). The full
   `c0b2a05` snapshot is in Git at `2969562:.ai/gsd/`.
 
+### Review scope override — PR #127, review 5669934629
+
+The [human review](https://github.com/Tasaddar12/ai-engineering-template/pull/127#pullrequestreview-5669934629) overrides conflicting deletion/reconciliation rows below. Retain these complete copied GSD methods:
+
+- `commands/extract-learnings.md`
+- `engineer/workflows/execute-phase/steps/codebase-drift-gate.md`
+- `engineer/workflows/new-milestone/steps/project-md-milestone-write.md`
+- `engineer/workflows/quick/steps/discussion-phase.md`
+- `engineer/workflows/quick/steps/research-phase.md`
+- `engineer/workflows/diagnose-issues.md`
+- `engineer/workflows/extract-learnings.md`
+- `engineer/workflows/graduation.md`
+- `engineer/workflows/list-seeds.md`
+- `engineer/workflows/note.md`
+- `engineer/workflows/scan.md`
+- `engineer/workflows/session-report.md`
+- `engineer/workflows/plant-seed.md`
+
+Copy the complete body of `engineer/workflows/discuss-phase/modes/analyze.md` into `engineer/workflows/discuss-phase.md`; remove only the optional-mode wrapper and the no-analysis fallback. This is the native discussion method and requires no flag.
+
+Quick tasks ask clarifying questions by default, then research as needed to establish scope and support the plan. Retain the full copied discussion and research steps. Runtime implementation and tests remain deferred by the user.
+
 ## Contents
 
 1. [Goals and end state](#1-goals-and-end-state)
