@@ -11,6 +11,13 @@ Template for spawning planner agent. The agent contains all planning expertise -
 
 **Phase:** {phase_number}
 **Mode:** {standard | gap_closure}
+**Repository:** {repository_root}
+**Branch:** {branch}
+**Input revision:** {input_revision}
+**Owned outputs:** {owned_outputs}
+**Required reading:** {read_first}
+**Checks:** {checks_argv}
+**Issue references:** {issue_refs}
 
 **Project State:**
 @.planning/STATE.md
@@ -66,9 +73,19 @@ Before returning PLANNING COMPLETE:
 
 ---
 
+| `{repository_root}` | Coordinator assignment | Absolute assigned checkout |
+| `{branch}` | Coordinator assignment | Assigned branch |
+| `{input_revision}` | Captured Git revision | Full SHA |
+| `{owned_outputs}` | Exact output ownership | PLAN paths only |
+| `{read_first}` | Required inputs | Exact existing paths |
+| `{checks_argv}` | Configured / assigned checks | argv lists or explicit none |
+| `{issue_refs}` | Canonical issue register | URLs or Pending reasons |
+
 ## Usage
 
 **From /plan-phase (standard mode):**
+The following is host pseudocode; use the actual Claude or Codex dispatch API.
+
 ```python
 Task(
   prompt=filled_template,
@@ -78,6 +95,8 @@ Task(
 ```
 
 **From /plan-phase --gaps (gap closure mode):**
+The following is host pseudocode; use the actual Claude or Codex dispatch API.
+
 ```python
 Task(
   prompt=filled_template,  # with mode: gap_closure
@@ -115,3 +134,7 @@ Continue: {standard | gap_closure}
 ---
 
 **Note:** Planning methodology, task breakdown, dependency analysis, wave assignment, TDD detection, and goal-backward derivation are baked into the planner agent. This template only passes context.
+
+## Revision assignments
+
+A correction assignment includes the original input revision, current artifact digest, exact finding IDs and authority, owned paths, required affected rechecks, preserved passing evidence and first continuation. Read the bounded correction packet from `engineer/workflows/plan-phase.md`; do not rediscover the repository or reinterpret approved scope. Verify the assigned repository/branch/revision before editing. Return revised artifacts and an evidence-linked disposition for every finding.

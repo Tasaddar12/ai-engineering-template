@@ -1,83 +1,47 @@
-# GSD Canonical Artifact Registry
+# Complete template use
 
-This directory contains the template files for every artifact that GSD workflows officially produce. The table below is the authoritative index: **if a `.planning/` root file is not listed here, `gsd-health` will flag it as W019** (unrecognized artifact).
+Read the entire template before authoring an artifact, including guidance, examples, producer and consumer notes. Preserve every required section and frontmatter field; use an explicit None / not applicable with a reason when a section has no content. Do not replace a complete template with a compact variant or a summary of its requirements.
 
-Agents should query this file before treating a `.planning/` file as authoritative. If the file name does not appear below, it is not a canonical GSD artifact.
+## Authoring sequence
 
----
+1. Identify the artifact in [the registry](README.md) and read its complete template.
+2. Read the producing workflow and each consuming schema or parser.
+3. Separate runtime-owned structures from authored narrative. Use `engineer_run query` for runtime-owned changes; write narrative only in its owning artifact.
+4. Fill concrete paths, identifiers, statuses, commands and evidence. Remove instructional placeholders from current records.
+5. Check required keys, matching phase/plan identity and producer-consumer consistency. Record checks actually run; pending evidence stays pending.
+6. Return the artifact, revision, limitations and first continuation step to the coordinator.
 
-## `.planning/` Root Artifacts
+## Connect a template to the Python runtime
 
-These files live directly at `.planning/` — not inside phase subdirectories.
+| Concern | Template author | Runtime owner | Boundary |
+|---------|-----------------|---------------|----------|
+| Identity and metadata | Declare required keys and enum values | Parse and validate current records | Do not infer missing current metadata from prose |
+| Project data | Explain purpose and examples | Initialize and update owned structures | Keep adopting identity blank in reusable templates |
+| PLAN | Preserve acceptance, documentation, checks argv and issue_refs | Validate identity, dependencies and ownership | Deletion paths are explicit, never implied |
+| Configuration | Document defaults and effect | Read YAML and supply supported defaults | Do not invent tests or silent success defaults |
+| Waves | Explain declared planning labels | Form groups from dependencies and overlap | Labels do not exempt shared ownership |
+| Source versus current records | Keep placeholders in templates | Reject unresolved placeholders in current records | Do not mistake examples for actual evidence |
+| Checkpoints | Preserve answer/resume fields | Route only authorized automation | Never infer human acceptance |
+| Verification | Preserve revision, coverage and v4 digest | Fingerprint and validate receipts | Missing evidence remains a gap |
+| Completion | Preserve goal and handoff fields | Reconcile authorized bookkeeping | Completion does not authorize the next phase |
+| Publication | Preserve exact PR evidence | Coordinator publishes after gates | Merge requires the user's instruction |
+| Optional artifacts | Explain applicability | Validate only when produced/required | Optional rationale does not own decisions |
+| Recovery | Preserve completed, remaining and dirty paths | Session/handoff state | Confirm worker stop before reassigning paths |
 
-| File | Template | Produced by | Purpose |
-|------|----------|-------------|---------|
-| `PROJECT.md` | `project.md` | `/new-project` | Project identity, goals, requirements summary |
-| `ROADMAP.md` | `roadmap.md` | `/new-milestone`, `/new-project` | Phase plan with milestones and progress tracking |
-| `STATE.md` | `state.md` | `/new-project`, `/health --repair` | Current session state, active phase, last activity |
-| `REQUIREMENTS.md` | `requirements.md` | `/new-milestone` | Functional requirements with traceability |
-| `MILESTONES.md` | `milestone.md` | `/complete-milestone` | Log of completed milestones with accomplishments |
-| `BACKLOG.md` | *(inline)* | `/capture --backlog` | Pending ideas and deferred work |
-| `LEARNINGS.md` | *(inline)* | `/extract-learnings`, `/execute-phase` (gated: `features.global_learnings`) | Phase retrospective learnings for future plans |
-| `THREADS.md` | *(inline)* | `/thread` | Persistent discussion threads |
-| `config.json` | `config.json` | `/new-project`, `/health --repair` | Project-specific GSD configuration |
-| `AGENTS.md` | *(inline)* | `/profile` | Auto-assembled Claude Code context file |
-| `RETROSPECTIVE.md` | *(inline)* | `/complete-milestone` | Living milestone retrospective updated at each milestone close |
-| `WINDOWS.md` | *(none)* | broken-windows ledger (`src/broken-windows.cts`) | Tracked known-broken items pending resolution (#3224) |
-| `STATE-ARCHIVE.md` | *(none)* | `state.cts`'s `cmdStatePrune` | Pruned historical STATE.md entries |
-| `milestone.lock` | *(none)* | `src/milestone-lock.cts` | Persistent milestone (phase + session) claim, unlike the transient `STATE.md.lock`/`WAITING.json` (#3311) |
-| `state.json` | *(none)* | `src/state-contract.cts` | Machine-readable state contract published at step boundaries (#3227) |
-| `skill-manifest.json` | *(none)* | `init.cts`'s `cmdSkillManifest --write` | Project-scoped skill manifest (#3964) |
-| `PATTERNS.md` | *(inline)* | `/extract-learnings` (graduation, `workflows/graduation.md`, `patterns` target) | Graduated cross-phase patterns -- distinct from the per-phase `NN-PATTERNS.md` below (#4282) |
+## Handoff checklist
 
-### Version-stamped artifacts (pattern: `vX.Y-*.md`)
+- Exact input and output revisions, repository, branch and owned paths.
+- Completed outcomes and committed changes; distinguish partial or dirty work.
+- Remaining work, missing inputs, failed gates and uncertain process state.
+- Exact checks with observed outcomes; label not run or not configured honestly.
+- First bounded continuation and its owner; preserve pending human decisions.
 
-| Pattern | Produced by | Purpose |
-|---------|-------------|---------|
-| `vX.Y-MILESTONE-AUDIT.md` | `/audit-milestone` | Milestone audit report before archiving |
+| Weak handoff | Useful handoff |
+|--------------|----------------|
+| Everything done | Commit SHA, exact outcomes, evidence and remaining items |
+| Tests fine | Tested SHA, exact argv, exit status and evidence path |
+| Continue later | First dependent step, preconditions and owner |
+| Need approval | Exact unresolved choice, alternatives, impact and authorization source |
+| Updated docs | Paths, changed contract and consumer checks |
 
-These files are archived to `.planning/milestones/` by `/complete-milestone`. Finding them at the `.planning/` root after completion indicates the archive step was skipped.
-
----
-
-## Phase Subdirectory Artifacts (`.planning/phases/NN-name/`)
-
-These files live inside a phase directory. They are NOT checked by W019 (which only inspects the `.planning/` root).
-
-| File Pattern | Template | Produced by | Purpose |
-|-------------|----------|-------------|---------|
-| `NN-MM-PLAN.md` | `phase-prompt.md` | `/plan-phase` | Executable implementation plan |
-| `NN-MM-SUMMARY.md` | `summary.md` | `/execute-phase` | Post-execution summary with learnings |
-| `NN-CONTEXT.md` | `context.md` | `/discuss-phase` | Scoped discussion decisions for the phase |
-| `NN-RESEARCH.md` | `research.md` | `/plan-phase`, `/plan-phase --research-phase <N>` | Technical research for the phase |
-| `NN-VALIDATION.md` | `VALIDATION.md` | `/plan-phase` (Nyquist) | Validation architecture (Nyquist method) |
-| `NN-UAT.md` | `UAT.md` | `/validate-phase` | User acceptance test results |
-| `NN-PATTERNS.md` | *(inline)* | `/plan-phase` (pattern mapper) | Analog file mapping for the phase |
-| `NN-UI-SPEC.md` | `UI-SPEC.md` | `/ui-phase` | UI design contract |
-| `NN-SECURITY.md` | `SECURITY.md` | `/secure-phase` | Security threat model |
-| `NN-AI-SPEC.md` | `AI-SPEC.md` | `/ai-integration-phase` | AI integration spec with eval strategy |
-| `NN-DEBUG.md` | `DEBUG.md` | `/debug` | Debug session log |
-| `NN-REVIEWS.md` | *(inline)* | `/review` | Cross-AI review feedback |
-
----
-
-## Milestone Archive (`.planning/milestones/`)
-
-Files archived by `/complete-milestone`. These are never checked by W019.
-
-| File Pattern | Source |
-|-------------|--------|
-| `vX.Y-ROADMAP.md` | Snapshot of ROADMAP.md at milestone close |
-| `vX.Y-REQUIREMENTS.md` | Snapshot of REQUIREMENTS.md at milestone close |
-| `vX.Y-MILESTONE-AUDIT.md` | Moved from `.planning/` root |
-| `vX.Y-phases/` | Archived phase directories (if `--archive-phases` used) |
-
----
-
-## Adding a New Canonical Artifact
-
-When a new workflow produces a `.planning/` root file:
-
-1. Add the file name to `CANONICAL_EXACT` in `engineer/bin/lib/artifacts.cjs`
-2. Add a row to the **`.planning/` Root Artifacts** table above
-3. Add the template to `engineer/templates/` if one exists
+Reusable instructions belong in `engineer/`; adopting-project records belong in `.planning/`. See [runtime integrity](../runtime/TEMPLATE-CONTRACT.md#planning-record-integrity).

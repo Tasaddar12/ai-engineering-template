@@ -4,6 +4,8 @@ Template for `.planning/phases/XX-name/{phase}-{plan}-SUMMARY.md` - phase comple
 
 ---
 
+Required current-record metadata: `phase`, `plan`, `status`, `requirements-completed`, `acceptance`, `documentation`, `issue_refs`.
+
 ## File Template
 
 ```markdown
@@ -46,7 +48,11 @@ patterns-established:
   - "Pattern 1: description"
   - "Pattern 2: description"
 
-requirements-completed: [] # REQUIRED — Copy ALL requirement IDs from this plan's `requirements` frontmatter field.
+requirements-completed: [] # REQUIRED — include only IDs the delivered changes and evidence actually complete.
+
+acceptance: []
+documentation: []
+issue_refs: []
 
 # Coverage metadata — one entry per shipped deliverable. Drives DETERMINISTIC UAT routing in verify-work.
 # OMIT this whole block for legacy/prose-only SUMMARYs — verify-work then falls back to the ## Accomplishments bullets
@@ -59,7 +65,7 @@ coverage:
       - kind: unit # unit | integration | e2e | automated_ui | manual_procedural | other
         ref: "[tests/path.test.ts#test name | playwright:shot.png | command invocation]"
         status: pass # pass | fail | unknown — from the latest run
-    human_judgment: false # REQUIRED boolean. false => may auto-pass IF every verification status is `pass`.
+    human_judgment: false # REQUIRED boolean. false does not waive required human UAT; automatic classification requires non-empty passing evidence.
   - id: D2
     description: "[a deliverable that needs a human to sign off]"
     verification: []
@@ -101,6 +107,14 @@ Each task was committed atomically:
 **Plan metadata:** `lmn012o` (docs: complete plan)
 
 _Note: TDD tasks may have multiple commits (test → feat → refactor)_
+
+## Checks
+
+| Tested revision | Command argv | Observed result | Evidence |
+|-----------------|--------------|-----------------|----------|
+| [SHA] | [exact argv] | [pass / fail / not run] | [receipt or output path] |
+
+TDD Evidence: record the RED failure, GREEN pass and commit ancestry; missing evidence remains a gap.
 
 ## Files Created/Modified
 
@@ -152,6 +166,20 @@ _Note: TDD tasks may have multiple commits (test → feat → refactor)_
 
 [If no USER-SETUP.md:]
 None - no external service configuration required.
+
+## Threat Flags
+
+| Threat ID | Finding / boundary | Canonical issue | Status |
+|-----------|--------------------|-----------------|--------|
+| [T-{phase}-NN] | [specific finding] | [URL or Pending reason] | [open / mitigated / accepted decision reference] |
+
+## Threat Outcomes
+
+| Threat ID | Delivered mitigation | Evidence | Remaining exposure |
+|-----------|----------------------|----------|--------------------|
+| [T-{phase}-NN] | [change] | [behavioral evidence] | [remaining work or none] |
+
+Follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking); do not silently drop open threats.
 
 ## Next Phase Readiness
 
@@ -319,3 +347,7 @@ _Completed: 2025-01-15_
 **After creation:** STATE.md updated with position, decisions, issues.
 </guidelines>
 ```
+
+## Coordinator reconciliation
+
+Workers report delivered changes and Remaining; they do not write shared STATE, ROADMAP, REQUIREMENTS traceability or CONTEXT decisions. The coordinator reconciles those records with supported `engineer_run query` operations. Coverage is mandatory for current summaries: classify each deliverable as automated, human-needed or unverified; automated requires non-empty passing evidence at the assigned revision. Required human UAT remains pending until an actual human accepts. Never turn absent evidence into a pass.

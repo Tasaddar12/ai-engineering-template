@@ -1,3 +1,9 @@
+# Milestone record contract
+
+**Purpose:** Preserve what shipped, its evidence and any explicitly deferred scope.
+**Producer:** complete-milestone coordinator, after auditing every selected phase.
+**Consumers:** progress, new-milestone and onboarding readers. Counts come from the runtime `milestone_phases` result, never guessed statistics.
+
 # Milestone Entry Template
 
 Add this entry to `.planning/MILESTONES.md` when completing a milestone:
@@ -52,7 +58,7 @@ If MILESTONES.md doesn't exist, create it with header:
 
 **Stats to include:**
 - Count modified files: `git diff --stat feat(XX-XX)..feat(YY-YY) | tail -1`
-- Count LOC: `find . -name "*.swift" -o -name "*.ts" | xargs wc -l` (or relevant extension)
+- Count lines changed: `find . -name "*.swift" -o -name "*.ts" | xargs wc -l` (or relevant extension)
 - Phase/plan/task counts from ROADMAP
 - Timeline from first phase commit to last phase commit
 
@@ -113,3 +119,17 @@ If MILESTONES.md doesn't exist, create it with header:
 **What's next:** Security audit and hardening for v1.1
 ```
 </example>
+
+## Counterexample
+
+Bad: "Shipped 12,000 LOC in three days; everything complete." This conflates size with delivered value and hides gaps.
+
+Good: "Shipped the account recovery flow across two phases and four plans, with 418 lines changed. Verification reports identify the tested revisions and human acceptance. Deferred retry analytics retains its explicit disposition."
+
+## Division of labour
+
+The coordinator selects the milestone, audits phase evidence, uses runtime counts from `milestone_phases`, records the shipped outcome and archives exact selected records. Workers return their owned evidence; they do not close milestones or publish independently. Commit ranges use actual SHA ranges or `docs(NN)` bookkeeping commits, not assumed `feat(XX-XX)` prefixes.
+
+## Completion criteria
+
+Every selected phase has a reconciled verification outcome; required checks and human acceptance are present; remaining scope has an explicit authorized disposition; shipped revision and PRs are linked; runtime archival preserves history. Record lines changed and actual phase/plan counts. Missing evidence keeps the milestone open.

@@ -69,10 +69,12 @@ created: "{date}"
 ## Validation Sign-Off
 
 - [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
+- [ ] Sampling continuity: no every consecutive 3-task window without automated verify
 - [ ] Wave 0 covers all MISSING references
 - [ ] No watch-mode flags
 - [ ] Feedback latency < {N}s
 - [ ] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** {pending / approved YYYY-MM-DD}
+
+Sampling rule: require at least 2 automated verifications in every consecutive 3-task window within a wave. Status remains draft until the architecture and checks are actually established; missing checks remain pending, never compliant by assertion.

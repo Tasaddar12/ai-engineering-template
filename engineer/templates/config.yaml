@@ -1,0 +1,72 @@
+# Canonical project configuration. Read with engineer_run query config-get KEY.
+# Initialize during onboarding. Keep reusable templates free of adopting-project identity.
+commit_docs: true
+response_language: null
+context_window: 200000
+workflow:
+  text_mode: false
+  auto_advance: false
+  discuss_mode: discuss
+  isolation: worktree
+  human_verify_mode: end-of-phase
+  code_review: true
+  code_review_depth: standard
+  code_review_depth_overrides: []
+  context_coverage_gate: true
+  live_dom_uat: false
+  mvp_mode: false
+  plan_chunked: false
+  security_asvs_level: 1
+  security_block_on: high
+  security_enforcement: true
+  specless_probe_fallback: true
+  ui_interaction_capture: false
+  ui_phase: auto
+  nyquist_validation: true
+  tdd_mode: false
+  research: true
+  plan_check: true
+  verifier: true
+executor:
+  stall_detect_interval_minutes: 5
+  stall_threshold_minutes: 10
+planner:
+  stall_detection_enabled: true
+  stall_detect_interval_minutes: 5
+  stall_threshold_minutes: 10
+quick_batch:
+  capacity: 3
+worktree:
+  directory: .worktrees
+  # root is retained as the requested project convention; directory is the current runtime key.
+  root: .worktrees
+  branch_prefix: codex/
+handoff:
+  enabled: true
+  context_percent: 60
+  context_tokens: 250000
+codebase:
+  max_age_commits: 20
+  # Map-specific preservation policy; verify current runtime support before relying on overrides.
+  staleness:
+    architecture: 15
+    stack: 1
+# Resolve final-role model and effort with engineer_run query resolve-model / resolve-effort.
+# Claude reads overrides here; Codex uses native installed TOML definitions.
+# Fixed scout and targeted-fixer policies cannot be overridden by project configuration.
+agents: {}
+verification:
+  # CHANGEME: configure actual project checks during onboarding. No invented test commands.
+  commands: []
+  # Example only, replace with this project's real argv and inputs:
+  # commands:
+  #   - id: unit
+  #     argv: ["python", "-m", "unittest", "discover", "-s", "tests"]
+  #     timeout: 300
+  #     inputs: ["src/app.py", "tests/test_app.py"]
+  # Preserve requested policy values; confirm consuming implementation before changing them.
+  reuse: true
+  max_parallel: 3
+git:
+  base_branch: main
+  protected_branches: [main, master]

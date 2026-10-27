@@ -12,9 +12,21 @@ Template for `.planning/phases/XX-name/{phase_num}-CONTEXT.md` - captures implem
 
 ---
 
+## Discussion and implementation gates
+
+Discussion must complete before planning. Record `discussion: pending` while questions remain and `discussion: complete` only after capturing the user's answers. Design approval and planning readiness do not authorize implementation. Record the explicit user instruction, date and covered scope before execution; preserve prior authorization for its stated scope.
+
+Current CONTEXT records require `phase`, `discussion` and `issue_refs` frontmatter.
+
 ## File Template
 
 ```markdown
+---
+phase: XX-name
+discussion: pending
+issue_refs: []
+---
+
 # Phase [X]: [Name] - Context
 
 **Gathered:** [date]

@@ -79,6 +79,14 @@ coincidental_reliance_items: # Only if a âœ“ VERIFIED truth holds incidentally â
 
 **Coverage:** {N}/{M} requirements satisfied
 
+## Deliverable Coverage
+
+| Deliverable | Requirement / acceptance | Evidence at revision | Classification | Human decision |
+|-------------|--------------------------|----------------------|----------------|----------------|
+| [outcome] | [ID] | [non-empty passing receipt or missing] | [automated / human-needed / unverified] | [record or pending] |
+
+The coordinator and verifier classify every delivered outcome. Automatic coverage requires non-empty passing evidence at the covered revision. Source presence does not prove behavior. Required UAT stays pending until actual human acceptance.
+
 ## Anti-Patterns Found
 
 | File | Line | Pattern | Severity | Impact |
@@ -346,3 +354,7 @@ None needed until automated gaps are fixed.
 *Verified: 2025-01-15T14:30:00Z*
 *Verifier: Claude (subagent)*
 ```
+
+## Findings and handoff authority
+
+A Warning identifies an evidenced non-blocking concern, never a substitute for a missing required check. A demonstrated acceptance failure or missing mandatory evidence blocks `passed`. Return precise gaps, affected paths, authority and observed evidence to the coordinator; the verifier does not author fix PLANs. The phase-preparer plans corrections within the configured task cap. Decision references preserve traceability and never waive acceptance.
