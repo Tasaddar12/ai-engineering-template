@@ -79,13 +79,10 @@ Spawn agents by their exact name (`phase-researcher`, `planner`, `plan-checker`,
 `engineer_run query resolve-model <agent>` and the effort with
 `engineer_run query resolve-effort <agent>`, and pass both inline on the dispatch
 call — shared role files carry neither as frontmatter (Claude exports default to
-scout/targeted-fixer `haiku`, executor `sonnet`, and planner `opus`/`medium`; only planner exports effort), and a resolved `inherit` means
+scout/code-fixer `haiku`, executor `sonnet`, and planner `opus`/`medium`; only planner exports effort), and a resolved `inherit` means
 omit that argument. Never fall back to a generic agent type.
 
-Use [scout dispatch](engineer/references/scout-dispatch.md) for the authoritative
-task/output routing table. Send one discovery scout when source location is
-unknown; send additional scouts only for separately named questions and distinct
-evidence outputs. The coordinator owns worker lifecycle, integration, shared
+task/output routing table.evidence outputs. The coordinator owns worker lifecycle, integration, shared
 records and publication. Scouts return cited read-only evidence and never
 dispatch children.
 

@@ -3,9 +3,9 @@
 Close an honestly delivered milestone through runtime-owned records after auditing every phase and accepted requirement. Preserve complete phase evidence; create no release tag and merge no branch here.
 </purpose>
 <required_reading>
-@engineer/RULES.md
-@engineer/references/template-contract.md
-@engineer/templates/milestone.md
+@~/.claude/engineer/RULES.md
+@~/.claude/engineer/references/template-contract.md
+@~/.claude/engineer/templates/milestone.md
 </required_reading>
 <process>
 <step name="init_context">

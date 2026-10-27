@@ -3,9 +3,9 @@
 Preview integrated owned worktrees and branches, obtain approval for the exact captured snapshot, then apply only that approved list. This workflow does not archive planning records.
 </purpose>
 <required_reading>
-@engineer/RULES.md
-@engineer/references/cleanup.md
-@engineer/references/git-workflow.md
+@~/.claude/engineer/RULES.md
+@~/.claude/engineer/references/cleanup.md
+@~/.claude/engineer/references/git-workflow.md
 </required_reading>
 <process>
 <step name="resolve_and_preview">

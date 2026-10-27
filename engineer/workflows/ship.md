@@ -3,14 +3,14 @@
 Publish the verified phase session, keep its draft PR current, wait for required provider checks, and merge only on the user's explicit instruction. A nonpassed or stale verdict has no shipping bypass. Preserve an open session and concrete blockers when publication or merge cannot complete.
 </purpose>
 <required_reading>
-@engineer/RULES.md
-@engineer/references/universal-anti-patterns.md
-@engineer/references/git-workflow.md
-@engineer/references/verification-evidence.md
-@engineer/templates/pull-request.md
+@~/.claude/engineer/RULES.md
+@~/.claude/engineer/references/universal-anti-patterns.md
+@~/.claude/engineer/references/git-workflow.md
+@~/.claude/engineer/references/verification-evidence.md
+@~/.claude/engineer/templates/pull-request.md
 </required_reading>
 <available_agent_types>
-Use code-reviewer, verifier, debugger and targeted-fixer, with exact role names and bounded assignments.
+Use code-reviewer, verifier, debugger and code-fixer, with exact role names and bounded assignments.
 </available_agent_types>
 <model_selection>
 Resolve every exact role with engineer_run query resolve-model and resolve-effort immediately before dispatch. Pass actual values inline and omit each inherited field. A fresh verifier auditing published issue links must be independent of the PR/body author.
@@ -43,7 +43,7 @@ Read and execute the complete engineer/workflows/_canonical-threat-tracking.md p
 8. Verify source head and every independent audit still describe the same phase/session before any external write.
 </step>
 <step name="optional_review">
-When --review is explicitly requested, capture a frozen revision and dispatch code-reviewer read-only with inline resolved model/effort, full diff, acceptance, threat records and complete PR/body context. Wait for the report. Correct demonstrated blocking findings through a bounded isolated targeted-fixer and fresh verification; do not turn INFO into required scope. The optional flag does not replace mandatory verification or an independent issue-link audit.
+When --review is explicitly requested, capture a frozen revision and dispatch code-reviewer read-only with inline resolved model/effort, full diff, acceptance, threat records and complete PR/body context. Wait for the report. Correct demonstrated blocking findings through a bounded isolated code-fixer and fresh verification; do not turn INFO into required scope. The optional flag does not replace mandatory verification or an independent issue-link audit.
 </step>
 <step name="prepare_shipping_record">
 Set preparation_record_changed=false before considering record writes. If continuity fields are already correct, leave them untouched and retain the current report/receipts; do not create an empty bookkeeping commit. Set preparation_record_changed=true only after inspecting a real authorized record diff and its commit.
@@ -88,7 +88,7 @@ Run `engineer_run query pr.checks "${SESSION_BRANCH}" --timeout 240` up to 12 ca
 | Failed | Diagnose the named failure and perform only authorized bounded repair |
 | Missing, cancelled, unreadable or mismatched-head evidence | Report the exact blocker; do not call it green |
 
-Permit at most 2 rounds of CI repair. A known bounded in-scope defect goes to an isolated targeted-fixer; an unknown cause goes to debugger. After integrating a committed repair, run verify-work in ship-repair/return-to-caller mode against a new frozen revision. Require passed/current evidence and a fresh issue-link audit, then push without force and read provider state again. Re-run `engineer_run query pr.checks "${SESSION_BRANCH}" --timeout 240` on the new actual head. Reaching the repair cap never authorizes merge or weakens acceptance. If user testing is deferred, do not trigger tests here; keep their required outcome pending.
+Permit at most 2 rounds of CI repair. A known bounded in-scope defect goes to an isolated code-fixer; an unknown cause goes to debugger. After integrating a committed repair, run verify-work in ship-repair/return-to-caller mode against a new frozen revision. Require passed/current evidence and a fresh issue-link audit, then push without force and read provider state again. Re-run `engineer_run query pr.checks "${SESSION_BRANCH}" --timeout 240` on the new actual head. Reaching the repair cap never authorizes merge or weakens acceptance. If user testing is deferred, do not trigger tests here; keep their required outcome pending.
 </step>
 <step name="merge_and_close">
 Reconcile [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking) under the complete _canonical-threat-tracking.md procedure, preserving stable planned entries, standalone unplanned scope and closure authority.
