@@ -1,6 +1,6 @@
 ---
 workflow: code-review
-roles: [coordinator, code-reviewer, targeted-fixer, debugger]
+roles: [coordinator, code-reviewer, code-fixer, debugger]
 produces: [REVIEW.md, optional REVIEW-FIX.md]
 ---
 

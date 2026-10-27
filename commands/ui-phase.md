@@ -26,8 +26,8 @@ Flow: Validate scope/decisions → Isolated UI-SPEC artifact → Independent che
 </objective>
 
 <execution_context>
-@engineer/workflows/ui-phase.md
-@engineer/templates/UI-SPEC.md
+@~/.claude/engineer/workflows/ui-phase.md
+@~/.claude/engineer/templates/UI-SPEC.md
 @agents/ui-researcher.md
 @agents/ui-checker.md
 </execution_context>
