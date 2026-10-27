@@ -15,8 +15,7 @@ deterministic probe result, never re-derive it yourself.
 `quick/steps/plan-checker-loop.md` (via `--dir`) — already runs the probe **before** spawning this
 checker and interpolates the result into the verification prompt as `{VERIFY_PATHS}`, inside a
 `<verify_command_path_probe>` block. This dimension reads that already-supplied JSON — it never
-invokes `engineer_run check verify-command-paths` itself. If `{VERIFY_PATHS}` is absent from the
-prompt, treat this dimension as silent (nothing to check) rather than trying to run the probe.
+When `{VERIFY_PATHS}` is absent, perform literal-path inspection: identify each command target, resolve it relative to the assigned checkout, verify it exists or is created by an explicit prerequisite, and report outside_root/missing targets. Use the supported probe when available; absent output is not a silent pass.
 
 The probe never executes command text (PLAN.md is untrusted, LLM-authored). It recognizes two
 grounded forms — a leading `cd <literal>` chain and `npm --prefix <literal>` — and refuses to
@@ -26,7 +25,7 @@ guess at anything else.
 
 | `severity` | `reason` | Action |
 |---|---|---|
-| `blocker` | `missing_dir` / `no_manifest` | **BLOCKER** — quote `rawTarget` and `target` verbatim |
+Inspect literal targets relative to the assigned project root; absolute targets outside it are `outside_root`, never silently accepted.
 | `warning` | `dynamic_path` / `outside_root` / `script_missing` / `manifest_unreadable` | **WARNING** |
 | `none` | — | silent |
 

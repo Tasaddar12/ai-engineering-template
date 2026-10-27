@@ -10,9 +10,9 @@ See also: `engineer/references/universal-anti-patterns.md` for the complete set 
 
 Every workflow that spawns agents or reads significant content must follow these rules:
 
-1. **Never** read agent definition files (`agents/*.md`) -- `subagent_type` auto-loads them
+1. Read your assigned role and all required inputs. Discover additional files only for a named question.
 2. **Never** inline large files into subagent prompts -- tell agents to read files from disk instead
-3. **Read depth scales with context window** -- check `context_window` in `.planning/config.json`:
+3. **Read depth scales with context window** -- check `context_window` in `.planning/config.yaml`:
    - At < 500000 tokens (default 200k): read only frontmatter, status fields, or summaries. Never read full SUMMARY.md, VERIFICATION.md, or RESEARCH.md bodies.
    - At >= 500000 tokens (1M model): MAY read full subagent output bodies when the content is needed for inline presentation or decision-making. Still avoid unnecessary reads.
 4. **Delegate** heavy work to subagents -- the orchestrator routes, it doesn't execute
@@ -25,18 +25,19 @@ Every workflow that spawns agents or reads significant content must follow these
 | < 500k (200k model) | Frontmatter only | Frontmatter only | Frontmatter only | Current phase only |
 | >= 500k (1M model) | Full body permitted | Full body permitted | Full body permitted | Current phase only |
 
-**How to check:** Read `.planning/config.json` and inspect `context_window`. If the field is absent, treat as 200k (conservative default).
+**How to check:** Read `.planning/config.yaml` and inspect `context_window`. If the field is absent, treat as 200k (conservative default).
 
 ## Context Degradation Tiers
 
-Monitor context usage and adjust behavior accordingly. The `workflow.context_guard_mode` config key (values: `auto`, `warn`, `off`; default `warn`) controls how `execute-phase.md` responds when the guard fires at a wave boundary.
+Use context percentages as heuristics, not measured proof. Preserve the current assignment and evidence before context pressure threatens completion.
 
-| Tier | Usage | Behavior | Trigger Action (execute-phase) |
-|------|-------|----------|-------------------------------|
-| PEAK | 0-30% | Full operations. Read bodies, spawn multiple agents, inline results. | None |
-| GOOD | 30-50% | Normal operations. Prefer frontmatter reads, delegate aggressively. | None |
-| DEGRADING | 50-70% | Economize. Frontmatter-only reads, minimal inlining, warn user about budget. | Emit warning, continue |
-| POOR | 70%+ | Emergency mode. Checkpoint progress immediately. No new reads unless critical. | `warn`: emit warning + recommend `/pause-work`. `auto`: invoke pause-work before next wave. `off`: proceed anyway. |
+| Tier | Heuristic signal | Action |
+|------|------------------|--------|
+| Healthy | Inputs and outputs remain bounded | Continue within assigned scope |
+| Growing | Repeated large reads or vague responses | Select narrower evidence and report the next uncertainty |
+| Constrained | Required context cannot fit reliably | Write a measured handoff and stop dependent work safely |
+
+Never use a mode flag to waive gates or infer acceptance.
 
 ## Context Degradation Warning Signs
 
@@ -46,80 +47,33 @@ Quality degrades gradually before panic thresholds fire. Watch for these early s
 - **Increasing vagueness** -- agent starts using phrases like "appropriate handling" or "standard patterns" instead of specific code. This indicates context pressure even before budget warnings fire.
 - **Skipped steps** -- agent omits protocol steps it would normally follow. If an agent's success criteria has 8 items but it only reports 5, suspect context pressure.
 
-When delegating to agents, the orchestrator cannot verify semantic correctness of agent output -- only structural completeness. This is a fundamental limitation. Mitigate with must_haves.truths and spot-check verification.
+The coordinator independently verifies semantic correctness with assigned specialists and behavioral evidence; file existence and worker self-attestation alone are insufficient.
 
-## MCP Tool Schema Cost (Harness Concern)
+## Tool schema cost
 
-Every enabled MCP server injects its tool schema into **every turn**, regardless of whether you call any of its tools. Heavyweight servers can cost 20k+ tokens per turn each — often dwarfing whatever GSD itself can save through `model_profile` tuning. This is a Claude Code harness concern, not a GSD concern: GSD does **not** manage MCP enablement. The toggle lives in `.claude/settings.json` under `enabledMcpjsonServers` and `disabledMcpjsonServers`.
+Enabled tool schemas and results consume context according to the actual Claude or Codex host. Do not assume every schema is injected on every turn or change account/tool configuration without the user's authorization. Select the narrowest relevant tool and return bounded evidence. Configuration of MCP services belongs to the host, not `.planning/config.yaml`.
 
-### Why this is the biggest cost lever you don't own
-
-Tool schemas count against the same context budget as model context, prompts, and conversation history. If a project has 5 unused MCP servers averaging 5k tokens of schema each, every turn pays a 25k-token tax before the assistant reads a single project file. Trimming MCPs has a **multiplier effect** that compounds with whichever `model_profile` you've chosen — every-turn overhead drops regardless of which model is in use.
-
-### Pre-Phase MCP Audit
-
-Before starting a long phase (especially `/execute-phase`, `/plan-phase`, or anything that fans out across many subagents), run this audit:
-
-- [ ] **Browser / playwright tools enabled?** If this phase has no UI work, disable them. They're among the heaviest per-turn schemas.
-- [ ] **Platform-specific tools enabled?** Mac-tools / Windows-tools / OS-specific helpers should be disabled when not actively needed for the phase at hand.
-- [ ] **Cross-project / stale MCPs?** Servers added for a different project that are still enabled here. These are often forgotten and pay a per-turn tax for zero benefit.
-- [ ] **Duplicate or shadow servers?** Two MCPs offering similar tools (e.g. two different filesystem helpers). Keep one.
-
-Each item disabled removes its schema from every subsequent turn for the rest of the session.
-
-### How to toggle
-
-The keys live in `.claude/settings.json` (project) or `~/.claude/settings.json` (global) — **not** in `.planning/config.json`:
-
-```json
-{
-  "enabledMcpjsonServers": ["context7"],
-  "disabledMcpjsonServers": ["playwright", "mac-tools"]
-}
-```
-
-Either list works — `enabledMcpjsonServers` is an explicit allow-list, `disabledMcpjsonServers` is a block-list against the default. See the [Claude Code MCP documentation](https://docs.anthropic.com/en/docs/claude-code/mcp) for the canonical reference; this section just flags it as a context-budget lever GSD users routinely overlook.
-
-### Composition with model_profile
-
-Trimming MCPs and tuning `model_profile` are independent levers that **compound**. Disabling a 25k-token MCP saves 25k per turn whether you're running `quality` (opus everywhere) or `budget` (sonnet/haiku); the savings are additive, not in lieu of model tuning. Don't pick one — do both, and audit MCPs first because the per-turn savings show up immediately and stack across every subagent the orchestrator spawns.
+Before a long operation, identify the tools required by its scope and avoid loading unrelated outputs. Keep source paths and exact citations so a continuation can retrieve them without carrying the whole repository in its prompt.
 
 ---
 
 # Phase Sizing (planner)
 
-## Estimate Emission (#2631, ADR-2629)
+## Advisory estimates
 
-Every plan carries an `estimate` block. It is the quantitative reason a phase must be sliced — tracer-first says *slice thin*, the estimate says *how thin, for this codebase*.
+Use `estimate_scope` to explain outcome boundaries and likely read/change/check cost. Estimate from actual relevant source, not a fixed token percentage. Label uncertain numbers as advisory; no calibration command is assumed. Read the configured task cap and honor the assigned cap. A count inside the cap does not prove a coherent plan.
 
-**Compute it:**
-1. Sum `estimateTokens`-scale cost across the plan: implementation + the files each task reads + verification output. Roughly chars/4 over what the executor will actually touch.
-2. Run `estimate-calibration` and **multiply your raw figure by its `factor`.** It is the measured estimate-vs-actual ratio for THIS project — a factor of 1 means there is not yet enough history to correct.
-3. `confidence` is **derived, not judged**: it is the `confidence` value from the same calibration query, keyed to the sample count (`low` <3, `med` 3–5, `high` ≥6). **Do not rate your own certainty.** Self-rated confidence was measured in this project and found weak (`references/honest-verifier.md:25-29`); every signal here routes on measured history instead.
+## Split signals
 
-**Over budget?** The plan-checker flags a plan whose estimate exceeds `workflow.smart_zone_tokens`. This is advisory — it never blocks. When flagged, re-slice: a tracer plus expansion slices, each inside the budget. Prefer more, smaller plans over one that spends the agent's best early-context tokens and finishes degraded.
+Split when a distinct outcome can be verified independently, a producer must finish before a consumer, or exact path/resource ownership requires serialization. Preserve contract-first, thin-slice delivery. Do not split merely because there are more than five files, a checkpoint is present or several subsystems participate in one outcome. Ask the coordinator to resolve a scope change; planners do not add or defer approved scope.
 
-## Context Budget Rules
+Good: a persistence contract and a dependent API consumer have an actual `depends_on` edge.
+Bad: split DB, API and UI mechanically when the authorized outcome requires one end-to-end slice.
 
-Plans should complete within ~50% context (not 80%). No context anxiety, quality maintained start to finish, room for unexpected complexity.
-
-**Each plan: 2-3 tasks maximum.**
-
-| Context Weight | Tasks/Plan | Context/Task | Total |
-|----------------|------------|--------------|-------|
-| Light (CRUD, config) | 3 | ~10-15% | ~30-45% |
-| Medium (auth, payments) | 2 | ~20-30% | ~40-50% |
-| Heavy (migrations, multi-subsystem) | 1-2 | ~30-40% | ~30-50% |
-
-## Split Signals
-
-**ALWAYS split if:**
-- More than 3 tasks
-- Multiple subsystems (DB + API + UI = separate plans)
-- Any task with >5 file modifications
-- Checkpoint + implementation in same plan
-- Discovery + implementation in same plan
-
-**CONSIDER splitting:** >5 files total, natural semantic boundaries, context cost estimate exceeds 40% for a single plan. See `<planner_authority_limits>` for prohibited split reasons.
+Read [planner guidance](planner-guidance.md) for outcome calibration.
 
 See @~/.claude/engineer/references/planner-guidance.md for Granularity Calibration table (Coarse/Standard/Fine plans-per-phase).
+
+## Evidence selection and continuation
+
+Read complete templates before authoring their artifacts even when general read-depth guidance favors frontmatter. Only the coordinator schedules specialist work. A context handoff records base/head revisions, completed and remaining work, dirty paths, pending gates and first continuation.

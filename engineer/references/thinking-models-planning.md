@@ -18,7 +18,7 @@ Before finalizing this plan, assume it has already failed. List the 3 most likel
 
 **Counters:** Overlapping tasks (merge conflicts) or gapped tasks (missing requirements).
 
-Verify this task breakdown is MECE at the REQUIREMENT level: (1) list every requirement from the phase goal, (2) confirm each maps to exactly one task's `<done>`, (3) if two tasks modify the same file, confirm they modify DIFFERENT sections or serve DIFFERENT requirements, (4) flag any requirement not covered by any task.
+Verify this task breakdown is MECE at the REQUIREMENT level: (1) list every requirement from the phase goal, (2) confirm each maps to exactly one task's `<done>`, (3) if two tasks modify the same file, declare exact ownership and serialize them; different sections do not exempt overlap, (4) flag any requirement not covered by any task.
 
 ## 3. Constraint Analysis
 
@@ -30,7 +30,7 @@ Identify the single hardest constraint in this phase -- the one thing that, if i
 
 **Counters:** Over-analyzing cheap decisions, under-analyzing costly ones.
 
-For each significant decision in this plan, ask what undoing it would cost three phases from now, and rate it `reversible` (local and cheap to change), `costly` (undo touches many call sites or needs a coordinated change), or `one-way` (undo requires a migration, breaks a published contract, or is impossible). Spend analysis time proportional to the rating. Record the rating and a one-line rationale on the task that implements the decision, via `<reversibility>`; a `one-way` rating also earns a `checkpoint:decision` before that task. When unsure, rate it `reversible` — rating everything `one-way` is checkpoint fatigue, not diligence.
+For each significant decision in this plan, ask what undoing it would cost three phases from now, and rate it `reversible` (local and cheap to change), `costly` (undo touches many call sites or needs a coordinated change), or `one-way` (undo requires a migration, breaks a published contract, or is impossible). Spend analysis time proportional to the rating. Record the rating and a one-line rationale on the task that implements the decision, via `<reversibility>`; the coordinator resolves an unresolved `one-way` choice before dependent execution, preserving any already recorded decision. When unsure, rate it `reversible` — rating everything `one-way` is checkpoint fatigue, not diligence.
 
 This is the reasoning step that produces the rating. The taxonomy itself, the emission rules, and the anti-patterns live in @~/.claude/engineer/references/planner-reversibility.md — do not maintain a second classification here.
 
@@ -78,3 +78,7 @@ Skip structured reasoning models when the situation does not benefit from them:
 - **Well-researched phases** -- If RESEARCH.md has HIGH-confidence recommendations for every decision and no `[NEEDS DECISION]` items, skip Base Rate Neglect Counter. The research already resolved uncertainty.
 - **Revision iterations** -- When revising a plan based on checker feedback, focus on fixing the flagged issues. Do not re-run the full model suite on every revision pass -- apply only the model relevant to the specific issue (e.g., MECE if the checker found a coverage gap).
 - **Boilerplate plans** -- Configuration changes, version bumps, documentation updates. These do not have failure modes worth pre-mortem analysis.
+
+## Ownership and evidence boundaries
+
+Apply MECE to fact ownership rather than document sections: each fact has one owner and consumers link to it. The coordinator resolves consequential one-way choices against recorded user decisions. Disconfirmation searches testable alternatives; never invent findings to appear adversarial. Counts are signals, not correctness proof. Re-verification is scoped to the covered revision, affected changes and preserved valid evidence; source or input drift invalidates only the evidence it actually affects.

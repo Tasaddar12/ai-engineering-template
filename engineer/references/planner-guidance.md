@@ -1,11 +1,8 @@
 # Planner Guidance: Philosophy, Task Calibration, and Output Formats
 
-## Solo Developer + Claude Workflow
+## Coordinated user and agent workflow
 
-Planning for ONE person (the user) and ONE implementer (Claude).
-- No teams, stakeholders, ceremonies, coordination overhead
-- User = visionary/product owner, Claude = builder
-- Estimate effort in context window cost, not time
+The user owns intent, scope and consequential choices. The coordinator routes bounded assignments; workers implement or inspect their exact ownership. Plans record required interfaces, evidence and stop conditions. Account for read/change/check cost through `estimate_scope`, not invented time or token guarantees.
 
 ## Plans Are Prompts
 
@@ -24,7 +21,7 @@ PLAN.md IS the prompt (not a document that becomes one). Contains:
 | 50-70% | DEGRADING | Efficiency mode begins |
 | 70%+ | POOR | Rushed, minimal |
 
-**Rule:** Plans should complete within ~50% context. More plans, smaller scope, consistent quality. Each plan: 2-3 tasks max.
+**Rule:** honor the configured task cap and size by coherent outcomes and actual dependencies. Context estimates are advisory.
 
 ## Ship Fast
 
@@ -38,30 +35,26 @@ Plan -> Execute -> Ship -> Learn -> Repeat
 
 | Type | Use For | Autonomy |
 |------|---------|----------|
-| `auto` | Everything Claude can do independently | Fully autonomous |
-| `checkpoint:human-verify` | Visual/functional verification | Pauses for user |
-| `checkpoint:decision` | Implementation choices | Pauses for user |
-| `checkpoint:human-action` | Truly unavoidable manual steps (rare) | Pauses for user |
+| `auto` | Authorized independently executable work | Within recorded authority |
+| `tracer` | Thin real end-to-end slice | Honors human-check gates |
+| `checkpoint:human-verify` | Required human judgment | Wait for actual human answer |
+| `checkpoint:decision` | Choice outside delegated discretion | Wait, unless recorded delegation covers declared auto_select |
+| `checkpoint:human-action` | Required secure/manual action | Wait only dependent work |
 
-**Automation-first rule:** If Claude CAN do it via CLI/API, Claude MUST do it. Checkpoints verify AFTER automation, not replace it.
+Prepare reviewable work first. Ability to invoke an API does not itself authorize publication, deployment or a human decision.
 
 ## Task Sizing
 
-Each task targets **10–30% context consumption**.
+Size each task by one independently verifiable outcome. Read the configured cap and record `estimate_scope` assumptions; do not treat a context percentage or file count as a measured execution budget.
 
-| Context Cost | Action |
-|--------------|--------|
-| < 10% context | Too small — combine with a related task |
-| 10-30% context | Right size — proceed |
-| > 30% context | Too large — split into two tasks |
+| Signal | Action |
+|--------|--------|
+| Producer contract must exist before consumer | Declare `depends_on` and exact interface revision |
+| Overlapping files or shared external resources | Declare ownership/resources and serialize |
+| Distinct independently verifiable outcome | Ask coordinator to split at that boundary |
+| One coherent outcome spans several layers | Keep the vertical slice intact |
 
-**Context cost signals (use these, not time estimates):**
-- Files modified: 0-3 = ~10-15%, 4-6 = ~20-30%, 7+ = ~40%+ (split)
-- New subsystem: ~25-35%
-- Migration + data transform: ~30-40%
-- Pure config/wiring: ~5-10%
-
-**Too large signals:** Touches >3-5 files, multiple distinct chunks, action section >1 paragraph.
+Do not add or defer approved scope while estimating.
 
 **Combine signals:** One task sets up for the next, separate tasks touch same file, neither meaningful alone.
 
@@ -69,9 +62,9 @@ Each task targets **10–30% context consumption**.
 
 When a plan creates new interfaces consumed by subsequent tasks:
 
-1. **First task: Define contracts** — Create type files, interfaces, exports
-2. **Middle tasks: Implement** — Build against the defined contracts
-3. **Last task: Wire** — Connect implementations to consumers
+1. **Define the consumed contracts** — types, interfaces, exports and observable invariants.
+2. **Deliver the thinnest end-to-end slice** against those contracts with real behavior and verification.
+3. **Expand the same outcome** with error paths and required edge cases; preserve producer/consumer dependencies.
 
 This prevents the "scavenger hunt" anti-pattern where executors explore the codebase to understand contracts. They receive the contracts in the plan itself.
 
@@ -159,12 +152,12 @@ Derive plans from actual work. Granularity determines compression tolerance, not
 
 ### Next Steps
 
-Run `/clear` first for a fresh context window, then execute: `/execute-phase {phase}`
+Return planning results and the first next action. Implementation requires explicit user authorization for this phase.
 ```
 
 ## Gap Closure Return (artifact-based — #3440)
 
-Gap-closure completion has **no completion marker**: nothing consumes one. The return contract is the artifacts themselves — `verify-work.md` spawns you in `--gaps` mode, and your output is complete when the fix plans are on disk carrying `gap_closure: true` in their frontmatter; the spawning workflow detects the files (never a return string), and `/execute-phase {phase} --gaps-only` consumes them. (The former `GAP CLOSURE PLANS CREATED` completion marker was retired as vestigial — it had no dispatch branch anywhere.)
+Gap-closure output is the complete artifact set named by the correction assignment. Preserve stable gap IDs and `gap_closure: true`; include acceptance, documentation, checks argv and issue_refs. Return exact paths and revision to the coordinator; do not start execution.
 
 **Phase:** {phase-name}
 **Closing:** {N} gaps from {VERIFICATION|UAT}.md
@@ -173,7 +166,7 @@ Gap-closure completion has **no completion marker**: nothing consumes one. The r
 |------|----------------|-------|
 | {phase}-04 | [gap truths] | [files] |
 
-**Next step for the orchestrator:** `/execute-phase {phase} --gaps-only`
+**Next step:** return the bounded gap plans to the coordinator. Execution still requires explicit user authorization for the phase.
 
 ## Checkpoint Reached / Revision Complete
 

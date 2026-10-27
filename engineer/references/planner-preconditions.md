@@ -30,9 +30,7 @@ of the "outrunning your headlights" failure mode.
 ## When to emit `<precondition>`
 
 Emit `<precondition>` ONLY when a task relies on state the plan's own `depends_on`
-ordering does not already guarantee. Three cases cover every legitimate use; if
-the task's prerequisite is intra-plan sequencing, use `depends_on`, NOT
-`<precondition>`.
+ordering does not already guarantee. Three cases cover the intended external-state uses. Use `depends_on` only for inter-plan dependencies in the same phase. Declare external resource conflicts in `resources`; record cross-phase prerequisites in CONTEXT.
 
 ### Case 1 — External service setup (`user_setup`)
 
@@ -55,9 +53,7 @@ executor halts if the setup was skipped.
 
 ### Case 2 — Prior-phase artifact dependency
 
-The task consumes an artifact a prior phase promised (a generated schema, a
-migration's dist output, a contract file). Cross-phase `depends_on` does not
-cross phase boundaries, so a `<precondition>` is the explicit pointer.
+The task consumes an artifact a prior phase promised, such as a generated schema, migration output or contract file. Cross-phase prerequisites belong in CONTEXT with the actual source artifact/revision. `depends_on` names only plans in this phase.
 
 ```xml
 <task type="auto">
@@ -105,9 +101,7 @@ environment variable or runtime config that exists *now* (not at plan time).
 
 - **Vague readiness checks.** "The system is ready" is not checkable. Name the
   concrete signal: a `curl` response, a file path, an env var name.
-- **Intra-plan ordering.** "Task 1 has completed" — that is what `depends_on`
-  is for. Reserve `<precondition>` for state the plan's wave/dependency graph
-  cannot express.
+- **Intra-plan ordering.** Task order within the current plan is not an inter-plan depends_on edge. Reserve preconditions for actual external state. Preserve completed independent slices on an unmet precondition; the coordinator assigns the continuation and workers record Remaining.
 - **Implementation choices.** "We have chosen library X" — that belongs in the
   `<action>` body or a `## Decisions` row, not a runtime fact.
 - **Things the task itself creates.** A precondition names a fact the task
@@ -121,17 +115,11 @@ The executor agent reads `<precondition>` before any other task work:
 |---|---|
 | **Absent** | No visible change — execute the task exactly as today. Back-compat for every existing plan. |
 | **Met** | No visible change — proceed with the task. The precondition is logged in the SUMMARY only if it was non-trivial to verify. |
-| **Unmet** | STOP — return a `checkpoint:human-verify` reporting `**Gate:** blocking-human` (use `checkpoint_return_format`) with `**Blocked by:** Precondition not met: <precondition text>`. Do NOT partial-commit the task. Unmet preconditions are NEVER auto-approved — a missing prerequisite is not a verification step a human can rubber-stamp, it is a fact the executor cannot establish on its own. |
+| **Unmet** | Preserve completed slices and commits. Record the exact unmet precondition; stop only dependent work and request the missing fact/decision through the checkpoint contract. Never roll back completed unrelated work or rubber-stamp a missing prerequisite. |
 
 ## Plan-structure validation
 
-`cmdVerifyPlanStructure` checks for the presence of required tags (`<name>`,
-`<action>`, etc.) and warns on missing recommended tags (`<verify>`, `<done>`,
-`<files>`). It does **not** reject unknown optional tags, so adding
-`<precondition>` to a plan passes validation unchanged. A future ADR may add
-structured validation if drift emerges; v1 ships prose-only to keep the surface
-minimal (Hyrum's Law: the smaller the observable surface, the less the system
-depends on by accident).
+Run `engineer_run query verify.plan-structure PLAN_PATH` for supported required-field and task checks. Inspect optional preconditions semantically too: a successful structural check does not prove the environment satisfies them. Record the exact unmet fact and dependent task, preserving completed slices.
 
 ## Out of scope
 

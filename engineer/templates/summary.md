@@ -4,6 +4,8 @@ Template for `.planning/phases/XX-name/{phase}-{plan}-SUMMARY.md` - phase comple
 
 ---
 
+Required current-record metadata: `phase`, `plan`, `status`, `requirements-completed`, `acceptance`, `documentation`, `issue_refs`.
+
 ## File Template
 
 ```markdown
@@ -46,11 +48,15 @@ patterns-established:
   - "Pattern 1: description"
   - "Pattern 2: description"
 
-requirements-completed: [] # REQUIRED — Copy ALL requirement IDs from this plan's `requirements` frontmatter field.
+requirements-completed: [] # REQUIRED — include only IDs the delivered changes and evidence actually complete.
+
+acceptance: []
+documentation: []
+issue_refs: []
 
 # Coverage metadata — one entry per shipped deliverable. Drives DETERMINISTIC UAT routing in verify-work.
-# OMIT this whole block for legacy/prose-only SUMMARYs — verify-work then falls back to the ## Accomplishments bullets
-# (byte-identical behavior for un-migrated phases). See <coverage_guidance> below for the contract.
+# Current summaries preserve this complete block. Legacy prose may inform review but cannot pass required acceptance.
+# See <coverage_guidance> for coordinator/verifier classification.
 coverage:
   - id: D1
     description: "[deliverable in human-readable form — what would have been a prose ## Accomplishments bullet]"
@@ -59,7 +65,7 @@ coverage:
       - kind: unit # unit | integration | e2e | automated_ui | manual_procedural | other
         ref: "[tests/path.test.ts#test name | playwright:shot.png | command invocation]"
         status: pass # pass | fail | unknown — from the latest run
-    human_judgment: false # REQUIRED boolean. false => may auto-pass IF every verification status is `pass`.
+    human_judgment: false # REQUIRED boolean. false does not waive required human UAT; automatic classification requires non-empty passing evidence.
   - id: D2
     description: "[a deliverable that needs a human to sign off]"
     verification: []
@@ -101,6 +107,14 @@ Each task was committed atomically:
 **Plan metadata:** `lmn012o` (docs: complete plan)
 
 _Note: TDD tasks may have multiple commits (test → feat → refactor)_
+
+## Checks
+
+| Tested revision | Command argv | Observed result | Evidence |
+|-----------------|--------------|-----------------|----------|
+| [SHA] | [exact argv] | [pass / fail / not run] | [receipt or output path] |
+
+TDD Evidence: record the RED failure, GREEN pass and commit ancestry; missing evidence remains a gap.
 
 ## Files Created/Modified
 
@@ -153,6 +167,20 @@ _Note: TDD tasks may have multiple commits (test → feat → refactor)_
 [If no USER-SETUP.md:]
 None - no external service configuration required.
 
+## Threat Flags
+
+| Threat ID | Finding / boundary | Canonical issue | Status |
+|-----------|--------------------|-----------------|--------|
+| [T-{phase}-NN] | [specific finding] | [URL or Pending reason] | [open / mitigated / accepted decision reference] |
+
+## Threat Outcomes
+
+| Threat ID | Delivered mitigation | Evidence | Remaining exposure |
+|-----------|----------------------|----------|--------------------|
+| [T-{phase}-NN] | [change] | [behavioral evidence] | [remaining work or none] |
+
+Follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking); do not silently drop open threats.
+
 ## Next Phase Readiness
 
 [What's ready for next phase]
@@ -185,7 +213,7 @@ _Completed: [date]_
 </frontmatter_guidance>
 
 <coverage_guidance>
-**Purpose:** The `coverage:` block is a per-deliverable Requirements Traceability Matrix. It lets `verify-work`'s `extract_tests` step route deliverables DETERMINISTICALLY — auto-passing those proven by passing tests and reserving human UAT for genuine judgment — instead of re-deriving coverage from prose. Consumed via `engineer-tools uat classify-coverage --summary <SUMMARY>`.
+**Purpose:** The `coverage:` block is a per-deliverable Requirements Traceability Matrix. It lets `verify-work`'s `extract_tests` step route deliverables DETERMINISTICALLY — classifying outcomes with valid non-empty automated evidence while preserving all required human acceptance — instead of re-deriving coverage from prose. Consumed via `engineer_run query uat.classify-coverage SUMMARY_PATH`.
 
 **Field semantics:**
 
@@ -202,10 +230,10 @@ _Completed: [date]_
 
 **Deterministic contract (what the classifier does):**
 
-- A deliverable auto-passes (no human prompt) **only** when `human_judgment: false` AND `verification` is non-empty AND every `verification[].status` is `pass`. This is the narrow, fully-proven case.
+- The coordinator and verifier may classify an automated deliverable only when human_judgment is false, verification is non-empty, every result is pass and revision/input coverage is current. This never waives required human UAT or final acceptance.
 - **Everything else is presented to a human** — `human_judgment: true`, an empty `verification:`, any non-`pass`/`unknown` status, or any schema error. A false-negative is a redundant prompt (the status quo); a false-positive ships a bug UAT existed to catch.
-- **Fail-safe default:** if you cannot determine coverage for a deliverable, you MUST set `human_judgment: true` with `rationale: "Coverage not determined at authoring time — verifier must classify"`. Never leave a deliverable's `human_judgment` empty, and never set it `false` just to skip the prompt — auto-pass additionally requires a passing `verification` entry, so the flag alone cannot skip the human.
-- `coverage: []` means "no deliverables to classify" (the single-confirmation path). OMITTING the block entirely means "legacy" — `verify-work` falls back to prose `## Accomplishments` extraction unchanged.
+- **Fail-safe default:** if you cannot determine coverage for a deliverable, you MUST set `human_judgment: true` with `rationale: "Coverage not determined at authoring time — verifier must classify"`. Never leave a deliverable's `human_judgment` empty, and never set it `false` just to skip the prompt — automated coverage additionally requires non-empty passing verification, so the flag alone cannot skip the human.
+- Current SUMMARYs require coverage for every delivered outcome. Empty coverage or missing required metadata remains a classification gap; legacy prose is discovery input only and cannot automatically approve current acceptance.
   </coverage_guidance>
 
 <one_liner_rules>
@@ -316,6 +344,10 @@ _Completed: 2025-01-15_
 - Extracted to STATE.md accumulated context
 - Use "None - followed plan as specified" if no deviations
 
-**After creation:** STATE.md updated with position, decisions, issues.
+**After creation:** only the coordinator reconciles STATE/CONTEXT/ROADMAP through supported runtime operations, including state.update-progress. Workers return proposed updates and Remaining; they do not write shared records.
 </guidelines>
 ```
+
+## Coordinator reconciliation
+
+Workers report delivered changes and Remaining; they do not write shared STATE, ROADMAP, REQUIREMENTS traceability or CONTEXT decisions. The coordinator reconciles those records with supported `engineer_run query` operations. Coverage is mandatory for current summaries: classify each deliverable as automated, human-needed or unverified; automated requires non-empty passing evidence at the assigned revision. Required human UAT remains pending until an actual human accepts. Never turn absent evidence into a pass.

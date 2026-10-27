@@ -8,7 +8,7 @@
 > Check 8f itself lives in its own reference:
 > @~/.claude/engineer/references/failing-direction.md
 
-**Skip if:** `workflow.nyquist_validation` is explicitly set to `false` in config.json
+**Applicability:** Run when Validation Architecture or assigned VALIDATION requires it. **Skip only if:** `workflow.nyquist_validation` is explicitly set to `false` in config.yaml
 (absent key = enabled), phase has no RESEARCH.md, or RESEARCH.md has no "Validation
 Architecture" section. Output: "Dimension 8: SKIPPED (nyquist_validation disabled or not
 applicable)"
@@ -30,10 +30,10 @@ Skip checks 8a-8d entirely. Report Dimension 8 as FAIL with this single issue.
 ## Check 8a — Automated Verify Presence
 
 For each `<task>` in each plan:
-- `<verify>` must contain `<automated>` command, OR a Wave 0 dependency that creates the test
+- `<verify>` must contain `<automated>` command, OR a prerequisite dependency that creates the test
   first
-- If `<automated>` is absent with no Wave 0 dependency → **BLOCKING FAIL**
-- If `<automated>` says "MISSING", a Wave 0 task must reference the same test file path →
+- If `<automated>` is absent with no prerequisite dependency → **BLOCKING FAIL**
+- If `<automated>` says "MISSING", a prerequisite task must reference the same test file path →
   **BLOCKING FAIL** if link broken
 
 ## Check 8b — Feedback Latency Assessment
@@ -46,13 +46,13 @@ For each `<automated>` command:
 ## Check 8c — Sampling Continuity
 
 Map tasks to waves. Per wave, any consecutive window of 3 implementation tasks must have ≥2
-with `<automated>` verify. 3 consecutive without → **BLOCKING FAIL**.
+with `<automated>` verify. Fewer than 2 automated verifications in any consecutive 3-task window → **BLOCKING FAIL**.
 
-## Check 8d — Wave 0 Completeness
+## Check 8d — Prerequisite Completeness
 
 For each `<automated>MISSING</automated>` reference:
-- Wave 0 task must exist with matching `<files>` path
-- Wave 0 plan must execute before dependent task
+- prerequisite task must exist with matching `<files>` path
+- prerequisite plan must execute before dependent task
 - Missing match → **BLOCKING FAIL**
 
 ## Dimension 8 Output
@@ -65,10 +65,10 @@ For each `<automated>MISSING</automated>` reference:
 | {task} | {plan} | {wave} | `{command}` | `{fails_when}` / ❌ | ✅ / ❌ |
 
 Sampling: Wave {N}: {X}/{Y} verified → ✅ / ❌
-Wave 0: {test file} → ✅ present / ❌ MISSING
+Prerequisite: {test file} → ✅ present / ❌ MISSING
 Failing directions: {stated}/{runnable} → ✅ / ❌
 Overall: ✅ PASS / ❌ FAIL
 ```
 
 If FAIL: return to planner with specific fixes. Same revision loop as other dimensions
-(max 3 loops).
+until resolved or specifically blocked. Never repeat an identical failed attempt.

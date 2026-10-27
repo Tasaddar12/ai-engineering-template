@@ -20,15 +20,13 @@ Using this pattern produces a macOS CLI binary, not an iOS app. The app will not
 
 ---
 
-## Required Pattern: XcodeGen
+## Preserve the project's build system
 
-All iOS app scaffolding MUST use XcodeGen to generate the `.xcodeproj`.
+Use the existing supported Xcode project/build convention. Never install XcodeGen or replace the build system silently. If the project already uses XcodeGen, the complete example below shows the required iOS application target; otherwise adapt the same target requirements to the existing project.
 
-### Step 1 — Install XcodeGen (if not present)
+### Step 1 — Confirm existing tooling
 
-```bash
-brew install xcodegen
-```
+Read the build manifest and available generator. If a required tool is absent, report that missing capability and stop only dependent generation. Install only when explicitly authorized.
 
 ### Step 2 — Create `project.yml`
 
@@ -68,7 +66,7 @@ targets:
 xcodegen generate
 ```
 
-This creates `MyApp.xcodeproj` in the project root. Commit `project.yml` but add `*.xcodeproj` to `.gitignore` (regenerate on checkout).
+Follow the project's existing generated-file policy. Commit source specifications and generated projects only as that policy requires; do not automatically add an ignore that hides an owned project.
 
 ### Step 4 — Standard project layout
 

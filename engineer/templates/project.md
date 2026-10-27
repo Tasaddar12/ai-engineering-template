@@ -201,3 +201,5 @@ See: .planning/PROJECT.md (updated [date])
 This ensures Claude reads current PROJECT.md context.
 
 </state_reference>
+
+The coordinator applies the transition checklist and reconciles shared records through the runtime. Completing one phase does not authorize the next. Key Decisions owns consequential decisions; an ADR stores optional linked rationale only.

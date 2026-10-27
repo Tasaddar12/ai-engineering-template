@@ -41,7 +41,7 @@ and revise it as evidence accumulates.
 | bug_class | Route to | Revoke if already run |
 |---|---|---|
 | **Bohrbug** | deterministic reproduction → **SBFL (Phase 1.25)** → git bisect → binary search | — |
-| **Heisenbug / Mandelbug** | record-replay (`rr`) → stability-stress → statistical sampling; for Mandelbug, look for resource-exhaustion / uptime-dependent patterns | **SBFL** — if Phase 1.25 already ran, **mark its Evidence entry revoked** (flaky spectrum poisons `failed(s)`) |
+| **Heisenbug / Mandelbug** | available record-replay tooling → stability-stress → statistical sampling; inspect uptime/resource-exhaustion patterns | **SBFL** — revoke prior spectrum evidence if flaky sampling poisons failed(s) |
 | **Concurrency** | the atomicity / order / deadlock checklist (below) FIRST, then general techniques | — |
 | **General (any class — situation-cued)** | Binary search (large codebase), Working backwards (known desired output), Differential debugging (worked-before/works-elsewhere), Delta debugging (large change set), Comment out everything (many possible causes), Follow the indirection (constructed paths/URLs/keys), Rubber duck (confused), Observability first (always, before changes) | — |
 
@@ -84,14 +84,10 @@ environment, per `debugger-rca-branching.md`).
   hypothesis — concurrency bugs almost always AND-gate (code race +
   environment/config amplification), so branch across categories.
 
-## Bound the Heisenbug-chase runs (AGENTS.md gauntlet — unbounded subprocess)
+## Tool availability
 
-`rr record` on a real application, stability-stress runs, and statistical
-sampling (N repeated executions) can each run minutes-to-hours. Bound them:
-cap `rr record` and each stress/sampling loop (60s for npm-tier, scale with
-suite size; a fixed iteration count for sampling), and **degrade to a logged
-skip on timeout** — never let a Heisenbug chase hang the debug session. If a
-run is cut short, note how far it got in Evidence.
+Use only already available record-replay tooling. Record the missing capability, attempted command and consequence when unavailable; preserve the strongest possible reproduction using current tools. Never auto-install a debugger or service. An unavailable signal is skipped or incomplete with a reason, never passed.
+Bound record-replay and stress/sampling operations using configured project timeouts and fixed iteration limits. A timeout becomes a logged skipped/incomplete signal, never a silent pass. Record how far the run got and preserve its inputs/output.
 
 ## Supersede, not append (Zawinski's Law)
 

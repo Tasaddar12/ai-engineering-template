@@ -2,7 +2,7 @@
 
 Triggered by `--gaps` flag. Creates plans to address verification or UAT failures.
 
-**Important: Skip deferred items.** When reading VERIFICATION.md, only the `gaps:` section contains actionable items that need closure plans. The `deferred:` section (if present) lists items explicitly addressed in later milestone phases — these are NOT gaps and must be ignored during gap closure planning. Creating plans for deferred items wastes effort on work already scheduled for future phases.
+Read Findings, Acceptance and unresolved UAT actions/gaps as correction inputs. Exclude deferred work only when its deferral is explicitly authorized and recorded. A deferred heading alone cannot remove approved scope.
 
 **1. Find gap sources:**
 
@@ -12,8 +12,8 @@ Use init context (from load_project_state) which provides `phase_dir`:
 # Check for VERIFICATION.md (code verification gaps)
 ls "$phase_dir"/*-VERIFICATION.md 2>/dev/null
 
-# Check for UAT.md with diagnosed status (user testing gaps)
-grep -l "status: diagnosed" "$phase_dir"/*-UAT.md 2>/dev/null
+# Read unresolved UAT actions and gaps; partial sessions are actionable.
+ls "$phase_dir"/*-UAT.md 2>/dev/null
 ```
 
 **2. Parse gaps:** Each gap has: truth (failed behavior), reason, artifacts (files with issues), missing (things to add/fix).
@@ -27,8 +27,10 @@ grep -l "status: diagnosed" "$phase_dir"/*-UAT.md 2>/dev/null
 **6. Create gap closure tasks:**
 
 ```xml
-<task name="{fix_description}" type="auto">
+<task type="auto">
+  <name>{fix_description}</name>
   <files>{artifact.path}</files>
+  <read_first>{exact current contract and source paths}</read_first>
   <action>
     {For each item in gap.missing:}
     - {missing item}
@@ -46,16 +48,22 @@ grep -l "status: diagnosed" "$phase_dir"/*-UAT.md 2>/dev/null
 - Plans that depend on other gap closure plans → max(dependency waves) + 1
 - Also consider dependencies on existing (non-gap) plans in the phase
 
-**8. Write PLAN.md files:**
+**8. Write complete PLAN.md files:** include required `acceptance`, `documentation`, `checks` as argv lists, `issue_refs`, exact files/deletions/resources, task read_first and goal-backward evidence.
 
 ```yaml
 ---
 phase: XX-name
-plan: NN              # Sequential after existing
+plan: "NN"            # Sequential after existing
 type: execute
-wave: N               # Computed from depends_on (see assign_waves)
+wave: N               # Declared label; actual groups also serialize files/resources
 depends_on: [...]     # Other plans this depends on (gap or existing)
 files_modified: [...]
+files_deleted: []
+resources: []
+acceptance: []
+documentation: []
+checks: []
+issue_refs: []
 autonomous: true
 gap_closure: true     # Flag for tracking
 ---

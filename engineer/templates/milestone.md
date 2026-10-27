@@ -1,3 +1,9 @@
+# Milestone record contract
+
+**Purpose:** Preserve what shipped, its evidence and any explicitly deferred scope.
+**Producer:** complete-milestone coordinator, after auditing every selected phase.
+**Consumers:** progress, new-milestone and onboarding readers. Counts come from the runtime `milestone_phases` result, never guessed statistics.
+
 # Milestone Entry Template
 
 Add this entry to `.planning/MILESTONES.md` when completing a milestone:
@@ -17,11 +23,10 @@ Add this entry to `.planning/MILESTONES.md` when completing a milestone:
 
 **Stats:**
 - [X] files created/modified
-- [Y] lines of code (primary language)
-- [Z] phases, [N] plans, [M] tasks
-- [D] days from start to ship (or milestone to milestone)
+- [Y] lines changed (actual Git diff)
+- [Z] phases and [N] plans from milestone_phases
 
-**Git range:** `feat(XX-XX)` → `feat(YY-YY)`
+**Git range:** `[first SHA]` → `[last SHA]`
 
 **What's next:** [Brief description of next milestone goals, or "Project complete"]
 
@@ -51,14 +56,13 @@ If MILESTONES.md doesn't exist, create it with header:
 - Minor bug fixes that don't constitute a release
 
 **Stats to include:**
-- Count modified files: `git diff --stat feat(XX-XX)..feat(YY-YY) | tail -1`
-- Count LOC: `find . -name "*.swift" -o -name "*.ts" | xargs wc -l` (or relevant extension)
-- Phase/plan/task counts from ROADMAP
-- Timeline from first phase commit to last phase commit
+- Count modified files: `git diff --stat FIRST_SHA LAST_SHA`
+- Count lines changed: `git diff --numstat FIRST_SHA LAST_SHA`
+- Phase/plan counts from milestone_phases
 
 **Git range format:**
 - First commit of milestone → last commit of milestone
-- Example: `feat(01-01)` → `feat(04-01)` for phases 1-4
+- Example: `[first SHA]` → `docs(04)` for phases 1-4
 </guidelines>
 
 <example>
@@ -79,11 +83,10 @@ If MILESTONES.md doesn't exist, create it with header:
 
 **Stats:**
 - 23 files modified
-- 650 lines of Swift added
-- 2 phases, 3 plans, 12 tasks
-- 8 days from v1.0 to v1.1
+- 650 lines changed
+- 2 phases, 3 plans (milestone_phases)
 
-**Git range:** `feat(05-01)` → `feat(06-02)`
+**Git range:** `[first SHA]` → `docs(06)`
 
 **What's next:** v2.0 SwiftUI redesign with widget support
 
@@ -104,12 +107,25 @@ If MILESTONES.md doesn't exist, create it with header:
 
 **Stats:**
 - 47 files created
-- 2,450 lines of Swift
-- 4 phases, 7 plans, 28 tasks
-- 12 days from start to ship
+- 2,450 lines changed
+- 4 phases, 7 plans (milestone_phases)
 
-**Git range:** `feat(01-01)` → `feat(04-01)`
+**Git range:** `[first SHA]` → `docs(04)`
 
 **What's next:** Security audit and hardening for v1.1
 ```
 </example>
+
+## Counterexample
+
+Bad: "Shipped 12,000 LOC in three days; everything complete." This conflates size with delivered value and hides gaps.
+
+Good: "Shipped the account recovery flow across two phases and four plans, with 418 lines changed. Verification reports identify the tested revisions and human acceptance. Deferred retry analytics retains its explicit disposition."
+
+## Division of labour
+
+The coordinator selects the milestone, audits phase evidence, uses runtime counts from `milestone_phases`, records the shipped outcome and archives exact selected records. Workers return their owned evidence; they do not close milestones or publish independently. Commit ranges use actual SHA ranges or `docs(NN)` bookkeeping commits, not assumed `feat(XX-XX)` prefixes.
+
+## Completion criteria
+
+Every selected phase has a reconciled verification outcome; required checks and human acceptance are present; remaining scope has an explicit authorized disposition; shipped revision and PRs are linked; runtime archival preserves history. Record lines changed and actual phase/plan counts. Missing evidence keeps the milestone open.

@@ -20,7 +20,7 @@
 </task>
 ```
 
-**Why bad:** Vercel has a CLI. Claude should run `vercel --yes`. Never ask the user to do what Claude can automate via CLI/API.
+The agent performs deployment only within recorded deployment authorization; prepare and validate the concrete result before a missing approval is requested.
 
 ### Bad — Too many checkpoints
 
@@ -100,7 +100,7 @@ If a decision from CONTEXT.md says "display cost calculated from billing table i
 
 When an `<acceptance_criteria>` or `<verify>` block uses a **negative grep** — `grep -c 'LITERAL' file == 0`, meaning "this literal must NOT appear in the file" — that same `LITERAL` must not appear verbatim anywhere in an `<action>` body. Verbatim code blocks, JSDoc samples, head-comment references, and "what NOT to do" illustrations get echoed into the file the executor writes, so the executor's commit-time gate fails on the *comment text*, not on a real code regression. The work is correct; the gate output is semantically wrong; the executor wastes cycles and learns to distrust the gate.
 
-**The gate:** plan creation FAILS (error, `valid: false`) when a confidently-extracted (quoted) negative-grep literal also appears in an `<action>` block. When the grep literal is unquoted and cannot be extracted unambiguously, the gate WARNS instead of failing (so you still get the plan, with the risk surfaced).
+Use `engineer_run query verify.plan-structure PLAN_PATH`; an example marker never grants a scheduling exemption.
 
 ### Bad — JSDoc sample echoes the forbidden literal
 
@@ -127,7 +127,7 @@ When an `<acceptance_criteria>` or `<verify>` block uses a **negative grep** —
 
 ### Allowlist escape hatch
 
-When the literal MUST appear in the plan body verbatim — e.g. the plan documents the test file that exercises the gate itself, or the literal is part of the verification command's own grep regex — add a marker on its own line so the gate skips that literal:
+Validate the complete PLAN contract through `engineer_run query verify.plan-structure PLAN_PATH`.
 
 ```
 <!-- planner-discipline-allow: ?from= -->
@@ -173,13 +173,13 @@ The factory region is asserted clean; the reindex handler elsewhere in the same 
 
 ### When the split is intentional and unavoidable
 
-If region-scoping is genuinely impractical and the file split is intentional, suppress the warning with a marker naming the pattern:
+Apply the actual `verify.plan-structure` result; marker text alone does not prove a complete contract.
 
 ```
 <!-- planner-region-allow: await .*refresh -->
 ```
 
-One marker per pattern. The marker exempts only the exact pattern it names. Prefer region-scoping over suppression.
+The plan marker is reviewer context; run `engineer_run query verify.plan-structure PLAN_PATH` for the supported structural gate.
 
 ## CLI Output Format Anchor Mismatch (#1478)
 
@@ -229,27 +229,16 @@ test -f src/i18n/en.json && test -f src/i18n/de.json || { echo "missing input fi
 
 **When `|| echo "default"` is acceptable:** only when absence is semantically the default AND the result is NOT used in a comparison that should detect absence.
 
-## External Review Before PR Open (#4107)
+## Draft PR first, keep review current
 
-Apply this ordering only when opening the PR is known to trigger automatic external review and the plan also has internal review lanes.
+Open a draft on the first authorized push for tracking. Continue internal review and corrections, then update the draft title/body around the final implementation and actual evidence. Do not delay draft creation merely because external review may trigger.
 
-**Bad:**
+Bad: finish every review, conceal the branch until the end, then open the first PR.
 
-```text
-Wave 1: Open PR; automatic external review starts
-Wave 2: Run internal review
-Wave 3: Apply accepted fixes
-```
+Good:
+1. Commit the bounded slice and push when delivery is authorized.
+2. Open/update the draft using the canonical PR template.
+3. Run the checks/reviews at their authorized point, apply fixes and update evidence.
+4. Mark ready only after current verification and required checks; merge only on the user's instruction.
 
-The external reviewer spends its first pass on a diff the plan already expects to change.
-
-**Good:**
-
-```text
-Wave 1: Run internal review
-Wave 2: Apply accepted fixes
-Wave 3: If applicable, re-check the open-time property; then immediately open PR
-Wave 4+: Run post-open CI, external review, and tracking work
-```
-
-Nothing may intervene between an applicable re-check and the open. Post-open work may follow; "immediately" constrains only that gap. Opening-time properties do not justify an early PR.
+If the user explicitly orders all checks after all stacked draft PRs exist, preserve that ordering and mark validation pending in every draft.

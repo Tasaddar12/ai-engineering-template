@@ -1,8 +1,8 @@
-# GSD Canonical Artifact Registry
+# Canonical Artifact Registry
 
-This directory contains the template files for every artifact that GSD workflows officially produce. The table below is the authoritative index: **if a `.planning/` root file is not listed here, `gsd-health` will flag it as W019** (unrecognized artifact).
+This directory contains the template files for every artifact that engineering workflows officially produce. The table below is the authoritative index: the registry describes artifact identity and producers; the Python runtime planning validator reports supported current schema findings.
 
-Agents should query this file before treating a `.planning/` file as authoritative. If the file name does not appear below, it is not a canonical GSD artifact.
+Agents should query this file before treating a `.planning/` file as authoritative. If the file name does not appear below, it is not a canonical engineering artifact.
 
 ---
 
@@ -12,22 +12,22 @@ These files live directly at `.planning/` — not inside phase subdirectories.
 
 | File | Template | Produced by | Purpose |
 |------|----------|-------------|---------|
-| `PROJECT.md` | `project.md` | `/new-project` | Project identity, goals, requirements summary |
-| `ROADMAP.md` | `roadmap.md` | `/new-milestone`, `/new-project` | Phase plan with milestones and progress tracking |
-| `STATE.md` | `state.md` | `/new-project`, `/health --repair` | Current session state, active phase, last activity |
+| `PROJECT.md` | `project.md` | `/onboard` | Project identity, goals, requirements summary |
+| `ROADMAP.md` | `roadmap.md` | `/new-milestone`, `/onboard` | Phase plan with milestones and progress tracking |
+| `STATE.md` | `state.md` | `/onboard`, `/health --repair` | Current session state, active phase, last activity |
 | `REQUIREMENTS.md` | `requirements.md` | `/new-milestone` | Functional requirements with traceability |
 | `MILESTONES.md` | `milestone.md` | `/complete-milestone` | Log of completed milestones with accomplishments |
 | `BACKLOG.md` | *(inline)* | `/capture --backlog` | Pending ideas and deferred work |
 | `LEARNINGS.md` | *(inline)* | `/extract-learnings`, `/execute-phase` (gated: `features.global_learnings`) | Phase retrospective learnings for future plans |
 | `THREADS.md` | *(inline)* | `/thread` | Persistent discussion threads |
-| `config.json` | `config.json` | `/new-project`, `/health --repair` | Project-specific GSD configuration |
-| `CLAUDE.md` | *(inline)* | `/gsd-profile` | Auto-assembled Claude Code context file |
+| `config.yaml` | `config.yaml` | `/onboard`, `/health --repair` | Project-specific workflow configuration |
+| `AGENTS.md` | *(inline)* | `/profile` | Auto-assembled Claude Code context file |
 | `RETROSPECTIVE.md` | *(inline)* | `/complete-milestone` | Living milestone retrospective updated at each milestone close |
-| `WINDOWS.md` | *(none)* | broken-windows ledger (`src/broken-windows.cts`) | Tracked known-broken items pending resolution (#3224) |
-| `STATE-ARCHIVE.md` | *(none)* | `state.cts`'s `cmdStatePrune` | Pruned historical STATE.md entries |
-| `milestone.lock` | *(none)* | `src/milestone-lock.cts` | Persistent milestone (phase + session) claim, unlike the transient `STATE.md.lock`/`WAITING.json` (#3311) |
-| `state.json` | *(none)* | `src/state-contract.cts` | Machine-readable state contract published at step boundaries (#3227) |
-| `skill-manifest.json` | *(none)* | `init.cts`'s `cmdSkillManifest --write` | Project-scoped skill manifest (#3964) |
+| `WINDOWS.md` | *(none)* | broken-windows ledger (the Python runtime artifact registry) | Tracked known-broken items pending resolution (#3224) |
+| `STATE-ARCHIVE.md` | *(none)* | guarded state retirement operations | Pruned historical STATE.md entries |
+| `milestone.lock` | *(none)* | the Python runtime artifact registry | Persistent milestone (phase + session) claim, unlike the transient `STATE.md.lock`/`WAITING.json` (#3311) |
+| `state.json` | *(none)* | the Python runtime artifact registry | Machine-readable state contract published at step boundaries (#3227) |
+| `skill-manifest.json` | *(none)* | the installed skill manifest producer | Project-scoped skill manifest (#3964) |
 | `PATTERNS.md` | *(inline)* | `/extract-learnings` (graduation, `workflows/graduation.md`, `patterns` target) | Graduated cross-phase patterns -- distinct from the per-phase `NN-PATTERNS.md` below (#4282) |
 
 ### Version-stamped artifacts (pattern: `vX.Y-*.md`)
@@ -42,7 +42,7 @@ These files are archived to `.planning/milestones/` by `/complete-milestone`. Fi
 
 ## Phase Subdirectory Artifacts (`.planning/phases/NN-name/`)
 
-These files live inside a phase directory. They are NOT checked by W019 (which only inspects the `.planning/` root).
+These files live inside a phase directory and are inspected by the current runtime according to their artifact schema.
 
 | File Pattern | Template | Produced by | Purpose |
 |-------------|----------|-------------|---------|
@@ -55,15 +55,15 @@ These files live inside a phase directory. They are NOT checked by W019 (which o
 | `NN-PATTERNS.md` | *(inline)* | `/plan-phase` (pattern mapper) | Analog file mapping for the phase |
 | `NN-UI-SPEC.md` | `UI-SPEC.md` | `/ui-phase` | UI design contract |
 | `NN-SECURITY.md` | `SECURITY.md` | `/secure-phase` | Security threat model |
-| `NN-AI-SPEC.md` | `AI-SPEC.md` | `/ai-integration-phase` | AI integration spec with eval strategy |
-| `NN-DEBUG.md` | `DEBUG.md` | `/debug` | Debug session log |
+| `NN-AI-SPEC.md` | *(none)* | `/ai-integration-phase` | AI integration spec with eval strategy |
+| `NN-DEBUG.md` | *(none)* | `/debug` | Debug session log |
 | `NN-REVIEWS.md` | *(inline)* | `/review` | Cross-AI review feedback |
 
 ---
 
 ## Milestone Archive (`.planning/milestones/`)
 
-Files archived by `/complete-milestone`. These are never checked by W019.
+Files archived by `/complete-milestone`. Archive manifests preserve their source identities and evidence.
 
 | File Pattern | Source |
 |-------------|--------|
@@ -78,6 +78,30 @@ Files archived by `/complete-milestone`. These are never checked by W019.
 
 When a new workflow produces a `.planning/` root file:
 
-1. Add the file name to `CANONICAL_EXACT` in `gsd-core/bin/lib/artifacts.cjs`
+1. Register the artifact with the Python runtime artifact registry and its required schema
 2. Add a row to the **`.planning/` Root Artifacts** table above
 3. Add the template to `engineer/templates/` if one exists
+
+## Additional current records
+
+| Path | Template | Producer | Purpose |
+|------|----------|----------|---------|
+| `NN-DISCUSSION-LOG.md` | `discussion-log.md` | discuss-phase | Incremental audit trail |
+| `NN-VERIFICATION.md` | `verification-report.md` | verify-work | Goal and evidence verdict |
+| `.continue-here.md` | `continue-here.md` | handoff | Continuation context |
+| `.planning/specs/SPEC-*.md` | `CURRENT-SPEC.md` | spec-phase | Approved behavior contract |
+| `.planning/decisions/ADR-*.md` | `ADR.md` | coordinator | Optional rationale linked from PROJECT Key Decisions |
+| Canonical issue | `issue.md` | coordinator | Defect, threat, UAT and scope tracking |
+| Draft pull request | `pull-request.md` | coordinator | Reviewable delivery and exact validation evidence |
+
+## Quick records
+
+| Path | Template | Producer | Purpose |
+|------|----------|----------|---------|
+| `.planning/quick/NNN-slug/NNN-VERIFICATION.md` | `verification-report.md` adapted with quick identity | quick coordinator | Genuine quick evidence; quick: NNN, status, covered_files, fingerprint, revision, issue_refs |
+
+Quick verification uses --quick ID on status/resolve-file/fingerprint/current and ready/merge gates. Never invent a phase identifier.
+
+## Runtime ownership and optional upstream artifacts
+
+The registry preserves upstream artifact categories and the current project's complete templates. A registry row is not a claim that every upstream producer or optional artifact has a Python implementation. Use the retained command catalog and current runtime API before invoking a producer. In particular retired profile/intelligence/AI-integration artifacts do not grant new workflow or host integrations. Add or change a current parser schema together with its full template and consumers; never treat registry membership as behavioral verification.

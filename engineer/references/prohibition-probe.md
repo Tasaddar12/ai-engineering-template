@@ -30,7 +30,7 @@ exists, after which the verifier reliably enforces it.
 The technique is adversarial elicitation, not deterministic computation. Unlike the edge
 taxonomy (a closed eight categories a classifier can apply), the recall stage is inherently
 model-driven: it asks an open question and reads prose. There is **no compiled
-`prohibition-probe.cjs` engine** — the recall stage is an LLM prose pass, and only the
+separate executable prohibition engine** — the recall stage is an LLM prose pass, and only the
 schema/projection layer is real code (ADR-550 Decision 7b). Building a deterministic
 recall adapter would be the scope-creep the maintainer flags.
 
@@ -112,11 +112,11 @@ lifecycle is identical to the edge-probe, the verification tiers differ):
 
   At verify time these tiers are routed differently (ADR-550 D4):
   - A **test**-tier prohibition is enforced + hard-gates via the deterministic
-    `check prohibition-enforcement` sub-command (#1259 + #1279, ADR-550 D5d): it locates the wired
-    mechanical check (a `node --test` negative test OR a lint/AST rule run as
+    configured project negative check with the actual violation/clean fixtures: it locates the wired
+    mechanical check (a configured negative test OR a lint/AST rule run as
     `eslint --format json` and filtered by `ruleId`), **machine-proves it is fail-first** against a
-    known violation, runs it for a genuine **non-vacuous** pass, and emits the
-    `dispositionForProhibition()` verdict. A passing, fail-first-proven wired check disposes **green**
+    known violation, runs it for a genuine **non-vacuous** pass, and records the
+    observed prohibition disposition. A passing, fail-first-proven wired check disposes **green**
     (satisfiable → can reach `passed`); a missing, un-provable, or genuinely-non-passing check
     **hard-gates** (flagged, never green → `gaps_found`) in BOTH interactive and autonomous modes —
     never a silent pass.
@@ -127,21 +127,21 @@ lifecycle is identical to the edge-probe, the verification tiers differ):
     times out, no violation source — hard-gates). The violation is sourced from a descriptor field:
     - **`violationFixture`** — an author-supplied path to a KNOWN-BAD subject. For `lint-rule`: a file
       whose content violates `rule`; the prover lints it and requires the rule id to appear in the
-      JSON report (the rule must have teeth). For `node-test`: a subject the negative test exercises,
+      JSON report (the rule must have teeth). For `test-command`: a subject the negative test exercises,
       expected to drive it RED.
-    - **`GSD_PROHIB_SUBJECT`** — the node-test subject-injection convention: the producer spawns the
+    - **`GSD_PROHIB_SUBJECT`** — the test-command subject-injection convention: the producer spawns the
       negative test with `GSD_PROHIB_SUBJECT=<violationFixture>` in the child env; the test reads that
       env var to locate its subject-under-test and is expected to go red against the violating subject.
     - **lint-fixture authoring gotcha** — the violating fixture must actually trigger the rule. For the
-      `local/no-source-grep` dogfood anchor specifically, use the `path.join('lib','foo.cjs')` form
-      (a standalone quoted dir token); a single string literal like `'src/x.cjs'` does NOT trigger the
+      `local/no-source-grep` dogfood anchor specifically, use the a path-construction expression that actually violates the configured rule form
+      (a standalone quoted dir token); a single string literal like a harmless path literal does NOT trigger the
       rule, so a mis-authored fixture makes the prover report "not proven" and hard-gate a legitimately
-      wired check. (`no-source-grep` has no filename guard — any `.cjs` with the pattern fires.)
+      wired check. (`no-source-grep` has no filename guard — every supported source file with the violating pattern must be exercised.)
 
     > **PROPOSED, renamable conventions (zero live consumers).** Both `GSD_PROHIB_SUBJECT` and
     > `violationFixture` are net-new surface with **no live in-tree consumer yet** — there is no
-    > in-tree `node --test` prohibition; node-test fail-first proof is exercised only by SYNTHETIC
-    > temp fixtures in the tests, and the real dogfood remains the LINT-rule `local/no-source-grep`.
+    > in-tree configured executable prohibition; test-command fail-first proof is exercised only by explicit
+    > synthetic violation/clean fixtures when configured, and the real dogfood remains the LINT-rule `local/no-source-grep`.
     > They are therefore **open to maintainer adjustment (rename, or replacing the env var with an
     > argv) at PR review with zero migration cost.** See the ADR-550 2026-06-15 addendum (#1279).
   - A **judgment**-tier prohibition routes to a never-silent / never-hard-halt soft gate
@@ -160,13 +160,13 @@ the author wires it when the negative test or lint rule already exists) and is r
 **five flat scalar keys** on the `must_haves.prohibitions` item — never a nested `check: {}`
 object:
 
-- `check_kind` — `node-test` | `lint-rule` (which producer mechanism runs the check).
-- `check_target` — the test file (`node-test`) or the file the rule runs against (`lint-rule`).
-- `check_rule` — the `ruleId` to filter on, **lint-rule only** (absent for `node-test`).
+- `check_kind` — `test-command` | `lint-rule` (which producer mechanism runs the check).
+- `check_target` — the test file (`test-command`) or the file the rule runs against (`lint-rule`).
+- `check_rule` — the `ruleId` to filter on, **lint-rule only** (absent for `test-command`).
 - `check_violation_fixture` — path to a KNOWN-BAD subject the #1279 prover runs the check against to
-  machine-prove fail-first (rides BOTH kinds; for `node-test` it is injected via `GSD_PROHIB_SUBJECT`).
+  machine-prove fail-first (rides BOTH kinds; for `test-command` it is injected via `GSD_PROHIB_SUBJECT`).
 - `check_clean_fixture` — **optional** path to a KNOWN-CLEAN control subject (#1346). When present the
-  node-test prover also runs the check against it and requires GREEN, proving the violation's RED is
+  test-command prover also runs the check against it and requires GREEN, proving the violation's RED is
   caused by the subject's *content* (not merely by `GSD_PROHIB_SUBJECT` being set). Absent → no control.
 
 The flat-scalar shape is load-bearing: the shared `parseMustHavesBlock` is a flat parser and a
@@ -185,7 +185,7 @@ falls through to the producer's fail-closed paths (`located: false`, or located-
 never a silent green. A prohibition with no descriptor parses and disposes byte-identically to today.
 `failFirst` is **not** sourced from the descriptor and is **demoted** (machine-proven fail-first
 DELIVERED in #1279 — no path greens on attestation alone, FF-08); the `dispositionForProhibition`
-policy is unchanged. Causation (**#1346**): the node-test proof confirms the fixture exists and the
+policy is unchanged. Causation (**#1346**): the test-command proof confirms the fixture exists and the
 check goes RED; supplying `check_clean_fixture` adds an opt-in control that *also* requires GREEN on a
 known-clean subject, proving the red is content-caused. With no clean fixture the control cannot run,
 so that one residual case (a deceptive test reding merely because the env var is set) stays a
@@ -203,7 +203,7 @@ The probe emits, per kept prohibition, an item of the form:
 where `statement` is the must-NOT sentence and `category` is the values/safety/ethics class
 (`values`, `fairness`, `privacy`, `transparency`, `safety`, …). The optional **flat-scalar
 `check_*` descriptor** (#1278) is present only on a resolved `test`-tier prohibition carrying a
-wired check: `check_kind` (`node-test` | `lint-rule`), `check_target`, and `check_rule` (lint-rule
+wired check: `check_kind` (`test-command` | `lint-rule`), `check_target`, and `check_rule` (lint-rule
 only). `projectProhibitions` emits these into `must_haves.prohibitions` and `descriptorFromProjection`
 reads them back into a `{ kind, target, rule? }` `CheckDescriptor`; they are flat scalars (never a
 nested `check:{}` object) so they round-trip through the unchanged `parseMustHavesBlock`. Plus a
@@ -328,5 +328,9 @@ while `fairness` and `transparency` are `judgment`-tier. The byVerification roll
 `{ test: 1, judgment: 2 }` is the count-preserved breakdown of the three `resolved`-status
 items. Each worked-example block above is kept byte-for-byte (parsed-JSON) identical to its
 fixture under `engineer/references/prohibition-probe-fixtures/` by
-`tests/prohibition-probe.docs-fixtures.test.cjs`, so the doc and the reference data cannot
+`prohibition-probe fixture comparison`, so the doc and the reference data cannot
 silently drift.
+
+## Python runtime boundary
+
+The current Python runtime exposes spec.section and spec.edge-probe, not a separate executable prohibition-enforcement service. Preserve this complete recall, descriptor, fail-first and non-vacuous proof protocol as reviewer/coordinator instructions. Run only the actual configured project check argv when authorized; record the observed violation failure and clean pass. Unavailable proof remains flagged/unverified or a blocking required-evidence gap. Do not claim a helper or fixture suite ran merely because this method describes it.

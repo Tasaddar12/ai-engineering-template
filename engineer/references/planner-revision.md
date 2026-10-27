@@ -10,7 +10,7 @@ Triggered when orchestrator provides `<revision_context>` with checker issues. N
 cat .planning/phases/$PHASE-*/$PHASE-*-PLAN.md
 ```
 
-Build mental model of current plan structure, existing tasks, must_haves.
+Read only the plans, findings and supporting source named in the revision packet; preserve their input revision and digest. Build the bounded mental model from those current artifacts.
 
 ### Step 2: Parse Checker Issues
 
@@ -19,9 +19,11 @@ Issues come in structured format:
 ```yaml
 issues:
   - plan: "16-01"
+    id: "PC-16-01-02"
     dimension: "task_completeness"
     severity: "blocker"
     required_property: "Every `auto` task has a `<verify>` separating pass from fail"
+    authority: "PLAN contract: each automatic task has executable verification"
     description: "Task 2 missing <verify> element"
     fix_hint: "Add verification command for build output"
 ```
@@ -33,9 +35,7 @@ Group by plan, dimension, severity.
 example** of a route to that property — an illustration, never an instruction. You address an
 issue by making `required_property` true; the hint's own mechanism is optional.
 
-An older checker may return an issue with no `required_property`. Derive it from `dimension`
-+ `description` and state the derived property in your revision summary. Never treat the
-absence of the field as licence to apply `fix_hint` literally.
+For a legacy finding without `authority`, identify its exact owning requirement, acceptance, decision or invariant before treating it as blocking. Derive a missing required_property from evidence and state it explicitly; unsupported preferences stay advisory. Never apply fix_hint as authority.
 
 **Prefer the smallest sufficient mechanism.** If a smaller change than the hint makes
 `required_property` true, take it — that fully addresses the issue and must be reported as
@@ -43,7 +43,7 @@ addressed, naming the property satisfied and the mechanism used.
 
 ### Step 2.5: Constraint Re-check (before any edit)
 
-Before editing, re-read the constraints already in force:
+Before editing, read the exact packet-owned paths and constraints; do not reread the repository or broaden the assignment.
 
 - Locked decisions in CONTEXT.md (`## Decisions`) and deferred ideas (`## Deferred Ideas`)
 - Active capability / project guidance (AGENTS.md, `.claude/skills/`, `.agents/skills/`)
@@ -66,7 +66,7 @@ smaller route under Step 2 and report it as addressed.
 | task_completeness | Add missing elements to existing task |
 | dependency_correctness | Fix depends_on, recompute waves |
 | key_links_planned | Add wiring task or update action |
-| scope_sanity | Split into multiple plans |
+| scope_sanity | Use `estimate_scope` and the configured cap; propose an outcome split to the coordinator only when necessary |
 | must_haves_derivation | Derive and add must_haves to frontmatter |
 
 Each strategy is the usual route, not the only one. Any change that makes the issue's
@@ -83,6 +83,7 @@ plans, or apply a `fix_hint` that contradicts a constraint from Step 2.5 — tha
 `## REVISION_CONFLICT` instead.
 
 ### Step 5: Validate Changes
+Read the correction packet's affected rechecks. Rerun checks whose command/configuration/inputs changed; preserve passing evidence only when its inputs and revision coverage remain valid. Record one disposition per stable finding ID, including authority, change, evidence and remaining blocker.
 
 - [ ] Every flagged issue's `required_property` now holds — reached by its `fix_hint` OR by a
       smaller/different mechanism (both count as addressed), OR raised as `## REVISION_CONFLICT`

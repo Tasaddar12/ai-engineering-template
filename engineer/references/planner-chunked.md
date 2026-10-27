@@ -1,8 +1,6 @@
 # Chunked Mode Return Formats
 
-Used when `plan-phase` spawns `planner` with `CHUNKED_MODE=true` (triggered by `--chunked`
-flag or `workflow.plan_chunked: true` config). Splits the single long-lived planner Task into
-shorter-lived Tasks to bound the blast radius of Windows stdio hangs.
+Use when the coordinator assigns bounded outline or single-plan work. It is a dispatch strategy, not a mode that relaxes planning contracts or user authorization. Each assignment carries repository, branch, revision, exact owned outputs and required checks.
 
 ## Modes
 
@@ -23,11 +21,7 @@ Return:
 | {padded_phase}-02 | [brief objective] | 1 | none | REQ-003 |
 ```
 
-The orchestrator reads this table, groups rows by `Wave` (ascending, blank treated as `1`), then
-spawns one single-plan Task per row — one Wave at a time, serially across Waves. Within a Wave,
-Tasks are spawned one at a time by default, or together (`run_in_background=true` on each, issued
-in one message) when `planning.chunked_parallel: true` and the host's negotiated dispatch capacity
-supports it (#3777; see `engineer/workflows/plan-phase/steps/chunked-planning-mode.md` §8.5.2).
+The coordinator assigns one bounded plan per worker. Actual groups follow `depends_on`, exact file/deletion overlap and shared `resources`; wave labels are advisory. Dispatch independent plans only within host capacity and confirmed ownership. Wait for all assigned workers before integrating or repairing their outputs.
 
 ### single-plan
 
@@ -43,11 +37,8 @@ Return:
 **Tasks:** {N}
 ```
 
-The orchestrator verifies the file exists on disk after each return, commits it, then moves
-to the next plan entry from the outline.
+After each return, the coordinator reads the produced contract, checks required fields and scope, commits the assigned artifacts and records their evidence. File existence alone is insufficient.
 
 ## Resume Behaviour
 
-If the orchestrator detects that `PLAN-OUTLINE.md` already exists (from a prior interrupted
-run), it skips the outline-only Task and goes directly to single-plan Tasks, skipping any
-`{plan_id}-PLAN.md` files that already exist on disk.
+On resume, inspect the outline and each existing plan's content, metadata, assignment revision and disposition. A filename alone does not prove completion. Preserve complete unaffected plans; return missing or stale contracts for bounded correction. Never redispatch onto paths an existing worker may still own.

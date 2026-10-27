@@ -136,7 +136,7 @@ if [ -f .git ]; then  # we are in a worktree
   WT_GIT_DIR=$(git rev-parse --git-dir 2>/dev/null)
   case "$WT_GIT_DIR" in
     *.git/worktrees/*)
-      SENTINEL="$WT_GIT_DIR/gsd-spawn-toplevel"
+      SENTINEL="$WT_GIT_DIR/engineer-spawn-toplevel"
       [ ! -f "$SENTINEL" ] && git rev-parse --show-toplevel > "$SENTINEL" 2>/dev/null
       EXPECTED_TL=$(cat "$SENTINEL" 2>/dev/null)
       ACTUAL_TL=$(git rev-parse --show-toplevel 2>/dev/null)
@@ -161,21 +161,21 @@ Edit/Write calls using absolute paths constructed from the **orchestrator's** `p
 the wrong directory; `git commit` from the worktree sees a clean tree and the work
 is silently lost.
 
-Before any Edit or Write using an absolute path:
+Prefer repository-relative paths before computing an absolute path. When unavoidable, derive `WT_ROOT` inside the assigned checkout, canonicalize the actual target and verify a path-component boundary rather than a raw prefix.
 
 ```bash
-WT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-# Fail fast if ABS_PATH resolves outside the worktree
-if [[ "$ABS_PATH" != "$WT_ROOT"* ]]; then
-  echo "WARNING: $ABS_PATH is outside the worktree ($WT_ROOT)" >&2
-  echo "Use a relative path or recompute the absolute path from WT_ROOT." >&2
-fi
+WT_ROOT=$(git rev-parse --show-toplevel) || exit 42
+case "$ABS_PATH" in
+  "$WT_ROOT"|"$WT_ROOT"/*) ;;
+  *)
+    REMAINDER=${ABS_PATH#"$WT_ROOT"}
+    echo "FATAL: absolute path outside assigned worktree: $ABS_PATH ($REMAINDER)" >&2
+    exit 42
+    ;;
+esac
 ```
 
-**Prefer relative paths** for all Edit/Write operations. When an absolute path is
-unavoidable, always derive it from `git rev-parse --show-toplevel` run inside the
-worktree — never from `pwd` captured in the orchestrator context.
-
+Resolve existing parent symlinks before writing. A textual prefix alone does not prove containment.
 ---
 
 ## `<automated>` command guard — step 0c (#4767)
@@ -283,7 +283,7 @@ _LAUNCH='((/[^[:space:]]*/)?((env|setsid|nohup)'"$_ENVOPTL"'|timeout('"$_LOPT"'[
 # package managers; `-C`/`--directory` to make and git. $_LAUNCH leads it for $_EXEC's reason — a
 # recognised tool behind `env` is still that tool.
 _DIR='(('"$_LAUNCH"')(npm|npx|pnpm|yarn)[[:space:]]+([^&;|]*[[:space:]]+)?(--prefix|--cwd|--dir|-C)|('"$_LAUNCH"')(make|git)[[:space:]]+([^&;|]*[[:space:]]+)?(-C|--directory)|('"$_LAUNCH"')(/[^[:space:]]*/)?env'"$_ENVOPT"'[[:space:]]+(--chdir|-C))[[:space:]=]+'
-# Command-string interpreters. `eval "cd <main> && x"`, `sh -c "…"`, `bash -c '…'`, `node -e '…'` bury
+# Command-string interpreters. `eval "cd <main> && x"`, `sh -c "…"`, `bash -c '…'`, `python3 -c '…'` bury
 # the real command inside ONE opaque quoted token, and that defeats BOTH scans below at once: the
 # relocating verb never sits at a boundary scan 1 recognizes, and scan 2's tokenizer swallows the whole
 # quoted span, which after unquoting does not begin with `/`. These are ordinary portability idioms, not
@@ -415,7 +415,7 @@ says what follows from it.
 **The largest one first, because it is the one a reader will otherwise assume away:**
 
 - **A RELATIVE path argument to a command that is not a recognized relocating verb.**
-  `python3 -m pytest ../main/tests`, `node ../main/test.js`, `make -f ../main/Makefile`, a redirect from
+  `python3 -m pytest ../main/tests`, `python3 ../main/test.py`, `make -f ../main/Makefile`, a redirect from
   `../main/file` — all pass. The catch-all scan evaluates only words that begin with `/`, so it never
   resolves a relative one, and the verb scan does not fire because none of these relocates. This is the
   widest gap in the guard and it is not new. Closing it means resolving every relative word in the
@@ -456,7 +456,7 @@ The rest, in descending order of how likely a planner is to reach them:
   Not recognized: an interpreter with no entry (`awk`, `php`, a shell not listed), whose payload stays
   one opaque token, so only an absolute path written as a bare word in it is caught by the catch-all
   scan. **The two lists are delimited on purpose** — the parity test in
-  `tests/executor-mvp-tdd-section.test.cjs` reads only the span between `Recognized,` and
+  `the path-containment regression fixtures` reads only the span between `Recognized,` and
   `Not recognized:`, matching BACKTICKED TOKENS rather than substrings, because a containment check over the whole section is satisfied by a name that
   appears here saying it is UNsupported: adding `awk` to `$_EXEC` with this prose untouched passed
   that test, driven by the pre-push review of the round that added it.
@@ -481,7 +481,7 @@ The rest, in descending order of how likely a planner is to reach them:
 - **`_DIR`'s tool-to-flag run is still a catch-all**, so a pass-through argument that happens to spell
   a directory flag can over-halt: `npm run package -- --prefix=../main/` halts although the flag goes
   to the script, not to npm. Pre-existing, and again in the loud direction.
-- **A non-shell payload whose path is computed.** `python3 -c` / `node -e` payloads are scanned _as
+- **A non-shell payload whose path is computed.** `python3 -c` payloads are scanned _as
   shell text_, which catches a path written as a literal word (`os.chdir('/main')`) and not one the
   program assembles (`os.path.join(root, '..')`).
 - **Wrapping nested more than four deep.** `_walk` bounds its own recursion.
@@ -494,5 +494,5 @@ The rest, in descending order of how likely a planner is to reach them:
 
 The enumerations are the parts that rot: they mirror a toolchain this file does not own. Adding a tool
 is one alternation in `_DIR` plus a row in each of the two tables in
-`tests/executor-mvp-tdd-section.test.cjs`. The guard is the executor's last containment check, not its
+`the path-containment regression fixtures`. The guard is the executor's last containment check, not its
 only one — a halt it misses still has to get past `check verify-command-paths` at plan time.

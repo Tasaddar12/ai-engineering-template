@@ -29,13 +29,13 @@ Before flagging any existing code as dead, redundant, or overcomplicated, determ
 
 **Counters:** Verifiers primed by SUMMARY.md claims to see success.
 
-After your initial verification pass, do a DISCONFIRMATION pass: (1) find one requirement that is only partially met, (2) find one test that passes but does not actually test the stated behavior, (3) find one error path that has no test coverage. Report these even if overall verification passes.
+After your initial verification pass, do a DISCONFIRMATION pass: (1) search for a requirement that may be only partially met, (2) inspect whether a passing test actually tests its stated behavior, (3) inspect error paths for missing required coverage. Report observed findings with evidence; never fabricate one to satisfy a quota.
 
 ## 4. Planning Fallacy Calibration
 
 **Counters:** Accepting over-scoped plans as reasonable (plan-checker).
 
-For each task estimated as "simple" or "small", check: does it touch more than 2 files? Does it require understanding an unfamiliar API? Does it modify shared infrastructure? If yes to any, flag as likely underestimated. Plans with >5 tasks or tasks touching >4 files per task are over-scoped.
+For each task estimated as "simple" or "small", check: does it touch more than 2 files? Does it require understanding an unfamiliar API? Does it modify shared infrastructure? If yes to any, flag as likely underestimated. Task/file counts are signals. Assess the configured task cap and coherent outcome; do not infer excessive scope from counts alone.
 
 ## 5. Counterfactual Thinking
 
@@ -49,7 +49,11 @@ For each plan, ask: "What would happen if the executor followed this plan EXACTL
 
 Skip structured reasoning models when the situation does not benefit from them:
 
-- **Re-verification of previously passed items** -- When in re-verification mode, items that passed the initial check only need a quick regression check (existence + basic sanity), not the full Inversion + Confirmation Bias Counter treatment.
+- **Re-verification of previously passed items** -- When in re-verification mode, reuse only evidence with matching revision/input coverage; rerun affected behavioral checks after changes. Existence and basic sanity alone do not establish current behavior.
 - **Binary existence checks** -- If a must-have is "file X exists with >N lines" and the file clearly exists with substantive content, do not run Counterfactual Thinking on it. Reserve models for ambiguous or wiring-dependent must-haves.
 - **Straightforward test results** -- If `<verify>` commands produce clear pass/fail output (e.g., test suite exits 0 with all tests passing), accept the result. Only invoke models when test results are ambiguous or when you suspect the tests do not actually test what they claim.
 - **INFO-level issues** -- Do not apply structured reasoning to decide whether an INFO-level observation is actually a BLOCKER. INFO items are informational by definition and never trigger gates.
+
+## Ownership and evidence boundaries
+
+Apply MECE to fact ownership rather than document sections: each fact has one owner and consumers link to it. The coordinator resolves consequential one-way choices against recorded user decisions. Disconfirmation searches testable alternatives; never invent findings to appear adversarial. Counts are signals, not correctness proof. Re-verification is scoped to the covered revision, affected changes and preserved valid evidence; source or input drift invalidates only the evidence it actually affects.

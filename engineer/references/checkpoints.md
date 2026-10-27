@@ -1,27 +1,26 @@
 <overview>
-Plans execute autonomously. Checkpoints formalize interaction points where human verification or decisions are needed.
+Plans execute within recorded authorization. Checkpoints preserve human decisions and verification requirements.
 
-**Core principle:** Claude automates everything with CLI/API. Checkpoints are for verification and decisions, not manual work.
+**Authority principles:**
 
-**Golden rules:**
+1. Prepare the concrete reviewable result before requesting a missing approval.
+2. Never infer approval from silence, a mode flag, a recommendation or implementation readiness.
+3. Preserve authorization already supplied for its stated scope; do not ask again.
+4. Stop only work dependent on the missing decision; continue independent authorized work.
+5. Secure credentials through masked/provider entry; never request secrets in conversation or expose them in logs.
+6. Record the actual answer, its scope and resume action before continuation.
 
-1. **If Claude can run it, Claude runs it** - Never ask user to execute CLI commands, start servers, or run builds
-2. **Claude sets up the verification environment** - Start dev servers, seed databases, configure env vars
-3. **User only does what requires human judgment** - Visual checks, UX evaluation, "does this feel right?"
-4. **Secrets come from user, automation comes from Claude** - Ask for API keys, then Claude uses them via CLI
-5. **Auto-mode bypasses verification checkpoints, and decision checkpoints with a declared `auto_select`** — When `workflow._auto_chain_active` or `workflow.auto_advance` is true in config: human-verify auto-approves; a `checkpoint:decision` carrying `auto_select="<option-id>"` auto-selects that named option; a `checkpoint:decision` with NO `auto_select` escalates to a human instead of guessing by position (#4095); human-action still stops (auth gates cannot be automated)
-6. **`gate="blocking-human"` is never auto-approved** — a checkpoint carrying this gate stops for a human in _every_ mode, including auto-mode, regardless of its type. Rule 5 does not apply to it. The executor's precondition-unmet checkpoint (a task's `<precondition>` evaluated false — unmet `user_setup` step, missing env var, absent prior-phase artifact) reports this gate (#3210).
+A `blocking-human` checkpoint requires an actual human answer in every mode. An unattended `checkpoint:decision` may proceed on its declared `auto_select` only when recorded authorization delegates that exact choice. Otherwise escalate; option position does not authorize selection.
 
-**The `gate` attribute:**
+| Condition, evaluated in order | Action |
+|-------------------------------|--------|
+| Actual required human judgment / blocking-human | Prepare and wait for actual human answer |
+| Recorded authorization already covers the action | Proceed and preserve that authorization |
+| Declared `auto_select` names a valid option and recorded discretion delegates the choice | Record selected option and authority, then proceed |
+| Required verification can be deferred to end-of-phase UAT | Prepare UAT and leave acceptance pending |
+| No authorized route | Escalate the exact dependent decision |
 
-| Value                   | Auto-mode behavior                                                                                                              | Use for                                                                                                                                                                                                                                                            |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `gate="blocking"`       | Bypassed per rule 5 (human-verify auto-approves; decision auto-selects only when `auto_select` names an option, else escalates) | The default. Post-hoc verification and implementation choices that are safe to take the recommended path on when unattended.                                                                                                                                       |
-| `gate="blocking-human"` | **Never bypassed.** Stops for a human in auto-mode too.                                                                         | Irreversible or trust-establishing steps a human must actually see: package-legitimacy verification before install, any decision whose default answer would be wrong to assume, and unmet `<precondition>` facts the executor cannot establish on its own (#3210). |
-
-Reach for `gate="blocking-human"` whenever auto-approving the checkpoint would defeat its purpose. If the checkpoint exists because a human must _decide_ something, `blocking` is the wrong gate — auto-mode will decide it for them.
-
-The gate spans two layers, and both must honor it. `executor` refuses to auto-approve a `gate="blocking-human"` checkpoint and escalates it via `checkpoint_return_format` precisely so a human sees it; `execute-phase`'s `checkpoint_handling` step then decides what the user is actually shown. An orchestrator that dispatches on checkpoint _type_ alone would auto-approve the very checkpoint the executor just refused to auto-approve, nullifying that refusal one layer up and letting an unattended `--auto` / `--chain` run install a package no human ever vetted.
+There is no auto-approval configuration flag. Both executor and coordinator enforce these conditions; a handoff cannot manufacture approval.
 </overview>
 
 <checkpoint_types>
@@ -35,7 +34,7 @@ The gate spans two layers, and both must honor it. `executor` refuses to auto-ap
 >
 > **Why this is the default:** every mid-flight halt costs a full executor cold-start (AGENTS.md, MEMORY.md, STATE.md, plan re-read on respawn) because subagent context is discarded across the pause. A plan with N human-verify checkpoints pays the cold-start cost N+1 times — measured at "tens of thousands of tokens" per round-trip on real projects.
 >
-> Set `workflow.human_verify_mode = mid-flight` in `.planning/config.json` to opt back into the pre-#3309 behavior of halting at every checkpoint. `checkpoint:decision` and `checkpoint:human-action` are unaffected by either value — those gate the work itself, not post-hoc verification.
+> Set `workflow.human_verify_mode = mid-flight` in `.planning/config.yaml` to opt back into the pre-#3309 behavior of halting at every checkpoint. `checkpoint:decision` and `checkpoint:human-action` are unaffected by either value — those gate the work itself, not post-hoc verification.
 
 **Use for:**
 
@@ -122,19 +121,19 @@ Evaluate the rows **in order** and take the first that matches — they are a pr
 | #   | Run                                        | Tracer `<verify>`                         | Behavior                                                                                             |
 | --- | ------------------------------------------ | ----------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | 1   | **Any run, any mode** (incl. auto)         | task carries `gate="blocking-human"`      | **STOP → `checkpoint:human-verify`.** Never auto-continued.                                          |
-| 2   | Auto mode active (`AUTO_CHAIN`/`AUTO_CFG`) | any (row 1 already took `blocking-human`) | Re-run verify; HALT on failure, continue on success. **Pre-existing behavior — unchanged by #3299.** |
+| 2 | Any mode, including unattended | `<verify>` carries `<human-check>` | STOP for the actual required human judgment; automated success does not replace it. |
 | 3   | Interactive, `end-of-phase` (default)      | only `<automated>`                        | Re-run verify; HALT on failure, continue to expansion on success — **no checkpoint**                 |
 | 4   | Interactive, `end-of-phase`                | carries `<human-check>`                   | STOP → `checkpoint:human-verify`                                                                     |
 | 5   | Interactive, `mid-flight`                  | any                                       | STOP → `checkpoint:human-verify`                                                                     |
 
-**Carve-outs — the #3299 auto-continue (row 3) applies ONLY when all three hold:** the run is interactive, the mode is `end-of-phase`, and the tracer's `<verify>` contains only `<automated>`. Anything else STOPs or falls to the pre-existing auto-mode branch. HALT-on-failure is unconditional in rows 2 and 3 alike: a failing tracer never becomes an approvable checkpoint and never proceeds to expansion, because layering expansion onto a broken slice is the failure this gate exists to prevent.
+**Carve-outs — the #3299 auto-continue (row 3) applies ONLY when all three hold:** the run is interactive, the mode is `end-of-phase`, and the tracer's `<verify>` contains only `<automated>`. Anything with required human judgment stops; other authorized automated work proceeds only with actual passing evidence. HALT-on-failure is unconditional in rows 2 and 3 alike: a failing tracer never becomes an approvable checkpoint and never proceeds to expansion, because layering expansion onto a broken slice is the failure this gate exists to prevent.
 
-Row 1 is deliberately **not** scoped to interactive runs. Golden rule 6 above states that `gate="blocking-human"` stops for a human in _every_ mode including auto-mode, and a precedence chain that let an autonomous run continue past it would make this file assert two incompatible rules about the same gate. No planner emits `gate` on a `type="tracer"` task today, but `src/verify.cts` parses only `type` and does not consult `gate` on non-checkpoint tasks, so a hand-authored, imported, or externally-generated `PLAN.md` can carry it and validate — unreachable by our planner is not unreachable.
+Row 1 is deliberately **not** scoped to interactive runs. The authority principles above state that `gate="blocking-human"` stops for a human in _every_ mode including auto-mode, and a precedence chain that let an autonomous run continue past it would make this file assert two incompatible rules about the same gate. No planner emits `gate` on a `type="tracer"` task today, but the Python plan-structure validator parses only `type` and does not consult `gate` on non-checkpoint tasks, so a hand-authored, imported, or externally-generated `PLAN.md` can carry it and validate — unreachable by our planner is not unreachable.
 
-Read `HUMAN_VERIFY_MODE` with an explicit default — `workflow.human_verify_mode` is absent from `SCHEMA_DEFAULTS`, so a bare `config-get` exits non-zero with `Key not found` on any project whose `config.json` predates #3309:
+Read `HUMAN_VERIFY_MODE` with an explicit default — the Python runtime defaults workflow.human_verify_mode to end-of-phase; unknown absent keys still fail unless an explicit --default is supplied:
 
 ```bash
-HUMAN_VERIFY_MODE=$(engineer_run query config-get workflow.human_verify_mode --default end-of-phase --raw 2>/dev/null || echo "end-of-phase")
+HUMAN_VERIFY_MODE=$(engineer_run query config-get workflow.human_verify_mode --default end-of-phase --raw) || exit 1
 ```
 
 </type>
@@ -325,7 +324,7 @@ HUMAN_VERIFY_MODE=$(engineer_run query config-get workflow.human_verify_mode --d
 </task>
 ```
 
-**Key distinction:** Auth gates are created dynamically when Claude encounters auth errors. NOT pre-planned — Claude automates first, asks for credentials only when blocked.
+**Key distinction:** Auth gates are created dynamically when Claude encounters auth errors. NOT pre-planned — The agent prepares authorized work first and requests secure credential entry only when needed; never collect secret values in conversation.
 </type>
 </checkpoint_types>
 
@@ -456,7 +455,7 @@ I'll verify: vercel whoami returns your account
 | GitHub      | `gh`           | `repo create`, `pr create`, `secret set`  | `gh auth login`      |
 | Node        | `npm`/`pnpm`   | `install`, `run build`, `test`, `run dev` | N/A                  |
 | Xcode       | `xcodebuild`   | `-project`, `-scheme`, `build`, `test`    | N/A                  |
-| Convex      | `npx convex`   | `dev`, `deploy`, `env set`, `env get`     | `npx convex login`   |
+| Convex      | `convex`   | `dev`, `deploy`, `env set`, `env get`     | `convex login`   |
 
 ## Environment Variable Automation
 
@@ -466,7 +465,7 @@ I'll verify: vercel whoami returns your account
 
 | Platform | CLI Command             | Example                                    |
 | -------- | ----------------------- | ------------------------------------------ |
-| Convex   | `npx convex env set`    | `npx convex env set OPENAI_API_KEY sk-...` |
+| Convex   | `convex env set`    | Secure provider/masked entry; never a secret value in argv |
 | Vercel   | `vercel env add`        | `vercel env add STRIPE_KEY production`     |
 | Railway  | `railway variables set` | `railway variables set API_KEY=value`      |
 | Fly      | `fly secrets set`       | `fly secrets set DATABASE_URL=...`         |
@@ -475,28 +474,23 @@ I'll verify: vercel whoami returns your account
 **Secret collection pattern:**
 
 ```xml
-<!-- WRONG: Asking user to add env vars in dashboard -->
+<!-- WRONG: collecting a secret in chat -->
 <task type="checkpoint:human-action">
-  <action>Add OPENAI_API_KEY to Convex dashboard</action>
-  <instructions>Go to dashboard.convex.dev → Settings → Environment Variables → Add</instructions>
+  <action>Paste the production API key in the conversation</action>
 </task>
 
-<!-- RIGHT: Claude asks for value, then adds via CLI -->
-<task type="checkpoint:human-action">
-  <action>Provide your OpenAI API key</action>
-  <instructions>
-    I need your OpenAI API key for Convex backend.
-    Get it from: https://platform.openai.com/api-keys
-    Paste the key (starts with sk-)
-  </instructions>
-  <verification>I'll add it via `npx convex env set` and verify</verification>
-  <resume-signal>Paste your API key</resume-signal>
+<!-- RIGHT: user enters the secret through a secure provider/local prompt -->
+<task type="checkpoint:human-action" gate="blocking-human">
+  <action>Enter the API key through the provider's secure secret-entry flow</action>
+  <instructions>Open the configured secret manager or local masked prompt. Do not paste the value into chat, logs, command arguments or committed files.</instructions>
+  <verification>Confirm only that the named secret exists and the authorized integration succeeds; never print the value.</verification>
+  <resume-signal>Confirm secure entry is complete</resume-signal>
 </task>
 
 <task type="auto">
-  <name>Configure OpenAI key in Convex</name>
-  <action>Run `npx convex env set OPENAI_API_KEY {user-provided-key}`</action>
-  <verify>`npx convex env get OPENAI_API_KEY` returns the key (masked)</verify>
+  <name>Verify authorized secret configuration</name>
+  <action>Use the configured secret reference through the provider's supported secure interface.</action>
+  <verify>Check presence and a bounded authenticated request without exposing the value.</verify>
 </task>
 ```
 
@@ -506,7 +500,7 @@ I'll verify: vercel whoami returns your account
 | --------- | ---------------------------- | ------------------------------ | --------------------- |
 | Next.js   | `npm run dev`                | "Ready in" or "started server" | http://localhost:3000 |
 | Vite      | `npm run dev`                | "ready in"                     | http://localhost:5173 |
-| Convex    | `npx convex dev`             | "Convex functions ready"       | N/A (backend only)    |
+| Convex    | `convex dev`             | "Convex functions ready"       | N/A (backend only)    |
 | Express   | `npm start`                  | "listening on port"            | http://localhost:3000 |
 | Django    | `python manage.py runserver` | "Starting development server"  | http://localhost:8000 |
 
@@ -517,43 +511,36 @@ I'll verify: vercel whoami returns your account
 npm run dev &
 DEV_SERVER_PID=$!
 
-# Wait for ready (max 30s) — uses fetch() for cross-platform compatibility
-engineer_run query run-with-timeout 30 -- bash -c 'until node -e "fetch(\"http://localhost:3000\").then(r=>{process.exit(r.ok?0:1)}).catch(()=>process.exit(1))" 2>/dev/null; do sleep 1; done'
+# Wait for ready (at most 30 attempts with a one-second bounded HTTP request)
+# Wait at most 30 seconds using the installed Python interpreter.
+for attempt in $(seq 1 30); do
+  if python -c 'import urllib.request; urllib.request.urlopen("http://localhost:3000",timeout=1)' 2>/dev/null; then break; fi
+  sleep 1
+done
 ```
 
-**Port conflicts:** Kill stale process (`lsof -ti:3000 | xargs kill`) or use alternate port (`--port 3001`).
+**Port conflicts:** inspect ownership. Never kill by port alone. Select another port or stop only a process this session created and positively identified.
 
-**Server stays running** through checkpoints. Only kill when plan complete, switching to production, or port needed for different service.
+**Server lifecycle:** retain owned processes through checkpoints, record PID/start command, then stop only those processes when no longer required. Shared databases and ports may serve other worktrees.
 
 ## CLI Installation Handling
 
-| CLI           | Auto-install? | Command                                               |
-| ------------- | ------------- | ----------------------------------------------------- |
-| npm/pnpm/yarn | No - ask user | User chooses package manager                          |
-| vercel        | Yes           | `npm i -g vercel`                                     |
-| gh (GitHub)   | Yes           | `brew install gh` (macOS) or `apt install gh` (Linux) |
-| stripe        | Yes           | `npm i -g stripe`                                     |
-| supabase      | Yes           | `npm i -g supabase`                                   |
-| convex        | No - use npx  | `npx convex` (no install needed)                      |
-| fly           | Yes           | `brew install flyctl` or curl installer               |
-| railway       | Yes           | `npm i -g @railway/cli`                               |
-
-**Protocol:** Try command → "command not found" → auto-installable? → yes: install silently, retry → no: checkpoint asking user to install.
+Never silently install a CLI, framework or package. Use an existing configured capability. If a required executable is missing, report its exact name, attempted command, purpose and the dependent operation it blocks. Continue independent work. Install only when the user has authorized the installation; record what changed and verify availability before retrying.
 
 ## Pre-Checkpoint Automation Failures
 
 | Failure            | Response                                                    |
 | ------------------ | ----------------------------------------------------------- |
 | Server won't start | Check error, fix issue, retry (don't proceed to checkpoint) |
-| Port in use        | Kill stale process or use alternate port                    |
-| Missing dependency | Run `npm install`, retry                                    |
+| Port in use        | Verify owned process identity or use an alternate port                    |
+| Missing dependency | Report missing dependency; install only under recorded authorization                                    |
 | Build error        | Fix the error first (bug, not checkpoint issue)             |
 | Auth error         | Create auth gate checkpoint                                 |
 | Network timeout    | Retry with backoff, then checkpoint if persistent           |
 
 **Never present a checkpoint with broken verification environment.** If the local server isn't responding, don't ask user to "visit localhost:3000".
 
-> **Cross-platform note:** Use `node -e "fetch('http://localhost:3000').then(r=>console.log(r.status))"` instead of `curl` for health checks. `curl` is broken on Windows MSYS/Git Bash due to SSL/path mangling issues.
+> **Cross-platform note:** use the project's available Python HTTP client or configured readiness check; record a timeout as failed readiness, never a passing checkpoint.
 
 ```xml
 <!-- WRONG: Checkpoint with broken environment -->
@@ -585,7 +572,7 @@ engineer_run query run-with-timeout 30 -- bash -c 'until node -e "fetch(\"http:/
 | Create Upstash DB                | Yes (`upstash`)            | YES             |
 | Run tests                        | Yes (`npm test`)           | YES             |
 | Start dev server                 | Yes (`npm run dev`)        | YES             |
-| Add env vars to Convex           | Yes (`npx convex env set`) | YES             |
+| Add env vars to Convex           | Yes (`convex env set`) | YES             |
 | Add env vars to Vercel           | Yes (`vercel env add`)     | YES             |
 | Seed database                    | Yes (CLI/API)              | YES             |
 | Click email verification link    | No                         | NO              |
@@ -806,7 +793,7 @@ engineer_run query run-with-timeout 30 -- bash -c 'until node -e "fetch(\"http:/
 ```xml
 <task type="checkpoint:human-action">
   <action>Run database migrations</action>
-  <instructions>Run: npx prisma migrate deploy && npx prisma db seed</instructions>
+  <instructions>Run: prisma migrate deploy && prisma db seed</instructions>
 </task>
 ```
 
@@ -826,42 +813,18 @@ engineer_run query run-with-timeout 30 -- bash -c 'until node -e "fetch(\"http:/
 </anti_patterns>
 
 <type name="tdd-review">
-## checkpoint:tdd-review (TDD Mode Only)
+### Independent TDD evidence review
 
-**When:** All waves in a phase complete and `workflow.tdd_mode` is enabled. Inserted by the execute-phase orchestrator after `aggregate_results`.
+The coordinator reviews assigned TDD plans after integration and before verification. Record RED evidence, GREEN result, ancestry and optional refactor result in the review table. Missing required evidence is a gap; a checkpoint answer, unattended mode or worker assertion cannot convert it into a pass.
 
-**Purpose:** Collaborative review of TDD gate compliance across all `type: tdd` plans in the phase. Advisory — does not block execution.
-
-**Use for:**
-
-- Verifying RED/GREEN/REFACTOR commit sequence for each TDD plan
-- Surfacing gate violations (missing RED or GREEN commits)
-- Reviewing test quality (tests fail for the right reason)
-- Confirming minimal GREEN implementations
-
-**Structure:**
-
-```xml
-<task type="checkpoint:tdd-review" gate="advisory">
-  <what-checked>TDD gate compliance for {count} plans in Phase {X}</what-checked>
-  <gate-results>
-    | Plan | RED | GREEN | REFACTOR | Status |
-    |------|-----|-------|----------|--------|
-    | {id} |  ✓  |   ✓   |    ✓     | Pass   |
-  </gate-results>
-  <violations>[List of gate violations, or "None"]</violations>
-  <resume-signal>Review complete — proceed to phase verification</resume-signal>
-</task>
-```
-
-**Auto-mode behavior:** When `workflow._auto_chain_active` or `workflow.auto_advance` is true, the TDD review checkpoint auto-approves (advisory gate — never blocks).
+If the user explicitly deferred tests, preserve that instruction and its scope. Do not run deferred checks early; retain pending validation and continue independent authorized work. Resume only from the recorded answer and covered scope.
 </type>
 
 <summary>
 
 Checkpoints formalize human-in-the-loop points for verification and decisions, not manual work.
 
-**The golden rule:** If Claude CAN automate it, Claude MUST automate it.
+**The golden rule:** Prepare and automate concrete work within recorded authority; capability alone does not authorize an external action or human decision.
 
 **Checkpoint priority:**
 
@@ -876,3 +839,7 @@ Checkpoints formalize human-in-the-loop points for verification and decisions, n
 - Code correctness (tests and static analysis)
 - Anything automatable via CLI/API
 </summary>
+
+## Tracer and resume contract
+
+A tracer whose `<verify>` carries `<human-check>` stops for the required human decision in unattended mode too. A passing automated check does not replace that decision. Record the answer and its exact scope before resuming. `auto_select` is a declared option identifier, not approval by itself. Never auto-pass TDD review or human acceptance.

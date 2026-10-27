@@ -6,9 +6,9 @@ Rules that apply to ALL workflows and agents. Individual workflows may have addi
 
 ## Context Budget Rules
 
-1. **Never** read agent definition files (`agents/*.md`) -- `subagent_type` auto-loads them. Reading agent definitions into the orchestrator wastes context for content automatically injected into subagent sessions.
+1. Read your assigned role and required inputs. The coordinator reads the dispatch contract before assigning work; do not assume host auto-loading satisfies required reading.
 2. **Never** inline large files into subagent prompts -- tell agents to read files from disk instead. Agents have their own context windows.
-3. **Read depth scales with context window** -- check `context_window` in `.planning/config.json`. At < 500000: read only frontmatter, status fields, or summaries. At >= 500000 (1M model): full body reads permitted when content is needed for inline decisions. See `engineer/references/context-budget.md` for the complete table.
+3. Read `context_window` from `.planning/config.yaml` and use bounded evidence selection. Complete templates and assigned role inputs remain mandatory.
 4. **Delegate** heavy work to subagents -- the orchestrator routes, it does not build, analyze, research, investigate, or verify.
 5. **Proactive pause warning**: If you have already consumed significant context (large file reads, multiple subagent results), warn the user: "Context budget is getting heavy. Consider checkpointing progress."
 
@@ -21,8 +21,8 @@ Rules that apply to ALL workflows and agents. Individual workflows may have addi
 
 ## Subagent Rules
 
-10. **NEVER** use non-GSD agent types (`general-purpose`, `Explore`, `Plan`, `Bash`, `feature-dev`, etc.) -- ALWAYS use `subagent_type: "gsd-{agent}"` (e.g., `phase-researcher`, `executor`, `planner`). GSD agents have project-aware prompts, audit logging, and workflow context. Generic agents bypass all of this.
-11. **Do not** re-litigate decisions that are already locked in CONTEXT.md (or PROJECT.md ## Context section) -- respect locked decisions unconditionally.
+10. Dispatch exact project roles from `agents/README.md`, with model and effort resolved inline; never substitute generic agents.
+11. Preserve approved CONTEXT scope and PROJECT Key Decisions. Resolve evidence-based conflicts through the coordinator; do not relitigate settled choices.
 
 ## Questioning Anti-Patterns
 
@@ -34,7 +34,7 @@ Reference: `engineer/references/questioning.md` for the full anti-pattern list.
 
 ## State Management Anti-Patterns
 
-15. **No direct Write/Edit to STATE.md or ROADMAP.md for mutations.** Always use `engineer_run query` for registered state/roadmap handlers (e.g. `state.update`, `state.advance-plan`, `roadmap.update-plan-progress`), or legacy `python -I …/engineer.py` for CLI-only commands. Direct Write tool usage bypasses safe update logic and is unsafe in multi-session environments. Exception: first-time creation of STATE.md from template is allowed.
+15. Use `engineer_run query` for all runtime-owned STATE/PROJECT Key Decisions/ROADMAP/REQUIREMENTS/todo/quick/milestone changes. Narrative is authored only in its owner; initialization does not authorize arbitrary direct mutation.
 
 ## Behavioral Rules
 
@@ -47,15 +47,15 @@ Reference: `engineer/references/questioning.md` for the full anti-pattern list.
 ## Error Recovery Rules
 
 21. **Git lock detection**: Before any git operation, if it fails with "Unable to create lock file", check for stale `.git/index.lock` and advise the user to remove it (do not remove automatically).
-22. **Config fallback awareness**: Config loading returns `null` silently on invalid JSON. If your workflow depends on config values, check for null and warn the user: "config.json is invalid or missing -- running with defaults."
-23. **Partial state recovery**: If STATE.md references a phase directory that doesn't exist, do not proceed silently. Warn the user and suggest diagnosing the mismatch.
+22. Config loading validates YAML. Use documented defaults or explicit `config-get KEY --default VALUE`; a malformed file or missing unknown key is an error, never silent success.
+23. If STATE points to absent artifacts, report the exact mismatch and use reviewed runtime repair; do not invent a replacement phase or hand-edit shared structures.
 
 ## GSD-Specific Rules
 
-24. **Do not** check for `mode === 'auto'` or `mode === 'autonomous'` -- GSD uses `yolo` config flag. Check `yolo: true` for autonomous mode, absence or `false` for interactive mode.
-25. **Prefer `engineer_run query`** for orchestration when a handler exists; when shelling out to the legacy CLI, go through the same `engineer_run` launcher rather than naming the shim file. The shim is not on PATH under any name ending in `.cjs`, and an agent that meets the bare filename falls back to searching the filesystem for it — on Git Bash for Windows that is a full-drive `find.exe` traversal (#3809). `engineer_run` resolves the CommonJS shim itself across every runtime home.
-26. **Plan files MUST follow `{padded_phase}-{NN}-PLAN.md` pattern** (e.g., `01-01-PLAN.md`). Never use `PLAN-01.md`, `plan-01.md`, or any other variation -- engineer_run detection depends on this exact pattern.
-27. **Do not start executing the next plan before writing the SUMMARY.md for the current plan** -- downstream plans may reference it via `@` includes.
+24. Do not infer approval from unattended or automatic mode. Read supported YAML configuration, preserve recorded authority and use checkpoint rules for missing choices.
+25. Use `engineer_run query VERB ARGS` for supported runtime operations. `config-get` fails on a missing key unless an explicit `--default VALUE` is supplied. Invalid YAML fails; never report a silent successful fallback.
+26. PLAN filenames use `{padded_phase}-{NN}-PLAN.md`, with quoted plan identifiers and complete acceptance/documentation/checks argv/issue_refs contracts.
+27. Commit the owned completed slice and required SUMMARY before reporting completion. Preserve pending tests and human acceptance; the coordinator owns shared records, integration and publication.
 
 ## iOS / Apple Platform Rules
 

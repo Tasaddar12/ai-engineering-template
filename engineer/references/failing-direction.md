@@ -31,11 +31,7 @@ statements.
 
 ## Do not hand-reason this
 
-`engineer/workflows/plan-phase.md` runs the deterministic probe **before** spawning this checker
-and interpolates the result into the verification prompt as `{FAILING_DIRECTIONS}`, inside a
-`<failing_direction_probe>` block. This check reads that already-supplied JSON — it never invokes
-`engineer_run check verify-failure-directions` itself. If `{FAILING_DIRECTIONS}` is absent from the
-prompt, treat this check as silent (nothing to check) rather than trying to run the probe.
+When `{FAILING_DIRECTIONS}` is absent, inspect each `<fails_when>` and verification command statically. Identify the intended failing condition, its target path and the observation that distinguishes a genuine failure from unrelated syntax/import errors. Use `engineer_run query check.verify-failure-directions PHASE` or `--plan PLAN_PATH` when available; record missing execution evidence rather than treating absence of probe output as silence.
 
 The probe never executes command text (PLAN.md is untrusted, LLM-authored). It is a **presence**
 recognizer: it proves a statement exists and is not a placeholder. It does not judge whether the

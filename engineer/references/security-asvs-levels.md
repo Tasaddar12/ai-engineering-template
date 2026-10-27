@@ -1,6 +1,6 @@
 # Security ASVS Levels
 
-GSD threat modeling maps OWASP ASVS levels to planner disposition rigor and auditor verification depth. Higher levels are supersets of lower — L3 includes all L2 and L1 requirements.
+These ASVS-inspired levels define review depth, not certification or a compliance claim. Higher depths include lower-depth obligations; scope each finding to the actual threat and evidence.
 
 ## L1 — Opportunistic (default)
 
@@ -8,7 +8,7 @@ GSD threat modeling maps OWASP ASVS levels to planner disposition rigor and audi
 
 **Planner disposition:** `mitigate` critical/high-severity threats. `mitigate` medium-severity threats if they occur on a primary trust boundary; otherwise `accept` with documented rationale explaining the specific risk tolerance. `accept` low-risk threats with a rationale statement. `transfer` when threat is third-party responsibility.
 
-**Auditor verification depth:** Verify each declared mitigation is PRESENT in the cited file (grep-level check — find the pattern, confirm the call exists).
+**Auditor verification depth:** Exercise the declared mitigation against the threat at its actual trust boundary. Source presence or a grep match is discovery only; cite behavioral evidence and retain any unexercised control as unverified.
 
 ## L2 — Standard
 

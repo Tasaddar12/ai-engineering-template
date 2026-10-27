@@ -9,26 +9,31 @@ Template for `.planning/phases/XX-name/{phase}-{plan}-PLAN.md` - executable phas
 
 ---
 
+Planning records must satisfy [planning-record integrity](../references/template-contract.md#planning-record-integrity). Use runtime operations for runtime-owned structures.
+
 ## File Template
 
 ```markdown
 ---
 phase: XX-name
-plan: NN
+plan: "NN"
 type: execute
-wave: N                     # Execution wave (1, 2, 3...). Pre-computed at plan time.
+wave: N                     # Declared planning label; execute-phase forms actual groups from dependencies and file overlap.
 depends_on: []              # Plan IDs this plan requires (e.g., ["01-01"]).
 files_modified: []          # Files this plan modifies.
-files_deleted: []           # OPTIONAL. Files this plan REMOVES. Declaring a path here is what
-                            # lets worktree cleanup-wave merge the branch that deletes it; an
-                            # undeclared deletion still blocks. Exact paths, not globs or dirs.
+files_deleted: []           # Exact authorized deletion paths; an undeclared deletion is out of scope and blocks.
+resources: []               # Shared external resources serialize otherwise independent plans.
 coupling_justified: []      # OPTIONAL. Deliberate, order-independent same-wave couplings: one
                             # "plan-id: reason" string per coupled peer, e.g.
                             # ["03-02: both append independent config keys"]. Exempts the pair
                             # from the plan-checker's Dimension 3b advisory (#3724).
 autonomous: true            # false if plan has checkpoints requiring user interaction
 requirements: []            # REQUIRED — Requirement IDs from ROADMAP this plan addresses. MUST NOT be empty.
-user_setup: []              # Human-required setup Claude cannot automate (see below)
+user_setup: []              # Human-required setup the agent cannot automate (see below)
+acceptance: []              # Required acceptance obligations; do not infer a pass from implementation.
+documentation: []           # Required documentation deliverables and evidence.
+checks: []                  # Required checks as argv lists, never shell command strings.
+issue_refs: []              # Canonical issue references; use Pending with a reason until available.
 
 # Goal-backward verification (derived during planning, verified after execution)
 must_haves:
@@ -112,6 +117,15 @@ Output: [What artifacts will be created]
 
 </tasks>
 
+<threat_model>
+| Threat ID | Category | Component | Severity | Disposition | Mitigation Plan |
+|-----------|----------|-----------|----------|-------------|-----------------|
+| T-{phase}-NN | [STRIDE/category] | [actual surface] | [assessment] | [mitigate / accept / defer / transfer with authority] | [mitigation and verified canonical reference, or Pending: reason; owner; next action] |
+</threat_model>
+
+Follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+
+
 <verification>
 Before declaring plan complete:
 - [ ] [Specific test command]
@@ -123,7 +137,7 @@ Before declaring plan complete:
 
 - All tasks completed
 - All verification checks pass
-- No errors or warnings introduced
+- No unresolved blocking findings; warnings retain their evidence and disposition
 - [Plan-specific criteria]
   </success_criteria>
 
@@ -141,7 +155,7 @@ After completion, create `.planning/phases/XX-name/{phase}-{plan}-SUMMARY.md`
 | `phase` | Yes | Phase identifier (e.g., `01-foundation`) |
 | `plan` | Yes | Plan number within phase (e.g., `01`, `02`) |
 | `type` | Yes | Always `execute` for standard plans, `tdd` for TDD plans |
-| `wave` | Yes | Execution wave number (1, 2, 3...). Pre-computed at plan time. |
+| `wave` | Yes | Declared label; dependencies, exact file ownership and resources determine actual ordered groups. |
 | `depends_on` | Yes | Array of plan IDs this plan requires. |
 | `files_modified` | Yes | Files this plan touches. |
 | `autonomous` | Yes | `true` if no checkpoints, `false` if has checkpoints |
@@ -149,11 +163,20 @@ After completion, create `.planning/phases/XX-name/{phase}-{plan}-SUMMARY.md`
 | `user_setup` | No | Array of human-required setup items (external services) |
 | `must_haves` | Yes | Goal-backward verification criteria (see below) |
 
-**Wave is pre-computed:** Wave numbers are assigned during `/plan-phase`. Execute-phase reads `wave` directly from frontmatter and groups plans by wave number. No runtime dependency analysis needed.
+**Ordered groups:**
+- Resolve `depends_on` before dispatch; it names inter-plan dependencies only.
+- Serialize overlapping `files_modified`, `files_deleted` and `resources`.
+- A declared wave label never exempts overlap or an unmet dependency.
+- Inspect `engineer_run query init.execute-phase` output before assigning the integrated revision.
 
-**Must-haves enable verification:** The `must_haves` field carries goal-backward requirements from planning to execution. After all plans complete, execute-phase spawns a verification subagent that checks these criteria against the actual codebase.
+**Must-haves enable verification:** The `must_haves` field carries goal-backward requirements from planning to execution. After all plans complete, the coordinator runs `/verify-work` on the integrated revision and checks these criteria against the actual codebase.
 
 ---
+
+| `acceptance` | Yes | Explicit acceptance obligations, including required human judgment. |
+| `documentation` | Yes | Documentation deliverables and verification. |
+| `checks` | Yes | Lists of argv lists, for example `[["python", "-m", "unittest"]]`. |
+| `issue_refs` | Yes | Canonical issues or an explicit Pending reason. |
 
 ## Parallel vs Sequential
 
@@ -253,15 +276,15 @@ Wave 3 runs after Waves 1 and 2. Pauses at checkpoint, orchestrator presents to 
 
 **Plan sizing:**
 
-- 2-3 tasks per plan
-- ~50% context usage maximum
+- the configured task cap per plan
+- `estimate_scope` explains read/change/check cost as advisory evidence
 - Complex phases: Multiple focused plans, not one large plan
 
 **When to split:**
 
-- Different subsystems (auth vs API vs UI)
-- >3 tasks
-- Risk of context overflow
+- Distinct independently verifiable outcomes or actual producer/consumer dependencies
+- Exceeds the configured task cap
+- Actual bounded assignment cannot preserve its required inputs/evidence; coordinator proposes an outcome split
 - TDD candidates - separate plans
 
 **Vertical slices preferred:**
@@ -513,7 +536,7 @@ files_modified: [...]
 - Prefer vertical slices over horizontal layers
 - Only reference prior SUMMARYs when genuinely needed
 - Group checkpoints with related auto tasks in same plan
-- 2-3 tasks per plan, ~50% context max
+- the configured task cap per plan and one coherent independently verifiable outcome
 
 ---
 
@@ -613,3 +636,7 @@ Task completion ≠ Goal achievement. A task "create chat component" can complet
 4. Verification subagent checks must_haves against codebase
 5. Gaps found → fix plans created → execute → re-verify
 6. All must_haves pass → phase complete
+
+## Outcome sizing and dependencies
+
+Read the configured plan task cap before sizing. Use `estimate_scope` as advisory planning evidence. Split at independently verifiable outcomes or an actual dependency, not at an arbitrary file count or context percentage. A task count within the cap does not prove the scope is coherent. Refer to a prior SUMMARY only when the current plan consumes its delivered interface or decision; never chain SUMMARY references mechanically.

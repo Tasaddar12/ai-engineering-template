@@ -184,3 +184,8 @@ Template for `.planning/codebase/STACK.md` - captures the technology foundation.
 - Choosing implementation approach (must work with existing stack)
 - Understanding build requirements
 </guidelines>
+
+<freshness>
+
+Run `engineer_run query codebase.status` before trusting this map. The default stale threshold is 1 commits, configurable through `codebase.staleness.stack`. Verify relevant paths and edges against current source even when the threshold is not exceeded. Refresh only affected sections and record the inspected revision; source evidence wins over a stale map.
+</freshness>

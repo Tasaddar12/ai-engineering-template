@@ -253,3 +253,8 @@ Include file paths as concrete examples of abstractions. Use backtick formatting
 - Identifying where to add code (which layer handles X?)
 - Understanding dependencies between components
 </guidelines>
+
+<freshness>
+
+Run `engineer_run query codebase.status` before trusting this map. The default stale threshold is 15 commits, configurable through `codebase.staleness.architecture`. Verify relevant paths and edges against current source even when the threshold is not exceeded. Refresh only affected sections and record the inspected revision; source evidence wins over a stale map.
+</freshness>

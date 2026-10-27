@@ -230,7 +230,7 @@ After completing setup:
 
 ```bash
 # Verify connection (run in project directory)
-npx supabase status
+supabase status
 ```
 
 ---

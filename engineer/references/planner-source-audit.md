@@ -22,7 +22,7 @@ CONTEXT   | D-04    | 15min access / 7day refresh  | 02    | COVERED   |
 
 1. **GOAL** — The `goal:` field from ROADMAP.md for this phase. The primary success condition.
 2. **REQ** — Every REQ-ID in `phase_req_ids`. Cross-reference REQUIREMENTS.md for descriptions.
-3. **RESEARCH** — Technical approaches, discovered constraints, and features identified in RESEARCH.md. Exclude items explicitly marked "out of scope" or "future work" by the researcher.
+3. **RESEARCH** — Recommendations and current-source evidence relevant to approved scope. Research cannot add or defer an obligation; return a consequential conflict to the coordinator.
 4. **CONTEXT** — Every D-XX decision from CONTEXT.md `<decisions>` section.
 
 ### What is NOT a Gap
@@ -30,7 +30,7 @@ CONTEXT   | D-04    | 15min access / 7day refresh  | 02    | COVERED   |
 Do not flag these as MISSING:
 - Items in `## Deferred Ideas` in CONTEXT.md — developer chose to defer these
 - Items scoped to a different phase via `phase_req_ids` — not assigned to this phase
-- Items in RESEARCH.md explicitly marked "out of scope" or "future work" by the researcher
+Confirm findings against current source and approved scope; research recommendations do not override a user decision.
 
 ### Handling MISSING Items
 
@@ -49,10 +49,10 @@ The following items from source artifacts have no corresponding plan:
    B) Split phase: move to a sub-phase
    C) Defer explicitly: add to backlog with developer confirmation
 
-   → Awaiting developer decision before finalizing plan set.
+Use outcome and dependency evidence rather than an arbitrary context percentage to propose a split.
 ```
 
-If ALL rows are COVERED → return `## PLANNING COMPLETE` as normal.
+Research cannot add or defer scope. Report the exact conflict and evidence to the coordinator.
 
 ---
 
@@ -61,7 +61,7 @@ If ALL rows are COVERED → return `## PLANNING COMPLETE` as normal.
 The planner's only legitimate reasons to split or flag a feature are **constraints**, not judgments about difficulty:
 
 **Valid (constraints):**
-- ✓ "This task touches 9 files and would consume ~45% context — split into two tasks"
+Preserve authorized corrections already in progress; only dependent missing decisions block work.
 - ✓ "No API key or endpoint is defined in any source artifact — need developer input"
 - ✓ "This feature depends on the auth system built in Phase 03, which is not yet complete"
 
@@ -70,4 +70,4 @@ The planner's only legitimate reasons to split or flag a feature are **constrain
 - ✗ "Integrating with an external service could take a long time"
 - ✗ "This is a challenging feature that might be better left to a future phase"
 
-If a feature has none of the three legitimate constraints (context cost, missing information, dependency conflict), it gets planned. Period.
+Split only at coherent outcomes or actual dependencies after coordinator review. `estimate_scope` and context estimates inform a proposal; they do not authorize adding, dropping or deferring approved scope.
