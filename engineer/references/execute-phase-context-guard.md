@@ -1,4 +1,4 @@
-0. **Context exhaustion guard — `context_guard` (BEFORE spawning, #1452):**
+0. **Context exhaustion guard — `context_guard` (BEFORE spawning):**
 
    Before spawning any agents for this wave, self-assess context pressure using the
    degradation signals in `engineer/references/context-budget.md`. Signs of POOR tier (70%+):

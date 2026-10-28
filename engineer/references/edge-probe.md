@@ -55,7 +55,7 @@ zero shapes unless `text_en` supplies a faithful English translation. A project 
 `response_language` set should populate `text_en` for every requirement; `text` keeps its own
 meaning — the requirement's own text, in whatever language the SPEC uses — and is never
 translated or overwritten. `text_en` is engine input, not part of the SPEC. `id` is never
-translated. Prose that matches no cue in either field surfaces as `unclassified` (#1110) — the
+translated. Prose that matches no cue in either field surfaces as `unclassified`  — the
 probe contributes nothing for that requirement. Where a requirement carries no cue even in
 English, author `shapes` explicitly rather than leaning on the classifier.
 
@@ -89,7 +89,7 @@ Two rules keep the probe honest and prevent an "everything is N/A" failure mode:
 2. **Dismissal requires a reason string.** "N/A — input is a bounded enum, no boundary
    exists" is valid; silence is not. The reason string is the audit trail.
 
-**Zero-classification surfaces an `unclassified` candidate (#1110).** The relevance filter is
+**Zero-classification surfaces an `unclassified` candidate .** The relevance filter is
 a heuristic over prose cues, so a requirement whose wording *is* edge-relevant but matches no
 shape cue would otherwise classify to zero shapes → zero edges and vanish from coverage with
 no signal — the same silent blind spot the probe exists to catch. Instead, a requirement with

@@ -16,10 +16,10 @@ Valid Engineer subagent types (use exact names — do not fall back to 'general-
 ## 0. Initialize
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 _engineer_identity_ok() {
   [ -f "$1" ] || return 1
   [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
@@ -63,11 +63,11 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --default "" 2>/dev/null || echo "")
-PHASE_ARG=$(echo "$GSD_ARGS" | sed -E 's/--ws[[:space:]]+[A-Za-z0-9._-]+//g' | xargs)
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.phase-op ${GSD_WS:+--ws=${GSD_WS##* }} "${PHASE_ARG}")
+PHASE_ARG=$(echo "$ENGINEER_ARGS" | sed -E 's/--ws[[:space:]]+[A-Za-z0-9._-]+//g' | xargs)
+ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
+INIT=$(engineer_run query init.phase-op ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_UI_REVIEWER=$(engineer_run query agent-skills ui-auditor ${GSD_WS:+--ws=${GSD_WS##* }})
+AGENT_SKILLS_UI_REVIEWER=$(engineer_run query agent-skills ui-auditor ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 # workflow.ui_interaction_capture (default false): read here and handed to the auditor
 # through its <config> block — the agent carries no engineer_run resolver of its own.
 INTERACTION_CAPTURE=$(engineer_run query config-get workflow.ui_interaction_capture --raw 2>/dev/null || echo "false")
@@ -102,7 +102,7 @@ UI_REVIEW_FILE=$(ls "${PHASE_DIR}"/*-UI-REVIEW.md 2>/dev/null | head -1)
 
 **If `--auto`:** Auto-select "View" — keep the existing UI-REVIEW.md untouched and exit without
 re-auditing. Log: `[auto] UI-REVIEW.md exists — reusing as-is.` "Re-audit" is the regenerating
-choice; an unattended run reuses an existing artifact instead (#4776).
+choice; an unattended run reuses an existing artifact instead .
 
 **Otherwise:** Use AskUserQuestion:
 - header: "Existing UI Review"
@@ -159,9 +159,9 @@ Omit null file paths. `interaction_capture` is always present — the `$INTERACT
 `workflow.ui_interaction_capture` is on; the auditor's `<screenshot_approach>` branches on it and
 falls back to its Playwright-only static capture when it is `false` or no Chrome binary resolves.
 
-<!-- #2517 model-omit-on-inherit -->
+<!-- model-omit-on-inherit -->
 
-> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`UI_AUDITOR_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
+> **Model omission .** Omit the `model` parameter entirely when the value it would carry (`UI_AUDITOR_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```
 Agent(

@@ -19,10 +19,10 @@ Read all files referenced by the invoking prompt's execution_context before star
 Parse arguments and load project state:
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 _engineer_identity_ok() {
   [ -f "$1" ] || return 1
   [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
@@ -66,12 +66,12 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 PHASE_ARG="${1}"
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.phase-op ${GSD_WS:+--ws=${GSD_WS##* }} "${PHASE_ARG}")
+ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
+INIT=$(engineer_run query init.phase-op ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_FIXER=$(engineer_run query agent-skills code-fixer ${GSD_WS:+--ws=${GSD_WS##* }})
-AGENT_SKILLS_REVIEWER=$(engineer_run query agent-skills code-reviewer ${GSD_WS:+--ws=${GSD_WS##* }})
-# #2072: resolve the routed models so model_overrides / models.<phaseType> are honored
+AGENT_SKILLS_FIXER=$(engineer_run query agent-skills code-fixer ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
+AGENT_SKILLS_REVIEWER=$(engineer_run query agent-skills code-reviewer ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
+# : resolve the routed models so model_overrides / models.<phaseType> are honored
 # (code-reviewer → "verification", code-fixer → "execution"); thread them below.
 REVIEWER_MODEL=$(engineer_run query resolve-model code-reviewer --raw)
 FIXER_MODEL=$(engineer_run query resolve-model code-fixer --raw)
@@ -246,9 +246,9 @@ echo "Fix scope: ${FIX_SCOPE}"
 
 Use Agent() to spawn agent:
 
-<!-- #2517 model-omit-on-inherit -->
+<!-- model-omit-on-inherit -->
 
-> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`FIXER_MODEL`, `REVIEWER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
+> **Model omission .** Omit the `model` parameter entirely when the value it would carry (`FIXER_MODEL`, `REVIEWER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```text
 Agent(subagent_type="code-fixer", model="{FIXER_MODEL}", prompt="
@@ -301,7 +301,7 @@ if [ "$AUTO_MODE" = "true" ]; then
   # Total fix passes = MAX_ITERATIONS. Loop uses -lt (not -le) intentionally.
   ITERATION=1
   MAX_ITERATIONS=3
-  # #3190's convergence-vs-degradation distinction still governs whether the .iterN.md backups are
+  # 's convergence-vs-degradation distinction still governs whether the .iterN.md backups are
   # spent scratch or a post-mortem trail — but the removal moved to `cleanup_iteration_backups`,
   # after `record_disposition` has read them, so nothing in THIS loop consumes the flag any more.
   # It is re-derived there from the final REVIEW.md's status, which is exactly the condition the
@@ -428,7 +428,7 @@ ${AGENT_SKILLS_FIXER}")
     fi
   fi
 
-  # #3190's cleanup of the .iterN.md backups now runs in `cleanup_iteration_backups`, AFTER
+  # 's cleanup of the .iterN.md backups now runs in `cleanup_iteration_backups`, AFTER
   # `record_disposition` — see that step for why. Removing them here deleted the only record of
   # what the earlier iterations fixed before anything had read it.
 fi
@@ -437,8 +437,8 @@ fi
 Key design decisions for --auto (addresses ALL review HIGH concerns):
 1. **Re-review scope**: Uses REVIEW_FILES_ARRAY from original REVIEW.md frontmatter, falling back to full phase scope. Scope is NOT lost between iterations. Uses portable while-read loop (bash 3.2+ compatible, handles spaces in paths).
 2. **Artifact semantics**: REVIEW.md is overwritten by each re-review (latest review state). REVIEW-FIX.md is overwritten by each fixer iteration (latest fix state with iteration count). There is ONE final version of each artifact, not per-iteration copies.
-   Backup files (.iterN.md) preserve history for post-mortem analysis if iterations degrade. On successful convergence (#3190) the backups are spent scratch and removed; on degradation (hit MAX_ITERATIONS / fixer failure) they are retained for post-mortem. The removal happens in `cleanup_iteration_backups`, after `record_disposition` has read them — they are the only surviving record of what an earlier iteration fixed, since this artifact keeps one final version rather than per-iteration copies.
-3. **Commit timing**: Fix commits happen per-finding inside the agent. REVIEW-FIX.md is NOT committed until step 7 (after ALL iterations complete). Only ONE docs commit, not one per iteration. In --auto that single commit also stages the converged REVIEW.md alongside REVIEW-FIX.md (#3190), so the two committed artifacts agree — the initial code-review commit held iteration-1 REVIEW.md content, and the --auto re-review loop overwrote it each iteration.
+   Backup files (.iterN.md) preserve history for post-mortem analysis if iterations degrade. On successful convergence the backups are spent scratch and removed; on degradation (hit MAX_ITERATIONS / fixer failure) they are retained for post-mortem. The removal happens in `cleanup_iteration_backups`, after `record_disposition` has read them — they are the only surviving record of what an earlier iteration fixed, since this artifact keeps one final version rather than per-iteration copies.
+3. **Commit timing**: Fix commits happen per-finding inside the agent. REVIEW-FIX.md is NOT committed until step 7 (after ALL iterations complete). Only ONE docs commit, not one per iteration. In --auto that single commit also stages the converged REVIEW.md alongside REVIEW-FIX.md , so the two committed artifacts agree — the initial code-review commit held iteration-1 REVIEW.md content, and the --auto re-review loop overwrote it each iteration.
 </step>
 
 <step name="commit_fix_report">
@@ -447,7 +447,7 @@ After ALL iterations complete (or single pass in non-auto mode), validate and co
 ```bash
 if [ -f "${FIX_REPORT_PATH}" ]; then
   # Validate REVIEW-FIX.md has valid YAML frontmatter with status field
-  # #3190: export FIX_REPORT_PATH (the var the body reads), not REVIEW_PATH.
+  # : export FIX_REPORT_PATH (the var the body reads), not REVIEW_PATH.
   HAS_STATUS=$(FIX_REPORT_PATH="${FIX_REPORT_PATH}" node -e "
     const fs = require('fs');
     const content = fs.readFileSync(process.env.FIX_REPORT_PATH, 'utf-8');
@@ -459,7 +459,7 @@ if [ -f "${FIX_REPORT_PATH}" ]; then
     echo "REVIEW-FIX.md created at ${FIX_REPORT_PATH}"
     
     if [ "$COMMIT_DOCS" = "true" ]; then
-      # #3190: --auto's re-review loop overwrote REVIEW.md each iteration
+      # : --auto's re-review loop overwrote REVIEW.md each iteration
       # (auto_iteration_loop), but the only prior REVIEW.md commit is the
       # initial code-review pass (iteration-1 content). Stage the converged
       # REVIEW.md alongside REVIEW-FIX.md in this single docs commit so the two
@@ -516,14 +516,14 @@ both, not two competing ones.
 Only runs if AUTO_MODE is true. If AUTO_MODE is false, skip this step entirely.
 
 **Removes the `.iterN.md` scratch — deliberately AFTER `record_disposition`, not at the end of the
-loop.** #3190's rule is unchanged: on convergence the backups are spent scratch and go; on degradation
+loop.** 's rule is unchanged: on convergence the backups are spent scratch and go; on degradation
 they are retained for post-mortem. What changed is the timing, and it was load-bearing. This workflow
 keeps ONE final version of `REVIEW.md` and `REVIEW-FIX.md` rather than per-iteration copies, so the
 backups are the only surviving record of what an earlier iteration fixed — and the re-review drops a
 finding once it is fixed, so the final review does not carry it either. Deleting them inside the loop
 meant the disposition ledger reached a converged `--auto` run with every early fix already erased, and
 recorded those findings as `open (not in the current review)`: indistinguishable from never triaged,
-which is the one distinction #3829 exists to make.
+which is the one distinction exists to make.
 
 Convergence is re-derived here rather than carried. Shell state does not survive the loop's fence, so
 a flag set there would be gone by this step — and once nothing in the loop consumed it, keeping it
@@ -582,7 +582,7 @@ Extract frontmatter fields:
 
 ```bash
 # Extract only the YAML frontmatter block (between first two --- lines)
-# #3190: export FIX_REPORT_PATH (the var the body reads), not REVIEW_PATH.
+# : export FIX_REPORT_PATH (the var the body reads), not REVIEW_PATH.
 FIX_FRONTMATTER=$(FIX_REPORT_PATH="${FIX_REPORT_PATH}" node -e "
   const fs = require('fs');
   const content = fs.readFileSync(process.env.FIX_REPORT_PATH, 'utf-8');

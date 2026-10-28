@@ -1,7 +1,7 @@
 # Dimension 8 — Nyquist Compliance (checks 8a–8e)
 
 > Reference file for plan-checker agent. Loaded on-demand via `@` reference.
-> Extracted from `agents/plan-checker.md` in #3172 to stay under the agent's
+> Extracted from `agents/plan-checker.md` in to stay under the agent's
 > LARGE size cap. Checks 8a-8e are moved unchanged; the only edit is to the
 > Dimension 8 Output table, which gains a `Failing Direction` column and a
 > stated/runnable tally so check 8f's result is reported alongside them.

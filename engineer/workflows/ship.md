@@ -1,4 +1,4 @@
-<!-- gsd:loop-host
+<!-- engineer:loop-host
 step: ship
 points: ship:pre, ship:post
 agent-roles: orchestrator
@@ -15,7 +15,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <available_agent_types>
 Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd-mempalace-curator — Ship-time MemPalace curation (diary, KG mirror, cross-project tunnels, wing-scoped prune); dispatched at ship:post when the mempalace capability is enabled.
+- mempalace-curator — Ship-time MemPalace curation (diary, KG mirror, cross-project tunnels, wing-scoped prune); dispatched at ship:post when the mempalace capability is enabled.
 </available_agent_types>
 
 <process>
@@ -24,10 +24,10 @@ Valid Engineer subagent types (use exact names — do not fall back to 'general-
 Parse arguments and load project state:
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 _engineer_identity_ok() {
   [ -f "$1" ] || return 1
   [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
@@ -71,9 +71,9 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --default "" 2>/dev/null || echo "")
-PHASE_ARG=$(echo "$GSD_ARGS" | sed -E 's/--ws[[:space:]]+[A-Za-z0-9._-]+//g' | xargs)
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.phase-op ${GSD_WS:+--ws=${GSD_WS##* }} "${PHASE_ARG}")
+PHASE_ARG=$(echo "$ENGINEER_ARGS" | sed -E 's/--ws[[:space:]]+[A-Za-z0-9._-]+//g' | xargs)
+ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
+INIT=$(engineer_run query init.phase-op ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
@@ -101,8 +101,8 @@ Verify the work is ready to ship:
    ```bash
    # The gate decides on ONE read. --pick takes a single field, so the two
    # human-facing fields are read only on the blocking path below — never on the
-   # passing path — rather than issuing three queries up front (#2589).
-   # #5118: stderr is kept; a failed read stops shipping — it is never "no status".
+   # passing path — rather than issuing three queries up front .
+   # : stderr is kept; a failed read stops shipping — it is never "no status".
    STATUS=$(engineer_run query verification.status "${PHASE_DIR}" --pick status) || { echo "verification.status refused this phase's report — see the error above. Fix it before shipping." >&2; exit 1; }
    ```
    Only `passed` may ship. If `$STATUS` is `passed`, verification is complete — continue to the next preflight check; do not read any further verification field. A non-zero exit above is a hard error (a report `status` outside `passed | gaps_found | human_needed`): present the error and stop.
@@ -174,7 +174,7 @@ Verify the work is ready to ship:
        Resolve open threats (or re-run /secure-phase {phase}) before shipping.
        ```
 
-   - **`capId == "broken-windows"`** (issue #1950) — enforce against the ledger's typed status. The ledger lives at the **project root** (cross-phase, not phase-scoped):
+   - **`capId == "broken-windows"`** — enforce against the ledger's typed status. The ledger lives at the **project root** (cross-phase, not phase-scoped):
 
      ```bash
      WINDOWS_STATUS_JSON=$(engineer_run windows status --raw 2>/dev/null || echo '')
@@ -199,7 +199,7 @@ Verify the work is ready to ship:
 
      The ledger is **optional and backward-compatible**: on a project where `engineer_run windows status` returns `open_count: 0` (no `.planning/WINDOWS.md` yet, or an empty ledger), the gate passes silently. It only blocks when at least one entry is `open`.
 
-   - **Every other `capId`** — run the gate's own declared check through the generic evaluator. This arm is what makes a third-party capability's declared gate enforceable at all (#3559); before it existed, a gate whose `capId` was not named above was resolved and then silently dropped.
+   - **Every other `capId`** — run the gate's own declared check through the generic evaluator. This arm is what makes a third-party capability's declared gate enforceable at all ; before it existed, a gate whose `capId` was not named above was resolved and then silently dropped.
 
      ⚠ **Validate `check` before shell use** (third-party manifest input; wherever `${hook.check.query}` appears, write the dot-normalized query, each `.` as `-`, and validate and pass that same value) — `loop-hook-dispatch.md` § `gate`.
 
@@ -210,7 +210,7 @@ Verify the work is ready to ship:
 
      (The named-query argument convention — a single `"${PHASE_DIR}"` positional — mirrors `verify-work.md`'s `verify:pre` arm verbatim. No capability declares a `check.query` gate at `ship:pre` today; the arm exists so the documented check contract is complete rather than half-implemented.)
 
-     For a `predicate` gate (ADR-2008 / #2008), serialize `hook.check.predicate` to compact JSON and pass it as a **single argv element**:
+     For a `predicate` gate (ADR-2008 / ), serialize `hook.check.predicate` to compact JSON and pass it as a **single argv element**:
      ```bash
      GATE_RESULT=$(engineer_run check predicate --predicate '<hook.check.predicate as JSON>' --phase-dir "${PHASE_DIR}" --phase-number "${PHASE_NUMBER}" --raw) && CHECK_EXIT=0 || CHECK_EXIT=$?
      ```
@@ -374,7 +374,7 @@ Pair commits by their conventional-commit type (the `type:` prefix of the subjec
 
 Surface each commit's `gate-status:` value, normalized to exactly one of `skill`, `fallback`, `exempt`, or `missing` — never the raw trailer text. A commit whose trailer is absent, whose value is none of the first three, or which carries more than one `gate-status:` trailer (ambiguous) is counted as **missing** and still listed. This section is informational; it never blocks the ship.
 
-**Self-suppress when every commit is missing (#2431):** the execute pipeline only writes `gate-status:` trailers when TDD mode is active. If every commit in the scan normalizes to `missing`, skip this section and the aggregate trailer (step 9) entirely — a 100%-missing table is pure noise. Only emit when at least one commit carries a real value (`skill`, `fallback`, or `exempt`).
+**Self-suppress when every commit is missing :** the execute pipeline only writes `gate-status:` trailers when TDD mode is active. If every commit in the scan normalizes to `missing`, skip this section and the aggregate trailer (step 9) entirely — a 100%-missing table is pure noise. Only emit when at least one commit carries a real value (`skill`, `fallback`, or `exempt`).
 
 Harden every table cell against injection, not just subjects: escape `|` as `\|` and strip `\r`/`\n` from both commit subjects and the rendered `gate-status` value. Prefer NUL (`-z` / `%x00`) record separation, and reject any record whose fields contain the `\x1f`/`\x1e` delimiters, so an adversarial commit message cannot corrupt record or field boundaries.
 
@@ -408,8 +408,8 @@ Create the PR using the generated body. Write the body to a temp file first so l
 
 ```bash
 # BSD/macOS mktemp only randomizes XXXXXX when it is the final path component, so make a
-# suffixless temp then append the extension — portable across BSD + GNU (#1520).
-PR_BODY_FILE=$(mktemp "${TMPDIR:-/tmp}/gsd-pr-body-XXXXXX") && mv "$PR_BODY_FILE" "${PR_BODY_FILE}.md" && PR_BODY_FILE="${PR_BODY_FILE}.md" || exit 1
+# suffixless temp then append the extension — portable across BSD + GNU .
+PR_BODY_FILE=$(mktemp "${TMPDIR:-/tmp}/engineer-pr-body-XXXXXX") && mv "$PR_BODY_FILE" "${PR_BODY_FILE}.md" && PR_BODY_FILE="${PR_BODY_FILE}.md" || exit 1
 trap 'rm -f "${PR_BODY_FILE:-}"' EXIT
 printf '%s\n' "${PR_BODY}" > "${PR_BODY_FILE}"
 
@@ -451,10 +451,10 @@ If `REVIEW_CMD` is non-empty and not `"null"`, run the external review:
    Construct a review prompt containing the diff, diff stats, and phase context, then pipe it to the configured command:
    ```bash
    REVIEW_PROMPT="You are reviewing a pull request.\n\nDiff stats:\n${DIFF_STATS}\n\nPhase context:\n${STATE_STATUS}\n\nFull diff:\n${DIFF}\n\nRespond with JSON: { \"verdict\": \"APPROVED\" or \"REVISE\", \"confidence\": 0-100, \"summary\": \"...\", \"issues\": [{\"severity\": \"...\", \"file\": \"...\", \"line_range\": \"...\", \"description\": \"...\", \"suggestion\": \"...\"}] }"
-   # #2358: a per-run temp file (not a shared, unqualified path) so concurrent
+   # : a per-run temp file (not a shared, unqualified path) so concurrent
    # ship runs — same or different phase, same or different project — never
    # clobber or read each other's stderr. Portable via ${TMPDIR:-/tmp}.
-   REVIEW_STDERR_FILE=$(mktemp "${TMPDIR:-/tmp}/gsd-review-stderr-XXXXXX")
+   REVIEW_STDERR_FILE=$(mktemp "${TMPDIR:-/tmp}/engineer-review-stderr-XXXXXX")
    REVIEW_OUTPUT=$(echo "${REVIEW_PROMPT}" | engineer_run query run-with-timeout 120 -- ${REVIEW_CMD} 2>"${REVIEW_STDERR_FILE}")
    REVIEW_EXIT=$?
    ```
@@ -518,7 +518,7 @@ Report the PR URL and suggest: "Review the diff at {url}/files"
 </step>
 
 <step name="track_shipping">
-Update STATE.md to reflect the shipping action. Write the activity line only, with its description; do not write `Status`. At ship time the Current Position block already describes the next phase, and `Status` feeds the frontmatter `status` field, so a free-text value such as "Phase N shipped" does not belong there (#5165).
+Update STATE.md to reflect the shipping action. Write the activity line only, with its description; do not write `Status`. At ship time the Current Position block already describes the next phase, and `Status` feeds the frontmatter `status` field, so a free-text value such as "Phase N shipped" does not belong there .
 
 ```bash
 engineer_run query state.update "Last Activity" "$(date +%Y-%m-%d) -- Phase ${PHASE_NUMBER} shipped as PR #${PR_NUMBER}"
@@ -527,7 +527,7 @@ engineer_run query state.update "Last Activity" "$(date +%Y-%m-%d) -- Phase ${PH
 If `commit_docs` is true, commit the ship-note AND push it onto the PR branch so
 it reaches the default branch when the PR merges. Without this push the ship-note
 commit stays local-only and is silently discarded when the branch is deleted on
-merge (#2138). The `[ci skip]` trailer suppresses the redundant pipeline the push
+merge . The `[ci skip]` trailer suppresses the redundant pipeline the push
 would otherwise trigger (GitHub honors `[ci skip]` / `[skip ci]`):
 
 ```bash
@@ -536,11 +536,11 @@ SHIP_NOTE_SHA=$(git rev-parse HEAD)
 git push origin ${CURRENT_BRANCH} 2>&1 || echo "⚠ track_shipping: ship-note push failed — it is local-only; rerun: git push origin ${CURRENT_BRANCH}"
 
 # Preserve the skip-token optimization for repositories without a required-check
-# wedge; only synthesize a second CI-triggering commit when GitHub reports one (#2783).
+# wedge; only synthesize a second CI-triggering commit when GitHub reports one .
 # Poll mergeStateStatus with backoff to avoid racing GitHub's async state computation.
 # Note: Skip tokens recognized by GitHub Actions are [skip ci], [ci skip], [no ci], [skip actions], [actions skip], and skip-checks:true.
 # The recovery commit message MUST NOT contain any of these tokens.
-# Recovery keys on the head only (BLOCKED, zero checks, skip token), never the review state (#4993).
+# Recovery keys on the head only (BLOCKED, zero checks, skip token), never the review state .
 
 STATUS="UNKNOWN"
 CHECKS=0
@@ -583,13 +583,13 @@ Read the `activeHooks` array directly from `SHIP_POST_HOOKS_JSON` in-context (do
 
 **Generic step hook dispatch contract:** For each active entry where `kind == "step"`:
 - Honor `consumes`: if it lists `UAT.md`, resolve `ls "${PHASE_DIR}"/*-UAT.md 2>/dev/null | head -1` and pass it to the dispatch; if a consumed artifact is absent, skip that hook.
-- If `ref.agent` is set, first show the spawn banner, then dispatch the agent named by `ref.agent` (use the exact `ref.agent` value as the subagent type — e.g. `gsd-mempalace-curator` — never `general-purpose`):
+- If `ref.agent` is set, first show the spawn banner, then dispatch the agent named by `ref.agent` (use the exact `ref.agent` value as the subagent type — e.g. `mempalace-curator` — never `general-purpose`):
 
   ```
   ◆ Spawning ship:post capability agent... (runs in a subagent — no output until it returns, ~1–2 min; expected, not a freeze)
   ```
 
-  **#2684 model resolution.** `init.phase-op` emits no model field, and `ref.agent` is only known at runtime, so resolve it per hook before dispatching.
+  ** model resolution.** `init.phase-op` emits no model field, and `ref.agent` is only known at runtime, so resolve it per hook before dispatching.
 
   **Input validation (defense-in-depth) — do this IN-CONTEXT, before any shell use.** `ref.agent` originates in a capability manifest, which may be third-party. Check the value you read from `activeHooks` against `^[A-Za-z0-9][A-Za-z0-9._-]*$` yourself, the same way you read `activeHooks` itself — **never** by pasting it into a shell command to be tested there. A value carrying a quote, `;`, `` ` ``, `$(`, or a newline would terminate the assignment and run as its own statement *before* any shell-side check could execute, so a shell-side check is no protection at all.
 
@@ -601,7 +601,7 @@ Read the `activeHooks` array directly from `SHIP_POST_HOOKS_JSON` in-context (do
   HOOK_AGENT_MODEL=$(engineer_run query resolve-model "<agent>" --raw 2>/dev/null || true)
   ```
 
-  **#2517: omit the `model=` parameter entirely when `HOOK_AGENT_MODEL` is `inherit` or empty** — a capability may name an agent absent from the model-profile table, which resolves to the empty string, and passing an empty model 404s on non-Claude runtimes. Omitting inherits the orchestrator's model.
+  **: omit the `model=` parameter entirely when `HOOK_AGENT_MODEL` is `inherit` or empty** — a capability may name an agent absent from the model-profile table, which resolves to the empty string, and passing an empty model 404s on non-Claude runtimes. Omitting inherits the orchestrator's model.
 
   With a resolved model (`{HOOK_AGENT_MODEL}` is the value the command above printed; `${…}` are bound shell variables):
 
@@ -610,7 +610,7 @@ Read the `activeHooks` array directly from `SHIP_POST_HOOKS_JSON` in-context (do
   When it resolved to `inherit` or empty, drop the parameter:
 
   `Agent(subagent_type=ref.agent, prompt="Ship-time capability hook for phase ${PHASE_NUMBER}. Phase dir: ${PHASE_DIR}. Consume: ${consumed_files}. Follow your agent instructions.")`
-- If `ref.skill` is set, dispatch with `Skill(skill="${ref.skill}", args="${PHASE_NUMBER} --auto ${GSD_WS}")` (use `ref.skill` directly).
+- If `ref.skill` is set, dispatch with `Skill(skill="${ref.skill}", args="${PHASE_NUMBER} --auto ${ENGINEER_WS}")` (use `ref.skill` directly).
 
 Each dispatch is best-effort: if it errors, record a warning and continue — never re-raise (`onError: skip`).
 </step>

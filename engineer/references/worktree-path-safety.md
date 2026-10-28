@@ -6,7 +6,7 @@ any staging, Edit, or Write operation in worktree mode.
 
 ---
 
-## Supplied-root pin — step 0p (#4254, EVERY mode)
+## Supplied-root pin — step 0p (EVERY mode)
 
 Sequential-mode dispatch (no `isolation="worktree"`) gives the executor no
 spawn-time cwd guarantee, and the worktree-only guards below do not apply — so
@@ -42,7 +42,7 @@ backslash-separated, `RUNNER~1`-style short names included — compare equal by
 construction (shell `pwd -P` normalization does NOT match git's emission on
 Windows — do not re-introduce it).
 
-Two portability rules baked into the guard below, learned from the #4254 CI
+Two portability rules baked into the guard below, learned from the CI
 Windows legs: (1) a backslash comparator must be GENERATED at runtime
 (`printf '\134'`), because a backslash written twice in the script text does
 not survive the Windows command-line round-trip into bash — the doubled form
@@ -52,12 +52,12 @@ git's own stderr in a `Diagnostic` line, so a platform failure self-describes
 instead of surfacing as a bare `Actual root: <none>`.
 
 ```bash
-# gsd:guard=supplied-root-pin (#4254) — run before the first Edit/Write and before every commit.
+# engineer:guard=supplied-root-pin  — run before the first Edit/Write and before every commit.
 PINNED_ROOT='{PINNED_ROOT}'  # orchestrator build-time substitution — the only valid source of this value
 PIN_STAGE=''
 PIN_DIAG=''
-gsd_pin_fail() {
-  echo "FATAL: executor root does not match the orchestrator-supplied PROJECT_ROOT pin (#4254)." >&2
+engineer_pin_fail() {
+  echo "FATAL: executor root does not match the orchestrator-supplied PROJECT_ROOT pin ." >&2
   echo "  Pinned root: ${PINNED_ROOT:-<empty or unexpanded>}" >&2
   echo "  Actual root: ${ACTUAL_ROOT:-<none>}" >&2
   echo "  Guard stage: ${PIN_STAGE:-<unset>}" >&2
@@ -70,7 +70,7 @@ gsd_pin_fail() {
 # Backslash comparator, generated at runtime: a backslash written twice in this
 # script does not survive the Windows spawn path into bash (the command-line
 # round-trip halves the doubled form), which rejected every C:\ pin at the form
-# gate on the #4254 CI Windows legs. printf's octal escape is a lone backslash,
+# gate on the  CI Windows legs. printf's octal escape is a lone backslash,
 # which does survive; the quoted expansion below is literal in a case pattern.
 BS=$(printf '\134')
 # Fail closed if the comparator could not be generated: an empty BS would widen
@@ -79,25 +79,25 @@ BS=$(printf '\134')
 if [ -z "$BS" ]; then
   PIN_STAGE=form-gate
   PIN_DIAG='backslash comparator generation failed (printf octal escape returned empty)'
-  gsd_pin_fail
+  engineer_pin_fail
 fi
 case "$PINNED_ROOT" in
-  ''|'{PINNED_ROOT}') PIN_STAGE=pin-unbound; gsd_pin_fail ;;  # empty or unexpanded pin — fail closed, never warn-and-proceed
+  ''|'{PINNED_ROOT}') PIN_STAGE=pin-unbound; engineer_pin_fail ;;  # empty or unexpanded pin — fail closed, never warn-and-proceed
   /*) ;;                                                     # absolute POSIX form
   [A-Za-z]:/*|[A-Za-z]:"$BS"*) ;;                            # Windows drive form, forward- or backslash-separated
-  *) PIN_STAGE=form-gate; gsd_pin_fail ;;                    # relative pin — never trustworthy across cwds
+  *) PIN_STAGE=form-gate; engineer_pin_fail ;;                    # relative pin — never trustworthy across cwds
 esac
 ACTUAL_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 if [ -z "$ACTUAL_ROOT" ]; then
   PIN_STAGE=actual-capture
   PIN_DIAG="git rev-parse --show-toplevel from the cwd failed: $(git rev-parse --show-toplevel 2>&1 1>/dev/null)"
-  gsd_pin_fail
+  engineer_pin_fail
 fi
 PINNED_TL=$(git -C "$PINNED_ROOT" rev-parse --show-toplevel 2>/dev/null)
 if [ -z "$PINNED_TL" ]; then
   PIN_STAGE=pinned-capture
   PIN_DIAG="git -C <pinned root> rev-parse --show-toplevel failed: $(git -C "$PINNED_ROOT" rev-parse --show-toplevel 2>&1 1>/dev/null)"
-  gsd_pin_fail
+  engineer_pin_fail
 fi
 if [ "$ACTUAL_ROOT" != "$PINNED_TL" ]; then
   # Registered-submodule allowance: sub_repos plans legitimately commit inside an
@@ -108,7 +108,7 @@ if [ "$ACTUAL_ROOT" != "$PINNED_TL" ]; then
   if [ "$SUPER_TL" != "$PINNED_TL" ]; then
     PIN_STAGE=root-mismatch
     PIN_DIAG="actual=${ACTUAL_ROOT} pinned=${PINNED_TL} superproject=${SUPER_TL:-<none>}"
-    gsd_pin_fail
+    engineer_pin_fail
   fi
 fi
 ```
@@ -124,7 +124,7 @@ If your prompt contains a `<worktree_branch_check>` embed instruction rather tha
 
 ---
 
-## cwd-drift sentinel — step 0a (#3097)
+## cwd-drift sentinel — step 0a 
 
 A prior Bash call may have `cd`'d out of the worktree into the main repo. When
 that happens `[ -f .git ]` is false (main repo's `.git` is a directory), silently
@@ -136,12 +136,12 @@ if [ -f .git ]; then  # we are in a worktree
   WT_GIT_DIR=$(git rev-parse --git-dir 2>/dev/null)
   case "$WT_GIT_DIR" in
     *.git/worktrees/*)
-      SENTINEL="$WT_GIT_DIR/gsd-spawn-toplevel"
+      SENTINEL="$WT_GIT_DIR/engineer-spawn-toplevel"
       [ ! -f "$SENTINEL" ] && git rev-parse --show-toplevel > "$SENTINEL" 2>/dev/null
       EXPECTED_TL=$(cat "$SENTINEL" 2>/dev/null)
       ACTUAL_TL=$(git rev-parse --show-toplevel 2>/dev/null)
       if [ -n "$EXPECTED_TL" ] && [ "$ACTUAL_TL" != "$EXPECTED_TL" ]; then
-        echo "FATAL: cwd drifted from spawn-time worktree root (#3097)" >&2
+        echo "FATAL: cwd drifted from spawn-time worktree root " >&2
         echo "  Spawn-time: $EXPECTED_TL" >&2
         echo "  Current:    $ACTUAL_TL" >&2
         echo "RECOVERY: cd \"$EXPECTED_TL\" before staging, then re-run this commit." >&2
@@ -154,7 +154,7 @@ fi
 
 ---
 
-## Absolute-path guard — step 0b (#3099)
+## Absolute-path guard — step 0b 
 
 Edit/Write calls using absolute paths constructed from the **orchestrator's** `pwd`
 (main repo root) will resolve to the main repo, not the worktree. Writes land in
@@ -178,7 +178,7 @@ worktree — never from `pwd` captured in the orchestrator context.
 
 ---
 
-## `<automated>` command guard — step 0c (#4767)
+## `<automated>` command guard — step 0c 
 
 The plan's `<automated>` text is where an orchestrator-cwd absolute path most often
 arrives: the planner saw absolute paths in its own context and wrote one into the
@@ -186,7 +186,7 @@ command. Run as written, `cd /abs/main-checkout/… && <test>` leaves the worktr
 against the main tree, and **passes on code this worktree changed and the main tree did
 not** — a green verify that verified nothing. Before executing any `<automated>` command,
 scan its text for absolute paths and halt if one is outside the worktree. Fail loud; never
-rewrite the prefix silently (#3050) — a rewritten command hides the defective plan, and the
+rewrite the prefix silently — a rewritten command hides the defective plan, and the
 next executor meets it again.
 
 ```bash
@@ -248,7 +248,7 @@ _ENV='([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*'
 # direction is the one that gets it routed around. The residual is disclosed instead.
 # Spell the literal ERE operators as bracket expressions. `\|` / `\(` / `\{`
 # are GNU-tolerated but undefined by POSIX and BSD sed rejects the same boundary
-# expression with "unbalanced brackets" before the scan can run (#4767).
+# expression with "unbalanced brackets" before the scan can run .
 _OPEN='(^|&&|&|;|[|][|]|[|]|[(]|[{])[[:space:]]*'
 # LAUNCHERS are a NAMED set, not `[^&;|]*`. A wrapper reached through a launcher is still a wrapper,
 # and the set admits an absolute path (`/usr/bin/env`) and an option with a SEPARATE operand
@@ -325,7 +325,7 @@ _scan(){ local CMD=$1 D=$2 RAW BODY BFR REST K Q T R P S PREFIX LDS LD _T _P
     # Classify with the same grep implementation that produced the event and
     # remove the matched prefix literally. Expanding these composed EREs into a
     # multi-expression BSD sed program fails with "unbalanced brackets" on
-    # macOS even though BSD grep accepts the event expression (#4767).
+    # macOS even though BSD grep accepts the event expression .
     if _P=$(printf '%s' "$BODY" | grep -oE "^${_ENV}${_EVAL}"); then K=E
     elif _P=$(printf '%s' "$BODY" | grep -oE "^${_ENV}${_EXEC}"); then K=W
     elif _P=$(printf '%s' "$BODY" | grep -oE "^${_DIR}"); then K=N
@@ -456,7 +456,7 @@ The rest, in descending order of how likely a planner is to reach them:
   Not recognized: an interpreter with no entry (`awk`, `php`, a shell not listed), whose payload stays
   one opaque token, so only an absolute path written as a bare word in it is caught by the catch-all
   scan. **The two lists are delimited on purpose** — the parity test in
-  `tests/executor-mvp-tdd-section.test.cjs` reads only the span between `Recognized,` and
+  the executor containment checks reads only the span between `Recognized,` and
   `Not recognized:`, matching BACKTICKED TOKENS rather than substrings, because a containment check over the whole section is satisfied by a name that
   appears here saying it is UNsupported: adding `awk` to `$_EXEC` with this prose untouched passed
   that test, driven by the pre-push review of the round that added it.
@@ -494,5 +494,5 @@ The rest, in descending order of how likely a planner is to reach them:
 
 The enumerations are the parts that rot: they mirror a toolchain this file does not own. Adding a tool
 is one alternation in `_DIR` plus a row in each of the two tables in
-`tests/executor-mvp-tdd-section.test.cjs`. The guard is the executor's last containment check, not its
+the executor containment checks. The guard is the executor's last containment check, not its
 only one — a halt it misses still has to get past `check verify-command-paths` at plan time.

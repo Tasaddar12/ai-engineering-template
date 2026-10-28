@@ -9,15 +9,15 @@ Plans execute autonomously. Checkpoints formalize interaction points where human
 2. **Claude sets up the verification environment** - Start dev servers, seed databases, configure env vars
 3. **User only does what requires human judgment** - Visual checks, UX evaluation, "does this feel right?"
 4. **Secrets come from user, automation comes from Claude** - Ask for API keys, then Claude uses them via CLI
-5. **Auto-mode bypasses verification checkpoints, and decision checkpoints with a declared `auto_select`** — When `workflow._auto_chain_active` or `workflow.auto_advance` is true in config: human-verify auto-approves; a `checkpoint:decision` carrying `auto_select="<option-id>"` auto-selects that named option; a `checkpoint:decision` with NO `auto_select` escalates to a human instead of guessing by position (#4095); human-action still stops (auth gates cannot be automated)
-6. **`gate="blocking-human"` is never auto-approved** — a checkpoint carrying this gate stops for a human in _every_ mode, including auto-mode, regardless of its type. Rule 5 does not apply to it. The executor's precondition-unmet checkpoint (a task's `<precondition>` evaluated false — unmet `user_setup` step, missing env var, absent prior-phase artifact) reports this gate (#3210).
+5. **Auto-mode bypasses verification checkpoints, and decision checkpoints with a declared `auto_select`** — When `workflow._auto_chain_active` or `workflow.auto_advance` is true in config: human-verify auto-approves; a `checkpoint:decision` carrying `auto_select="<option-id>"` auto-selects that named option; a `checkpoint:decision` with NO `auto_select` escalates to a human instead of guessing by position ; human-action still stops (auth gates cannot be automated)
+6. **`gate="blocking-human"` is never auto-approved** — a checkpoint carrying this gate stops for a human in _every_ mode, including auto-mode, regardless of its type. Rule 5 does not apply to it. The executor's precondition-unmet checkpoint (a task's `<precondition>` evaluated false — unmet `user_setup` step, missing env var, absent prior-phase artifact) reports this gate .
 
 **The `gate` attribute:**
 
 | Value                   | Auto-mode behavior                                                                                                              | Use for                                                                                                                                                                                                                                                            |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `gate="blocking"`       | Bypassed per rule 5 (human-verify auto-approves; decision auto-selects only when `auto_select` names an option, else escalates) | The default. Post-hoc verification and implementation choices that are safe to take the recommended path on when unattended.                                                                                                                                       |
-| `gate="blocking-human"` | **Never bypassed.** Stops for a human in auto-mode too.                                                                         | Irreversible or trust-establishing steps a human must actually see: package-legitimacy verification before install, any decision whose default answer would be wrong to assume, and unmet `<precondition>` facts the executor cannot establish on its own (#3210). |
+| `gate="blocking-human"` | **Never bypassed.** Stops for a human in auto-mode too. | Irreversible or trust-establishing steps a human must actually see: package-legitimacy verification before install, any decision whose default answer would be wrong to assume, and unmet `<precondition>` facts the executor cannot establish on its own . |
 
 Reach for `gate="blocking-human"` whenever auto-approving the checkpoint would defeat its purpose. If the checkpoint exists because a human must _decide_ something, `blocking` is the wrong gate — auto-mode will decide it for them.
 
@@ -31,11 +31,11 @@ The gate spans two layers, and both must honor it. `executor` refuses to auto-ap
 
 **When:** Claude completed automated work, human confirms it works correctly.
 
-> **Default mode (#3309): `workflow.human_verify_mode = end-of-phase`.** New projects do NOT halt mid-flight at _planner-emitted_ `checkpoint:human-verify` tasks. (The executor-synthesized **tracer feedback gate** is the one runtime checkpoint this mode also governs, with its own precedence chain — see "Tracer feedback gate (#3299)" below.) The planner suppresses those task emissions and embeds the verification details into the relevant `auto` task's `<verify><human-check>` block; the verifier harvests every `<verify><human-check>` at end-of-phase (Step 8) and consolidates them into the existing `human_needed` → `{phase_num}-UAT.md` flow in `workflows/execute-phase.md`. The user reviews everything in one batch.
+> **Default mode : `workflow.human_verify_mode = end-of-phase`.** New projects do NOT halt mid-flight at _planner-emitted_ `checkpoint:human-verify` tasks. The planner suppresses those task emissions and embeds the verification details into the relevant `auto` task's `<verify><human-check>` block; the verifier harvests every `<verify><human-check>` at end-of-phase (Step 8) and consolidates them into the existing `human_needed` → `{phase_num}-UAT.md` flow in `workflows/execute-phase.md`. The user reviews everything in one batch.
 >
 > **Why this is the default:** every mid-flight halt costs a full executor cold-start (CLAUDE.md, MEMORY.md, STATE.md, plan re-read on respawn) because subagent context is discarded across the pause. A plan with N human-verify checkpoints pays the cold-start cost N+1 times — measured at "tens of thousands of tokens" per round-trip on real projects.
 >
-> Set `workflow.human_verify_mode = mid-flight` in `.planning/config.json` to opt back into the pre-#3309 behavior of halting at every checkpoint. `checkpoint:decision` and `checkpoint:human-action` are unaffected by either value — those gate the work itself, not post-hoc verification.
+> Set `workflow.human_verify_mode = mid-flight` in `.planning/config.json` to opt back into the pre- behavior of halting at every checkpoint. `checkpoint:decision` and `checkpoint:human-action` are unaffected by either value — those gate the work itself, not post-hoc verification.
 
 **Use for:**
 
@@ -111,30 +111,6 @@ The gate spans two layers, and both must honor it. `executor` refuses to auto-ap
   </how-to-verify>
   <resume-signal>Type "approved" or describe issues</resume-signal>
 </task>
-```
-
-### Tracer feedback gate (#3299)
-
-A `type="tracer"` task is followed by an early integration checkpoint on the proven slice, run BEFORE any expansion task. This checkpoint is **synthesized by the executor at runtime** — no planner emits it — so planner-side `human_verify_mode` suppression cannot reach it. It must therefore consult the mode itself.
-
-Evaluate the rows **in order** and take the first that matches — they are a precedence chain, not independent conditions:
-
-| #   | Run                                        | Tracer `<verify>`                         | Behavior                                                                                             |
-| --- | ------------------------------------------ | ----------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| 1   | **Any run, any mode** (incl. auto)         | task carries `gate="blocking-human"`      | **STOP → `checkpoint:human-verify`.** Never auto-continued.                                          |
-| 2   | Auto mode active (`AUTO_CHAIN`/`AUTO_CFG`) | any (row 1 already took `blocking-human`) | Re-run verify; HALT on failure, continue on success. **Pre-existing behavior — unchanged by #3299.** |
-| 3   | Interactive, `end-of-phase` (default)      | only `<automated>`                        | Re-run verify; HALT on failure, continue to expansion on success — **no checkpoint**                 |
-| 4   | Interactive, `end-of-phase`                | carries `<human-check>`                   | STOP → `checkpoint:human-verify`                                                                     |
-| 5   | Interactive, `mid-flight`                  | any                                       | STOP → `checkpoint:human-verify`                                                                     |
-
-**Carve-outs — the #3299 auto-continue (row 3) applies ONLY when all three hold:** the run is interactive, the mode is `end-of-phase`, and the tracer's `<verify>` contains only `<automated>`. Anything else STOPs or falls to the pre-existing auto-mode branch. HALT-on-failure is unconditional in rows 2 and 3 alike: a failing tracer never becomes an approvable checkpoint and never proceeds to expansion, because layering expansion onto a broken slice is the failure this gate exists to prevent.
-
-Row 1 is deliberately **not** scoped to interactive runs. Golden rule 6 above states that `gate="blocking-human"` stops for a human in _every_ mode including auto-mode, and a precedence chain that let an autonomous run continue past it would make this file assert two incompatible rules about the same gate. No planner emits `gate` on a `type="tracer"` task today, but `src/verify.cts` parses only `type` and does not consult `gate` on non-checkpoint tasks, so a hand-authored, imported, or externally-generated `PLAN.md` can carry it and validate — unreachable by our planner is not unreachable.
-
-Read `HUMAN_VERIFY_MODE` with an explicit default — `workflow.human_verify_mode` is absent from `SCHEMA_DEFAULTS`, so a bare `config-get` exits non-zero with `Key not found` on any project whose `config.json` predates #3309:
-
-```bash
-HUMAN_VERIFY_MODE=$(engineer_run query config-get workflow.human_verify_mode --default end-of-phase --raw 2>/dev/null || echo "end-of-phase")
 ```
 
 </type>

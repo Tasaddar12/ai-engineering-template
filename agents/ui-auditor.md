@@ -135,7 +135,7 @@ fi
 
 No dev server: code-review-only audit (Tailwind class audit, string audit for generic labels, state handling check); say screenshots were not captured. The block's last line is its outcome: `captured`, `PARTIAL` or `NOT captured`. Record `captured` only for the first; otherwise name the failed captures and score the visual pillars without them.
 
-<!-- gsd:ui-interaction-capture -->
+<!-- engineer:ui-interaction-capture -->
 
 ### Interaction capture (default-off — `workflow.ui_interaction_capture`)
 

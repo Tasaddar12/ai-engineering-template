@@ -605,7 +605,7 @@ change — only location and metadata change.
 
 <critical_rules>
 
-1. NEVER include Engineer methodology content in generated docs — no references to phases, plans, `/gsd-` commands, PLAN.md, ROADMAP.md, or any Engineer workflow concepts. Generated docs describe the TARGET PROJECT exclusively.
+1. NEVER include Engineer methodology content in generated docs — no references to phases, plans, `/engineer-` commands, PLAN.md, ROADMAP.md, or any Engineer workflow concepts. Generated docs describe the TARGET PROJECT exclusively.
 2. NEVER touch CHANGELOG.md — it is managed by `/ship` and is out of scope.
 3. Include the Engineer marker `<!-- generated-by: doc-writer -->` as the first line of every generated doc file (except supplement mode — see rule 7).
 4. Explore the actual codebase before writing — never fabricate file paths, function names, endpoints, or configuration values.

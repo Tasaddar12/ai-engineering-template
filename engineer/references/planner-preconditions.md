@@ -2,7 +2,7 @@
 
 > Progressive-disclosure reference for `agents/planner.md`. The planner agent
 > reads this file when it needs the full emission rules for the `<precondition>`
-> task element (issue #1949, *The Pragmatic Programmer* Topic 23 — Design by
+> task element (*The Pragmatic Programmer* Topic 23 — Design by
 > Contract). The slim pointer in `agents/planner.md` → `<task_breakdown>`
 > routes here; the canonical schema row lives in `docs/reference/plan-md.md`.
 
@@ -21,11 +21,6 @@ the missing side: it states, in runnable/checkable terms, what must be true
 *before* a task begins — so an autonomous executor stops the instant an
 assumption is false, instead of building ten atomic commits on top of a
 migration that never ran.
-
-This is the front-of-task companion to the tracer-bullet proposal (#1945):
-tracers prove the *architecture* end-to-end before expansion; preconditions prove
-each expansion task's *assumptions* before it runs. Together they close both ends
-of the "outrunning your headlights" failure mode.
 
 ## When to emit `<precondition>`
 
@@ -78,7 +73,7 @@ environment variable or runtime config that exists *now* (not at plan time).
 ```xml
 <task type="auto">
   <name>Add /reveal endpoint handler</name>
-  <precondition>server bootstraps and responds to GET /health (from the tracer slice)</precondition>
+  <precondition>server bootstraps and responds to GET /health</precondition>
   <files>server/reveal.ts</files>
   <action>...</action>
   <verify>curl /reveal?path=... opens the OS file manager</verify>
@@ -150,7 +145,5 @@ The following are explicitly NOT part of v1:
 - *The Pragmatic Programmer*, Topic 23 — "Design by Contract" (Hunt & Thomas).
 - `docs/reference/plan-md.md` — canonical PLAN.md schema reference (where
   `<precondition>` appears in the task-element table).
-- Tracer-bullet proposal (#1945) — the architectural-end companion to this
-  front-of-task contract.
 - `agents/executor.md` → `<execution_flow>` → precondition check step — the
   assertion surface that consumes what this reference defines.

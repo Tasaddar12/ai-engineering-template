@@ -31,7 +31,7 @@ Arguments:
 - `--fix` (optional) — after review completes (or if REVIEW.md already exists), auto-apply fixes found. Spawns code-fixer agent. Accepts sub-flags:
   - `--all` — include Info findings in fix scope (default: Critical + Warning only)
   - `--auto` — enable fix + re-review iteration loop, capped at 3 iterations
-- Optional reviewer-lane flags (#4209) — any flag returned by `engineer_run review-lane flags` (the canonical reviewer-lane roster; e.g. `--codex`) requests that lane independently review the same already-resolved scope alongside the internal `code-reviewer` agent. Its findings are corroborating evidence only — `code-reviewer` alone verifies each claim against the actual source and writes REVIEW.md; there is exactly one REVIEW.md schema. No reviewer-lane flag (the default) reviews with only the internal agent, byte-for-byte unchanged from before #4209.
+- Optional reviewer-lane flags — any flag returned by `engineer_run review-lane flags` (the canonical reviewer-lane roster; e.g. `--codex`) requests that lane independently review the same already-resolved scope alongside the internal `code-reviewer` agent. Its findings are corroborating evidence only — `code-reviewer` alone verifies each claim against the actual source and writes REVIEW.md; there is exactly one REVIEW.md schema. No reviewer-lane flag (the default) reviews with only the internal agent, byte-for-byte unchanged from before .
 
 Output: {padded_phase}-REVIEW.md in phase directory + inline summary of findings
 </objective>

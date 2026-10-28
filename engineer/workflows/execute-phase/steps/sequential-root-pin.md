@@ -1,4 +1,4 @@
-# Sequential root pin (#4254)
+# Sequential root pin 
 
 Apply response_language to all user-facing prose — narration between tool calls, status
 updates, progress notes, and findings included; preserve code, paths, and identifiers.
@@ -7,7 +7,7 @@ Read and execute this fragment from `execute-phase.md`'s **Sequential mode** bra
 composing any sequential dispatch prompt. It owns the sequential root-pin build-time embed,
 the `<required_reading>` root substitution, and the wave serialization rules.
 
-## Root pin — ORCHESTRATOR build-time embed (#4254; NOT a sub-agent runtime step)
+## Root pin — ORCHESTRATOR build-time embed (NOT a sub-agent runtime step)
 
 Before this dispatch, read `engineer/references/worktree-path-safety.md` step 0p
 ("Supplied-root pin") and copy its guard template into this prompt inside a
@@ -24,7 +24,7 @@ ONLY: worktree-mode dispatches keep the self-derived line — an isolated execut
 toplevel IS its correct (and intentionally different) worktree, and substituting the
 orchestrator's root there would break every worktree-mode dispatch.
 
-## Wave serialization (moved verbatim from the host step — ADR-857 Phase 6 ceiling, #1168)
+## Wave serialization (moved verbatim from the host step — ADR-857 Phase 6 ceiling)
 
 When worktrees are disabled for a plan (per-plan or project-level), that plan's executor runs
 on the main working tree. If **any** plan in the current wave dropped to sequential mode,

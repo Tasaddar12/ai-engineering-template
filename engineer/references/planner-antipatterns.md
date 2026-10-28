@@ -96,7 +96,7 @@ If a decision from CONTEXT.md says "display cost calculated from billing table i
 
 ## Comment-Text Discipline (HARD GATE)
 
-> Enforced at plan-write time by `verify.plan-structure` (the `validate_plan` step). Issue #429.
+> Enforced at plan-write time by `verify.plan-structure` (the `validate_plan` step). Issue .
 
 When an `<acceptance_criteria>` or `<verify>` block uses a **negative grep** — `grep -c 'LITERAL' file == 0`, meaning "this literal must NOT appear in the file" — that same `LITERAL` must not appear verbatim anywhere in an `<action>` body. Verbatim code blocks, JSDoc samples, head-comment references, and "what NOT to do" illustrations get echoed into the file the executor writes, so the executor's commit-time gate fails on the *comment text*, not on a real code regression. The work is correct; the gate output is semantically wrong; the executor wastes cycles and learns to distrust the gate.
 
@@ -137,14 +137,14 @@ One marker per literal. The marker exempts only the exact literal it names.
 
 ## Region-Scoped Negative Gates
 
-> Surfaced at plan-write time by `verify.plan-structure` (the `validate_plan` step), WARN-level. Issue #968.
+> Surfaced at plan-write time by `verify.plan-structure` (the `validate_plan` step), WARN-level. Issue .
 
 A **negative grep** — `! grep -Eq 'PAT' file` or `grep -c 'PAT' file == 0` — asserts a construct is absent. `grep` is file-scoped by nature: it has no notion of function or region. This breaks down when a phase splits one file across parallel tasks with legitimately opposite needs for the same construct in different regions:
 
 - **Task A** bans the construct file-wide — a synchronous factory must not block on a refresh: `! grep -Eq 'await .*refresh' app/page.py`.
 - **Task B** legitimately requires it elsewhere in the same file — a post-reindex handler must `await bridge.refresh()` to repopulate state.
 
-Both occurrences are real, correct production code in different functions of one file. A file-wide negative grep cannot say "absent in function X, present in function Y", so the two gates are mutually unsatisfiable with a direct call — the executor is pushed into an indirection whose only purpose is to relocate the matched string out of the file (pure gate-appeasement, zero behaviour change). This is distinct from Comment-Text Discipline (#429): there is no comment echo and no allowlist helps — the construct must genuinely be present in one region and absent in another.
+Both occurrences are real, correct production code in different functions of one file. A file-wide negative grep cannot say "absent in function X, present in function Y", so the two gates are mutually unsatisfiable with a direct call — the executor is pushed into an indirection whose only purpose is to relocate the matched string out of the file (pure gate-appeasement, zero behaviour change). This is distinct from Comment-Text Discipline : there is no comment echo and no allowlist helps — the construct must genuinely be present in one region and absent in another.
 
 **The fix:** region-scope the negative gate so "absent in region X" stops implying "absent file-wide."
 
@@ -181,7 +181,7 @@ If region-scoping is genuinely impractical and the file split is intentional, su
 
 One marker per pattern. The marker exempts only the exact pattern it names. Prefer region-scoping over suppression.
 
-## CLI Output Format Anchor Mismatch (#1478)
+## CLI Output Format Anchor Mismatch 
 
 `pnpm ls vite | grep -E '^vite@7\.'` looks correct but silently fails. `pnpm ls` uses tree characters as line prefixes:
 ```
@@ -196,14 +196,14 @@ Lines begin with `└──`, not `vite`. The `^` anchor matches line start, whi
 
 Same trap: `npm ls`, `yarn list`, `docker ps` column output, `kubectl get` table output.
 
-## Fabricated Numeric Baselines (#1478)
+## Fabricated Numeric Baselines 
 
 Never emit `grep '714 tests'` or `grep '52 test files'` unless you ran the count command in this session. Model-recalled counts are stale from training.
 
 **Bad:** `npm test 2>&1 | grep '714 passed'`
 **Good:** `npm test 2>&1 | grep -E '[0-9]+ passed'` or just `npm test`
 
-## Error-Suppressing Fallbacks in Verify Gates (#1479)
+## Error-Suppressing Fallbacks in Verify Gates 
 
 `2>/dev/null || echo "0"` in an assignment that feeds a comparison converts any failure into a passing gate that measures nothing.
 
@@ -229,7 +229,7 @@ test -f src/i18n/en.json && test -f src/i18n/de.json || { echo "missing input fi
 
 **When `|| echo "default"` is acceptable:** only when absence is semantically the default AND the result is NOT used in a comparison that should detect absence.
 
-## External Review Before PR Open (#4107)
+## External Review Before PR Open 
 
 Apply this ordering only when opening the PR is known to trigger automatic external review and the plan also has internal review lanes.
 

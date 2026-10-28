@@ -1,4 +1,4 @@
-# Convergence Evidence Gate (#3304)
+# Convergence Evidence Gate 
 
 Bounds Step 7's anti-pattern scan so an approved gap-closure contract can
 actually close. Applies **only** when `is_re_verification = true` (Step 0) —
@@ -31,7 +31,7 @@ names. This gate therefore touches Step 7 only.
 ## Definitions
 
 **Self-evidencing blocker (unaffected by this gate).** The debt-marker gate
-(`TBD`/`FIXME`/`XXX` with no `issue #123`/`PR #123`/`#123`/`DEF-*` reference
+(`TBD`/`FIXME`/`XXX` with no `canonical issue URL`/`canonical pull-request URL`/`issue number`/`DEF-*` reference
 on the same line) is the *only* Step 7 category with zero judgment
 component — a regex match plus the absence of a follow-up reference, nothing
 inferred. Its own textual presence in the file is the deterministic evidence.

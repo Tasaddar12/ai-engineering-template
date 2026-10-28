@@ -9,10 +9,10 @@ Run prior phases' test suites to catch cross-phase regressions BEFORE verificati
 ```bash
 # Find all VERIFICATION.md files from prior phases in current milestone
 PRIOR_VERIFICATIONS=$(find .planning/phases/ -name "*-VERIFICATION.md" ! -path "*${PHASE_NUMBER}*" 2>/dev/null)
-# gsd-handoff:begin regression-files-reset
-_GSD_HANDOFF="$( { git rev-parse --absolute-git-dir 2>/dev/null || echo "${TMPDIR:-/tmp}/gsd-$(pwd | cksum | cut -d' ' -f1)"; } )/handoff"; mkdir -p "$_GSD_HANDOFF"
-rm -f "$_GSD_HANDOFF/regression-files"  # a list left by an earlier run must never reach this gate (#4915)
-# gsd-handoff:end regression-files-reset
+# engineer-handoff:begin regression-files-reset
+_ENGINEER_HANDOFF="$( { git rev-parse --absolute-git-dir 2>/dev/null || echo "${TMPDIR:-/tmp}/engineer-$(pwd | cksum | cut -d' ' -f1)"; } )/handoff"; mkdir -p "$_ENGINEER_HANDOFF"
+rm -f "$_ENGINEER_HANDOFF/regression-files"  # a list left by an earlier run must never reach this gate 
+# engineer-handoff:end regression-files-reset
 ```
 
 **Step 2: Extract test file lists from prior verifications**
@@ -22,22 +22,22 @@ For each VERIFICATION.md found, look for test file references:
 - The "Test Suite" or "Automated Checks" section
 - File patterns from `key-files.created` in corresponding SUMMARY.md files that match `*.test.*` or `*.spec.*`
 
-Write all unique test file paths to the handoff file, one path per line (#4915). Each fenced
+Write all unique test file paths to the handoff file, one path per line . Each fenced
 `bash` block is dispatched as its own shell, so a shell variable assigned here would never reach
 `regression-gate-run.md` — the file is the hand-off. Replace the example lines with the real paths;
 write none when no test file was found:
 
 ```bash
-# gsd-handoff:begin regression-files-write
-_GSD_HANDOFF="$( { git rev-parse --absolute-git-dir 2>/dev/null || echo "${TMPDIR:-/tmp}/gsd-$(pwd | cksum | cut -d' ' -f1)"; } )/handoff"; mkdir -p "$_GSD_HANDOFF"
-cat > "$_GSD_HANDOFF/regression-files" <<'GSD_REGRESSION_FILES'
+# engineer-handoff:begin regression-files-write
+_ENGINEER_HANDOFF="$( { git rev-parse --absolute-git-dir 2>/dev/null || echo "${TMPDIR:-/tmp}/engineer-$(pwd | cksum | cut -d' ' -f1)"; } )/handoff"; mkdir -p "$_ENGINEER_HANDOFF"
+cat > "$_ENGINEER_HANDOFF/regression-files" <<'ENGINEER_REGRESSION_FILES'
 tests/test_example_one.py
 tests/test_example_two.py
-GSD_REGRESSION_FILES
-# gsd-handoff:end regression-files-write
+ENGINEER_REGRESSION_FILES
+# engineer-handoff:end regression-files-write
 ```
 
-**Step 3: Run regression tests (if any found)** — Read and execute `engineer/workflows/execute-phase/steps/regression-gate-run.md`. It resolves the project test command, normalizes it to a one-shot form (defeating vitest/jest watch mode via the shared `normalize-test-command` helper), runs it under `workflow.test_gate_timeout`, and aborts on timeout with a watch-mode hint (#1857). On `REGRESSION GATE ABORTED` (exit 124), HALT — do not proceed to verification.
+**Step 3: Run regression tests (if any found)** — Read and execute `engineer/workflows/execute-phase/steps/regression-gate-run.md`. It resolves the project test command, normalizes it to a one-shot form (defeating vitest/jest watch mode via the shared `normalize-test-command` helper), runs it under `workflow.test_gate_timeout`, and aborts on timeout with a watch-mode hint . On `REGRESSION GATE ABORTED` (exit 124), HALT — do not proceed to verification.
 
 **Step 4: Report results**
 

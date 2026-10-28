@@ -101,7 +101,7 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
 fi
 # fast writes no planning artifacts (its own guardrails forbid PLAN.md/SUMMARY.md); .planning/
 # is excluded from staging ONLY when commit_docs is false — otherwise this path is
-# byte-identical to an unconditional `git add -A`, unchanged from before #3585.
+# byte-identical to an unconditional `git add -A`, unchanged from before .
 COMMIT_DOCS=$(engineer_run query config-get commit_docs --raw 2>/dev/null || echo "true")
 if [ "$COMMIT_DOCS" = "false" ]; then
   git add -A -- ':!.planning'
@@ -117,16 +117,16 @@ Use conventional commit format: `fix:`, `feat:`, `docs:`, `chore:`, `refactor:` 
 <step name="log_to_state">
 If `.planning/STATE.md` exists and has a "Quick Tasks Completed" table, append a row
 that matches the existing table's schema via the schema-backed `engineer_run
-quick-tasks-append` helper (`markdown-table.cjs`'s `appendQuickTaskRow`; #2133,
+quick-tasks-append` helper (`markdown-table.cjs`'s `appendQuickTaskRow`; ,
 ADR-2143 §3/§7). If no table exists, skip silently. If the table's schema is
 unrecognized, the helper fails loud (non-zero exit) instead of silently guessing
 a column count — this replaces the prior inline `awk NF-2` arithmetic that was
-the root cause of #2133.
+the root cause of .
 
 ```bash
 # Detect whether STATE.md has a Quick Tasks Completed table
 if grep -q "Quick Tasks Completed" .planning/STATE.md 2>/dev/null; then
-  # #3730: bring a legacy pre-registry table onto the canonical schema BEFORE
+  # : bring a legacy pre-registry table onto the canonical schema BEFORE
   # appending — silent no-op when already canonical, so this runs harmlessly
   # on every fast task and migrates exactly once, on the first.
   engineer_run quick-tasks-migrate || true

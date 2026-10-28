@@ -81,8 +81,8 @@ blocked: [N]
   artifacts: [] # Filled by diagnosis
   missing: [] # Filled by diagnosis
   debug_session: "" # Filled by diagnosis
-  resolved_by: "" # Written by verify-work's reconcile_gaps (#1921) when # an executed gap-closure plan resolves this gap — # never author this directly. Plan basename.
-  resolved_at: "" # Written alongside resolved_by (#1921).
+  resolved_by: "" # Written by verify-work's reconcile_gaps  when # an executed gap-closure plan resolves this gap — # never author this directly. Plan basename.
+  resolved_at: "" # Written alongside resolved_by .
 ```
 
 ---
@@ -121,7 +121,7 @@ blocked: [N]
 - APPEND only when issue found (YAML format)
 - After diagnosis: fill `root_cause`, `artifacts`, `missing`, `debug_session`
 - This section feeds directly into /plan-phase --gaps
-- `status: resolved` (#1921, #4983): when `/verify-work`'s `reconcile_gaps`
+- `status: resolved` : when `/verify-work`'s `reconcile_gaps`
   step finds an executed gap-closure plan (a `*-PLAN.md` naming this entry's
   `gap_id` with a matching `*-SUMMARY.md`), it updates the entry IN PLACE —
   `status: failed` → `status: resolved` — and adds `resolved_by` (the

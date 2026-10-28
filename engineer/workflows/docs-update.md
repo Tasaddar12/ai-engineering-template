@@ -16,18 +16,18 @@ Read `engineer/workflows/docs-update/detail/elaboration.md` in full before conti
 Load docs-update context:
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then engineer_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then engineer_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f engineer_run; _G="$(command -v engineer_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; engineer_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving engineer_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok engineer_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
+_ENGINEER_SHIM_NAME="engineer_run"; _ENGINEER_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; ENGINEER_TOOLS="${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}"; _engineer_at() { for _p; do if [ -f "$_p" ]; then ENGINEER_TOOLS="$_p"; return 0; fi; done; return 1; }; _engineer_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"engineer-runtime"'*'}') return 0;; *) return 1;; esac; }; _engineer_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _engineer_at "$_h/engineer/bin/${_ENGINEER_SHIM_NAME}" && return 0; done; return 1; }; if _engineer_at "${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.claude/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.codex/engineer/bin/${_ENGINEER_SHIM_NAME}"; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif _engineer_homes; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif unset -f engineer_run; _G="$(command -v engineer_run)"; [ -n "$_G" ] && _engineer_id_ok "$_G"; then ENGINEER_TOOLS="$_G"; engineer_run() { "$ENGINEER_TOOLS" "$@"; }; else echo "ERROR: engineer_run not found at $ENGINEER_TOOLS and no identity-proving engineer_run is on PATH. Run: python -I bin/install.py --source <local-source> --ref <pinned-ref> --target <project-root> --host claude --local" >&2; exit 1; fi; ENGINEER_IDENTITY_STATUS=unverified; _engineer_id_ok engineer_run && ENGINEER_IDENTITY_STATUS=ok; export ENGINEER_IDENTITY_STATUS; [ "$ENGINEER_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$ENGINEER_TOOLS\" did not prove it is engineer-runtime - it is either a different package or an engineer-runtime older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-engineer_run.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${ENGINEER_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${ENGINEER_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
 INIT=$(engineer_run query docs-init)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-AGENT_SKILLS=$(engineer_run query agent-skills doc-writer ${GSD_WS:+--ws=${GSD_WS##* }})
-# #2994: dedicated init.docs-update call — additive to docs-init above, carries
+ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
+AGENT_SKILLS=$(engineer_run query agent-skills doc-writer ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
+# : dedicated init.docs-update call — additive to docs-init above, carries
 # only the section_manifest field (gates dispatch_monorepo_packages).
-INIT_DOCS_UPDATE=$(engineer_run query init.docs-update ${GSD_WS:+--ws=${GSD_WS##* }})
+INIT_DOCS_UPDATE=$(engineer_run query init.docs-update ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_DOCS_UPDATE" == @file:* ]]; then INIT_DOCS_UPDATE=$(cat "${INIT_DOCS_UPDATE#@file:}"); fi
 DOC_VERIFIER_MODEL=$(engineer_run query resolve-model doc-verifier --raw)
 ```
@@ -35,7 +35,7 @@ DOC_VERIFIER_MODEL=$(engineer_run query resolve-model doc-verifier --raw)
 Extract from init JSON:
 - `doc_writer_model` — model string for the doc-writer spawns (never hardcode a model name); the doc-verifier spawn resolves its own `DOC_VERIFIER_MODEL`
 - `commit_docs` — whether to commit generated files when done
-- `existing_docs` — array of `{path, has_gsd_marker}` objects for existing Markdown files
+- `existing_docs` — array of `{path, has_engineer_marker}` objects for existing Markdown files
 - `project_type` — object with boolean signals: `has_package_json`, `has_api_routes`, `has_cli_bin`, `is_open_source`, `has_deploy_config`, `is_monorepo`, `has_tests`
 - `doc_tooling` — object with booleans: `docusaurus`, `vitepress`, `mkdocs`, `storybook`
 - `monorepo_workspaces` — array of workspace glob patterns (empty if not a monorepo)
@@ -75,7 +75,7 @@ Conditional docs queued: {list or "none"}
 </step>
 
 <step name="build_doc_queue">
-**Skip condition:** If `--verify-only` is present in `$ARGUMENTS`: skip this step, `resolve_modes` and `preservation_check`, and go straight to `verify_only_report` (#5050). That step fact-checks every file in `existing_docs` from the init JSON and never reads the queue, so no question asked here (the gap list, the queue confirmation, the CONTRIBUTING.md confirmation) can change its result — and none of them has a text-mode fallback, so an unattended run would stop on an answer that is discarded.
+**Skip condition:** If `--verify-only` is present in `$ARGUMENTS`: skip this step, `resolve_modes` and `preservation_check`, and go straight to `verify_only_report` . That step fact-checks every file in `existing_docs` from the init JSON and never reads the queue, so no question asked here (the gap list, the queue confirmation, the CONTRIBUTING.md confirmation) can change its result — and none of them has a text-mode fallback, so an unattended run would stop on an answer that is discarded.
 
 Assemble the complete doc queue from always-on docs plus conditional docs from classify_project.
 
@@ -355,9 +355,9 @@ Check for hand-written docs in the queue and gather user decisions before dispat
 
 1. If `--force` is present in `$ARGUMENTS`: treat all docs as mode: regenerate, skip to detect_runtime_capabilities.
 2. If `--verify-only` is present in `$ARGUMENTS`: skip to verify_only_report (do not continue to detect_runtime_capabilities).
-3. If no docs in the queue have `has_gsd_marker: false` in the `existing_docs` array: skip to detect_runtime_capabilities.
+3. If no docs in the queue have `has_engineer_marker: false` in the `existing_docs` array: skip to detect_runtime_capabilities.
 
-**For each queued doc where `has_gsd_marker` is false (hand-written doc detected):**
+**For each queued doc where `has_engineer_marker` is false (hand-written doc detected):**
 
 Present the following choice using `AskUserQuestion` if available, or inline prompt otherwise:
 
@@ -398,12 +398,12 @@ Use `run_in_background=true` for all three to enable parallel execution.
 
 **Agent 1: README**
 
-<!-- #2508 runtime-aware-dispatch -->
+<!-- runtime-aware-dispatch -->
 
 
-<!-- #2517 model-omit-on-inherit -->
+<!-- model-omit-on-inherit -->
 
-> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`doc_writer_model`, `DOC_VERIFIER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
+> **Model omission .** Omit the `model` parameter entirely when the value it would carry (`doc_writer_model`, `DOC_VERIFIER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```
 Agent(
@@ -724,7 +724,7 @@ If any agent failed or its file is missing, note the failure and continue. Missi
 Continue to dispatch_monorepo_packages (if monorepo_workspaces is non-empty) or commit_docs.
 </step>
 
-<!-- gsd:section id="dispatch-monorepo-packages" when="state:is-monorepo" -->
+<!-- engineer:section id="dispatch-monorepo-packages" when="state:is-monorepo" -->
 If `section_manifest` (from `INIT_DOCS_UPDATE`) is `null` or `"dispatch-monorepo-packages"` is in its `included` list: read and execute `engineer/workflows/docs-update/steps/dispatch-monorepo-packages.md`. Otherwise skip — do not read the file; continue to commit_docs.
 <!-- /section -->
 
@@ -747,14 +747,14 @@ Extract `canonical_queue` (items with `status: "completed"`) and `review_queue` 
 
 **Skip condition:** If `--verify-only` is present in `$ARGUMENTS`, this step was already handled by `verify_only_report` (early exit). Skip.
 
-**Result file contract (#5050).** The verifier does not choose where its result goes; the orchestrator assigns it. For each doc, compute once:
+**Result file contract .** The verifier does not choose where its result goes; the orchestrator assigns it. For each doc, compute once:
 
 - `doc_key`: the doc's path relative to `project_root`, `/`-separated, with `%` → `%25` first and then `/` → `%2F` (so `README.md` → `README.md`, `docs/product/README.md` → `docs%2Fproduct%2FREADME.md`). Escaping `%` first makes the key reversible, so two different paths can never share one.
 - `result_path`: `{project_root}/.planning/tmp/verify-{doc_key}.json`, absolute under `project_root`. A subagent's working directory is not guaranteed to be `project_root` (a run inside a `git worktree` is the common case), so every read of a result file and the final cleanup use this same absolute path — never a bare `.planning/tmp/...`.
 
 Pass `result_path` in the verifier's assignment block (the XML below) and read the result back from it.
 
-**Dispatch bound (#5050).** Verifier spawns are bounded by the host's negotiated dispatch capacity, the same query `quick-batch` and chunked planning use, which fails closed to `1` (one at a time) for a host that declares no limit:
+**Dispatch bound .** Verifier spawns are bounded by the host's negotiated dispatch capacity, the same query `quick-batch` and chunked planning use, which fails closed to `1` (one at a time) for a host that declares no limit:
 
 ```bash
 DISPATCH_CAPACITY=$(engineer_run query dispatch-capacity --raw 2>/dev/null || echo 1)

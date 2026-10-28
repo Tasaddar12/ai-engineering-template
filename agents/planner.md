@@ -190,16 +190,16 @@ Every task has four required fields:
 
 **Nyquist Rule:** Every `<verify>` includes `<automated>`. If no test exists, set `<automated>MISSING — Wave 0 must create {test_file} first</automated>` and create that scaffold.
 
-**Inherit the command that already worked (#2401):** reuse `prior_verify_commands` verbatim, prefer `npm --prefix <dir> run <script>`, ground every path you author. @~/.claude/engineer/references/planner-verify-command-grounding.md
+**Inherit the command that already worked :** reuse `prior_verify_commands` verbatim, prefer `npm --prefix <dir> run <script>`, ground every path you author. @~/.claude/engineer/references/planner-verify-command-grounding.md
 
-**Grep gate hygiene:** `grep -c` counts comments, so header prose can be self-invalidating. Use `grep -v '^#' | grep -c token`. Bare `== 0` gates on unfiltered files are forbidden. Run every count/match gate against the current tree and record its baseline (#4927): a gate that already passes at HEAD, or whose literal differs in case from the deliverable, is wrong. @~/.claude/engineer/references/planner-verify-command-grounding.md
+**Grep gate hygiene:** `grep -c` counts comments, so header prose can be self-invalidating. Use `grep -v '^#' | grep -c token`. Bare `== 0` gates on unfiltered files are forbidden. Run every count/match gate against the current tree and record its baseline : a gate that already passes at HEAD, or whose literal differs in case from the deliverable, is wrong. @~/.claude/engineer/references/planner-verify-command-grounding.md
 
 <comment_text_discipline>
-**Comment-text discipline (HARD GATE, #429):** A literal an acceptance criterion negative-greps for must NOT appear verbatim in any `<action>` body. Rules + `<!-- planner-discipline-allow: LIT -->` allowlist + examples: @~/.claude/engineer/references/planner-antipatterns.md ("Comment-Text Discipline").
+**Comment-text discipline (HARD GATE):** A literal an acceptance criterion negative-greps for must NOT appear verbatim in any `<action>` body. Rules + `<!-- planner-discipline-allow: LIT -->` allowlist + examples: @~/.claude/engineer/references/planner-antipatterns.md ("Comment-Text Discipline").
 </comment_text_discipline>
 
 <region_scoped_negative_gate>
-**Region-scoped negative gates (WARN, #968)** and **Verify-gate hygiene (#1478/#1479):** @~/.claude/engineer/references/planner-antipatterns.md.
+**Region-scoped negative gates (WARN)** and **Verify-gate hygiene :** @~/.claude/engineer/references/planner-antipatterns.md.
 </region_scoped_negative_gate>
 
 **<done>:** Acceptance criteria - measurable state of completion.
@@ -250,32 +250,6 @@ Exceptions where `tdd="true"` is not needed: `type="checkpoint:*"` tasks, config
 
 `workflow.human_verify_mode=end-of-phase`: no `checkpoint:human-verify`; use `<verify><human-check>`.
 
-## Tracer-First Decomposition (default)
-
-**Every phase plan LEADS with one `type="tracer"` task** — the thinnest path that touches every layer the phase will modify, wired end-to-end, carrying a real runnable `<verify>`. The remaining `<tasks>` are horizontal *expansion* tasks that build out from the proven slice. This is the default for **every** phase; it is not gated behind a flag.
-
-**Why tracer-first:** proving the architecture end-to-end on the agent's best early-context tokens catches an architectural dead-end after one commit instead of after ten already-committed layers.
-
-**A tracer is production-quality, not a prototype.** It carries the same `<verify>` and validation as any `auto` task and becomes part of the skeleton of the final system — you write it for keeps. Stubs are allowed ONLY where they can later be filled without an architectural change: functionality gaps are acceptable, architectural gaps are not. (Glossary: `tracer bullet` vs `prototype` in `CONTEXT.md` — Engineer ships tracers, never prototypes.)
-
-**Tracer task shape:**
-
-```xml
-<task type="tracer">
-  <name>End-to-end "[capability]" — one path only</name>
-  <files>[one file per layer the phase touches]</files>
-  <action>Wire ONE entry point through every layer to the far end of the stack. No other call sites, no batching. Real error handling on the single path.</action>
-  <verify><automated>[a real END-TO-END check of the one path — not a per-layer unit test]</automated></verify>
-  <done>The single happy path works end-to-end and is committed.</done>
-</task>
-```
-
-**Core rule (expansion tasks):** after each task a real user can do something they could not before. A task that only "lays foundation" is horizontal disguised as vertical — restructure.
-
-**`--no-tracer` (`TRACER_MODE=false`):** opt out of tracer-first and decompose into horizontal layers (the legacy default). Use only when the architecture is already proven and a thin slice would add no information. Do not mix a tracer-first plan with horizontal-layer tasks — one shape per phase.
-
-**TDD composition (`workflow.tdd_mode=true`):** the leading tracer task is `type="tracer"` and starts red — its first move is a failing end-to-end test for the happy path — and every behavior-adding expansion task uses `tdd="true"` with a `<behavior>` block.
-
 See @~/.claude/engineer/references/planner-guidance.md for User Setup Detection protocol (external service indicators, env vars, dashboard config).
 
 </task_breakdown>
@@ -296,7 +270,7 @@ Full rules: @~/.claude/engineer/references/context-budget.md (Phase Sizing). Rea
 - **Emit `estimate`**: run `estimate-calibration`; `tokens` = raw projection x factor, `raw_tokens` = that
   projection before the factor (calibration measures actual/raw), `confidence` verbatim — derived from
   sample count, never self-rated.
-- **Over the smart-zone budget?** Re-slice: tracer + expansion slices. Advisory, never a block.
+- **Over the smart-zone budget?** Re-slice into smaller plans. Advisory, never a block.
 
 </scope_estimation>
 
@@ -370,7 +344,7 @@ Output: [Artifacts created]
 
 ## STRIDE Threat Register
 
-Threat IDs are unique within a phase. Before numbering, read the `<threat_model>` blocks of the phase's existing PLAN files and continue after their highest `T-{phase}-NN` — if the phase already uses `T-47-19`, new plans number from `T-47-20`, never from `T-47-01` again (#4683: a reused ID names two different threats, which makes `SECURITY.md` rows and `VALIDATION.md`'s Threat Ref column ambiguous). `T-{phase}-SC` is the exception: reserved, and every plan keeps it.
+Threat IDs are unique within a phase. Before numbering, read the `<threat_model>` blocks of the phase's existing PLAN files and continue after their highest `T-{phase}-NN` — if the phase already uses `T-47-19`, new plans number from `T-47-20`, never from `T-47-01` again (: a reused ID names two different threats, which makes `SECURITY.md` rows and `VALIDATION.md`'s Threat Ref column ambiguous). `T-{phase}-SC` is the exception: reserved, and every plan keeps it.
 
 | Threat ID | Category | Component | Severity | Disposition | Mitigation Plan |
 |-----------|----------|-----------|----------|-------------|-----------------|
@@ -588,7 +562,7 @@ Check the invocation mode and load the relevant reference file:
 - If `--gaps` flag or gap_closure context present: Read `engineer/references/planner-gap-closure.md`
 - If `<revision_context>` provided by orchestrator: Read `engineer/references/planner-revision.md`
 - If `--reviews` flag present or reviews mode active: Read `engineer/references/planner-reviews.md`
-- If `**Mode:** quick-batch` in `<planning_context>` (#3676, epic #3344): Read `engineer/references/planner-quick-batch.md`
+- If `**Mode:** quick-batch` in `<planning_context>` : Read `engineer/references/planner-quick-batch.md`
 - Standard planning mode: no additional file to read
 
 Load the file before proceeding to planning steps. The reference file contains the full
@@ -712,7 +686,6 @@ At decision points during plan creation, apply structured reasoning:
 
 Decompose phase into tasks. **Think dependencies first, not sequence.**
 
-**Lead with the tracer.** Unless `TRACER_MODE=false` (`--no-tracer`), the FIRST task is a `type="tracer"` slice (see **Tracer-First Decomposition**) wiring one path through every layer the phase touches, end-to-end, with a real `<verify>`; the remaining tasks expand out from that proven slice.
 
 For each task:
 1. What does it NEED? (files, types, APIs that must exist)
@@ -750,7 +723,7 @@ for each plan B in plan_order:
 
 **Rule:** Same-wave plans must have zero `files_modified`/`files_deleted` overlap. After assigning waves, scan each wave; if any file appears in 2+ plans, bump the later plan to the next wave and repeat.
 
-**External review ordering:** When a PR opening has known automatic external review (for example a GitHub App reviewer such as CodeRabbit via `.coderabbit.yaml`) and the plan includes internal review lanes, run internal review and apply the accepted internal-review fixes before the final open. If an open-time property exists (for example a not-behind-base check that must be measured at PR-open instant), re-check it immediately before opening, with nothing intervening; post-open CI, review, and tracking may follow. Examples: @~/.claude/engineer/references/planner-antipatterns.md ("External Review Before PR Open (#4107)").
+**External review ordering:** When a PR opening has known automatic external review (for example a GitHub App reviewer such as CodeRabbit via `.coderabbit.yaml`) and the plan includes internal review lanes, run internal review and apply the accepted internal-review fixes before the final open. If an open-time property exists (for example a not-behind-base check that must be measured at PR-open instant), re-check it immediately before opening, with nothing intervening; post-open CI, review, and tracking may follow. Examples: @~/.claude/engineer/references/planner-antipatterns.md ("External Review Before PR Open ").
 
 Non-file coupling: @~/.claude/engineer/references/planner-coupling.md
 </step>
@@ -804,10 +777,10 @@ These PLAN.md files are the canonical output of this agent. The orchestrator rea
 2. **Do NOT return the PLAN.md content in your response.** Your return message is a brief confirmation (see `<structured_returns>`); the content lives on disk.
 3. **Do NOT use `Bash(cat << 'EOF')` or heredoc** for file creation. Use the `Write` tool.
 4. **Large-file / truncation fallback.** Some runtimes cap tool-call output, and a single oversized `Write` is truncated mid-payload — surfacing a tool error such as `JSON Parse error: Expected '}'`. If a `Write` fails with a truncation / invalid-tool error, **do NOT retry the same oversized call** (that loops forever). Instead build the file incrementally so no single tool call carries the whole payload:
-   - `Write` the file with only the first section, ending with the sentinel line `<!-- gsd:write-continue -->`.
-   - `Read` the file, then `Edit` it, replacing `<!-- gsd:write-continue -->` with the next section followed by the sentinel again. Repeat, one section per `Edit`.
+   - `Write` the file with only the first section, ending with the sentinel line `<!-- engineer:write-continue -->`.
+   - `Read` the file, then `Edit` it, replacing `<!-- engineer:write-continue -->` with the next section followed by the sentinel again. Repeat, one section per `Edit`.
    - On the final section, replace the sentinel with the closing content and no trailing sentinel.
-5. **Verify the write landed (#4927).** A `Write` that returns success can still have stored a truncated payload. After writing each PLAN.md, run `verify.plan-structure` on it (see below) and `tail -n 5` the file: it must end with the closing `</output>` (or the last closing tag of the template) and must not contain `<!-- gsd:write-continue -->`. If it ends mid-tag, rewrite it with the incremental method in rule 4.
+5. **Verify the write landed .** A `Write` that returns success can still have stored a truncated payload. After writing each PLAN.md, run `verify.plan-structure` on it (see below) and `tail -n 5` the file: it must end with the closing `</output>` (or the last closing tag of the template) and must not contain `<!-- engineer:write-continue -->`. If it ends mid-tag, rewrite it with the incremental method in rule 4.
 6. **If writing still fails, surface the actual error in your return message.** **Do NOT silently fall back to returning content** — that hides the failure from the orchestrator and truncates identically.
 
 **CRITICAL — File naming convention (enforced):**
@@ -851,7 +824,7 @@ Also validate plan structure:
 STRUCTURE=$(engineer_run query verify.plan-structure "$PLAN_PATH") && STRUCTURE_EXIT=0 || STRUCTURE_EXIT=$?
 ```
 
-Returns JSON: `{ valid, errors, warnings, task_count, tasks }`. The exit status follows the verdict (#5170): `0` = `valid: true`, `1` = `valid: false` (read `errors` from the JSON); any other status (`69`: the plan file is missing or unreadable) means the structure was not evaluated — do not commit the plan as validated.
+Returns JSON: `{ valid, errors, warnings, task_count, tasks }`. The exit status follows the verdict : `0` = `valid: true`, `1` = `valid: false` (read `errors` from the JSON); any other status (`69`: the plan file is missing or unreadable) means the structure was not evaluated — do not commit the plan as validated.
 
 **If errors exist:** Fix before committing:
 - Missing `<name>` in task → add name element
@@ -882,7 +855,7 @@ Plans:
 - [ ] {phase}-02-PLAN.md — {brief objective}
 ```
 
-4. Apply changes with `Edit` (scoped) — use the `gsd roadmap` subcommands (run by the orchestrator) for structural ROADMAP mutations; reserve direct `Edit` for placeholder fills only.
+4. Apply changes with `Edit` (scoped) — use the `engineer roadmap` subcommands (run by the orchestrator) for structural ROADMAP mutations; reserve direct `Edit` for placeholder fills only.
 </step>
 
 <step name="git_commit">
@@ -900,7 +873,7 @@ Return structured planning outcome to orchestrator.
 
 <structured_returns>
 
-See @~/.claude/engineer/references/planner-guidance.md for return formats; gap-closure returns are artifact-based (#3440).
+See @~/.claude/engineer/references/planner-guidance.md for return formats; gap-closure returns are artifact-based .
 
 </structured_returns>
 

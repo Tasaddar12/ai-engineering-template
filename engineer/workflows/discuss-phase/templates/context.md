@@ -6,7 +6,7 @@ Apply response_language to all user-facing prose — narration between tool call
 > `workflows/discuss-phase.md`, immediately before writing
 > `${phase_dir}/${padded_phase}-CONTEXT.md`. Do not put a reference to this
 > file in `<required_reading>` — that defeats the progressive-disclosure
-> savings from the discuss-phase/modes split (#717).
+> savings from the discuss-phase/modes split .
 
 ## Variable substitutions
 

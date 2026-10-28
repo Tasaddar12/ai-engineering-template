@@ -4,7 +4,7 @@ This is the batch's MUTATING wave — worktree create/executor dispatch/merge
 are the operations `isolation == "none"` caps to concurrency 1 (row 6),
 unlike planning/research above.
 
-**Auto-degrade on stale fork base (row 38, mirrors `/quick`'s own #1941
+**Auto-degrade on stale fork base (row 38, mirrors `/quick`'s own 
 guard):**
 ```bash
 _engineer_identity_ok() {
@@ -52,7 +52,7 @@ fi
 if [ "$ISOLATION" = "harness-worktree" ] && [ "${USE_WORKTREES:-true}" != "false" ]; then
   _QB_SHOULD_DEGRADE=$(engineer_run query worktree.base-check --mode "$ISOLATION" --pick shouldDegrade 2>/dev/null || true)
   if [ "$_QB_SHOULD_DEGRADE" = "true" ]; then
-    echo "⚠ [#1941] Worktree fork base diverged — auto-degrading quick-batch to sequential mode." >&2
+    echo "⚠  Worktree fork base diverged — auto-degrading quick-batch to sequential mode." >&2
     USE_WORKTREES=false
     ISOLATION=none
   fi
@@ -79,7 +79,7 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.
    `complete`) and refresh `$BATCH_MANIFEST_JSON` from its `manifest`.
 
    **Crash-window guard (mirrors `planner-wave.md`'s PLAN.md-existence
-   check one layer earlier — #3677):** `quick-batch resume`'s `eligible` is
+   check one layer earlier — ):** `quick-batch resume`'s `eligible` is
    purely status/dependency-derived; it does NOT know an item already
    finished executing. A coordinator crash between this step returning
    (executor committed, `SUMMARY.md` written) and Step 7's merge leaves
@@ -184,7 +184,7 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.
    primary checkout (same prompt, minus the worktree-only framing), one item
    at a time — `EXEC_CONCURRENCY` is already forced to 1 in this mode.
 
-   **Durable worktree-recovery persistence (#3677 — `harness-worktree`/
+   **Durable worktree-recovery persistence (`harness-worktree`/
    `orchestrator-worktree` only, skip for `none`):** immediately after
    recording `{agent_id, worktree_path, branch, expected_base}` into the
    EPHEMERAL `$QUICK_BATCH_WORKTREE_MANIFEST` above, ALSO persist the same

@@ -150,18 +150,18 @@ ROADMAP_JSON=$(engineer_run query roadmap.analyze)
 ROADMAP_SCOPE=$(echo "$ROADMAP_JSON" | jq -r '.scope // "complete"')
 if [ $? -ne 0 ] || [ -z "$ROADMAP_JSON" ]; then
   echo "⚠ WARNING: resume-incomplete-phase scan could not run (roadmap.analyze failed)." >&2
-  echo "  The incomplete-phase invariant (#160) could not be verified." >&2
+  echo "  The incomplete-phase invariant  could not be verified." >&2
   echo "  Proceeding to prior-phase completeness check — review project state carefully." >&2
   # Fall through to prior_phase_completeness rather than silently skipping
 elif [ "$ROADMAP_SCOPE" != "complete" ]; then
-  # #3184/#3165: roadmap.analyze succeeded and returned a well-formed document,
+  # /: roadmap.analyze succeeded and returned a well-formed document,
   # but its milestone window did not see all of its input, so `.phases[]` is a
   # NON-answer rather than a real empty. Looping it would run the invariant over
   # a phase list the scan could not populate and report "clean" — the silent
-  # disarm #3165 reports. Treated as scan-failed, same as an outright failure.
+  # disarm  reports. Treated as scan-failed, same as an outright failure.
   echo "⚠ WARNING: resume-incomplete-phase scan could not be scoped (roadmap.analyze scope: $ROADMAP_SCOPE)." >&2
   echo "  The milestone window did not cover the whole ROADMAP, so the phase list is incomplete." >&2
-  echo "  The incomplete-phase invariant (#160) could not be verified — review project state carefully." >&2
+  echo "  The incomplete-phase invariant  could not be verified — review project state carefully." >&2
   # Fall through to prior_phase_completeness rather than silently passing
 else
   for PHASE_NUM in $(echo "$ROADMAP_JSON" | jq -r '.phases[] | (.number // .phase_number // empty)'); do
@@ -312,27 +312,27 @@ If STATE.md shows paused_at:
 Parse the arguments passed to this workflow to detect the plan strategy and build convergence pass-through args:
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 PLAN_STRATEGY="local"
-if echo "$GSD_ARGS" | grep -qE '(^|[[:space:]])\-\-(converge|cross-ai)([[:space:]]|$)'; then
+if echo "$ENGINEER_ARGS" | grep -qE '(^|[[:space:]])\-\-(converge|cross-ai)([[:space:]]|$)'; then
   PLAN_STRATEGY="converge"
 fi
 
 CONVERGENCE_ARGS=""
-# Lane flags derived from the declared roster (#2800/#2272); --all and --text are convergence
+# Lane flags derived from the declared roster ; --all and --text are convergence
 # controls, not reviewer lanes, so they stay literal.
 for REVIEW_FLAG in $(engineer_run review-lane flags) --all --text; do
-  if echo "$GSD_ARGS" | grep -qE "(^|[[:space:]])${REVIEW_FLAG}([[:space:]]|$)"; then
+  if echo "$ENGINEER_ARGS" | grep -qE "(^|[[:space:]])${REVIEW_FLAG}([[:space:]]|$)"; then
     CONVERGENCE_ARGS="${CONVERGENCE_ARGS} ${REVIEW_FLAG}"
   fi
 done
 
 MAX_CYCLES_ARG=""
-if echo "$GSD_ARGS" | grep -qE '\-\-max-cycles\s+[0-9]+'; then
-  MAX_CYCLES_ARG=$(echo "$GSD_ARGS" | grep -oE '\-\-max-cycles\s+[0-9]+' | awk '{print $2}')
+if echo "$ENGINEER_ARGS" | grep -qE '\-\-max-cycles\s+[0-9]+'; then
+  MAX_CYCLES_ARG=$(echo "$ENGINEER_ARGS" | grep -oE '\-\-max-cycles\s+[0-9]+' | awk '{print $2}')
   CONVERGENCE_ARGS="${CONVERGENCE_ARGS} --max-cycles ${MAX_CYCLES_ARG}"
 fi
 ```
@@ -348,7 +348,7 @@ if [ "$PLAN_STRATEGY" = "converge" ]; then
       '' \
       'Enable plan convergence with:' \
       '' \
-      '  gsd config-set workflow.plan_review_convergence true' \
+      '  engineer config-set workflow.plan_review_convergence true' \
       '' \
       'Then re-run with --converge.'
     exit 1
@@ -396,12 +396,12 @@ Resume with: `/progress --next --auto` once resolved.
 - [ ] `--no-resume`: Route 0 skipped, prior_phase_completeness defer prompt runs as before
 - [ ] `--force`: everything skipped (Gates, Route 0, prior_phase_completeness) → straight to `determine_next_action`
 - [ ] Scan uses `engineer_run` (canonical resolver form); errors are surfaced rather than suppressed
-- [ ] A `roadmap.analyze` result whose `scope` is not `complete` is treated as scan-failed (warn + fall through), never as a clean empty scan (#3184/#3165)
+- [ ] A `roadmap.analyze` result whose `scope` is not `complete` is treated as scan-failed (warn + fall through), never as a clean empty scan 
 - [ ] Predicate is plans-without-summaries (`plans.length > summaries.length`) — consistent with `determine_next_action` Route 4
 - [ ] Next action correctly determined from routing rules
 - [ ] Command invoked immediately without user confirmation
 - [ ] Clear status shown before invoking
-- [ ] `--converge` routes Route 3 planning through `gsd-plan-review-convergence`
+- [ ] `--converge` routes Route 3 planning through `engineer-plan-review-convergence`
 - [ ] `--cross-ai` is accepted as an alias for `--converge`
 - [ ] `--converge` fails fast with enable instructions when `workflow.plan_review_convergence=false`
 - [ ] `--converge` forwards reviewer selector flags and `--max-cycles N`

@@ -1,7 +1,7 @@
 # Quick-Batch Mode — Planner Reference
 
 Triggered when `<planning_context>` declares `**Mode:** quick-batch`
-(#3676, epic #3344, ADR-1239 "Quick-batch binding"). One dispatch = one
+(epic , ADR-1239 "Quick-batch binding"). One dispatch = one
 item's plan — the SAME single-plan, 1-3-task scope as `/quick`'s own
 `quick`/`quick-full` modes, with one fixed difference: **`depends_on` and
 `files_modified` frontmatter are ALWAYS required, regardless of whether

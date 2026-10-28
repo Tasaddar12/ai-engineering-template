@@ -1,7 +1,7 @@
 # Debugger technique catalog
 
 Full technique bodies for `agents/debugger.md`, extracted per
-`DEFECT.AGENT-FILE-SIZE-CAP-BREACH` (issue #2995, epic #1671 Phase 6.4). The agent
+`DEFECT.AGENT-FILE-SIZE-CAP-BREACH` (epic Phase 6.4). The agent
 keeps each technique's name and routing entry; the step-by-step detail lives here.
 
 ## Binary Search / Divide and Conquer

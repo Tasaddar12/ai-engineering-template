@@ -3,7 +3,7 @@ If the `--fix` flag was passed (`FIX_FLAG=true`), delegate to the `code-review-f
 to auto-apply findings from the REVIEW.md that was just written (or that already existed).
 
 This step runs AFTER `commit_review` so a freshly-written REVIEW.md is guaranteed to be on disk
-before the fixer is invoked. Since #4665 there is a second route: `check_empty_scope` jumps here
+before the fixer is invoked. Since there is a second route: `check_empty_scope` jumps here
 directly when the incremental scope is empty but `--fix` was passed and a REVIEW.md already exists
 — `code-review-fix.md` resolves it from the phase and owns the missing-review error either way.
 

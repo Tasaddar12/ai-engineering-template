@@ -1,4 +1,4 @@
-# Check 8f — Stated Failing Direction (#3172)
+# Check 8f — Stated Failing Direction 
 
 > Reference file for plan-checker agent. Loaded on-demand via `@` reference.
 
@@ -10,7 +10,7 @@ Resolvability asks whether its target *resolves*. This one asks whether the comm
 **falsifiable at all**. A command with no expressible failure mode is not an acceptance test —
 it reads as rigour and delivers none.
 
-#3172: a planner emitted 21 `<automated>` commands that could not run. Cargo exited non-zero, so
+: a planner emitted 21 `<automated>` commands that could not run. Cargo exited non-zero, so
 that instance failed loudly — luck, not design. The same class of error with a command that
 exits 0 on a no-op passes green and silently. Requiring a stated failing direction is the only
 shape that catches the silent case, because it forces the plan to name the failure signal rather
@@ -55,7 +55,7 @@ Rules:
 
 - **Report, never prescribe.** State which command has no stated failure mode. Do **not** author
   the statement for the planner. A prescribed statement is copied verbatim and carries zero
-  information — that reproduces #3172 one level up, exactly as the #2401 probe refuses to
+  information — that reproduces one level up, exactly as the probe refuses to
   prescribe a replacement path.
 - `status: sentinel` is a `MISSING — Wave 0 must create …` placeholder command. It is not
   runnable, so it has no failure mode to state. **Not a finding.** Say nothing; checks 8a/8d

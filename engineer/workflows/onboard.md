@@ -15,9 +15,9 @@ Run the standard `engineer_run` resolver from the reference above, then run the 
 
 ```bash
 # If --fast was parsed from $ARGUMENTS:
-INIT=$(engineer_run --cwd "$_GSD_RUNTIME_ROOT" init onboard --fast --raw)
+INIT=$(engineer_run --cwd "$_ENGINEER_RUNTIME_ROOT" init onboard --fast --raw)
 # Otherwise:
-INIT=$(engineer_run --cwd "$_GSD_RUNTIME_ROOT" init onboard --raw)
+INIT=$(engineer_run --cwd "$_ENGINEER_RUNTIME_ROOT" init onboard --raw)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
@@ -37,7 +37,7 @@ Parse JSON fields from `INIT`:
 
 Set:
 - `TEXT_MODE=true` if `--text` is present or `text_mode` is true. When `TEXT_MODE` is active, replace every `AskUserQuestion` call below with a plain-text numbered list and ask the user to type their choice number — required for non-Claude runtimes (OpenAI Codex) where `AskUserQuestion` is not available.
-- `ONBOARDING_ROOT={git_worktree_root || _GSD_RUNTIME_ROOT}`.
+- `ONBOARDING_ROOT={git_worktree_root || _ENGINEER_RUNTIME_ROOT}`.
 
 If `has_git` and `in_nested_subdir` are true, warn that onboarding artifacts belong to the outer worktree at `git_worktree_root`. Do not run `git init`.
 

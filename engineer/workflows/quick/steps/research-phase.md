@@ -11,9 +11,9 @@ Display banner:
 
 Spawn a single focused researcher (not 4 parallel researchers like full phases — quick tasks need targeted research, not broad domain surveys):
 
-<!-- #2517 model-omit-on-inherit -->
+<!-- model-omit-on-inherit -->
 
-> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`planner_model`, `checker_model`, `executor_model`, `reviewer_model`, `verifier_model`, `researcher_model`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
+> **Model omission .** Omit the `model` parameter entirely when the value it would carry (`planner_model`, `checker_model`, `executor_model`, `reviewer_model`, `verifier_model`, `researcher_model`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```
 Agent(
@@ -28,7 +28,7 @@ Agent(
 - ${STATE_PATH} (Project state — what's already built)
 - ${PROJECT_PATH} (Project context)
 - ./CLAUDE.md or ./.claude/CLAUDE.md (if exists — project-specific guidelines)
-${DISCUSS_MODE ? '- ' + QUICK_DIR + '/' + quick_id + '-CONTEXT.md (User decisions — research should align with these. #3894: when workflow.research_before_questions is enabled research runs BEFORE discussion, so this file will not exist yet — read it only if present)' : ''}
+${DISCUSS_MODE ? '- ' + QUICK_DIR + '/' + quick_id + '-CONTEXT.md (User decisions — research should align with these. : when workflow.research_before_questions is enabled research runs BEFORE discussion, so this file will not exist yet — read it only if present)' : ''}
 </required_reading>
 
 ${AGENT_SKILLS_RESEARCHER}

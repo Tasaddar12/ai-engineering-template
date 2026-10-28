@@ -71,7 +71,7 @@ fi
    alone (Open Question 2's accepted resolution). `$mergeable` is a bash
    ARRAY (parsed from the JSON `mergeable` array) — never a plain
    space-joined string, which re-splits unpredictably between bash and zsh
-   (#4109):
+   :
    ```bash
    for quick_id in "${mergeable[@]}"; do
      PLAN_CONTENT=$(cat "${ITEM_DIR}/${quick_id}-PLAN.md")
@@ -89,7 +89,7 @@ fi
    `$QUICK_BATCH_WORKTREE_MANIFEST` entry Step 6 wrote for that `agent_id`
    THIS process, when present.
 
-   **Durable fallback (#3677):** for an item Step 6 did NOT dispatch this
+   **Durable fallback :** for an item Step 6 did NOT dispatch this
    process — the crash-window guard correctly skipped it because
    `SUMMARY.md` already existed from a PRIOR, now-dead coordinator process —
    `$QUICK_BATCH_WORKTREE_MANIFEST` has no entry for it at all (it is a
@@ -120,7 +120,7 @@ fi
    - `status == "merged_removed"`: success. Mark the item's completion pending
      (Step 9 calls `quick-batch complete` for it — do NOT call it here; a
      `--validate` item still has verification ahead of it). **Clear the
-     durable worktree-recovery fields now (#3677)** — the worktree no
+     durable worktree-recovery fields now ** — the worktree no
      longer exists on disk, so its `dispatched_worktree`/`dispatched_branch`/
      `dispatched_base` must not keep pointing at a removed path:
      ```bash

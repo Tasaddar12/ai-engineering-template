@@ -8,14 +8,14 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <available_agent_types>
 Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd-project-researcher — Researches project-level technical decisions
-- gsd-research-synthesizer — Synthesizes findings from parallel research agents
-- gsd-roadmapper — Creates phased execution roadmaps
+- project-researcher — Researches project-level technical decisions
+- research-synthesizer — Synthesizes findings from parallel research agents
+- roadmapper — Creates phased execution roadmaps
 </available_agent_types>
 
 <auto_mode>
 
-<!-- gsd:section id="auto-mode-detection" when="flag:--auto" -->
+<!-- engineer:section id="auto-mode-detection" when="flag:--auto" -->
 If `section_manifest` is `null` or `"auto-mode-detection"` is in its `included` list: read and execute `engineer/workflows/new-project/steps/auto-mode-detection.md`. Otherwise skip — do not read the file.
 <!-- /section -->
 
@@ -29,10 +29,10 @@ If `section_manifest` is `null` or `"auto-mode-detection"` is in its `included` 
 **MANDATORY FIRST STEP — Execute these checks before ANY user interaction:**
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 _engineer_identity_ok() {
   [ -f "$1" ] || return 1
   [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
@@ -75,12 +75,12 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
-AUTO_PARAM=""; if [[ "$GSD_ARGS" =~ (^|[[:space:]])--auto([[:space:]]|$) ]]; then AUTO_PARAM="--auto"; fi
+AUTO_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--auto([[:space:]]|$) ]]; then AUTO_PARAM="--auto"; fi
 INIT=$(engineer_run query init.new-project $AUTO_PARAM)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_RESEARCHER=$(engineer_run query agent-skills gsd-project-researcher)
-AGENT_SKILLS_SYNTHESIZER=$(engineer_run query agent-skills gsd-research-synthesizer)
-AGENT_SKILLS_ROADMAPPER=$(engineer_run query agent-skills gsd-roadmapper)
+AGENT_SKILLS_RESEARCHER=$(engineer_run query agent-skills project-researcher)
+AGENT_SKILLS_SYNTHESIZER=$(engineer_run query agent-skills research-synthesizer)
+AGENT_SKILLS_ROADMAPPER=$(engineer_run query agent-skills roadmapper)
 ```
 
 Parse JSON for: `researcher_model`, `synthesizer_model`, `roadmapper_model`, `commit_docs`, `project_exists`, `has_codebase_map`, `planning_exists`, `has_existing_code`, `has_package_file`, `is_brownfield`, `needs_codebase_map`, `has_git`, `git_worktree_root`, `in_nested_subdir`, `project_path`, `agents_installed`, `missing_agents`, `agent_runtime`, `agents_dir`, `required_agents`, `required_agents_installed`, `missing_required_agents`, `agent_skill_payloads_available`, `agent_skill_payload_agents`, `requirements_exists`, `init_incomplete`, `requirements_path`, `roadmap_path`, `config_path`, `research_dir`, `response_language`.
@@ -104,10 +104,10 @@ Agent skill payload agents:
 Skill payloads only provide prompt context. Named subagent spawns still require agent
 definitions to be installed for this runtime.
 
-Subagent spawns (gsd-project-researcher, gsd-research-synthesizer, gsd-roadmapper) will fail
+Subagent spawns (project-researcher, research-synthesizer, roadmapper) will fail
 with "agent type not found" if `required_agents_installed` is false. Run the installer with --global to make agents available:
 
-  npx @opengsd/gsd-core@latest --global
+  python -I bin/install.py --source <local-source> --ref <pinned-ref> --target <project-root> --host claude --local
 
 Proceeding without research subagents — roadmap will be generated inline.
 ```
@@ -132,11 +132,11 @@ INSTRUCTION_FILE=$(engineer_run query project-instruction-file --runtime "$RUNTI
 
 All subsequent references to the project instruction file use `$INSTRUCTION_FILE`.
 
-**If `project_exists` is true and `init_incomplete` is true (#4040 — interrupted bootstrap):** Resume initialization instead of erroring. `.planning/` exists but initialization stopped before all core artifacts landed. Keep the existing `PROJECT.md` and any already-created artifacts (`REQUIREMENTS.md` if present, `config.json`); skip the steps that would recreate them and continue the flow from the first missing artifact in init order — `REQUIREMENTS.md` → `ROADMAP.md` + `STATE.md` — until all exist. Do not error and do not bounce the user back to `/progress` (that routing loop is the #4040 bug).
+**If `project_exists` is true and `init_incomplete` is true (interrupted bootstrap):** Resume initialization instead of erroring. `.planning/` exists but initialization stopped before all core artifacts landed. Keep the existing `PROJECT.md` and any already-created artifacts (`REQUIREMENTS.md` if present, `config.json`); skip the steps that would recreate them and continue the flow from the first missing artifact in init order — `REQUIREMENTS.md` → `ROADMAP.md` + `STATE.md` — until all exist. Do not error and do not bounce the user back to `/progress` (that routing loop is the bug).
 
 **If `project_exists` is true and `init_incomplete` is false:** Error — project already initialized. Use `/progress`.
 
-**Git init (#3491 — never nest `.git` inside an existing worktree):**
+**Git init (never nest `.git` inside an existing worktree):**
 
 - If `has_git` true and `in_nested_subdir` true: skip `git init`; warn `⚠ Initializing inside existing worktree (${git_worktree_root}); planning files will track to outer repo.`
 - If `has_git` true and `in_nested_subdir` false: skip `git init` (already at worktree root).
@@ -146,13 +146,13 @@ All subsequent references to the project instruction file use `$INSTRUCTION_FILE
 
 **If auto mode:** Skip to Step 4 (assume greenfield, synthesize PROJECT.md from provided document).
 
-<!-- gsd:section id="codebase-map-offer" when="state:needs-codebase-map" -->
+<!-- engineer:section id="codebase-map-offer" when="state:needs-codebase-map" -->
 If `section_manifest` is `null` or `"codebase-map-offer"` is in its `included` list: read and execute `engineer/workflows/new-project/steps/codebase-map-offer.md`. Otherwise skip — do not read the file.
 <!-- /section -->
 
 **If "Skip mapping" OR `needs_codebase_map` is false:** Continue to Step 3.
 
-<!-- gsd:section id="auto-mode-config" when="flag:--auto" -->
+<!-- engineer:section id="auto-mode-config" when="flag:--auto" -->
 If `section_manifest` is `null` or `"auto-mode-config"` is in its `included` list: read and execute `engineer/workflows/new-project/steps/auto-mode-config.md`. Otherwise skip — do not read the file.
 <!-- /section -->
 
@@ -337,10 +337,10 @@ engineer_run query commit "docs: initialize project" --files .planning/PROJECT.m
 
 **If auto mode:** Skip — config was collected in Step 2a. Proceed to Step 5.5.
 
-**Check for global defaults** at `${GSD_HOME:-$HOME}/.gsd/defaults.json` (`~/.gsd/defaults.json` unless `GSD_HOME` is set). If the file exists, read and display its contents before asking:
+**Check for global defaults** at `${ENGINEER_HOME:-$HOME}/.engineer/defaults.json` (`~/.engineer/defaults.json` unless `ENGINEER_HOME` is set). If the file exists, read and display its contents before asking:
 
 ```bash
-DEFAULTS_RAW=$(cat "${GSD_HOME:-$HOME}/.gsd/defaults.json" 2>/dev/null)
+DEFAULTS_RAW=$(cat "${ENGINEER_HOME:-$HOME}/.engineer/defaults.json" 2>/dev/null)
 ```
 
 Format the JSON into human-readable bullets using these label mappings:
@@ -357,7 +357,7 @@ Format the JSON into human-readable bullets using these label mappings:
 Display above the prompt:
 
 ```text
-Your saved defaults (~/.gsd/defaults.json):
+Your saved defaults (~/.engineer/defaults.json):
   • Mode: [value]
   • Granularity: [value]
   • Execution: [Parallel|Sequential]
@@ -496,7 +496,7 @@ option set from Round 1 / Round 2 below. Merge user answers over the saved
 defaults — unchanged settings retain their saved values. Then skip to
 **Commit config.json**.
 
-**If "Configure fresh" or `~/.gsd/defaults.json` doesn't exist:** proceed with the questions below.
+**If "Configure fresh" or `~/.engineer/defaults.json` doesn't exist:** proceed with the questions below.
 
 **Round 1 — Core workflow settings (4 questions):**
 
@@ -554,7 +554,7 @@ These spawn additional agents during planning/execution. They add tokens and tim
 
 All recommended for important projects. Skip for quick experiments.
 
-A fourth question in this same round covers Compact Content (#4139) — not a spawned agent,
+A fourth question in this same round covers Compact Content — not a spawned agent,
 but grouped here because it's the last general workflow-behavior toggle before the more
 involved AI-models round below.
 
@@ -602,7 +602,7 @@ questions: [
 // 4-option cap and there are 5 valid profiles (quality, balanced, budget, adaptive,
 // inherit). Q1 routes between adaptive/standard-tier/inherit; Q2 (shown only when
 // Q1 = "Standard tier…") picks among the three standard profiles. Mirrors the
-// /settings split (#3784, #1516).
+// /settings split .
 questions: [
   {
     header: "AI Models",
@@ -760,12 +760,12 @@ Display spawning indicator:
   → Pitfalls research
 ```
 
-Spawn 4 parallel gsd-project-researcher agents — one per dimension (Stack, Features, Architecture, Pitfalls) — each given the domain and greenfield/subsequent milestone context, a dimension-specific question, a downstream-consumer note (what the next stage needs from this file), and a quality gate; each writes its own file (STACK.md / FEATURES.md / ARCHITECTURE.md / PITFALLS.md) under `{research_dir}/` from its template.
+Spawn 4 parallel project-researcher agents — one per dimension (Stack, Features, Architecture, Pitfalls) — each given the domain and greenfield/subsequent milestone context, a dimension-specific question, a downstream-consumer note (what the next stage needs from this file), and a quality gate; each writes its own file (STACK.md / FEATURES.md / ARCHITECTURE.md / PITFALLS.md) under `{research_dir}/` from its template.
 
-<!-- gsd:protected -->
+<!-- engineer:protected -->
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling all 4 researcher Agent() calls above, do NOT read research files or synthesize content independently while the subagents are active. Wait for all 4 researchers to complete before spawning the synthesizer. This prevents duplicate work and wasted context.
 
-**Model omission (#2517) applies to every one of these 5 spawns** (4 researchers + synthesizer): omit the `model=` parameter entirely when the value it would carry (`researcher_model`, `synthesizer_model`) is `"inherit"` or empty — passing it literally 404s on runtimes without native tier aliases (the default on non-Claude runtimes). Omitting `model=` inherits the orchestrator's model.
+**Model omission applies to every one of these 5 spawns** (4 researchers + synthesizer): omit the `model=` parameter entirely when the value it would carry (`researcher_model`, `synthesizer_model`) is `"inherit"` or empty — passing it literally 404s on runtimes without native tier aliases (the default on non-Claude runtimes). Omitting `model=` inherits the orchestrator's model.
 
 After all 4 agents complete, spawn synthesizer to create SUMMARY.md:
 
@@ -789,19 +789,19 @@ Write to: {research_dir}/SUMMARY.md
 Use template: engineer/templates/research-project/SUMMARY.md
 Commit after writing.
 </output>
-", subagent_type="gsd-research-synthesizer", model="{synthesizer_model}", description="Synthesize research")
+", subagent_type="research-synthesizer", model="{synthesizer_model}", description="Synthesize research")
 ```
 
-<!-- gsd:protected -->
+<!-- engineer:protected -->
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
-**Synthesizer output self-heal (#222) — verify SUMMARY.md materialized:** The synthesizer's canonical output is `.planning/research/SUMMARY.md` on disk; its brief structured return (`## SYNTHESIS COMPLETE` plus a few `###` confirmation lines) is NOT the file content. The restriction is not always fabricated: Claude Code refuses a subagent's `Write` to a few exact basenames — `SUMMARY.md` among them — with `Subagents should return findings as text, not write report files` (observed on Claude Code 2.1.301), and the synthesizer is told to return the full document inline when its `Write` hits that error; the refusal is real, not fabricated. It depends on the exact basename (`SUMMARY.md`, `REPORT.md`, `FINDINGS.md`, `ANALYSIS.md`, case-insensitive; a prefixed name such as `01-01-SUMMARY.md` and other agents' files write fine), so do not tell other agents to avoid `Write`. Either cause lands in step 2. A known LLM false-refusal (issue #222) sometimes makes the agent return the full SUMMARY.md document inline — fabricating a write restriction (e.g. "the runtime is blocking file writes") — instead of writing the file. Prompt hardening alone does not fully eliminate it, so the orchestrator MUST absorb either cause deterministically before spawning `gsd-roadmapper`:
+**Synthesizer output self-heal — verify SUMMARY.md materialized:** The synthesizer's canonical output is `.planning/research/SUMMARY.md` on disk; its brief structured return (`## SYNTHESIS COMPLETE` plus a few `###` confirmation lines) is NOT the file content. The restriction is not always fabricated: Claude Code refuses a subagent's `Write` to a few exact basenames — `SUMMARY.md` among them — with `Subagents should return findings as text, not write report files` (observed on Claude Code 2.1.301), and the synthesizer is told to return the full document inline when its `Write` hits that error; the refusal is real, not fabricated. It depends on the exact basename (`SUMMARY.md`, `REPORT.md`, `FINDINGS.md`, `ANALYSIS.md`, case-insensitive; a prefixed name such as `01-01-SUMMARY.md` and other agents' files write fine), so do not tell other agents to avoid `Write`. Either cause lands in step 2. A known LLM false-refusal sometimes makes the agent return the full SUMMARY.md document inline — fabricating a write restriction (e.g. "the runtime is blocking file writes") — instead of writing the file. Prompt hardening alone does not fully eliminate it, so the orchestrator MUST absorb either cause deterministically before spawning `roadmapper`:
 
-1. Verify `.planning/research/SUMMARY.md` exists AND is substantive — non-empty, and free of any leftover `<!-- gsd:write-continue -->` continuation sentinel (which marks a truncated/incomplete write). You may validate with `engineer_run verify-summary .planning/research/SUMMARY.md` — it exits 0 regardless, so check its JSON `passed` field (`"passed": false` means missing or invalid), not the process exit code. If it passes, continue normally.
-2. If it is MISSING or invalid AND the synthesizer's return message contains the FULL SUMMARY.md document — recognizable by the template's top-level markers `# Project Research Summary`, `## Key Findings`, `## Implications for Roadmap`, and `## Sources`, not merely the brief `## SYNTHESIS COMPLETE` confirmation — the synthesizer returned the document inline (the #222 false-refusal, or the runtime's real refusal of the name `SUMMARY.md`): write that returned document to `.planning/research/SUMMARY.md` with the Write tool, then commit ALL research artifacts the synthesizer owns (it commits on behalf of the four researchers) with `engineer_run query commit "docs: complete project research" --files .planning/research/` unless they are already committed. Log `⚠ #222 self-heal: synthesizer returned SUMMARY.md inline without writing it; orchestrator persisted the file.`
-3. If it is MISSING or invalid AND the return is only a brief confirmation (no full SUMMARY document to recover), the synthesizer genuinely failed — surface the error and stop; do NOT spawn `gsd-roadmapper` against a missing or incomplete SUMMARY.md.
+1. Verify `.planning/research/SUMMARY.md` exists AND is substantive — non-empty, and free of any leftover `<!-- engineer:write-continue -->` continuation sentinel (which marks a truncated/incomplete write). You may validate with `engineer_run verify-summary .planning/research/SUMMARY.md` — it exits 0 regardless, so check its JSON `passed` field (`"passed": false` means missing or invalid), not the process exit code. If it passes, continue normally.
+2. If it is MISSING or invalid AND the synthesizer's return message contains the FULL SUMMARY.md document — recognizable by the template's top-level markers `# Project Research Summary`, `## Key Findings`, `## Implications for Roadmap`, and `## Sources`, not merely the brief `## SYNTHESIS COMPLETE` confirmation — the synthesizer returned the document inline (the false-refusal, or the runtime's real refusal of the name `SUMMARY.md`): write that returned document to `.planning/research/SUMMARY.md` with the Write tool, then commit ALL research artifacts the synthesizer owns (it commits on behalf of the four researchers) with `engineer_run query commit "docs: complete project research" --files .planning/research/` unless they are already committed. Log `⚠  self-heal: synthesizer returned SUMMARY.md inline without writing it; orchestrator persisted the file.`
+3. If it is MISSING or invalid AND the return is only a brief confirmation (no full SUMMARY document to recover), the synthesizer genuinely failed — surface the error and stop; do NOT spawn `roadmapper` against a missing or incomplete SUMMARY.md.
 
-This guarantees `gsd-roadmapper` (which lists SUMMARY.md as required reading) never runs against a missing or truncated SUMMARY.md.
+This guarantees `roadmapper` (which lists SUMMARY.md as required reading) never runs against a missing or truncated SUMMARY.md.
 
 Exact agent prompts (all four researcher dimensions): `engineer/workflows/new-project/detail/elaboration.md` § 2.
 
@@ -973,21 +973,6 @@ If "adjust": Return to scoping.
 engineer_run query commit "docs: define v1 requirements" --files .planning/REQUIREMENTS.md
 ```
 
-## 7.5. Project Structure Mode
-
-**If auto mode:** Set `PROJECT_MODE=mvp` and skip this prompt.
-
-**Mode prompt: Vertical MVP vs Horizontal Layers.**
-
-Ask the user how they want to structure the project. Use `AskUserQuestion` with two options:
-
-- **Vertical MVP** — get a working app fast, add features slice by slice. Each phase delivers an end-to-end user capability. *(Recommended for new products and rapid-iteration MVPs.)*
-- **Horizontal Layers** — build complete technical layers (DB → API → UI → wiring) and assemble at the end. *(Better for infrastructure-heavy projects with multiple developers.)*
-
-Set `PROJECT_MODE=mvp` if the user picks Vertical MVP, otherwise `PROJECT_MODE=standard`.
-
-When `TEXT_MODE=true` (per the workflow's existing TEXT_MODE handling for non-Claude runtimes), present the same two options as a plain-text numbered list and ask the user to type their choice number.
-
 ## 8. Create Roadmap
 
 Display stage banner:
@@ -998,24 +983,7 @@ Display stage banner:
 ◆ Spawning roadmapper... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
 
-**ROADMAP.md template — mode-aware emit.** When generating the initial ROADMAP.md:
-
-- If `PROJECT_MODE=mvp`: under each `### Phase N:` header, emit `**Mode:** mvp` on the line immediately following `**Goal:**`. This sets every initial phase to MVP mode (per Phase-4-Persistence decision: per-phase mode, not project-wide config).
-- If `PROJECT_MODE=standard`: emit the standard ROADMAP.md template with no `**Mode:**` lines (Horizontal Layers standard template — no behavioral change for users who pick Horizontal Layers).
-
-Example MVP-mode emit for Phase 1:
-
-```markdown
-### Phase 1: [Name]
-**Goal:** [Goal]
-**Mode:** mvp
-**Success Criteria**:
-1. [Criterion]
-```
-
-Pass `PROJECT_MODE` to the roadmapper so it applies the correct template.
-
-Spawn gsd-roadmapper agent with path references:
+Spawn roadmapper agent with path references:
 
 ```text
 Agent(prompt="
@@ -1043,7 +1011,7 @@ Create roadmap:
 
 Write files first, then return. This ensures artifacts persist even if context is lost.
 </instructions>
-", subagent_type="gsd-roadmapper", model="{roadmapper_model}", description="Create roadmap")
+", subagent_type="roadmapper", model="{roadmapper_model}", description="Create roadmap")
 ```
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
@@ -1131,7 +1099,7 @@ Use AskUserQuestion:
   Update the roadmap based on feedback. Edit files in place.
   Return ROADMAP REVISED with changes made.
   </revision>
-  ", subagent_type="gsd-roadmapper", model="{roadmapper_model}", description="Revise roadmap")
+  ", subagent_type="roadmapper", model="{roadmapper_model}", description="Revise roadmap")
   ```
 
   > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
@@ -1267,7 +1235,7 @@ PHASE1_HAS_UI=$(echo "$PHASE1_SECTION" | grep -qi "UI hint.*yes" && echo "true" 
 - [ ] Requirements gathered (from research or conversation)
 - [ ] User scoped each category (v1/v2/out of scope)
 - [ ] REQUIREMENTS.md created with REQ-IDs → **committed**
-- [ ] gsd-roadmapper spawned with context
+- [ ] roadmapper spawned with context
 - [ ] Roadmap files written immediately (not draft)
 - [ ] User feedback incorporated (if any)
 - [ ] ROADMAP.md created with phases, requirement mappings, success criteria

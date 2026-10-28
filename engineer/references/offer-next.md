@@ -1,5 +1,5 @@
 <!--
-  offer-next.md — extracted from execute-phase.md step "offer_next" (#2537).
+  offer-next.md — extracted from execute-phase.md step "offer_next" .
   Eagerly @-referenced from execute-phase.md so runtime behavior is unchanged; the
   extraction restores byte-budget headroom the frozen ceiling exists to provide.
 -->
@@ -66,10 +66,10 @@ If CONTEXT.md does **not** exist for the next phase, present:
 ```
 ## ✓ Phase {X}: {Name} Complete
 
-/progress ${GSD_WS} — see updated roadmap
-/discuss-phase {next} ${GSD_WS} — start here: discuss next phase before planning  ← recommended
-/plan-phase {next} ${GSD_WS} — plan next phase (skip discuss)
-/execute-phase {next} ${GSD_WS} — execute next phase (skip discuss and plan)
+/progress ${ENGINEER_WS} — see updated roadmap
+/discuss-phase {next} ${ENGINEER_WS} — start here: discuss next phase before planning  ← recommended
+/plan-phase {next} ${ENGINEER_WS} — plan next phase (skip discuss)
+/execute-phase {next} ${ENGINEER_WS} — execute next phase (skip discuss and plan)
 ```
 
 If CONTEXT.md **exists** for the next phase, present:
@@ -77,10 +77,10 @@ If CONTEXT.md **exists** for the next phase, present:
 ```
 ## ✓ Phase {X}: {Name} Complete
 
-/progress ${GSD_WS} — see updated roadmap
-/plan-phase {next} ${GSD_WS} — start here: plan next phase (CONTEXT.md already present)  ← recommended
-/discuss-phase {next} ${GSD_WS} — re-discuss next phase
-/execute-phase {next} ${GSD_WS} — execute next phase (skip planning)
+/progress ${ENGINEER_WS} — see updated roadmap
+/plan-phase {next} ${ENGINEER_WS} — start here: plan next phase (CONTEXT.md already present)  ← recommended
+/discuss-phase {next} ${ENGINEER_WS} — re-discuss next phase
+/execute-phase {next} ${ENGINEER_WS} — execute next phase (skip planning)
 ```
 
 Only suggest the commands listed above. Do not invent or hallucinate command names.

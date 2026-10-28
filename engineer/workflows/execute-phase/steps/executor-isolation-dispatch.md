@@ -1,15 +1,15 @@
-# Executor isolation dispatch (ADR-1239 / #2584 Phase 3)
+# Executor isolation dispatch (ADR-1239 / Phase 3)
 
 Read and follow this fragment from `execute-phase.md` step 3 when dispatching a wave.
 It owns the per-host dispatch detail so the host workflow stays inside its
-ADR-857 Phase 6 byte budget (#1168) — the host step keeps only the `ISOLATION`
+ADR-857 Phase 6 byte budget — the host step keeps only the `ISOLATION`
 resolution and its fail-closed guard.
 
 ## Resolve ISOLATION
 
 The resolution rule is shared with every other dispatch site — see
 @~/.claude/engineer/references/dispatch-isolation-gate.md, the canonical statement of the
-`ISOLATION`-not-`RUNTIME` contract (#2652). This fragment keeps the wave-specific
+`ISOLATION`-not-`RUNTIME` contract . This fragment keeps the wave-specific
 extras (`worktree.reap-orphans`, the `worktree.base-check` auto-degrade) inline below.
 
 Run this in the config-gate step, right after `RUNTIME`/`USE_WORKTREES` are read.
@@ -57,8 +57,8 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
-# Isolation is a NEGOTIATED CAPABILITY, not a runtime id (#2584). Fail-closed to none.
-# #3045 CORE REDESIGN: `dispatch-isolation` PERSISTS this resolution to the
+# Isolation is a NEGOTIATED CAPABILITY, not a runtime id . Fail-closed to none.
+#  CORE REDESIGN: `dispatch-isolation` PERSISTS this resolution to the
 # run-scoped sentinel the isolation guard hooks read, as an unconditional
 # side effect of resolving it — this call is the ONLY way the workflow learns
 # ISOLATION at all, so the recording cannot be skipped the way a separate
@@ -70,7 +70,7 @@ fi
 # as references/dispatch-isolation-gate.md does — this site declares that gate
 # canonical, so it must not carry the older collapsing shape. Both outcomes fail
 # closed, which is right, but only one of them may claim the host declared no
-# primitive (#2652 review).
+# primitive ( review).
 _ISOLATION_RAW=$(engineer_run query dispatch-isolation --raw --phase "${PHASE_NUMBER:-}" 2>/dev/null)
 _ISOLATION_RC=$?
 if [ $_ISOLATION_RC -ne 0 ] || [ -z "$_ISOLATION_RAW" ]; then
@@ -96,9 +96,9 @@ if [ "$ISOLATION" = "none" ] && [ "$USE_WORKTREES" != "false" ]; then
   exit 1
 fi
 
-# Sweep orphaned locked worktrees from prior crashed sessions (#3707).
+# Sweep orphaned locked worktrees from prior crashed sessions .
 [ "$ISOLATION" != "none" ] && engineer_run query worktree.reap-orphans 2>/dev/null || true
-# Auto-degrade if HEAD diverged from the fork base (#683) — both isolation models.
+# Auto-degrade if HEAD diverged from the fork base  — both isolation models.
 if [ "$ISOLATION" != "none" ]; then
   _SHOULD_DEGRADE=$(engineer_run query worktree.base-check --mode "$ISOLATION" --pick shouldDegrade 2>/dev/null || true)
   if [ "$_SHOULD_DEGRADE" = "true" ]; then
@@ -112,15 +112,15 @@ fi
 # Re-resolve (and, as a side effect, re-persist) now that the base-check
 # auto-degrade above may have changed $ISOLATION since the first
 # `dispatch-isolation` call. `--force-isolation` pushes the FINAL,
-# shell-computed value (which the resolver itself cannot see — the #683
+# shell-computed value (which the resolver itself cannot see — the 
 # base-check degrade is decided here, not inside engineer.py) through the
 # SAME single write path (`--force-isolation none` also clears the stored
 # harnessFlag, since none applies to sequential dispatch). The isolation
-# guard hooks (hooks/gsd-agent-isolation-guard.js)
+# guard hooks (hooks/engineer-agent-isolation-guard.js)
 # read this sentinel instead of
 # re-deriving a host CAPABILITY from the registry — the registry's
 # harness-worktree entry means "this host CAN isolate", not "this dispatch
-# SHOULD be isolated", and every degrade above (project opt-out, the #683
+# SHOULD be isolated", and every degrade above (project opt-out, the 
 # base-check auto-degrade) is a legitimate ISOLATION=none outcome the guards
 # must not treat as a bypass. Best-effort: a write failure here must never
 # fail the wave — the guards' own sentinel-absent fallback is safe, just less
@@ -149,7 +149,7 @@ both degrade to `none` rather than dispatching executors that only believe they 
 Read the flag once before dispatching; it is descriptor data, never hardcoded per runtime:
 
 ```bash
-# #3045 CORE REDESIGN: `dispatch-isolation --json` already resolves and
+#  CORE REDESIGN: `dispatch-isolation --json` already resolves and
 # atomically records `harnessFlag` together with `isolation` and `phase` in
 # ONE write, as a side effect of this same call (routeDispatchIsolation,
 # engineer/bin/engineer.py) — there is no separate "now also record the
@@ -167,13 +167,13 @@ in `execute-phase.md` step 3 (on Claude Code it is literally `isolation="worktre
 
 The host has no harness-native isolation primitive, so **Engineer** creates each worktree and process-spawns the executor into it. Fan-out is OS-level (N processes), not the host's subagent tool. Per the Codex `workspace-write` sandbox constraint, **the orchestrator performs every git operation** — create, merge, cleanup; the spawned executor only edits files and commits inside its own worktree.
 
-**Resume-first guard (#4624).** The launching turn may end while external workers are still live — that is expected here, not an error. So before dispatching ANY plan in this section, sweep for workers a previous session left behind:
+**Resume-first guard .** The launching turn may end while external workers are still live — that is expected here, not an error. So before dispatching ANY plan in this section, sweep for workers a previous session left behind:
 
 ```bash
 engineer_run query worktree.worker-status --root "${ORCH_ROOT}/.claude/worktrees" 2>/dev/null || true
 ```
 
-(An older installed shim without these verbs reports nothing here — its waves stay owned by the #3707 orphan sweep, as before.)
+(An older installed shim without these verbs reports nothing here — its waves stay owned by the orphan sweep, as before.)
 
 Every entry with `needsReconciliation: true` (recorded running, process gone) is reconciled from its persisted record — SUMMARY + plan-scoped commits + branch state per `execute-phase/steps/completion-reconciliation.md`, merge if artifact-complete, preserve with recovery information otherwise — then marked with `worker-complete`. An entry that is still `running` with `pidAlive: true` is a live worker — wait on it or leave it running; its terminal state surfaces on the next sweep. One caution: pid reuse on a long-lived host can keep a dead worker reading as alive — when a running entry's `startedAt` is older than the executor timeout budget, inspect its log and worktree before trusting liveness. **Never re-dispatch a recorded plan, and never reconcile on narration alone.**
 
@@ -181,9 +181,9 @@ Run the loop below once per runnable plan in the wave, **one plan at a time** (`
 
 **Before running the bash block, substitute the plan's identifiers into it** exactly as you do for the `Agent()` prompt on the harness path: replace `{plan_number}` and `{phase_number}` with this plan's values. They are template placeholders, not shell variables. `$ORCH_ROOT` and `$EXPECTED_BASE` are real shell variables, already assigned earlier in this step; `$WAVE_WORKTREE_MANIFEST` was initialized above.
 
-First build the executor prompt. It is the **same prompt text the harness path's `Agent()` call uses** — same executor identity, same execution context, same required-reading contract — with only the harness-only framing removed: drop the `<worktree_branch_check>` build-time embed note (this backend pins the base itself via `worktree create --base` and verifies it at merge) and the `<parallel_execution>` harness block (its SUMMARY-commit semantics ride inside the embedded `execute-plan.md` worktree mode). Keep `<objective>`, `<execution_context>`, `<required_reading>`, `${AGENT_SKILLS}`, and `<success_criteria>` from the harness prompt — substituting the worktree-specific `<execution_context>` framing below. The checkpoint gate rule (#3370, in `per-plan-executor-routing.md`) applies here too: add no prompt text refusing or overriding auto-approval for the default `gate="blocking"` — only `blocking-human` always surfaces.
+First build the executor prompt. It is the **same prompt text the harness path's `Agent()` call uses** — same executor identity, same execution context, same required-reading contract — with only the harness-only framing removed: drop the `<worktree_branch_check>` build-time embed note (this backend pins the base itself via `worktree create --base` and verifies it at merge) and the `<parallel_execution>` harness block (its SUMMARY-commit semantics ride inside the embedded `execute-plan.md` worktree mode). Keep `<objective>`, `<execution_context>`, `<required_reading>`, `${AGENT_SKILLS}`, and `<success_criteria>` from the harness prompt — substituting the worktree-specific `<execution_context>` framing below. The checkpoint gate rule (in `per-plan-executor-routing.md`) applies here too: add no prompt text refusing or overriding auto-approval for the default `gate="blocking"` — only `blocking-human` always surfaces.
 
-#3637: the process-spawned child has NO host subagent machinery — nothing loads the `executor` agent definition or the execute-plan workflow unless THIS prompt carries them. A short objective-only prompt forces the child to reconstruct its role from the repository (skill discovery, inference) and leaves it unaware of the gitignored-planning skip semantics, which is how executors ended up force-staging gitignored `SUMMARY.md` files to satisfy an unconditional commit criterion. Build-time embeds below are therefore MANDATORY, and the resolution check after the assignment fails closed: if any embed source cannot be read, do NOT spawn a generic process and hope — halt the wave (the fail-closed check after `dispatch-isolation` handles the worktree teardown).
+: the process-spawned child has NO host subagent machinery — nothing loads the `executor` agent definition or the execute-plan workflow unless THIS prompt carries them. A short objective-only prompt forces the child to reconstruct its role from the repository (skill discovery, inference) and leaves it unaware of the gitignored-planning skip semantics, which is how executors ended up force-staging gitignored `SUMMARY.md` files to satisfy an unconditional commit criterion. Build-time embeds below are therefore MANDATORY, and the resolution check after the assignment fails closed: if any embed source cannot be read, do NOT spawn a generic process and hope — halt the wave (the fail-closed check after `dispatch-isolation` handles the worktree teardown).
 
 Assign the composed prompt to a shell variable so it can be passed as one argument:
 
@@ -197,7 +197,7 @@ Assign the composed prompt to a shell variable so it can be passed as one argume
 #
 # ORCHESTRATOR BUILD-TIME EMBEDS (do these BEFORE the spawn, in order):
 #   1. Inline each file listed in <execution_context> verbatim, in order.
-#      An unreadable source file is a halt condition (#3637 fail-closed),
+#      An unreadable source file is a halt condition ( fail-closed),
 #      never a skip — a child without these texts is not a executor.
 #   2. Substitute this plan's {plan_number}, {phase_number}, {phase_name},
 #      {phase_dir}, {plan_file}, {plan_id}, and {plan_padded} placeholders (same values the
@@ -212,11 +212,11 @@ Assign the composed prompt to a shell variable so it can be passed as one argume
 #      marker below. The agent-skills query alone is NOT sufficient — its
 #      block is the skills include list whenever the project configures
 #      agent_skills for executor, and only an UNCONFIGURED non-Claude
-#      project gets the full agent file via the #2454 fallback. The child has
+#      project gets the full agent file via the  fallback. The child has
 #      no host subagent machinery, so the role definition must ride the prompt
-#      (#3637 acceptance: resolved agent instructions as launch-level
+#      ( acceptance: resolved agent instructions as launch-level
 #      instructions + provenance of which role definition was used).
-# Resolve TDD-applicability for THIS plan (#4266/#4272) — fail closed on
+# Resolve TDD-applicability for THIS plan  — fail closed on
 # command failure, mirroring the ISOLATION resolution above: an absent
 # verdict must never silently resolve to "not TDD" (ADR-3473 §8.4), since
 # that would silently drop a real TDD plan's RED/GREEN/REFACTOR procedure.
@@ -230,7 +230,7 @@ TDD_APPLICABLE="$_TDD_APPLICABLE_RAW"
 
 EXECUTOR_PROMPT='<objective>
 Execute plan {plan_number} of phase {phase_number}-{phase_name}.
-[gsd:dispatch phase="{phase_number}" plan="{plan_id}"]
+[engineer:dispatch phase="{phase_number}" plan="{plan_id}"]
 Commit each task atomically. Create SUMMARY.md.
 Do NOT update STATE.md or ROADMAP.md — the orchestrator owns those writes after all worktree agents in the wave complete.
 </objective>
@@ -249,7 +249,7 @@ the executor workflow from repository search.
   SUMMARY commit semantics and the gitignored-planning skip contract)
 - summary.md template
 - checkpoints.md
-${TDD_APPLICABLE ? "- tdd.md" : ""}  # #3990/#4265: only when this dispatch is TDD (plan type: tdd, a tdd="true" task, or workflow.tdd_mode config)
+${TDD_APPLICABLE ? "- tdd.md" : ""}  # /: only when this dispatch is TDD (plan type: tdd, a tdd="true" task, or workflow.tdd_mode config)
 - worktree-path-safety.md
 - agents/executor.md (the ROLE DEFINITION you are executing — its steps
   0/0a/0b per-commit HEAD/cwd-drift/path-guard discipline applies to every
@@ -296,7 +296,7 @@ ${AGENT_SKILLS}
 - [ ] No modifications to shared orchestrator artifacts (the orchestrator handles all post-wave shared-file writes)
 </success_criteria>'
 [ -n "$EXECUTOR_PROMPT" ] || { echo "FATAL: executor prompt is empty for plan {plan_number}." >&2; exit 1; }
-# #3637 fail-closed verification. Two classes of check:
+#  fail-closed verification. Two classes of check:
 #   (a) template completeness — the prompt must carry the required-reading
 #       contract and the skip semantics at all (catches wholesale truncation
 #       back to the objective-only prompt);
@@ -305,7 +305,7 @@ ${AGENT_SKILLS}
 #       instructions-about-instructions (the provenance parenthetical and the
 #       un-substituted persona marker); those strings surviving to spawn time
 #       mean the embeds were skipped and the child would hold instructions
-#       about files it never received — the milder recurrence of #3637.
+#       about files it never received — the milder recurrence of .
 # These run BEFORE worktree creation, so a gate exit leaves nothing to tear
 # down; the post-dispatch-isolation fail-closed check governs the worktree
 # itself once one exists.
@@ -314,19 +314,19 @@ printf '%s' "$EXECUTOR_PROMPT" | grep -q '<required_reading>' || {
   exit 1
 }
 printf '%s' "$EXECUTOR_PROMPT" | grep -q 'skipped_gitignored' || {
-  echo "FATAL: executor prompt for plan {plan_number} is missing the gitignored-planning skip semantics — executors without them force-stage planning artifacts (#3637). Halting." >&2
+  echo "FATAL: executor prompt for plan {plan_number} is missing the gitignored-planning skip semantics — executors without them force-stage planning artifacts . Halting." >&2
   exit 1
 }
 printf '%s' "$EXECUTOR_PROMPT" | grep -q 'Inline the actual contents' && {
-  echo "FATAL: executor prompt for plan {plan_number} still contains its compose-time placeholder — the build-time embeds were not performed. Halting rather than dispatching instructions-about-instructions (#3637)." >&2
+  echo "FATAL: executor prompt for plan {plan_number} still contains its compose-time placeholder — the build-time embeds were not performed. Halting rather than dispatching instructions-about-instructions ." >&2
   exit 1
 }
 printf '%s' "$EXECUTOR_PROMPT" | grep -q '\${AGENT_SKILLS}' && {
-  echo "FATAL: executor prompt for plan {plan_number} still contains the un-substituted \${AGENT_SKILLS} marker — the role definition was not spliced in (#3637). Halting." >&2
+  echo "FATAL: executor prompt for plan {plan_number} still contains the un-substituted \${AGENT_SKILLS} marker — the role definition was not spliced in . Halting." >&2
   exit 1
 }
 printf '%s' "$EXECUTOR_PROMPT" | grep -q '\${TDD_APPLICABLE' && {
-  echo "FATAL: executor prompt for plan {plan_number} still contains the un-substituted \${TDD_APPLICABLE marker — the TDD-applicability decision was not resolved into the prompt (#4266). Halting." >&2
+  echo "FATAL: executor prompt for plan {plan_number} still contains the un-substituted \${TDD_APPLICABLE marker — the TDD-applicability decision was not resolved into the prompt . Halting." >&2
   exit 1
 }
 ```
@@ -375,15 +375,15 @@ if [ "$EXEC_OK" != "true" ]; then
 fi
 ```
 
-`--files` carries the plan's declared `files_modified` (the same `PLAN_FILES` the per-plan worktree gate extracts) so this backend routes through the SAME advisory scope-conformance check the Claude worktree path uses at merge (#2596) — one validation, both backends. It is advisory and never blocks; omitting it just skips the check.
+`--files` carries the plan's declared `files_modified` (the same `PLAN_FILES` the per-plan worktree gate extracts) so this backend routes through the SAME advisory scope-conformance check the Claude worktree path uses at merge — one validation, both backends. It is advisory and never blocks; omitting it just skips the check.
 
-`--deletions` carries the plan's declared `files_deleted` (`PLAN_DELETIONS`, extracted alongside `PLAN_FILES`) so this backend also routes through the deletions guard's opt-in (#3003). Unlike `--files` this one is **not** advisory: omitting it leaves the guard blocking on any deletion at all, which would make a plan that declares a removal merge on the harness path and fail here. Every dispatch surface that records a worktree must pass it.
+`--deletions` carries the plan's declared `files_deleted` (`PLAN_DELETIONS`, extracted alongside `PLAN_FILES`) so this backend also routes through the deletions guard's opt-in . Unlike `--files` this one is **not** advisory: omitting it leaves the guard blocking on any deletion at all, which would make a plan that declares a removal merge on the harness path and fail here. Every dispatch surface that records a worktree must pass it.
 
 `worktree create` records the entry in `$WAVE_WORKTREE_MANIFEST` itself, so **do not** call `worktree.record-agent` for these plans — that verb is the harness-path counterpart, used because the harness creates the worktree behind Engineer's back. Double-recording is deduped by path+branch, but the create verb is the single writer here.
 
 Spawn `EXEC_JSON`'s `command` + `args` as a background process with its working directory set to `EXEC_JSON.cwd`, capturing the PID (`WORKER_PID=$!`) and redirecting stdout+stderr into a per-worker log placed BESIDE the worktree — `${WT_PATH}.worker.log`, not inside it: cleanup removes the worktree, and the log plus the lifecycle record must survive it. The `cwd` is returned for **every** host, including those whose descriptor has no cwd flag (`cwdFlag: null`) and therefore bind through the process's own working directory — always set it, never assume the flag did the job. Launch from a shell that has `cd`'d into it (`cd "$cwd" && command args &`).
 
-**Record the launch before any wait (#4624).** A bare background `wait` left the wave with no durable lifecycle: when the orchestrator's turn ended first, a finished worker sat undiscovered and a blocked one sat unreported, and a resumed session had nothing to recover from. Immediately after the spawn — before waiting on anything — persist the launch identity and result location:
+**Record the launch before any wait .** A bare background `wait` left the wave with no durable lifecycle: when the orchestrator's turn ended first, a finished worker sat undiscovered and a blocked one sat unreported, and a resumed session had nothing to recover from. Immediately after the spawn — before waiting on anything — persist the launch identity and result location:
 
 ```bash
 WORKER_LOG="${WT_PATH}.worker.log"
@@ -398,7 +398,7 @@ engineer_run query worktree.worker-record \
   }
 ```
 
-**Wait until terminal, reconcile BEFORE recording the outcome (#4217/#4624).** Wait for the wave's executors to reach a terminal process state (`wait` on the captured PIDs, or poll `worktree.worker-status --root "${ORCH_ROOT}/.claude/worktrees"` and read `pidAlive`). While a worker's record is `running`, it is a reconciliation candidate the moment its process dies — a crash between classification and recording can never strand it. So the ordering is: run the **existing** artifact reconciliation (`execute-phase/steps/completion-reconciliation.md`) FIRST — SUMMARY + plan-scoped commits + branch state decide the outcome: a worker that exits 0 with no artifacts is not done, and one that exits non-zero with artifacts complete may still merge. Merge artifact-complete workers through the manifest-only gauntlet below; preserve a blocked/failed worktree untouched. Only then record the terminal outcome, carrying the recovery information:
+**Wait until terminal, reconcile BEFORE recording the outcome .** Wait for the wave's executors to reach a terminal process state (`wait` on the captured PIDs, or poll `worktree.worker-status --root "${ORCH_ROOT}/.claude/worktrees"` and read `pidAlive`). While a worker's record is `running`, it is a reconciliation candidate the moment its process dies — a crash between classification and recording can never strand it. So the ordering is: run the **existing** artifact reconciliation (`execute-phase/steps/completion-reconciliation.md`) FIRST — SUMMARY + plan-scoped commits + branch state decide the outcome: a worker that exits 0 with no artifacts is not done, and one that exits non-zero with artifacts complete may still merge. Merge artifact-complete workers through the manifest-only gauntlet below; preserve a blocked/failed worktree untouched. Only then record the terminal outcome, carrying the recovery information:
 
 ```bash
 engineer_run query worktree.worker-complete --path "$WT_PATH" --exit-code "$WORKER_EXIT" \
@@ -411,5 +411,5 @@ The executor never touches `STATE.md`/`ROADMAP.md`, and that guard needs no new 
 
 Merge-back, validation, and cleanup are the **existing** gauntlet, unchanged: the serialized `worktree.cleanup-wave` merge loop that stops the wave and retains the worktree on conflict, and manifest-only cleanup (never glob-inferred). Because the manifest shape is identical, the orchestrator path reuses it verbatim.
 
-> **Declared-scope conformance (#2596):** ADR-1239 specifies that *both* isolation adapters route their merge through a check that each plan branch's committed diff stayed inside its declared `files_modified` scope. That check now exists, advisory-first, and is wired into **both** paths: this one passes `--files "$PLAN_FILES"` to `worktree create` above, the harness path passes it to `worktree record-agent`, and `cleanup-wave` runs the one comparison for both. A path outside the declared scope is reported in the result's `warnings` array; it does not block the merge. Promotion to a hard gate is a separate, disclosed change.
+> **Declared-scope conformance :** ADR-1239 specifies that *both* isolation adapters route their merge through a check that each plan branch's committed diff stayed inside its declared `files_modified` scope. That check now exists, advisory-first, and is wired into **both** paths: this one passes `--files "$PLAN_FILES"` to `worktree create` above, the harness path passes it to `worktree record-agent`, and `cleanup-wave` runs the one comparison for both. A path outside the declared scope is reported in the result's `warnings` array; it does not block the merge. Promotion to a hard gate is a separate, disclosed change.
 

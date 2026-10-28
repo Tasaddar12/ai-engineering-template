@@ -9,7 +9,7 @@ Display banner:
 ◆ Spawning plan checker... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
 
-**Verify-command path probe (#2401, #4767).** Before spawning, run the deterministic probe over
+**Verify-command path probe .** Before spawning, run the deterministic probe over
 the quick plan's `<automated>` commands and hand its JSON to the checker, exactly as
 `plan-phase.md` does. Quick plans live under `${QUICK_DIR}`, not `.planning/phases/`, so the
 probe takes the directory directly. It never executes command text and never prescribes a
@@ -61,7 +61,7 @@ fi
 VERIFY_PATHS=$(engineer_run check verify-command-paths --dir "${QUICK_DIR}" --raw) && VERIFY_PATHS_EXIT=0 || VERIFY_PATHS_EXIT=$?
 ```
 
-Branch on `VERIFY_PATHS_EXIT` (#5170): `0` — the probe looked. `69` (`UNAVAILABLE`) — it could not look: the JSON is still printed with `status: 'unresolvable'`, so hand it to the checker unchanged. Any other non-zero is a command failure: stop and surface it rather than hand the checker an empty value.
+Branch on `VERIFY_PATHS_EXIT` : `0` — the probe looked. `69` (`UNAVAILABLE`) — it could not look: the JSON is still printed with `status: 'unresolvable'`, so hand it to the checker unchanged. Any other non-zero is a command failure: stop and surface it rather than hand the checker an empty value.
 
 Checker prompt:
 
@@ -77,7 +77,7 @@ Checker prompt:
 ${AGENT_SKILLS_CHECKER}
 
 <verify_command_path_probe>
-**Deterministic verify-command path probe (#2401)** — already run; do NOT re-derive these
+**Deterministic verify-command path probe ** — already run; do NOT re-derive these
 verdicts by reading the filesystem yourself. Act on `severity` per the "Verify Command Path
 Resolvability" dimension: `blocker` → BLOCKER, `warning` → WARNING, `none` → silent.
 `status: pending_creation` is not a finding. A non-empty `readError` means the probe could not
@@ -96,7 +96,7 @@ replacement path.
 - Requirement coverage: Does the plan address the task description?
 - Task completeness: Do tasks have files, action, verify, done fields?
 - Key links: Are referenced files real?
-- Verify-command path resolvability: act on the `<verify_command_path_probe>` verdicts above (#2401, #4767)
+- Verify-command path resolvability: act on the `<verify_command_path_probe>` verdicts above 
 - Scope sanity: Is this appropriately sized for a quick task (1-3 tasks)?
 - must_haves derivation: Are must_haves traceable to the task description?
 
@@ -123,8 +123,8 @@ Agent(
 
 **Handle checker return:**
 
-- **`## VERIFICATION PASSED`:** If the return lists an entry whose severity is BLOCKER or WARNING, in the YAML issues block or listed in prose (a mention such as "no warnings" or a zero count is not an entry), handle it as `## ISSUES FOUND` below, counting the prose entries as BLOCKER/WARNING entries; the sentinel never decides alone, and an entry with a missing or unrecognized severity counts as a BLOCKER (#5578). Otherwise display confirmation, proceed to step 6.
-- **`## ISSUES FOUND`:** Count BLOCKER + WARNING entries in the YAML issues block; an entry whose severity is missing or unrecognized counts as a BLOCKER (fail closed). If zero — every entry is explicitly INFO — display `ℹ advisory — {dimension}: {description}` per entry and proceed to step 6; INFO is advisory and never enters the loop (#3724). Otherwise display issues, check iteration count, enter revision loop.
+- **`## VERIFICATION PASSED`:** If the return lists an entry whose severity is BLOCKER or WARNING, in the YAML issues block or listed in prose (a mention such as "no warnings" or a zero count is not an entry), handle it as `## ISSUES FOUND` below, counting the prose entries as BLOCKER/WARNING entries; the sentinel never decides alone, and an entry with a missing or unrecognized severity counts as a BLOCKER . Otherwise display confirmation, proceed to step 6.
+- **`## ISSUES FOUND`:** Count BLOCKER + WARNING entries in the YAML issues block; an entry whose severity is missing or unrecognized counts as a BLOCKER (fail closed). If zero — every entry is explicitly INFO — display `ℹ advisory — {dimension}: {description}` per entry and proceed to step 6; INFO is advisory and never enters the loop . Otherwise display issues, check iteration count, enter revision loop.
 
 **Revision loop (max 2 iterations):**
 

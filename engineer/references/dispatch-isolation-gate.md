@@ -1,13 +1,13 @@
-# Dispatch isolation gate (ADR-1239 / #2584)
+# Dispatch isolation gate (ADR-1239 / )
 
 The single source of truth for **how a dispatch site decides whether it may run an agent
 isolated**. Every workflow that spawns an executor-like subagent reads this file and follows
-it, rather than restating the rule inline (#2652).
+it, rather than restating the rule inline .
 
 `ISOLATION` — not `RUNTIME` — is the decision variable. **Never branch a dispatch site on a
 runtime id.** Isolation is a negotiated capability declared per host; a runtime-name test
-silently diverges the moment a new host declares support, which is exactly how #2652 happened:
-`quick.md` and `diagnose-issues.md` kept a `RUNTIME != "claude"` gate after #2584 migrated the
+silently diverges the moment a new host declares support, which is exactly how happened:
+`quick.md` and `diagnose-issues.md` kept a `RUNTIME != "claude"` gate after migrated the
 phase scheduler, so Codex — which declares `orchestrator-worktree` — was refused isolation it
 had in fact negotiated.
 
@@ -17,15 +17,15 @@ Run this in the dispatch site's config-gate step, right after `RUNTIME` / `USE_W
 read. It requires `engineer_run` to be defined (the standard shim preamble).
 
 ```bash
-# Isolation is a NEGOTIATED CAPABILITY, not a runtime id (#2584). Fail-closed to none.
-# #3045: this call PERSISTS the resolution to the run-scoped sentinel the isolation
+# Isolation is a NEGOTIATED CAPABILITY, not a runtime id . Fail-closed to none.
+# : this call PERSISTS the resolution to the run-scoped sentinel the isolation
 # guard hooks read, as an unconditional side effect of resolving it.
 # Keep the resolver's own failure DISTINGUISHABLE from a genuine `none`. Both
 # fail closed — that policy is right — but only one of them may claim the host
 # declared no primitive. A shim-resolution failure, a non-zero exit or empty
 # stdout is NOT a capability verdict, and reporting it as one tells a Claude
 # Code user their runtime "declares no executor-isolation primitive", which is
-# false (#2652 review).
+# false ( review).
 _ISOLATION_RAW=$(engineer_run query dispatch-isolation --raw 2>/dev/null)
 _ISOLATION_RC=$?
 if [ $_ISOLATION_RC -ne 0 ] || [ -z "$_ISOLATION_RAW" ]; then
@@ -105,10 +105,10 @@ fi
 dispatch.** This is not optional bookkeeping — it is what keeps the dispatch legal.
 
 `query dispatch-isolation` writes the mode it resolved into a run-scoped sentinel
-(`.gsd/dispatch-isolation-sentinel.json`) as an unconditional side effect, and the shipped
+(`.engineer/dispatch-isolation-sentinel.json`) as an unconditional side effect, and the shipped
 `PreToolUse` isolation guards read that sentinel at the instant of the dispatch call
-(`hooks/gsd-agent-isolation-guard.js`, shared reader
-`hooks/lib/isolation-sentinel.js`, #3045). Every degrade in this file is decided **in shell**,
+(`hooks/engineer-agent-isolation-guard.js`, shared reader
+`hooks/lib/isolation-sentinel.js`). Every degrade in this file is decided **in shell**,
 where the resolver cannot see it. Degrade without re-recording and the sentinel still asserts
 `harness-worktree` while the dispatch correctly omits the harness flag — the guard reads that
 as a dropped isolation flag and **denies the dispatch with exit 2**. The task does not run
@@ -134,5 +134,5 @@ Wave fan-out sites (`execute-phase`) implement both models — see
 ## Base divergence
 
 Any site that ends up with `ISOLATION != none` must also run the `worktree.base-check`
-auto-degrade before dispatch (#683, #1369, #1941), or the agent's `worktree_branch_check` guard
+auto-degrade before dispatch , or the agent's `worktree_branch_check` guard
 halts on a stale fork base. `quick.md` and `execute-phase` do this today.

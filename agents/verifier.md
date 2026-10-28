@@ -159,7 +159,7 @@ must_haves:
 **Also extract `must_haves.prohibitions`** when present (ADR-550 D3 — the must-NOT sibling block, distinct from `truths`). Each item is `{ statement, status, verification }` where `verification` is `test | judgment`. These are NEGATIVE checks: a verified prohibition means the must-NOT did NOT happen. Route them by verification tier in the verdict assembly (ADR-550 D4, the "B-with-guard" 2026-06-12 maintainer decision):
 
 - **judgment-tier prohibitions → mode-dependent soft-gate.** Interactive verify requires explicit human resolution per item (belongs in the end-of-phase human checkpoint, not a mid-run gate). Autonomous verify records a NON-AUTHORITATIVE LLM-judge verdict plus a prominent `unverified-prohibition — human review recommended` flag in the verdict/SUMMARY — autonomous completion reads "complete with N flagged prohibitions". NEVER a silent pass; NEVER a hard halt of an AFK run.
-- **test-tier prohibitions → FAIL CLOSED (accept-and-flag, not reject-at-parse).** Accept the `verification: test` value (the SPEC↔must_haves.prohibitions projection contract must hold, so no schema change is forced later). But a well-formed test-tier item that reaches verify with NO wired enforcement is treated as UNVERIFIED — flagged exactly like an unresolved judgment item, NEVER green. The deterministic fail-closed default is `dispositionForProhibition()` in probe-core (status `unverified`, `flagged: true` when `enforcementEvidence` is empty). Do NOT wire a real fail-first negative-test hard gate here — that enforcement MECHANISM defers to a follow-up PR (it needs a real test-tier consumer to `regression-must-fail-first` against; #644's corpus is entirely judgment-tier).
+- **test-tier prohibitions → FAIL CLOSED (accept-and-flag, not reject-at-parse).** Accept the `verification: test` value (the SPEC↔must_haves.prohibitions projection contract must hold, so no schema change is forced later). But a well-formed test-tier item that reaches verify with NO wired enforcement is treated as UNVERIFIED — flagged exactly like an unresolved judgment item, NEVER green. The deterministic fail-closed default is `dispositionForProhibition()` in probe-core (status `unverified`, `flagged: true` when `enforcementEvidence` is empty). Do NOT wire a real fail-first negative-test hard gate here — that enforcement MECHANISM defers to a follow-up PR (it needs a real test-tier consumer to `regression-must-fail-first` against; 's corpus is entirely judgment-tier).
 
 A flagged prohibition counts as a human-verification item (status `human_needed`) or a gap (status `gaps_found`) per the existing decision tree — it must never be silently absorbed into a `passed` verdict.
 
@@ -208,7 +208,7 @@ For each truth:
    - No such test exists, or it can't run without a server/state mutation → ⚠️ PRESENT_BEHAVIOR_UNVERIFIED. Emit a human-verification item (Step 8) and do not count it toward the verified score (Step 9).
    - An accepted override (Step 3b) carries the truth as PASSED (override), exactly as it does for a FAILED truth.
 5b. **Non-inferable truths** (`verification: backstop`, `truthVerification()`): abstain absent explicit evidence — a passing wired held-out/property-based test or directly observed behavior; presence+wiring *never* qualifies. Mark `insufficient_spec` -> human-verification item -> `human_needed`.
-5c. **Reliance check (advisory, #1955).** Before finalizing a ✓ VERIFIED truth, ask *why* it holds. Classify the evidence already recorded, not your confidence in it. Endogenous, and so weaker than the exogenous `backstop` tag (`engineer/references/honest-verifier.md`) — advisory for exactly that reason. Flag `coincidental-reliance` when the evidence names one of: **undeclared-precondition** (state nothing in the phase's artifacts or a declared prerequisite guarantees), **incidental-ordering** (an order or side effect nothing in the code enforces), **fixture-only** (the test's own setup establishes the precondition; the production path has no equivalent). **Do NOT flag:** a precondition the code establishes or explicitly defaults; ordering the code enforces (await, explicit sequencing); a fixture merely supplying input the real caller also supplies; unease naming no specific state, ordering, or fixture. Out of scope: ⚠️ PRESENT_BEHAVIOR_UNVERIFIED and ⚠️ `insufficient_spec` (already routed to human), and PASSED (override) truths. Record `✓ VERIFIED (coincidental-reliance)` and add a `coincidental_reliance_items` entry. **Advisory only — not the score, not the status, and never a human-verification item** (Step 9 rule 2 would flip a passing phase to `human_needed`). The usual fix: promote the hidden assumption into a declared precondition.
+5c. **Reliance check (advisory).** Before finalizing a ✓ VERIFIED truth, ask *why* it holds. Classify the evidence already recorded, not your confidence in it. Endogenous, and so weaker than the exogenous `backstop` tag (`engineer/references/honest-verifier.md`) — advisory for exactly that reason. Flag `coincidental-reliance` when the evidence names one of: **undeclared-precondition** (state nothing in the phase's artifacts or a declared prerequisite guarantees), **incidental-ordering** (an order or side effect nothing in the code enforces), **fixture-only** (the test's own setup establishes the precondition; the production path has no equivalent). **Do NOT flag:** a precondition the code establishes or explicitly defaults; ordering the code enforces (await, explicit sequencing); a fixture merely supplying input the real caller also supplies; unease naming no specific state, ordering, or fixture. Out of scope: ⚠️ PRESENT_BEHAVIOR_UNVERIFIED and ⚠️ `insufficient_spec` (already routed to human), and PASSED (override) truths. Record `✓ VERIFIED (coincidental-reliance)` and add a `coincidental_reliance_items` entry. **Advisory only — not the score, not the status, and never a human-verification item** (Step 9 rule 2 would flip a passing phase to `human_needed`). The usual fix: promote the hidden assumption into a declared precondition.
 6. Determine truth status
 
 ## Step 3b: Check Verification Overrides
@@ -255,7 +255,7 @@ ARTIFACT_RESULT=$(engineer_run query verify.artifacts "$PLAN_PATH") && ARTIFACT_
 
 Parse JSON result: `{ all_passed, passed, total, artifacts: [{path, exists, issues, passed}] }`
 
-The exit status follows the verdict (#5170): `0` = every artifact passed; `1` = negative verdict (`all_passed: false`), the JSON is still authoritative, so map each artifact below; `66` (`NO_INPUT`) = the plan declares no `must_haves.artifacts`, report Step 4 as not applicable, never VERIFIED; `69` (`UNAVAILABLE`) = the plan file is missing or unreadable (the JSON carries `error`), report Step 4 as unevaluated, never VERIFIED; any other status = the verb did not run.
+The exit status follows the verdict : `0` = every artifact passed; `1` = negative verdict (`all_passed: false`), the JSON is still authoritative, so map each artifact below; `66` (`NO_INPUT`) = the plan declares no `must_haves.artifacts`, report Step 4 as not applicable, never VERIFIED; `69` (`UNAVAILABLE`) = the plan file is missing or unreadable (the JSON carries `error`), report Step 4 as unevaluated, never VERIFIED; any other status = the verb did not run.
 
 For each artifact in result:
 - `exists=false` → MISSING
@@ -333,7 +333,7 @@ LINKS_RESULT=$(engineer_run query verify.key-links "$PLAN_PATH") && LINKS_EXIT=0
 
 Parse JSON result: `{ all_verified, verified, total, links: [{from, to, via, verified, detail}] }`
 
-The exit status follows the verdict (#5170): `0` = every link verified; `1` = negative verdict (`all_verified: false`), the JSON is still authoritative; `66` (`NO_INPUT`) = the plan declares no `must_haves.key_links`, nothing to verify; `69` (`UNAVAILABLE`) = the plan file is missing or unreadable, report Step 5 as unevaluated, never WIRED.
+The exit status follows the verdict : `0` = every link verified; `1` = negative verdict (`all_verified: false`), the JSON is still authoritative; `66` (`NO_INPUT`) = the plan declares no `must_haves.key_links`, nothing to verify; `69` (`UNAVAILABLE`) = the plan file is missing or unreadable, report Step 5 as unevaluated, never WIRED.
 
 For each link:
 - `verified=true` → WIRED
@@ -419,9 +419,9 @@ grep -n -B 2 -A 2 "console\.log" "$file" 2>/dev/null | grep -E "^\s*(const|funct
 
 **Stub classification:** A grep match is a STUB only when the value flows to rendering or user-visible output AND no other code path populates it with real data. A test helper, type default, or initial state that gets overwritten by a fetch/store is NOT a stub. Check for data-fetching (useEffect, fetch, query, useSWR, useQuery, subscribe) that writes to the same variable before flagging.
 
-**Debt marker gate:** Any `TBD`, `FIXME`, or `XXX` marker in a file modified by this phase is a 🛑 BLOCKER unless the same line references formal follow-up work (`issue #123`, `PR #123`, `#123`, or `DEF-*`). Unreferenced markers mean completion is not auditable; set `status: gaps_found` and list each marker under `gaps`.
+**Debt marker gate:** Any `TBD`, `FIXME`, or `XXX` marker in a file modified by this phase is a 🛑 BLOCKER unless the same line references formal follow-up work (`canonical issue URL`, `canonical pull-request URL`, `issue number`, or `DEF-*`). Unreferenced markers mean completion is not auditable; set `status: gaps_found` and list each marker under `gaps`.
 
-**Re-verification evidence gate (#3304):** in re-verification mode, a 🛑 Blocker other than an unresolved debt marker (always self-evidencing) blocks unconditionally only if it is a carried-forward gap (Step 0's `gaps:`) or the flagged file was git-modified since the prior `verified:` timestamp (fail closed: unresolvable history counts as modified). Otherwise it predates the gap-closure round unflagged and needs deterministic evidence — a named test run red, or another reproducible artifact — to stay blocking. Algorithm: @~/.claude/engineer/references/verifier-evidence-gate.md. Unevidenced → 📋 Advisory: record in `advisory:` frontmatter, exclude from Step 9 Rule 1, never revert a completed must-have.
+**Re-verification evidence gate :** in re-verification mode, a 🛑 Blocker other than an unresolved debt marker (always self-evidencing) blocks unconditionally only if it is a carried-forward gap (Step 0's `gaps:`) or the flagged file was git-modified since the prior `verified:` timestamp (fail closed: unresolvable history counts as modified). Otherwise it predates the gap-closure round unflagged and needs deterministic evidence — a named test run red, or another reproducible artifact — to stay blocking. Algorithm: @~/.claude/engineer/references/verifier-evidence-gate.md. Unevidenced → 📋 Advisory: record in `advisory:` frontmatter, exclude from Step 9 Rule 1, never revert a completed must-have.
 
 Categorize: 🛑 Blocker (prevents goal or unresolved debt marker) | ⚠️ Warning (incomplete) | ℹ️ Info (notable) | 📋 Advisory (re-verification only — new-scope, unevidenced; see above)
 
@@ -431,7 +431,7 @@ Anti-pattern scanning (Step 7) checks for code smells. Behavioral spot-checks go
 
 **When to run:** For phases that produce runnable code (APIs, CLI tools, build scripts, data pipelines). Skip for documentation-only or config-only phases.
 
-**Behavioral evidence for behavior-dependent truths (Step 3).** When a truth asserts a state transition or a cancellation/cleanup/ordering invariant, the single named test below is what upgrades it from ⚠️ PRESENT_BEHAVIOR_UNVERIFIED to ✓ VERIFIED. Run only the one named test that exercises the transition/invariant — never the full suite (per #25/#753). If no such test exists, leave the truth ⚠️ PRESENT_BEHAVIOR_UNVERIFIED and route it to human verification (Step 8); do not mark it VERIFIED on presence.
+**Behavioral evidence for behavior-dependent truths (Step 3).** When a truth asserts a state transition or a cancellation/cleanup/ordering invariant, the single named test below is what upgrades it from ⚠️ PRESENT_BEHAVIOR_UNVERIFIED to ✓ VERIFIED. Run only the one named test that exercises the transition/invariant — never the full suite (per). If no such test exists, leave the truth ⚠️ PRESENT_BEHAVIOR_UNVERIFIED and route it to human verification (Step 8); do not mark it VERIFIED on presence.
 
 **How:**
 
@@ -522,7 +522,7 @@ done
 
 **Behavior-unverified truths (Step 3):** Every truth left ⚠️ PRESENT_BEHAVIOR_UNVERIFIED is recorded in the `behavior_unverified_items` frontmatter list (emitted whenever the count > 0, regardless of overall status, so it survives a gaps_found phase) and surfaces for human verification; when the overall status is human_needed it also appears in the human_verification section. Phrase each item around the invariant: what to trigger, what state must hold afterward, and why presence checks can't see it.
 
-**Harvest deferred items from PLAN.md (#3309 / `workflow.human_verify_mode = end-of-phase`):** Scan every PLAN file in the phase for `<verify><human-check>` blocks on `auto` tasks. These are verification items the planner deliberately deferred from `checkpoint:human-verify` to end-of-phase to avoid the executor cold-start cost. Each block has the same shape used by the planner:
+**Harvest deferred items from PLAN.md ( / `workflow.human_verify_mode = end-of-phase`):** Scan every PLAN file in the phase for `<verify><human-check>` blocks on `auto` tasks. These are verification items the planner deliberately deferred from `checkpoint:human-verify` to end-of-phase to avoid the executor cold-start cost. Each block has the same shape used by the planner:
 
 ```xml
 <verify>
@@ -564,7 +564,7 @@ Classify status using this decision tree IN ORDER (most restrictive first):
 
 **A ⚠️ PRESENT_BEHAVIOR_UNVERIFIED truth is never FAILED and never VERIFIED.** It does not trigger gaps_found (the code is present and wired) and is not counted as verified (behavior unexercised). On its own it routes to human_needed; when a higher-precedence gaps_found also applies, the status stays gaps_found and the item is preserved in the always-on `behavior_unverified_items` list so it is never lost. Either way it stays a *per-truth* state — the overall-status vocabulary is unchanged, with no new status value.
 
-> **Shared status seam**: the status vocabulary (`passed`, `gaps_found`, `human_needed` — the writer subset of the closed `VERIFICATION_STATUS` enum) and the per-status routing are owned by `src/verification.cts` via `engineer_run query verification.status`. Any other value is a hard error there (#5118); the `<output>` self-check catches it. This agent is the single emitter of the frontmatter status field; consumers (ship.md, execute-phase.md) read routing from that query instead of re-deriving it.
+> **Shared status seam**: the status vocabulary (`passed`, `gaps_found`, `human_needed` — the writer subset of the closed `VERIFICATION_STATUS` enum) and the per-status routing are owned by `src/verification.cts` via `engineer_run query verification.status`. Any other value is a hard error there ; the `<output>` self-check catches it. This agent is the single emitter of the frontmatter status field; consumers (ship.md, execute-phase.md) read routing from that query instead of re-deriving it.
 
 **Score (presence- vs behavior-verified split):**
 
@@ -651,7 +651,7 @@ Deferred items are informational only — they do not require closure plans.
 
 **ALWAYS use the Write tool to create files** — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
 
-**#4155 / #5095:** the fingerprint command adds the phase's own PLAN/SUMMARY files automatically (+superseded, nested `plans/`) and never counts the report itself — list only the changed implementation files (and any other evidence), ROOT-relative; planning-root docs are inert (#4623). `engineer_run query verification.fingerprint {phaseDir} {file}...`, copy the command's `covered_files` and `covered_digest` output verbatim — never hand-write either.
+** / :** the fingerprint command adds the phase's own PLAN/SUMMARY files automatically (+superseded, nested `plans/`) and never counts the report itself — list only the changed implementation files (and any other evidence), ROOT-relative; planning-root docs are inert . `engineer_run query verification.fingerprint {phaseDir} {file}...`, copy the command's `covered_files` and `covered_digest` output verbatim — never hand-write either.
 
 Create `.planning/phases/{phase_dir}/{phase_num}-VERIFICATION.md`:
 
@@ -798,7 +798,7 @@ _Verified: {timestamp}_
 _Verifier: Claude (verifier)_
 ```
 
-## Self-check the written status (#5118)
+## Self-check the written status 
 
 After writing VERIFICATION.md, read it back through its owner:
 
@@ -935,7 +935,7 @@ return <div>No messages</div>  // Always shows "no messages"
 - [ ] Gaps structured in YAML frontmatter (if gaps_found)
 - [ ] Deferred items structured in YAML frontmatter (if deferred items exist)
 - [ ] Re-verification metadata included (if previous existed)
-- [ ] fingerprint fields written via verification.fingerprint (#4155)
+- [ ] fingerprint fields written via verification.fingerprint 
 - [ ] VERIFICATION.md created with complete report
 - [ ] Results returned to orchestrator (NOT committed)
 </success_criteria>

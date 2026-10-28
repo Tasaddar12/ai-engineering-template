@@ -6,7 +6,7 @@ runs the same probe protocol the SPEC path uses and authors the predicates into 
 (ADR-857 Phase 6 — the *else branch* of the `<downstream_consumer>` SPEC-conditional lift). This is
 core workflow-body substrate — NOT the `PLAN_PRE_HOOKS_JSON contribution into planner` capability rail
 (D-03). Section absence is detected by the shared `spec-section` helper in the gate; this file holds the
-*run-the-probe* half so the capped plan-phase.md stays lean (#717/#1074 budget).
+*run-the-probe* half so the capped plan-phase.md stays lean (/ budget).
 
 ## 0. Gate — toggle + per-section absence (run first, in the orchestrator)
 
@@ -25,11 +25,11 @@ SPECLESS_FALLBACK=true; [[ "$SPECLESS_CFG" == "false" ]] && SPECLESS_FALLBACK=fa
 # source of truth for the canonical SPEC headings (suffix-tolerant) and table-row counting, replacing
 # ad-hoc awk (contract pinned by tests/spec-section.test.cjs). Resolve via the edge-probe install-dir
 # idiom; build only in a source checkout, else fail loud (never silently mis-detect).
-_GSD_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-_gsd_lib() { for _d in "$_GSD_RT/engineer/bin/lib" "$_GSD_RT/bin/lib" "$_GSD_RT/.claude/bin/lib" "$HOME/.claude/engineer/bin/lib" "$HOME/.claude/bin/lib"; do [ -f "$_d/$1" ] && { echo "$_d/$1"; return; }; done; }
-SPEC_SECTION_JS=$(_gsd_lib spec-section.cjs)
-if [ -z "$SPEC_SECTION_JS" ] && [ -f "$_GSD_RT/tsconfig.build.json" ] && [ -f "$_GSD_RT/src/spec-section.cts" ]; then
-  npm --prefix "$_GSD_RT" run build:lib 2>/dev/null || true; SPEC_SECTION_JS=$(_gsd_lib spec-section.cjs)
+_ENGINEER_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+_engineer_lib() { for _d in "$_ENGINEER_RT/engineer/bin/lib" "$_ENGINEER_RT/bin/lib" "$_ENGINEER_RT/.claude/bin/lib" "$HOME/.claude/engineer/bin/lib" "$HOME/.claude/bin/lib"; do [ -f "$_d/$1" ] && { echo "$_d/$1"; return; }; done; }
+SPEC_SECTION_JS=$(_engineer_lib spec-section.cjs)
+if [ -z "$SPEC_SECTION_JS" ] && [ -f "$_ENGINEER_RT/tsconfig.build.json" ] && [ -f "$_ENGINEER_RT/src/spec-section.cts" ]; then
+  npm --prefix "$_ENGINEER_RT" run build:lib 2>/dev/null || true; SPEC_SECTION_JS=$(_engineer_lib spec-section.cjs)
 fi
 [ -n "$SPEC_SECTION_JS" ] || { echo "ERROR: spec-section.cjs not found - reinstall Engineer or run build:lib." >&2; exit 1; }
 # supplied => header present AND >=1 row; missing $SPEC_FILE => supplied:false => fallback fires.
@@ -64,21 +64,21 @@ phase requirement IDs (`{phase_req_ids}`) instead of a SPEC interview. Leave `$C
 `EDGE_ABSENT=0` — a SPEC-supplied section is never re-run (section-level precedence).
 
 ```bash
-# Resolve the compiled edge-probe.cjs against the Engineer install dir via RUNTIME_DIR (#448) — NOT the
+# Resolve the compiled edge-probe.cjs against the Engineer install dir via RUNTIME_DIR  — NOT the
 # consuming project's git root — falling back to git toplevel / $HOME/.claude (spec-phase.md:198 idiom).
-_GSD_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+_ENGINEER_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 EDGE_PROBE_JS=$(for _c in \
-  "$_GSD_RT/engineer/bin/lib/edge-probe.cjs" "$_GSD_RT/bin/lib/edge-probe.cjs" \
-  "$_GSD_RT/.claude/bin/lib/edge-probe.cjs" "$HOME/.claude/engineer/bin/lib/edge-probe.cjs" \
+  "$_ENGINEER_RT/engineer/bin/lib/edge-probe.cjs" "$_ENGINEER_RT/bin/lib/edge-probe.cjs" \
+  "$_ENGINEER_RT/.claude/bin/lib/edge-probe.cjs" "$HOME/.claude/engineer/bin/lib/edge-probe.cjs" \
   "$HOME/.claude/bin/lib/edge-probe.cjs"; do [ -f "$_c" ] && { echo "$_c"; break; }; done)
 # Build ONLY inside a verified Engineer source checkout; --prefix pins npm so we never trigger the
 # consuming project's build:lib. Never silent-skip (RR-04) — fail loud if unresolvable.
 if [ -z "$EDGE_PROBE_JS" ]; then
-  if [ -f "$_GSD_RT/tsconfig.build.json" ] && [ -f "$_GSD_RT/src/edge-probe.cts" ]; then
-    npm --prefix "$_GSD_RT" run build:lib 2>/dev/null || true
+  if [ -f "$_ENGINEER_RT/tsconfig.build.json" ] && [ -f "$_ENGINEER_RT/src/edge-probe.cts" ]; then
+    npm --prefix "$_ENGINEER_RT" run build:lib 2>/dev/null || true
     EDGE_PROBE_JS=$(for _c in \
-      "$_GSD_RT/engineer/bin/lib/edge-probe.cjs" "$_GSD_RT/bin/lib/edge-probe.cjs" \
-      "$_GSD_RT/.claude/bin/lib/edge-probe.cjs" "$HOME/.claude/engineer/bin/lib/edge-probe.cjs" \
+      "$_ENGINEER_RT/engineer/bin/lib/edge-probe.cjs" "$_ENGINEER_RT/bin/lib/edge-probe.cjs" \
+      "$_ENGINEER_RT/.claude/bin/lib/edge-probe.cjs" "$HOME/.claude/engineer/bin/lib/edge-probe.cjs" \
       "$HOME/.claude/bin/lib/edge-probe.cjs"; do [ -f "$_c" ] && { echo "$_c"; break; }; done)
   fi
   [ -n "$EDGE_PROBE_JS" ] || { echo "ERROR: edge-probe.cjs not found — reinstall Engineer or run \`npm run build:lib\`." >&2; exit 1; }
@@ -86,7 +86,7 @@ fi
 
 # THE ONE DIVERGENCE (D-02): source requirements from THIS phase. Populate the heredoc from
 # {phase_req_ids}, pulling each requirement's text from REQUIREMENTS.md: {"id","text","shapes"?}.
-# mktemp suffix trick is BSD/GNU portable (#1520).
+# mktemp suffix trick is BSD/GNU portable .
 REQS_JSON=$(mktemp "${TMPDIR:-/tmp}/edge-probe-reqs-XXXXXX") && mv "$REQS_JSON" "${REQS_JSON}.json" && REQS_JSON="${REQS_JSON}.json" || exit 1
 cat > "$REQS_JSON" <<'JSON'
 [
@@ -124,12 +124,12 @@ fi
 `must_haves.truths` string); else auto-`resolved` (verification: backstop) → author it as a
 **structured flat-scalar marker** `{ statement: <the check>,
 verification: backstop }` in `must_haves.truths`, NOT a prose note (the verifier branches
-deterministically on the `verification: backstop` field; a parenthetical is unparseable — the #1110
-fragility; flat scalar `verification:` key, never a nested object, ADR-550 #1278). A `backstop` truth
+deterministically on the `verification: backstop` field; a parenthetical is unparseable — the 
+fragility; flat scalar `verification:` key, never a nested object, ADR-550 ). A `backstop` truth
 the verifier cannot confirm with explicit evidence abstains → `human_needed` (reason
-`insufficient_spec`), never a silent pass (#1154; `engineer/references/honest-verifier.md`). **Never
+`insufficient_spec`), never a silent pass (`engineer/references/honest-verifier.md`). **Never
 auto-dismiss** (a wrong dismissal is the exact silent failure this eliminates). An `unclassified` row
-stays **`unresolved`** (#1110) — never auto-resolved with backstop — and is surfaced to the planner as a flagged
+stays **`unresolved`** — never auto-resolved with backstop — and is surfaced to the planner as a flagged
 assumption. Pass `$COVERAGE` (+ the gate's `$SPECLESS_FALLBACK_DISABLED` note) into the planner
 prompt (Step 8). When `EDGE_ABSENT=0`, `$COVERAGE` is empty and this does not run.
 
@@ -162,8 +162,8 @@ changes (the fallback report, not the SPEC):
 
 - **Edges →** every resolved (verification: explicit) edge's acceptance criterion → `must_haves.truths` as a plain string;
   every resolved (verification: backstop) edge → `must_haves.truths` as a structured `{ statement, verification: backstop }`
-  marker (NOT prose; #1110/#1278), which abstains → `human_needed` at verify time when unconfirmed
-  (#1154); every `unresolved`/`unclassified` row → an explicit flagged assumption (never a silent drop).
+  marker (NOT prose;), which abstains → `human_needed` at verify time when unconfirmed
+  ; every `unresolved`/`unclassified` row → an explicit flagged assumption (never a silent drop).
 - **Prohibitions →** every kept prohibition → the `must_haves.prohibitions:` sibling block (NOT
   `truths`, ADR-550 D3) via the single `projectProhibitions` serializer (Hyrum — no second
   serializer), authored **descriptor-less** (no `check_*` scalar) so each disposes flagged-unverified.

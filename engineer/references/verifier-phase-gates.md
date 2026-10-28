@@ -2,15 +2,15 @@
 
 > Loaded eagerly by `agents/verifier.md` (`<required_reading>`). Carries the three
 > verification-time gates that lived in the retired `verify-phase` workflow
-> (#1892 / epic #1891 F7): decision-coverage validation (#2492), the test-quality audit,
-> and infrastructure-phase human-verification scoping (#2504) — plus the backstop-abstention
-> reporting contract (#3206). Run each gate at its named
+> ( / epic F7): decision-coverage validation , the test-quality audit,
+> and infrastructure-phase human-verification scoping — plus the backstop-abstention
+> reporting contract . Run each gate at its named
 > agent step; `engineer_run` is the launcher shim defined in the agent's own Step 1 block.
 
 ## verify_decisions — Decision Coverage Gate (run after Step 6, requirements coverage)
 
 <step name="verify_decisions">
-**Decision coverage validation gate (issue #2492).**
+**Decision coverage validation gate .**
 
 After requirements coverage, also check that each trackable CONTEXT.md
 `<decisions>` entry shows up somewhere in the shipped artifacts (plans,
@@ -33,7 +33,7 @@ no `<decisions>` block.
 ```bash
 GATE_CFG=$(engineer_run query config-get workflow.context_coverage_gate 2>/dev/null || echo "true")
 if [ "$GATE_CFG" != "false" ]; then
-  CONTEXT_PATH=$(ls "${PHASE_DIR}"/*-CONTEXT.md 2>/dev/null | head -1)  # #2962: not a for-glob (zsh aborts)
+  CONTEXT_PATH=$(ls "${PHASE_DIR}"/*-CONTEXT.md 2>/dev/null | head -1)  # : not a for-glob (zsh aborts)
   DECISION_RESULT=$(engineer_run query check.decision-coverage-verify "${PHASE_DIR}" "${CONTEXT_PATH}") && DECISION_EXIT=0 || DECISION_EXIT=$?
 fi
 ```
@@ -45,7 +45,7 @@ caller error about the phase directory (`reason` is `'phase directory not found'
 `'phase directory holds no plans'`), `total` and `honored` are `null` and
 `not_honored` is `[]`; nothing was checked, so there is no count to report.
 A non-zero `DECISION_EXIT` (`69` `UNAVAILABLE`: the gate
-could not read CONTEXT.md or the phase artifacts, #5170) is **not** "no decisions": record
+could not read CONTEXT.md or the phase artifacts) is **not** "no decisions": record
 `Decision coverage: not evaluated (the gate could not read its evidence)` in VERIFICATION.md
 and do not report counts.
 
@@ -180,7 +180,7 @@ All acceptance criteria are verifiable programmatically.
 
 **If the phase IS user-facing:** only flag items that genuinely require a human — per the Step 8 always/uncertain lists already in the agent. Do not invent steps.
 
-## Backstop abstention — reporting contract (#3206, companion to agent Step 3 item 5b)
+## Backstop abstention — reporting contract (companion to agent Step 3 item 5b)
 
 When a non-inferable (`verification: backstop`) truth abstains for lack of explicit evidence:
 

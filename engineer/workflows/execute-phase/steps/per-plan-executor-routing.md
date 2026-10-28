@@ -1,4 +1,4 @@
-# Per-plan executor routing (#1689)
+# Per-plan executor routing 
 
 Run for each plan, immediately before its `Agent()` dispatch in step 3. Sets
 `EXECUTOR_TYPE` so a plan can opt into a specialist executor instead of the
@@ -7,7 +7,7 @@ default `executor`. `plan_json` (the current plan's object from
 
 ## Contract
 
-- Default: `EXECUTOR_TYPE="executor"` — byte-identical to pre-#1689 dispatch.
+- Default: `EXECUTOR_TYPE="executor"` — byte-identical to pre- dispatch.
 - A plan opts into a specialist by declaring `agent_hint: <name>` in its PLAN.md
   frontmatter. The field reaches the orchestrator as `plan_json.agent_hint`
   (parsed by `phase-plan-index`; `null` when unset).
@@ -62,7 +62,7 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
-# Default-on; opt out with: gsd config-set workflow.agent_hint_routing false
+# Default-on; opt out with: engineer config-set workflow.agent_hint_routing false
 AGENT_HINT_ROUTING=$(engineer_run query config-get workflow.agent_hint_routing --raw 2>/dev/null || echo "true")
 
 EXECUTOR_TYPE="executor"
@@ -73,7 +73,7 @@ if [ "${AGENT_HINT_ROUTING:-true}" != "false" ]; then
   fi
 fi
 
-# #1689 v1 routes only the Agent()-based dispatch. On the orchestrator-worktree
+#  v1 routes only the Agent()-based dispatch. On the orchestrator-worktree
 # backend (process-spawn; no subagent_type) a resolved hint cannot be honored
 # yet — surface it so a set hint is never silently ignored.
 if [ "${ISOLATION:-}" = "orchestrator-worktree" ] && [ -n "${PLAN_HINT:-}" ]; then
@@ -94,7 +94,7 @@ modes). The `orchestrator-worktree` isolation backend spawns executors via a
 separate process path that has no `subagent_type` and is not routed in this
 release.
 
-## Checkpoint gate rule (#3370)
+## Checkpoint gate rule 
 
 Loaded with the routing resolution so the orchestrator reads it immediately
 before composing each dispatch prompt, in every isolation mode.
@@ -107,7 +107,7 @@ Only `gate="blocking-human"` always surfaces to a human, regardless of
 auto-mode. An unmet `<precondition>` checkpoint (executor step 0, `Blocked by:
 Precondition not met` — unmet `user_setup` step, missing env var, absent
 prior-phase artifact) reports `blocking-human` and therefore always surfaces
-to a human, in every mode (#3210): the missing prerequisite is a fact only a
+to a human, in every mode : the missing prerequisite is a fact only a
 human can establish, not a verification step to rubber-stamp.
 
 When composing the `Agent()` prompt, do NOT add text refusing or overriding

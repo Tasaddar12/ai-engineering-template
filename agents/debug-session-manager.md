@@ -33,7 +33,7 @@ Received from spawning orchestrator:
 - `tdd_mode` — boolean; true if TDD gate is active
 - `goal` — `find_root_cause_only` | `find_and_fix`
 - `specialist_dispatch_enabled` — boolean; true if specialist skill review is enabled
-- `resume` — boolean; present only on an orchestrator auto-resume re-spawn (#3448), accompanied by `resume_status` and `resume_next_action` (the checkpoint's `status`/`next_action` read from the debug file at resume time). When `resume: true`, any earlier checkpoint in the session was already answered — carry that disposition and the recorded next action into the Step 2 dispatch.
+- `resume` — boolean; present only on an orchestrator auto-resume re-spawn , accompanied by `resume_status` and `resume_next_action` (the checkpoint's `status`/`next_action` read from the debug file at resume time). When `resume: true`, any earlier checkpoint in the session was already answered — carry that disposition and the recorded next action into the Step 2 dispatch.
 </session_parameters>
 
 <process>
@@ -103,11 +103,11 @@ Agent(
 )
 ```
 
-**Foreground, blocking spawn — #4395.** `run_in_background: false` is REQUIRED, for the same
-reason `/debug` requires it when spawning this agent (#2196): Claude Code backgrounds
+**Foreground, blocking spawn — .** `run_in_background: false` is REQUIRED, for the same
+reason `/debug` requires it when spawning this agent : Claude Code backgrounds
 subagents by default, and only that flag makes the spawn return the debugger's structured header
 for Step 3 to classify. Backgrounded, Step 3 has nothing to inspect, so this agent returns
-`CONTINUE_REQUIRED`, the orchestrator auto-resumes (#2257/#3448), and the resumed manager spawns a
+`CONTINUE_REQUIRED`, the orchestrator auto-resumes , and the resumed manager spawns a
 SECOND debugger that races the first on `.planning/debug/{slug}.md`. Wait for it; do not background
 it, and do not poll for it. Never pass an agent id to `TaskOutput` — an agent id is not a task id.
 
@@ -117,7 +117,7 @@ only "spawn continuation agent" without naming a format, so they inherit this ru
 a flag written at each one — which is exactly why Step 2 must remain the only `Agent()` spawn
 literal in this file.
 
-**Never spawn the debugger through Bash — #5214.** The only way to start `debugger` is the Step 2
+**Never spawn the debugger through Bash — .** The only way to start `debugger` is the Step 2
 `Agent()` call above. A `Bash` command such as `claude --agent debugger …`, with or without
 `run_in_background`, starts a detached process that returns no structured header, so the checkpoint
 never advances. The Bash guard hook denies it (`debugger-cli-spawn`). If the `Agent` call itself fails,
@@ -125,7 +125,7 @@ stop and return that error to the orchestrator; do not improvise a shell spawn.
 
 Resolve the debugger model before spawning:
 ```bash
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then engineer_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then engineer_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f engineer_run; _G="$(command -v engineer_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; engineer_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving engineer_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok engineer_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
+_ENGINEER_SHIM_NAME="engineer_run"; _ENGINEER_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; ENGINEER_TOOLS="${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}"; _engineer_at() { for _p; do if [ -f "$_p" ]; then ENGINEER_TOOLS="$_p"; return 0; fi; done; return 1; }; _engineer_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"engineer-runtime"'*'}') return 0;; *) return 1;; esac; }; _engineer_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _engineer_at "$_h/engineer/bin/${_ENGINEER_SHIM_NAME}" && return 0; done; return 1; }; if _engineer_at "${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.claude/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.codex/engineer/bin/${_ENGINEER_SHIM_NAME}"; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif _engineer_homes; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif unset -f engineer_run; _G="$(command -v engineer_run)"; [ -n "$_G" ] && _engineer_id_ok "$_G"; then ENGINEER_TOOLS="$_G"; engineer_run() { "$ENGINEER_TOOLS" "$@"; }; else echo "ERROR: engineer_run not found at $ENGINEER_TOOLS and no identity-proving engineer_run is on PATH. Run: python -I bin/install.py --source <local-source> --ref <pinned-ref> --target <project-root> --host claude --local" >&2; exit 1; fi; ENGINEER_IDENTITY_STATUS=unverified; _engineer_id_ok engineer_run && ENGINEER_IDENTITY_STATUS=ok; export ENGINEER_IDENTITY_STATUS; [ "$ENGINEER_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$ENGINEER_TOOLS\" did not prove it is engineer-runtime - it is either a different package or an engineer-runtime older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-engineer_run.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${ENGINEER_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${ENGINEER_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
 debugger_model=$(engineer_run query resolve-model debugger 2>/dev/null | jq -r '.model' 2>/dev/null || true)
 ```
 
@@ -342,7 +342,7 @@ If user selects 3: proceed to Step 4 with fix = "not applied (guardrail rejected
 
 Read the resolved (or current) debug file to extract final Resolution values.
 
-**Commit before returning a terminal summary (#2568).** This agent owns the terminal path —
+**Commit before returning a terminal summary .** This agent owns the terminal path —
 it applies fixes, archives to `resolved/`, and returns the summary — but carried no commit
 step, so `commit_docs` was never consulted on the normal `/debug` flow and session docs
 were left untracked. Do this for **both** terminal shapes below, and **NOT** for

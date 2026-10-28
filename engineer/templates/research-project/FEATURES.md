@@ -60,7 +60,7 @@ Features that seem good but create problems.
 - **[Feature D] enhances [Feature A]:** [how they work together]
 - **[Feature E] conflicts with [Feature F]:** [why they're incompatible]
 
-## MVP Definition
+## Release Scope
 
 ### Launch With (v1)
 
@@ -139,9 +139,9 @@ Features to defer until product-market fit is established.
 - If A requires B, B must be in an earlier phase
 - Conflicts inform what NOT to combine in same phase
 
-**MVP Definition:**
+**Release Scope:**
 - Be ruthless about what's truly minimum
-- "Nice to have" is not MVP
+- "Nice to have" is outside the release scope
 - Launch with less, validate, then expand
 
 </guidelines>

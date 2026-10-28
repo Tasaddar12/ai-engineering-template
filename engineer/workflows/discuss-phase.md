@@ -1,4 +1,4 @@
-<!-- gsd:loop-host
+<!-- engineer:loop-host
 step: discuss
 points: discuss:pre, discuss:post
 agent-roles: orchestrator
@@ -19,7 +19,7 @@ You are a thinking partner, not an interviewer. The user is the visionary — yo
 
 <progressive_disclosure>
 **Per-mode bodies, templates, and the advisor flow are lazy-loaded** to keep
-this file under the discuss-phase byte budget (32000 bytes, #717; mirrors the agent size-budget convention). Read only the files needed for the current invocation:
+this file under the discuss-phase byte budget (32000 bytes; mirrors the agent size-budget convention). Read only the files needed for the current invocation:
 
 | When | Read |
 |---|---|
@@ -149,10 +149,10 @@ prompting.
 Phase number from argument (required).
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 _engineer_identity_ok() {
   [ -f "$1" ] || return 1
   [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
@@ -195,9 +195,9 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.phase-op ${GSD_WS:+--ws=${GSD_WS##* }} "${PHASE}"); [[ "$INIT" == @file:* ]] && INIT=$(cat "${INIT#@file:}")
-AGENT_SKILLS_ADVISOR=$(engineer_run query agent-skills gsd-advisor-researcher ${GSD_WS:+--ws=${GSD_WS##* }})
+ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
+INIT=$(engineer_run query init.phase-op ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} "${PHASE}"); [[ "$INIT" == @file:* ]] && INIT=$(cat "${INIT#@file:}")
+AGENT_SKILLS_ADVISOR=$(engineer_run query agent-skills advisor-researcher ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 ```
 
 Parse JSON for: `commit_docs`, `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `has_research`, `has_context`, `has_plans`, `has_verification`, `plan_count`, `roadmap_exists`, `planning_exists`, `has_spec`, `spec_path`, `response_language`.
@@ -207,7 +207,7 @@ Parse JSON for: `commit_docs`, `phase_found`, `phase_dir`, `phase_number`, `phas
 **If `phase_found` is false:**
 ```
 Phase [X] not found in roadmap.
-Use /progress ${GSD_WS} to see available phases.
+Use /progress ${ENGINEER_WS} to see available phases.
 ```
 Exit workflow.
 
@@ -509,11 +509,11 @@ Created: .planning/phases/${PADDED_PHASE}-${SLUG}/${PADDED_PHASE}-CONTEXT.md
 
 `/clear` then:
 
-`/plan-phase ${PHASE} ${GSD_WS}`
+`/plan-phase ${PHASE} ${ENGINEER_WS}`
 
 ---
 
-**Also available:** `--chain` for auto plan+execute after; `/plan-phase ${PHASE} --skip-research ${GSD_WS}` to plan without research; `/ui-phase ${PHASE} ${GSD_WS}` for UI design contracts; review/edit CONTEXT.md before continuing.
+**Also available:** `--chain` for auto plan+execute after; `/plan-phase ${PHASE} --skip-research ${ENGINEER_WS}` to plan without research; `/ui-phase ${PHASE} ${ENGINEER_WS}` for UI design contracts; review/edit CONTEXT.md before continuing.
 ```
 </step>
 

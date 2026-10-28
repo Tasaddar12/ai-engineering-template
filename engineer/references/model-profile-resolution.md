@@ -40,7 +40,7 @@ Agent(
 
 Substitute the field **this workflow bound** — never a generic placeholder name.
 
-**#2517 — omit, do not emit an empty model.** When the resolved value is `"inherit"` or
+** — omit, do not emit an empty model.** When the resolved value is `"inherit"` or
 empty, **omit the `model=` parameter entirely**:
 
 ```
@@ -61,7 +61,7 @@ runtime has no native tier aliases; an agent type absent from the profile table 
 same empty-string path, because it has no tier for the earlier steps to resolve. Emitting
 either value verbatim fails the spawn on every runtime without native tier aliases.
 
-**#2684 — substitute a field your workflow actually bound.** `model="{…}"` must name a key
+** — substitute a field your workflow actually bound.** `model="{…}"` must name a key
 your own `init.*` payload emits, a shell variable you assigned, or a field on your declared
 parse line. A placeholder that resolves to nothing does not fail loudly — the orchestrator
 silently invents a value, which is the invisible partial application ADR-1411 prohibits.

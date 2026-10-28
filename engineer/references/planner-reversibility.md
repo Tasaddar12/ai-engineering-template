@@ -1,7 +1,7 @@
 # Planner: Reversibility Tagging
 
 > Loaded by `planner`. Owns the canonical reversibility taxonomy — the
-> single source of truth for the three ratings. Issue #1951, *The Pragmatic
+> single source of truth for the three ratings. Issue , *The Pragmatic
 > Programmer* Topic 15 ("Reversibility": *there are no final decisions*).
 
 Good architecture keeps decisions cheap to undo. The dangerous ones are the
@@ -142,5 +142,5 @@ same rule; if they ever diverge, this file wins.
 - `engineer/references/checkpoints.md` → `checkpoint:decision` — the checkpoint
   mechanism this feature reuses. No new checkpoint machinery is introduced.
 - `engineer/references/planner-preconditions.md` — the sibling contract element
-  (#1949): preconditions guard *implementation* assumptions, reversibility
+  : preconditions guard *implementation* assumptions, reversibility
   ratings guard *decision* risk.

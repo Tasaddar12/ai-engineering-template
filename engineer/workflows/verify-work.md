@@ -1,4 +1,4 @@
-<!-- gsd:loop-host
+<!-- engineer:loop-host
 step: verify
 points: verify:pre, verify:post
 agent-roles: orchestrator
@@ -38,10 +38,10 @@ No Pass/Fail buttons. No severity questions. Just: "Here's what should happen. D
 If $ARGUMENTS contains a phase number, load context:
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 _engineer_identity_ok() {
   [ -f "$1" ] || return 1
   [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
@@ -84,14 +84,14 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
-GSD_WS=""
-echo "$GSD_ARGS" | grep -qE -- '--ws[[:space:]]+[A-Za-z0-9._-]+' && GSD_WS=$(echo "$GSD_ARGS" | grep -oE -- '--ws[[:space:]]+[A-Za-z0-9._-]+')
-PHASE_ARG=$(echo "$GSD_ARGS" | sed -E 's/--ws[[:space:]]+[A-Za-z0-9._-]+//g' | xargs)
+ENGINEER_WS=""
+echo "$ENGINEER_ARGS" | grep -qE -- '--ws[[:space:]]+[A-Za-z0-9._-]+' && ENGINEER_WS=$(echo "$ENGINEER_ARGS" | grep -oE -- '--ws[[:space:]]+[A-Za-z0-9._-]+')
+PHASE_ARG=$(echo "$ENGINEER_ARGS" | sed -E 's/--ws[[:space:]]+[A-Za-z0-9._-]+//g' | xargs)
 
-INIT=$(engineer_run query init.verify-work "${PHASE_ARG}" ${GSD_WS:+--ws=${GSD_WS##* }})
+INIT=$(engineer_run query init.verify-work "${PHASE_ARG}" ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_PLANNER=$(engineer_run query agent-skills planner ${GSD_WS:+--ws=${GSD_WS##* }})
-AGENT_SKILLS_CHECKER=$(engineer_run query agent-skills plan-checker ${GSD_WS:+--ws=${GSD_WS##* }})
+AGENT_SKILLS_PLANNER=$(engineer_run query agent-skills planner ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
+AGENT_SKILLS_CHECKER=$(engineer_run query agent-skills plan-checker ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 ```
 
 Parse JSON for: `planner_model`, `checker_model`, `commit_docs`, `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `has_verification`, `uat_path`, `state_path`, `roadmap_path`, `response_language`.
@@ -199,7 +199,7 @@ Provide a phase number to start testing (e.g., /verify-work 4)
 Continue to `create_uat_file`.
 </step>
 
-<!-- gsd:section id="automated-ui-verification" when="state:ui-phase-active" -->
+<!-- engineer:section id="automated-ui-verification" when="state:ui-phase-active" -->
 If `section_manifest` is `null` or `"automated-ui-verification"` is in its `included` list: read and execute `engineer/workflows/verify-work/steps/automated-ui-verification.md`. Otherwise skip — do not read the file.
 <!-- /section -->
 
@@ -214,7 +214,7 @@ ls "$phase_dir"/*-SUMMARY.md 2>/dev/null || true
 
 Read each SUMMARY.md to extract testable deliverables.
 
-**Commit-claim reconciliation (#3968).** A SUMMARY's `commits:` frontmatter is a MEASURED
+**Commit-claim reconciliation .** A SUMMARY's `commits:` frontmatter is a MEASURED
 number (the executor derives it from its on-disk plan commit ledger and records the base as
 `plan_head_before:`), and this is where that claim is checked against reality with the SAME
 instrument — the executor's own narration is never the last word. For each `*-SUMMARY.md`:
@@ -224,9 +224,9 @@ CLAIMED=$(grep -oE '^commits: [0-9]+' "$SUMMARY_FILE" | grep -oE '[0-9]+' || ech
 ACTUAL=$(git rev-list --count "${BASE}"..HEAD)
 AFTER=$(grep -oE '^plan_head_after: [0-9a-f]{7,40}' "$SUMMARY_FILE" | awk '{print $2}')
 ```
-- A `commits: absent` or `plan_head_before: absent` SUMMARY (pre-#3968 legacy) is reported as
+- A `commits: absent` or `plan_head_before: absent` SUMMARY (pre- legacy) is reported as
   a WARNING with the measured git state, not a mismatch.
-- **Bounded reconciliation (#4670).** A SUMMARY carrying `plan_head_after:` (the executor's
+- **Bounded reconciliation .** A SUMMARY carrying `plan_head_after:` (the executor's
   HEAD at its measurement moment — after the last task commit, before the SUMMARY commit) is
   reconciled against the plan's OWN window:
 ```bash
@@ -236,13 +236,13 @@ if git merge-base --is-ancestor "$AFTER" HEAD 2>/dev/null \
 fi
 ```
   Consistent → done. Anything else is a **BLOCKER** — `commit_claim_mismatch` with both
-  numbers and the SUMMARY path: commits claimed but never made (#3968), task commits lost
+  numbers and the SUMMARY path: commits claimed but never made , task commits lost
   after the fact, or the plan's recorded window rewritten afterwards (a rebase/amend/cherry-pick
   of those commits makes `$AFTER` a non-ancestor — recount that plan's commits manually
   before treating it as a genuine mismatch). The unbounded `${BASE}..HEAD` count is NOT
   evidence either way: it grows with every later plan's commits and execute-phase's own
-  phase-completion commit, so an honest plan would read as a mismatch (#4670).
-- **Legacy fallback (#4670).** A SUMMARY with a base but no `plan_head_after:` (pre-#4670)
+  phase-completion commit, so an honest plan would read as a mismatch .
+- **Legacy fallback .** A SUMMARY with a base but no `plan_head_after:` (pre-)
   cannot be bounded to its own window — report the measured `${BASE}..HEAD` count as a
   **WARNING** with the SUMMARY's task-commit list for manual counting. The old
   `ACTUAL == CLAIMED` / `ACTUAL == CLAIMED + 1` tolerance was a guess that later plans'
@@ -250,7 +250,7 @@ fi
 </step>
 
 <step name="extract_tests">
-**Coverage-aware deterministic classification (#1602).** Before deriving checkpoints from prose, classify each SUMMARY's structured `coverage:` block. For each `*-SUMMARY.md`:
+**Coverage-aware deterministic classification .** Before deriving checkpoints from prose, classify each SUMMARY's structured `coverage:` block. For each `*-SUMMARY.md`:
 
 ```bash
 COVERAGE=$(engineer_run query uat.classify-coverage --summary "$SUMMARY_FILE")
@@ -258,7 +258,7 @@ COVERAGE=$(engineer_run query uat.classify-coverage --summary "$SUMMARY_FILE")
 
 Read the JSON result (`mode`, `total`, `all_auto_covered`, `auto_passed[]`, `present[]`, `errors[]`):
 
-- **`mode: legacy`** (no `coverage:` block, OR a malformed block that could not be parsed) → **fall through** to the prose-based extraction below. Behavior is byte-identical to pre-#1602 for un-migrated SUMMARYs; do NOT auto-pass anything. If `errors[]` is non-empty (a `malformed_block`), note the broken coverage block to the user before proceeding so the SUMMARY can be fixed.
+- **`mode: legacy`** (no `coverage:` block, OR a malformed block that could not be parsed) → **fall through** to the prose-based extraction below. Behavior is byte-identical to pre- for un-migrated SUMMARYs; do NOT auto-pass anything. If `errors[]` is non-empty (a `malformed_block`), note the broken coverage block to the user before proceeding so the SUMMARY can be fixed.
 - **`mode: coverage`** →
   - Each `auto_passed[]` entry is recorded in UAT.md as `result: pass`, `source: automated` (see `create_uat_file`) — **do not present it as a checkpoint.** It is deterministically covered by the passing tests in its `verification` refs.
   - Each `present[]` entry becomes a human UAT checkpoint: use its `description` as the test and carry its `rationale` into the checkpoint context. The `reason` (`human_judgment` / `no_verification` / `verification_not_passing` / `validation_failed`) explains why a human is needed.
@@ -267,7 +267,7 @@ Read the JSON result (`mode`, `total`, `all_auto_covered`, `auto_passed[]`, `pre
 
 The cold-start smoke test injection below still applies in `coverage` mode.
 
-**Verify:pre produced-artefact seam (#3866).** If `VERIFY_PRE_PRODUCED` (recorded in
+**Verify:pre produced-artefact seam .** If `VERIFY_PRE_PRODUCED` (recorded in
 `verify_pre_hooks`) is empty or absent, skip this paragraph entirely — derivation is unchanged.
 Otherwise, for each artefact name in it, locate the artefact the producing step wrote under
 `$PHASE_DIR` and merge its checkpoints into the test list **additively**.
@@ -372,7 +372,7 @@ result: [pending]
 
 ...
 
-**Coverage auto-passed entries (#1602):** for each `auto_passed[]` entry from `uat classify-coverage`, write a Tests entry pre-resolved as automated — these are NOT presented to the user:
+**Coverage auto-passed entries :** for each `auto_passed[]` entry from `uat classify-coverage`, write a Tests entry pre-resolved as automated — these are NOT presented to the user:
 
 ```
 ### N. [coverage description]
@@ -477,7 +477,7 @@ Note: Blocked tests do NOT go into the Gaps section (they aren't code issues —
 **If response indicates a deferred follow-up (NOT a current-phase blocker):**
 - "later", "future", "follow-up", "next version", "out of scope", "nice to have", "not now", "defer", "down the road", "separate phase", "phase 2"
 
-These are future-work ideas, not code issues for the current phase. Capture them WITHOUT creating a gap plan (#1921 — a deferred follow-up must never become a blocking gap or spawn a fix plan):
+These are future-work ideas, not code issues for the current phase. Capture them WITHOUT creating a gap plan (a deferred follow-up must never become a blocking gap or spawn a fix plan):
 
 Update Tests section:
 ```
@@ -517,7 +517,7 @@ severity: {inferred}
 
 Append to Gaps section (structured YAML for plan-phase --gaps):
 ```yaml
-- gap_id: G-{phase}-{N}        # Stable id (phase + test number) — gap-closure plans tag it in their frontmatter so verify-work can reconcile resolved gaps on resume (#1921).
+- gap_id: G-{phase}-{N}        # Stable id (phase + test number) — gap-closure plans tag it in their frontmatter so verify-work can reconcile resolved gaps on resume .
   truth: "{expected behavior from test}"
   status: failed
   reason: "User reported: {verbatim user response}"
@@ -537,7 +537,7 @@ If no more tests → Go to `complete_session`
 </step>
 
 <step name="reconcile_gaps">
-**Reconcile diagnosed gaps against completed gap-closure plans (#1921):** when verify-work resumes after `/execute-phase --gaps-only`, UAT `## Gaps` entries still read `status: failed` even though their fix plans already executed — without reconciliation they'd be re-diagnosed as fresh blockers. For each `status: failed` gap with a `*-PLAN.md` whose `gap_ids` names it AND a matching `*-SUMMARY.md`, mark it `resolved` (with `resolved_by`/`resolved_at`) in place; otherwise leave it `failed`. Resolved gaps are never re-diagnosed or re-planned; a later regression gets a fresh `gap_id`, not a reopened old one.
+**Reconcile diagnosed gaps against completed gap-closure plans :** when verify-work resumes after `/execute-phase --gaps-only`, UAT `## Gaps` entries still read `status: failed` even though their fix plans already executed — without reconciliation they'd be re-diagnosed as fresh blockers. For each `status: failed` gap with a `*-PLAN.md` whose `gap_ids` names it AND a matching `*-SUMMARY.md`, mark it `resolved` (with `resolved_by`/`resolved_at`) in place; otherwise leave it `failed`. Resolved gaps are never re-diagnosed or re-planned; a later regression gets a fresh `gap_id`, not a reopened old one.
 
 Exact YAML shape and the announcement line: `engineer/workflows/verify-work/detail/elaboration.md` § 1.
 </step>
@@ -556,15 +556,15 @@ Exact resume-announcement wording: `engineer/workflows/verify-work/detail/elabor
 <step name="complete_session">
 **Complete testing:**
 
-**Count results** (for routing below — the completion verb computes the persisted `status` itself, #5105 R1):
+**Count results** (for routing below — the completion verb computes the persisted `status` itself, R1):
 - `pending_count`: tests with `result: [pending]`
 - `blocked_count`: tests with `result: blocked`
 - `skipped_no_reason`: tests with `result: skipped` and no `reason` field
-- `unresolved_issues`: tests with `result: issue` that are NOT a verified gap resolution (#4983) —
+- `unresolved_issues`: tests with `result: issue` that are NOT a verified gap resolution —
   same criterion `phase uat-passed` uses (`src/uat-predicate.cts`). Exact definition:
   `engineer/workflows/verify-work/detail/elaboration.md` § 4.
 
-Run the completion verb — it independently computes the final status (`complete`/`partial`) from the same rows, clears `## Current Test`, and writes + commits ONLY when something material changed (a session whose UAT was already complete and covered must leave the report fresh, #4981):
+Run the completion verb — it independently computes the final status (`complete`/`partial`) from the same rows, clears `## Current Test`, and writes + commits ONLY when something material changed (a session whose UAT was already complete and covered must leave the report fresh):
 
 ```bash
 engineer_run query uat.complete-session "$uat_path" --message "test({phase_num}): complete UAT - {passed} passed, {issues} issues"
@@ -572,7 +572,7 @@ engineer_run query uat.complete-session "$uat_path" --message "test({phase_num})
 
 `changed: false` → announce that the session was already complete and nothing was written or committed. `changed: true` → the UAT file (frontmatter `status`, `updated`, `## Current Test`) was written and committed in one step.
 
-**If the UAT file has a non-empty `## Deferred Follow-Ups` section,** those items are currently visible only inside this phase's `*-UAT.md` — offer to promote them to the roadmap backlog so they stay visible at the project level (#4546; reuses the exact entry mechanism `next.md`'s `prior_phase_completeness` step uses for plans-without-summaries):
+**If the UAT file has a non-empty `## Deferred Follow-Ups` section,** those items are currently visible only inside this phase's `*-UAT.md` — offer to promote them to the roadmap backlog so they stay visible at the project level (reuses the exact entry mechanism `next.md`'s `prior_phase_completeness` step uses for plans-without-summaries):
 
 ```
 Deferred follow-ups recorded: {N}
@@ -624,20 +624,20 @@ Present summary:
 [List from Issues section]
 ```
 
-**If issues > 0:** (reads `unresolved_issues` from "Count results" above, #4983 — not the raw
+**If issues > 0:** (reads `unresolved_issues` from "Count results" above, — not the raw
 `issues` count) Proceed to `diagnose_issues`
 
 **If issues == 0:** (again `unresolved_issues == 0` — including when the raw `issues` count is
-nonzero but every one is a verified gap resolution, #4983)
+nonzero but every one is a verified gap resolution)
 
 ```bash
 VERIFY_POST_HOOKS_JSON=$(engineer_run loop render-hooks verify:post --after-fingerprint "$PHASE_DIR" --raw)
 SECURITY_FILE=$(ls "${PHASE_DIR}"/*-SECURITY.md 2>/dev/null | head -1)
 ```
 
-**Generic step dispatch:** dispatch every `kind == "step"` hook from `VERIFY_POST_HOOKS_JSON` per @~/.claude/engineer/references/loop-hook-dispatch.md (skip silently when none). Each step is advisory and best-effort — honor `onError` and continue. The secure-phase handling below is an additional specialization of one such hook, not a replacement for the generic dispatch. `--after-fingerprint "$PHASE_DIR"` (#5105) moves a step whose declared artifact already exists in `$PHASE_DIR` into `skippedHooks` instead of `activeHooks` — execute-phase already dispatched it before its own fingerprint (`execute-phase.md:1202`), so this re-dispatch is a no-op for that step and is not repeated here.
+**Generic step dispatch:** dispatch every `kind == "step"` hook from `VERIFY_POST_HOOKS_JSON` per @~/.claude/engineer/references/loop-hook-dispatch.md (skip silently when none). Each step is advisory and best-effort — honor `onError` and continue. The secure-phase handling below is an additional specialization of one such hook, not a replacement for the generic dispatch. `--after-fingerprint "$PHASE_DIR"`  moves a step whose declared artifact already exists in `$PHASE_DIR` into `skippedHooks` instead of `activeHooks` — execute-phase already dispatched it before its own fingerprint (`execute-phase.md:1202`), so this re-dispatch is a no-op for that step and is not repeated here.
 
-Resolve whether the secure-phase step hook is enabled: an entry with `kind == "step"` and `ref.skill == "secure-phase"` present in `activeHooks` OR `skippedHooks` of `VERIFY_POST_HOOKS_JSON` both count as enabled. `--after-fingerprint` moves this hook into `skippedHooks` once its declared artifact (`SECURITY.md`) already exists in `$PHASE_DIR` (#5105) — the hook is still enabled, only its re-dispatch is skipped. Each `skippedHooks` entry carries `capId`, `kind`, and `ref.skill` for exactly this resolution.
+Resolve whether the secure-phase step hook is enabled: an entry with `kind == "step"` and `ref.skill == "secure-phase"` present in `activeHooks` OR `skippedHooks` of `VERIFY_POST_HOOKS_JSON` both count as enabled. `--after-fingerprint` moves this hook into `skippedHooks` once its declared artifact (`SECURITY.md`) already exists in `$PHASE_DIR`  — the hook is still enabled, only its re-dispatch is skipped. Each `skippedHooks` entry carries `capId`, `kind`, and `ref.skill` for exactly this resolution.
 
 If the secure-phase step hook is enabled AND `SECURITY_FILE` is empty, dispatch the registry-provided skill stem:
 
@@ -671,12 +671,12 @@ If `SECURITY_FILE` exists — regardless of whether the secure-phase step hook s
 
 If the secure-phase step hook is not enabled (absent from both `activeHooks` and `skippedHooks`) OR (`SECURITY_FILE` exists AND `threats_open` is `0`):
 
-If execution verification is waiting only on human UAT and this session recorded zero issues, canonicalize the report before the shared completion predicate. (#4663) Zero issues is NOT pass evidence on its own — blocked rows are not issues by this workflow's own rule, so a session that observed nothing (0 passed / 0 issues / N blocked) must NOT flip the report. The flip runs the SAME UAT-row predicate the phase-close uses, in its `--uat-only` form: it skips the verification-status blockers (the report still reads `human_needed` at this point — the full predicate could never pass here), and `passed` means at least one UAT check passed with no row pending/blocked/failed or skipped without a reason. The flagged transition-gate call below stays the final say on canonical verification:
+If execution verification is waiting only on human UAT and this session recorded zero issues, canonicalize the report before the shared completion predicate. Zero issues is NOT pass evidence on its own — blocked rows are not issues by this workflow's own rule, so a session that observed nothing (0 passed / 0 issues / N blocked) must NOT flip the report. The flip runs the SAME UAT-row predicate the phase-close uses, in its `--uat-only` form: it skips the verification-status blockers (the report still reads `human_needed` at this point — the full predicate could never pass here), and `passed` means at least one UAT check passed with no row pending/blocked/failed or skipped without a reason. The flagged transition-gate call below stays the final say on canonical verification:
 
 ```bash
 PHASE_DIR=$(printf '%s' "$INIT" | jq -r '.phase_dir // empty')
 VERIFICATION_FILE=$(engineer_run query verification.resolve-file "$PHASE_DIR" --raw 2>/dev/null)
-# #5118: stderr kept; an out-of-set report status is a hard error, never "no result".
+# : stderr kept; an out-of-set report status is a hard error, never "no result".
 VERIFICATION_STATUS=$(engineer_run query verification.status "$PHASE_DIR") || { echo "verification.status refused this phase's report — see the error above; fix the report before re-running /verify-work {phase}." >&2; exit 1; }
 VERIFICATION_STATUS_VALUE=$(printf '%s' "$VERIFICATION_STATUS" | jq -r '.status')
 VERIFICATION_ROUTE=$(printf '%s' "$VERIFICATION_STATUS" | jq -r '.route')
@@ -684,7 +684,7 @@ NEXT_COMMAND=$(printf '%s' "$VERIFICATION_STATUS" | jq -r '.next_command')
 IMPLEMENTATION_COMPLETE=$(printf '%s' "$INIT" | jq -r '.phase_completion.implementation_complete // false')
 PHASE_VERIFICATION_STATUS="$VERIFICATION_STATUS_VALUE"
 if [ "$VERIFICATION_STATUS_VALUE" = "human_needed" ]; then
-  # #5170: exit 0 and exit 1 are VERDICTS (1 = the predicate says not passed) — the JSON on stdout is
+  # : exit 0 and exit 1 are VERDICTS (1 = the predicate says not passed) — the JSON on stdout is
   # authoritative. Any other status, or exit 1 with nothing on stdout (an error()), means it could not run.
   UAT_PRECHECK=$(engineer_run phase uat-passed "{phase}" --uat-only) && UAT_EXIT=0 || UAT_EXIT=$?
   if [ "$UAT_EXIT" -gt 1 ] || { [ "$UAT_EXIT" -eq 1 ] && [ -z "$UAT_PRECHECK" ]; }; then echo "phase uat-passed could not run (exit $UAT_EXIT) — see the error above." >&2; exit 1; fi
@@ -701,22 +701,22 @@ fi
 
 Run the owner's route — the ONE verification action — here when `VERIFICATION_ROUTE` is
 `execute-phase` AND the report can actually be regenerated: `PHASE_VERIFICATION_STATUS` is `stale`
-(#4682/#5118), or it is `missing` and `IMPLEMENTATION_COMPLETE` is `true` (every plan has a
+, or it is `missing` and `IMPLEMENTATION_COMPLETE` is `true` (every plan has a
 SUMMARY.md, so execute-phase would resume straight at the verification gates — the verify step
 never ran on an executed phase). A `missing` report on a phase that is NOT fully executed does NOT
 dispatch the step: the code review, regression gate and verifier have nothing complete to verify
 there, so fall through to the completion predicate below, which blocks with the owner's own
-`NEXT_COMMAND` (execute-phase) exactly as before #5118. This workflow never rewrites VERIFICATION.md
-itself (its only write is the canonicalization, #4663).
+`NEXT_COMMAND` (execute-phase) exactly as before . This workflow never rewrites VERIFICATION.md
+itself (its only write is the canonicalization).
 Load the step's inputs through the SAME bundle execute-phase loads, then include the step:
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-EXECUTE_INIT=$(engineer_run query init.execute-phase "{phase}" ${GSD_WS:+--ws=${GSD_WS##* }})
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
+ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
+EXECUTE_INIT=$(engineer_run query init.execute-phase "{phase}" ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$EXECUTE_INIT" == @file:* ]]; then EXECUTE_INIT=$(cat "${EXECUTE_INIT#@file:}"); fi
 for _k in phase_dir phase_number verifier_model phase_req_ids requirements_path section_manifest response_language; do
   printf '%s=%s\n' "$_k" "$(printf '%s' "$EXECUTE_INIT" | jq -c ".${_k}")"
@@ -738,7 +738,7 @@ NEXT_COMMAND=$(printf '%s' "$VERIFICATION_STATUS" | jq -r '.next_command')
 Otherwise, check the shared UAT-plus-verification completion predicate before transition:
 
 ```bash
-# #5170: exit 0 and exit 1 are VERDICTS (1 = not passed) — read the JSON either way. Any other status,
+# : exit 0 and exit 1 are VERDICTS (1 = not passed) — read the JSON either way. Any other status,
 # or exit 1 with nothing on stdout (an error()), means the command could not run: abort.
 PHASE_COMPLETE=$(engineer_run phase uat-passed "{phase}" --require-verification) && PHASE_COMPLETE_EXIT=0 || PHASE_COMPLETE_EXIT=$?
 if [ "$PHASE_COMPLETE_EXIT" -gt 1 ] || { [ "$PHASE_COMPLETE_EXIT" -eq 1 ] && [ -z "$PHASE_COMPLETE" ]; }; then echo "phase uat-passed could not run (exit $PHASE_COMPLETE_EXIT) — see the error above." >&2; exit 1; fi
@@ -813,23 +813,23 @@ When UAT testing found issues, this sub-flow (diagnose_issues -> plan_gap_closur
 </step>
 
 <step name="plan_gap_closure">
-Spawn planner in --gaps mode against the UAT (with diagnoses), `{state_path}` (Project State), and `{roadmap_path}` (Roadmap). Each created PLAN.md MUST carry `gap_closure: true` and `gap_ids: [...]` in its frontmatter (#1921) so a later verify-work resume can reconcile it.
+Spawn planner in --gaps mode against the UAT (with diagnoses), `{state_path}` (Project State), and `{roadmap_path}` (Roadmap). Each created PLAN.md MUST carry `gap_closure: true` and `gap_ids: [...]` in its frontmatter so a later verify-work resume can reconcile it.
 
-<!-- gsd:protected -->
+<!-- engineer:protected -->
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
 PLANNING COMPLETE proceeds to verify_gap_plans; PLANNING INCONCLUSIVE reports and offers manual intervention.
 </step>
 
 <step name="verify_gap_plans">
-Spawn plan-checker against the fix plans (iteration_count starts at 1), model="{checker_model}" (omit on inherit/empty, #2517).
+Spawn plan-checker against the fix plans (iteration_count starts at 1), model="{checker_model}" (omit on inherit/empty).
 
-<!-- gsd:protected -->
+<!-- engineer:protected -->
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
 On return:
-- **VERIFICATION PASSED:** If the return lists an entry whose severity is BLOCKER or WARNING, in the YAML issues block or listed in prose (a mention such as "no warnings" or a zero count is not an entry), handle it as ISSUES FOUND below, counting the prose entries as BLOCKER/WARNING entries; the sentinel never decides alone, and an entry with a missing or unrecognized severity counts as a BLOCKER (#5578). Otherwise proceed to `present_ready`
-- **ISSUES FOUND:** Count BLOCKER + WARNING entries in the YAML issues block; an entry whose severity is missing or unrecognized counts as a BLOCKER (fail closed). If zero — every entry is explicitly INFO — display `ℹ advisory — {dimension}: {description}` per entry and proceed to `present_ready`; INFO is advisory and never enters the loop (#3724). Otherwise proceed to `revision_loop`
+- **VERIFICATION PASSED:** If the return lists an entry whose severity is BLOCKER or WARNING, in the YAML issues block or listed in prose (a mention such as "no warnings" or a zero count is not an entry), handle it as ISSUES FOUND below, counting the prose entries as BLOCKER/WARNING entries; the sentinel never decides alone, and an entry with a missing or unrecognized severity counts as a BLOCKER . Otherwise proceed to `present_ready`
+- **ISSUES FOUND:** Count BLOCKER + WARNING entries in the YAML issues block; an entry whose severity is missing or unrecognized counts as a BLOCKER (fail closed). If zero — every entry is explicitly INFO — display `ℹ advisory — {dimension}: {description}` per entry and proceed to `present_ready`; INFO is advisory and never enters the loop . Otherwise proceed to `revision_loop`
 
 Exact Agent() prompt fields: `engineer/workflows/verify-work/detail/elaboration.md` § 2.
 </step>
@@ -855,7 +855,7 @@ the alternatives rather than applying or working around it. Full contract:
 
 Do NOT replan from scratch unless issues are fundamental.
 
-<!-- gsd:protected -->
+<!-- engineer:protected -->
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
 **If the planner returns `## REVISION_CONFLICT`:** do NOT increment `iteration_count` and do NOT

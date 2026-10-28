@@ -87,7 +87,7 @@ Abstention is **model-tier dependent** and this is a standing cost, not an assum
   over-abstain on a real spec-determined bug; the weakest tier was flag-deaf) and they name exactly
   the failure modes the over-abstention guard and the capable-tier requirement defend against.
 - **Tag-precision coupling.** Quality is bounded by the edge-probe's `backstop` recall/precision — a
-  false non-inferable flag causes over-abstention. Positive coupling: improving the probe (#1110)
+  false non-inferable flag causes over-abstention. Positive coupling: improving the probe 
   improves this for free. It adds no independent burden.
 - **Explicit non-goals.** Does NOT identify the omitted rule; does NOT recalibrate decisive verdicts;
   does NOT defend against *malicious compliance* (a self-graded review rationalizing away its own
@@ -96,10 +96,10 @@ Abstention is **model-tier dependent** and this is a standing cost, not an assum
 
 ## Distinct from neighbours
 
-- **vs `PRESENT_BEHAVIOR_UNVERIFIED` (#966 axis):** that is the *inferable-but-unobserved* case — the
+- **vs `PRESENT_BEHAVIOR_UNVERIFIED` ( axis):** that is the *inferable-but-unobserved* case — the
   truth **can** be verified from the spec but was shortcut-passed on symbol presence; the fix is to
   demand behavioral evidence. Honest-verifier is the *non-inferable* case — the truth **cannot** be
   verified from the spec at all; the fix is to abstain and route to a held-out test. Orthogonal axes
   (insufficient *evidence* vs insufficient *spec*); both feed the same `human_needed` sink.
-- **vs prohibition judgment-tier (#644):** that disposes **must-NOT** constraints; honest-verifier
+- **vs prohibition judgment-tier :** that disposes **must-NOT** constraints; honest-verifier
   disposes **non-inferable positive truths**. Opposite polarity, same never-silent disposition.
