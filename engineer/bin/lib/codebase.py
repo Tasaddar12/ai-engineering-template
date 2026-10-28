@@ -249,6 +249,7 @@ def command(args, action):
         from .planning import safe
         directory = records.planning()/'codebase'
         data = load_json(safe(directory/'.freshness.json'), {'maps': {}})
+        settings = config.load()
         result = []
         for name,entry in data['maps'].items():
             if Path(name).name != name:
@@ -258,10 +259,23 @@ def command(args, action):
                 files = changed(entry['revision'])
                 selected = entry.get('paths',[])
                 files = [p for p in files if not selected or any(p == v or p.startswith(v.rstrip('/')+'/') for v in selected)]
-                count = int(git('rev-list','--count',entry['revision']+'..HEAD').stdout.strip())
+                # Planning-only commits do not age source maps. Scope the age to the
+                # map's actual declared inputs, just as the input fingerprint is scoped.
+                count = int(git('rev-list','--count',entry['revision']+'..HEAD','--',*(selected or ['.']),':(exclude).planning').stdout.strip())
+                key = name.lower().removesuffix('.md')
+                maximum = config.lookup(settings,'codebase.staleness.'+key,
+                                        config.lookup(settings,'codebase.max_age_commits',20))
+                if isinstance(maximum,bool) or not isinstance(maximum,int) or maximum < 0:
+                    raise Failure('invalid-map-staleness',key+' requires a nonnegative commit threshold',69)
                 available = bool(entry.get('input_hash') and entry.get('map_hash'))
-                stale = not available or not path.is_file() or inputs(selected)['digest'] != entry['input_hash'] or map_hash(read(path)) != entry['map_hash']
-                result.append({'name':name,**entry,'stale':stale,'available':available,'commits_since':count,'changed_files':files})
+                input_changed = available and inputs(selected)['digest'] != entry['input_hash']
+                dirty_names = git('diff','--name-only','HEAD','-z').stdout.split('\0')+git('ls-files','--others','--exclude-standard','-z').stdout.split('\0')
+                working_changed = any(p and not p.startswith(('.planning/','.git/')) and
+                    (not selected or any(v == '.' or p == v or p.startswith(v.rstrip('/')+'/') for v in selected)) for p in dirty_names)
+                map_changed = not path.is_file() or available and map_hash(read(path)) != entry['map_hash']
+                stale = not available or map_changed or input_changed and (working_changed or count >= maximum)
+                result.append({'name':name,**entry,'stale':stale,'available':available,'commits_since':count,'changed_files':files,
+                               'input_changed':input_changed,'map_changed':map_changed,'threshold':maximum,'working_changes':working_changed})
             except (Failure,OSError,ValueError,KeyError) as exc:
                 result.append({'name':name,**entry,'stale':True,'available':False,'commits_since':None,'changed_files':[],'reason':str(exc)})
         packet = {'maps':result,'fresh':bool(result) and all(not item['stale'] for item in result),
