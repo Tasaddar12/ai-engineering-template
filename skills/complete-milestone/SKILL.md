@@ -8,7 +8,7 @@ allowed-tools:
   - Write
   - Bash
   - Grep
-requires: [audit-milestone, discuss-phase, execute-phase, new-milestone, phase, plan-phase, stats, update]
+requires: [audit-milestone, discuss-phase, execute-phase, new-milestone, phase, plan-phase, update]
 ---
 
 <arguments>$ARGUMENTS</arguments>

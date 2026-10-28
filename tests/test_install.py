@@ -26,6 +26,22 @@ def command(*args, cwd=None):
     return subprocess.run(args, cwd=cwd, text=True, encoding="utf-8", capture_output=True, check=True).stdout
 
 
+def seed_installer_skills(source):
+    """Give the template installer the `.agents/skills/` source layout it reads.
+
+    The repository's own skills live in `skills/` since 45b28e8 deleted
+    `.agents/`; the template installer still consumes `.agents/skills/<name>/
+    SKILL.md` from its pinned source, so each fixture mirrors `.ai/commands/`
+    one-for-one there, exactly as the deleted tree did.
+    """
+    for command in sorted((ROOT / ".ai" / "commands").glob("*.md")):
+        if command.name in ("README.md", "install.md"):
+            continue
+        skill = source / ".agents" / "skills" / command.stem / "SKILL.md"
+        skill.parent.mkdir(parents=True, exist_ok=True)
+        skill.write_bytes(command.read_bytes())
+
+
 def read_settings(path):
     content = path.read_text(encoding="utf-8")
     return tomllib.loads(content) if path.suffix == ".toml" else json.loads(content)
@@ -190,9 +206,10 @@ class InstallerTests(unittest.TestCase):
     def setUpClass(cls):
         cls.source_temp = tempfile.TemporaryDirectory(prefix="installer-source-")
         cls.source = Path(cls.source_temp.name)
-        for directory in (".ai", ".agents", ".planning", "docs"):
+        for directory in (".ai", ".planning", "docs"):
             shutil.copytree(ROOT / directory, cls.source / directory,
                             ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+        seed_installer_skills(cls.source)
         for name in ("AGENTS.md", "README.md", ".gitattributes"):
             shutil.copy2(ROOT / name, cls.source / name)
         # Source-project records must never become destination-project history.
