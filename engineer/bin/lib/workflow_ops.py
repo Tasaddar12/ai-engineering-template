@@ -44,9 +44,9 @@ def review_flags(args):
                 parsed.pos.append(token)
             index += 1
     true = lambda key: parsed.has(key) and str(parsed.get(key)).lower() in ("true", "1", "yes")
-    host = models.resolve_host()
     explicit = [name for name in ("claude", "codex") if true(name)]
-    errors = ["Cross-host reviewer is unavailable: "+name for name in explicit if name != host]
+    allowed_flags = {"fix", "all", "auto", "claude", "codex", "text", "depth", "files", "phase", "since", "max-commits", "raw", "json", "pick", "_body"}
+    errors = ["Unsupported review flag: --"+name for name in sorted(set(parsed.opts)-allowed_flags)]
     return {"ok": not errors, "phase": parsed.arg(0, ""), "fix": true("fix") or true("all") or true("auto"),
             "all": true("all"), "auto": true("auto"), "depth": str(parsed.get("depth", "")),
             "files": ",".join(parsed.all("files")), "explicit": ",".join(explicit), "errors": errors}
@@ -286,6 +286,11 @@ def check(args):
 
 
 def review_dispatch(args):
+    if args.has("explicit"):
+        if args.has("fix"):
+            raise Failure("review-execution-read-only", "Independent CLI reviews cannot apply fixes; use a separate bounded repair assignment")
+        from .review_execution import command as execute_review
+        return execute_review(args, "run")
     base = args.get("base-sha", args.get("base"))
     if not base:
         raise Failure("review-base-required", "Independent review requires an explicit base revision", 2)
@@ -351,27 +356,27 @@ def review_record(args):
 
 
 def review_lane(args, action):
-    host = models.resolve_host()
     if action == "flags":
-        return "--"+host
+        return "--claude --codex"
     if action == "sections":
-        return host+"\tNative independent code-reviewer"
+        return "claude\tIndependent Claude read-only review\ncodex\tIndependent Codex read-only review"
     if action == "explicit-from-argv":
         values = args.all("_body") or args.pos
-        unsupported = [value for value in values if value in ("--claude", "--codex") and value != "--"+host]
-        if unsupported:
-            raise Failure("cross-host-review-unavailable", "Use the current host's native independent reviewer", flags=unsupported)
-        return host if "--"+host in values else ""
+        selected = []
+        for value in values:
+            if value in ("--claude", "--codex"):
+                selected.append(value[2:])
+            elif value.startswith(("--claude=", "--codex=")):
+                name, active = value[2:].split("=", 1)
+                if active not in ("true", "false"):
+                    raise Failure("invalid-review-selection", "Reviewer flag values must be true or false", 2)
+                if active == "true":
+                    selected.append(name)
+        return ",".join(dict.fromkeys(selected))
     if action != "dispatch-step":
         raise Failure("unknown-review-lane-action", action, 2)
-    explicit = str(args.get("explicit", ""))
-    if not explicit:
-        return {"ok": True, "results": [], "selection": {"errors": []}, "requested": False}
-    if explicit != host:
-        raise Failure("cross-host-review-unavailable", "Only the current Claude/Codex native reviewer may dispatch", requested=explicit)
-    packet = review_dispatch(args)
-    return {"ok": False, "reason": "awaiting_native_dispatch", "results": [], "selection": {"errors": []},
-            "dispatches": [packet], "requested": True}
+    from .review_execution import command as execute_review
+    return execute_review(args, "dispatch-step")
 
 
 def _health(args):
@@ -445,6 +450,9 @@ def _learnings(args, action):
 
 
 def command(args, action):
+    if action == "security":
+        from .security_tracking import command as security_command
+        return security_command(args, "status")
     if action == "review-dispatch":
         return review_dispatch(args)
     if action == "review-record":
