@@ -241,7 +241,8 @@ def get(args):
     if value is missing:
         if not args.has("default"):
             raise Failure("key-not-found", "Configuration key not found: "+args.need())
-        value = scalar(str(args.get("default")))
+        default = str(args.get("default"))
+        value = scalar(default) if default.strip() else ""
     return value
 
 
