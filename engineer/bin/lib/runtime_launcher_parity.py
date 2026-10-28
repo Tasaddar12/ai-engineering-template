@@ -33,9 +33,10 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import re
-import shutil
 import subprocess
 import tempfile
+
+from .posix_shell import find_posix_shell
 
 SOURCE = Path(__file__).resolve().parents[3]
 WORKFLOWS_DIR = SOURCE / "engineer" / "workflows"
@@ -219,8 +220,18 @@ def roster_violations(roster: dict[str, Path]) -> list[str]:
 
 # --- Behavioral harness -------------------------------------------------------
 
+def bash_path() -> str | None:
+    """Absolute path of a real bash (Git Bash on Windows, never the System32 WSL launcher), or None."""
+    return find_posix_shell("bash")
+
+
+def sh_path() -> str | None:
+    """Absolute path of a real POSIX sh, or None."""
+    return find_posix_shell("sh")
+
+
 def shell_available() -> bool:
-    return shutil.which("bash") is not None and shutil.which("sh") is not None
+    return bash_path() is not None and sh_path() is not None
 
 
 def posix(path) -> str:
@@ -295,7 +306,7 @@ def run_script(script_text: str, workdir, env: dict, name: str = "fixture.sh") -
     workdir.mkdir(parents=True, exist_ok=True)
     script = workdir / name
     script.write_bytes(script_text.encode("utf-8"))
-    return subprocess.run(["bash", str(script)], cwd=workdir, env=env, capture_output=True, text=True)
+    return subprocess.run([bash_path(), str(script)], cwd=workdir, env=env, capture_output=True, text=True)
 
 
 def make_temp(prefix: str) -> str:
@@ -317,7 +328,7 @@ def python_wrapper_dir(directory, interpreter) -> Path:
 
 def run_launcher_executable(launcher, args, env: dict) -> subprocess.CompletedProcess:
     """Run the shipped `engineer_run` script with `sh`, as the snippet does."""
-    return subprocess.run(["sh", posix(launcher), *args], env=env, capture_output=True, text=True)
+    return subprocess.run([sh_path(), posix(launcher), *args], env=env, capture_output=True, text=True)
 
 
 def env_file_path_line(env_file_text: str) -> str:
@@ -329,7 +340,7 @@ def env_file_path_line(env_file_text: str) -> str:
 
 
 def run_shell_text(command: str, env: dict, cwd=None) -> subprocess.CompletedProcess:
-    return subprocess.run(["bash", "-c", command], env=env, cwd=cwd, capture_output=True, text=True)
+    return subprocess.run([bash_path(), "-c", command], env=env, cwd=cwd, capture_output=True, text=True)
 
 
 # --- Resolver extraction from a workflow ----------------------------------------

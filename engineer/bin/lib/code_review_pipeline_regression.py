@@ -29,10 +29,11 @@ import json
 import os
 from pathlib import Path
 import re
-import shutil
 import subprocess
 import sys
 import tempfile
+
+from .posix_shell import find_posix_shell
 
 SOURCE = Path(__file__).resolve().parents[3]
 WORKFLOW_PATH = SOURCE / "engineer" / "workflows" / "code-review.md"
@@ -152,8 +153,13 @@ def fence_containing(src: str, marker: str, from_index: int = 0) -> str:
 
 # --- Bash harness -----------------------------------------------------------------
 
+def bash_path() -> str | None:
+    """Absolute path of a real bash (Git Bash on Windows, never the System32 WSL launcher), or None."""
+    return find_posix_shell("bash")
+
+
 def shell_available() -> bool:
-    return shutil.which("bash") is not None
+    return bash_path() is not None
 
 
 def posix(path) -> str:
@@ -169,7 +175,7 @@ def run_bash(script: str, args=(), env: dict | None = None, cwd=None, timeout: i
     with tempfile.TemporaryDirectory(prefix="engineer-crp-") as directory:
         path = Path(directory) / "fixture.sh"
         path.write_bytes(script.encode("utf-8"))
-        return subprocess.run(["bash", posix(path), *map(str, args)], env=env, cwd=cwd, capture_output=True,
+        return subprocess.run([bash_path(), posix(path), *map(str, args)], env=env, cwd=cwd, capture_output=True,
                               text=True, encoding="utf-8", errors="replace", timeout=timeout)
 
 
@@ -178,7 +184,7 @@ def bash_syntax_error(script: str) -> str:
     with tempfile.TemporaryDirectory(prefix="engineer-crp-") as directory:
         path = Path(directory) / "syntax.sh"
         path.write_bytes(script.encode("utf-8"))
-        result = subprocess.run(["bash", "-n", posix(path)], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
+        result = subprocess.run([bash_path(), "-n", posix(path)], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
     return result.stderr if result.returncode else ""
 
 
