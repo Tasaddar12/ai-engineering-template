@@ -38,6 +38,9 @@ class Args:
                 self.opts[active] = []
             elif active == "_body":
                 self.opts[active].append(token)
+            elif active and token.startswith("---"):
+                # Long option names never begin with three dashes; this is a value such as YAML frontmatter.
+                self.opts[active].append(token)
             elif token.startswith("--"):
                 key, sep, value = token[2:].partition("=")
                 self.opts.setdefault(key, [])

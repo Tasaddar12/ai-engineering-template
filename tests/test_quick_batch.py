@@ -72,11 +72,12 @@ class QuickBatchChecks(RuntimeCase):
         plan = '---\nfiles_modified: ["src/app.py"]\n---\n# Plan\n'
         arguments = ("--worktree-path", worker["path"], "--branch", worker["branch"], "--expected-base", worker["base"],
                      "--allowed-bases", json.dumps([worker["base"]]))
-        entry = self.cli("quick-batch.cleanup-entry", *arguments, "--plan-content="+plan)
+        # merge-wave.md passes PLAN content, which begins with YAML `---`, as a separate token.
+        entry = self.cli("quick-batch.cleanup-entry", *arguments, "--plan-content", plan)
         self.assertEqual(worker["branch"], entry["branch"])
         self.assertEqual(["src/app.py"], entry["files_modified"])
         drifted = '---\nfiles_modified: ["src/other.py"]\n---\n# Plan\n'
-        self.cli("quick-batch.cleanup-entry", *arguments, "--plan-content="+drifted, status=1, raw=True)
+        self.cli("quick-batch.cleanup-entry", *arguments, "--plan-content", drifted, status=1, raw=True)
 
     def test_argument_parser_rejects_unknown_flags(self):
         result = self.cli("quick-batch.parse-args", "--stdin", stdin='"First fix" --jobs 2 --research --validate')
