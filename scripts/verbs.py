@@ -6,7 +6,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import files, main_guard, parser, read_text, safe_path
 
-CALL = re.compile(r'\bengineer_run\s+query\s+([A-Za-z][A-Za-z0-9_.-]*)')
+CALL = re.compile(r'\bengineer_run\s+query\s+([A-Za-z][A-Za-z0-9_.-]*)(?:[ \t]+([A-Za-z][A-Za-z0-9_.-]*))?')
 
 
 def registered_verbs(source):
@@ -94,16 +94,21 @@ def registered_verbs(source):
     return found
 
 
-def call_sites(root):
+def call_sites(root, known=()):
     result = []
+    namespaces = {name.partition('.')[0] for name in known if '.' in name}
     for path in files(root):
         text = read_text(path)
         if text is None:
             continue
         for number, line in enumerate(text.splitlines(), 1):
             for match in CALL.finditer(line):
-                # Angle-bracket placeholders and shell expressions never match CALL.
-                result.append((match[1], path.relative_to(root.resolve()).as_posix(), number))
+                name = match[1]
+                if name.endswith('.') or (match.end(1) < len(line) and line[match.end(1)] in '<{$'):
+                    continue
+                if name not in known and name in namespaces and match[2]:
+                    name += '.'+match[2]
+                result.append((name, path.relative_to(root.resolve()).as_posix(), number))
     return result
 
 
@@ -114,7 +119,7 @@ def main():
     args = command.parse_args()
     runtime = safe_path(args.root, "engineer/bin/engineer.py")
     known = registered_verbs(runtime.read_text(encoding="utf-8"))
-    sites = call_sites(args.root)
+    sites = call_sites(args.root, known)
     unknown = [(verb, path, number) for verb, path, number in sites if verb not in known]
     for verb, path, number in sorted(unknown):
         print(f"UNKNOWN {path}:{number}: {verb}")
