@@ -539,7 +539,7 @@ def command(args,action):
         kind = args.get('kind')
         if kind not in ('merge_failed','conflict','scope_violation'):
             raise Failure('invalid-merge-kind',str(kind),2)
-        return {'action':'preserve','retryable':kind == 'merge_failed','message':args.get('detail',kind),'preserveWorktree':True}
+        return {'action':'retry' if kind == 'merge_failed' else 'block','retryable':kind == 'merge_failed','message':args.get('detail',kind),'preserveWorktree':True}
     if action == 'verification-routing':
         status = args.get('status')
         if status not in ('passed','human_needed','gaps_found','missing','stale','unparseable','phase_dir_not_found','failed','blocked'):
