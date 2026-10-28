@@ -93,7 +93,8 @@ duplicates other tooling and drowns the bespoke signal.
 ## Resolution states
 
 Each surfaced prohibition carries two orthogonal axes — a resolution **lifecycle** and, when
-resolved, a **verification** tier (The lifecycle is identical to the edge-probe, the verification tiers differ):
+resolved, a **verification** tier (the shared probe-core model; the
+lifecycle is identical to the edge-probe, the verification tiers differ):
 
 - **status** — `resolved | dismissed | unresolved` (IDENTICAL to the edge-probe):
   - **resolved** — the prohibition is addressed; *how* it is addressed is the verification tier.

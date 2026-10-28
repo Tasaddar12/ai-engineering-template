@@ -1,6 +1,6 @@
 # UI-Consideration Probe — Spec-Completeness Reference
 
-The **third** adapter of the shared `probe-core` resolution model (ADR-550 Decision 7), on
+The **third** adapter of the shared `probe-core` resolution model, on
 the **UI element/state axis**. It surfaces the shape-rooted UI *state* considerations a
 UI-SPEC must resolve before a dimension may PASS — the visual analog of the requirement-side
 [edge-probe](./edge-probe.md), reusing its exact lifecycle, validators, and plan-phase lift
@@ -45,7 +45,7 @@ bloating this closed core.
 
 ## Relevance filter + resolution states
 
-The probe reuses the edge-probe rails verbatim (ADR-550 Decision 7 — see
+The probe reuses the edge-probe rails verbatim (see
 [edge-probe.md](./edge-probe.md#relevance-filter--resolution-states) for the full model):
 
 1. **Relevance filter first.** Classify each element's kind(s), then raise only the categories

@@ -726,7 +726,7 @@ Continue to step 8.
 ## 7.95. Spec-less Probe Fallback (gate)
 
 When the SPEC did not supply `## Edge Coverage` / `## Prohibitions`, plan-phase runs the probe protocol
-and authors the predicates into PLAN.md `must_haves` (The *else branch* of the
+and authors the predicates into PLAN.md `must_haves` (the *else branch* of the
 `<downstream_consumer>` lift below). Core workflow-body substrate, not a capability rail. Runs
 after `$SPEC_FILE` (Step 7), before the planner spawn (Step 8).
 

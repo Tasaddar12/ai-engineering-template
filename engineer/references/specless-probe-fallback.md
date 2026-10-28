@@ -3,7 +3,7 @@
 Lazy-loaded by `workflows/plan-phase.md` step 7.95 (the gate) and the `<specless_probe_fallback>`
 planner block. When a phase SPEC did NOT supply `## Edge Coverage` / `## Prohibitions`, plan-phase
 runs the same probe protocol the SPEC path uses and authors the predicates into PLAN.md `must_haves`
-(The *else branch* of the `<downstream_consumer>` SPEC-conditional lift). This is
+(the *else branch* of the `<downstream_consumer>` SPEC-conditional lift). This is
 core workflow-body substrate — NOT the `PLAN_PRE_HOOKS_JSON contribution into planner` capability rail. Section absence is detected by the shared `spec-section` helper in the gate; this file holds the
 *run-the-probe* half so the capped plan-phase.md stays lean (/ budget).
 
@@ -142,7 +142,7 @@ this in-prompt. Full two-stage protocol, canon-referral rule, and status×verifi
   the author would NOT want, but the spec does not forbid?"* Over-produce (~10 raw must-NOT candidates).
 - **Stage 2 — Precision.** DROP routine-engineering (normal correctness/hygiene — owned by the edge
   probe or code review); KEEP values / safety / ethics (~2–3 survive).
-- **Canon-referral drop (ADR-550 D6).** A kept candidate that is canon security/compliance (OWASP /
+- **Canon-referral drop.** A kept candidate that is canon security/compliance (OWASP /
   prototype-pollution / path-traversal / injection / GDPR / generic fairness) is NOT minted — emit a
   one-line breadcrumb and DROP it.
 
@@ -164,7 +164,7 @@ changes (the fallback report, not the SPEC):
   marker (NOT prose;), which abstains → `human_needed` at verify time when unconfirmed
   ; every `unresolved`/`unclassified` row → an explicit flagged assumption (never a silent drop).
 - **Prohibitions →** every kept prohibition → the `must_haves.prohibitions:` sibling block (NOT
-  `truths`, ADR-550 D3) via the single `projectProhibitions` serializer (Hyrum — no second
+  `truths`) via the single `projectProhibitions` serializer (Hyrum — no second
   serializer), authored **descriptor-less** (no `check_*` scalar) so each disposes flagged-unverified.
 - **Section-level precedence:** a SPEC-supplied section is never re-run or overwritten — exactly one
   producer per section.

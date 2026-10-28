@@ -1,7 +1,7 @@
 Apply response_language to all user-facing prose — narration between tool calls, status updates, progress notes, and findings included; preserve code, paths, and identifiers.
 
 <step name="verify_phase_goal_regeneration">
-**The one verification action for a phase (ADR-5057 Phase 4).** The verification owner
+**The one verification action for a phase.** The verification owner
 routes `stale` (and `missing`) to `execute-phase`; this file is what that route runs, and it is the
 ONLY place the verification sequence is written, whole and in this order: the `verify:post` hook
 dispatch with the SECURITY threats-open gate (`verify_post_security_gate`), the code-review gate,
@@ -130,7 +130,7 @@ advisory throughout: it never blocks.
 
 **Error handling:** If the Skill invocation fails or throws, catch the error, display "Code review encountered an error (non-blocking): {error}" and proceed to gate dispatch. Review failures must never block execution.
 
-**Execute:post gate hook dispatch.** After code review, dispatch all active gate hooks from `EXECUTE_POST_HOOKS_JSON` where `kind == "gate"`. ⚠ **Validate `check` before shell use** (third-party manifest input; wherever `${hook.check.query}` appears, write the dot-normalized query, each `.` as `-`, and validate and pass that same value) — `loop-hook-dispatch.md` § `gate`. For each, run the form below, or — for a `predicate` gate (ADR-2008 / ) — `engineer_run check predicate --predicate '<predicate JSON>' --phase-dir "${PHASE_DIR}" --phase-number "${PHASE_NUMBER}" --raw`:
+**Execute:post gate hook dispatch.** After code review, dispatch all active gate hooks from `EXECUTE_POST_HOOKS_JSON` where `kind == "gate"`. ⚠ **Validate `check` before shell use** (third-party manifest input; wherever `${hook.check.query}` appears, write the dot-normalized query, each `.` as `-`, and validate and pass that same value) — `loop-hook-dispatch.md` § `gate`. For each, run the form below, or — for a `predicate` gate — `engineer_run check predicate --predicate '<predicate JSON>' --phase-dir "${PHASE_DIR}" --phase-number "${PHASE_NUMBER}" --raw`:
 
 ```bash
 GATE_RESULT=$(engineer_run check ${hook.check.query} "${PHASE_NUMBER}" --raw) && CHECK_EXIT=0 || CHECK_EXIT=$?

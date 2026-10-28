@@ -7,7 +7,7 @@ Template for `.planning/STATE.md` — the project's living memory.
 ## File Template
 
 The frontmatter block below is generated from `STATE_FIELD_SCHEMA`
-(`src/state-md-schema.cts`, ADR-3473 §8.8) by `scripts/gen-state-md-docs.cjs
+(`src/state-md-schema.cts`) by `scripts/gen-state-md-docs.cjs
 --write` — do not hand-edit the marked region; the body below it is
 hand-authored.
 

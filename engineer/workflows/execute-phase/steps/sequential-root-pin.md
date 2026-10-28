@@ -24,7 +24,7 @@ ONLY: worktree-mode dispatches keep the self-derived line — an isolated execut
 toplevel IS its correct (and intentionally different) worktree, and substituting the
 orchestrator's root there would break every worktree-mode dispatch.
 
-## Wave serialization (moved verbatim from the host step — ADR-857 Phase 6 ceiling)
+## Wave serialization (moved verbatim from the host step)
 
 When worktrees are disabled for a plan (per-plan or project-level), that plan's executor runs
 on the main working tree. If **any** plan in the current wave dropped to sequential mode,

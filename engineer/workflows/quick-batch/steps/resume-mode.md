@@ -57,8 +57,8 @@ if [[ "$QB_RESUME_JSON" == @file:* ]]; then QB_RESUME_JSON=$(cat "${QB_RESUME_JS
 ```
 
 **If `$QB_RESUME_RC` is non-zero:** the resume was refused closed — an unknown
-batch id (row 18) or a diverged base revision (row 17, ADR-1239 "Base
-divergence"). Print the CLI's error message verbatim and STOP. Do not dispatch
+batch id (row 18) or a diverged base revision (row 17).
+Print the CLI's error message verbatim and STOP. Do not dispatch
 anything, do not create a new batch on the user's behalf.
 
 **Otherwise:** parse `$QB_RESUME_JSON` for `eligible` (array of quick ids),

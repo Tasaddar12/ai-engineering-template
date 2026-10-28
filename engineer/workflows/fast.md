@@ -117,7 +117,7 @@ Use conventional commit format: `fix:`, `feat:`, `docs:`, `chore:`, `refactor:` 
 <step name="log_to_state">
 If `.planning/STATE.md` exists and has a "Quick Tasks Completed" table, append a row
 that matches the existing table's schema via the schema-backed `engineer_run
-quick-tasks-append` helper (`markdown-table.cjs`'s `appendQuickTaskRow`;).
+quick-tasks-append` helper (`markdown-table.cjs`'s `appendQuickTaskRow`).
 If no table exists, skip silently. If the table's schema is
 unrecognized, the helper fails loud (non-zero exit) instead of silently guessing
 a column count.

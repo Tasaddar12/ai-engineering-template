@@ -1,4 +1,4 @@
-# Executor isolation dispatch (ADR-1239 / Phase 3)
+# Executor isolation dispatch
 
 Read and follow this fragment from `execute-phase.md` step 3 when dispatching a wave.
 It owns the per-host dispatch detail so the host workflow stays inside its
@@ -218,7 +218,7 @@ Assign the composed prompt to a shell variable so it can be passed as one argume
 # instructions + provenance of which role definition was used).
 # Resolve TDD-applicability for THIS plan — fail closed on
 # command failure, mirroring the ISOLATION resolution above: an absent
-# verdict must never silently resolve to "not TDD" (ADR-3473 §8.4), since
+# verdict must never silently resolve to "not TDD", since
 # that would silently drop a real TDD plan's RED/GREEN/REFACTOR procedure.
 _TDD_APPLICABLE_RAW=$(engineer_run query phase.tdd-applicable "{phase_dir}/{plan_file}" --pick applicable 2>/dev/null)
 _TDD_APPLICABLE_RC=$?

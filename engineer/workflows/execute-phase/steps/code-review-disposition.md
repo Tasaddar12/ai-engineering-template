@@ -386,7 +386,7 @@ direction. Driven by executing the shipped script twice (round 11).
 The table cell is read first (it is the human-facing surface, and the one the disposition
 already comes from); the frontmatter key is the fallback for a hand-mangled cell. Both are
 ENUM-validated -- a value outside critical|warning|info is not a severity and is ignored, so
-the row falls through to inference rather than carrying garbage (ADR-227, the same rule the
+the row falls through to inference rather than carrying garbage (the same rule the
 disposition column takes).
 
 **Before `const m = l.match(/^\|\s*((?:CR|BL|WR|IN)-\d+)\s*\|\s*([^|]*?)\s*\|\s*(open|fixed|skipped|deferred)\s*\|\s*(.*?)\s*\|?\s*$/);`**

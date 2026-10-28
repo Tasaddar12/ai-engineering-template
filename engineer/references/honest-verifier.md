@@ -56,7 +56,7 @@ polarity (must-HAVE under-specified vs must-NOT irreducible).
 ## Deterministic engine surface
 
 The CI-testable surface is the **deterministic disposition + projection**, never the LLM's judgment
-(A test asserting the model's verdict is vacuous and rejected). In `probe-core`:
+(a test asserting the model's verdict is vacuous and rejected). In `probe-core`:
 
 - `truthStatement(t)` / `truthVerification(t)` — normalizers; read a truth's statement and tier from
   either the plain-string or object form (a truth-reader MUST normalize, never assume a string).
