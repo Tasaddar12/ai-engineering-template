@@ -17,7 +17,7 @@ DEFAULTS = {
         "isolation": "auto", "agent_hint_routing": True,
         "code_review": True, "code_review_depth": "standard", "code_review_depth_overrides": [],
         "context_coverage_gate": True, "human_verify_mode": "end-of-phase", "live_dom_uat": False,
-        "mvp_mode": False, "plan_chunked": False, "security_asvs_level": 1,
+        "plan_chunked": False, "security_asvs_level": 1,
         "security_block_on": "high", "security_enforcement": True,
         "specless_probe_fallback": True, "ui_interaction_capture": False,
         "ui_phase": "auto", "nyquist_validation": True, "tdd_mode": False,

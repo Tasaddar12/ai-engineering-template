@@ -159,7 +159,6 @@ passed as one shell argument. `--raw`, `--json`, and `--pick FIELD` are global.
 | `phase.edit` | `N [--name TEXT --goal TEXT --depends-on TEXT --requirements ID...]` | `updated, phase, action` |
 | `phase.remove` | `N [--force]` | archived path and renumbered integer phases; nonempty phase requires force |
 | `phase.complete` | `N` | updated phase; complete summaries, issue handoff and passed verification required |
-| `phase.mvp-mode` | `N [--mvp]` | `active, source` |
 | `phase.tdd-applicable` | `PLAN_PATH` | `applicable, plan_tdd, enabled` |
 | `phase.uat-passed` | `N_OR_DIRECTORY [--uat-only --require-verification]` | `passed, blocking_items[]`; blockers exit 1 |
 | `phase.handoff` | `N` | `ready, errors[], findings[], phase` |

@@ -3,7 +3,6 @@
 Only recognized operations are rewritten. This module neither runs code nor
 writes exports. Unknown JavaScript stays intact for the installer's refusal gate.
 """
-from pathlib import PurePosixPath
 import re
 import shlex
 
@@ -210,16 +209,16 @@ def _shell(body, command, source, runtime_path):
     # operation. The input authoring/resolution loop remains byte-for-byte.
     if source.endswith(("spec-phase.md", "ui-phase.md", "specless-probe-fallback.md")):
         variable = "UI_PROBE_JS" if source.endswith("ui-phase.md") else "EDGE_PROBE_JS"
-        pattern = r'(?ms)^_GSD_RT=[^\n]*\n'+variable+r'=\$\(for .*?^fi\n(?=\n# (?:Write the Requirements|Element extraction|THE ONE DIVERGENCE))'
+        pattern = r'(?ms)^_ENGINEER_RT=[^\n]*\n'+variable+r'=\$\(for .*?^fi\n(?=\n# (?:Write the Requirements|Element extraction|THE ONE DIVERGENCE))'
         replacement = ('[ -f '+_quote(runtime_path)+' ] || { printf \'%s\\n\' \'ERROR: installed Python workflow runtime is missing; restore the pinned installation before probing.\' >&2; exit 1; }\n')
         body = re.sub(pattern, lambda _: replacement, body)
         if source.endswith("specless-probe-fallback.md"):
-            body = re.sub(r'(?ms)^_GSD_RT=[^\n]*\n_gsd_lib\(\).*?^\[ -n "\$SPEC_SECTION_JS" \][^\n]*\n', lambda _: replacement, body)
+            body = re.sub(r'(?ms)^_ENGINEER_RT=[^\n]*\n_engineer_lib(?:\(\))? \{.*?^\[ -n "\$SPEC_SECTION_JS" \][^\n]*\n', lambda _: replacement, body)
             body = re.sub(r'''node "\$SPEC_SECTION_JS" "\$SPEC_FILE" (edges|prohibitions)[ \t]+2>/dev/null \| grep -q '\"supplied\":true' ''',
                           lambda m: '[ "$('+command("spec.section")+' "$SPEC_FILE" '+m[1]+' --pick supplied --raw)" = true ] ', body)
     # Remove only loader machinery for known equivalent Python operations.
     known = r"(?:code-review-flags|code-review-depth|fallow-runner)\.cjs"
-    body = re.sub(r"(?ms)^[ \t]*# gsd-resolve-lib begin "+known+r"[^\n]*\n.*?^[ \t]*# gsd-resolve-lib end[^\n]*\n", "", body)
+    body = re.sub(r"(?ms)^[ \t]*# engineer-resolve-lib begin "+known+r"[^\n]*\n.*?^[ \t]*# engineer-resolve-lib end[^\n]*\n", "", body)
     body = re.sub(r'node "\$EDGE_PROBE_JS" "\$REQS_JSON"', lambda _: command("spec.edge-probe")+' "$REQS_JSON"', body)
     body = re.sub(r'node "\$UI_PROBE_JS" "\$ELEMENTS_JSON"', lambda _: command("spec.ui-probe")+' --input "$ELEMENTS_JSON"', body)
     # A source helper reads created/modified SUMMARY fields, never source prose.
@@ -241,149 +240,6 @@ def _shell(body, command, source, runtime_path):
     return _node_calls(body, command, source)
 
 
-def _step(text, name, replacement):
-    pattern = re.compile(r'(?s)(<step name="'+re.escape(name)+r'"[^>]*>).*?(</step>)')
-    return pattern.sub(lambda match: match[1]+"\n"+replacement.strip()+"\n"+match[2], text)
-
-
-def _pinned_update(text, command, runtime_path):
-    """Port the update mechanism while retaining its full backup/restore method."""
-    update = "python -I "+_quote(PurePosixPath(runtime_path).parents[2]/"bin/update.py")
-    text = text.replace("Check for Engineer updates via npm, display changelog for versions between installed and latest, obtain user confirmation, and execute clean installation with cache clearing.",
-                        "Inspect a user-selected source revision, display its pinned Git changes and complete update plan, preserve custom files, obtain any still-required approval, and apply the exact reviewed transaction with recoverable backups.")
-    text = re.sub(r'`update-context` reproduces the previous detection cascade.*?Branch coverage lives in `tests/update-context\.test\.cjs`\.',
-                  'The installed Python `update-context` reads actual manifest provenance and returns its exact source, revision, host, scope and target. Multiple matching installations remain ambiguous until an actual target is selected. An absent or malformed manifest cannot establish an update target.', text, flags=re.S)
-    text = _step(text, "parse_update_channel", '''Select a concrete source and revision from the user's request. A channel name is not an immutable revision. Preserve any update authorization already given; ask only for genuinely missing source/ref inputs. Do not install or query an unpinned package.
-
-```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
-$ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\\n'}
-UPDATE_SOURCE="${UPDATE_SOURCE:-$(UC_SOURCE)}"
-: "${UPDATE_SOURCE:?Specify the local source repository from the actual request or installed provenance}"
-: "${UPDATE_REF:?Specify the actual user-selected commit, branch or tag to resolve once}"
-UPDATE_TARGET="$(UC_TARGET)"
-UPDATE_HOST="$(UC_HOST)"
-case "$INSTALL_SCOPE" in LOCAL|local) UPDATE_SCOPE=--local ;; GLOBAL|global) UPDATE_SCOPE=--global ;; *) printf '%s\\n' 'BLOCKED: installation scope is unresolved' >&2; exit 1 ;; esac
-TEXT_MODE=$(UC_TEXT_MODE) || exit $?
-```
-
-The source repository must already exist locally. Do not fetch, choose a different repository, infer a release channel or move an unrelated checkout. The next step resolves the selected ref to a full immutable SHA before preview or mutation.'''.replace("UC_SOURCE", command("json.get")+' --payload "$UC" --field source_path --raw').replace("UC_TARGET", command("json.get")+' --payload "$UC" --field target --raw').replace("UC_HOST", command("json.get")+' --payload "$UC" --field host --raw').replace("UC_TEXT_MODE", command("config-get")+' workflow.text_mode --raw'))
-    text = _step(text, "check_latest_version", '''Resolve and capture the selected revision. The installed revision comes from the actual installation manifest, not a guessed package version.
-
-```bash
-UPDATE_PIN=$(git -C "$UPDATE_SOURCE" rev-parse --verify "$UPDATE_REF^{commit}") || exit $?
-case "$UPDATE_PIN" in ''|*[!0-9a-fA-F]*) printf '%s\\n' 'BLOCKED: selected ref did not resolve to a commit' >&2; exit 1 ;; esac
-[ "${#UPDATE_PIN}" -eq 40 ] || { printf '%s\\n' 'BLOCKED: expected a full source commit SHA' >&2; exit 1; }
-LATEST_VERSION="$UPDATE_PIN"
-CHANNEL_LABEL="selected pinned revision"
-UPDATE_CHANGES=$(__CHANGES__ --source "$UPDATE_SOURCE" --from "$INSTALLED_VERSION" --ref "$UPDATE_PIN") || exit $?
-printf '%s\\n' "$UPDATE_CHANGES"
-```
-
-Failure to resolve either source revision stops the update. Preserve the provider/Git diagnostic and the installed files. No package manager fallback, network fetch or latest-version substitution is allowed.'''.replace("__CHANGES__", command("update.changes")))
-    text = _step(text, "compare_versions", '''Compare the actual installed source SHA with the selected immutable SHA. Semver ordering cannot establish whether a custom source checkout should be replaced.
-
-```bash
-if [ "$INSTALLED_VERSION" = "$UPDATE_PIN" ]; then
-  printf '%s\\n' "The installed source revision already equals $UPDATE_PIN."
-  printf '%s\\n' 'No update was applied. Use an explicit reviewed repair plan if the installed files need repair.'
-  exit 0
-fi
-printf 'Installed revision: %s\\nSelected revision: %s\\n' "$INSTALLED_VERSION" "$UPDATE_PIN"
-```
-
-Continue only toward this selected pin. An older or divergent pin is not silently changed to another revision; show the exact changes and preserve the user's actual choice.''')
-    # Replace the obsolete changelog-fetch/extractor operation, not the complete
-    # confirmation, custom backup or post-update restoration methods around it.
-    preview = '''1. Display the complete pinned Git changes and exact planned file transaction before any update.
-2. Write the immutable preview using the installed Python updater:
-
-```bash
-CHANGELOG_PREVIEW="$UPDATE_CHANGES"
-UPDATE_PLAN=$(mktemp "${TMPDIR:-/tmp}/engineer-update-plan-XXXXXX.json") || exit $?
-UPDATE_PLAN_JSON=$(__UPDATER__ --source "$UPDATE_SOURCE" --ref "$UPDATE_PIN" --target "$UPDATE_TARGET" --host "$UPDATE_HOST" "$UPDATE_SCOPE" --plan "$UPDATE_PLAN") || exit $?
-REVIEWED_PLAN_SHA256=$(__GET__ --payload "$UPDATE_PLAN_JSON" --field reviewed_plan_sha256 --raw) || exit $?
-printf '%s\\n' "$UPDATE_PLAN_JSON"
-printf 'Exact reviewed plan: %s\\nPlan SHA256: %s\\n' "$UPDATE_PLAN" "$REVIEWED_PLAN_SHA256"
-```
-
-Inspect every conflict, migration finding, managed write, preserved custom path and backup action. A preview with unresolved findings is blocked; do not edit the plan to hide them. Approval applies only to these exact reviewed plan bytes. If inputs or target files change, generate and review a fresh plan.
-
-3. Display preview and ask for confirmation, using `$CHANGELOG_PREVIEW` from the extract step above:'''.replace("__UPDATER__", update).replace("__GET__", command("json.get"))
-    text = re.sub(r'(?s)1\. Fetch changelog from GitHub raw URL.*?3\. Display preview and ask for confirmation, using `\$CHANGELOG_PREVIEW` from the extract step above:', lambda _: preview, text)
-    text = text.replace('⚠️  **Note:** The installer performs a clean install of Engineer folders:\n- `commands/` will be wiped and replaced\n- `gsd-core/` will be wiped and replaced\n- `agents/gsd-*` files will be replaced',
-                        '⚠️  **Note:** The installer applies only the exact reviewed transaction. Unmanaged files and conflicting local edits are preserved; no directory wipe or blanket replacement is permitted. Managed changes receive byte-preserving transaction backups with a rollback journal.')
-    text = text.replace("If you've modified any Engineer files directly, they'll be automatically backed up to `gsd-local-patches/` and can be reapplied with `/update --reapply` after the update.",
-                        "The preview identifies locally modified managed files. Preserve them or explicitly select reviewed conflict resolutions; exact original bytes remain in the transaction backup. Never overwrite an unreviewed local change.")
-    text = text.replace("in `gsd-file-manifest.json` — i.e., files the user added themselves that the\ninstaller does not know about and will delete during the wipe.",
-                        "in the installed `engineer-install/manifest.json` — files the user added themselves. The updater preserves these unmanaged paths; the additional backup below protects the explicitly previewed custom files.")
-    text = text.replace("reliably with Node.js `path.relative()`.", "with the installed Python path/ownership checks.")
-    text = text.replace('CUSTOM_JSON=$(engineer_run query detect-custom-files --config-dir "$RUNTIME_DIR" 2>/dev/null)',
-                        'CUSTOM_JSON=$(engineer_run query detect-custom-files --config-dir "$RUNTIME_DIR") || exit $?')
-    text = text.replace('RESTORE_JSON=$(engineer_run query restore-custom-files --config-dir "$GSD_DIR" 2>/dev/null)',
-                        'RESTORE_JSON=$(engineer_run query restore-custom-files --config-dir "$GSD_DIR") || exit $?')
-    text = text.replace('BACKUP_DIR="$RUNTIME_DIR/gsd-user-files-backup"', 'BACKUP_DIR="$RUNTIME_DIR/engineer-user-files-backup"')
-    text = re.sub(r"(?ms)^node - \"\$RUNTIME_DIR\" \"\$BACKUP_DIR\" \"\$CUSTOM_JSON\" <<'JSEOF'\n.*?^JSEOF$",
-                  lambda _: command("custom-files.backup")+' --config-dir "$RUNTIME_DIR" --custom-json "$CUSTOM_JSON" --backup-dir "$BACKUP_DIR" || exit $? ', text)
-    text = text.replace("gsd-user-files-backup/", "engineer-user-files-backup/")
-    text = text.replace("before the wipe", "before applying the reviewed transaction")
-    text = text.replace("installer wipes the directories", "reviewed updater applies its managed writes")
-    text = text.replace("`text_mode` from init JSON is `true`", "`TEXT_MODE` from the actual configuration is `true`")
-    text = _step(text, "run_update", '''Apply only the exact reviewed plan after the existing update authorization or explicit answer covers this pin and its concrete transaction. Do not request approval again solely because this workflow reached the apply step.
-
-```bash
-: "${UPDATE_PLAN:?The complete pinned preview must exist before apply}"
-: "${REVIEWED_PLAN_SHA256:?The SHA256 of the exact reviewed plan bytes is required}"
-UPDATE_RESULT=$(__UPDATER__ --apply "$UPDATE_PLAN" --reviewed-plan-sha256 "$REVIEWED_PLAN_SHA256") || exit $?
-printf '%s\\n' "$UPDATE_RESULT"
-UPDATE_BACKUP=$(__GET__ --payload "$UPDATE_RESULT" --field backup --raw) || exit $?
-```
-
-The updater rechecks the source pin, exporter digest, target hashes, manifest and exact reviewed bytes. Any drift stops mutation. It journals original bytes and file modes before writes and rolls back a failed transaction. Preserve its error and backup path if recovery is needed; do not retry an uncertain transaction blindly.
-
-Do not clear unrelated cache files, install a package, wipe managed directories or run a second installer. The returned verification field remains not-executed: successful installation is not evidence of runtime correctness.'''.replace("__UPDATER__", update).replace("__GET__", command("json.get")))
-    text = _step(text, "display_result", '''Report only the actual update result: installed source revision, target, host, changed paths, preserved local files and returned backup directory. Name any blocked or deferred paths and execution checks that remain unrun.
-
-```bash
-printf 'Updated source: %s\\nTarget: %s\\nBackup: %s\\n' "$UPDATE_PIN" "$UPDATE_TARGET" "$UPDATE_BACKUP"
-```
-
-Ask the user to restart the host when required to load changed commands. The previously displayed pinned Git changes are the change record; do not invent a release version or use a moving changelog URL as evidence.''')
-    # Preserve the full restore preview/selection procedure and its untrusted
-    # filename handling, adding the actual snapshot token and exact selections.
-    text = text.replace('restore-custom-files --config-dir "$GSD_DIR" --apply',
-                        'restore-custom-files --config-dir "$GSD_DIR" --preview-token "$RESTORE_PREVIEW_TOKEN" --apply "${RESTORE_SELECTION_ARGS[@]}"')
-    text = text.replace('RESTORE_DIR=$(json_field backup_dir)',
-                        'RESTORE_PREVIEW_TOKEN=$(json_field preview_token)\nRESTORE_DIR=$(json_field backup_dir)')
-    text = text.replace('**If the user chooses to restore:**',
-                        '**If the user chooses to restore:** Read the exact eligible paths from the displayed preview. Set `RESTORE_SELECTION_ARGS` as a Bash array containing one `--select` and its unchanged path per explicitly selected eligible entry. Do not infer additional selections, restore blocked entries or replace files that appeared after preview. Keep `RESTORE_PREVIEW_TOKEN` bound to these exact current snapshots.')
-    text = _step(text, "check_local_patches", '''Inspect the returned transaction backup rather than an obsolete package patch directory. Its journal records exact original bytes, modes and target-relative paths.
-
-```bash
-printf 'Preserved transaction backup: %s\\n' "$UPDATE_BACKUP"
-```
-
-Do not automatically reapply locally modified managed files over the new pin. Compare the actual source, backed-up bytes and updated contract; prepare exact reviewed resolutions. The user may keep the backup without changing the installed result.
-
-If the exact transaction must be rolled back, first inspect its journal, ownership and current target state. With actual rollback authority, call the same pinned updater using the returned backup path:
-
-```bash
-__UPDATER__ --target "$UPDATE_TARGET" --host "$UPDATE_HOST" --rollback "$UPDATE_BACKUP"
-```
-
-Rollback validates target ownership and refuses drift. Preserve the backup and diagnostic when that check fails. It never authorizes deleting unrelated files or replacing later user changes.'''.replace("__UPDATER__", update))
-    text = text.replace("Latest version checked via npm", "User-selected source ref captured as a full immutable Git SHA")
-    text = text.replace("Changelog fetched and displayed BEFORE update", "Pinned changes and complete reviewed transaction displayed BEFORE update")
-    text = text.replace("Clean install warning shown", "Exact managed writes, conflicts, preserved paths and recoverable backups shown")
-    text = text.replace("latest-version", "selected-revision")
-    text = text.replace("**Latest:**", "**Selected revision:**")
-    text = text.replace('run `npx -y --package=@opengsd/gsd-core@latest -- gsd-core --global`',
-                        'use the pinned Python installer with explicit source, ref, target, host and scope')
-    return text
-
-
 def transform(text, source_name, runtime_path):
     """Return full text with recognized retained shell adapters translated."""
     source = source_name.replace("\\", "/")
@@ -395,8 +251,6 @@ def transform(text, source_name, runtime_path):
         text = text.replace("\r\n", "\n")
     command = lambda verb: "python -I "+_quote(runtime_path)+" query "+verb
     # Operative examples in commands/skills share these exact source contracts.
-    if source.endswith("engineer/workflows/update.md"):
-        text = _pinned_update(text, command, runtime_path)
     if source.endswith("engineer/workflows/execute-phase.md"):
         text = text.replace('worktree.record-agent --manifest "$WAVE_WORKTREE_MANIFEST" --agent-id',
                             'worktree.record-agent --manifest "$WAVE_WORKTREE_MANIFEST" --plan "${plan_id:?Set plan_id from the selected plan record}" --terminal-receipt "$NATIVE_TERMINAL_RECEIPT" --agent-id')

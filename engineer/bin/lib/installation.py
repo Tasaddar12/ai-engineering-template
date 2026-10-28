@@ -69,7 +69,7 @@ def context(args):
     return {"resolved": True, "installedVersion": manifest.get("revision"), "revision": manifest.get("revision"),
             "source_path": manifest.get("source"), "source": manifest.get("source"), "scope": manifest.get("scope"),
             "runtime": manifest["host"], "host": manifest["host"], "target": str(namespace.parent),
-            "config_dir": str(namespace), "gsdDir": str(namespace), "manifest": str(path),
+            "config_dir": str(namespace), "manifest": str(path),
             "complete": bool(manifest.get("complete")), "owned_files": manifest.get("files", {})}
 
 
@@ -88,7 +88,7 @@ def custom_files(args):
         if path.is_symlink():
             raise Failure("linked-install-path", str(path))
         relative = path.relative_to(namespace)
-        if any(part in ("engineer-install", "engineer-user-files-backup", "gsd-user-files-backup", "__pycache__", ".git") for part in relative.parts):
+        if any(part in ("engineer-install", "engineer-user-files-backup", "__pycache__", ".git") for part in relative.parts):
             continue
         if path.is_file() and (namespace.name+"/"+relative.as_posix()) not in owned:
             name = relative.as_posix()

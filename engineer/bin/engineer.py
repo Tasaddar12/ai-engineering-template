@@ -38,7 +38,7 @@ def registry():
         "phase-plan-index": records.plan_index, "roadmap.analyze": records.roadmap_analyze,
         "roadmap.get-phase": lambda a: records.roadmap_phase(a.need()),
         "roadmap.set-plans": lambda a: records.phase_change(a, "set-plans"),
-        "roadmap.update-plan-progress": misc.roadmap_progress, "phase.mvp-mode": records.mvp,
+        "roadmap.update-plan-progress": misc.roadmap_progress,
         "phase.tdd-applicable": tdd.applicable, "task.is-behavior-adding": tdd.behavior,
         "user-story.validate": records.user_story, "state.get": records.state_view,
         "state.load": records.state_view, "state.patch": records.state_patch,

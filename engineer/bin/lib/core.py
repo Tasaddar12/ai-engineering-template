@@ -22,7 +22,7 @@ class Failure(Exception):
 
 class Args:
     """Parse long options without shell interpolation; multi-value options stay lists."""
-    FLAGS = {"raw", "json", "force", "confirm", "fix", "mvp", "mutating", "stdin",
+    FLAGS = {"raw", "json", "force", "confirm", "fix", "mutating", "stdin",
              "commits-only", "uat-only", "require-verification", "discuss", "research",
              "validate", "full", "no-archive-phases", "milestone-bound", "tdd", "dry-run",
              "publish", "execution-authorized", "authorize-execution", "track-issues", "list", "apply", "repair", "backfill",

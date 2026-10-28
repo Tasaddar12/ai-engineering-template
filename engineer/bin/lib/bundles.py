@@ -33,9 +33,6 @@ def _roles(packet):
                    "required_agents": ["phase-researcher", "planner"],
                    "missing_required_agents": [role for role in ("phase-researcher", "planner") if role in missing]})
     packet["required_agents_installed"] = not packet["missing_required_agents"]
-    packet["synthesizer_model"] = packet["roadmapper_model"] = None
-    packet["unsupported_agents"] = ["gsd-project-researcher", "gsd-research-synthesizer", "gsd-roadmapper"]
-    packet["unsupported_agent_reason"] = "Removed roles are not substituted; project.init deterministically initializes approved records and retained roles perform assigned research/planning."
 
 
 def _progress(packet):
@@ -53,7 +50,7 @@ def _progress(packet):
     packet.update({"progress_percent": progress["percent"], "completed_count": progress["completed_phases"],
                    "current_phase": current, "next_phase": following, "phase_verification": states,
                    "all_phases_verified": bool(states) and all(item["status"] == "passed" for item in states),
-                   "paused_at": packet["state"].get("stopped_at"), "phase_mvp_mode": False})
+                   "paused_at": packet["state"].get("stopped_at")})
     return packet
 
 

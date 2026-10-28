@@ -81,7 +81,7 @@ def roadmap_phases():
         result.append({"number": number(match.group(1)), "name": match.group(2).strip(),
                        "goal": fields.get("goal", ""), "depends_on": fields.get("depends_on", ""),
                        "requirements": re.findall(r"\b[A-Z]+-\d+\b", fields.get("requirements", "")),
-                       "mode": fields.get("mode", "standard"), "status": fields.get("status", "Not started"), "dependencies": _dependency_ids(fields.get("depends_on", "")), "body": body,
+                       "status": fields.get("status", "Not started"), "dependencies": _dependency_ids(fields.get("depends_on", "")), "body": body,
                        "start": match.start(), "end": limit})
     identifiers = [item["number"] for item in result]
     if len(identifiers) != len(set(identifiers)):
@@ -664,13 +664,6 @@ def requirements(args, action):
             raise Failure("missing-requirements", "Supply explicit requirement IDs", 2)
         write(path, text)
     return {"updated": matched}
-
-
-def mvp(args):
-    phase = roadmap_phase(args.need())
-    enabled = config.lookup(config.load(), "workflow.mvp_mode", False)
-    active = args.has("mvp") or phase["mode"].lower() == "mvp" or enabled
-    return {"active": bool(active), "source": "flag" if args.has("mvp") else "roadmap" if phase["mode"].lower() == "mvp" else "config" if enabled else "default"}
 
 
 def user_story(args):

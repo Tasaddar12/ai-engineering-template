@@ -17,10 +17,8 @@ class MiscVerbs(RuntimeCase):
         self.assertTrue(self.cli("user-story.validate", "As a user, I want to sign in, so that I can work.")["valid"])
         self.assertFalse(self.cli("user-story.validate", "A vague feature")["valid"])
 
-    def test_mvp_state_summary_and_new_project(self):
+    def test_state_summary_and_new_project(self):
         directory = self.phase()
-        self.assertFalse(self.cli("phase.mvp-mode", "1")["active"])
-        self.assertEqual("flag", self.cli("phase.mvp-mode", "1", "--mvp")["source"])
         self.cli("state.patch", '{"Phase":"01"}')
         self.cli("state.update", "Last Activity", "Work complete")
         self.assertEqual("Work complete", self.cli("state.get", "last_activity"))

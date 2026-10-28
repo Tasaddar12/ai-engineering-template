@@ -159,16 +159,16 @@ def adapt(content, host, ns, source_name, findings):
     # Replace the complete obsolete bootstrap, preserving every surrounding method.
     launcher = ('ENGINEER_RUN=' + json.dumps(str(ns / 'engineer/bin/engineer_run')) + '\n'
                 'engineer_run() { sh "$ENGINEER_RUN" "$@"; }\nexport ENGINEER_RUN')
-    text = re.sub(r'(?m)^_GSD_SHIM_NAME=.*$', lambda _: launcher, text)
+    text = re.sub(r'(?m)^ENGINEER_SHIM_NAME=.*$', lambda _: launcher, text)
     for directory in ('references', 'templates', 'workflows'):
         text = text.replace('@~/.claude/' + directory + '/', '@' + str(ns / 'engineer' / directory).replace('\\', '/') + '/')
     text = text.replace('@~/.claude/', '@' + str(ns).replace('\\', '/') + '/')
     text = text.replace('~/.claude/engineer/', str(ns / 'engineer').replace('\\', '/') + '/')
     if host == 'codex':
         text = text.replace('.claude/CLAUDE.md', '.codex/AGENTS.md').replace('CLAUDE.md', 'AGENTS.md')
-    field_function = ('_gsd_field() { python -I ' + json.dumps(str(ns / 'bin/install_support.py'))
+    field_function = ('_engineer_field() { python -I ' + json.dumps(str(ns / 'bin/install_support.py'))
                       + ' json-field "$1" "$2"; }')
-    text = re.sub(r'_gsd_field\(\) \{ node -e [^\n]*?; \}', lambda _: field_function, text)
+    text = re.sub(r'_engineer_field\(\) \{ node -e [^\n]*?; \}', lambda _: field_function, text)
     transforms = Path(__file__).with_name('export_transforms.py')
     if transforms.is_file():
         spec = importlib.util.spec_from_file_location('_engineer_export_transforms', transforms)
@@ -184,7 +184,7 @@ def adapt(content, host, ns, source_name, findings):
         if fence:
             shell = not shell if not fence.group(1) else fence.group(1) in ('bash', 'sh', 'shell', 'zsh')
             continue
-        if shell and not line.lstrip().startswith('#') and re.search(r'(?:\bnode\s+(?:-[ep]|["\'])|\.cjs\b|@gsd|@opengsd/gsd-core)', line):
+        if shell and not line.lstrip().startswith('#') and re.search(r'(?:\bnode\s+(?:-[ep]|["\'])|\.cjs\b)', line):
             # Application-specific examples may legitimately inspect a Node application.
             if source_name.startswith(('commands/', 'skills/', 'engineer/workflows/')):
                 findings.append({'path': source_name, 'line': index, 'code': 'unported-runtime-javascript', 'text': line[:400]})

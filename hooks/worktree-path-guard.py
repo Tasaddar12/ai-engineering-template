@@ -110,7 +110,6 @@ def inspect(payload):
         warnings.append('The actual Git checkout differs from the supplied root pin. Stop dependent writes and resolve the coordinator-owned worktree identity.')
     if tool in ('Agent', 'Task'):
         role = str(inputs.get('subagent_type') or inputs.get('agent_type') or inputs.get('name') or 'unknown')
-        role = role.removeprefix('gsd-')
         role = {'coder': 'executor', 'phase-preparer': 'planner', 'phase-checker': 'plan-checker', 'researcher': 'phase-researcher'}.get(role, role)
         category = 'read-only' if role in READ_ONLY else 'artifact' if role in ARTIFACT else 'write'
         if category != 'read-only' and inputs.get('isolation') != 'worktree':

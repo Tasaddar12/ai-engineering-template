@@ -16,7 +16,7 @@ SCHEMAS = {
 OPTIONAL = {
     "plan": {"requirements": list, "acceptance": list, "documentation": list, "resources": list, "checks": list,
              "files_deleted": list, "estimate": dict, "gap_closure": bool, "user_setup": list, "tags": list,
-             "threat_model": (dict, list), "task_count": int, "mvp": bool, "reversible": (str, bool)},
+             "threat_model": (dict, list), "task_count": int, "reversible": (str, bool)},
     "summary": {"subsystem": (str, list), "tags": list, "requires": list, "provides": list, "affects": list,
                 "actuals": dict, "estimate": dict, "tech-stack": dict, "key-files": dict, "key-decisions": list,
                 "patterns-established": list, "requirements-completed": list, "coverage": list, "duration": (str, int, float),

@@ -29,8 +29,8 @@ def agents_dir():
 def resolve_agent(name):
     if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", name):
         raise Failure("invalid-agent-name", str(name), 2)
-    aliases = {"coder": "executor", "phase-preparer": "planner", "phase-checker": "plan-checker", "researcher": "phase-researcher", "gsd-executor": "executor"}
-    name = aliases.get(name, name.removeprefix("gsd-"))
+    aliases = {"coder": "executor", "phase-preparer": "planner", "phase-checker": "plan-checker", "researcher": "phase-researcher"}
+    name = aliases.get(name, name)
     directories = [agents_dir(), root()/".claude/agents", root()/".codex/agents"]
     if not any((directory/(name+suffix)).is_file() for directory in directories for suffix in (".md", ".toml")):
         raise Failure("agent-not-found", f"Required agent role is missing: {name}")
