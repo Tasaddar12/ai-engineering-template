@@ -1,7 +1,7 @@
 """Specification projections and explicit probe resolutions, never AI judgment."""
 import json
 import re
-from .core import Failure, read, safe_path
+from .core import Failure, input_json, read, safe_path
 
 UI_KINDS = {
     "form": r"\bform|input|submit|field\b", "list-collection": r"\blist|collection|table|rows|grid|feed\b",
@@ -21,12 +21,7 @@ UI_CATEGORIES = {
 
 
 def _load(args):
-    path = safe_path(args.get("input", args.arg(0, "")))
-    try:
-        value = json.loads(read(path))
-    except (ValueError, OSError) as exc:
-        raise Failure("invalid-spec-input", str(exc), 2) from exc
-    return value
+    return input_json(None if args.has("stdin") else args.get("input", args.arg(0)))
 
 
 def _resolution(item, tiers):

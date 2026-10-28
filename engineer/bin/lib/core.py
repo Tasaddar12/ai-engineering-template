@@ -11,6 +11,7 @@ import re
 import subprocess
 import tempfile
 import time
+import sys
 
 
 class Failure(Exception):
@@ -24,10 +25,12 @@ class Args:
     FLAGS = {"raw", "json", "force", "confirm", "fix", "mvp", "mutating", "stdin",
              "commits-only", "uat-only", "require-verification", "discuss", "research",
              "validate", "full", "no-archive-phases", "milestone-bound", "tdd", "dry-run",
-             "publish", "execution-authorized", "authorize-execution", "track-issues", "list"}
+             "publish", "execution-authorized", "authorize-execution", "track-issues", "list", "apply", "repair", "backfill",
+             "all", "auto", "lines", "first", "require-nonempty", "preview", "no-write"}
 
-    def __init__(self, values):
+    def __init__(self, values, flags=()):
         self.pos, self.opts = [], {}
+        boolean_flags = self.FLAGS | set(flags)
         active = None
         for token in values:
             if token == "--":
@@ -38,7 +41,7 @@ class Args:
             elif token.startswith("--"):
                 key, sep, value = token[2:].partition("=")
                 self.opts[key] = [value] if sep else []
-                active = None if key in self.FLAGS else key
+                active = None if key in boolean_flags else key
             elif active:
                 self.opts[active].append(token)
             else:
@@ -133,6 +136,27 @@ def write(path, content):
 
 def load_json(path, default=None):
     return json.loads(read(path)) if Path(path).exists() else default
+
+
+def input_json(path=None, max_bytes=10*1024*1024):
+    """Read an explicitly named regular JSON input, including workflow temp files."""
+    try:
+        if path is None:
+            content = sys.stdin.read(max_bytes+1)
+            if len(content.encode("utf-8")) > max_bytes:
+                raise Failure("json-input-too-large", "JSON input exceeds the configured read bound", 2)
+        else:
+            selected = Path(str(path)).expanduser()
+            if selected.is_symlink() or not selected.is_file():
+                raise Failure("json-input-file", "Expected an explicitly named regular JSON file: "+str(selected), 2)
+            with selected.open("rb") as stream:
+                raw_content = stream.read(max_bytes+1)
+            if len(raw_content) > max_bytes:
+                raise Failure("json-input-too-large", str(selected), 2)
+            content = raw_content.decode("utf-8-sig")
+        return json.loads(content)
+    except (OSError, UnicodeError, ValueError) as exc:
+        raise Failure("invalid-json-input", str(exc), 2) from exc
 
 
 def write_json(path, value):

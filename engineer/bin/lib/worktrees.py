@@ -487,6 +487,10 @@ def deletion_guards(entry, expected_head, require_ancestry=True):
                 assert_stopped(worker)
     if dirty(target):
         raise Failure('dirty-worktree-preserved', str(target))
+    ignored = git('ls-files', '--others', '--ignored', '--exclude-standard', '--directory', '-z', cwd=target).stdout
+    ignored_paths = [name for name in ignored.split('\0') if name]
+    if ignored_paths:
+        raise Failure('ignored-data-preserved', 'Ignored local data has no disposal authority or verified backup', path=str(target), files=ignored_paths)
     actual = head(target)
     if actual != expected_head or item['head'] != expected_head:
         raise Failure('worktree-head-drift', str(target))

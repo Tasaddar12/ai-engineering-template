@@ -118,6 +118,9 @@ def complete_phase(args):
         raise Failure("phase-issues", "Complete worker summaries and reconcile findings first", errors=packet["errors"])
     if verification.status(args)["status"] != "passed":
         raise Failure("phase-unverified", "Passed verification is required before phase completion")
+    evidence = verification.current_evidence(args.need())
+    if not evidence["current"]:
+        raise Failure("phase-verification-stale", "Current frozen verification evidence is required before phase completion", evidence=evidence)
     result = records.phase_change(args, "complete")
     view = records.state_view()
     current = str(view.get("phase", "")).split(" ", 1)[0]

@@ -13,7 +13,7 @@ def plan_gate(args):
     context = "\n".join(read(p) for p in directory.glob("*-CONTEXT.md"))
     marked = bool(re.search(r"\b(?:UI|user interface|frontend|front-end|visual design)\b", phase["name"]+phase["body"]+context, re.I))
     mode = config.lookup(config.load(), "workflow.ui_phase", "auto")
-    required = mode is True or (mode == "auto" and marked)
+    required = bool(config.lookup(config.load(), "workflow.ui_safety_gate", True)) and (mode is True or marked)
     if not required:
         return {"block": False, "blocked": False, "required": False, "structuralOnly": True}, 0
     paths = list(directory.glob("*-UI-SPEC.md"))

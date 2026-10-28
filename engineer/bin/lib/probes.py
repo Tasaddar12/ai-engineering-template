@@ -1,7 +1,7 @@
 """Deterministic specification boundary probes and section extraction."""
 import json
 import re
-from .core import Failure, read, safe_path
+from .core import Failure, input_json, read, safe_path
 
 PROBES = {
     "adjacency": (r"merge|overlap|interval|dedup|duplicates?|equal|touch|collid", "When two things are exactly equal or just touch, do they merge, collide, or separate?"),
@@ -25,8 +25,8 @@ SHAPES = {
 def edge(args):
     source = args.arg(0, args.get("requirements", args.get("input")))
     try:
-        requirements = json.loads(read(safe_path(source)))
-        resolutions = json.loads(read(safe_path(args.get("resolutions")))) if args.has("resolutions") else []
+        requirements = input_json(None if args.has("stdin") else source)
+        resolutions = input_json(args.get("resolutions")) if args.has("resolutions") else []
     except (ValueError, TypeError, OSError) as exc:
         raise Failure("invalid-probe-input", str(exc), 2) from exc
     if not isinstance(requirements, list) or not isinstance(resolutions, list):
@@ -82,6 +82,7 @@ def edge(args):
 
 
 def section(args):
+    from .issue_format import visible_lines
     path, kind = safe_path(args.need()), args.need(1)
     if kind not in ("edges", "prohibitions"):
         raise Failure("unknown-spec-section", kind, 2)
@@ -92,5 +93,19 @@ def section(args):
         return {"supplied": False, "items": []}
     end = re.search(r"(?m)^#{1,"+str(len(match[1]))+r"}\s", content[match.end():])
     body = content[match.end():match.end()+end.start() if end else len(content)]
-    items = [m.group(1).strip() for m in re.finditer(r"(?m)^\s*(?:[-*]|\d+[.)])\s+(.+)$", body)]
-    return {"supplied": True, "items": items}
+    items, in_table = [], False
+    for line in visible_lines(body):
+        bullet = re.match(r"^\s*(?:[-*]|\d+[.)])\s+(.+)$", line)
+        if bullet:
+            item = bullet[1].strip()
+            if not re.fullmatch(r"(?:\[[ xX]\]\s*)?(?:TBD|TODO|none|n/a|—|-)", item, re.I):
+                items.append(item)
+        if "|" not in line:
+            in_table = False
+            continue
+        cells = [cell.strip() for cell in re.split(r"(?<!\\)\|", line.strip().strip("|"))]
+        if len(cells) > 1 and all(re.fullmatch(r":?-{3,}:?", cell) for cell in cells):
+            in_table = True
+        elif in_table and any(cell and not re.fullmatch(r"TBD|TODO|none|n/a|—|-", cell, re.I) for cell in cells):
+            items.append(" | ".join(cells))
+    return {"supplied": bool(items), "items": items}

@@ -19,7 +19,7 @@ def _roles(packet):
     agents = models.agents_dir()
     for role in ROLES:
         key = role.replace("-", "_")
-        if not (agents/(role+".md")).is_file():
+        if not any((agents/(role+suffix)).is_file() for suffix in (".md", ".toml")):
             missing.append(role)
             packet[key+"_model"] = packet[key+"_effort"] = None
             continue
@@ -132,10 +132,11 @@ def init(args, kind):
                        "quick_tasks": tasks, "capacity": quick_batch.capacity(), "isolation": "worktree",
                        **{flag: args.has(flag) for flag in ("discuss", "research", "validate", "full")}})
         if kind == "quick-batch":
-            batches = [load_json(safe(path)) for path in sorted((base/"quick/batches").glob("*.json"))]
+            batches = quick_batch.command(Args([]), "list")["batches"]
             if any(not isinstance(item, dict) for item in batches):
                 raise Failure("invalid-quick-batch", "Stored batch must be an object")
             packet["open_batches"] = [item for item in batches if item.get("status") != "complete"]
+            packet["quick_batches_dir"] = str(base/"quick-batches")
         return packet
     if kind == "docs-update":
         files = [path for name in ("README.md", "CONTRIBUTING.md", "ARCHITECTURE.md", "SECURITY.md", "CHANGELOG.md") if (path := root()/name).is_file()]
@@ -151,10 +152,16 @@ def init(args, kind):
             sessions.append({**metadata, "path": str(path)})
         return {**packet, "debug_dir": str(base/"debug"), "sessions": sessions, "active_sessions": [item for item in sessions if item.get("status") not in ("resolved", "closed")]}
     if kind == "update":
+        from . import installation
+        import copy
         namespace = models.NAMESPACE
-        manifest = load_json(namespace/"workflow-ownership.json", {})
-        return {**packet, "namespace": str(namespace), "ownership_manifest": manifest, "installed_revision": manifest.get("current", {}).get("revision"),
-                "source": manifest.get("current", {}).get("source"), "review_required": True}
+        selected = copy.deepcopy(args)
+        if not selected.has("config-dir") and namespace.name in (".claude", ".codex"):
+            selected.opts["config-dir"] = [str(namespace)]
+        installed = installation.context(selected)
+        manifest = load_json(installed["manifest"], {}) if installed["resolved"] else {}
+        return {**packet, **installed, "namespace": str(namespace), "ownership_manifest": manifest,
+                "installed_revision": installed.get("revision"), "source": installed.get("source_path"), "review_required": True}
     value = args.arg(0, args.get("phase"))
     if value is None:
         state_phase = packet["state"].get("phase", "")

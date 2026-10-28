@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 import shlex
 import sys
-from .core import Failure, now, pick, read, root, safe_path, write_json
+from .core import Failure, input_json, now, pick, read, root, safe_path, write_json
 from .text import split_frontmatter
 
 
@@ -182,6 +182,22 @@ def normalize_test_command(args):
 
 
 def review_adapter(args, action):
+    if action == "normalize-structural":
+        data = input_json(args.get("input"))
+        if not isinstance(data, dict) or not isinstance(data.get("findings"), list) or not isinstance(data.get("summary"), (str, dict)):
+            raise Failure("structural-schema-unrecognized", "Expected a structural report with summary and findings; no findings were discarded", 2)
+        findings = data["findings"]
+        if any(not isinstance(item, dict) or not any(isinstance(item.get(key), str) and item[key].strip() for key in ("message", "description", "title")) for item in findings):
+            raise Failure("structural-finding-unrecognized", "Every finding needs its actual title, description or message", 2)
+        normalized = {"summary": data["summary"], "findings": findings}
+        if args.has("output"):
+            output = Path(str(args.get("output"))).expanduser()
+            if output.is_symlink():
+                raise Failure("structural-output-linked", str(output))
+            if output.exists() and input_json(output) != normalized:
+                raise Failure("structural-output-exists", "Refusing to overwrite a different explicit structural report")
+            write_json(output, normalized)
+        return normalized
     if action in ("frontmatter", "summary-files"):
         path = safe_path(args.get("report", args.arg(0, "")))
         if not path.is_file():

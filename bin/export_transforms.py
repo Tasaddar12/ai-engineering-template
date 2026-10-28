@@ -230,7 +230,7 @@ def _shell(body, command, source, runtime_path):
     if source.endswith("completion-reconciliation.md"):
         body = body.replace('--commits-only --committed-since', '--committed-since')
     if source.endswith("executor-isolation-dispatch.md"):
-        body = body.replace('--agent-id "$AGENT_ID" \\\n', '--agent-id "$AGENT_ID" \\\n  --plan "{plan_number}" \\\n')
+        body = body.replace('--agent-id "$AGENT_ID" \\\n', '--agent-id "$AGENT_ID" \\\n  --plan "${plan_id:?Set plan_id from the selected plan record}" \\\n')
         body = body.replace('[ "$USE_WORKTREES" = "false" ] && ISOLATION=none',
                             '[ "$USE_WORKTREES" != "false" ] || { printf \'%s\\n\' \'BLOCKED: workflow isolation is mandatory; no sequential shared-checkout fallback is permitted.\' >&2; exit 1; }')
         # A real base mismatch never degrades into writes in the primary lane.
@@ -399,13 +399,17 @@ def transform(text, source_name, runtime_path):
         text = _pinned_update(text, command, runtime_path)
     if source.endswith("engineer/workflows/execute-phase.md"):
         text = text.replace('worktree.record-agent --manifest "$WAVE_WORKTREE_MANIFEST" --agent-id',
-                            'worktree.record-agent --manifest "$WAVE_WORKTREE_MANIFEST" --plan "{plan_id}" --terminal-receipt "$NATIVE_TERMINAL_RECEIPT" --agent-id')
+                            'worktree.record-agent --manifest "$WAVE_WORKTREE_MANIFEST" --plan "${plan_id:?Set plan_id from the selected plan record}" --terminal-receipt "$NATIVE_TERMINAL_RECEIPT" --agent-id')
         anchor = 'After each `Agent()` returns, parse executor-returned worktree metadata'
         text = text.replace(anchor,
                             'For a native harness worker, obtain and persist the actual host terminal receipt before recording completion: source `native-host`, actual Claude/Codex host, agent ID, absolute worktree path, branch, captured head, actual complete/completed/stopped status and exact repository-relative SUMMARY path. Bind `NATIVE_TERMINAL_RECEIPT` to that real packet file. A narration, timeout, guessed PID or `--completed` flag is not a receipt. If the host cannot supply one, stop integration and preserve the checkout; use the orchestrator process backend for subsequent dispatch rather than inventing evidence. '+anchor)
     if source.endswith("engineer/workflows/quick-batch/steps/worktree-dispatch.md"):
         text = text.replace('worktree.create --manifest "$QUICK_BATCH_WORKTREE_MANIFEST" --agent-id',
                             'worktree.create --manifest "$QUICK_BATCH_WORKTREE_MANIFEST" --plan "${quick_id}" --agent-id')
+    if source.endswith("engineer/workflows/quick-batch/steps/batch-init.md"):
+        text = text.replace('QB_CREATE_JSON=$(engineer_run quick-batch create --file "$TASK_FILE" --base-revision "$(git rev-parse HEAD)" --raw)',
+                            'QB_CREATE_JSON=$(engineer_run quick-batch create --file "$TASK_FILE" --base-revision "$(git rev-parse HEAD)" $VALIDATE_PARAM $RESEARCH_PARAM --raw)\nQB_CREATE_RC=$?')
+        text = text.replace('```bash\nQB_CREATE_RC=$?\n', '```bash\n')
     if source.endswith(".sh"):
         result = _shell(text, command, source, runtime_path)
         return result.replace("\n", "\r\n") if crlf else result
