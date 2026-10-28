@@ -178,7 +178,7 @@ def registry():
         verbs["phase."+action+"-inputs"] = lambda a, action=action: research.inputs(a, "discuss" if action == "discussion" else action)
     for action in ("prohibitions", "ui", "project", "coverage"):
         verbs["spec."+action] = lambda a, action=action: specs.command(a, action)
-    verbs["spec.ui-probe"] = lambda a: specs.command(a, "ui")
+    verbs["spec.ui-probe"] = probes.ui
     verbs["spec.prohibition-probe"] = lambda a: specs.command(a, "prohibitions")
     for action in ("status", "append", "fixed", "waive"):
         verbs["windows."+action] = lambda a, action=action: quality.command(a, action)
@@ -195,7 +195,7 @@ def registry():
         verbs[key] = lambda a, action=action: workflow_ops.command(a, action)
     for action in ("get", "read", "length", "lines", "commits", "exec-ready", "has-section", "predicate", "validate", "encode-lines", "depth-input", "depth-fields", "status-reason"):
         verbs["json."+action] = lambda a, action=action: runtime_tools.json_command(a, action)
-    for action in ("frontmatter", "summary-files", "contributions", "evidence", "normalize-structural"):
+    for action in ("frontmatter", "summary-files", "contributions", "evidence", "normalize-structural", "normalize-fallow"):
         verbs["review."+action] = lambda a, action=action: runtime_tools.review_adapter(a, action)
     for kind in ("code-review", "complete-milestone", "execute-phase", "new-milestone", "new-project", "onboard", "phase-op", "plan-phase", "progress", "quick", "quick-batch", "todos", "verify-work", "ship", "debug", "docs-update", "map-codebase", "milestone-op", "resume", "update"):
         verbs["init."+kind] = lambda a, kind=kind: bundles.init(a, kind)
@@ -218,6 +218,10 @@ VERBS = registry()
 
 
 def main(argv=None):
+    # JSON is UTF-8 across source and installed runtimes, including Windows hosts.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     values = list(sys.argv[1:] if argv is None else argv)
     if values and (values[0] == "--cwd" or values[0].startswith("--cwd=")):
         option = values.pop(0)
