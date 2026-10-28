@@ -206,7 +206,7 @@ Proceed to gather_stats.
 
 </if>
 
-<if mode="interactive" AND="gates.confirm_milestone_scope != false">
+<if mode="interactive" AND="gates.confirm_milestone_scope!= false">
 
 ```
 Ready to mark this milestone as shipped?
@@ -253,7 +253,7 @@ Milestone Stats:
 Extract one-liners from SUMMARY.md files using summary-extract:
 
 ```bash
-# : zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
+# Zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
 shopt -s nullglob 2>/dev/null; setopt NULL_GLOB 2>/dev/null
 
 # For each phase in milestone, extract one-liner
@@ -284,7 +284,7 @@ If additional details are needed (e.g., user-provided "Delivered" summary, git r
 
 </step>
 
-**Resolve the PROJECT.md review gate first.** This is the first `init.complete-milestone` call in the workflow, so the section manifest does not exist before it; reading `section_manifest` without making this call would fall into the fail-open `null` branch below and rewrite the shared PROJECT.md under `--ws` . `init.complete-milestone` is a pure read, so the later full call in `reorganize_roadmap_and_delete_originals` is unaffected.
+**Resolve the PROJECT.md review gate first.** This is the first `init.complete-milestone` call in the workflow, so the section manifest does not exist before it; reading `section_manifest` without making this call would fall into the fail-open `null` branch below and rewrite the shared PROJECT.md under `--ws`. `init.complete-milestone` is a pure read, so the later full call in `reorganize_roadmap_and_delete_originals` is unaffected.
 
 ```bash
 IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
@@ -298,7 +298,7 @@ node -e "const m=JSON.parse(process.argv[1]).section_manifest; console.log('PROJ
 ```
 
 <!-- engineer:section id="project-md-evolution-review" when="state:flat-mode" -->
-If the line above printed `PROJECT_MD_REVIEW=run` (the manifest is `null` or lists `"project-md-evolution-review"` in `included`): read and execute `engineer/workflows/complete-milestone/steps/project-md-evolution-review.md`. If it printed `PROJECT_MD_REVIEW=skip` (a workstream is active) — do not read the file; PROJECT.md is shared across workstreams, so a workstream's milestone close never rewrites it ; proceed to `archive_milestone`.
+If the line above printed `PROJECT_MD_REVIEW=run` (the manifest is `null` or lists `"project-md-evolution-review"` in `included`): read and execute `engineer/workflows/complete-milestone/steps/project-md-evolution-review.md`. If it printed `PROJECT_MD_REVIEW=skip` (a workstream is active) — do not read the file; PROJECT.md is shared across workstreams, so a workstream's milestone close never rewrites it; proceed to `archive_milestone`.
 <!-- /section -->
 
 <step name="archive_milestone">
@@ -321,7 +321,7 @@ If "Yes": set `ARCHIVE_QUICK_FLAG="--archive-quick"`. If "Skip" (or `.planning/q
 ARCHIVE=$(engineer_run query milestone.complete "v[X.Y]" --name "[Milestone Name]" --confirm $ARCHIVE_QUICK_FLAG)
 ```
 
-`--confirm` is required : the archive is irreversible (ROADMAP/REQUIREMENTS archived, phase
+`--confirm` is required: the archive is irreversible (ROADMAP/REQUIREMENTS archived, phase
 directories MOVED, STATE.md rewritten), so `milestone complete` refuses to mutate without it. This
 workflow has already gathered the user's explicit intent by this step, so passing the flag here is
 correct; `--dry-run` previews the exact move list without mutating if a preview is ever needed first.
@@ -343,7 +343,7 @@ Verify: `✅ Milestone archived to .planning/milestones/`
 
 Verify after `--archive-quick` was passed: `✅ Quick tasks archived to .planning/milestones/v[X.Y]-quick/`
 
-**Phase archival (default-on):** `milestone complete` archives phase directories to `milestones/v[X.Y]-phases/` by default , so the next `/new-milestone` never inherits un-archived dirs. No manual `mkdir`/`mv` or `--archive-phases` flag is needed.
+**Phase archival (default-on):** `milestone complete` archives phase directories to `milestones/v[X.Y]-phases/` by default, so the next `/new-milestone` never inherits un-archived dirs. No manual `mkdir`/`mv` or `--archive-phases` flag is needed.
 
 If the user explicitly wants to keep phase directories in place as raw execution history, invoke `milestone complete` with `--no-archive-phases`:
 
@@ -450,7 +450,7 @@ ROADMAP_PATH=$(_engineer_field "$INIT_REORG" roadmap_path)
 ARCHIVE_DIR=$(_engineer_field "$INIT_REORG" archive_dir)
 MILESTONES_PATH=$(_engineer_field "$INIT_REORG" milestones_path)
 PROJECT_PATH=$(_engineer_field "$INIT_REORG" project_path)
-# : PROJECT.md is shared across workstreams. Stage it only when init's own section manifest says this run edited it (the evolution review is included in flat mode only) — the same source the review step is gated on, so the two cannot disagree.
+# PROJECT.md is shared across workstreams. Stage it only when init's own section manifest says this run edited it (the evolution review is included in flat mode only) — the same source the review step is gated on, so the two cannot disagree.
 _engineer_has_section() { node -e "const m=JSON.parse(process.argv[1]).section_manifest; process.exit(m==null||m.included.includes(process.argv[2])?0:1)" "$1" "$2"; }
 _engineer_has_section "$INIT_REORG" project-md-evolution-review || PROJECT_PATH=""
 engineer_run query commit "chore: archive v[X.Y] milestone files" --files "${ARCHIVE_DIR}/v[X.Y]-ROADMAP.md" "${ARCHIVE_DIR}/v[X.Y]-REQUIREMENTS.md" "${ARCHIVE_DIR}/v[X.Y]-MILESTONE-AUDIT.md" "$MILESTONES_PATH" ${PROJECT_PATH:+"$PROJECT_PATH"} "$STATE_PATH" "$ROADMAP_PATH"
@@ -458,7 +458,7 @@ engineer_run query commit "chore: archive v[X.Y] milestone files" --files "${ARC
 
 This creates a durable checkpoint in git history. If anything fails after this point, the working tree can be reconstructed from git.
 
-MILESTONES.md is workstream-scoped the same way STATE.md/ROADMAP.md are (`planningPaths(cwd).planning`) — under an active workstream this commits the actual files `milestone complete` wrote, not the root copies. PROJECT.md is NOT: it is shared across workstreams, so under an active workstream it is neither reviewed nor staged here .
+MILESTONES.md is workstream-scoped the same way STATE.md/ROADMAP.md are (`planningPaths(cwd).planning`) — under an active workstream this commits the actual files `milestone complete` wrote, not the root copies. PROJECT.md is NOT: it is shared across workstreams, so under an active workstream it is neither reviewed nor staged here.
 
 **Remove REQUIREMENTS.md via git rm** (preserves history, stages deletion atomically):
 
@@ -562,7 +562,7 @@ See: .planning/PROJECT.md (updated [today])
 
 <step name="handle_branches">
 
-Check the project's `branching_strategy` (from `init.execute-phase`/`init.complete-milestone`). `"none"` skips straight to `git_tag`. For `"phase"` or `"milestone"`, list the matching branches (by the configured prefix template); no branches found also skips to `git_tag`. Resolve the base branch through the single shared resolver, never a bare `main`/`master` fallback :
+Check the project's `branching_strategy` (from `init.execute-phase`/`init.complete-milestone`). `"none"` skips straight to `git_tag`. For `"phase"` or `"milestone"`, list the matching branches (by the configured prefix template); no branches found also skips to `git_tag`. Resolve the base branch through the single shared resolver, never a bare `main`/`master` fallback:
 ```bash
 BASE_BRANCH=$(engineer_run query git.base-branch)
 ```

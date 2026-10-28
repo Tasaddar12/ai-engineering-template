@@ -53,7 +53,7 @@ The probe reuses the edge-probe rails verbatim (ADR-550 Decision 7 — see
    empty state — that is what makes an unresolved consideration meaningful.
 2. **Dismissal requires a reason string.** Silence is not a resolution; the reason is the audit
    trail.
-3. **Zero-classification surfaces one `unclassified` candidate .** An element whose prose
+3. **Zero-classification surfaces one `unclassified` candidate.** An element whose prose
    matched no kind cue yields exactly one soft `unclassified — review manually` item
    (`category: "unclassified"`, `status: "unresolved"`) — never a silent drop, never a guessed
    kind. `unclassified` is a review signal, **not** a ninth taxonomy category; an explicit

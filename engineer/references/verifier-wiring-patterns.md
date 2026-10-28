@@ -42,7 +42,7 @@ grep -r -A 3 "<${COMPONENT_NAME}" "${search_path:-src/}" --include="*.tsx" 2>/de
 
 > These two status tables are intentionally mirrored in `agents/verifier.md`.
 > The status vocabulary is load-bearing verifier output and must remain in the
-> agent body ; this copy is here so the procedure below reads standalone.
+> agent body; this copy is here so the procedure below reads standalone.
 
 **Data-flow status:**
 

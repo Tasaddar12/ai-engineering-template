@@ -32,7 +32,7 @@ Plans:
 
 - [x] {{PHASE}}-01: {{PLAN_DESCRIPTION}}
 - [x] {{PHASE}}-02: {{PLAN_DESCRIPTION}}
-      [... all plans ...]
+      [... all plans...]
 
 **Details:**
 {{PHASE_DETAILS_FROM_ROADMAP}}

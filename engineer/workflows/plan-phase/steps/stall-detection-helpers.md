@@ -5,7 +5,7 @@ planner/plan-checker spawns. It defaults to `true`. In that default-on mode each
 spawn dispatches with `run_in_background=true`, records `TS=$(date +%s)`, and
 then repeatedly calls `engineer_stall_watch` until it returns something other than
 `waiting`/`active`. This mirrors the already-shipped `executor.stall_*`
-pattern (`execute-phase.md`, bug , commit `e7942c21b`) but — unlike
+pattern (`execute-phase.md`, bug, commit `e7942c21b`) but — unlike
 that prose-only surveillance, which cannot run during a *blocking* `Agent()`
 call — each `engineer_stall_watch` call is a real, bounded bash subprocess wait
 issued as its own tool call, so it returns control to the orchestrator on
@@ -58,7 +58,7 @@ min), real, bounded call that reliably hands control back — the outer
 threshold is enforced by `dispatch_ts` accumulating across calls, not by one
 call's own duration.
 
-**Never a wake-up call between cycles :** while the orchestrator waits
+**Never a wake-up call between cycles:** while the orchestrator waits
 between `engineer_stall_watch` cycles, it must NOT call `ScheduleWakeup` (or any
 host wake/sleep-scheduling tool, e.g. the `/loop` pacing surface) to
 literalize "I'll wait". The `engineer_stall_watch` bash call IS the wait mechanism;

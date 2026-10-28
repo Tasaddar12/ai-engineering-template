@@ -102,7 +102,7 @@ UI_REVIEW_FILE=$(ls "${PHASE_DIR}"/*-UI-REVIEW.md 2>/dev/null | head -1)
 
 **If `--auto`:** Auto-select "View" — keep the existing UI-REVIEW.md untouched and exit without
 re-auditing. Log: `[auto] UI-REVIEW.md exists — reusing as-is.` "Re-audit" is the regenerating
-choice; an unattended run reuses an existing artifact instead .
+choice; an unattended run reuses an existing artifact instead.
 
 **Otherwise:** Use AskUserQuestion:
 - header: "Existing UI Review"
@@ -161,7 +161,7 @@ falls back to its Playwright-only static capture when it is `false` or no Chrome
 
 <!-- model-omit-on-inherit -->
 
-> **Model omission .** Omit the `model` parameter entirely when the value it would carry (`UI_AUDITOR_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
+> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`UI_AUDITOR_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```
 Agent(

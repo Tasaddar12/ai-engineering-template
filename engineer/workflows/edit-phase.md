@@ -16,9 +16,9 @@ Parse the command arguments:
 - Optional flag: --force (allow editing in_progress/completed phases)
 
 Examples:
-  `/edit-phase 5`       → phase = 5, force = false
+  `/edit-phase 5` → phase = 5, force = false
   `/edit-phase 5 --force` → phase = 5, force = true
-  `/edit-phase 12.1`    → phase = 12.1, force = false
+  `/edit-phase 12.1` → phase = 12.1, force = false
 
 If no argument provided:
 

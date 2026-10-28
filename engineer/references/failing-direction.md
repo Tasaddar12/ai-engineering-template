@@ -10,9 +10,7 @@ Resolvability asks whether its target *resolves*. This one asks whether the comm
 **falsifiable at all**. A command with no expressible failure mode is not an acceptance test —
 it reads as rigour and delivers none.
 
-: a planner emitted 21 `<automated>` commands that could not run. Cargo exited non-zero, so
-that instance failed loudly — luck, not design. The same class of error with a command that
-exits 0 on a no-op passes green and silently. Requiring a stated failing direction is the only
+Requiring a stated failing direction is the only
 shape that catches the silent case, because it forces the plan to name the failure signal rather
 than assume the command has one.
 

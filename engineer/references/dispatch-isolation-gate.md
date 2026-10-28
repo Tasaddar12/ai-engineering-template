@@ -2,7 +2,7 @@
 
 The single source of truth for **how a dispatch site decides whether it may run an agent
 isolated**. Every workflow that spawns an executor-like subagent reads this file and follows
-it, rather than restating the rule inline .
+it, rather than restating the rule inline.
 
 `ISOLATION` — not `RUNTIME` — is the decision variable. **Never branch a dispatch site on a
 runtime id.** Isolation is a negotiated capability declared per host; a runtime-name test
@@ -17,8 +17,8 @@ Run this in the dispatch site's config-gate step, right after `RUNTIME` / `USE_W
 read. It requires `engineer_run` to be defined (the standard shim preamble).
 
 ```bash
-# Isolation is a NEGOTIATED CAPABILITY, not a runtime id . Fail-closed to none.
-# : this call PERSISTS the resolution to the run-scoped sentinel the isolation
+# Isolation is a NEGOTIATED CAPABILITY, not a runtime id. Fail-closed to none.
+# This call PERSISTS the resolution to the run-scoped sentinel the isolation
 # guard hooks read, as an unconditional side effect of resolving it.
 # Keep the resolver's own failure DISTINGUISHABLE from a genuine `none`. Both
 # fail closed — that policy is right — but only one of them may claim the host
@@ -134,5 +134,5 @@ Wave fan-out sites (`execute-phase`) implement both models — see
 ## Base divergence
 
 Any site that ends up with `ISOLATION != none` must also run the `worktree.base-check`
-auto-degrade before dispatch , or the agent's `worktree_branch_check` guard
+auto-degrade before dispatch, or the agent's `worktree_branch_check` guard
 halts on a stale fork base. `quick.md` and `execute-phase` do this today.

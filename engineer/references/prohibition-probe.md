@@ -112,7 +112,7 @@ lifecycle is identical to the edge-probe, the verification tiers differ):
 
   At verify time these tiers are routed differently (ADR-550 D4):
   - A **test**-tier prohibition is enforced + hard-gates via the deterministic
-    `check prohibition-enforcement` sub-command ( + , ADR-550 D5d): it locates the wired
+    `check prohibition-enforcement` sub-command ( +, ADR-550 D5d): it locates the wired
     mechanical check (a `node --test` negative test OR a lint/AST rule run as
     `eslint --format json` and filtered by `ruleId`), **machine-proves it is fail-first** against a
     known violation, runs it for a genuine **non-vacuous** pass, and emits the
@@ -121,7 +121,7 @@ lifecycle is identical to the edge-probe, the verification tiers differ):
     **hard-gates** (flagged, never green → `gaps_found`) in BOTH interactive and autonomous modes —
     never a silent pass.
 
-    **Machine-proven fail-first .** `failFirst` is now **machine-proven, not caller-attested**:
+    **Machine-proven fail-first.** `failFirst` is now **machine-proven, not caller-attested**:
     before a clean pass greens, the producer independently runs the wired check against a KNOWN
     VIOLATION and confirms it goes RED (any other outcome — passes-on-violation, can't-prove, throws,
     times out, no violation source — hard-gates). The violation is sourced from a descriptor field:
@@ -143,7 +143,7 @@ lifecycle is identical to the edge-probe, the verification tiers differ):
     > in-tree `node --test` prohibition; node-test fail-first proof is exercised only by SYNTHETIC
     > temp fixtures in the tests, and the real dogfood remains the LINT-rule `local/no-source-grep`.
     > They are therefore **open to maintainer adjustment (rename, or replacing the env var with an
-    > argv) at PR review with zero migration cost.** See the ADR-550 2026-06-15 addendum .
+    > argv) at PR review with zero migration cost.** See the ADR-550 2026-06-15 addendum.
   - A **judgment**-tier prohibition routes to a never-silent / never-hard-halt soft gate
     (autonomous emits an `unverified-prohibition — human review recommended` flag).
 
@@ -165,7 +165,7 @@ object:
 - `check_rule` — the `ruleId` to filter on, **lint-rule only** (absent for `node-test`).
 - `check_violation_fixture` — path to a KNOWN-BAD subject the prover runs the check against to
   machine-prove fail-first (rides BOTH kinds; for `node-test` it is injected via `ENGINEER_PROHIB_SUBJECT`).
-- `check_clean_fixture` — **optional** path to a KNOWN-CLEAN control subject . When present the
+- `check_clean_fixture` — **optional** path to a KNOWN-CLEAN control subject. When present the
   node-test prover also runs the check against it and requires GREEN, proving the violation's RED is
   caused by the subject's *content* (not merely by `ENGINEER_PROHIB_SUBJECT` being set). Absent → no control.
 
@@ -175,7 +175,7 @@ rewrite" precedent). `projectProhibitions` emits these keys **only for a well-fo
 (valid `check_kind` + non-empty `check_target`; `check_rule` only on the lint-rule path;
 `check_violation_fixture` and `check_clean_fixture` only when non-empty), and verify-phase reads them
 back via `descriptorFromProjection` into the `CheckDescriptor` handed to `check prohibition-enforcement`.
-This closes the locate , the machine-proof-fixture , and the causation-control 
+This closes the locate, the machine-proof-fixture, and the causation-control 
 halves with **zero manual descriptor authoring**: a prohibition authored with the scalars greens
 end-to-end through the projection alone.
 

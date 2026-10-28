@@ -212,7 +212,7 @@ Omit null file paths from `<required_reading>`.
 
 <!-- model-omit-on-inherit -->
 
-> **Model omission .** Omit the `model` parameter entirely when the value it would carry (`UI_RESEARCHER_MODEL`, `UI_CHECKER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
+> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`UI_RESEARCHER_MODEL`, `UI_CHECKER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```
 Agent(
@@ -359,7 +359,7 @@ never silently no-ops (a silent skip would drop the whole state-coverage axis).
 **Non-English projects — `text_en` carries the classifier-facing translation; the UI-SPEC is
 not.** The element cues the classifier matches are **English** word-boundary patterns, so
 element prose written in another language matches nothing, classifies to zero kinds, and lands
-every element in `unclassified`  — the taxonomy contributes nothing and `--auto` leaves
+every element in `unclassified` — the taxonomy contributes nothing and `--auto` leaves
 it all `unresolved`. When this project has `response_language` set, add an optional `text_en`
 key to each `$ELEMENTS_JSON` entry: a faithful **English** translation of that element's
 `text`. `text_en` is **engine input, never user-facing output**, so the `response_language`
@@ -381,7 +381,7 @@ author an explicit `elements` array on that element instead of relying on the pr
 
 ```bash
 # Resolve the compiled ui-consideration-probe.cjs against the Engineer install dir via RUNTIME_DIR
-#  — NOT the consuming project's git root — falling back to git toplevel / $HOME/.claude.
+# — NOT the consuming project's git root — falling back to git toplevel / $HOME/.claude.
 # Mirrors spec-phase.md Step 5.5's edge-probe resolution idiom verbatim (same candidate paths).
 _ENGINEER_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 UI_PROBE_JS=$(for _c in \
@@ -462,7 +462,7 @@ fi
 # classification miss (or malformed elements) than a genuinely state-free UI. Surface it loudly.
 APPLICABLE=$(printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let n=0;try{n=JSON.parse(s).coverage.applicable}catch{n=0}process.stdout.write(String(n))})')
 UNCLASSIFIED=$(printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let n=0;try{n=JSON.parse(s).coverage.unclassified}catch{n=0}process.stdout.write(String(n))})')
-# : all-unclassified reads as a non-zero applicable — widen the guard to fire there too.
+# All-unclassified reads as a non-zero applicable — widen the guard to fire there too.
 if [ "$APPLICABLE" = "0" ] || [ "$UNCLASSIFIED" = "$APPLICABLE" ]; then
   echo "WARNING: ui-consideration-probe proposed ZERO applicable categories across all elements — likely a classification miss or malformed elements, not a genuinely state-free UI. Do NOT silently write an empty UI Considerations section." >&2
 fi
@@ -499,11 +499,11 @@ resolution runs.
 **`--auto` mode (two layers).** The adapter's `autoResolve` is the CODE floor: every applicable
 consideration auto-resolves with `verification: backstop` (carrying the taxonomy question as its
 resolution) and an `unclassified` candidate stays `unresolved` — it NEVER auto-`dismiss`es and never
-auto-resolves an unclassified item with backstop . On top of that floor the workflow MAY
+auto-resolves an unclassified item with backstop. On top of that floor the workflow MAY
 upgrade an item to `resolved` (verification: explicit) when a
 defensible acceptance criterion can be written (the same judgment spec-phase 5.5 applies in prose).
 An auto `--auto` run therefore leaves un-upgraded items as `resolved` (verification: backstop): at verify time each one
-with no wired evidence routes to `insufficient_spec → human_needed` — never a silent pass .
+with no wired evidence routes to `insufficient_spec → human_needed` — never a silent pass.
 That surfacing is the intended honest-verifier behavior, not over-flagging.
 
 **Write-back.** Populate a `## UI Considerations` section in the UI-SPEC from the resolved

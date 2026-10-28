@@ -73,7 +73,7 @@ PHASE_ARG="${1}"
 # logic (e.g., --all and --auto imply --fix). Resolved BEFORE the init call below so
 # the section-manifest gate forwards the RESOLVED (post-implication) fix decision, not
 # just a literal --fix token check.
-# engineer-resolve-lib begin code-review-flags.cjs : load helpers from the installed runtime, not the cwd
+# engineer-resolve-lib begin code-review-flags.cjs: load helpers from the installed runtime, not the cwd
 _engineer_lib_probe="code-review-flags.cjs"
 _engineer_rt="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 _engineer_gr="$(command -v engineer_run 2>/dev/null || true)"
@@ -108,7 +108,7 @@ ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-
 INIT=$(engineer_run query init.code-review ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} "${PHASE_ARG}" $FIX_PARAM)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 AGENT_SKILLS_REVIEWER=$(engineer_run query agent-skills code-reviewer ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-# : resolve the routed model so model_overrides / models.verification are honored
+# Resolve the routed model so model_overrides / models.verification are honored
 # (the resolver maps code-reviewer → phaseType "verification"); thread it below.
 REVIEWER_MODEL=$(engineer_run query resolve-model code-reviewer --raw)
 ```
@@ -164,7 +164,7 @@ Compute the phase's last review commit, if any. This narrows Tiers 2 and 3 below
 changed since that review (wave-scoped reviews under `workflow.code_review_point=execute:wave:post`):
 
 ```bash
-# : incremental scoping — when this phase has a prior review, later tiers
+# Incremental scoping — when this phase has a prior review, later tiers
 # narrow to what changed since it (wave-scoped reviews under
 # workflow.code_review_point=execute:wave:post). Empty on a phase's first review
 # (the entire execute:post-default path), in which case Tiers 2 and 3 below are
@@ -178,7 +178,7 @@ If FILES_OVERRIDE is set (from --files flag):
 ```bash
 if [ -n "$FILES_OVERRIDE" ]; then
   REVIEW_FILES=()
-  # : compare the repository root and each resolved path in ONE form. On Windows Git Bash,
+  # Compare the repository root and each resolved path in ONE form. On Windows Git Bash,
   # `git rev-parse --show-toplevel` (a native program) reports a mixed path (C:/Users/..) while
   # GNU `realpath` reports an MSYS POSIX path (/c/Users/..); the two never share a prefix, so
   # every entry looked "outside". `cygpath -m` exists exactly where the forms differ and maps both
@@ -243,7 +243,7 @@ if [ -z "$FILES_OVERRIDE" ]; then
         raw = raw.replace(/^['"]|['"]$/g, '');
         raw = raw.replace(/\s+\([^)]*\)\s*$/, '');
         raw = raw.split(/\s+—\s/)[0].trim();
-        // : accept root-level paths (no `/`) and known extensionless build
+        // Accept root-level paths (no `/`) and known extensionless build
         // files, not only nested paths with a trailing extension. The pre-fix
         // guard required BOTH a directory separator AND a trailing dot-extension,
         // which silently dropped every repository-root file (Dockerfile,
@@ -271,7 +271,7 @@ NODE
     # `$VAR` word-splits under bash but not zsh, collapsing every element onto
     # one iteration there.
     for summary in $(printf '%s' "$SUMMARIES"); do
-      # : skip a SUMMARY.md unchanged since the phase's last review — this
+      # Skip a SUMMARY.md unchanged since the phase's last review — this
       # summary's plan was already reviewed. No-op (every summary is "changed") when
       # LAST_REVIEW_COMMIT is empty. Fails OPEN on any git error (file stays in scope)
       # — never silently drop a file because a git command errored.
@@ -300,7 +300,7 @@ NODE
 fi
 ```
 
-**Tier 3 — Phase evaluation scope (per D-02) and SUMMARY/scope cross-check :**
+**Tier 3 — Phase evaluation scope (per D-02) and SUMMARY/scope cross-check:**
 
 If no SUMMARY.md files found OR no files extracted from them, fall back to the phase's evaluation scope.
 Additionally, whenever the resolver returns a scope, cross-check the SUMMARY scope against it and warn
@@ -312,13 +312,13 @@ derives no commit range of its own. The resolver returns the UNION of the phase'
 sets (the `## Task Commits` rows of the phase's SUMMARYs), restricted to commits reachable from `HEAD`
 (a commit that lives only on another branch is named, never counted), with planning artifacts and
 lockfiles excluded. A range (`base..HEAD`) is deliberately not used: it keeps every interleaved
-non-phase commit in its window . The resolver also reports, by name rather than by
+non-phase commit in its window. The resolver also reports, by name rather than by
 count, what the union dropped: `outsideUnion` (changed in the phase window by other commits) and
 `unreachable` (task commits not on this branch). When the union is empty — a phase with no SUMMARY,
 no task rows, or only planning paths — the resolver widens to the phase-directory range and says so
 (`status: degraded`, `reason`); an unreadable phase or repository is `unresolvable`, never an empty
 scope that reports success. Its `rangeBase` (the parent of the commit that first added the phase
-directory, or `LAST_REVIEW_COMMIT` when a prior review exists — ) is `DIFF_BASE`, kept only for
+directory, or `LAST_REVIEW_COMMIT` when a prior review exists) is `DIFF_BASE`, kept only for
 the reviewer lanes that need an anchor sha.
 ```bash
 # Exit 69 (UNAVAILABLE) is the resolver saying "could not look" (`status: unresolvable`): its JSON
@@ -369,13 +369,13 @@ if [ ${#REVIEW_FILES[@]} -eq 0 ]; then
     echo "Use --files flag to specify files explicitly: /code-review ${PHASE_ARG} --files=file1,file2,..."
   fi
 elif [ -z "$FILES_OVERRIDE" ] && [ -n "$SCOPE_FILES" ]; then
-  # : gated on FILES_OVERRIDE being unset — without this, REVIEW_FILES is
+  # Gated on FILES_OVERRIDE being unset — without this, REVIEW_FILES is
   # already non-empty under --files (Tier 1 filled it), so this elif was
-  # reached anyway and the  cross-check below appended the whole phase
+  # reached anyway and the cross-check below appended the whole phase
   # scope onto an explicit user-supplied file list, contradicting "Skip
   # SUMMARY/git scoping entirely when --files is provided" and Tier 2's
   # own --files guard.
-  #  cross-check: SUMMARY yielded a non-empty (possibly partial) scope.
+  # cross-check: SUMMARY yielded a non-empty (possibly partial) scope.
   # Warn about — and add — any in-scope files the SUMMARY extractor did not surface,
   # so a partial result can no longer silently ship an incomplete review scope.
 
@@ -503,7 +503,7 @@ DEPTH_PAYLOAD=$(printf '%s\n' "${REVIEW_FILES[@]}" | FLAG_DEPTH="$DEPTH_OVERRIDE
   }));
 ")
 
-# engineer-resolve-lib begin code-review-depth.cjs : load helpers from the installed runtime, not the cwd
+# engineer-resolve-lib begin code-review-depth.cjs: load helpers from the installed runtime, not the cwd
 _engineer_lib_probe="code-review-depth.cjs"
 _engineer_rt="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 _engineer_gr="$(command -v engineer_run 2>/dev/null || true)"
@@ -609,7 +609,7 @@ This `if`/`else`/`fi` is the entire guard: unless `DEPTH_OK` is the literal stri
 </step>
 
 <step name="check_empty_scope">
-An empty `REVIEW_FILES`  means nothing new to re-review — NOT a phase with no standing findings. : with `--fix` + an existing REVIEW.md, route to `dispatch-fix` (the flag covers "if REVIEW.md already exists"):
+An empty `REVIEW_FILES` means nothing new to re-review — NOT a phase with no standing findings.: with `--fix` + an existing REVIEW.md, route to `dispatch-fix` (the flag covers "if REVIEW.md already exists"):
 
 ```bash
 REVIEW_PATH="${PHASE_DIR}/${PADDED_PHASE}-REVIEW.md"
@@ -668,7 +668,7 @@ reads it must run as a single shell control-flow decision, start to finish:
 ```bash
 CODE_REVIEW_POINT_STDERR=$(mktemp)
 CODE_REVIEW_POINT=$(engineer_run query config-get workflow.code_review_point --raw 2>"$CODE_REVIEW_POINT_STDERR") || {
-  #  RQ-03: `config-get` already resolves capabilities/code-review/capability.json's own
+  # RQ-03: `config-get` already resolves capabilities/code-review/capability.json's own
   # declared schema default (execute:post) in the normal case — this fallback is reached only
   # when the config-get COMMAND ITSELF fails, an already-anomalous state that must be visible,
   # not silently papered over with a literal that could itself drift from the manifest.
@@ -682,7 +682,7 @@ rm -f "$CODE_REVIEW_POINT_STDERR"
 # are parsed separately, straight from the merged first-party + installed-overlay roster
 # (review-lane-descriptor.cjs), so a flag with more than one alias
 # resolves to its one canonical slug.
-#  RQ-02: `review-lane explicit-from-argv` owns matching this workflow's raw CLI argv
+# RQ-02: `review-lane explicit-from-argv` owns matching this workflow's raw CLI argv
 # against the merged first-party+installed-overlay roster — the SAME roster-merge logic
 # `dispatch-step` and `plan`/`invoke` already share, not a second copy re-derived here.
 EXPLICIT_JOINED_STDERR=$(mktemp)
@@ -711,7 +711,7 @@ if [ ${#EXPLICIT_REVIEWER_SLUGS[@]} -gt 0 ] && [ -z "$DIFF_BASE" ]; then
   # generic rejection stand unexplained.
   echo "Warning: external reviewer lane(s) requested (${EXPLICIT_REVIEWER_SLUGS[*]}) but no diff base could be resolved (no prior review, no phase-start commit) — skipping external dispatch." >&2
 elif [ ${#EXPLICIT_REVIEWER_SLUGS[@]} -gt 0 ]; then
-  #  R5: a dedicated run-scoped temp dir (same `${TMPDIR:-/tmp}/engineer-review-*` convention
+  # R5: a dedicated run-scoped temp dir (same `${TMPDIR:-/tmp}/engineer-review-*` convention
   # review.md's gather_context step uses), not $PHASE_DIR directly — lane artifacts
   # (engineer-review-prompt.md, engineer-review-<slug>.md/.err) are read-once evidence for THIS run, never
   # meant to be committed, and a second dispatch on the same phase would otherwise silently
@@ -815,7 +815,7 @@ if [ -n "$FALLOW_JSON_PATH" ] && [ -f "$FALLOW_JSON_PATH" ]; then
   # Normalize fallow's raw report into the compact {summary, findings[]} contract
   # the reviewer consumes (real fallow schema -> normalized findings).
   FALLOW_NORMALIZED_PATH="${PHASE_DIR}/FALLOW-normalized.json"
-  # engineer-resolve-lib begin fallow-runner.cjs : load helpers from the installed runtime, not the cwd
+  # engineer-resolve-lib begin fallow-runner.cjs: load helpers from the installed runtime, not the cwd
   _engineer_lib_probe="fallow-runner.cjs"
   _engineer_rt="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
   _engineer_gr="$(command -v engineer_run 2>/dev/null || true)"
@@ -844,7 +844,7 @@ if [ -n "$FALLOW_JSON_PATH" ] && [ -f "$FALLOW_JSON_PATH" ]; then
 fi
 ```
 
-Gather the capability review rules addressed to this reviewer : active `contribution` hooks with `into: code-reviewer`,
+Gather the capability review rules addressed to this reviewer: active `contribution` hooks with `into: code-reviewer`,
 read from the loop point the review step is registered at (`workflow.code_review_point`, default `execute:post`). This is
 advisory by construction: any failure leaves the prompt without them and never blocks the review. The fragments are handed over once,
 below, beside — never instead of — `${AGENT_SKILLS_REVIEWER}`:
@@ -863,7 +863,7 @@ Print: `◆ Spawning code reviewer... (runs in a subagent — no output until it
 
 <!-- model-omit-on-inherit -->
 
-> **Model omission .** Omit the `model` parameter entirely when the value it would carry (`REVIEWER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
+> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`REVIEWER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```
 Agent(subagent_type="code-reviewer", model="{REVIEWER_MODEL}", prompt="
@@ -909,7 +909,7 @@ Do NOT proceed to commit_review step. Do NOT create a partial or empty REVIEW.md
 After agent completes successfully, verify REVIEW.md was created and has valid structure:
 
 ```bash
-#  R5: remove the reviewer-lane run dir now that the agent has read every evidence path it
+# R5: remove the reviewer-lane run dir now that the agent has read every evidence path it
 # cited (the agent ran to completion before this step, per `dispatch_reviewer_lanes` above) — a
 # no-op when no reviewer lane was dispatched (LANE_RUN_DIR stays unset).
 if [ -n "${LANE_RUN_DIR:-}" ]; then
@@ -1033,7 +1033,7 @@ The `--files` containment check compares the repository root with each resolved 
 reports them in different forms (`git rev-parse` returns `C:/Users/...`, GNU `realpath` returns
 `/c/Users/...`), so both are normalized with `cygpath -m` (shipped with Git Bash) before the
 comparison. Relative paths and absolute paths in either form are accepted when they are inside the
-repository .
+repository.
 
 **macOS:** macOS ships with bash 3.2 (GPL licensing). This workflow does NOT use `mapfile` (bash 4+
 only) — all array construction uses portable `while IFS= read -r` loops compatible with bash 3.2.

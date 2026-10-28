@@ -6,7 +6,7 @@ spawning the executor. This ensures the worktree inherits these artifacts at its
 HEAD so the executor can read them via a worktree-rooted path — avoiding the main-repo
 path priming that triggers CC path-resolution drift, and avoiding the locked
 decisions (CONTEXT.md) and research findings (RESEARCH.md) being stranded outside the
-worktree while only PLAN.md reaches it .
+worktree while only PLAN.md reaches it.
 
 Skip this step entirely if `USE_WORKTREES === "false"` (non-worktree mode: these artifacts
 are committed in Step 8 as usual).
@@ -61,7 +61,7 @@ if [ "${USE_WORKTREES}" != "false" ]; then
   if [ "$COMMIT_DOCS" != "false" ]; then
     # pre-dispatch plan commit — PLAN.md is always in scope. CONTEXT.md/RESEARCH.md
     # join it only when their phase actually ran AND actually produced a file — a
-    # mode flag alone is not proof the file exists . An array (not a
+    # mode flag alone is not proof the file exists. An array (not a
     # space-joined string) keeps each path a single git argument under `set -u`
     # word-splitting rules (ShellCheck SC2086).
     QUICK_PREDISPATCH_PATHS=("${QUICK_DIR}/${quick_id}-PLAN.md")
@@ -76,7 +76,7 @@ if [ "${USE_WORKTREES}" != "false" ]; then
     if git diff --cached --quiet -- "${QUICK_PREDISPATCH_PATHS[@]}"; then
       echo "ℹ Pre-dispatch artifact commit skipped (no staged changes)"
     else
-      # Run hooks normally . If a project opts out via
+      # Run hooks normally. If a project opts out via
       # workflow.worktree_skip_hooks=true, honor that opt-in only.
       SKIP_HOOKS=$(engineer_run query config-get workflow.worktree_skip_hooks --raw 2>/dev/null || echo "false")
       if [ "$SKIP_HOOKS" = "true" ]; then
@@ -92,7 +92,7 @@ if [ "${USE_WORKTREES}" != "false" ]; then
   if [ -z "$QUICK_PLAN_COMMIT" ]; then
     QUICK_PLAN_COMMIT=$(git rev-parse HEAD)
   fi
-  # : the alternate base is the PLAN commit's immediate parent, read AFTER the
+  # The alternate base is the PLAN commit's immediate parent, read AFTER the
   # commit attempt so it holds whether the planner already committed the plan or this
   # step just did. Empty when docs commits are off and for a root commit.
   if [ "$COMMIT_DOCS" != "false" ]; then

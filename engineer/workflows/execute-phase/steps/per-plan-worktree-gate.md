@@ -10,7 +10,7 @@ This gate has two parts that run at **different times**. **Part 1** (this part) 
 # plan_json is the JSON object for this plan from PLAN_INDEX.plans[]
 # files_modified is an array of strings (repo-relative paths or globs)
 PLAN_FILES=$(jq -r '.files_modified // [] | join(" ")' <<<"$plan_json")
-# : files_deleted is the paths the plan declared it will REMOVE. Separate from
+# Files_deleted is the paths the plan declared it will REMOVE. Separate from
 # files_modified on purpose — it authorizes the cleanup-wave deletions guard, and a
 # deletion authorization must never be inferred from a general scope declaration.
 PLAN_DELETIONS=$(jq -r '.files_deleted // [] | join(" ")' <<<"$plan_json")
@@ -22,13 +22,13 @@ Then run the per-plan gate:
 ```bash
 USE_WORKTREES_FOR_PLAN="$USE_WORKTREES"
 
-# : this gate asks "does the plan touch a submodule at all", and REMOVING a file
+# This gate asks "does the plan touch a submodule at all", and REMOVING a file
 # inside one is as much a touch as modifying it. Both declared channels feed the
 # intersection: before files_deleted existed a deleted path had to appear in
 # files_modified to be planned at all, so the gate saw it. Now that plan-md.md tells
 # authors a deleted path needs no files_modified entry, reading files_modified alone
-# would let a deletion-only submodule plan keep worktree isolation on — exactly the
-# case  disabled it for. Note this is the OPPOSITE posture from the cleanup-wave
+# would let a deletion-only submodule plan keep worktree isolation on.
+# Note this is the OPPOSITE posture from the cleanup-wave
 # deletions guard: there the two channels are kept apart because a deletion
 # AUTHORIZATION must never be inferred; here they are merged because a safety fallback
 # must never MISS a touch.
@@ -115,11 +115,11 @@ fi
 
 After running this for the plan, the dispatch branches in `execute_waves` step 3 MUST gate on `USE_WORKTREES_FOR_PLAN` for the current plan, not on the project-level `USE_WORKTREES`. Track which plans in this wave actually used worktrees (append `plan_id` to a `WAVE_WORKTREE_PLANS` accumulator when `USE_WORKTREES_FOR_PLAN != false`) — the post-wave cleanup step (5.5) uses this to decide whether worktree-merge cleanup is needed at all.
 
-**Store the decision per plan .** `USE_WORKTREES_FOR_PLAN` is one shared value: the next plan's decision overwrites it. Keep each plan's answer as `plan_id → value` (for example `WAVE_PLAN_ISOLATION="03-01-api=false 03-02-docs=true"`) so step 3 can restore the dispatched plan's own value just before its dispatch (the value after `<plan_id>=`). `PLAN_FILES` and `PLAN_DELETIONS` above are shared the same way, and step 3 passes them to `worktree.record-agent` / `worktree.create`: re-run the extraction block above on the dispatched plan's JSON to restore them. This part does **not** write the isolation record.
+**Store the decision per plan.** `USE_WORKTREES_FOR_PLAN` is one shared value: the next plan's decision overwrites it. Keep each plan's answer as `plan_id → value` (for example `WAVE_PLAN_ISOLATION="03-01-api=false 03-02-docs=true"`) so step 3 can restore the dispatched plan's own value just before its dispatch (the value after `<plan_id>=`). `PLAN_FILES` and `PLAN_DELETIONS` above are shared the same way, and step 3 passes them to `worktree.record-agent` / `worktree.create`: re-run the extraction block above on the dispatched plan's JSON to restore them. This part does **not** write the isolation record.
 
 ## Part 2 — Re-record the dispatch-isolation sentinel, scoped to THIS plan ( BLOCKER 1)
 
-Run this in `execute_waves` step 3, **immediately before dispatching THIS plan**, after restoring that plan's **stored decision** from Part 1 (`plan_id` := this plan's `id`, `USE_WORKTREES_FOR_PLAN` := the value stored for it, and `PLAN_FILES` / `PLAN_DELETIONS` re-extracted from this plan's JSON). Never run it at step 2.5 and never for a plan other than the one about to dispatch: the sentinel is a single slot, so recording every plan up front leaves only the wave's last plan in it, and every earlier plan is dispatched against a record naming a different plan (the isolation guard discards it and its registry fallback denies a sequential dispatch the plan's own decision allowed).
+Run this in `execute_waves` step 3, **immediately before dispatching THIS plan**, after restoring that plan's **stored decision** from Part 1 (`plan_id`:= this plan's `id`, `USE_WORKTREES_FOR_PLAN`:= the value stored for it, and `PLAN_FILES` / `PLAN_DELETIONS` re-extracted from this plan's JSON). Never run it at step 2.5 and never for a plan other than the one about to dispatch: the sentinel is a single slot, so recording every plan up front leaves only the wave's last plan in it, and every earlier plan is dispatched against a record naming a different plan (the isolation guard discards it and its registry fallback denies a sequential dispatch the plan's own decision allowed).
 
 The phase-level sentinel (written by the "Resolve ISOLATION" step, before any per-plan decision exists) authorizes/denies at the PHASE level. The per-plan decision can override that (submodule intersection forcing `USE_WORKTREES_FOR_PLAN=false` on an otherwise harness-worktree phase) — without a fresh, plan-scoped record at dispatch time, the isolation guard hooks would still be reading the STALE phase-level `harness-worktree` sentinel when this plan's dispatch omits the isolation kwarg (correctly, since it isn't worktree-isolated), producing a false DENY; or, symmetrically, a plan-level degrade elsewhere in the wave could leave a stale `none` sentinel that a LATER, genuinely harness-worktree plan's own dispatch could be misread against. Running it right before the dispatch keeps the sentinel always fresh and always keyed to the plan it authorizes:
 
@@ -178,9 +178,9 @@ elif [ -n "${USE_WORKTREES_FOR_PLAN:-}" ]; then
   engineer_run query dispatch-isolation --raw --phase "${PHASE_NUMBER:-}" --plan "$plan_id" >/dev/null 2>&1 || true
 fi
 # An EMPTY value (the plan state was lost with an earlier tool call's shell) writes
-# nothing, so a recorded phase-level degrade is never re-persisted as harness-worktree .
+# nothing, so a recorded phase-level degrade is never re-persisted as harness-worktree.
 ```
 
-**`PLAN_FILES` is reused after dispatch :** pass it as `--files "$PLAN_FILES"` on the step-3 `worktree.record-agent` call (and on `worktree.create` in the orchestrator-worktree path) so the post-wave cleanup gauntlet can compare each plan branch's actual committed diff against the scope the plan declared, and report any path outside it. That check is advisory — it warns, it never blocks the merge — and omitting the flag simply skips it for that plan.
+**`PLAN_FILES` is reused after dispatch:** pass it as `--files "$PLAN_FILES"` on the step-3 `worktree.record-agent` call (and on `worktree.create` in the orchestrator-worktree path) so the post-wave cleanup gauntlet can compare each plan branch's actual committed diff against the scope the plan declared, and report any path outside it. That check is advisory — it warns, it never blocks the merge — and omitting the flag simply skips it for that plan.
 
-**`PLAN_DELETIONS` is reused the same way :** pass it as `--deletions "$PLAN_DELETIONS"` on the same `worktree.record-agent` / `worktree.create` calls. Unlike `--files`, this one is **not** advisory — it is what lets the post-wave deletions guard merge a branch whose plan declared a file removal. Matching is exact per path: a declared path merges, anything else still blocks that entry (and only that entry). Omitting the flag keeps the guard's original behavior of blocking on any deletion at all, so a plan that declares nothing loses nothing.
+**`PLAN_DELETIONS` is reused the same way:** pass it as `--deletions "$PLAN_DELETIONS"` on the same `worktree.record-agent` / `worktree.create` calls. Unlike `--files`, this one is **not** advisory — it is what lets the post-wave deletions guard merge a branch whose plan declared a file removal. Matching is exact per path: a declared path merges, anything else still blocks that entry (and only that entry). Omitting the flag keeps the guard's original behavior of blocking on any deletion at all, so a plan that declares nothing loses nothing.

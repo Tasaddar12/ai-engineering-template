@@ -188,7 +188,7 @@ in the installed `engineer-install/manifest.json` — files the user added thems
 **Do not use bash path-stripping (`${filepath#$RUNTIME_DIR/}`) or `node -e require()`
 inline** — those patterns fail when `$RUNTIME_DIR` is unset and the stripped
 relative path may not match manifest key format, which causes CUSTOM_COUNT=0
-even when custom files exist . Use `engineer_run query detect-custom-files`
+even when custom files exist. Use `engineer_run query detect-custom-files`
 or the bundled `engineer_run detect-custom-files` path — both resolve paths
 with the installed Python path and ownership checks.
 

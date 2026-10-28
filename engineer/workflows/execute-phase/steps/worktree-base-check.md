@@ -14,7 +14,7 @@ On a harness-created run with no observation, a Claude Code `WorktreeCreate` hoo
 of those three settings files, or one of them that does not parse, withholds that trust and the
 check compares against `origin/HEAD` as before. The prior-worktree observation is withheld
 there rather than consulted — a worktree at HEAD does not record which creator left it, so one the
-plain harness created before the hook reads the same as one the hook created , and only
+plain harness created before the hook reads the same as one the hook created, and only
 `--observed-fork-base` restores a trusted verdict. A supplied `--observed-fork-base` is never trusted
 either: HEAD is compared against the observation, in both modes. Without the setting the fork
 base is `origin/HEAD` and parallel execution returns once HEAD is merged/pushed so it matches

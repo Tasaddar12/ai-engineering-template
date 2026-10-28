@@ -33,7 +33,7 @@ segments — the canonical grammar in `src/phase-id.cts` (`normalizePhaseName`):
 
 ```bash
 # Normalize phase number
-# : one branch for the whole canonical token — digits, optional [A-Z],
+# One branch for the whole canonical token — digits, optional [A-Z],
 # dotted segments. Pad through $((10#…)) so an already-padded `08` is not read
 # as octal by printf; anything non-canonical passes through untouched.
 if [[ "$PHASE" =~ ^([0-9]+)([A-Z]?)((\.[0-9]+)*)$ ]]; then

@@ -2,15 +2,15 @@
 
 > Loaded eagerly by `agents/verifier.md` (`<required_reading>`). Carries the three
 > verification-time gates that lived in the retired `verify-phase` workflow
-> ( / epic F7): decision-coverage validation , the test-quality audit,
+> ( / epic F7): decision-coverage validation, the test-quality audit,
 > and infrastructure-phase human-verification scoping — plus the backstop-abstention
-> reporting contract . Run each gate at its named
+> reporting contract. Run each gate at its named
 > agent step; `engineer_run` is the launcher shim defined in the agent's own Step 1 block.
 
 ## verify_decisions — Decision Coverage Gate (run after Step 6, requirements coverage)
 
 <step name="verify_decisions">
-**Decision coverage validation gate .**
+**Decision coverage validation gate.**
 
 After requirements coverage, also check that each trackable CONTEXT.md
 `<decisions>` entry shows up somewhere in the shipped artifacts (plans,

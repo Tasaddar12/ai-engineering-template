@@ -89,7 +89,7 @@ fi
    `$QUICK_BATCH_WORKTREE_MANIFEST` entry Step 6 wrote for that `agent_id`
    THIS process, when present.
 
-   **Durable fallback :** for an item Step 6 did NOT dispatch this
+   **Durable fallback:** for an item Step 6 did NOT dispatch this
    process — the crash-window guard correctly skipped it because
    `SUMMARY.md` already existed from a PRIOR, now-dead coordinator process —
    `$QUICK_BATCH_WORKTREE_MANIFEST` has no entry for it at all (it is a

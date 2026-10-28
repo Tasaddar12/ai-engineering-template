@@ -4,10 +4,10 @@ Apply response_language to all user-facing prose — narration between tool call
 
 Run the resolved prior-phase test command one-shot, bounded by a timeout, so a
 watch-mode runner (vitest defaults to watch in a TTY; jest `--watch`) cannot
-hang this gate forever . Uses the shared `normalize-test-command` helper
+hang this gate forever. Uses the shared `normalize-test-command` helper
 — the same one the post-merge gate uses — so the two gate paths cannot drift.
 
-Reads the prior step's test-file list from the handoff file `regression-files` ; a shell variable
+Reads the prior step's test-file list from the handoff file `regression-files`; a shell variable
 cannot carry it, because each fenced `bash` block runs as its own shell.
 
 ```bash
@@ -89,7 +89,7 @@ if [ -z "$REG_TEST_CMD" ]; then
     REG_TEST_CMD="true"
   fi
 fi
-# : normalize to a one-shot form (defeat vitest/jest watch mode) and bound
+# Normalize to a one-shot form (defeat vitest/jest watch mode) and bound
 # with a timeout so a watch-mode runner cannot hang the gate indefinitely.
 REG_TEST_CMD=$(engineer_run query normalize-test-command "$REG_TEST_CMD" --cwd . 2>/dev/null || echo "$REG_TEST_CMD")
 TEST_GATE_TIMEOUT=$(engineer_run query config-get workflow.test_gate_timeout --raw 2>/dev/null || echo "600")

@@ -73,7 +73,7 @@ if [ "${AGENT_HINT_ROUTING:-true}" != "false" ]; then
   fi
 fi
 
-#  v1 routes only the Agent()-based dispatch. On the orchestrator-worktree
+# v1 routes only the Agent()-based dispatch. On the orchestrator-worktree
 # backend (process-spawn; no subagent_type) a resolved hint cannot be honored
 # yet — surface it so a set hint is never silently ignored.
 if [ "${ISOLATION:-}" = "orchestrator-worktree" ] && [ -n "${PLAN_HINT:-}" ]; then
@@ -107,7 +107,7 @@ Only `gate="blocking-human"` always surfaces to a human, regardless of
 auto-mode. An unmet `<precondition>` checkpoint (executor step 0, `Blocked by:
 Precondition not met` — unmet `user_setup` step, missing env var, absent
 prior-phase artifact) reports `blocking-human` and therefore always surfaces
-to a human, in every mode : the missing prerequisite is a fact only a
+to a human, in every mode: the missing prerequisite is a fact only a
 human can establish, not a verification step to rubber-stamp.
 
 When composing the `Agent()` prompt, do NOT add text refusing or overriding

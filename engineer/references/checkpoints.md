@@ -9,8 +9,8 @@ Plans execute autonomously. Checkpoints formalize interaction points where human
 2. **Claude sets up the verification environment** - Start dev servers, seed databases, configure env vars
 3. **User only does what requires human judgment** - Visual checks, UX evaluation, "does this feel right?"
 4. **Secrets come from user, automation comes from Claude** - Ask for API keys, then Claude uses them via CLI
-5. **Auto-mode bypasses verification checkpoints, and decision checkpoints with a declared `auto_select`** — When `workflow._auto_chain_active` or `workflow.auto_advance` is true in config: human-verify auto-approves; a `checkpoint:decision` carrying `auto_select="<option-id>"` auto-selects that named option; a `checkpoint:decision` with NO `auto_select` escalates to a human instead of guessing by position ; human-action still stops (auth gates cannot be automated)
-6. **`gate="blocking-human"` is never auto-approved** — a checkpoint carrying this gate stops for a human in _every_ mode, including auto-mode, regardless of its type. Rule 5 does not apply to it. The executor's precondition-unmet checkpoint (a task's `<precondition>` evaluated false — unmet `user_setup` step, missing env var, absent prior-phase artifact) reports this gate .
+5. **Auto-mode bypasses verification checkpoints, and decision checkpoints with a declared `auto_select`** — When `workflow._auto_chain_active` or `workflow.auto_advance` is true in config: human-verify auto-approves; a `checkpoint:decision` carrying `auto_select="<option-id>"` auto-selects that named option; a `checkpoint:decision` with NO `auto_select` escalates to a human instead of guessing by position; human-action still stops (auth gates cannot be automated)
+6. **`gate="blocking-human"` is never auto-approved** — a checkpoint carrying this gate stops for a human in _every_ mode, including auto-mode, regardless of its type. Rule 5 does not apply to it. The executor's precondition-unmet checkpoint (a task's `<precondition>` evaluated false — unmet `user_setup` step, missing env var, absent prior-phase artifact) reports this gate.
 
 **The `gate` attribute:**
 
@@ -31,7 +31,7 @@ The gate spans two layers, and both must honor it. `executor` refuses to auto-ap
 
 **When:** Claude completed automated work, human confirms it works correctly.
 
-> **Default mode : `workflow.human_verify_mode = end-of-phase`.** New projects do NOT halt mid-flight at _planner-emitted_ `checkpoint:human-verify` tasks. The planner suppresses those task emissions and embeds the verification details into the relevant `auto` task's `<verify><human-check>` block; the verifier harvests every `<verify><human-check>` at end-of-phase (Step 8) and consolidates them into the existing `human_needed` → `{phase_num}-UAT.md` flow in `workflows/execute-phase.md`. The user reviews everything in one batch.
+> **Default mode: `workflow.human_verify_mode = end-of-phase`.** New projects do NOT halt mid-flight at _planner-emitted_ `checkpoint:human-verify` tasks. The planner suppresses those task emissions and embeds the verification details into the relevant `auto` task's `<verify><human-check>` block; the verifier harvests every `<verify><human-check>` at end-of-phase (Step 8) and consolidates them into the existing `human_needed` → `{phase_num}-UAT.md` flow in `workflows/execute-phase.md`. The user reviews everything in one batch.
 >
 > **Why this is the default:** every mid-flight halt costs a full executor cold-start (CLAUDE.md, MEMORY.md, STATE.md, plan re-read on respawn) because subagent context is discarded across the pause. A plan with N human-verify checkpoints pays the cold-start cost N+1 times — measured at "tens of thousands of tokens" per round-trip on real projects.
 >

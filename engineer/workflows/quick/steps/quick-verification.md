@@ -84,7 +84,7 @@ machine without jq — the default on Windows/Git-Bash — which here would rout
 
 Route on `$STATUS` and store the display string as `$VERIFICATION_STATUS` (consumed by the quick index row and the completion banner).
 
-The query is **total** over the closed VerificationStatus set : beyond the verifier's own statuses it can also return `missing` (no `*-VERIFICATION.md`, or no `status` in its frontmatter), `stale` (the covered inputs changed after the verifier ran), `unparseable` (the report's frontmatter is not YAML) or `phase_dir_not_found` (no directory at `${QUICK_DIR}`). A report `status` outside `passed | gaps_found | human_needed` is not a status at all: the query exits non-zero with the reason on stderr, and the fence above stops. Which status wins when more than one applies is the query's own precedence, not this table's concern — every non-verifier status lands in the same arm here. That arm is reachable in normal operation and must never be dropped.
+The query is **total** over the closed VerificationStatus set: beyond the verifier's own statuses it can also return `missing` (no `*-VERIFICATION.md`, or no `status` in its frontmatter), `stale` (the covered inputs changed after the verifier ran), `unparseable` (the report's frontmatter is not YAML) or `phase_dir_not_found` (no directory at `${QUICK_DIR}`). A report `status` outside `passed | gaps_found | human_needed` is not a status at all: the query exits non-zero with the reason on stderr, and the fence above stops. Which status wins when more than one applies is the query's own precedence, not this table's concern — every non-verifier status lands in the same arm here. That arm is reachable in normal operation and must never be dropped.
 
 | `$STATUS` | Action |
 |--------|--------|

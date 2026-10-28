@@ -54,7 +54,7 @@ reads is inert — the consumption mechanism is what gives an artifact meaning.
 ### HANDOFF.json / .continue-here.md
 - **Shape**: Structured pause state (JSON machine-readable + Markdown human-readable)
 - **Lifecycle**: Created on pause → Consumed on resume → Replaced by next pause
-- **Location**: `.planning/HANDOFF.json` + `.planning/phases/XX-name/.continue-here.md` (or spike/deliberation path)
+- **Location**: `.planning/HANDOFF.json` + `.planning/phases/XX-name/ .continue-here.md` (or spike/deliberation path)
 - **Consumed by**: `resume-project` workflow
 
 ---

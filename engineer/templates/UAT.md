@@ -42,7 +42,7 @@ result: pass
 expected: [observable behavior]
 result: issue
 reported: "[verbatim user response]"
-severity: major
+  severity: major
 
 ### 4. [Test Name]
 
@@ -121,7 +121,7 @@ blocked: [N]
 - APPEND only when issue found (YAML format)
 - After diagnosis: fill `root_cause`, `artifacts`, `missing`, `debug_session`
 - This section feeds directly into /plan-phase --gaps
-- `status: resolved` : when `/verify-work`'s `reconcile_gaps`
+- `status: resolved`: when `/verify-work`'s `reconcile_gaps`
   step finds an executed gap-closure plan (a `*-PLAN.md` naming this entry's
   `gap_id` with a matching `*-SUMMARY.md`), it updates the entry IN PLACE —
   `status: failed` → `status: resolved` — and adds `resolved_by` (the
@@ -160,11 +160,11 @@ blocked: [N]
   test: 2
   root_cause: "useEffect in CommentList.tsx missing commentCount dependency"
   artifacts:
-    - path: "src/components/CommentList.tsx"
-      issue: "useEffect missing dependency"
+  - path: "src/components/CommentList.tsx"
+    issue: "useEffect missing dependency"
   missing:
     - "Add commentCount to useEffect dependency array"
-  debug_session: ".planning/debug/comment-not-refreshing.md"
+    debug_session: ".planning/debug/comment-not-refreshing.md"
 ```
 
 </diagnosis_lifecycle>
@@ -257,7 +257,7 @@ result: pass
 expected: Submit comment via rich text editor, appears in list with author info
 result: issue
 reported: "works but doesn't show until I refresh the page"
-severity: major
+  severity: major
 
 ### 3. Reply to a Comment
 

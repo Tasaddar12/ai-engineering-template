@@ -602,7 +602,7 @@ questions: [
 // 4-option cap and there are 5 valid profiles (quality, balanced, budget, adaptive,
 // inherit). Q1 routes between adaptive/standard-tier/inherit; Q2 (shown only when
 // Q1 = "Standard tier…") picks among the three standard profiles. Mirrors the
-// /settings split .
+// /settings split.
 questions: [
   {
     header: "AI Models",
@@ -636,11 +636,11 @@ questions: [
 ]
 
 // Map UI choices → config values:
-//   Q1 "Adaptive (Recommended)"         → model_profile = "adaptive"
-//   Q1 "Inherit"                        → model_profile = "inherit"
-//   Q1 "Standard tier…" + Q2 "Quality"  → model_profile = "quality"
-//   Q1 "Standard tier…" + Q2 "Balanced" → model_profile = "balanced"
-//   Q1 "Standard tier…" + Q2 "Budget"   → model_profile = "budget"
+// Q1 "Adaptive (Recommended)" → model_profile = "adaptive"
+// Q1 "Inherit" → model_profile = "inherit"
+// Q1 "Standard tier…" + Q2 "Quality" → model_profile = "quality"
+// Q1 "Standard tier…" + Q2 "Balanced" → model_profile = "balanced"
+// Q1 "Standard tier…" + Q2 "Budget" → model_profile = "budget"
 ```
 
 **PR body onboarding:** Ask which optional PRD-style sections `/ship` should append to generated PR bodies. Use the same `ship.pr_body_sections` mapping as Step 2a: selected sections get `enabled: true`, seeded-but-unselected sections get `enabled: false`, and selecting none writes an empty list. Prefer lean/agile PRD sections that make user value, acceptance criteria, Definition of Done, and stakeholder traceability explicit.

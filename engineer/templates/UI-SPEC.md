@@ -117,8 +117,8 @@ Applicable state considerations resolved: {N covered, M backstop, K unresolved �
 | {overflow} | {list-collection} | ⚠ unresolved | {planner treats as assumption} |
 
 <!-- Status vocabulary (locked by probe-core projectTruths):
-     ✅ covered   → a plain truth string lifted into must_haves.truths
-     🧪 backstop  → a flat scalar { statement, verification: backstop }; at verify time, no explicit
+     ✅ covered → a plain truth string lifted into must_haves.truths
+     🧪 backstop → a flat scalar { statement, verification: backstop }; at verify time, no explicit
                     evidence → insufficient_spec → human_needed (never a silent pass)
      ⚠ unresolved → an explicit planner assumption (surfaced, never silently dropped)
      Rows are REPLACED (not appended) on a probe re-run — idempotent. -->

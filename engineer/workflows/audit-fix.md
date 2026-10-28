@@ -85,7 +85,7 @@ Read existing UAT and verification files to extract findings:
 - Glob: `.planning/phases/*/*-VERIFICATION.md`
 
 Parse each finding into a structured record:
-- **ID** — sequential identifier (F-01, F-02, ...)
+- **ID** — sequential identifier (F-01, F-02,...)
 - **description** — concise summary of the issue
 - **severity** — high, medium, or low
 - **file_refs** — specific file paths referenced in the finding
@@ -143,7 +143,7 @@ EXECUTOR_MODEL=$(engineer_run query resolve-model executor --raw)
 
 <!-- model-omit-on-inherit -->
 
-> **Model omission .** Omit the `model` parameter entirely when the value it would carry (`EXECUTOR_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
+> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`EXECUTOR_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 **a. Spawn executor agent** (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)**:**
 ```
@@ -177,7 +177,7 @@ if [ -z "$AUDIT_TEST_CMD" ]; then
     AUDIT_TEST_CMD="true"
   fi
 fi
-# : normalize to one-shot (defeat vitest/jest watch mode) + bound with a
+# Normalize to one-shot (defeat vitest/jest watch mode) + bound with a
 # timeout so a watch-mode runner cannot hang the audit gate indefinitely.
 AUDIT_TEST_CMD=$(engineer_run query normalize-test-command "$AUDIT_TEST_CMD" --cwd . 2>/dev/null || echo "$AUDIT_TEST_CMD")
 TEST_GATE_TIMEOUT=$(engineer_run query config-get workflow.test_gate_timeout --raw 2>/dev/null || echo "600")

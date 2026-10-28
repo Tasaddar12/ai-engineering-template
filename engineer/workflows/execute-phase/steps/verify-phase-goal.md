@@ -68,7 +68,7 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 TDD_MODE=${TDD_MODE:-$(engineer_run loop render-hooks execute:post --active-cap tdd)}
-# : this file is Read, not textually substituted - write the parent command's original argument string in place of $ARGUMENTS so --ws reaches the query.
+# This file is Read, not textually substituted - write the parent command's original argument string in place of $ARGUMENTS so --ws reaches the query.
 ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
 VERIFIER_SKILLS=$(engineer_run query agent-skills verifier ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 CONTEXT_WINDOW=$(engineer_run query config-get context_window --raw 2>/dev/null || echo "200000")
@@ -160,7 +160,7 @@ not read the file. It applies to decimal (gap-closure) phases only and is a no-o
 </step>
 
 <step name="regression_gate_dispatch">
-**Regression gate, gated by the section manifest .** If `section_manifest` is `null` or
+**Regression gate, gated by the section manifest.** If `section_manifest` is `null` or
 `"regression-gate"` is in its `included` list: read and execute
 `engineer/workflows/execute-phase/steps/regression-gate.md`. Otherwise skip — do not read the file.
 On `REGRESSION GATE ABORTED`, HALT — do not dispatch the verifier.
@@ -200,7 +200,7 @@ ${VERIFIER_SKILLS}",
 
 (When `response_language` is unset, omit the `Use response_language …` line.)
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available. If the session ends abnormally (`turn_aborted`), reconcile via the `verification.status` query below — the session's terminal state is not evidence of failure .
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available. If the session ends abnormally (`turn_aborted`), reconcile via the `verification.status` query below — the session's terminal state is not evidence of failure.
 
 **Regeneration.** The verifier — not the orchestrator — recomputes the covered-input fingerprint
 through the CLI over the report's covered set and copies the command's `covered_files` /
@@ -221,7 +221,7 @@ NEXT_ACTION=$(printf '%s' "$VERIFICATION" | jq -r '.next_action')
 NEXT_COMMAND=$(printf '%s' "$VERIFICATION" | jq -r '.next_command')
 ```
 
-A non-zero exit here is the write-time hard error : the report is rejected in the run that
+A non-zero exit here is the write-time hard error: the report is rejected in the run that
 produced it. Present the error verbatim and stop — never read it as "no status".
 
 Never silently proceed past a stale gate: if `STATUS` is still `stale` after the verifier ran,

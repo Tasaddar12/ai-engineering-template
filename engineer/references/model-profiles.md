@@ -7,11 +7,8 @@ Model profiles control which Claude model each Engineer agent uses. This allows 
 | Agent | `quality` | `balanced` | `budget` | `adaptive` | `inherit` |
 |-------|-----------|------------|----------|------------|-----------|
 | planner | opus | opus | sonnet | opus | inherit |
-| roadmapper | opus | sonnet | sonnet | sonnet | inherit |
 | executor | opus | sonnet | sonnet | sonnet | inherit |
 | phase-researcher | opus | sonnet | haiku | sonnet | inherit |
-| project-researcher | opus | sonnet | haiku | sonnet | inherit |
-| research-synthesizer | sonnet | sonnet | haiku | haiku | inherit |
 | debugger | opus | sonnet | sonnet | opus | inherit |
 | codebase-mapper | sonnet | haiku | haiku | haiku | inherit |
 | verifier | sonnet | sonnet | haiku | sonnet | inherit |
@@ -44,9 +41,9 @@ Model profiles control which Claude model each Engineer agent uses. This allows 
 
 | Phase type | Agents |
 |---|---|
-| `planning` | planner, roadmapper, pattern-mapper |
-| `discuss` | `assumptions-analyzer` |
-| `research` | phase-researcher, project-researcher, research-synthesizer, codebase-mapper, ui-researcher |
+| `planning` | planner, pattern-mapper |
+| `discuss` | (no subagent) |
+| `research` | phase-researcher, codebase-mapper, ui-researcher |
 | `execution` | executor, debugger, doc-writer |
 | `verification` | verifier, plan-checker, integration-checker, nyquist-auditor, ui-checker, ui-auditor, doc-verifier, code-reviewer |
 | `completion` | (reserved — no subagent today) |
@@ -144,7 +141,7 @@ Fable 5 is a valid advisor for Haiku 4.5, Sonnet 4.6/5, and Opus 4.8 executors, 
 
 ### Constraint: session-level only (today)
 
-The advisor is a single session-wide setting inherited by all subagents; there is **no per-agent advisor selection**, so Engineer cannot vary the advisor by role the way it varies the executor model (e.g. "no advisor on the Haiku mapper, a Fable 5 advisor on the Sonnet executor"). Per-agent advisor control is tracked upstream at ; until it lands, pick one session advisor that fits the most valuable agents in your run.
+The advisor is a single session-wide setting inherited by all subagents; there is **no per-agent advisor selection**, so Engineer cannot vary the advisor by role the way it varies the executor model (e.g. "no advisor on the Haiku mapper, a Fable 5 advisor on the Sonnet executor"). Pick one session advisor that fits the most valuable agents in your run.
 
 ## Dynamic Routing with Failure-Tier Escalation 
 
@@ -169,9 +166,9 @@ When `dynamic_routing.enabled = true` in `.planning/config.json`, the resolver p
 
 | Tier | Agents | Use case |
 |---|---|---|
-| `light` | codebase-mapper, pattern-mapper, research-synthesizer, plan-checker, integration-checker, nyquist-auditor, ui-checker, ui-auditor, doc-verifier | Cheap/fast — pure mappers, scanners, low-stakes audits |
-| `standard` | executor, phase-researcher, project-researcher, verifier, doc-writer, ui-researcher | Default workhorse — research, writing, primary verification |
-| `heavy` | planner, roadmapper, debugger | Deep reasoning — already at top, can't escalate further |
+| `light` | codebase-mapper, pattern-mapper, plan-checker, integration-checker, nyquist-auditor, ui-checker, ui-auditor, doc-verifier | Cheap/fast — pure mappers, scanners, low-stakes audits |
+| `standard` | executor, phase-researcher, verifier, doc-writer, ui-researcher | Default workhorse — research, writing, primary verification |
+| `heavy` | planner, debugger | Deep reasoning — already at top, can't escalate further |
 
 **Escalation flow** (orchestrator-driven):
 
@@ -202,7 +199,7 @@ is (highest → lowest):
 4. If no dynamic_routing match, check models[phase_type] for a phase-type tier
    (see §Per-Phase-Type Model Map for the agent → phase-type mapping)
 5. Check model_profile_overrides.<runtime>.<tier> for a per-tier model override
-   (honored on the claude runtime too — ; verbatim unless it maps to the
+   (honored on the claude runtime too; verbatim unless it maps to the
    current tier alias)
 6. If no phase-type slot, look up agent in profile table
 7. Pass model parameter to Task call
@@ -237,7 +234,7 @@ Override specific agents without changing the entire profile:
 
 Overrides take precedence over the profile. Valid values: `opus`, `sonnet`, `haiku`, `fable`, `inherit`, or any fully-qualified model ID (e.g., `"o3"`, `"openai/o3"`). `fable` is a Claude Code Agent-tool alias, not an Engineer profile tier — it has no column in the profile table above.
 
-On the Claude runtime, fully-qualified Claude model IDs are honored as explicit generation pins : an ID that names the current tier default (e.g. `"claude-sonnet-5"`) resolves to its tier alias — the same model in the form the Agent tool always accepts — while any other ID (e.g. `"claude-opus-4-7"`) resolves verbatim, with a warn-once stderr note that setups accepting only tier aliases will not honor a full ID. To pin a generation for a whole tier rather than one agent, set `model_profile_overrides.claude.<tier>` (see docs/CONFIGURATION.md — Runtime-Aware Profiles).
+On the Claude runtime, fully-qualified Claude model IDs are honored as explicit generation pins: an ID that names the current tier default (e.g. `"claude-sonnet-5"`) resolves to its tier alias — the same model in the form the Agent tool always accepts — while any other ID (e.g. `"claude-opus-4-7"`) resolves verbatim, with a warn-once stderr note that setups accepting only tier aliases will not honor a full ID. To pin a generation for a whole tier rather than one agent, set `model_profile_overrides.claude.<tier>` (see docs/CONFIGURATION.md — Runtime-Aware Profiles).
 
 ## Switching Profiles
 

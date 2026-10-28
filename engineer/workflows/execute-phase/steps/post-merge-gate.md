@@ -57,7 +57,7 @@ if [ -z "$BUILD_CMD" ]; then
   if [ -n "$XCODEPROJ" ]; then
     # Xcode project: get first scheme from xcodebuild -list -json
     XCODE_SCHEME=$(xcodebuild -list -json -project "$XCODEPROJ" 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('project',{}).get('schemes',[None])[0] or '')" 2>/dev/null || true)
-    # : a concrete simulator NAME is machine state, not project state — the
+    # A concrete simulator NAME is machine state, not project state — the
     # hardcoded 'iPhone 16' can never match on machines whose simulators were
     # never created. Resolve the first available iOS simulator (id= works for
     # both build and test); with none available, skip the Xcode gates loudly
@@ -73,7 +73,7 @@ if [ -z "$BUILD_CMD" ]; then
       XCODEPROJ=""
     else
       XCODE_DEST="id=$XCODE_SIM"
-      #  review F2: the command string is re-parsed by `bash -c`, so an
+      # review F2: the command string is re-parsed by `bash -c`, so an
       # apostrophe in a repo/scheme name would terminate the quote (unbalanced-
       # quote failure; a crafted path shape reaches command injection). Escape
       # for the single-quoted span at the only boundary Engineer owns.
@@ -96,7 +96,7 @@ if [ -z "$BUILD_CMD" ]; then
   elif [ -f "pyproject.toml" ] || [ -f "requirements.txt" ]; then
     BUILD_CMD="python -m py_compile $(find . -name '*.py' -not -path './.planning/*' -not -path './node_modules/*' | head -20 | tr '\n' ' ')"
   elif [ -f "package.json" ] && grep -q '"build"' package.json; then
-    # : the project's own package manager (packageManager field, then lockfile), npm if unresolved.
+    # The project's own package manager (packageManager field, then lockfile), npm if unresolved.
     BUILD_CMD=$(engineer_run query resolve-package-manager build --cwd . 2>/dev/null || echo "npm run build")
     [ -n "$BUILD_CMD" ] || BUILD_CMD="npm run build"
     echo "⚠ Build command not configured — running this project's build script (${BUILD_CMD}). Set workflow.build_command to pin it."
@@ -142,7 +142,7 @@ if [ -z "$TEST_CMD" ]; then
     if [ -z "${XCODE_SCHEME:-}" ]; then
       XCODE_SCHEME=$(xcodebuild -list -json -project "$XCODEPROJ" 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('project',{}).get('schemes',[None])[0] or '')" 2>/dev/null || true)
     fi
-    # : reuse the simulator resolved by the build gate; re-detect if this
+    # Reuse the simulator resolved by the build gate; re-detect if this
     # block runs in a fresh shell. No simulator → skip loudly, same as Step A.
     if [ -z "${XCODE_SIM:-}" ]; then
       XCODE_SIM=$(xcrun simctl list devices available 2>/dev/null | sed -n 's/.*(\([A-F0-9-]\{8,\}\)).*/\1/p' | head -1)
@@ -166,7 +166,7 @@ if [ -z "$TEST_CMD" ]; then
   elif [ -f "Justfile" ] || [ -f "justfile" ]; then
     TEST_CMD="just test"
   elif [ -f "package.json" ]; then
-    # : same resolver as the build gate.
+    # Same resolver as the build gate.
     TEST_CMD=$(engineer_run query resolve-package-manager test --cwd . 2>/dev/null || echo "npm test")
     [ -n "$TEST_CMD" ] || TEST_CMD="npm test"
   elif [ -f "Cargo.toml" ]; then
@@ -180,7 +180,7 @@ if [ -z "$TEST_CMD" ]; then
     echo "⚠ No test runner detected — skipping post-merge test gate"
   fi
 fi
-# : normalize to a one-shot form (defeat vitest/jest watch mode) via the
+# Normalize to a one-shot form (defeat vitest/jest watch mode) via the
 # same shared normalize-test-command helper the regression gate uses, then bound
 # with the configured timeout so a watch-mode runner cannot hang the gate.
 TEST_CMD=$(engineer_run query normalize-test-command "$TEST_CMD" --cwd . 2>/dev/null || echo "$TEST_CMD")

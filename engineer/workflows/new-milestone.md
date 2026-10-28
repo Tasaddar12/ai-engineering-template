@@ -79,12 +79,12 @@ fi
 ENGINEER_WS=""
 echo "$ENGINEER_ARGS" | grep -qE -- '--ws[[:space:]]+[A-Za-z0-9._-]+' && ENGINEER_WS=$(echo "$ENGINEER_ARGS" | grep -oE -- '--ws[[:space:]]+[A-Za-z0-9._-]+')
 MILESTONE_ARG=$(echo "$ENGINEER_ARGS" | sed -E 's/--ws[[:space:]]+[A-Za-z0-9._-]+//g' | xargs)
-# : persist ENGINEER_WS to a file so later steps' bash fences (each a
+# Persist ENGINEER_WS to a file so later steps' bash fences (each a
 # separate shell) can forward it — the same cross-fence problem Step 5/6
 # already solve for OUTGOING_MILESTONE via .engineer-outgoing-milestone.
 printf '%s' "$ENGINEER_WS" > .planning/.engineer-ws-arg 2>/dev/null || true
 RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --default "" 2>/dev/null || echo "")
-# : EARLY, section-manifest-only init.new-milestone call — needed here
+# EARLY, section-manifest-only init.new-milestone call — needed here
 # (before Step 4) to gate the project-md-milestone-write section. This is
 # DELIBERATELY separate from Step 7's full init.new-milestone call below,
 # which must stay AFTER Step 6's phase archival/phases.clear so its
@@ -93,7 +93,7 @@ RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --defa
 # fields too early and corrupt the planner's phase-numbering context.
 # init.new-milestone is a pure read (no mutation), so calling it twice is
 # safe; only `section_manifest` is consumed from this early call.
-# : $ENGINEER_WS forwarded (same fence as the parse above, no round-trip
+# $ENGINEER_WS forwarded (same fence as the parse above, no round-trip
 # needed here) so the section manifest — and the shared PROJECT.md write
 # guard it gates — reflects the EXPLICITLY requested workstream, not
 # whatever ambient ENGINEER_WORKSTREAM/session pointer happens to be active.
@@ -260,7 +260,7 @@ version BEFORE the switch flips STATE.md's `milestone:` field to the new one, an
 `.planning/.engineer-outgoing-milestone` so Step 6 can consume it via a shell variable — do NOT
 transcribe the echoed value into a later command by hand. Step 6 reads that file back into
 `--archive-version` so the previous milestone's phase directories archive under
-`<outgoing-version>-phases/`, not the new one . Once `state.milestone-switch` runs,
+`<outgoing-version>-phases/`, not the new one. Once `state.milestone-switch` runs,
 current-milestone state no longer holds the outgoing version, which is why it is captured here.
 
 The resulting Current Position section looks like:
@@ -274,7 +274,7 @@ Status: Defining requirements
 Last activity: [today] — Milestone v[X.Y] started
 ```
 
-Bug : a prior version of this workflow rewrote the Current Position body
+Bug: a prior version of this workflow rewrote the Current Position body
 manually but left the frontmatter pointing at the previous milestone, so every
 downstream reader (`state.json`, `getMilestoneInfo`, progress bars) reported the
 stale milestone until the first phase advance forced a resync. Always use the
@@ -288,7 +288,7 @@ Clear leftover phase directories from the previous milestone. Read the outgoing 
 persisted in Step 5 back into a shell variable and pass it as `--archive-version` so the
 archive lands under the *previous* milestone's label — the switch in Step 5 has already
 advanced current-milestone state, so without this override the archive would be mislabeled
-with the *new* version . Use the shell variable directly (quoted) — never hand-retype
+with the *new* version. Use the shell variable directly (quoted) — never hand-retype
 the captured value into the command, so untrusted STATE.md content cannot be re-parsed by the
 shell:
 
@@ -309,7 +309,7 @@ state, and a dated archive label only if no version label is resolvable at all. 
 rejects any `--archive-version` value that is not a plain version token (no path separators or
 `..`), so a malformed capture fails loudly rather than writing outside the archive directory.
 
-Stage the phase archive move + source removal so they land in the same commit as the milestone start (atomic — no orphaned uncommitted deletions, no un-archived dirs carried forward). `phases.clear` archives each non-999 dir to `milestones/<version>-phases/`; staging both dirs captures the new archive and the removals together .
+Stage the phase archive move + source removal so they land in the same commit as the milestone start (atomic — no orphaned uncommitted deletions, no un-archived dirs carried forward). `phases.clear` archives each non-999 dir to `milestones/<version>-phases/`; staging both dirs captures the new archive and the removals together.
 
 ```bash
 COMMIT_DOCS=$(engineer_run query config-get commit_docs --raw 2>/dev/null || echo "true")
@@ -326,7 +326,7 @@ fi
 
 When `commit_docs` is false, the archive move and phase removals are deliberately left unstaged here — not a bug — since Step 6's commit is skipped too.
 
-Stage PROJECT.md in both modes. Step 4's Part A guard — not this commit — is what protects the shared `## Current Milestone` heading : when a workstream is active Part A never writes it, so the only change PROJECT.md can carry here is Part B's idempotent `## Evolution` backfill, which must be committed rather than stranded as a dangling edit. Do NOT reintroduce a `[ -n "$ENGINEER_WS" ]` branch around this commit: `ENGINEER_WS` is set in Step 1's shell and each step's bash block runs in its own shell (the same reason Step 5 round-trips `OUTGOING_MILESTONE` through a file), so such a guard reads an unset variable, always takes the flat-mode branch, and only appears to work. STATE.md, unlike PROJECT.md, IS workstream-scoped (Step 5's switch just wrote the workstream's own copy) — resolved below via `init.new-milestone` rather than a literal `.planning/STATE.md`, which would commit the wrong (or a stale, unrelated) file under an active workstream.
+Stage PROJECT.md in both modes. Step 4's Part A guard — not this commit — is what protects the shared `## Current Milestone` heading: when a workstream is active Part A never writes it, so the only change PROJECT.md can carry here is Part B's idempotent `## Evolution` backfill, which must be committed rather than stranded as a dangling edit. Do NOT reintroduce a `[ -n "$ENGINEER_WS" ]` branch around this commit: `ENGINEER_WS` is set in Step 1's shell and each step's bash block runs in its own shell (the same reason Step 5 round-trips `OUTGOING_MILESTONE` through a file), so such a guard reads an unset variable, always takes the flat-mode branch, and only appears to work. STATE.md, unlike PROJECT.md, IS workstream-scoped (Step 5's switch just wrote the workstream's own copy) — resolved below via `init.new-milestone` rather than a literal `.planning/STATE.md`, which would commit the wrong (or a stale, unrelated) file under an active workstream.
 
 ```bash
 ENGINEER_WS_ARG=$(cat .planning/.engineer-ws-arg 2>/dev/null || true)
@@ -353,7 +353,7 @@ AGENT_SKILLS_RESEARCHER=$(engineer_run query agent-skills phase-researcher ${ENG
 AGENT_SKILLS_DOC_WRITER=$(engineer_run query agent-skills doc-writer ${ENGINEER_WS_ARG:+--ws=${ENGINEER_WS_ARG##* }})
 AGENT_SKILLS_PLANNER=$(engineer_run query agent-skills planner ${ENGINEER_WS_ARG:+--ws=${ENGINEER_WS_ARG##* }})
 ```
-<!-- : .planning/.engineer-ws-arg is NOT cleaned up here — Steps 9 and 10
+<!--: .planning/.engineer-ws-arg is NOT cleaned up here — Steps 9 and 10
 below still need to re-read it (each is its own shell) to resolve
 REQUIREMENTS.md/ROADMAP.md/STATE.md correctly under a workstream. It is
 removed in Step 10, its true last consumer. -->
@@ -414,7 +414,7 @@ Spawn 4 parallel phase-researcher agents. Each uses this template with dimension
 **Common structure for all 4 researchers:**
 <!-- model-omit-on-inherit -->
 
-> **Model omission .** Omit the `model` parameter entirely when the value it would carry (`researcher_model`, `doc_writer_model`, `planner_model`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
+> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`researcher_model`, `doc_writer_model`, `planner_model`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```text
 Agent(prompt="
@@ -668,7 +668,7 @@ ROADMAP_PATH=$(_engineer_field "$INIT_ROADMAP" roadmap_path)
 STATE_PATH=$(_engineer_field "$INIT_ROADMAP" state_path)
 REQUIREMENTS_PATH=$(_engineer_field "$INIT_ROADMAP" requirements_path)
 engineer_run query commit "docs: create milestone v[X.Y] roadmap ([N] phases)" --files "$ROADMAP_PATH" "$STATE_PATH" "$REQUIREMENTS_PATH"
-# : true last consumer of the persisted --ws in this workflow — the
+# True last consumer of the persisted --ws in this workflow — the
 # round-trip file is no longer needed after this commit.
 rm -f .planning/.engineer-ws-arg 2>/dev/null || true
 ```

@@ -193,7 +193,7 @@ USE_WORKTREES=$(engineer_run query config-get workflow.use_worktrees --raw 2>/de
 RUNTIME=$(engineer_run query config-get runtime --default claude --raw 2>/dev/null || echo "claude")
 ```
 
-**Resolve isolation now .** Read @~/.claude/engineer/references/dispatch-isolation-gate.md
+**Resolve isolation now.** Read @~/.claude/engineer/references/dispatch-isolation-gate.md
 and run its `Resolve ISOLATION`, `Single-agent dispatch sites`, and `Resolve the harness flag`
 blocks in order; they set `ISOLATION`/`HARNESS_FLAG` via `query dispatch-isolation`.
 `ISOLATION` — not `RUNTIME` — gates every worktree decision below. Substitute `{harnessFlag}`
@@ -201,7 +201,7 @@ in Step 6's `Agent()` with `$HARNESS_FLAG`+comma when `ISOLATION = "harness-work
 empty. `{harnessFlag}`
 is a template placeholder, not a shell variable.
 
-If `USE_WORKTREES` is not `"false"`, run a startup orphan sweep before spawning any executors. This reaps locked worktrees whose lock-owner process is dead, whose branch is merged into the default branch, and whose lock file mtime is older than 5 minutes. Running it at startup prevents accumulation of orphaned worktrees from prior sessions that exited without cleanup .
+If `USE_WORKTREES` is not `"false"`, run a startup orphan sweep before spawning any executors. This reaps locked worktrees whose lock-owner process is dead, whose branch is merged into the default branch, and whose lock file mtime is older than 5 minutes. Running it at startup prevents accumulation of orphaned worktrees from prior sessions that exited without cleanup.
 
 ```bash
 if [ "$USE_WORKTREES" != "false" ]; then
@@ -241,7 +241,7 @@ Quick tasks can run mid-phase - validation only checks ROADMAP.md exists, not ph
 
 The new branch must fork off the project's default branch (`origin/HEAD`), not
 off whatever HEAD happens to be checked out — otherwise consecutive quick tasks
-compound on top of each other and stay unpushed . If `$branch_name`
+compound on top of each other and stay unpushed. If `$branch_name`
 already exists locally, reuse it as-is so resumed work is not rebased.
 
 ```bash
@@ -255,11 +255,10 @@ if git show-ref --verify --quiet "refs/heads/$branch_name"; then
 else
   # Fetch the default branch so origin/$DEFAULT_BRANCH is current. If the fetch
   # fails (offline, no remote, auth failure) AND we have no local copy of
-  # origin/$DEFAULT_BRANCH to fall back on, abort — creating the branch off
-  # arbitrary HEAD is exactly the bug  fixed.
+  # origin/$DEFAULT_BRANCH to fall back on, abort.
   if ! git fetch --quiet origin "$DEFAULT_BRANCH"; then
     if ! git show-ref --verify --quiet "refs/remotes/origin/$DEFAULT_BRANCH"; then
-      echo "ERROR: Could not fetch origin/$DEFAULT_BRANCH and no local copy exists. Refusing to create '$branch_name' off the current HEAD . Resolve the remote/network issue and retry." >&2
+      echo "ERROR: Could not fetch origin/$DEFAULT_BRANCH and no local copy exists. Refusing to create '$branch_name' off the current HEAD. Resolve the remote/network issue and retry." >&2
       exit 1
     fi
     echo "WARNING: git fetch origin $DEFAULT_BRANCH failed; using the local copy of origin/$DEFAULT_BRANCH as base." >&2
@@ -277,16 +276,16 @@ else
   fi
 
   # Pin the new branch to origin/$DEFAULT_BRANCH so the start point is
-  # deterministic regardless of which branch we are currently on .
+  # deterministic regardless of which branch we are currently on.
   # On success HEAD is exactly at origin/$DEFAULT_BRANCH, so a post-creation
   # merge-base / "ahead-of" guard would be unreachable — the explicit base
-  # argument here is the single source of correctness for .
+  # argument here is the single source of correctness.
   # --no-track: with the default branch.autoSetupMerge=true, checkout -b from a
   # remote-tracking ref wires branch.<name>.merge to refs/heads/$DEFAULT_BRANCH
   # (origin/master), so a GUI sync pushes quick-task commits straight onto
-  # origin/$DEFAULT_BRANCH, bypassing PR review .
+  # origin/$DEFAULT_BRANCH, bypassing PR review.
   git checkout -b "$branch_name" "origin/$DEFAULT_BRANCH" --no-track \
-    || { echo "ERROR: Could not create '$branch_name' from origin/$DEFAULT_BRANCH ." >&2; exit 1; }
+    || { echo "ERROR: Could not create '$branch_name' from origin/$DEFAULT_BRANCH." >&2; exit 1; }
 fi
 ```
 
@@ -309,7 +308,7 @@ Create the directory for this quick task:
 ```bash
 QUICK_DIR="${task_dir}"
 mkdir -p "$QUICK_DIR"
-# Worktree-relative form for an isolated executor : the guard blocks absolute paths outside its worktree.
+# Worktree-relative form for an isolated executor: the guard blocks absolute paths outside its worktree.
 _QTOP=$(git rev-parse --show-toplevel 2>/dev/null)
 _QTOP_DIR=$(git -C "$QUICK_DIR" rev-parse --show-toplevel 2>/dev/null)
 QUICK_DIR_REL=$(git -C "$QUICK_DIR" rev-parse --show-prefix 2>/dev/null)
@@ -327,7 +326,7 @@ Store `$QUICK_DIR` for use in orchestration.
 
 ---
 
-**Step 4 ordering :** Check whether `workflow.research_before_questions` is enabled in `.planning/config.json` (or the config from init context) — the same check `/discuss-phase` and `/new-project` already make. When **enabled**, execute the research-phase section BELOW BEFORE the discussion-phase section: a gray-area answer given without research is written to `<quick_id>-CONTEXT.md` as a locked decision downstream agents are told not to revisit, so the evidence must come first. When **false or unset**, keep the written order (discussion, then research) — behavior unchanged.
+**Step 4 ordering:** Check whether `workflow.research_before_questions` is enabled in `.planning/config.json` (or the config from init context) — the same check `/discuss-phase` and `/new-project` already make. When **enabled**, execute the research-phase section BELOW BEFORE the discussion-phase section: a gray-area answer given without research is written to `<quick_id>-CONTEXT.md` as a locked decision downstream agents are told not to revisit, so the evidence must come first. When **false or unset**, keep the written order (discussion, then research) — behavior unchanged.
 
 <!-- engineer:section id="discussion-phase" when="flag:--discuss" -->
 Read and execute `engineer/workflows/quick/steps/discussion-phase.md`.
@@ -348,7 +347,7 @@ If RESEARCH_MODE is true, read and execute `engineer/workflows/quick/steps/resea
 PLAN_PRE_HOOKS_JSON=$(engineer_run loop render-hooks plan:pre --raw)
 ```
 
-**Contribution dispatch :** read `PLAN_PRE_HOOKS_JSON.activeHooks` directly in context. In registry order, inject only active entries with `kind == "contribution"` and `into == "planner"` into each Quick planner prompt below, using `fragment.inline` verbatim plus resolved `configValues`. Do not paste `rendered`. Empty, inactive, incompatible, or non-planner entries inject nothing and do not error. Reuse this snapshot for revisions; do not render again.
+**Contribution dispatch:** read `PLAN_PRE_HOOKS_JSON.activeHooks` directly in context. In registry order, inject only active entries with `kind == "contribution"` and `into == "planner"` into each Quick planner prompt below, using `fragment.inline` verbatim plus resolved `configValues`. Do not paste `rendered`. Empty, inactive, incompatible, or non-planner entries inject nothing and do not error. Reuse this snapshot for revisions; do not render again.
 
 **If `$VALIDATE_MODE`:** Use `quick-full` mode with stricter constraints.
 
@@ -449,7 +448,7 @@ fi
 
 # Re-resolve (and, as a side effect, re-persist) now that the base-check
 # auto-degrade above may have changed $ISOLATION since the Step 2 gate's
-# `dispatch-isolation` call . That first call recorded the NATURALLY
+# `dispatch-isolation` call. That first call recorded the NATURALLY
 # resolved mode into the run-scoped sentinel the isolation guard hooks read
 # (hooks/engineer-agent-isolation-guard.js via
 # hooks/lib/isolation-sentinel.js). The degrade above is decided HERE, in
@@ -468,7 +467,7 @@ Capture current HEAD before spawning (used for worktree branch check):
 EXPECTED_BASE=$(git rev-parse HEAD)
 if [ "$ISOLATION" = "harness-worktree" ]; then   # keyed on ISOLATION like every other dispatch-coupled branch 
   # BSD/macOS mktemp only randomizes XXXXXX when it is the final path component, so make a
-  # suffixless temp then append the extension — portable across BSD + GNU .
+  # suffixless temp then append the extension — portable across BSD + GNU.
   QUICK_WORKTREE_MANIFEST=$(mktemp "${TMPDIR:-/tmp}/engineer-quick-worktree-XXXXXX") && mv "$QUICK_WORKTREE_MANIFEST" "${QUICK_WORKTREE_MANIFEST}.json" && QUICK_WORKTREE_MANIFEST="${QUICK_WORKTREE_MANIFEST}.json" || exit 1
   printf '{"worktrees":[]}\n' > "$QUICK_WORKTREE_MANIFEST"
   export QUICK_WORKTREE_MANIFEST
@@ -593,7 +592,7 @@ After executor returns:
    ```bash
    QUICK_WORKTREE_MANIFEST=${QUICK_WORKTREE_MANIFEST:-$WAVE_WORKTREE_MANIFEST}
    [ -n "${QUICK_WORKTREE_MANIFEST:-}" ] && [ -f "$QUICK_WORKTREE_MANIFEST" ] || {
-     echo "BLOCKED: missing QUICK_WORKTREE_MANIFEST; refusing broad worktree cleanup ." >&2
+     echo "BLOCKED: missing QUICK_WORKTREE_MANIFEST; refusing broad worktree cleanup." >&2
      exit 1
    }
 
@@ -605,7 +604,7 @@ After executor returns:
    ```
    If `ISOLATION` was not `"harness-worktree"` at dispatch (including a base-check degrade — that is *this* file's degrade; is the `diagnose-issues.md` / `execute-plan.md` one), skip this step.
 
-   > **ISOLATED-RUN RECOVERY — FAIL SAFE :** When an isolated (worktree) run is *rejected* — the user declines to merge it, the orchestrator surfaces recovery guidance for a blocked/halted plan, or the run over-reached the requested scope — the worktree-isolation contract MUST hold through recovery. Do **NOT** propose continuing on `main`/the primary checkout as the default or recommended recovery path. Default to a **safe halt** and offer: (a) re-attempt in a **fresh, narrowly-scoped worktree**, or (b) inspect or discard the rejected worktree without merging. Any path that edits the primary checkout requires an **explicit, clearly-labeled confirmation** from the user first — editing `main` directly is never the proposed or default option for a run the user configured to be isolated.
+   > **ISOLATED-RUN RECOVERY — FAIL SAFE:** When an isolated (worktree) run is *rejected* — the user declines to merge it, the orchestrator surfaces recovery guidance for a blocked/halted plan, or the run over-reached the requested scope — the worktree-isolation contract MUST hold through recovery. Do **NOT** propose continuing on `main`/the primary checkout as the default or recommended recovery path. Default to a **safe halt** and offer: (a) re-attempt in a **fresh, narrowly-scoped worktree**, or (b) inspect or discard the rejected worktree without merging. Any path that edits the primary checkout requires an **explicit, clearly-labeled confirmation** from the user first — editing `main` directly is never the proposed or default option for a run the user configured to be isolated.
 
 2. Verify summary exists at `${QUICK_DIR}/${quick_id}-SUMMARY.md`
 3. Extract commit hash from executor output
@@ -628,7 +627,7 @@ Skip this step entirely if `$FULL_MODE` is false.
 EXECUTE_POST_HOOKS_JSON=$(engineer_run loop render-hooks execute:post --raw)
 ```
 
-**Generic step dispatch :** dispatch every `kind == "step"` hook from `EXECUTE_POST_HOOKS_JSON` per @~/.claude/engineer/references/loop-hook-dispatch.md (skip silently when none); each step is advisory and best-effort. The code-review specialization below is one such hook, not a replacement for the generic dispatch.
+**Generic step dispatch:** dispatch every `kind == "step"` hook from `EXECUTE_POST_HOOKS_JSON` per @~/.claude/engineer/references/loop-hook-dispatch.md (skip silently when none); each step is advisory and best-effort. The code-review specialization below is one such hook, not a replacement for the generic dispatch.
 
 Resolve active step hooks from `EXECUTE_POST_HOOKS_JSON` where `kind == "step"` and `ref.skill == "code-review"`.
 
@@ -636,9 +635,9 @@ If no active code-review step hook exists, skip with message "Code review skippe
 
 **Scope files from executor's commits:**
 ```bash
-# : the quick task's files come from the evaluation-scope resolver (ADR-5057 §4): the
+# The quick task's files come from the evaluation-scope resolver (ADR-5057 §4): the
 # UNION of the commits naming the quick task id, on THIS branch only, planning artifacts and
-# lockfiles excluded. A `base..tip` range (the  bound) still folds in every unrelated
+# lockfiles excluded. A `base..tip` range (the bound) still folds in every unrelated
 # commit interleaved inside the task's window (worktree merge-back, a shared tree, another
 # session); the union cannot. No commits for this task => empty scope => skip review.
 # Exit 69 (UNAVAILABLE) is the resolver's "could not look" (`status: unresolvable`); its JSON carries
@@ -730,7 +729,7 @@ engineer_run quick-tasks-append --quick-id "${quick_id}" --slug "${slug}" --task
 ```
 
 Both forms emit the row this step previously authored by hand: `--quick-id`/`--slug` derive the same
-`[${quick_id}-${slug}](./quick/${quick_id}-${slug}/)` permalink , and `date`/commit are
+`[${quick_id}-${slug}](./quick/${quick_id}-${slug}/)` permalink, and `date`/commit are
 computed by the command itself — from the current day and the current `HEAD` (already the executor's
 own commit from Step 6 at this point in the workflow) — never passed explicitly. For a schema-safe
 append outside this workflow, with neither a quick id nor a task directory (e.g. `fast.md`),

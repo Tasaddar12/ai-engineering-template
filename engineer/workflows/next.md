@@ -158,7 +158,7 @@ elif [ "$ROADMAP_SCOPE" != "complete" ]; then
   # but its milestone window did not see all of its input, so `.phases[]` is a
   # NON-answer rather than a real empty. Looping it would run the invariant over
   # a phase list the scan could not populate and report "clean" — the silent
-  # disarm  reports. Treated as scan-failed, same as an outright failure.
+  # disarm reports. Treated as scan-failed, same as an outright failure.
   echo "⚠ WARNING: resume-incomplete-phase scan could not be scoped (roadmap.analyze scope: $ROADMAP_SCOPE)." >&2
   echo "  The milestone window did not cover the whole ROADMAP, so the phase list is incomplete." >&2
   echo "  The incomplete-phase invariant  could not be verified — review project state carefully." >&2
@@ -322,7 +322,7 @@ if echo "$ENGINEER_ARGS" | grep -qE '(^|[[:space:]])\-\-(converge|cross-ai)([[:s
 fi
 
 CONVERGENCE_ARGS=""
-# Lane flags derived from the declared roster ; --all and --text are convergence
+# Lane flags derived from the declared roster; --all and --text are convergence
 # controls, not reviewer lanes, so they stay literal.
 for REVIEW_FLAG in $(engineer_run review-lane flags) --all --text; do
   if echo "$ENGINEER_ARGS" | grep -qE "(^|[[:space:]])${REVIEW_FLAG}([[:space:]]|$)"; then

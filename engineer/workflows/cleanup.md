@@ -1,6 +1,6 @@
 <purpose>
 
-Archive accumulated phase directories from completed milestones into `.planning/milestones/v{X.Y}-phases/`. Identifies which phases belong to each completed milestone, shows a dry-run summary, and moves directories on confirmation. Also offers retroactive archival of `.planning/quick/`  when it is non-empty.
+Archive accumulated phase directories from completed milestones into `.planning/milestones/v{X.Y}-phases/`. Identifies which phases belong to each completed milestone, shows a dry-run summary, and moves directories on confirmation. Also offers retroactive archival of `.planning/quick/` when it is non-empty.
 
 </purpose>
 
@@ -113,7 +113,7 @@ Match phase directories to milestone membership. Only include directories that s
 
 <step name="identify_quick_tasks">
 
-Check whether `.planning/quick/` has anything to retroactively archive :
+Check whether `.planning/quick/` has anything to retroactively archive:
 
 ```bash
 ls -d .planning/quick/*/ 2>/dev/null || true
@@ -233,7 +233,7 @@ Repeat for all milestones in the cleanup set.
 
 Only run this step when the "Yes — archive quick tasks into v{X.Y}" option was confirmed in `show_dry_run`.
 
-Uses the narrow `milestone.archive-quick` command ( escalation) rather than `milestone.complete --archive-quick`: cleanup runs against milestones that are typically ALREADY completed, and `milestone.complete` is the full close-out — it archives ROADMAP/REQUIREMENTS and writes a MILESTONES.md entry, so re-running it against an already-completed milestone would clobber that milestone's archived ROADMAP/REQUIREMENTS snapshot (the very snapshot this cleanup depends on) and duplicate its MILESTONES.md entry. `milestone.archive-quick` shares the same move/README-index/table-reset logic as `milestone.complete --archive-quick` (same underlying helper) without any of that.
+Uses the narrow `milestone.archive-quick` command rather than `milestone.complete --archive-quick`: cleanup runs against milestones that are typically ALREADY completed, and `milestone.complete` is the full close-out — it archives ROADMAP/REQUIREMENTS and writes a MILESTONES.md entry, so re-running it against an already-completed milestone would clobber that milestone's archived ROADMAP/REQUIREMENTS snapshot (the very snapshot this cleanup depends on) and duplicate its MILESTONES.md entry. `milestone.archive-quick` shares the same move/README-index/table-reset logic as `milestone.complete --archive-quick` (same underlying helper) without any of that.
 
 ```bash
 engineer_run query milestone.archive-quick "v{X.Y}"
@@ -267,7 +267,7 @@ Commit the changes:
 engineer_run query commit "chore: archive phase directories from completed milestones" --files .planning/milestones/ .planning/STATE.md --files-removed .planning/phases/ .planning/quick/
 ```
 
-`.planning/phases/` and `.planning/quick/` go under `--files-removed`, not `--files` : a `--files` directory entry stages everything under it, so it would also commit any in-flight phase or quick-task file a concurrent session had written there. `--files-removed` stages only the tracked files under those directories that the archival `mv` moved away, and leaves everything still present untouched.
+`.planning/phases/` and `.planning/quick/` go under `--files-removed`, not `--files`: a `--files` directory entry stages everything under it, so it would also commit any in-flight phase or quick-task file a concurrent session had written there. `--files-removed` stages only the tracked files under those directories that the archival `mv` moved away, and leaves everything still present untouched.
 
 </step>
 

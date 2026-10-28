@@ -96,7 +96,7 @@ If a decision from CONTEXT.md says "display cost calculated from billing table i
 
 ## Comment-Text Discipline (HARD GATE)
 
-> Enforced at plan-write time by `verify.plan-structure` (the `validate_plan` step). Issue .
+> Enforced at plan-write time by `verify.plan-structure` (the `validate_plan` step).
 
 When an `<acceptance_criteria>` or `<verify>` block uses a **negative grep** — `grep -c 'LITERAL' file == 0`, meaning "this literal must NOT appear in the file" — that same `LITERAL` must not appear verbatim anywhere in an `<action>` body. Verbatim code blocks, JSDoc samples, head-comment references, and "what NOT to do" illustrations get echoed into the file the executor writes, so the executor's commit-time gate fails on the *comment text*, not on a real code regression. The work is correct; the gate output is semantically wrong; the executor wastes cycles and learns to distrust the gate.
 
@@ -137,14 +137,14 @@ One marker per literal. The marker exempts only the exact literal it names.
 
 ## Region-Scoped Negative Gates
 
-> Surfaced at plan-write time by `verify.plan-structure` (the `validate_plan` step), WARN-level. Issue .
+> Surfaced at plan-write time by `verify.plan-structure` (the `validate_plan` step), WARN-level.
 
 A **negative grep** — `! grep -Eq 'PAT' file` or `grep -c 'PAT' file == 0` — asserts a construct is absent. `grep` is file-scoped by nature: it has no notion of function or region. This breaks down when a phase splits one file across parallel tasks with legitimately opposite needs for the same construct in different regions:
 
 - **Task A** bans the construct file-wide — a synchronous factory must not block on a refresh: `! grep -Eq 'await .*refresh' app/page.py`.
 - **Task B** legitimately requires it elsewhere in the same file — a post-reindex handler must `await bridge.refresh()` to repopulate state.
 
-Both occurrences are real, correct production code in different functions of one file. A file-wide negative grep cannot say "absent in function X, present in function Y", so the two gates are mutually unsatisfiable with a direct call — the executor is pushed into an indirection whose only purpose is to relocate the matched string out of the file (pure gate-appeasement, zero behaviour change). This is distinct from Comment-Text Discipline : there is no comment echo and no allowlist helps — the construct must genuinely be present in one region and absent in another.
+Both occurrences are real, correct production code in different functions of one file. A file-wide negative grep cannot say "absent in function X, present in function Y", so the two gates are mutually unsatisfiable with a direct call — the executor is pushed into an indirection whose only purpose is to relocate the matched string out of the file (pure gate-appeasement, zero behaviour change). This is distinct from Comment-Text Discipline: there is no comment echo and no allowlist helps — the construct must genuinely be present in one region and absent in another.
 
 **The fix:** region-scope the negative gate so "absent in region X" stops implying "absent file-wide."
 

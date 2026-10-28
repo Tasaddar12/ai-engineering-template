@@ -64,7 +64,7 @@ phase requirement IDs (`{phase_req_ids}`) instead of a SPEC interview. Leave `$C
 `EDGE_ABSENT=0` — a SPEC-supplied section is never re-run (section-level precedence).
 
 ```bash
-# Resolve the compiled edge-probe.cjs against the Engineer install dir via RUNTIME_DIR  — NOT the
+# Resolve the compiled edge-probe.cjs against the Engineer install dir via RUNTIME_DIR — NOT the
 # consuming project's git root — falling back to git toplevel / $HOME/.claude (spec-phase.md:198 idiom).
 _ENGINEER_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 EDGE_PROBE_JS=$(for _c in \
@@ -86,7 +86,7 @@ fi
 
 # THE ONE DIVERGENCE (D-02): source requirements from THIS phase. Populate the heredoc from
 # {phase_req_ids}, pulling each requirement's text from REQUIREMENTS.md: {"id","text","shapes"?}.
-# mktemp suffix trick is BSD/GNU portable .
+# mktemp suffix trick is BSD/GNU portable.
 REQS_JSON=$(mktemp "${TMPDIR:-/tmp}/edge-probe-reqs-XXXXXX") && mv "$REQS_JSON" "${REQS_JSON}.json" && REQS_JSON="${REQS_JSON}.json" || exit 1
 cat > "$REQS_JSON" <<'JSON'
 [

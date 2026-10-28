@@ -101,5 +101,5 @@ Abstention is **model-tier dependent** and this is a standing cost, not an assum
   demand behavioral evidence. Honest-verifier is the *non-inferable* case — the truth **cannot** be
   verified from the spec at all; the fix is to abstain and route to a held-out test. Orthogonal axes
   (insufficient *evidence* vs insufficient *spec*); both feed the same `human_needed` sink.
-- **vs prohibition judgment-tier :** that disposes **must-NOT** constraints; honest-verifier
+- **vs prohibition judgment-tier:** that disposes **must-NOT** constraints; honest-verifier
   disposes **non-inferable positive truths**. Opposite polarity, same never-silent disposition.

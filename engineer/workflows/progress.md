@@ -246,7 +246,7 @@ if [ -z "$ROADMAP" ]; then
 else
   for PHASE_NUM in $(echo "$ROADMAP" | jq -r '.phases[] | (.number // .phase_number)'); do
     PHASE_DATA=$(echo "$ROADMAP" | jq --arg n "$PHASE_NUM" '.phases[] | select((.number // .phase_number) == ($n | tonumber))')
-    # : $PHASE_DATA is a `.phases[]` entry from `roadmap.analyze`, which
+    #: $PHASE_DATA is a `.phases[]` entry from `roadmap.analyze`, which
     # emits `plan_count`/`summary_count` SCALARS (src/roadmap.cts) — it has
     # never emitted `.plans`/`.summaries` ARRAYS. Reading those absent keys
     # (even with a `// []` fallback) always produced 0, permanently disabling
@@ -311,7 +311,7 @@ Track:
 
 **Step 1.6: Cross-phase health check**
 
-Scan ALL phases for outstanding verification debt using the CLI. Milestone scoping note : the audit milestone-filters the ACTIVE phase tree (`getMilestonePhaseFilter`), and deliberately adds ARCHIVED milestone trees unfiltered — each archived result carries an `archived_milestone` stamp. `summary.total_items` spans BOTH populations, so never read it as current-milestone debt.
+Scan ALL phases for outstanding verification debt using the CLI. Milestone scoping note: the audit milestone-filters the ACTIVE phase tree (`getMilestonePhaseFilter`), and deliberately adds ARCHIVED milestone trees unfiltered — each archived result carries an `archived_milestone` stamp. `summary.total_items` spans BOTH populations, so never read it as current-milestone debt.
 
 ```bash
 DEBT=$(engineer_run query audit-uat --raw 2>/dev/null)
@@ -322,7 +322,7 @@ DEBT=$(engineer_run query audit-uat --raw 2>/dev/null)
 if [[ "$DEBT" == @file:* ]]; then DEBT=$(cat "${DEBT#@file:}"); fi
 ```
 
-Segment the debt by population before counting :
+Segment the debt by population before counting:
 
 ```bash
 CURRENT_DEBT=$(printf '%s' "$DEBT" | jq '[.results[] | select(has("archived_milestone") | not)] | map(.items | length) | add // 0' 2>/dev/null || echo 0)

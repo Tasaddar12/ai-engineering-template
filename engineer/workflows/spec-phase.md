@@ -119,7 +119,7 @@ If `has_spec` is true:
 
 **If `--auto`:** Auto-select "Skip" — leave the existing SPEC.md unchanged and exit with the same
 message the interactive "Skip" prints. Log: `[auto] SPEC.md exists — reusing as-is.` An unattended
-run reuses an existing artifact rather than regenerating it : "Update it" re-scores and
+run reuses an existing artifact rather than regenerating it: "Update it" re-scores and
 rewrites the spec, discarding answers a person already recorded in it, and nobody is present to
 notice.
 
@@ -237,7 +237,7 @@ ones). Reference: @~/.claude/engineer/references/edge-probe.md.
 **Non-English projects — `text_en` carries the classifier-facing translation; the SPEC is
 not.** The shape cues the classifier matches are **English** word-boundary patterns, so
 requirement prose written in another language matches nothing, classifies to zero shapes, and
-lands every row in `unclassified`  — the taxonomy contributes nothing and `--auto`
+lands every row in `unclassified` — the taxonomy contributes nothing and `--auto`
 leaves it all `unresolved`. When this project has `response_language` set, add an optional
 `text_en` key to each `$REQS_JSON` entry: a faithful **English** translation of that
 requirement's `text`. `text_en` is **engine input, never user-facing output**, so the
@@ -307,7 +307,7 @@ fi
 # `text` alone classifies to zero shapes; `text` itself stays the SPEC's own requirement text
 # and is never translated. Keep every `id` exactly as it appears in the SPEC.
 # BSD/macOS mktemp only randomizes XXXXXX when it is the final path component, so make a
-# suffixless temp then append the extension — portable across BSD + GNU .
+# suffixless temp then append the extension — portable across BSD + GNU.
 REQS_JSON=$(mktemp "${TMPDIR:-/tmp}/edge-probe-reqs-XXXXXX") && mv "$REQS_JSON" "${REQS_JSON}.json" && REQS_JSON="${REQS_JSON}.json" || exit 1
 cat > "$REQS_JSON" <<'JSON'
 [
@@ -323,7 +323,7 @@ if ! node -e 'const a=require(process.argv[1]);if(!Array.isArray(a)||a.length===
   exit 1
 fi
 # Invoke the compiled engine and CAPTURE its report — it computes which categories apply per
-# requirement. The report is RENDERED into context below ; its resolved/dismissed/
+# requirement. The report is RENDERED into context below; its resolved/dismissed/
 # unresolved rows (resolved items carry verification: explicit|backstop) are the deterministic
 # FLOOR the resolution loop consumes and unions with its own classification — the loop no longer
 # re-derives the taxonomy from prose unaided. Floor, never ceiling: the classifier has a measured
@@ -344,7 +344,7 @@ if ! printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d
   echo "ERROR: edge-probe produced an unparseable or malformed coverage report — refusing to proceed with the resolution loop." >&2
   exit 1
 fi
-# Render the validated report into the model's visible context . Until here $COVERAGE was
+# Render the validated report into the model's visible context. Until here $COVERAGE was
 # captured, shape-checked, and reduced to coverage.applicable — the engine's per-requirement
 # items[] never reached the model, so the resolution loop below re-derived edge categories from
 # requirement PROSE (the data-flow twin of 's control-flow discard). These rows are the
@@ -361,7 +361,7 @@ echo "### (end edge-probe coverage report)"
 # below rather than silently emitting a green empty ## Edge Coverage section.
 APPLICABLE=$(printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let n=0;try{n=JSON.parse(s).coverage.applicable}catch{n=0}process.stdout.write(String(n))})')
 UNCLASSIFIED=$(printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let n=0;try{n=JSON.parse(s).coverage.unclassified}catch{n=0}process.stdout.write(String(n))})')
-# : all-unclassified is the accidental-miss case the applicable:0 guard could never
+# All-unclassified is the accidental-miss case the applicable:0 guard could never
 # reach — 's soft-signal rows make applicable non-zero by construction there.
 if [ "$APPLICABLE" = "0" ] || [ "$UNCLASSIFIED" = "$APPLICABLE" ]; then
   echo "WARNING: edge-probe proposed ZERO applicable edges across all requirements — likely a classification miss or malformed requirements, not a genuinely edge-free spec. Do NOT silently write an empty Edge Coverage section." >&2
@@ -412,7 +412,7 @@ written; otherwise auto-`resolved` (verification: backstop) (never auto-dismiss 
 dismissal is the exact silent failure being eliminated). Log:
 `[auto] edge coverage: E explicit, B backstop, U unresolved`.
 
-**`unclassified` exception :** `--auto` leaves an `unclassified` candidate
+**`unclassified` exception:** `--auto` leaves an `unclassified` candidate
 **`unresolved`** (the soft gate surfaces it as a flagged planner assumption) — it never
 auto-resolves it with `verification: backstop`. A missing shape is not evidence an edge exists, so minting a held-out
 edge obligation on a requirement that may be genuinely edge-free would be a false claim and
@@ -464,7 +464,7 @@ For each Requirement gathered so far, run the two-stage recall→precision pass:
        - `check_target` — the negative-test file path (for `node-test`), or the path to lint
          (for `lint-rule`).
        - `check_rule` — the eslint rule id (e.g. `local/no-source-grep`); `lint-rule` only.
-       - `check_violation_fixture`  — path to a KNOWN-BAD subject the wired check is run
+       - `check_violation_fixture` — path to a KNOWN-BAD subject the wired check is run
          against to **machine-prove fail-first**; rides BOTH kinds. Capture it to let the item green
          end-to-end with zero hand-authoring at verify time; for `node-test` the negative test should
          read its subject from the `ENGINEER_PROHIB_SUBJECT` env var so the prover can inject this fixture.
@@ -481,7 +481,7 @@ For each Requirement gathered so far, run the two-stage recall→precision pass:
        downstream (an absent/partial descriptor — or one with no `check_violation_fixture` —
        → `descriptorFromProjection` null/under-specified/fixture-less → producer fail-closed
        locate-or-unprovable, never green). Do NOT capture `failFirst` here — it is a
-       verify-time caller attestation, not a spec-authored field .
+       verify-time caller attestation, not a spec-authored field.
    - **Dismiss (reason)** → mark `dismissed` with a REQUIRED non-empty reason (PROB-05). The
      reason string is the audit trail; silence is not a valid dismissal.
    - **Defer** → leave `unresolved`.

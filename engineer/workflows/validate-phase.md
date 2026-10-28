@@ -148,7 +148,7 @@ Print: `◆ Spawning nyquist auditor... (runs in a subagent — no output until 
 
 <!-- model-omit-on-inherit -->
 
-> **Model omission .** Omit the `model` parameter entirely when the value it would carry (`AUDITOR_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
+> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`AUDITOR_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```
 Agent(
@@ -180,7 +180,7 @@ Handle return:
 
 **State A (update):**
 1. Update Per-Task Map statuses, add escalated to Manual-Only, update frontmatter (**set `status: validated`**)
-2. Append to the audit trail through the owning verb — it compares against the LAST `## Validation Audit` block and skips the write entirely when nothing material changed ( R3; : idempotence alone is insufficient for VALIDATION, whose content legitimately changes with the plan/SUMMARY set, so this call is made AFTER the Per-Task Map update above, not instead of it):
+2. Append to the audit trail through the owning verb — it compares against the LAST `## Validation Audit` block and skips the write entirely when nothing material changed ( R3;: idempotence alone is insufficient for VALIDATION, whose content legitimately changes with the plan/SUMMARY set, so this call is made AFTER the Per-Task Map update above, not instead of it):
 
 ```bash
 engineer_run query verification.append-audit "${PHASE_DIR}/${PADDED_PHASE}-VALIDATION.md" \

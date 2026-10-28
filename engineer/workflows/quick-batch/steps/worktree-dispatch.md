@@ -79,7 +79,7 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.
    `complete`) and refresh `$BATCH_MANIFEST_JSON` from its `manifest`.
 
    **Crash-window guard (mirrors `planner-wave.md`'s PLAN.md-existence
-   check one layer earlier — ):** `quick-batch resume`'s `eligible` is
+   check one layer earlier):** `quick-batch resume`'s `eligible` is
    purely status/dependency-derived; it does NOT know an item already
    finished executing. A coordinator crash between this step returning
    (executor committed, `SUMMARY.md` written) and Step 7's merge leaves

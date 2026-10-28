@@ -199,7 +199,7 @@ Return to list_todos step.
 If `.planning/STATE.md` exists:
 
 1. Re-run `engineer_run query init.todos ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }}` (same workstream flag as the first call) to get a fresh, post-write JSON snapshot (the count and rendering must reflect the change just made).
-2. **Fail-safe check :** if the JSON failed to parse, or `pending_read_ok` is not `true`, or `pending_todos_markdown` is not a string, do NOT touch the "### Pending Todos" section — leave it exactly as-is and continue to the next step. A partial or malformed `init.todos` result must never overwrite a good existing section.
+2. **Fail-safe check:** if the JSON failed to parse, or `pending_read_ok` is not `true`, or `pending_todos_markdown` is not a string, do NOT touch the "### Pending Todos" section — leave it exactly as-is and continue to the next step. A partial or malformed `init.todos` result must never overwrite a good existing section.
 3. Otherwise, replace the entire body of "### Pending Todos" (under "## Accumulated Context") with the literal value of `pending_todos_markdown` — verbatim, one bullet per pending todo already rendered and length-capped by `init.todos`. Do not reformat, re-wrap, re-order, or hand-edit the bullets; do not append to the old body — replace it wholesale (this is what makes an old run-on-sentence section get superseded cleanly with no migration step).
 </step>
 

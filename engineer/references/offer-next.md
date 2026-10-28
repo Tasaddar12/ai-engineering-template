@@ -1,5 +1,5 @@
 <!--
-  offer-next.md — extracted from execute-phase.md step "offer_next" .
+  offer-next.md — extracted from execute-phase.md step "offer_next".
   Eagerly @-referenced from execute-phase.md so runtime behavior is unchanged; the
   extraction restores byte-budget headroom the frozen ceiling exists to provide.
 -->

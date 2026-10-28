@@ -25,7 +25,7 @@ and REVIEW.md has a single writer, `code-reviewer`, which this step is not.
 # PADDED must survive a DOTTED phase number, of ANY segment count. This step is dispatched from
 # exactly TWO places: `execute-phase.md` (`code_review_gate`) and `code-review-fix.md`
 # (`record_disposition`). Only the second validates anything -- `code-review-fix.md`'s PADDED_PHASE validator anchors
-# `^[0-9]+[A-Z]?(\.[0-9]+)*$`, an unbounded `*` widened by  and a letter axis widened by , so it accepts `03.1`, `23.1.2` AND `12A`.
+# `^[0-9]+[A-Z]?(\.[0-9]+)*$`, an unbounded `*` widened by and a letter axis widened by, so it accepts `03.1`, `23.1.2` AND `12A`.
 # `execute-phase.md` applies NO shape gate at all, so this fence is not mirroring an upstream
 # guarantee; it IS the guarantee. (`code-review.md`'s own PADDED_PHASE validator is identical but never
 # dispatches this step. It was cited here as a caller for several rounds and is not one.) And
@@ -35,7 +35,7 @@ and REVIEW.md has a single writer, `code-reviewer`, which this step is not.
 # it. Pad the integer part only and carry the sub-number verbatim, so 3.1 -> 03.1, 23.1.2 ->
 # 23.1.2 and 3 -> 03. The segment count is deliberately NOT bounded here: the canonical
 # grammar in src/phase-id.cts (`PHASE_NUMBER_TOKEN_SOURCE`, ) is unbounded in segments,
-# and  widened the one dispatcher that validates to match it on that axis, so a guard
+# and widened the one dispatcher that validates to match it on that axis, so a guard
 # narrower than that dispatcher means no ledger for a phase id the dispatcher already accepted.
 # On failure NO path is built and the fence refuses by name: advisory means advisory, and it
 # also means never probing a path assembled out of a value we just rejected.
@@ -75,7 +75,7 @@ case "$_pn" in
                               # the retired `*.*.*` arity bound, which masked `1..2` by accident.
 esac
 # THE LETTER AXIS. The canonical grammar (src/phase-id.cts) is digits, an OPTIONAL single uppercase
-# letter, then dotted digit segments -- `12A`, `3A`, `23A.1.2`.   widened the six
+# letter, then dotted digit segments -- `12A`, `3A`, `23A.1.2`. widened the six
 # shell/markdown mirrors to it after this branch was cut, and its lint ratchet then flagged this
 # step as the one letterless mirror left. The character class above admits the letter; these
 # arms pin WHERE it may sit -- only as the last character of the integer part, at most once --
@@ -502,7 +502,7 @@ rather than a MIS-CLASSIFIED one -- is the wrong trade under this repo's own fai
 a dropped finding is demoted below every finding that parsed, and an unparseable finding is
 precisely the one a human most needs to see. Surfaced, not thrown, exactly as the stale
 fix-report case above is: the gate stays advisory and states the shortfall.
-The !unparsed conjunct here is the SECOND of the two exits that discarded the shortfall, and
+The!unparsed conjunct here is the SECOND of the two exits that discarded the shortfall, and
 it is not redundant with the one above: that guard keys on order and stands down when a fix
 report exists, so a run with a fix report and no parseable finding reaches THIS line with
 rows.length 0. Both exits now decline to fire while a shortfall is outstanding, and the
@@ -543,7 +543,7 @@ stated in docs/features/code-review-pipeline.md; not reproduced as a lost update
 # PADDED must survive a DOTTED phase number, of ANY segment count. This step is dispatched from
 # exactly TWO places: `execute-phase.md` (`code_review_gate`) and `code-review-fix.md`
 # (`record_disposition`). Only the second validates anything -- `code-review-fix.md`'s PADDED_PHASE validator anchors
-# `^[0-9]+[A-Z]?(\.[0-9]+)*$`, an unbounded `*` widened by  and a letter axis widened by , so it accepts `03.1`, `23.1.2` AND `12A`.
+# `^[0-9]+[A-Z]?(\.[0-9]+)*$`, an unbounded `*` widened by and a letter axis widened by, so it accepts `03.1`, `23.1.2` AND `12A`.
 # `execute-phase.md` applies NO shape gate at all, so this fence is not mirroring an upstream
 # guarantee; it IS the guarantee. (`code-review.md`'s own PADDED_PHASE validator is identical but never
 # dispatches this step. It was cited here as a caller for several rounds and is not one.) And
@@ -553,7 +553,7 @@ stated in docs/features/code-review-pipeline.md; not reproduced as a lost update
 # it. Pad the integer part only and carry the sub-number verbatim, so 3.1 -> 03.1, 23.1.2 ->
 # 23.1.2 and 3 -> 03. The segment count is deliberately NOT bounded here: the canonical
 # grammar in src/phase-id.cts (`PHASE_NUMBER_TOKEN_SOURCE`, ) is unbounded in segments,
-# and  widened the one dispatcher that validates to match it on that axis, so a guard
+# and widened the one dispatcher that validates to match it on that axis, so a guard
 # narrower than that dispatcher means no ledger for a phase id the dispatcher already accepted.
 # On failure NO path is built and the fence refuses by name: advisory means advisory, and it
 # also means never probing a path assembled out of a value we just rejected.
@@ -593,7 +593,7 @@ case "$_pn" in
                               # the retired `*.*.*` arity bound, which masked `1..2` by accident.
 esac
 # THE LETTER AXIS. The canonical grammar (src/phase-id.cts) is digits, an OPTIONAL single uppercase
-# letter, then dotted digit segments -- `12A`, `3A`, `23A.1.2`.   widened the six
+# letter, then dotted digit segments -- `12A`, `3A`, `23A.1.2`. widened the six
 # shell/markdown mirrors to it after this branch was cut, and its lint ratchet then flagged this
 # step as the one letterless mirror left. The character class above admits the letter; these
 # arms pin WHERE it may sit -- only as the last character of the integer part, at most once --
@@ -774,7 +774,7 @@ _fix_any=0
 [ -f "${_pd}/${PADDED}-REVIEW-FIX.md" ] && _fix_any=1
 # Backups count too -- a converged loop's earlier iterations live only there. An unmatched glob
 # expands to the literal pattern, which `-f` rejects.
-# $(printf '%s' "$PADDED") per lint-workflow-shellcheck's  remedy: a bare $VAR in a `for x in`
+# $(printf '%s' "$PADDED") per lint-workflow-shellcheck's remedy: a bare $VAR in a `for x in`
 # splits differently under bash and zsh.
 for _f in "${_pd}/$(printf '%s' "$PADDED")-REVIEW-FIX.iter"*.md; do [ -f "$_f" ] && _fix_any=1; done
 # The word for an empty status names WHICH empty it is, for the same reason block 1 does: a

@@ -71,7 +71,7 @@ INIT=$(engineer_run query init.phase-op ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} 
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 AGENT_SKILLS_FIXER=$(engineer_run query agent-skills code-fixer ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 AGENT_SKILLS_REVIEWER=$(engineer_run query agent-skills code-reviewer ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-# : resolve the routed models so model_overrides / models.<phaseType> are honored
+# Resolve the routed models so model_overrides / models.<phaseType> are honored
 # (code-reviewer → "verification", code-fixer → "execution"); thread them below.
 REVIEWER_MODEL=$(engineer_run query resolve-model code-reviewer --raw)
 FIXER_MODEL=$(engineer_run query resolve-model code-fixer --raw)
@@ -220,7 +220,7 @@ done < <(REVIEW_PATH="${REVIEW_PATH}" node -e "
     if (bracketMatch) {
       bracketMatch[1].split(',').map(f => f.trim()).filter(Boolean).forEach(f => console.log(f));
     } else {
-      // Try YAML list format: files_reviewed_list:\n  - file1\n  - file2
+      // Try YAML list format: files_reviewed_list:\n - file1\n - file2
       let inList = false;
       for (const line of fm.split('\n')) {
         if (/files_reviewed_list:/.test(line)) { inList = true; continue; }
@@ -248,7 +248,7 @@ Use Agent() to spawn agent:
 
 <!-- model-omit-on-inherit -->
 
-> **Model omission .** Omit the `model` parameter entirely when the value it would carry (`FIXER_MODEL`, `REVIEWER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
+> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`FIXER_MODEL`, `REVIEWER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```text
 Agent(subagent_type="code-fixer", model="{FIXER_MODEL}", prompt="
@@ -301,7 +301,7 @@ if [ "$AUTO_MODE" = "true" ]; then
   # Total fix passes = MAX_ITERATIONS. Loop uses -lt (not -le) intentionally.
   ITERATION=1
   MAX_ITERATIONS=3
-  # 's convergence-vs-degradation distinction still governs whether the .iterN.md backups are
+  # The convergence-vs-degradation distinction still governs whether the .iterN.md backups are
   # spent scratch or a post-mortem trail — but the removal moved to `cleanup_iteration_backups`,
   # after `record_disposition` has read them, so nothing in THIS loop consumes the flag any more.
   # It is re-derived there from the final REVIEW.md's status, which is exactly the condition the
@@ -428,7 +428,7 @@ ${AGENT_SKILLS_FIXER}")
     fi
   fi
 
-  # 's cleanup of the .iterN.md backups now runs in `cleanup_iteration_backups`, AFTER
+  # Cleanup of the .iterN.md backups runs in `cleanup_iteration_backups`, AFTER
   # `record_disposition` — see that step for why. Removing them here deleted the only record of
   # what the earlier iterations fixed before anything had read it.
 fi
@@ -438,7 +438,7 @@ Key design decisions for --auto (addresses ALL review HIGH concerns):
 1. **Re-review scope**: Uses REVIEW_FILES_ARRAY from original REVIEW.md frontmatter, falling back to full phase scope. Scope is NOT lost between iterations. Uses portable while-read loop (bash 3.2+ compatible, handles spaces in paths).
 2. **Artifact semantics**: REVIEW.md is overwritten by each re-review (latest review state). REVIEW-FIX.md is overwritten by each fixer iteration (latest fix state with iteration count). There is ONE final version of each artifact, not per-iteration copies.
    Backup files (.iterN.md) preserve history for post-mortem analysis if iterations degrade. On successful convergence the backups are spent scratch and removed; on degradation (hit MAX_ITERATIONS / fixer failure) they are retained for post-mortem. The removal happens in `cleanup_iteration_backups`, after `record_disposition` has read them — they are the only surviving record of what an earlier iteration fixed, since this artifact keeps one final version rather than per-iteration copies.
-3. **Commit timing**: Fix commits happen per-finding inside the agent. REVIEW-FIX.md is NOT committed until step 7 (after ALL iterations complete). Only ONE docs commit, not one per iteration. In --auto that single commit also stages the converged REVIEW.md alongside REVIEW-FIX.md , so the two committed artifacts agree — the initial code-review commit held iteration-1 REVIEW.md content, and the --auto re-review loop overwrote it each iteration.
+3. **Commit timing**: Fix commits happen per-finding inside the agent. REVIEW-FIX.md is NOT committed until step 7 (after ALL iterations complete). Only ONE docs commit, not one per iteration. In --auto that single commit also stages the converged REVIEW.md alongside REVIEW-FIX.md, so the two committed artifacts agree — the initial code-review commit held iteration-1 REVIEW.md content, and the --auto re-review loop overwrote it each iteration.
 </step>
 
 <step name="commit_fix_report">
@@ -447,7 +447,7 @@ After ALL iterations complete (or single pass in non-auto mode), validate and co
 ```bash
 if [ -f "${FIX_REPORT_PATH}" ]; then
   # Validate REVIEW-FIX.md has valid YAML frontmatter with status field
-  # : export FIX_REPORT_PATH (the var the body reads), not REVIEW_PATH.
+  # Export FIX_REPORT_PATH (the var the body reads), not REVIEW_PATH.
   HAS_STATUS=$(FIX_REPORT_PATH="${FIX_REPORT_PATH}" node -e "
     const fs = require('fs');
     const content = fs.readFileSync(process.env.FIX_REPORT_PATH, 'utf-8');
@@ -459,7 +459,7 @@ if [ -f "${FIX_REPORT_PATH}" ]; then
     echo "REVIEW-FIX.md created at ${FIX_REPORT_PATH}"
     
     if [ "$COMMIT_DOCS" = "true" ]; then
-      # : --auto's re-review loop overwrote REVIEW.md each iteration
+      #: --auto's re-review loop overwrote REVIEW.md each iteration
       # (auto_iteration_loop), but the only prior REVIEW.md commit is the
       # initial code-review pass (iteration-1 content). Stage the converged
       # REVIEW.md alongside REVIEW-FIX.md in this single docs commit so the two
@@ -582,7 +582,7 @@ Extract frontmatter fields:
 
 ```bash
 # Extract only the YAML frontmatter block (between first two --- lines)
-# : export FIX_REPORT_PATH (the var the body reads), not REVIEW_PATH.
+# Export FIX_REPORT_PATH (the var the body reads), not REVIEW_PATH.
 FIX_FRONTMATTER=$(FIX_REPORT_PATH="${FIX_REPORT_PATH}" node -e "
   const fs = require('fs');
   const content = fs.readFileSync(process.env.FIX_REPORT_PATH, 'utf-8');

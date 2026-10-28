@@ -9,7 +9,7 @@ Display banner:
 ◆ Spawning plan checker... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
 
-**Verify-command path probe .** Before spawning, run the deterministic probe over
+**Verify-command path probe.** Before spawning, run the deterministic probe over
 the quick plan's `<automated>` commands and hand its JSON to the checker, exactly as
 `plan-phase.md` does. Quick plans live under `${QUICK_DIR}`, not `.planning/phases/`, so the
 probe takes the directory directly. It never executes command text and never prescribes a
@@ -61,7 +61,7 @@ fi
 VERIFY_PATHS=$(engineer_run check verify-command-paths --dir "${QUICK_DIR}" --raw) && VERIFY_PATHS_EXIT=0 || VERIFY_PATHS_EXIT=$?
 ```
 
-Branch on `VERIFY_PATHS_EXIT` : `0` — the probe looked. `69` (`UNAVAILABLE`) — it could not look: the JSON is still printed with `status: 'unresolvable'`, so hand it to the checker unchanged. Any other non-zero is a command failure: stop and surface it rather than hand the checker an empty value.
+Branch on `VERIFY_PATHS_EXIT`: `0` — the probe looked. `69` (`UNAVAILABLE`) — it could not look: the JSON is still printed with `status: 'unresolvable'`, so hand it to the checker unchanged. Any other non-zero is a command failure: stop and surface it rather than hand the checker an empty value.
 
 Checker prompt:
 
@@ -123,8 +123,8 @@ Agent(
 
 **Handle checker return:**
 
-- **`## VERIFICATION PASSED`:** If the return lists an entry whose severity is BLOCKER or WARNING, in the YAML issues block or listed in prose (a mention such as "no warnings" or a zero count is not an entry), handle it as `## ISSUES FOUND` below, counting the prose entries as BLOCKER/WARNING entries; the sentinel never decides alone, and an entry with a missing or unrecognized severity counts as a BLOCKER . Otherwise display confirmation, proceed to step 6.
-- **`## ISSUES FOUND`:** Count BLOCKER + WARNING entries in the YAML issues block; an entry whose severity is missing or unrecognized counts as a BLOCKER (fail closed). If zero — every entry is explicitly INFO — display `ℹ advisory — {dimension}: {description}` per entry and proceed to step 6; INFO is advisory and never enters the loop . Otherwise display issues, check iteration count, enter revision loop.
+- **`## VERIFICATION PASSED`:** If the return lists an entry whose severity is BLOCKER or WARNING, in the YAML issues block or listed in prose (a mention such as "no warnings" or a zero count is not an entry), handle it as `## ISSUES FOUND` below, counting the prose entries as BLOCKER/WARNING entries; the sentinel never decides alone, and an entry with a missing or unrecognized severity counts as a BLOCKER. Otherwise display confirmation, proceed to step 6.
+- **`## ISSUES FOUND`:** Count BLOCKER + WARNING entries in the YAML issues block; an entry whose severity is missing or unrecognized counts as a BLOCKER (fail closed). If zero — every entry is explicitly INFO — display `ℹ advisory — {dimension}: {description}` per entry and proceed to step 6; INFO is advisory and never enters the loop. Otherwise display issues, check iteration count, enter revision loop.
 
 **Revision loop (max 2 iterations):**
 

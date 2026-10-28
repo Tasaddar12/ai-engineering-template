@@ -24,7 +24,7 @@ orchestrator/human decision, never agent self-repair. If your prompt contains
 NO `<project_root_pin>` block (worktree/isolated dispatch, or a legacy
 orchestrator), emit one warning line and continue with steps 0a/0b below — do
 not fail closed on dispatches that never carried a pin. **Never bind
-`{PINNED_ROOT}` yourself**: if this template reaches you unbound it is
+`{PINNED_ROOT}` yourself**If this template reaches you unbound it is
 reference prose, not your pin — only the orchestrator's build-time
 substitution produces a valid guard.
 
@@ -52,12 +52,12 @@ git's own stderr in a `Diagnostic` line, so a platform failure self-describes
 instead of surfacing as a bare `Actual root: <none>`.
 
 ```bash
-# engineer:guard=supplied-root-pin  — run before the first Edit/Write and before every commit.
+# engineer:guard=supplied-root-pin — run before the first Edit/Write and before every commit.
 PINNED_ROOT='{PINNED_ROOT}'  # orchestrator build-time substitution — the only valid source of this value
 PIN_STAGE=''
 PIN_DIAG=''
 engineer_pin_fail() {
-  echo "FATAL: executor root does not match the orchestrator-supplied PROJECT_ROOT pin ." >&2
+  echo "FATAL: executor root does not match the orchestrator-supplied PROJECT_ROOT pin." >&2
   echo "  Pinned root: ${PINNED_ROOT:-<empty or unexpanded>}" >&2
   echo "  Actual root: ${ACTUAL_ROOT:-<none>}" >&2
   echo "  Guard stage: ${PIN_STAGE:-<unset>}" >&2
@@ -70,7 +70,7 @@ engineer_pin_fail() {
 # Backslash comparator, generated at runtime: a backslash written twice in this
 # script does not survive the Windows spawn path into bash (the command-line
 # round-trip halves the doubled form), which rejected every C:\ pin at the form
-# gate on the  CI Windows legs. printf's octal escape is a lone backslash,
+# gate on the CI Windows legs. printf's octal escape is a lone backslash,
 # which does survive; the quoted expansion below is literal in a case pattern.
 BS=$(printf '\134')
 # Fail closed if the comparator could not be generated: an empty BS would widen
@@ -248,7 +248,7 @@ _ENV='([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*'
 # direction is the one that gets it routed around. The residual is disclosed instead.
 # Spell the literal ERE operators as bracket expressions. `\|` / `\(` / `\{`
 # are GNU-tolerated but undefined by POSIX and BSD sed rejects the same boundary
-# expression with "unbalanced brackets" before the scan can run .
+# expression with "unbalanced brackets" before the scan can run.
 _OPEN='(^|&&|&|;|[|][|]|[|]|[(]|[{])[[:space:]]*'
 # LAUNCHERS are a NAMED set, not `[^&;|]*`. A wrapper reached through a launcher is still a wrapper,
 # and the set admits an absolute path (`/usr/bin/env`) and an option with a SEPARATE operand
@@ -259,7 +259,7 @@ _OPEN='(^|&&|&|;|[|][|]|[|]|[(]|[{])[[:space:]]*'
 # bash` is a name PROBE that executes nothing, and halting it is the false-positive direction
 # again. The cost is that a genuine `command bash -c …` is not unwrapped; that is disclosed.
 # but a catch-all leading run also unwraps interpreter TEXT that is merely an argument — `echo bash -c
-# 'cd ../main'` halted on a command that executes nothing. A spurious unwrap is NOT harmless: the scans
+# 'cd../main'` halted on a command that executes nothing. A spurious unwrap is NOT harmless: the scans
 # halt on a path the shell would never visit. Name the launchers instead.
 _LOPT='([[:space:]]+-[^[:space:]]+|[[:space:]]+[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*)*'
 # THE SHAPE IS `(<generic opts> <opt> <operand>)* <generic opts>`, NOT `<generic opts> (<opt>
@@ -325,7 +325,7 @@ _scan(){ local CMD=$1 D=$2 RAW BODY BFR REST K Q T R P S PREFIX LDS LD _T _P
     # Classify with the same grep implementation that produced the event and
     # remove the matched prefix literally. Expanding these composed EREs into a
     # multi-expression BSD sed program fails with "unbalanced brackets" on
-    # macOS even though BSD grep accepts the event expression .
+    # macOS even though BSD grep accepts the event expression.
     if _P=$(printf '%s' "$BODY" | grep -oE "^${_ENV}${_EVAL}"); then K=E
     elif _P=$(printf '%s' "$BODY" | grep -oE "^${_ENV}${_EXEC}"); then K=W
     elif _P=$(printf '%s' "$BODY" | grep -oE "^${_DIR}"); then K=N
