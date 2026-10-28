@@ -11,11 +11,24 @@ import string
 import sys
 import unittest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]/"engineer/bin"))
+import importlib
+import importlib.util
 
-from lib.code_review_depth import (  # noqa: E402
-    DEPTH_TIERS, LARGE_SCOPE_THRESHOLD, REASON, normalize_rel_path, resolve_code_review_depth, rule_matches_file,
-)
+LIB = Path(__file__).resolve().parents[1]/"engineer/bin/lib"
+
+
+def _load(name):
+    # Load engineer/bin/lib as an isolated package: ".ai/runtime/lib" is also named "lib".
+    if "engineer_bin_lib" not in sys.modules:
+        spec = importlib.util.spec_from_file_location("engineer_bin_lib", LIB/"__init__.py", submodule_search_locations=[str(LIB)])
+        package = importlib.util.module_from_spec(spec)
+        sys.modules["engineer_bin_lib"] = package
+        spec.loader.exec_module(package)
+    return importlib.import_module("engineer_bin_lib."+name)
+
+_module = _load("code_review_depth")
+DEPTH_TIERS, LARGE_SCOPE_THRESHOLD, REASON = _module.DEPTH_TIERS, _module.LARGE_SCOPE_THRESHOLD, _module.REASON
+normalize_rel_path, resolve_code_review_depth, rule_matches_file = _module.normalize_rel_path, _module.resolve_code_review_depth, _module.rule_matches_file
 
 
 _DEFAULT = object()

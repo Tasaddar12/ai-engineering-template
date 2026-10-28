@@ -3,9 +3,24 @@ from pathlib import Path
 import sys
 import unittest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]/"engineer/bin"))
+import importlib
+import importlib.util
 
-from lib.code_review_flags import parse_code_review_flags, resolve_code_review_workflow  # noqa: E402
+LIB = Path(__file__).resolve().parents[1]/"engineer/bin/lib"
+
+
+def _load(name):
+    # Load engineer/bin/lib as an isolated package: ".ai/runtime/lib" is also named "lib".
+    if "engineer_bin_lib" not in sys.modules:
+        spec = importlib.util.spec_from_file_location("engineer_bin_lib", LIB/"__init__.py", submodule_search_locations=[str(LIB)])
+        package = importlib.util.module_from_spec(spec)
+        sys.modules["engineer_bin_lib"] = package
+        spec.loader.exec_module(package)
+    return importlib.import_module("engineer_bin_lib."+name)
+
+_module = _load("code_review_flags")
+parse_code_review_flags = _module.parse_code_review_flags
+resolve_code_review_workflow = _module.resolve_code_review_workflow
 
 DEFAULTS = {"fix": False, "all": False, "auto": False, "depth": "", "files": ""}
 
