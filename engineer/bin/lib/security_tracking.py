@@ -566,10 +566,10 @@ def security_status(args, proposed=None):
     if not valid_revision or run(['git', 'merge-base', '--is-ancestor', str(frozen), revision], root(), check=False, timeout=30).returncode:
         reasons.append('Security evidence is not bound to an actual current-history frozen revision')
     elif frozen != revision:
-        changed = run(['git', 'diff', '--name-only', frozen, revision], root(), timeout=30).stdout.splitlines()
+        changed = run(['git', 'log', '--format=', '--name-only', '--full-history', '-m', frozen + '..' + revision], root(), timeout=30).stdout.splitlines()
         allowed = {str(path.relative_to(root())), '.planning/STATE.md', '.planning/ROADMAP.md', '.planning/REQUIREMENTS.md'}
         allowed.update(str(p.relative_to(root())) for p in ctx['directory'].glob('*-VERIFICATION.md'))
-        if any(p not in allowed for p in changed):
+        if any(p.strip() and p not in allowed for p in changed):
             reasons.append('Source changed after the frozen security audit')
     covered = metadata.get('covered_files', [])
     if not isinstance(covered, list) or not covered or not all(isinstance(p, str) for p in covered):
