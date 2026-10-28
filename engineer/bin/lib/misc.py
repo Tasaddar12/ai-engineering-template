@@ -85,6 +85,8 @@ def timeout(args):
     if args.has('timeout') and args.has('seconds'):
         raise Failure('ambiguous-timeout','Choose --timeout or --seconds',2)
     budget = named
+    if isinstance(budget,bool):
+        raise Failure('invalid-timeout','A named timeout requires a numeric seconds value',2)
     if body:
         if positional:
             if named is not None or len(positional) != 1:
