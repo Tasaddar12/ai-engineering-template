@@ -116,8 +116,8 @@ so they restate the operative rules inline; this section is the authority they m
    `prev_issue_count`. Do NOT re-spawn the checker yet — the conflict is not a revised output.
 2. **Record**, where the host has a channel an arbitration loop reads. `review.md` emits one
    fixed writer-owned slot immediately after the artifact title, between
-   `<!-- gsd:plan-revision-conflicts:begin -->` and
-   `<!-- gsd:plan-revision-conflicts:end -->`. When `workflow.plan_review_convergence` is enabled
+   `<!-- engineer:plan-revision-conflicts:begin -->` and
+   `<!-- engineer:plan-revision-conflicts:end -->`. When `workflow.plan_review_convergence` is enabled
    and the phase `*-REVIEWS.md` already exists, `plan-phase` appends one line per conflict under
    `## Plan-Revision Conflicts` inside that slot:
 

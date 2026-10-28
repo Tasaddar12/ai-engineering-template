@@ -1,4 +1,4 @@
-<!-- gsd:loop-host
+<!-- engineer:loop-host
 step: execute
 points: execute:pre, execute:wave:pre, execute:wave:post, execute:post
 agent-roles: executor, verifier, code-reviewer
@@ -19,9 +19,9 @@ Orchestrator coordinates, not executes. Each subagent loads the full execute-pla
 - **Claude Code:** Uses `Agent(subagent_type="executor", ...)` — backgrounded by default; verify completion
 - **Codex:** native subagent sessions can end abnormally (`turn_aborted`) after the plan
   work is already committed. Completion is decided by the step-4 artifact reconciliation
-  (SUMMARY + matching recent commits), not by the session's terminal state (#4217).
+  (SUMMARY + matching recent commits), not by the session's terminal state.
 - If `Agent`/`agent` tool is genuinely unavailable (e.g. a backgrounded
-  Claude Code agent per #853), use sequential inline execution as
+  Claude Code agent per ), use sequential inline execution as
   the fallback for executor parallelization only. If `Agent` IS available (top-level Claude
   Code), you MUST spawn executor agents — inline execution is not authorized. Check for
   actual tool availability, not runtime name.
@@ -78,34 +78,34 @@ Load all context in one call:
 @~/.claude/engineer/references/run-resolver.md
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-WAVE_PARAM=""; if [[ "$GSD_ARGS" =~ (^|[[:space:]])--wave[[:space:]]+([^[:space:]-][^[:space:]]*) ]]; then WAVE_PARAM="--wave ${BASH_REMATCH[2]}"; fi
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.execute-phase ${GSD_WS:+--ws=${GSD_WS##* }} "${PHASE_ARG}" $WAVE_PARAM)
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
+WAVE_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--wave[[:space:]]+([^[:space:]-][^[:space:]]*) ]]; then WAVE_PARAM="--wave ${BASH_REMATCH[2]}"; fi
+ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
+INIT=$(engineer_run query init.execute-phase ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} "${PHASE_ARG}" $WAVE_PARAM)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS=$(engineer_run query agent-skills executor ${GSD_WS:+--ws=${GSD_WS##* }})
+AGENT_SKILLS=$(engineer_run query agent-skills executor ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 ```
 
 Parse JSON for: `executor_model`, `verifier_model`, `commit_docs`, `parallelization`, `branching_strategy`, `branch_name`, `phase_found`, `phase_dir`, `phase_number`, `padded_phase`, `phase_name`, `phase_slug`, `plans`, `incomplete_plans`, `plan_count`, `incomplete_count`, `state_exists`, `roadmap_exists`, `phase_req_ids`, `response_language`, `requirements_path`, `section_manifest`, `threat_id_duplicate_count`.
 
-**Threat-ID gate (#4683):** if `threat_id_duplicate_count` is non-zero, read and execute `execute-phase/steps/threat-id-gate.md` BEFORE any dispatch — it is a hard stop (the full duplicate list is in `threat_id_duplicates`).
+**Threat-ID gate:** if `threat_id_duplicate_count` is non-zero, read and execute `execute-phase/steps/threat-id-gate.md` BEFORE any dispatch — it is a hard stop (the full duplicate list is in `threat_id_duplicates`).
 
-`section_manifest` (#2932) gates the three `steps/*.md` reads below: read a step file only when its `id` is in `section_manifest.included` (equivalently, its path is in `section_manifest.read`); skip it — without reading — when its `id` is in `section_manifest.excluded`. When `section_manifest` is `null` (degraded: manifest artifact missing/unreadable), read all three unconditionally — the safe superset.
+`section_manifest` gates the three `steps/*.md` reads below: read a step file only when its `id` is in `section_manifest.included` (equivalently, its path is in `section_manifest.read`); skip it — without reading — when its `id` is in `section_manifest.excluded`. When `section_manifest` is `null` (degraded: manifest artifact missing/unreadable), read all three unconditionally — the safe superset.
 
 **Model resolution:** If `executor_model` is `"inherit"`, omit the `model=` parameter from all `Agent()` calls — do NOT pass `model="inherit"` to Agent. Omitting the `model=` parameter causes Claude Code to inherit the orchestrator model automatically. Only set `model=` when `executor_model` is an explicit model name (e.g., `"claude-sonnet-5"`, `"claude-opus-4-8"`).
 
 @~/.claude/engineer/references/execute-phase-response-language.md
 
-Reset the wave-failure tally (#4915). Fenced `bash` blocks are separate shells, so the post-merge gate's cumulative count reaches step 5.8 through a handoff file; a previous run's tally must not leak in:
+Reset the wave-failure tally. Fenced `bash` blocks are separate shells, so the post-merge gate's cumulative count reaches step 5.8 through a handoff file; a previous run's tally must not leak in:
 
 ```bash
-# gsd-handoff:begin wave-failure-reset
-_GSD_HANDOFF="$( { git rev-parse --absolute-git-dir 2>/dev/null || echo "${TMPDIR:-/tmp}/gsd-$(pwd | cksum | cut -d' ' -f1)"; } )/handoff"; mkdir -p "$_GSD_HANDOFF"
-: > "$_GSD_HANDOFF/wave-failures"
-# gsd-handoff:end wave-failure-reset
+# engineer-handoff:begin wave-failure-reset
+_ENGINEER_HANDOFF="$( { git rev-parse --absolute-git-dir 2>/dev/null || echo "${TMPDIR:-/tmp}/engineer-$(pwd | cksum | cut -d' ' -f1)"; } )/handoff"; mkdir -p "$_ENGINEER_HANDOFF"
+: > "$_ENGINEER_HANDOFF/wave-failures"
+# engineer-handoff:end wave-failure-reset
 ```
 
 Read runtime/worktree config and fail closed before any executor dispatch:
@@ -120,7 +120,7 @@ EXECUTOR_STALL_THRESHOLD_MINUTES=$(engineer_run query config-get executor.stall_
 # section of execute-phase/steps/executor-isolation-dispatch.md. It sets
 # ISOLATION (harness-worktree|orchestrator-worktree|none), forces none when
 # USE_WORKTREES=false, fails closed when a host has no primitive, sweeps orphans,
-# and applies the #683 fork-base auto-degrade.
+# and applies the fork-base auto-degrade.
 ```
 
 `ISOLATION` — not `RUNTIME` — is the ONLY fan-out branch point; **never add a `RUNTIME = "codex"` test here.** Per-host dispatch detail lives in `execute-phase/steps/executor-isolation-dispatch.md` (read from step 3).
@@ -141,7 +141,7 @@ fi
 
 When `USE_WORKTREES` is `false`, `ISOLATION` is forced to `none`: executors run sequentially on the main working tree. The per-plan decision below has no effect when worktrees are project-disabled.
 
-`USE_WORKTREES` and `ISOLATION` are also reset for the run when `worktree base-check` detects the orchestrator HEAD has diverged from the worktree fork base (#683) — read and follow `execute-phase/steps/worktree-base-check.md` for the degrade semantics and the `worktree.baseRef:"head"` escape hatch (#3659).
+`USE_WORKTREES` and `ISOLATION` are also reset for the run when `worktree base-check` detects the orchestrator HEAD has diverged from the worktree fork base — read and follow `execute-phase/steps/worktree-base-check.md` for the degrade semantics and the `worktree.baseRef:"head"` escape hatch.
 
 Read context window size for adaptive prompt enrichment:
 
@@ -171,39 +171,39 @@ When `parallelization` is false, plans within a wave execute sequentially.
 **REQUIRED — Sync chain flag with intent.** If user invoked manually (no `--auto`), clear the ephemeral chain flag from any previous interrupted `--auto` chain. This prevents stale `_auto_chain_active: true` from causing unwanted auto-advance. This does NOT touch `workflow.auto_advance` (the user's persistent settings preference). You MUST execute this bash block before any config reads:
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 # REQUIRED: prevents stale auto-chain from previous --auto runs
-if [[ ! "$GSD_ARGS" =~ --auto ]]; then
+if [[ ! "$ENGINEER_ARGS" =~ --auto ]]; then
   engineer_run query config-set workflow._auto_chain_active false || true
 fi
 ```
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 EXECUTE_POST_HOOKS_JSON=$(engineer_run loop render-hooks execute:post --raw)
 TDD_MODE=$(engineer_run loop render-hooks execute:post --active-cap tdd)
 ```
 
-A `contribution` hook at this point with `into: code-reviewer` (#4790) is not dispatched from this envelope: `code-review.md` reads it itself and hands it to `code-reviewer` exactly once.
+A `contribution` hook at this point with `into: code-reviewer` is not dispatched from this envelope: `code-review.md` reads it itself and hands it to `code-reviewer` exactly once.
 
 <step name="safe_resume_gate">
 Before trusting `STATE.md` or dispatching any executor, derive `CURRENT_PLAN_ID`
 from the active incomplete plan in `INIT`, then search recent history:
 ```bash
 SUMMARY_PATH="{phase_dir}/{plan_padded}-SUMMARY.md"
-# #5164: the plan's commits come from the evaluation-scope resolver (ADR-5057 §4): anchored
-# on the commit SUBJECT, zero-pad tolerant (#4003) and tolerant of a decimal / N-segment /
-# letter-suffixed phase number (#4619, #4748), reachable from THIS branch only, bounded to
+# The plan's commits come from the evaluation-scope resolver: anchored
+# on the commit SUBJECT, zero-pad tolerant and tolerant of a decimal / N-segment /
+# letter-suffixed phase number, reachable from THIS branch only, bounded to
 # the latest reachable tag (milestone marker). One `<sha> <subject>` line per commit, newest first.
 PHASE_NUMBER="{phase_number}"
 PLAN_COMMITS=$(engineer_run check evaluation-scope --plan "${PHASE_NUMBER}-{plan_padded}" --commits-only --milestone-bound --max-commits 30 --raw 2>/dev/null) && PLAN_SCOPE_RC=0 || PLAN_SCOPE_RC=$?
-# Exit 69 (UNAVAILABLE) = "could not look": empty is then NOT "no commits". Fail closed (#5170).
+# Exit 69 (UNAVAILABLE) = "could not look": empty is then NOT "no commits". Fail closed.
 if [ "$PLAN_SCOPE_RC" -ne 0 ]; then echo "SAFE-RESUME GATE: could not resolve the plan's commits (evaluation-scope exit ${PLAN_SCOPE_RC}); not dispatching an executor on an unknown resume state." >&2; exit 1; fi
 PLAN_COMMITS=$(printf '%s' "$PLAN_COMMITS" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{process.stdout.write(JSON.parse(s).commits.map(c=>c.sha.slice(0,10)+' '+c.subject).join('\n'))}catch{}})")
 ```
@@ -221,10 +221,10 @@ Offer these recovery options:
 if [ "$TDD_MODE" = "true" ]; then
   IS_BEHAVIOR_ADDING=$(engineer_run query task.is-behavior-adding "$TASK_FILE" --pick is_behavior_adding)
   if [ "$IS_BEHAVIOR_ADDING" = "true" ]; then
-    # #5164: the same resolver, scope and milestone bound as safe_resume_gate — anchored,
-    # zero-pad tolerant (#4003, #4619, #4748), this branch only. A padded literal grep
+    # The same resolver, scope and milestone bound as safe_resume_gate — anchored,
+    # zero-pad tolerant, this branch only. A padded literal grep
     # hard-halted on a correct unpadded RED commit.
-    # #4379: this pathspec IS the gate's definition of "a test file". It was
+    # This pathspec IS the gate's definition of "a test file". It was
     # JS/TS-only, so Go tripped on every task; and `**/` never matches a
     # root-level path, so a root `foo.test.js` was invisible too. Bare globs
     # match at every depth. NOT widened to ordinary source — that would make
@@ -232,7 +232,7 @@ if [ "$TDD_MODE" = "true" ]; then
     # references/tdd.md § Create first test file.
 
     RED_COMMIT=$(engineer_run check evaluation-scope --plan "${PHASE_NUMBER}-${PLAN_ID}" --commits-only --milestone-bound --max-commits 1 --raw --pathspec "*.test.*" --pathspec "*.spec.*" --pathspec "tests/" --pathspec "__tests__/" --pathspec "*_test.go" --pathspec "test_*.py" --pathspec "*_test.py" --pathspec "*_test.exs" --pathspec "*_spec.rb" --pathspec "*_test.rb" 2>/dev/null) && RED_SCOPE_RC=0 || RED_SCOPE_RC=$?
-    # Exit 69 (UNAVAILABLE) = the scope could not be resolved: that is not "missing RED commit" (#5170).
+    # Exit 69 (UNAVAILABLE) = the scope could not be resolved: that is not "missing RED commit".
     if [ "$RED_SCOPE_RC" -ne 0 ]; then echo "TDD GATE UNAVAILABLE: could not resolve the plan's commits for ${PLAN_ID}/${TASK_ID} (evaluation-scope exit ${RED_SCOPE_RC})"; exit 1; fi
     RED_COMMIT=$(printf '%s' "$RED_COMMIT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{const c=JSON.parse(s).commits;process.stdout.write(c.length?c[0].sha.slice(0,10)+' '+c[0].subject:'')}catch{}})")
     if [ -z "$RED_COMMIT" ]; then
@@ -284,7 +284,7 @@ Check `branching_strategy` from init:
 
 **"phase" or "milestone":** Use pre-computed `branch_name` from init.
 
-Fork the new phase branch off `origin/HEAD` (the project's default branch), not the current HEAD — otherwise consecutive phases compound and stay unpushed (#2916). If `$BRANCH_NAME` already exists locally, reuse it as-is.
+Fork the new phase branch off `origin/HEAD` (the project's default branch), not the current HEAD — otherwise consecutive phases compound and stay unpushed. If `$BRANCH_NAME` already exists locally, reuse it as-is.
 
 ```bash
 DEFAULT_BRANCH=$(engineer_run query git.base-branch 2>/dev/null \
@@ -294,9 +294,9 @@ DEFAULT_BRANCH=$(engineer_run query git.base-branch 2>/dev/null \
 if git show-ref --verify --quiet "refs/heads/$BRANCH_NAME"; then
   git switch "$BRANCH_NAME" || { echo "ERROR: Could not switch to existing branch '$BRANCH_NAME'." >&2; exit 1; }
 else
-  if ! git fetch --quiet origin "$DEFAULT_BRANCH"; then  # #2916
+  if ! git fetch --quiet origin "$DEFAULT_BRANCH"; then
     git show-ref --verify --quiet "refs/remotes/origin/$DEFAULT_BRANCH" \
-      || { echo "ERROR: fetch origin/$DEFAULT_BRANCH failed and no local copy exists. Refusing to create '$BRANCH_NAME' off current HEAD (#2916)." >&2; exit 1; }
+      || { echo "ERROR: fetch origin/$DEFAULT_BRANCH failed and no local copy exists. Refusing to create '$BRANCH_NAME' off current HEAD." >&2; exit 1; }
     echo "WARNING: fetch origin/$DEFAULT_BRANCH failed; using local copy as base." >&2
   fi
   if [ -n "$(git status --porcelain)" ]; then
@@ -304,11 +304,11 @@ else
   else
     git switch --quiet "$DEFAULT_BRANCH" 2>/dev/null && git merge --ff-only --quiet "origin/$DEFAULT_BRANCH" 2>/dev/null || true
   fi
-  # Pinned base (#2916); --no-track (#2498). #2639: warn if local ahead of origin.
+  # Pinned base; --no-track; warn if local ahead of origin.
   AHEAD=$(git rev-list --count "origin/$DEFAULT_BRANCH..$DEFAULT_BRANCH" 2>/dev/null || echo 0)
-  [ "$AHEAD" != "0" ] && [ -n "$AHEAD" ] && echo "WARNING: $DEFAULT_BRANCH is $AHEAD ahead of origin — '$BRANCH_NAME' won't include those commits (#2639)." >&2
+  [ "$AHEAD" != "0" ] && [ -n "$AHEAD" ] && echo "WARNING: $DEFAULT_BRANCH is $AHEAD ahead of origin — '$BRANCH_NAME' won't include those commits." >&2
   git checkout -b "$BRANCH_NAME" "origin/$DEFAULT_BRANCH" --no-track \
-    || { echo "ERROR: Could not create '$BRANCH_NAME' from origin/$DEFAULT_BRANCH (#2916)." >&2; exit 1; }
+    || { echo "ERROR: Could not create '$BRANCH_NAME' from origin/$DEFAULT_BRANCH." >&2; exit 1; }
 fi
 ```
 
@@ -336,26 +336,26 @@ Load plan inventory with wave grouping in one call:
 PLAN_INDEX=$(engineer_run query phase-plan-index "${PHASE_NUMBER}")
 ```
 
-Parse JSON for: `phase`, `plans[]`, `waves`, `incomplete`, `runnable`, `ready_plans`, `has_checkpoints` — full per-plan fields and the #4628 readiness rules: read and follow `execute-phase/steps/ready-wave-gate.md`.
+Parse JSON for: `phase`, `plans[]`, `waves`, `incomplete`, `runnable`, `ready_plans`, `has_checkpoints` — full per-plan fields and the readiness rules: read and follow `execute-phase/steps/ready-wave-gate.md`.
 
-**Filtering:** Skip plans where `has_summary: true`. Additionally skip any plan whose `blocked_by` array is non-empty (#2830) — it depends, directly or transitively, on a plan that halted at a designed stop rather than completing — and report it by name: "Skipping {plan.id}: blocked by halted {blocked_by.join(', ')}". Never silently drop a blocked plan from the report; it must appear by name with its reason, not merely vanish from the executable list. This rule is additive to the `has_summary` skip, not a replacement for it. Additionally skip any incomplete plan with `ready: false` (#4628 — see `execute-phase/steps/ready-wave-gate.md`; never dispatch a not-ready plan). If `--gaps-only`: also skip plans whose `gap_closure` is not `true` — but first confirm every plan object carries a `gap_closure` key. If any lacks it, the index cannot answer the filter (an older engineer_run): STOP and report "--gaps-only cannot read gap_closure from phase-plan-index — refusing to report an empty selection" rather than filtering. A key the index never emitted must not surface as "No matching incomplete plans" (#4924). If `WAVE_FILTER` is set: also skip plans whose `wave` does not equal `WAVE_FILTER`.
+**Filtering:** Skip plans where `has_summary: true`. Additionally skip any plan whose `blocked_by` array is non-empty — it depends, directly or transitively, on a plan that halted at a designed stop rather than completing — and report it by name: "Skipping {plan.id}: blocked by halted {blocked_by.join(', ')}". Never silently drop a blocked plan from the report; it must appear by name with its reason, not merely vanish from the executable list. This rule is additive to the `has_summary` skip, not a replacement for it. Additionally skip any incomplete plan with `ready: false` (see `execute-phase/steps/ready-wave-gate.md`; never dispatch a not-ready plan). If `--gaps-only`: also skip plans whose `gap_closure` is not `true` — but first confirm every plan object carries a `gap_closure` key. If any lacks it, the index cannot answer the filter (an older engineer_run): STOP and report "--gaps-only cannot read gap_closure from phase-plan-index — refusing to report an empty selection" rather than filtering. A key the index never emitted must not surface as "No matching incomplete plans". If `WAVE_FILTER` is set: also skip plans whose `wave` does not equal `WAVE_FILTER`.
 
 **Wave safety check:** If `WAVE_FILTER` is set and there are still incomplete plans in any lower wave that match the current execution mode, STOP and tell the user to finish earlier waves first. Do not let Wave 2+ execute while prerequisite earlier-wave plans remain incomplete.
 
-**If all filtered — do NOT exit unconditionally (#2868).** "No plan work left" and "phase fully
+**If all filtered — do NOT exit unconditionally.** "No plan work left" and "phase fully
 done" are different conditions: a run can be interrupted between the final wave's SUMMARY and
 `verify_phase_goal` (most commonly by a checkpoint plan that is retired but still writes a SUMMARY),
 leaving a phase that looks complete from every index yet never produced `*-VERIFICATION.md`. A
 third condition looks identical to the first two by plan_count alone but is neither: some filtered
-plans were filtered because they are **blocked** (non-empty `blocked_by`, #2830), not because they
+plans were filtered because they are **blocked** (non-empty `blocked_by`), not because they
 are done. Blocked-and-incomplete must never be reported as finished.
 
 ```bash
-# #5118: the owner's answer — `status` and the bare command it routes to. A non-zero exit
+# The owner's answer — `status` and the bare command it routes to. A non-zero exit
 # (an out-of-set report status) is a hard error: surface it, never read it as "no status".
 VERIFY_STATUS=$(engineer_run query verification status "${PHASE_DIR}" --pick status) || { echo "verification status failed — see the error above" >&2; exit 1; }
 VERIFY_ROUTE=$(engineer_run query verification status "${PHASE_DIR}" --pick route) || { echo "verification status failed — see the error above" >&2; exit 1; }
-# #3684: checkbox = marked-complete; report fields can claim a no-op write (#3685).
+# Checkbox = marked-complete; report fields can claim a no-op write.
 ANALYZE=$(engineer_run query roadmap.analyze)
 if [[ "$ANALYZE" == @file:* ]]; then ANALYZE=$(cat "${ANALYZE#@file:}"); fi
 PHASE_MARKED=$(echo "$ANALYZE"|jq -r --arg p "$PHASE_NUMBER" 'def n:sub("^0+(?=[0-9])";"");.phases[]|select(((.number//.phase_number|tostring|n))==($p|n))|.roadmap_complete'|head -1)
@@ -373,14 +373,14 @@ later conditions once one matches:
    because nothing was left to filter. Report:
    `"Phase stuck: {blocked plan ids} blocked by halted {their blocked_by ids} — resolve the halt, do not resume verification."`
    → exit. Do not fall through to condition 3; this is not a completion state.
-   2b. **No filter is active, no blocked-plan skip occurred, and at least one filtered plan was skipped because `ready: false` (#4628)** — the phase is WAITING on incomplete predecessors, not finished: report it by name and exit before any completion state (`execute-phase/steps/ready-wave-gate.md`).
+   2b. **No filter is active, no blocked-plan skip occurred, and at least one filtered plan was skipped because `ready: false` ** — the phase is WAITING on incomplete predecessors, not finished: report it by name and exit before any completion state (`execute-phase/steps/ready-wave-gate.md`).
 3. **No filter is active, and every filtered plan was filtered by `has_summary` alone** (no
-   blocked-plan skip occurred) — branch on the owner's answer, never on a status word (#5118):
+   blocked-plan skip occurred) — branch on the owner's answer, never on a status word:
    - **`VERIFY_ROUTE == execute-phase`** — the owner routes here when the verify step never ran
-     (`VERIFY_STATUS == missing`, #2868) and when covered source changed after the verifier ran
-     (#4682); on both sides of `PHASE_MARKED`. Report `$VERIFY_STATUS` with:
-     `"All {plan_count} plans are summarized but no VERIFICATION.md exists — resuming at the phase gates (#2868)."`
-     (or, for a stale report, "…verification is stale — resuming at the phase gates to re-run the verifier (#4682).")
+     (`VERIFY_STATUS == missing`) and when covered source changed after the verifier ran,
+     on both sides of `PHASE_MARKED`. Report `$VERIFY_STATUS` with:
+     `"All {plan_count} plans are summarized but no VERIFICATION.md exists — resuming at the phase gates ."`
+     (or, for a stale report, "…verification is stale — resuming at the phase gates to re-run the verifier.")
      SKIP `cross_ai_delegation`, `execute_waves` and `checkpoint_handling` — there is no wave work
      to do — and continue directly at `aggregate_results`, NOT `code_review_gate`. `aggregate_results`
      reads exclusively from on-disk `${PHASE_DIR}` artifacts (`*-SUMMARY.md`) and independent
@@ -396,9 +396,9 @@ later conditions once one matches:
    - **`VERIFY_STATUS == passed` + `PHASE_MARKED` is `true`**: genuinely finished.
      Report "No matching incomplete plans" → exit, unchanged.
    - **`VERIFY_STATUS == passed` + `PHASE_MARKED` not `true`** — the run died between
-     `verify_phase_goal` and `update_roadmap` (#3684): verification EXISTS — do not redo
+     `verify_phase_goal` and `update_roadmap`: verification EXISTS — do not redo
      it or the gates already run. Report `"Phase {X} is verified but never marked
-complete — resuming at update_roadmap (#3684)."` and continue directly at
+complete — resuming at update_roadmap."` and continue directly at
      `update_roadmap`; the tail steps then run in their normal order. This is the ONLY arm that
      reaches `update_roadmap`.
    - **Anything else** (`gaps_found`, `human_needed`, `unparseable`, `phase_dir_not_found`):
@@ -423,7 +423,7 @@ Report:
 </step>
 
 <step name="cross_ai_delegation">
-**Optional step 2.5 — Delegate plans to an external AI runtime.** Runs after plan discovery, before wave execution. Activates when `--cross-ai` forces all incomplete plans, `--no-cross-ai` disables it entirely, or (default) a plan's `cross_ai: true` frontmatter agrees with the `workflow.cross_ai_execution` config. **Only `ready` plans are eligible (#4628) — a not-ready plan is never delegated over incomplete predecessors.** If no plan is marked, skip to execute_waves; if marked but `workflow.cross_ai_command` is unset, error and tell the user to set it.
+**Optional step 2.5 — Delegate plans to an external AI runtime.** Runs after plan discovery, before wave execution. Activates when `--cross-ai` forces all incomplete plans, `--no-cross-ai` disables it entirely, or (default) a plan's `cross_ai: true` frontmatter agrees with the `workflow.cross_ai_execution` config. **Only `ready` plans are eligible — a not-ready plan is never delegated over incomplete predecessors.** If no plan is marked, skip to execute_waves; if marked but `workflow.cross_ai_command` is unset, error and tell the user to set it.
 
 For each marked plan: build a self-contained prompt from the plan's `<objective>`/`<tasks>` plus PROJECT.md context, warn on a dirty working tree, then run the configured command **wrapped in `engineer_run query run-with-timeout "${CROSS_AI_TIMEOUT}"` (config `workflow.cross_ai_timeout`, default 300s) — never run it unbounded** — with the prompt piped to **stdin, never shell-interpolated, to prevent injection**. On success (exit 0): validate the captured SUMMARY output is non-empty and structurally valid before writing it as the plan's SUMMARY.md, update STATE/ROADMAP, mark handled. On failure (non-zero exit, or the summary fails that validation): show the error, warn about possible partial edits, and offer **retry** / **skip** (falls back to the normal executor) / **abort**. Successfully handled plans are removed from execute_waves' list; skipped-to-fallback plans remain in it.
 
@@ -433,7 +433,7 @@ Exact bash and per-branch wording: `engineer/workflows/execute-phase/detail/elab
 <step name="execute_waves">
 Execute each selected wave in sequence. Within a wave: parallel if `PARALLELIZATION=true`, sequential if `false`.
 
-**Orchestrator cwd-drift guard (FIRST ACTION at execute_waves entry — #48):**
+**Orchestrator cwd-drift guard (FIRST ACTION at execute_waves entry):**
 
 A prior `Agent(isolation="worktree")` dispatch can silently leave the orchestrator's
 cwd inside an agent worktree (or a subdirectory of one). Every subsequent
@@ -447,13 +447,13 @@ pin to `git worktree list`'s first entry — that is the main worktree, the wron
 when the orchestrator legitimately runs from a feature worktree.
 
 ```bash
-# gsd:guard=orchestrator-cwd-drift
+# engineer:guard=orchestrator-cwd-drift
 ORCHESTRATOR_WT=$(git rev-parse --show-toplevel 2>/dev/null) || {
-  echo "FATAL: execute_waves entry is not inside a git worktree (#48)." >&2; exit 1; }
+  echo "FATAL: execute_waves entry is not inside a git worktree." >&2; exit 1; }
 ORCH_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
 if printf '%s' "$ORCH_BRANCH" | grep -Eq '^((worktree-)?agent-|worktree-wf_)'; then
-  echo "FATAL: orchestrator cwd is inside an agent worktree (branch '$ORCH_BRANCH', root '$ORCHESTRATOR_WT') — refusing to execute waves (#48). A prior isolation=\"worktree\" dispatch drifted the cwd; re-run from the orchestrator's own worktree." >&2
-  # #1856 handoff: the refusal above is correct, but on its own it is a dead end —
+  echo "FATAL: orchestrator cwd is inside an agent worktree (branch '$ORCH_BRANCH', root '$ORCHESTRATOR_WT') — refusing to execute waves. A prior isolation=\"worktree\" dispatch drifted the cwd; re-run from the orchestrator's own worktree." >&2
+  # handoff: the refusal above is correct, but on its own it is a dead end —
   # this worktree may hold committed fixes AND uncommitted work, and "re-run from
   # the orchestrator's worktree" silently means abandoning them. Report exactly
   # what is stranded and how to integrate it. Every command here is DIAGNOSTIC:
@@ -476,7 +476,7 @@ if printf '%s' "$ORCH_BRANCH" | grep -Eq '^((worktree-)?agent-|worktree-wf_)'; t
   [ -n "$_WT_AHEAD" ] && [ "$_WT_AHEAD" -gt 0 ] 2>/dev/null && _WT_HAS_COMMITS=1
 
   echo "" >&2
-  echo "── Handoff: what is in this worktree (#1856) ──" >&2
+  echo "── Handoff: what is in this worktree  ──" >&2
   if [ "$_WT_HAS_COMMITS" -eq 1 ]; then
     echo "  $_WT_AHEAD commit(s) on '$ORCH_BRANCH' not on '$_WT_BASE':" >&2
     git log --oneline --no-decorate "$_WT_BASE..HEAD" 2>/dev/null | head -20 | sed 's/^/    /' >&2 || true
@@ -500,14 +500,14 @@ if printf '%s' "$ORCH_BRANCH" | grep -Eq '^((worktree-)?agent-|worktree-wf_)'; t
   exit 1
 fi
 # Pin to the worktree root; each later orchestrator-side block re-pins the same way
-# (see the #3174 cleanup guard). Treat $ORCHESTRATOR_WT as the canonical root for the
+# (see the cleanup guard). Treat $ORCHESTRATOR_WT as the canonical root for the
 # rest of the phase — prefer `git -C "$ORCHESTRATOR_WT"` for cross-step git calls,
 # since a bare `cd` does not persist across separate tool invocations.
 export ORCHESTRATOR_WT
-cd "$ORCHESTRATOR_WT" || { echo "FATAL: cannot cd to orchestrator worktree '$ORCHESTRATOR_WT' (#48)." >&2; exit 1; }
+cd "$ORCHESTRATOR_WT" || { echo "FATAL: cannot cd to orchestrator worktree '$ORCHESTRATOR_WT'." >&2; exit 1; }
 ```
 
-**Stream-idle-timeout prevention — checkpoint heartbeats (#2410):**
+**Stream-idle-timeout prevention — checkpoint heartbeats:**
 
 Multi-plan phases can accumulate enough subagent context that the Claude API
 SSE layer terminates with `Stream idle timeout - partial response received`
@@ -572,7 +572,7 @@ between a large tool_result and the next assistant turn (seen on Claude Code
 2. **Describe what's being built (BEFORE spawning):**
 
    **First, emit the wave-start checkpoint heartbeat as a literal assistant-text
-   line — no tool call (#2410). Do NOT skip this even for single-plan waves; it
+   line — no tool call. Do NOT skip this even for single-plan waves; it
    is required before any further reasoning or spawning:**
 
    ```
@@ -599,9 +599,9 @@ between a large tool_result and the next assistant turn (seen on Claude Code
 
 Read and execute **Part 1** of `engineer/workflows/execute-phase/steps/per-plan-worktree-gate.md` for each plan. It extracts `PLAN_FILES` from the plan's JSON, intersects against `SUBMODULE_PATHS` (with normalization, bidirectional matching, and glob-prefix handling), and sets `USE_WORKTREES_FOR_PLAN` to `false` when the plan touches a submodule path. Append `plan_id` to a `WAVE_WORKTREE_PLANS` accumulator when `USE_WORKTREES_FOR_PLAN != false`. **Store each plan's decision** (`plan_id → USE_WORKTREES_FOR_PLAN`): the shared `USE_WORKTREES_FOR_PLAN` value is overwritten by the next plan's decision.
 
-The plan-scoped dispatch-isolation record is **not written here**. It is a single slot, so it is written in step 3, immediately before each plan's own dispatch (Part 2 of the gate, #5516).
+The plan-scoped dispatch-isolation record is **not written here**. It is a single slot, so it is written in step 3, immediately before each plan's own dispatch (Part 2 of the gate).
 
-The dispatch branches in step 3 gate on both `USE_WORKTREES` and the dispatched plan's own stored `USE_WORKTREES_FOR_PLAN` (#2474).
+The dispatch branches in step 3 gate on both `USE_WORKTREES` and the dispatched plan's own stored `USE_WORKTREES_FOR_PLAN`.
 
 2.75. **Execute:wave:pre capability dispatch:**
 
@@ -616,7 +616,7 @@ WAVE_PRE_HOOKS_JSON=$(engineer_run loop render-hooks execute:wave:pre --raw)
 3. **Spawn executor agents:**
 
    **Emit a plan-start heartbeat (literal line, no tool call) immediately before
-   each `Agent()` dispatch (#2410):**
+   each `Agent()` dispatch:**
 
    `[checkpoint] phase {PHASE_NUMBER} wave {N}/{M} plan {plan_id} starting ({P}/{Q} plans done)`
 
@@ -624,11 +624,11 @@ WAVE_PRE_HOOKS_JSON=$(engineer_run loop render-hooks execute:wave:pre --raw)
 
    **Substitute `{plan_id}` in the prompt below with this plan's `id` field** from the `phase-plan-index` JSON loaded in step 1 (the same field referred to elsewhere in this workflow as `plan.id`) — unmodified and un-truncated, never a paraphrase. The guard hooks compare this value verbatim against the sentinel the per-plan gate wrote (`per-plan-worktree-gate.md`'s `plan_id`); a paraphrase or an omission costs the dispatch its recorded isolation decision.
 
-   **Record this plan's isolation immediately before its dispatch (#5516).** Restore the dispatched plan's **stored decision** from step 2.5 (`plan_id` := this plan's `id`, `USE_WORKTREES_FOR_PLAN` := the value stored for that plan, and `PLAN_FILES` / `PLAN_DELETIONS` re-extracted from this plan's JSON, since the later plans' decisions overwrote them) and run **Part 2** of `engineer/workflows/execute-phase/steps/per-plan-worktree-gate.md`, so the single-slot sentinel names the plan being dispatched. Do not run it for any other plan, and do not batch it ahead of the dispatches.
+   **Record this plan's isolation immediately before its dispatch.** Restore the dispatched plan's **stored decision** from step 2.5 (`plan_id`:= this plan's `id`, `USE_WORKTREES_FOR_PLAN`:= the value stored for that plan, and `PLAN_FILES` / `PLAN_DELETIONS` re-extracted from this plan's JSON, since the later plans' decisions overwrote them) and run **Part 2** of `engineer/workflows/execute-phase/steps/per-plan-worktree-gate.md`, so the single-slot sentinel names the plan being dispatched. Do not run it for any other plan, and do not batch it ahead of the dispatches.
 
-   **Executor routing (#1689/#3370).** Per plan, run `engineer/workflows/execute-phase/steps/per-plan-executor-routing.md` to set `EXECUTOR_TYPE` for `subagent_type="{EXECUTOR_TYPE}"` below.
+   **Executor routing.** Per plan, run `engineer/workflows/execute-phase/steps/per-plan-executor-routing.md` to set `EXECUTOR_TYPE` for `subagent_type="{EXECUTOR_TYPE}"` below.
 
-   **TDD-applicability resolution (#4266/#4272).** Run `engineer/workflows/execute-phase/steps/tdd-applicability-resolution.md`.
+   **TDD-applicability resolution.** Run `engineer/workflows/execute-phase/steps/tdd-applicability-resolution.md`.
 
    **Worktree mode** (`USE_WORKTREES` and `USE_WORKTREES_FOR_PLAN` not `false`):
 
@@ -639,10 +639,10 @@ WAVE_PRE_HOOKS_JSON=$(engineer_run loop render-hooks execute:wave:pre --raw)
    DISPATCH_TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
    EXPECTED_BRANCH=$(git rev-parse --abbrev-ref HEAD)
     if [ "${USE_WORKTREES:-true}" != "false" ] && [ "${USE_WORKTREES_FOR_PLAN:-true}" != "false" ] && [ -z "${WAVE_WORKTREE_MANIFEST:-}" ]; then
-     M=$(mktemp "${TMPDIR:-/tmp}/gsd-worktree-wave-XXXXXX") && mv "$M" "$M.json" && WAVE_WORKTREE_MANIFEST="$M.json" || exit 1  # XXXXXX must be path-final on BSD/macOS (#1520)
+     M=$(mktemp "${TMPDIR:-/tmp}/engineer-worktree-wave-XXXXXX") && mv "$M" "$M.json" && WAVE_WORKTREE_MANIFEST="$M.json" || exit 1  # XXXXXX must be path-final on BSD/macOS 
      # Persist the dispatch-time orchestrator worktree root so wave-cleanup can pin back to the
      # orchestrator's OWN worktree — NOT `git worktree list`'s first entry (always the main
-     # checkout), which pins a non-primary (per-phase lane) orchestrator off its branch (#630).
+     # checkout), which pins a non-primary (per-phase lane) orchestrator off its branch.
      # Dispatch runs from the orchestrator's lane, so show-toplevel here is the correct root.
      ORCH_ROOT=$(git rev-parse --show-toplevel)
      ORCH_ROOT="$ORCH_ROOT" MANIFEST="$WAVE_WORKTREE_MANIFEST" node -e 'const fs=require("fs");fs.writeFileSync(process.env.MANIFEST,JSON.stringify({orchestrator_root:process.env.ORCH_ROOT||null,worktrees:[]})+"\n")'
@@ -677,7 +677,7 @@ WAVE_PRE_HOOKS_JSON=$(engineer_run loop render-hooks execute:wave:pre --raw)
      prompt="
        <objective>
        Execute plan {plan_number} of phase {phase_number}-{phase_name}.
-       [gsd:dispatch phase="{phase_number}" plan="{plan_id}"]
+       [engineer:dispatch phase="{phase_number}" plan="{plan_id}"]
        Commit each task atomically. Create SUMMARY.md.
        Do NOT update STATE.md or ROADMAP.md — the orchestrator owns those writes after all worktree agents in the wave complete.
        </objective>
@@ -691,7 +691,7 @@ WAVE_PRE_HOOKS_JSON=$(engineer_run loop render-hooks execute:wave:pre --raw)
        You are running as a PARALLEL executor agent in a git worktree. Worktree path safety (cwd-drift, absolute-path guards) is in `worktree-path-safety.md` (loaded below).
        Run `git commit` normally — hooks run by default. Do NOT pass `--no-verify`
        unless the orchestrator surfaces `workflow.worktree_skip_hooks=true` in this
-       prompt; silent bypass violates project CLAUDE.md guidance (#2924).
+       prompt; silent bypass violates project CLAUDE.md guidance .
 
        IMPORTANT: Do NOT modify STATE.md or ROADMAP.md. execute-plan.md
        auto-detects worktree mode (`.git` is a file, not a directory) and skips
@@ -702,17 +702,17 @@ WAVE_PRE_HOOKS_JSON=$(engineer_run loop render-hooks execute:wave:pre --raw)
        git_commit_metadata step in execute-plan.md commits SUMMARY.md and REQUIREMENTS.md
        only (STATE.md and ROADMAP.md are excluded automatically). Do NOT skip or defer
        this commit — the orchestrator force-removes the worktree after you return, and
-       any uncommitted SUMMARY.md will be permanently lost (#2070).
-       REQUIRED ORDER: Write SUMMARY.md → commit → only then any narration. No text between Write and commit (truncation risk; #2070 rescue is not primary defense).
+       any uncommitted SUMMARY.md will be permanently lost .
+       REQUIRED ORDER: Write SUMMARY.md → commit → only then any narration. No text between Write and commit (truncation risk;  rescue is not primary defense).
 
        </parallel_execution>
 
        <execution_context>
-       ORCHESTRATOR build-time embed (NOT a sub-agent runtime step): before this dispatch, read each file listed below and replace this note with those files' contents, inlined verbatim in this block in the listed order. Never leave `@`-include lines in the dispatched prompt — `@path` never expands inside an Agent() `prompt="..."` string (#3324), so an include arrives as literal text the executor never sees.
+       ORCHESTRATOR build-time embed (NOT a sub-agent runtime step): before this dispatch, read each file listed below and replace this note with those files' contents, inlined verbatim in this block in the listed order. Never leave `@`-include lines in the dispatched prompt — `@path` never expands inside an Agent() `prompt="..."` string , so an include arrives as literal text the executor never sees.
        - `engineer/workflows/execute-plan.md`
        - `engineer/templates/summary.md`
        - `engineer/references/checkpoints.md`
-       ${TDD_APPLICABLE ? '- `engineer/references/tdd.md`' : ''}  # #3990/#4265: type: tdd, tdd="true", or workflow.tdd_mode
+       ${TDD_APPLICABLE ? '- `engineer/references/tdd.md`' : ''}  # Type: tdd, tdd="true", or workflow.tdd_mode
        - `engineer/references/worktree-path-safety.md`
        ${CONTEXT_WINDOW < 200000 ? '' : '- `engineer/references/executor-examples.md`'}
        </execution_context>
@@ -755,26 +755,26 @@ WAVE_PRE_HOOKS_JSON=$(engineer_run loop render-hooks execute:wave:pre --raw)
 
    After each `Agent()` returns, parse executor-returned worktree metadata (`<worktree_metadata>`) before harness metadata, then record the `{agent_id, worktree_path, branch, expected_base}` entry with `engineer_run query worktree.record-agent --manifest "$WAVE_WORKTREE_MANIFEST" --agent-id … --path … --branch … --base … --files "$PLAN_FILES" --deletions "$PLAN_DELETIONS"`. The verb validates every field at write time using the `cleanup-wave` reader's own rules (write-strict `--agent-id`), failing loudly with a recovery hint rather than appending an under-populated entry the reader would later drop silently. On a non-zero exit or any missing field: stop and ask for recovery instead of scanning worktrees.
 
-   > **Worktree recovery policy (#48 + #1292):** See `execute-phase/steps/worktree-recovery-policy.md` — FAIL-CLOSED rule for base/HEAD-namespace mismatches AND isolated-run fail-safe recovery.
+   > **Worktree recovery policy:** See `execute-phase/steps/worktree-recovery-policy.md` — FAIL-CLOSED rule for base/HEAD-namespace mismatches AND isolated-run fail-safe recovery.
 
-   > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above to spawn executor agent(s), stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available. While waiting, run the step-4 completion surveillance; if the child's session ends abnormally — including `turn_aborted` — reconcile artifacts per `execute-phase/steps/completion-reconciliation.md` before classifying the plan (#4217).
+   > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above to spawn executor agent(s), stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available. While waiting, run the step-4 completion surveillance; if the child's session ends abnormally — including `turn_aborted` — reconcile artifacts per `execute-phase/steps/completion-reconciliation.md` before classifying the plan.
 
    **Orchestrator-managed worktree dispatch** (`ISOLATION=orchestrator-worktree`): read and execute `execute-phase/steps/executor-isolation-dispatch.md`. Engineer creates each worktree (`worktree create`) and spawns the executor into it; the orchestrator performs every git operation. Merge-back and cleanup are the existing manifest-scoped gauntlet, unchanged.
 
    **Sequential mode** (`USE_WORKTREES_FOR_PLAN` is `false` — either project-level `USE_WORKTREES=false`, or per-plan submodule intersection forced it false in step 2.5):
 
    Omit `isolation="worktree"` from the Agent call. Before composing the prompt, read and execute
-   `execute-phase/steps/sequential-root-pin.md` (#4254) — it owns the sequential root-pin build-time
+   `execute-phase/steps/sequential-root-pin.md` — it owns the sequential root-pin build-time
    embed and the wave serialization rules.
 
    Replace the `<parallel_execution>` block with:
 
    ```
        <sequential_execution>
-       You are running as a SEQUENTIAL executor agent on the main working tree (set SEQUENTIAL=true in your Step 0 commit guard; a linked phase worktree on the configured branch is allowed, #4799).
+       You are running as a SEQUENTIAL executor agent on the main working tree (set SEQUENTIAL=true in your Step 0 commit guard; a linked phase worktree on the configured branch is allowed, ).
        Use normal git commits (with hooks). Do NOT use --no-verify.
-       Run the `<project_root_pin>` guard before your first Edit/Write and before every commit (#4254).
-       REQUIRED ORDER: Write SUMMARY.md → commit → only then any narration. No text between Write and commit (truncation risk; #2070 rescue is not primary defense).
+       Run the `<project_root_pin>` guard before your first Edit/Write and before every commit .
+       REQUIRED ORDER: Write SUMMARY.md → commit → only then any narration. No text between Write and commit (truncation risk;  rescue is not primary defense).
        </sequential_execution>
 
        <project_root_pin>
@@ -796,7 +796,7 @@ WAVE_PRE_HOOKS_JSON=$(engineer_run loop render-hooks execute:wave:pre --raw)
 
 4. **Wait for all agents in wave to complete.**
 
-   **Plan-complete heartbeat (#2410):** as each executor returns (or is verified
+   **Plan-complete heartbeat:** as each executor returns (or is verified
    via spot-check below), emit one line — `complete` advances `{P}`, `failed`
    and `checkpoint` do not but still warm the stream:
 
@@ -810,26 +810,26 @@ WAVE_PRE_HOOKS_JSON=$(engineer_run loop render-hooks execute:wave:pre --raw)
 
    If a spawned agent does not return a normal terminal completion response — or its session ends abnormally (interrupted, aborted, closed, killed, timed out, `turn_aborted`, including ends the orchestrator itself initiated) — do NOT block indefinitely and do NOT classify the plan as failed yet. Read and execute `engineer/workflows/execute-phase/steps/completion-reconciliation.md` — reconcile the plan artifacts FIRST, classify SECOND: SUMMARY present AND matching recent commits → complete (proceed to step 5, do NOT re-dispatch); no completion evidence → the failure handler. Verify, never wait.
 
-   **Configurable stall surveillance (#3212):** Every `${EXECUTOR_STALL_INTERVAL_MINUTES}`
+   **Configurable stall surveillance:** Every `${EXECUTOR_STALL_INTERVAL_MINUTES}`
    minutes while waiting, inspect `git log "${EXPECTED_BRANCH}" --since="${DISPATCH_TS}"`
    for activity. If no completion signal, no SUMMARY.md, and no expected-branch
    commits appear for `${EXECUTOR_STALL_THRESHOLD_MINUTES}` minutes, pause and
    ask for one recovery path: `continue waiting`, `kill and retry`, or
    `kill and switch to inline execution`.
 
-   **A working executor is never steered (#4218).** The threshold measures time WITHOUT
+   **A working executor is never steered.** The threshold measures time WITHOUT
    PROGRESS, not total runtime. Before treating an executor as stalled — and before sending it
    any message — read and execute `execute-phase/steps/executor-progress-policy.md`.
 
-5. **Post-wave hook validation (parallel mode only):** Hooks run on every executor commit by default (#2924); this post-wave run only fires when `workflow.worktree_skip_hooks=true` opted out of per-commit hooks:
+5. **Post-wave hook validation (parallel mode only):** Hooks run on every executor commit by default; this post-wave run only fires when `workflow.worktree_skip_hooks=true` opted out of per-commit hooks:
    ```bash
    SKIP_HOOKS=$(engineer_run query config-get workflow.worktree_skip_hooks --raw 2>/dev/null || echo "false")
    if [ "$SKIP_HOOKS" = "true" ]; then
-     # Stash uncommitted changes under a named ref so we always pop (bare `git stash` strands them on hook/script failure). #3542: `refs/stash` is shared across worktrees, so this helper runs ONLY in the orchestrator's main checkout after all wave worktrees have been merged + removed; executors are forbidden from running any `git stash` subcommand (see `<destructive_git_prohibition>` in `agents/executor.md`).
+     # Stash uncommitted changes under a named ref so we always pop (bare `git stash` strands them on hook/script failure).: `refs/stash` is shared across worktrees, so this helper runs ONLY in the orchestrator's main checkout after all wave worktrees have been merged + removed; executors are forbidden from running any `git stash` subcommand (see `<destructive_git_prohibition>` in `agents/executor.md`).
      STASHED=false
-     if (! git diff --quiet || ! git diff --cached --quiet) && git stash push -u -m "gsd-post-wave-hook-$$" >/dev/null 2>&1; then STASHED=true; fi
+     if (! git diff --quiet || ! git diff --cached --quiet) && git stash push -u -m "engineer-post-wave-hook-$$" >/dev/null 2>&1; then STASHED=true; fi
      git hook run pre-commit 2>&1 || echo "⚠ Pre-commit hooks failed — review before continuing"
-     [ "$STASHED" = "true" ] && (git stash pop >/dev/null 2>&1 || echo "⚠ Could not pop gsd-post-wave-hook stash — recover manually")
+     [ "$STASHED" = "true" ] && (git stash pop >/dev/null 2>&1 || echo "⚠ Could not pop engineer-post-wave-hook stash — recover manually")
    fi
    ```
    If hooks fail: report the failure and ask "Fix hook issues now?" or "Continue to next wave?"
@@ -842,7 +842,7 @@ WAVE_PRE_HOOKS_JSON=$(engineer_run loop render-hooks execute:wave:pre --raw)
 
 When executor agents ran in worktree isolation, their commits land on temporary branches in separate working trees. After the wave completes, merge these changes back and clean up:
 
-**Manifest source of truth (#3384):** Cleanup consumes the `WAVE_WORKTREE_MANIFEST` created and populated during executor dispatch in step 3. Do not recreate or truncate it here.
+**Manifest source of truth:** Cleanup consumes the `WAVE_WORKTREE_MANIFEST` created and populated during executor dispatch in step 3. Do not recreate or truncate it here.
 
 Prefer the bounded helper, which validates branch identity, expected base, deletion
 diffs, merge result, and worktree removal before deleting the temporary branch.
@@ -851,26 +851,26 @@ rerun the same command. Do not fall back to broad worktree discovery.
 
 ```bash
 [ -n "${WAVE_WORKTREE_MANIFEST:-}" ] && [ -f "$WAVE_WORKTREE_MANIFEST" ] || {
-  echo "BLOCKED: missing WAVE_WORKTREE_MANIFEST; refusing broad worktree cleanup (#3384)." >&2
+  echo "BLOCKED: missing WAVE_WORKTREE_MANIFEST; refusing broad worktree cleanup." >&2
   exit 1
 }
 
-# Guard: pin cleanup back to the orchestrator's OWN worktree and fail on branch drift (#3174, #630).
+# Guard: pin cleanup back to the orchestrator's OWN worktree and fail on branch drift.
 # Resolve from the dispatch-time orchestrator root persisted in the manifest — NOT `git worktree
 # list`'s first entry, which is always the main checkout and would pin a non-primary (per-phase
-# lane) orchestrator off its own branch, tripping the #3174 assertion below (#630). Byte-identical
-# for a primary orchestrator (its root IS the first entry); the fallback covers pre-#630 manifests.
+# lane) orchestrator off its own branch, tripping the assertion below. Byte-identical
+# for a primary orchestrator (its root IS the first entry); the fallback covers pre- manifests.
 PRIMARY_WT=$(MANIFEST="$WAVE_WORKTREE_MANIFEST" node -e 'const fs=require("fs");try{const j=JSON.parse(fs.readFileSync(process.env.MANIFEST,"utf8"));if(j&&j.orchestrator_root)process.stdout.write(String(j.orchestrator_root))}catch(e){}')
 [ -n "$PRIMARY_WT" ] || PRIMARY_WT=$(git worktree list --porcelain | awk '/^worktree /{print substr($0,10); exit}')
 if [ -z "$PRIMARY_WT" ]; then
   echo "FATAL: could not resolve orchestrator worktree before cleanup" >&2
   exit 1
 fi
-if [ -n "$PRIMARY_WT" ] && [ "$(pwd -P 2>/dev/null)" != "$(cd "$PRIMARY_WT" 2>/dev/null && pwd -P)" ]; then echo "⚠ Orchestrator CWD drifted to $(pwd) — pinning to $PRIMARY_WT before worktree cleanup (#3174)"; cd "$PRIMARY_WT" || { echo "FATAL: cannot cd to primary worktree $PRIMARY_WT" >&2; exit 1; }; fi
+if [ -n "$PRIMARY_WT" ] && [ "$(pwd -P 2>/dev/null)" != "$(cd "$PRIMARY_WT" 2>/dev/null && pwd -P)" ]; then echo "⚠ Orchestrator CWD drifted to $(pwd) — pinning to $PRIMARY_WT before worktree cleanup "; cd "$PRIMARY_WT" || { echo "FATAL: cannot cd to primary worktree $PRIMARY_WT" >&2; exit 1; }; fi
 ORCH_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-[ -z "${EXPECTED_BRANCH:-}" ] || [ "$ORCH_BRANCH" = "$EXPECTED_BRANCH" ] || { echo "FATAL: orchestrator on '$ORCH_BRANCH' but expected '$EXPECTED_BRANCH' before worktree cleanup — refusing to merge (#3174-class drift)" >&2; exit 1; }
+[ -z "${EXPECTED_BRANCH:-}" ] || [ "$ORCH_BRANCH" = "$EXPECTED_BRANCH" ] || { echo "FATAL: orchestrator on '$ORCH_BRANCH' but expected '$EXPECTED_BRANCH' before worktree cleanup — refusing to merge (drift)" >&2; exit 1; }
 
-# Fail closed: SDK refusal (safety guard #3174/#3384) must surface — do not swallow exit 1.
+# Fail closed: SDK refusal (safety guard /) must surface — do not swallow exit 1.
 engineer_run query worktree.cleanup-wave --manifest "$WAVE_WORKTREE_MANIFEST" || exit 1
 ```
 
@@ -879,16 +879,16 @@ engineer_run query worktree.cleanup-wave --manifest "$WAVE_WORKTREE_MANIFEST" ||
 If the orchestrator deviated from the standard wave merge path (e.g., custom inter-worktree base-update merges with `merge: bring …` style messages), run this snippet after the custom merges are complete. It reads only `WAVE_WORKTREE_MANIFEST`; do not discover unrelated `worktree-agent-*` worktrees.
 
 ```bash
-# Cleanup-tail: pin orchestrator CWD to its OWN worktree before cleanup-tail (#3174, #630).
+# Cleanup-tail: pin orchestrator CWD to its OWN worktree before cleanup-tail.
 # Same fix as the templated path: resolve the dispatch-time orchestrator root from the manifest,
 # not `git worktree list`'s first entry (always the main checkout — wrong for a lane orchestrator).
 PRIMARY_WT=$(MANIFEST="$WAVE_WORKTREE_MANIFEST" node -e 'const fs=require("fs");try{const j=JSON.parse(fs.readFileSync(process.env.MANIFEST,"utf8"));if(j&&j.orchestrator_root)process.stdout.write(String(j.orchestrator_root))}catch(e){}')
 [ -n "$PRIMARY_WT" ] || PRIMARY_WT=$(git worktree list --porcelain | awk '/^worktree /{print substr($0,10); exit}')
-if [ -n "$PRIMARY_WT" ] && [ "$(pwd -P 2>/dev/null)" != "$(cd "$PRIMARY_WT" 2>/dev/null && pwd -P)" ]; then echo "⚠ Orchestrator CWD drifted to $(pwd) — pinning to $PRIMARY_WT before cleanup-tail (#3174)"; cd "$PRIMARY_WT" || { echo "FATAL: cannot cd to primary worktree $PRIMARY_WT" >&2; exit 1; }; fi
+if [ -n "$PRIMARY_WT" ] && [ "$(pwd -P 2>/dev/null)" != "$(cd "$PRIMARY_WT" 2>/dev/null && pwd -P)" ]; then echo "⚠ Orchestrator CWD drifted to $(pwd) — pinning to $PRIMARY_WT before cleanup-tail "; cd "$PRIMARY_WT" || { echo "FATAL: cannot cd to primary worktree $PRIMARY_WT" >&2; exit 1; }; fi
 # Cleanup-tail: remove residual agent worktrees after a cross-wave-dependency deviation.
-# Uses only the current wave manifest to avoid touching unrelated active agents (#3384).
-WT_PATHS_FILE=$(mktemp "${TMPDIR:-/tmp}/gsd-worktree-paths-XXXXXX")
-node -e 'const fs=require("fs");const p=process.env.WAVE_WORKTREE_MANIFEST;try{if(!p)throw new Error("WAVE_WORKTREE_MANIFEST is unset");if(!fs.existsSync(p))throw new Error("manifest does not exist");const s=fs.readFileSync(p,"utf8");if(!s.trim())throw new Error("manifest is empty");const j=JSON.parse(s);for(const w of j.worktrees||[])if(w.worktree_path)console.log(w.worktree_path)}catch(e){console.error(`ERROR: cannot read worktree manifest ${p||"(unset)"}: ${e.message}`);process.exit(1)}' > "$WT_PATHS_FILE" || { echo "BLOCKED: cannot read WAVE_WORKTREE_MANIFEST; refusing cleanup (#3384)." >&2; exit 1; }
+# Uses only the current wave manifest to avoid touching unrelated active agents.
+WT_PATHS_FILE=$(mktemp "${TMPDIR:-/tmp}/engineer-worktree-paths-XXXXXX")
+node -e 'const fs=require("fs");const p=process.env.WAVE_WORKTREE_MANIFEST;try{if(!p)throw new Error("WAVE_WORKTREE_MANIFEST is unset");if(!fs.existsSync(p))throw new Error("manifest does not exist");const s=fs.readFileSync(p,"utf8");if(!s.trim())throw new Error("manifest is empty");const j=JSON.parse(s);for(const w of j.worktrees||[])if(w.worktree_path)console.log(w.worktree_path)}catch(e){console.error(`ERROR: cannot read worktree manifest ${p||"(unset)"}: ${e.message}`);process.exit(1)}' > "$WT_PATHS_FILE" || { echo "BLOCKED: cannot read WAVE_WORKTREE_MANIFEST; refusing cleanup." >&2; exit 1; }
 while IFS= read -r WT; do
   [ -z "$WT" ] && continue
   WT_BRANCH=$(git -C "$WT" rev-parse --abbrev-ref HEAD 2>/dev/null)
@@ -981,20 +981,20 @@ Read the `activeHooks` array from `WAVE_POST_HOOKS_JSON` in-context (do NOT pipe
 
 **Contribution dispatch:** inject every `kind == "contribution"` fragment per @~/.claude/engineer/references/loop-hook-dispatch.md (skip when none), before the gates below.
 
-**Step dispatch:** dispatch every `kind == "step"` hook per @~/.claude/engineer/references/loop-hook-dispatch.md (skip when none) — not one shape of one. A step here is advisory: it never blocks wave completion. ⚠ **Validate `ref.command` in-context before any shell use** (third-party manifest input) — loop-hook-dispatch.md § `step`. **`ref.skill == "code-review"` (#3661):** the generic contract's bare skill dispatch carries no phase argument, but `code-review.md`'s `initialize` step requires one (`PHASE_ARG="${1}"`) or it reports "Phase not found" and exits — pass it explicitly, mirroring step `code_review_gate` in `execute-phase/steps/verify-phase-goal.md`: `Skill(skill="code-review", args="${PHASE_NUMBER}")`.
+**Step dispatch:** dispatch every `kind == "step"` hook per @~/.claude/engineer/references/loop-hook-dispatch.md (skip when none) — not one shape of one. A step here is advisory: it never blocks wave completion. ⚠ **Validate `ref.command` in-context before any shell use** (third-party manifest input) — loop-hook-dispatch.md § `step`. **`ref.skill == "code-review"`:** the generic contract's bare skill dispatch carries no phase argument, but `code-review.md`'s `initialize` step requires one (`PHASE_ARG="${1}"`) or it reports "Phase not found" and exits — pass it explicitly, mirroring step `code_review_gate` in `execute-phase/steps/verify-phase-goal.md`: `Skill(skill="code-review", args="${PHASE_NUMBER}")`.
 
 **For each active entry where `kind == "gate"`** (process in array order): read and execute `engineer/workflows/execute-phase/steps/wave-post-gate-hooks.md` for the full evaluation contract (check validation, `onError`, blocking semantics, mapper spawn). A gate declared `blocking: false` — the `drift` capability's codebase-drift gate is one — is non-blocking by contract: it reports and the wave continues. When all active gates are processed without a blocking halt, continue to step 5.8.
 
 5.8. **Handle test gate failures (when `WAVE_FAILURE_COUNT > 0`):**
 
-Read the count the post-merge gate recorded (#4915); a shell variable set in step 5.6 is gone by now:
+Read the count the post-merge gate recorded; a shell variable set in step 5.6 is gone by now:
 
 ```bash
-# gsd-handoff:begin wave-failure-read
-_GSD_HANDOFF="$( { git rev-parse --absolute-git-dir 2>/dev/null || echo "${TMPDIR:-/tmp}/gsd-$(pwd | cksum | cut -d' ' -f1)"; } )/handoff"; mkdir -p "$_GSD_HANDOFF"
-WAVE_FAILURE_COUNT=$(wc -l < "$_GSD_HANDOFF/wave-failures" 2>/dev/null | tr -d ' ' || true); WAVE_FAILURE_COUNT=${WAVE_FAILURE_COUNT:-0}
+# engineer-handoff:begin wave-failure-read
+_ENGINEER_HANDOFF="$( { git rev-parse --absolute-git-dir 2>/dev/null || echo "${TMPDIR:-/tmp}/engineer-$(pwd | cksum | cut -d' ' -f1)"; } )/handoff"; mkdir -p "$_ENGINEER_HANDOFF"
+WAVE_FAILURE_COUNT=$(wc -l < "$_ENGINEER_HANDOFF/wave-failures" 2>/dev/null | tr -d ' ' || true); WAVE_FAILURE_COUNT=${WAVE_FAILURE_COUNT:-0}
 echo "WAVE_FAILURE_COUNT=${WAVE_FAILURE_COUNT}"
-# gsd-handoff:end wave-failure-read
+# engineer-handoff:end wave-failure-read
 ```
 
 ```
@@ -1026,7 +1026,7 @@ the next wave builds on a broken foundation.
 
 6. **Report completion — spot-check claims first:**
 
-   **Wave-close heartbeat (#2410):** after spot-checks finish (pass or fail),
+   **Wave-close heartbeat:** after spot-checks finish (pass or fail),
    before the `## Wave {N} Complete` summary, emit as a literal line:
 
    ```
@@ -1035,7 +1035,7 @@ the next wave builds on a broken foundation.
 
    For each SUMMARY.md:
    - Verify first 2 files from `key-files.created` exist on disk
-   - Check `engineer_run check evaluation-scope --plan "{phase}-{plan}" --commits-only --raw` returns `commits` with ≥1 entry (commits on THIS branch only — #5164; a commit that lives only on another branch does not satisfy the check; exit `69` means the scope could not be resolved, which fails the spot-check, never "no commits yet")
+   - Check `engineer_run check evaluation-scope --plan "{phase}-{plan}" --commits-only --raw` returns `commits` with ≥1 entry (commits on THIS branch only; a commit that lives only on another branch does not satisfy the check; exit `69` means the scope could not be resolved, which fails the spot-check, never "no commits yet")
    - Check for `## Self-Check: FAILED` marker
 
    If ANY spot-check fails: report which plan failed, route to failure handler — ask "Retry plan?" or "Continue with remaining waves?"
@@ -1055,7 +1055,7 @@ the next wave builds on a broken foundation.
    ```
 
 7. **Handle failures:**
-   **Step 7.0 — classify before branching (#3095):**
+   **Step 7.0 — classify before branching:**
    ```bash
    CLASS_JSON=$(engineer_run query agent.classify-failure -- "$AGENT_RETURN_BODY")
    CLASS=$(echo "$CLASS_JSON" | jq -r '.class')
@@ -1064,7 +1064,7 @@ the next wave builds on a broken foundation.
    if [ -n "$RETRY_AFTER" ]; then RETRY_HINT="  Provider hinted retry-after: ${RETRY_AFTER}s"; else RETRY_HINT=""; fi
    ```
    One classifier branch handles sentinels across Claude/Codex. Reference: `docs/research/provider-rate-limit-signals.md`.
-   **Abnormal ends reconcile first (#4217):** an abnormal session end (`turn_aborted`-class) routes through the step-4 artifact reconciliation BEFORE classifying the failure — artifacts decide.
+   **Abnormal ends reconcile first:** an abnormal session end (`turn_aborted`-class) routes through the step-4 artifact reconciliation BEFORE classifying the failure — artifacts decide.
    **Step 7.1 — `class == "quota-exceeded"`:** follow the quota-recovery fragment below.
    **Step 7.2 — `class == "classify-handoff-bug"`:**
    If error contains `classifyHandoffIfNeeded is not defined`, treat as Claude runtime bug. Run the same step-5 spot-checks; PASS => treat as success, FAIL => fall through.
@@ -1090,12 +1090,12 @@ AUTO_MODE=$(engineer_run query check auto-mode --pick active 2>/dev/null)
 When executor returns a checkpoint AND `AUTO_MODE` is `true`:
 
 - **human-verify** → Auto-spawn continuation agent with `{user_response}` = `"approved"`. Log `⚡ Auto-approved checkpoint`. **Except `blocking-human`.**
-- **decision** → `auto_select` present: auto-spawn with `{user_response}` = that option, log `⚡ Auto-selected: [option]`. Absent: present to user (#4095). **Except `blocking-human`.**
+- **decision** → `auto_select` present: auto-spawn with `{user_response}` = that option, log `⚡ Auto-selected: [option]`. Absent: present to user. **Except `blocking-human`.**
 - **human-action** → Present to user (existing behavior below). Auth gates cannot be automated.
 
-<!-- gsd:protected -->
+<!-- engineer:protected -->
 
-**Carve-out — overrides all branches above.** If the returned `Gate:` is `blocking-human` (precondition-unmet, #3210), or its `<what-built>` mentions `Package verification required before install` or `Package install failed — human verification required`, never auto-approve or auto-select. Present to user (standard flow). Log `⛔ blocking-human gate — auto-mode suspended`.
+**Carve-out — overrides all branches above.** If the returned `Gate:` is `blocking-human` (precondition-unmet), or its `<what-built>` mentions `Package verification required before install` or `Package install failed — human verification required`, never auto-approve or auto-select. Present to user (standard flow). Log `⛔ blocking-human gate — auto-mode suspended`.
 
 **Standard flow (not auto-mode, human-action, or blocking-human):**
 
@@ -1154,10 +1154,10 @@ After all waves:
 
 The `verify:post` hook dispatch and the SECURITY threats-open gate are the first step of the shared
 verification step (`verify_post_security_gate` in `verify_phase_goal` below), so verify-work's
-re-verification route runs them too (#5118).
+re-verification route runs them too.
 </step>
 
-<!-- gsd:section id="partial-wave" when="flag:--wave" -->
+<!-- engineer:section id="partial-wave" when="flag:--wave" -->
 
 If `section_manifest` is `null` or `"partial-wave"` is in its `included` list: read and execute `engineer/workflows/execute-phase/steps/partial-wave.md`. Otherwise skip — do not read the file.
 
@@ -1172,11 +1172,11 @@ Verify phase achieved its GOAL, not just completed tasks: read and execute
 whole sequence (the `verify:post` dispatch with the SECURITY threats-open gate, `code_review_gate`
 with its TDD escalation, the gap-closure parent-artifact close, the manifest-gated `regression_gate`,
 the verifier dispatch, the fingerprint, and the owner's `verification.status` read with stderr
-kept), shared with verify-work (#5118). If it stopped (TDD block, regression abort, refused
+kept), shared with verify-work. If it stopped (TDD block, regression abort, refused
 report), stop here.
 
-**TDD review escalation (#4011):** the `tdd.review-checkpoint` gate is advisory (`blocking: false`)
-except when `TDD_MODE=true` AND `GATE_RESULT.block == true` — no MVP condition — where the shared
+**TDD review escalation:** the `tdd.review-checkpoint` gate is advisory (`blocking: false`)
+except when `TDD_MODE=true` AND `GATE_RESULT.block == true` — where the shared
 step escalates the end-of-phase review to blocking: refuse to mark the phase complete and present
 `Phase blocked: {N} TDD plan(s) violate the RED→GREEN gate sequence under TDD.` Never proceed to
 `close_parent_artifacts`, `verify_phase_goal`'s verifier or `phase.complete` past that block. Full
@@ -1247,7 +1247,7 @@ Tests saved to `{phase_num}-UAT.md`.
 
 When ready to run the tests:
 
-`/verify-work {X} ${GSD_WS}`
+`/verify-work {X} ${ENGINEER_WS}`
 
 Verify-work will walk you through each item and mark the phase complete when all tests pass.
 ```
@@ -1275,27 +1275,27 @@ Verify-work will walk you through each item and mark the phase complete when all
 
 `/clear` then:
 
-`/plan-phase {X} --gaps ${GSD_WS}`
+`/plan-phase {X} --gaps ${ENGINEER_WS}`
 
 Also: `cat {phase_dir}/{phase_num}-VERIFICATION.md` — full report
-Also: `/verify-work {X} ${GSD_WS}` — manual testing first
+Also: `/verify-work {X} ${ENGINEER_WS}` — manual testing first
 ```
 
-Gap closure cycle: `/plan-phase {X} --gaps ${GSD_WS}` reads VERIFICATION.md → creates gap plans with `gap_closure: true` → user runs `/execute-phase {X} --gaps-only ${GSD_WS}` → verifier re-runs.
+Gap closure cycle: `/plan-phase {X} --gaps ${ENGINEER_WS}` reads VERIFICATION.md → creates gap plans with `gap_closure: true` → user runs `/execute-phase {X} --gaps-only ${ENGINEER_WS}` → verifier re-runs.
 </step>
 
-<!-- gsd:section id="gap-closure-artifacts" when="state:gap-closure-phase" -->
+<!-- engineer:section id="gap-closure-artifacts" when="state:gap-closure-phase" -->
 
 The `gap-closure-artifacts` section is evaluated inside the shared verification step
 (`verify_phase_goal` above) — between its code-review gate and its regression gate, where it ran
-before #5118 — gated on this id exactly as every section here is gated.
+before — gated on this id exactly as every section here is gated.
 
 <!-- /section -->
 
-<!-- gsd:section id="regression-gate" when="state:has-prior-phases" -->
+<!-- engineer:section id="regression-gate" when="state:has-prior-phases" -->
 
 The `regression-gate` section is evaluated inside the shared verification step (`verify_phase_goal`
-above), which gates it on this id exactly as every section here is gated (#5118).
+above), which gates it on this id exactly as every section here is gated.
 
 <!-- /section -->
 
@@ -1339,7 +1339,7 @@ engineer_run query commit "docs(phase-{X}): complete phase execution" --files .p
 This step runs AFTER phase completion and SUMMARY.md is written. It produces the phase's
 learnings artifact (the sole producer is otherwise the user-invoked
 `/extract-learnings`) and copies it to the global learnings store at
-`~/.gsd/knowledge/`.
+`~/.engineer/knowledge/`.
 
 **Check config gate:**
 
@@ -1364,7 +1364,7 @@ Copy failure must NOT block phase completion.
 </step>
 
 <step name="close_phase_todos">
-**Auto-close todos whose `resolves_phase` matches this phase (#2433)**, after `update_roadmap`.
+**Auto-close todos whose `resolves_phase` matches this phase **, after `update_roadmap`.
 
 ```bash
 shopt -s nullglob 2>/dev/null; setopt NULL_GLOB 2>/dev/null
@@ -1372,7 +1372,7 @@ PENDING_DIR=".planning/todos/pending"
 COMPLETED_DIR=".planning/todos/completed"
 mkdir -p "$COMPLETED_DIR"
 PHASE_NUM="${PHASE_NUMBER}"
-#2576
+
 normalize_phase_num() {
   printf '%s' "${1//\"/}" | sed 's/^0*\([0-9]\)/\1/'
 }
@@ -1398,7 +1398,7 @@ No matches: skip silently, never blocks.
 </step>
 
 <step name="delegate_post_completion_to_transition">
-**#1526 — Delegate post-completion to the transition workflow** (parity: the auto-chain
+** — Delegate post-completion to the transition workflow** (parity: the auto-chain
 path must run the SAME post-processing as a normal transition). `phase.complete`
 (`update_roadmap` above) and verification (`verify_phase_goal`) already ran, so invoke
 transition in **post-completion mode**: SKIP its `verify_completion` and
@@ -1423,7 +1423,7 @@ For 1M+ context models, consider:
 
 <failure_handling>
 
-- **Quota / rate-limit (any runtime — #3095):** Agent return body contains a sentinel like `usage limit`, `rate limit`, `429`, `too many requests`, `RESOURCE_EXHAUSTED`, `usage_limit_reached`. Route via `engineer_run query agent.classify-failure` → `class: "quota-exceeded"`. Do not offer retry-now; the right action is wait-for-reset and resume.
+- **Quota / rate-limit (any runtime):** Agent return body contains a sentinel like `usage limit`, `rate limit`, `429`, `too many requests`, `RESOURCE_EXHAUSTED`, `usage_limit_reached`. Route via `engineer_run query agent.classify-failure` → `class: "quota-exceeded"`. Do not offer retry-now; the right action is wait-for-reset and resume.
 - **classifyHandoffIfNeeded false failure:** Agent reports "failed" but error is `classifyHandoffIfNeeded is not defined` → Claude Code bug, not Engineer. Spot-check (SUMMARY exists, commits present) → if pass, treat as success
 - **Agent fails mid-plan:** Missing SUMMARY.md → report, ask user how to proceed
 - **Dependency chain breaks:** Wave 1 fails → Wave 2 dependents likely fail → user chooses attempt or skip

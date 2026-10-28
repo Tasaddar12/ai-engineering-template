@@ -99,7 +99,7 @@ files_changed: []
 
 **Session Loop:**
 
-- Owned by the checkpoint loop that drives `debugger`; on Pi that loop is the top-level session, which holds no state in memory between turns (#5638)
+- Owned by the checkpoint loop that drives `debugger`; on Pi that loop is the top-level session, which holds no state in memory between turns 
 - OVERWRITE on each dispatch and each wait; the debugger never edits it and `## Current Focus` rewrites never touch it
 - Fields: goal, tdd_mode, tdd_phase, resume_count, awaiting, question, last_next_action
 

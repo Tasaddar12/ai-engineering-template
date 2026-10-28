@@ -1,10 +1,10 @@
 # Planner Coupling — Same-Wave Shared Mutable State
 
 > Progressive-disclosure reference for `agents/planner.md`. The planner agent
-> reads this file when assigning waves (issue #3724). The slim pointer in
+> reads this file when assigning waves. The slim pointer in
 > `agents/planner.md` → `assign_waves` routes here; the canonical schema row
-> for `coupling_justified` lives in `docs/reference/plan-md.md`. The verifying
-> side is `agents/plan-checker.md` Dimension 3b (#1954).
+> for `coupling_justified` lives in `engineer/templates/phase-prompt.md`. The verifying
+> side is `agents/plan-checker.md` Dimension 3b.
 
 ## The rule
 

@@ -93,7 +93,7 @@ VERIFY_ERROR=""  # reset per item — a prior item's refusal must not leak into 
 STATUS=$(engineer_run query verification.status "${ITEM_DIR}" --pick status) || VERIFY_ERROR=1
 ```
 
-If `VERIFY_ERROR` is set, the owner refused the item's report (#5118 — a report `status` outside
+If `VERIFY_ERROR` is set, the owner refused the item's report (a report `status` outside
 `passed | gaps_found | human_needed`; the reason is on stderr above): mark the item `failed` with
 that error as its `failureReason` and skip the routing call below for it — never read the refusal
 as a verdict, and never drop the item silently.

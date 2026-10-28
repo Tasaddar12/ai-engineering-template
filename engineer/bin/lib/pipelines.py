@@ -191,150 +191,22 @@ def _host(args, data):
 
 
 def _alive(attempt):
-    pid = attempt.get("pid")
-    if not pid:
-        return None  # Launch crash window: never guess that no worker exists.
-    if os.name == "nt":
-        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
-        kernel.OpenProcess.restype = ctypes.c_void_p
-        handle = kernel.OpenProcess(0x1000, False, pid)
-        if not handle:
-            return False if ctypes.get_last_error() == 87 else None
-        try:
-            code = ctypes.c_ulong()
-            if not kernel.GetExitCodeProcess(ctypes.c_void_p(handle), ctypes.byref(code)):
-                return None
-            return code.value == 259
-        finally:
-            kernel.CloseHandle(ctypes.c_void_p(handle))
-    try:
-        os.killpg(pid, 0)
-        return True
-    except ProcessLookupError:
-        return False
-    except PermissionError:
+    from . import processes
+    ownership = attempt.get("process_ownership")
+    if not ownership:
         return None
-
-
-class _WindowsJob:
-    """Kill every assigned descendant when this runner's job handle closes."""
-    def __init__(self):
-        self.handle = None
-        if os.name != "nt":
-            return
-        from ctypes import wintypes as w
-
-        class Basic(ctypes.Structure):
-            _fields_ = [("process_time", ctypes.c_longlong), ("job_time", ctypes.c_longlong),
-                        ("flags", w.DWORD), ("minimum", ctypes.c_size_t), ("maximum", ctypes.c_size_t),
-                        ("active", w.DWORD), ("affinity", ctypes.c_size_t),
-                        ("priority", w.DWORD), ("scheduling", w.DWORD)]
-
-        class IO(ctypes.Structure):
-            _fields_ = [(name, ctypes.c_ulonglong) for name in
-                        ("read_ops", "write_ops", "other_ops", "read_bytes", "write_bytes", "other_bytes")]
-
-        class Extended(ctypes.Structure):
-            _fields_ = [("basic", Basic), ("io", IO), ("process_memory", ctypes.c_size_t),
-                        ("job_memory", ctypes.c_size_t), ("peak_process", ctypes.c_size_t),
-                        ("peak_job", ctypes.c_size_t)]
-
-        self.api = ctypes.WinDLL("kernel32", use_last_error=True)
-        self.api.CreateJobObjectW.restype = w.HANDLE
-        self.handle = self.api.CreateJobObjectW(None, None)
-        limits = Extended()
-        limits.basic.flags = 0x2000  # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE; no breakaway.
-        if not self.handle or not self.api.SetInformationJobObject(
-                w.HANDLE(self.handle), 9, ctypes.byref(limits), ctypes.sizeof(limits)):
-            self.close()
-            raise Failure("pipeline-job", "Cannot establish Windows process-tree ownership")
-
-    def assign(self, process):
-        if self.handle and not self.api.AssignProcessToJobObject(
-                ctypes.c_void_p(self.handle), ctypes.c_void_p(int(process._handle))):
-            raise Failure("pipeline-job", "Cannot assign host to the owned Windows job")
-
-    def resume(self, process):
-        """Resume the suspended primary thread only after its job owns it."""
-        from ctypes import wintypes as w
-
-        class ThreadEntry(ctypes.Structure):
-            _fields_ = [("size", w.DWORD), ("usage", w.DWORD), ("thread", w.DWORD),
-                        ("owner", w.DWORD), ("priority", w.LONG), ("delta", w.LONG), ("flags", w.DWORD)]
-
-        self.api.CreateToolhelp32Snapshot.argtypes = [w.DWORD, w.DWORD]
-        self.api.CreateToolhelp32Snapshot.restype = w.HANDLE
-        self.api.Thread32First.argtypes = [w.HANDLE, ctypes.POINTER(ThreadEntry)]
-        self.api.Thread32Next.argtypes = [w.HANDLE, ctypes.POINTER(ThreadEntry)]
-        self.api.OpenThread.argtypes = [w.DWORD, w.BOOL, w.DWORD]
-        self.api.OpenThread.restype = w.HANDLE
-        self.api.ResumeThread.argtypes = [w.HANDLE]
-        self.api.ResumeThread.restype = w.DWORD
-        snapshot = self.api.CreateToolhelp32Snapshot(0x4, 0)
-        if not snapshot or snapshot == ctypes.c_void_p(-1).value:
-            raise Failure("pipeline-job", "Cannot locate suspended host thread")
-        try:
-            entry = ThreadEntry()
-            entry.size = ctypes.sizeof(entry)
-            present = self.api.Thread32First(w.HANDLE(snapshot), ctypes.byref(entry))
-            while present:
-                if entry.owner == process.pid:
-                    thread = self.api.OpenThread(0x2, False, entry.thread)
-                    if not thread:
-                        raise Failure("pipeline-job", "Cannot open suspended host thread")
-                    try:
-                        if self.api.ResumeThread(w.HANDLE(thread)) != 1:
-                            raise Failure("pipeline-job", "Host thread did not resume from its initial suspension")
-                        return
-                    finally:
-                        self.api.CloseHandle(w.HANDLE(thread))
-                present = self.api.Thread32Next(w.HANDLE(snapshot), ctypes.byref(entry))
-            raise Failure("pipeline-job", "Suspended host thread was not found")
-        finally:
-            self.api.CloseHandle(w.HANDLE(snapshot))
-
-    def stop(self):
-        if self.handle:
-            if not self.api.TerminateJobObject(ctypes.c_void_p(self.handle), 1):
-                raise Failure("pipeline-job", "Cannot terminate the owned Windows process tree")
-            # Query JobObjectBasicAccountingInformation until ActiveProcesses is zero.
-            buffer = ctypes.create_string_buffer(48)
-            deadline = time.monotonic() + 30
-            while True:
-                if not self.api.QueryInformationJobObject(ctypes.c_void_p(self.handle), 1, buffer, 48, None):
-                    raise Failure("pipeline-job", "Cannot establish process-tree termination")
-                if int.from_bytes(buffer.raw[40:44], "little") == 0:
-                    break
-                if time.monotonic() >= deadline:
-                    raise Failure("pipeline-job", "Owned process tree did not terminate")
-                time.sleep(0.1)
-
-    def close(self):
-        if self.handle:
-            self.api.CloseHandle(ctypes.c_void_p(self.handle))
-            self.handle = None
-
-
-def _stop(process, job=None):
-    if os.name == "nt":
-        if job and job.handle:
-            job.stop()
-            process.wait(timeout=30)
-            return True
-        result = run(["taskkill", "/PID", str(process.pid), "/T", "/F"], check=False, timeout=30)
-        process.wait(timeout=30)
-        return result.returncode == 0
     try:
-        os.killpg(process.pid, signal.SIGKILL)
-    except ProcessLookupError:
-        pass
-    process.wait(timeout=30)
-    deadline = time.monotonic() + 30
-    while _alive({"pid": process.pid}) is not False:
-        if time.monotonic() >= deadline:
-            return False
-        time.sleep(0.1)
-    return True
+        processes.terminal(ownership)
+        return False
+    except (Failure,OSError,ValueError,KeyError):
+        if __import__('sys').platform == 'linux':
+            expected = ownership.get('supervisor')
+            if expected and processes._identity(expected['pid']) == expected:
+                return True
+        return None  # A vanished supervisor is not a terminal subtree receipt.
+
+
+from .processes import _WindowsJob, stop as _stop
 
 
 def _stdout_receipt(attempt, task, data):
@@ -435,10 +307,15 @@ def _recover(directory, data):
             alive = _alive(attempt)
             if alive is not False:
                 raise Failure("pipeline-worker-uncertain", "Live or unidentifiable worker preserved; no duplicate launch", task=task["id"], attempt=attempt)
-            # On Windows the leader's death cannot prove its descendants stopped.
-            if os.name == "nt" and attempt["status"] != "integrating" and not attempt.get("job_guard"):
-                raise Failure("pipeline-worker-uncertain", "Inspect preserved Windows process tree before recovery; leader exit alone is insufficient", attempt=attempt)
+            from . import processes
+            proof = processes.terminal(attempt['process_ownership'])
+            attempt['process_terminal'] = proof
             data["spent_seconds"] += max(0, time.time() - attempt.get("accounted_at", time.time()))
+            if proof['exit_code'] != 0 or proof.get('reason'):
+                attempt.update(status='interrupted',retry_safe=True,finished=now(),exit_code=proof['exit_code'],error='Recovered owned process did not complete successfully')
+                task['status'] = 'interrupted'
+                _save(directory,data)
+                continue
             if Path(attempt["receipt"]).is_file() or Path(attempt["stdout"]).is_file():
                 try:
                     _accept(directory, data, task, attempt)
@@ -483,72 +360,64 @@ def _attempt(directory, data, task, argv):
               + "\n\nUSER CONSTRAINTS (preserve these throughout implementation):\n"
               + data.get("instructions", "") + "\n" + task.get("instructions", "")
               + "\n\nTASK:\n" + task["prompt"] + "\n")
-    # Preserve the exact prompt and deliver it only after process-tree ownership exists.
+    # The exact prompt is private and hash-bound to the durable owned attempt.
+    from . import processes
     prompt_path = logs / "prompt.txt"
-    prompt_path.write_text(prompt, encoding="utf-8")
-    job = _WindowsJob()
-    attempt.update(status="launching", accounted_at=time.time())
+    processes._new(prompt_path, prompt.encode("utf-8"))
+    attempt.update(status="launching", accounted_at=time.time(), prompt_sha256=hashlib.sha256(prompt.encode("utf-8")).hexdigest())
     _save(directory, data)
     env = dict(os.environ, ENGINEER_ROOT=str(path), ENGINEER_HOST=data["host"], ENGINEER_PIPELINE_ATTEMPT=token)
     started = time.monotonic()
     timed_out = cancelled = False
+    process = None
+    remaining_budget = data["budget_seconds"]-data["spent_seconds"]
+    if remaining_budget <= 0:
+        attempt.update(status="timed_out",finished=now(),retry_safe=True,launched=False)
+        task["status"] = "failed"
+        _save(directory,data)
+        return
     with Path(attempt["stdout"]).open("wb") as stdout, Path(attempt["stderr"]).open("wb") as stderr:
-        options = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP | 0x4} if os.name == "nt" else {"start_new_session": True}
         try:
-            process = subprocess.Popen(argv, cwd=path, env=env, stdin=subprocess.PIPE, stdout=stdout, stderr=stderr, shell=False, **options)
-        except OSError as exc:
-            job.close()
-            attempt.update(status="failed", error=str(exc), finished=now(), retry_safe=True)
-            task["status"] = "failed"
-            _save(directory, data)
-            return
-        try:
-            attempt["pid"] = process.pid
-            job.assign(process)
-            attempt.update(pid=process.pid, status="running", job_guard=os.name == "nt")
-            _save(directory, data)
-            if os.name == "nt":
-                job.resume(process)
-            def send_prompt():
-                try:
-                    process.stdin.write(prompt.encode("utf-8"))
-                    process.stdin.close()
-                except (BrokenPipeError, OSError):
-                    pass  # Exit code and required receipt determine the outcome.
-
-            sender = threading.Thread(target=send_prompt, daemon=True)
-            sender.start()
+            def record_ownership(ownership):
+                attempt['process_ownership'] = ownership
+                _save(directory,data)
+            process = processes.start_owned(argv,path,env=env,input=prompt,stdout=stdout,stderr=stderr,
+                timeout=min(task["timeout_seconds"],remaining_budget),on_prepare=record_ownership)
+            attempt.update(pid=process.pid,status="running",process_ownership=process.ownership,job_guard=os.name == "nt")
+            _save(directory,data)
             while process.poll() is None:
-                elapsed = time.monotonic() - started
+                elapsed = time.monotonic()-started
                 timed_out = elapsed >= task["timeout_seconds"] or data["spent_seconds"] >= data["budget_seconds"]
-                cancelled = (directory / "cancel.json").exists()
+                cancelled = (directory/"cancel.json").exists()
                 if timed_out or cancelled:
-                    attempt["retry_safe"] = _stop(process, job)
+                    process.stop("timeout" if timed_out else "cancelled")
                     break
                 time.sleep(0.5)
                 current = time.time()
-                data["spent_seconds"] += max(0, current - attempt["accounted_at"])
+                data["spent_seconds"] += max(0,current-attempt["accounted_at"])
                 attempt["accounted_at"] = current
-                _save(directory, data)
+                _save(directory,data)
             process.wait()
-            if os.name == "nt":
-                job.stop()
-                attempt["retry_safe"] = True
-            elif _alive(attempt) is not False:
-                attempt["retry_safe"] = _stop(process)
-                attempt["orphaned_children"] = True
-            sender.join(timeout=5)
-        except BaseException:
-            # Abrupt process death still leaves launch/running evidence for fail-closed recovery.
-            try:
-                attempt["retry_safe"] = _stop(process, job if attempt.get("job_guard") else None)
-            finally:
-                attempt.update(status="interrupted", finished=now())
-                task["status"] = "interrupted"
-                _save(directory, data)
+            attempt.update(process_terminal=process.proof,retry_safe=True)
+            timed_out = timed_out or process.proof.get("reason") == "timeout"
+            cancelled = cancelled or process.proof.get("reason") == "cancelled"
+        except BaseException as exc:
+            attempt["retry_safe"] = False
+            if process is not None:
+                try:
+                    process.stop("runner-error")
+                    attempt.update(process_terminal=process.proof,retry_safe=True)
+                except (Failure,OSError,ValueError):
+                    pass  # Preserve the supervisor/request and forbid redispatch.
+            if isinstance(exc,Failure) and exc.details.get("ownership"):
+                attempt["process_ownership"] = exc.details["ownership"]
+            attempt.update(status="interrupted",finished=now(),error=str(exc))
+            task["status"] = "interrupted"
+            _save(directory,data)
             raise
         finally:
-            job.close()
+            if process is not None and process.proof:
+                process.close()
         attempt["exit_code"] = process.returncode
     current = time.time()
     data["spent_seconds"] += max(0, current - attempt["accounted_at"])
@@ -557,8 +426,7 @@ def _attempt(directory, data, task, argv):
     if cancelled or timed_out or process.returncode:
         attempt["status"] = "cancelled" if cancelled else "timed_out" if timed_out else "failed"
         task["status"] = "cancelled" if cancelled else "failed"
-        # Ordinary Windows host exit does not establish that child processes ended.
-        attempt.setdefault("retry_safe", os.name != "nt" and _alive(attempt) is False)
+        attempt["retry_safe"] = _alive(attempt) is False
     elif attempt.get("orphaned_children") or _alive(attempt) is not False:
         attempt.update(status="interrupted", error="Host left live descendants; preserve attempt", retry_safe=False)
         task["status"] = "interrupted"

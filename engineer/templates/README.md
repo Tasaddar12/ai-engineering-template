@@ -23,12 +23,12 @@ These files live directly at `.planning/` — not inside phase subdirectories.
 | `config.json` | `config.json` | `/new-project`, `/health --repair` | Project-specific Engineer configuration |
 | `CLAUDE.md` | *(inline)* | `/profile` | Auto-assembled Claude Code context file |
 | `RETROSPECTIVE.md` | *(inline)* | `/complete-milestone` | Living milestone retrospective updated at each milestone close |
-| `WINDOWS.md` | *(none)* | broken-windows ledger (`src/broken-windows.cts`) | Tracked known-broken items pending resolution (#3224) |
+| `WINDOWS.md` | *(none)* | broken-windows ledger (`src/broken-windows.cts`) | Tracked known-broken items pending resolution |
 | `STATE-ARCHIVE.md` | *(none)* | `state.cts`'s `cmdStatePrune` | Pruned historical STATE.md entries |
-| `milestone.lock` | *(none)* | `src/milestone-lock.cts` | Persistent milestone (phase + session) claim, unlike the transient `STATE.md.lock`/`WAITING.json` (#3311) |
-| `state.json` | *(none)* | `src/state-contract.cts` | Machine-readable state contract published at step boundaries (#3227) |
-| `skill-manifest.json` | *(none)* | `init.cts`'s `cmdSkillManifest --write` | Project-scoped skill manifest (#3964) |
-| `PATTERNS.md` | *(inline)* | `/extract-learnings` (graduation, `workflows/graduation.md`, `patterns` target) | Graduated cross-phase patterns -- distinct from the per-phase `NN-PATTERNS.md` below (#4282) |
+| `milestone.lock` | *(none)* | `src/milestone-lock.cts` | Persistent milestone (phase + session) claim, unlike the transient `STATE.md.lock`/`WAITING.json`  |
+| `state.json` | *(none)* | `src/state-contract.cts` | Machine-readable state contract published at step boundaries |
+| `skill-manifest.json` | *(none)* | `init.cts`'s `cmdSkillManifest --write` | Project-scoped skill manifest |
+| `PATTERNS.md` | *(inline)* | `/extract-learnings` (graduation, `workflows/graduation.md`, `patterns` target) | Graduated cross-phase patterns -- distinct from the per-phase `NN-PATTERNS.md` below |
 
 ### Version-stamped artifacts (pattern: `vX.Y-*.md`)
 

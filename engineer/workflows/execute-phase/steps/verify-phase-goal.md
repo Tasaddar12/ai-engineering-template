@@ -1,7 +1,7 @@
 Apply response_language to all user-facing prose — narration between tool calls, status updates, progress notes, and findings included; preserve code, paths, and identifiers.
 
 <step name="verify_phase_goal_regeneration">
-**The one verification action for a phase (#5118, ADR-5057 Phase 4).** The verification owner
+**The one verification action for a phase.** The verification owner
 routes `stale` (and `missing`) to `execute-phase`; this file is what that route runs, and it is the
 ONLY place the verification sequence is written, whole and in this order: the `verify:post` hook
 dispatch with the SECURITY threats-open gate (`verify_post_security_gate`), the code-review gate,
@@ -17,14 +17,14 @@ bundle (execute-phase loaded it in `initialize`; verify-work loads the same quer
 this file). From it: `phase_dir` (`PHASE_DIR`), `phase_number` (`PHASE_NUMBER`),
 `verifier_model`, `phase_req_ids`, `requirements_path`, `section_manifest`, `response_language`.
 The phase goal is the `**Goal**` of this phase in ROADMAP.md, loaded explicitly below as `PHASE_GOAL`
-(`roadmap.get-phase --pick goal`, the query `verify-work/steps/mvp-uat-framing.md` uses) — the same
+(`roadmap.get-phase --pick goal`) — the same
 value for both callers, never left for the model to resolve. Resolve the rest the same way:
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 _engineer_identity_ok() {
   [ -f "$1" ] || return 1
   [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
@@ -68,11 +68,11 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 TDD_MODE=${TDD_MODE:-$(engineer_run loop render-hooks execute:post --active-cap tdd)}
-# #4772: this file is Read, not textually substituted - write the parent command's original argument string in place of $ARGUMENTS so --ws reaches the query.
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-VERIFIER_SKILLS=$(engineer_run query agent-skills verifier ${GSD_WS:+--ws=${GSD_WS##* }})
+# This file is Read, not textually substituted - write the parent command's original argument string in place of $ARGUMENTS so --ws reaches the query.
+ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
+VERIFIER_SKILLS=$(engineer_run query agent-skills verifier ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 CONTEXT_WINDOW=$(engineer_run query config-get context_window --raw 2>/dev/null || echo "200000")
-PHASE_GOAL=$(engineer_run query roadmap.get-phase "${PHASE_NUMBER}" ${GSD_WS:+--ws} ${GSD_WS:+"${GSD_WS##*[[:space:]]}"} --pick goal)
+PHASE_GOAL=$(engineer_run query roadmap.get-phase "${PHASE_NUMBER}" ${ENGINEER_WS:+--ws} ${ENGINEER_WS:+"${ENGINEER_WS##*[[:space:]]}"} --pick goal)
 ```
 </step>
 
@@ -95,7 +95,7 @@ If an active secure-phase step hook exists AND `SECURITY_FILE` is empty (no SECU
 Include in the next-steps routing output:
 ```
 ⚠ Security enforcement enabled — run before advancing:
-  /secure-phase {PHASE} ${GSD_WS}
+  /secure-phase {PHASE} ${ENGINEER_WS}
 ```
 
 If an active secure-phase step hook exists AND SECURITY.md exists: check frontmatter `threats_open`. If > 0:
@@ -130,7 +130,7 @@ advisory throughout: it never blocks.
 
 **Error handling:** If the Skill invocation fails or throws, catch the error, display "Code review encountered an error (non-blocking): {error}" and proceed to gate dispatch. Review failures must never block execution.
 
-**Execute:post gate hook dispatch.** After code review, dispatch all active gate hooks from `EXECUTE_POST_HOOKS_JSON` where `kind == "gate"`. ⚠ **Validate `check` before shell use** (third-party manifest input; wherever `${hook.check.query}` appears, write the dot-normalized query, each `.` as `-`, and validate and pass that same value) — `loop-hook-dispatch.md` § `gate`. For each, run the form below, or — for a `predicate` gate (ADR-2008 / #2008) — `engineer_run check predicate --predicate '<predicate JSON>' --phase-dir "${PHASE_DIR}" --phase-number "${PHASE_NUMBER}" --raw`:
+**Execute:post gate hook dispatch.** After code review, dispatch all active gate hooks from `EXECUTE_POST_HOOKS_JSON` where `kind == "gate"`. ⚠ **Validate `check` before shell use** (third-party manifest input; wherever `${hook.check.query}` appears, write the dot-normalized query, each `.` as `-`, and validate and pass that same value) — `loop-hook-dispatch.md` § `gate`. For each, run the form below, or — for a `predicate` gate — `engineer_run check predicate --predicate '<predicate JSON>' --phase-dir "${PHASE_DIR}" --phase-number "${PHASE_NUMBER}" --raw`:
 
 ```bash
 GATE_RESULT=$(engineer_run check ${hook.check.query} "${PHASE_NUMBER}" --raw) && CHECK_EXIT=0 || CHECK_EXIT=$?
@@ -140,14 +140,14 @@ GATE_RESULT=$(engineer_run check ${hook.check.query} "${PHASE_NUMBER}" --raw) &&
 
 **Gate evaluation** uses the same two-step contract as the `execute:wave:post` gates (`execute-phase/steps/wave-post-gate-hooks.md`).
 
-**TDD review escalation (overrides the advisory default for the `tdd.review-checkpoint` gate only).** The tdd `execute:post` gate is declared `blocking: false`, so by the generic contract above it displays its `message`/table and continues. There is ONE documented exception (see `engineer/references/tdd.md`): when `TDD_MODE=true` AND `GATE_RESULT.block == true` (one or more TDD plans miss a RED or GREEN gate commit, or have no GREEN commit that follows a RED commit — `reason: green_before_red`, #5275; #4011 — no MVP condition), the end-of-phase TDD review escalates from advisory to **blocking under TDD** — refuse to mark the phase complete and present:
+**TDD review escalation (overrides the advisory default for the `tdd.review-checkpoint` gate only).** The tdd `execute:post` gate is declared `blocking: false`, so by the generic contract above it displays its `message`/table and continues. There is ONE documented exception (see `engineer/references/tdd.md`): when `TDD_MODE=true` AND `GATE_RESULT.block == true` (one or more TDD plans miss a RED or GREEN gate commit, or have no GREEN commit that follows a RED commit — `reason: green_before_red`), the end-of-phase TDD review escalates from advisory to **blocking under TDD** — refuse to mark the phase complete and present:
 
 ```
 Phase blocked: {N} TDD plan(s) violate the RED→GREEN gate sequence under TDD.
-Resolve and re-run /execute-phase, or override with /execute-phase {phase} --force-mvp-gate to ship anyway.
+Resolve and re-run /execute-phase.
 ```
 
-(`--force-mvp-gate` is the documented, not-yet-implemented escape hatch.) Outside TDD mode, TDD-review violations remain advisory (table shown, execution continues).
+Outside TDD mode, TDD-review violations remain advisory (table shown, execution continues).
 
 **Proceed rule:** If `TDD_MODE && GATE_RESULT.block == true` for `tdd.review-checkpoint`: STOP — do NOT proceed to `close_parent_artifacts`, `regression_gate`, the verifier, or `phase.complete`. Otherwise proceed normally.
 </step>
@@ -160,7 +160,7 @@ not read the file. It applies to decimal (gap-closure) phases only and is a no-o
 </step>
 
 <step name="regression_gate_dispatch">
-**Regression gate, gated by the section manifest (#2932).** If `section_manifest` is `null` or
+**Regression gate, gated by the section manifest.** If `section_manifest` is `null` or
 `"regression-gate"` is in its `included` list: read and execute
 `engineer/workflows/execute-phase/steps/regression-gate.md`. Otherwise skip — do not read the file.
 On `REGRESSION GATE ABORTED`, HALT — do not dispatch the verifier.
@@ -200,7 +200,7 @@ ${VERIFIER_SKILLS}",
 
 (When `response_language` is unset, omit the `Use response_language …` line.)
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available. If the session ends abnormally (`turn_aborted`), reconcile via the `verification.status` query below — the session's terminal state is not evidence of failure (#4217).
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available. If the session ends abnormally (`turn_aborted`), reconcile via the `verification.status` query below — the session's terminal state is not evidence of failure.
 
 **Regeneration.** The verifier — not the orchestrator — recomputes the covered-input fingerprint
 through the CLI over the report's covered set and copies the command's `covered_files` /
@@ -221,11 +221,11 @@ NEXT_ACTION=$(printf '%s' "$VERIFICATION" | jq -r '.next_action')
 NEXT_COMMAND=$(printf '%s' "$VERIFICATION" | jq -r '.next_command')
 ```
 
-A non-zero exit here is the write-time hard error (#5118): the report is rejected in the run that
+A non-zero exit here is the write-time hard error: the report is rejected in the run that
 produced it. Present the error verbatim and stop — never read it as "no status".
 
 Never silently proceed past a stale gate: if `STATUS` is still `stale` after the verifier ran,
-stop and present `$NEXT_ACTION` (#4623 covers what the digest hashes).
+stop and present `$NEXT_ACTION` ( covers what the digest hashes).
 
 Otherwise return to the including step with `STATUS`, `ROUTE`, `NEXT_ACTION` and `NEXT_COMMAND`
 set.

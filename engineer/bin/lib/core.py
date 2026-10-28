@@ -11,6 +11,7 @@ import re
 import subprocess
 import tempfile
 import time
+import sys
 
 
 class Failure(Exception):
@@ -21,13 +22,15 @@ class Failure(Exception):
 
 class Args:
     """Parse long options without shell interpolation; multi-value options stay lists."""
-    FLAGS = {"raw", "json", "force", "confirm", "fix", "mvp", "mutating", "stdin",
+    FLAGS = {"raw", "json", "force", "confirm", "fix", "mutating", "stdin",
              "commits-only", "uat-only", "require-verification", "discuss", "research",
              "validate", "full", "no-archive-phases", "milestone-bound", "tdd", "dry-run",
-             "publish", "execution-authorized", "authorize-execution", "track-issues", "list"}
+             "publish", "execution-authorized", "authorize-execution", "track-issues", "list", "apply", "repair", "backfill",
+             "all", "auto", "lines", "first", "require-nonempty", "preview", "no-write"}
 
-    def __init__(self, values):
+    def __init__(self, values, flags=()):
         self.pos, self.opts = [], {}
+        boolean_flags = self.FLAGS | set(flags)
         active = None
         for token in values:
             if token == "--":
@@ -37,8 +40,10 @@ class Args:
                 self.opts[active].append(token)
             elif token.startswith("--"):
                 key, sep, value = token[2:].partition("=")
-                self.opts[key] = [value] if sep else []
-                active = None if key in self.FLAGS else key
+                self.opts.setdefault(key, [])
+                if sep:
+                    self.opts[key].append(value)
+                active = None if key in boolean_flags else key
             elif active:
                 self.opts[active].append(token)
             else:
@@ -135,30 +140,39 @@ def load_json(path, default=None):
     return json.loads(read(path)) if Path(path).exists() else default
 
 
+def input_json(path=None, max_bytes=10*1024*1024):
+    """Read an explicitly named regular JSON input, including workflow temp files."""
+    try:
+        if path is None:
+            content = sys.stdin.read(max_bytes+1)
+            if len(content.encode("utf-8")) > max_bytes:
+                raise Failure("json-input-too-large", "JSON input exceeds the configured read bound", 2)
+        else:
+            selected = Path(str(path)).expanduser()
+            if selected.is_symlink() or not selected.is_file():
+                raise Failure("json-input-file", "Expected an explicitly named regular JSON file: "+str(selected), 2)
+            with selected.open("rb") as stream:
+                raw_content = stream.read(max_bytes+1)
+            if len(raw_content) > max_bytes:
+                raise Failure("json-input-too-large", str(selected), 2)
+            content = raw_content.decode("utf-8-sig")
+        return json.loads(content)
+    except (OSError, UnicodeError, ValueError) as exc:
+        raise Failure("invalid-json-input", str(exc), 2) from exc
+
+
 def write_json(path, value):
     write(path, json.dumps(value, indent=2, ensure_ascii=False) + "\n")
 
 
 @contextlib.contextmanager
 def planning_lock(base=None, timeout=10):
-    directory = (base or root()) / ".planning"
-    directory.mkdir(parents=True, exist_ok=True)
-    lock = directory / ".engineer.lock"
-    end = time.monotonic() + timeout
-    while True:
-        try:
-            descriptor = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-            os.write(descriptor, json.dumps({"pid": os.getpid(), "created": now()}).encode())
-            os.close(descriptor)
-            break
-        except FileExistsError:
-            if time.monotonic() >= end:
-                raise Failure("planning-locked", f"Planning records locked: {lock}")
-            time.sleep(0.05)
+    from .locking import acquire, lock_path
     try:
-        yield
-    finally:
-        lock.unlink(missing_ok=True)
+        with acquire(lock_path(base or root()), timeout):
+            yield
+    except TimeoutError as exc:
+        raise Failure("planning-locked", str(exc)) from exc
 
 
 def digest(paths, base=None):

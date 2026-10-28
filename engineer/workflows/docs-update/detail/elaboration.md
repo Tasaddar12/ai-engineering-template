@@ -129,10 +129,10 @@ Continue to scan_for_secrets.
 
 **Reached when `--verify-only` is present in `$ARGUMENTS`.** This is an early-exit step — do not proceed to dispatch, generation, commit, or report steps after this step.
 
-Invoke the doc-verifier agent in read-only mode for each file in `existing_docs` from the init JSON. Resolve `DISPATCH_CAPACITY` and compute each doc's `doc_key`/`result_path` as `verify_docs` § Dispatch bound and § Result file contract specify (#5050), and spawn in batches of at most `DISPATCH_CAPACITY`, waiting for a batch to return before starting the next:
+Invoke the doc-verifier agent in read-only mode for each file in `existing_docs` from the init JSON. Resolve `DISPATCH_CAPACITY` and compute each doc's `doc_key`/`result_path` as `verify_docs` § Dispatch bound and § Result file contract specify, and spawn in batches of at most `DISPATCH_CAPACITY`, waiting for a batch to return before starting the next:
 
 1. For each doc in `existing_docs`:
-   a. Spawn `doc-verifier` (or invoke sequentially if Task tool is unavailable), passing `model="{DOC_VERIFIER_MODEL}"` as the Task/Agent call's `model` parameter — not part of the `<verify_assignment>` prompt — so `dynamic_routing`/`model_profile` tiers apply instead of the caller's session model (#3602). Omit the parameter entirely when the value is `"inherit"` or empty (#2517). Each spawn carries:
+   a. Spawn `doc-verifier` (or invoke sequentially if Task tool is unavailable), passing `model="{DOC_VERIFIER_MODEL}"` as the Task/Agent call's `model` parameter — not part of the `<verify_assignment>` prompt — so `dynamic_routing`/`model_profile` tiers apply instead of the caller's session model. Omit the parameter entirely when the value is `"inherit"` or empty. Each spawn carries:
       ```xml
       <verify_assignment>
       doc_path: {doc.path}

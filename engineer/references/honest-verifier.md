@@ -14,8 +14,7 @@ touching `[2,3]` merge?", "is a 'character' a grapheme or a code unit?"). On the
 not know that it does not know*: measured behavior is a **confident PASS on the blind-spot check ~100%
 of the time** (mean confidence ~0.93), because a model cannot self-detect a gap it does not perceive.
 
-The edge-probe already detects these at spec time and tags them `verification: backstop` (ADR-550
-D7a). The honest verifier consumes that tag so the verifier **abstains** instead of confidently
+The edge-probe already detects these at spec time and tags them `verification: backstop`. The honest verifier consumes that tag so the verifier **abstains** instead of confidently
 false-passing — converting a silent false-pass (the worst failure: you don't know to look) into an
 explicit, actionable "write a held-out test." Measured: the confident-false-pass rate on the blind
 spot drops **100% → 17%** (N17).
@@ -51,14 +50,13 @@ For each `must_haves.truths` item:
 - **Distinguishable reason.** The abstain disposition carries `reason: insufficient_spec` so the
   `human_needed` outcome is never conflated with an ordinary manual-UAT `human_needed`.
 
-This is the verify-time half of ADR-550 Decision 4 (the never-silent-pass disposition), applied to the
-edge `backstop` truth tier instead of the prohibition judgment tier — the same machinery, opposite
+This is the verify-time half applied to the edge `backstop` truth tier instead of the prohibition judgment tier — the same machinery, opposite
 polarity (must-HAVE under-specified vs must-NOT irreducible).
 
 ## Deterministic engine surface
 
 The CI-testable surface is the **deterministic disposition + projection**, never the LLM's judgment
-(ADR-550 D5 — a test asserting the model's verdict is vacuous and rejected). In `probe-core`:
+(a test asserting the model's verdict is vacuous and rejected). In `probe-core`:
 
 - `truthStatement(t)` / `truthVerification(t)` — normalizers; read a truth's statement and tier from
   either the plain-string or object form (a truth-reader MUST normalize, never assume a string).
@@ -87,7 +85,7 @@ Abstention is **model-tier dependent** and this is a standing cost, not an assum
   over-abstain on a real spec-determined bug; the weakest tier was flag-deaf) and they name exactly
   the failure modes the over-abstention guard and the capable-tier requirement defend against.
 - **Tag-precision coupling.** Quality is bounded by the edge-probe's `backstop` recall/precision — a
-  false non-inferable flag causes over-abstention. Positive coupling: improving the probe (#1110)
+  false non-inferable flag causes over-abstention. Positive coupling: improving the probe 
   improves this for free. It adds no independent burden.
 - **Explicit non-goals.** Does NOT identify the omitted rule; does NOT recalibrate decisive verdicts;
   does NOT defend against *malicious compliance* (a self-graded review rationalizing away its own
@@ -96,10 +94,10 @@ Abstention is **model-tier dependent** and this is a standing cost, not an assum
 
 ## Distinct from neighbours
 
-- **vs `PRESENT_BEHAVIOR_UNVERIFIED` (#966 axis):** that is the *inferable-but-unobserved* case — the
+- **vs `PRESENT_BEHAVIOR_UNVERIFIED` ( axis):** that is the *inferable-but-unobserved* case — the
   truth **can** be verified from the spec but was shortcut-passed on symbol presence; the fix is to
   demand behavioral evidence. Honest-verifier is the *non-inferable* case — the truth **cannot** be
   verified from the spec at all; the fix is to abstain and route to a held-out test. Orthogonal axes
   (insufficient *evidence* vs insufficient *spec*); both feed the same `human_needed` sink.
-- **vs prohibition judgment-tier (#644):** that disposes **must-NOT** constraints; honest-verifier
+- **vs prohibition judgment-tier:** that disposes **must-NOT** constraints; honest-verifier
   disposes **non-inferable positive truths**. Opposite polarity, same never-silent disposition.

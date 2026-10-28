@@ -4,10 +4,10 @@ Apply response_language to all user-facing prose — narration between tool call
 
 Run the resolved prior-phase test command one-shot, bounded by a timeout, so a
 watch-mode runner (vitest defaults to watch in a TTY; jest `--watch`) cannot
-hang this gate forever (#1857). Uses the shared `normalize-test-command` helper
+hang this gate forever. Uses the shared `normalize-test-command` helper
 — the same one the post-merge gate uses — so the two gate paths cannot drift.
 
-Reads the prior step's test-file list from the handoff file `regression-files` (#4915); a shell variable
+Reads the prior step's test-file list from the handoff file `regression-files`; a shell variable
 cannot carry it, because each fenced `bash` block runs as its own shell.
 
 ```bash
@@ -53,15 +53,15 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
-# gsd-handoff:begin regression-files-read
-_GSD_HANDOFF="$( { git rev-parse --absolute-git-dir 2>/dev/null || echo "${TMPDIR:-/tmp}/gsd-$(pwd | cksum | cut -d' ' -f1)"; } )/handoff"; mkdir -p "$_GSD_HANDOFF"
+# engineer-handoff:begin regression-files-read
+_ENGINEER_HANDOFF="$( { git rev-parse --absolute-git-dir 2>/dev/null || echo "${TMPDIR:-/tmp}/engineer-$(pwd | cksum | cut -d' ' -f1)"; } )/handoff"; mkdir -p "$_ENGINEER_HANDOFF"
 REGRESSION_FILES=""
-if [ -s "$_GSD_HANDOFF/regression-files" ]; then
+if [ -s "$_ENGINEER_HANDOFF/regression-files" ]; then
   while IFS= read -r _f; do
     if [ -n "$_f" ]; then REGRESSION_FILES="${REGRESSION_FILES}$(printf '%q ' "$_f")"; fi
-  done < "$_GSD_HANDOFF/regression-files"
+  done < "$_ENGINEER_HANDOFF/regression-files"
 fi
-# gsd-handoff:end regression-files-read
+# engineer-handoff:end regression-files-read
 # Resolve test command: project config > Makefile > language sniff
 REG_TEST_CMD=$(engineer_run query config-get workflow.test_command --default "" --raw 2>/dev/null || true)
 if [ -z "$REG_TEST_CMD" ]; then
@@ -77,19 +77,19 @@ if [ -z "$REG_TEST_CMD" ]; then
   elif [ -f "go.mod" ]; then
     REG_TEST_CMD="go test ./..."
   elif [ -f "requirements.txt" ] || [ -f "pyproject.toml" ]; then
-    # gsd-handoff:begin regression-pytest-arm
+    # engineer-handoff:begin regression-pytest-arm
     if [ -n "$REGRESSION_FILES" ]; then
       REG_TEST_CMD="python -m pytest -q --tb=short -- ${REGRESSION_FILES}"
     else
       echo "⚠ Regression gate: no prior-phase test files were collected — skipping the scoped pytest run instead of falling back to the full suite."
       REG_TEST_CMD="true"
     fi
-    # gsd-handoff:end regression-pytest-arm
+    # engineer-handoff:end regression-pytest-arm
   else
     REG_TEST_CMD="true"
   fi
 fi
-# #1857: normalize to a one-shot form (defeat vitest/jest watch mode) and bound
+# Normalize to a one-shot form (defeat vitest/jest watch mode) and bound
 # with a timeout so a watch-mode runner cannot hang the gate indefinitely.
 REG_TEST_CMD=$(engineer_run query normalize-test-command "$REG_TEST_CMD" --cwd . 2>/dev/null || echo "$REG_TEST_CMD")
 TEST_GATE_TIMEOUT=$(engineer_run query config-get workflow.test_gate_timeout --raw 2>/dev/null || echo "600")

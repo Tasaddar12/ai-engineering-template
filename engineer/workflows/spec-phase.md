@@ -119,7 +119,7 @@ If `has_spec` is true:
 
 **If `--auto`:** Auto-select "Skip" — leave the existing SPEC.md unchanged and exit with the same
 message the interactive "Skip" prints. Log: `[auto] SPEC.md exists — reusing as-is.` An unattended
-run reuses an existing artifact rather than regenerating it (#4776): "Update it" re-scores and
+run reuses an existing artifact rather than regenerating it: "Update it" re-scores and
 rewrites the spec, discarding answers a person already recorded in it, and nobody is present to
 notice.
 
@@ -237,7 +237,7 @@ ones). Reference: @~/.claude/engineer/references/edge-probe.md.
 **Non-English projects — `text_en` carries the classifier-facing translation; the SPEC is
 not.** The shape cues the classifier matches are **English** word-boundary patterns, so
 requirement prose written in another language matches nothing, classifies to zero shapes, and
-lands every row in `unclassified` (#1110) — the taxonomy contributes nothing and `--auto`
+lands every row in `unclassified` — the taxonomy contributes nothing and `--auto`
 leaves it all `unresolved`. When this project has `response_language` set, add an optional
 `text_en` key to each `$REQS_JSON` entry: a faithful **English** translation of that
 requirement's `text`. `text_en` is **engine input, never user-facing output**, so the
@@ -248,45 +248,45 @@ The SPEC keeps the original language — only `text_en` is translated, and requi
 Criteria you write from the resolved edges go into the SPEC in `response_language`). Populate
 `text_en` for **every** requirement, not only the ones that look edge-relevant: the
 `$APPLICABLE = 0` warning below fires only when *all* requirements are unclassified, so a
-partly-classified spec slips through with no signal at all. (#4656) The warning now ALSO
+partly-classified spec slips through with no signal at all. The warning now ALSO
 fires on the all-unclassified case itself: `coverage.unclassified` counts the soft-signal
 rows, and the guard below fires when `$UNCLASSIFIED = $APPLICABLE` — the case where the
 classifier learned nothing about ANY requirement. When `response_language` is unset
 (an English-language project), omit `text_en` — `text` is already English and the engine
 falls back to it automatically (`text_en ?? text`).
 If a requirement still classifies to zero shapes with `text_en` populated, it carries no cue in
-any language (the recorded recall gap — ADR-857 §98 / ADR-550 D7b, not a translation failure);
+any language (the recorded recall gap, not a translation failure);
 author an explicit `shapes` array on that requirement instead of relying on the prose
 classifier.
 
 **Runtime coverage compute — resolve and invoke edge-probe.cjs:**
 
 ```bash
-# Resolve the compiled edge-probe.cjs against the Engineer install dir via RUNTIME_DIR (#448)
+# Resolve the compiled edge-probe.cjs against the Engineer install dir via RUNTIME_DIR 
 # — NOT the consuming project's git root — falling back to git toplevel / $HOME/.claude.
 # Mirrors the ui-safety-gate.cjs resolution idiom at autonomous.md:290 / plan-phase.md:631.
-_GSD_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+_ENGINEER_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 EDGE_PROBE_JS=$(for _c in \
-  "$_GSD_RT/engineer/bin/lib/edge-probe.cjs" \
-  "$_GSD_RT/bin/lib/edge-probe.cjs" \
-  "$_GSD_RT/.claude/bin/lib/edge-probe.cjs" \
+  "$_ENGINEER_RT/engineer/bin/lib/edge-probe.cjs" \
+  "$_ENGINEER_RT/bin/lib/edge-probe.cjs" \
+  "$_ENGINEER_RT/.claude/bin/lib/edge-probe.cjs" \
   "$HOME/.claude/engineer/bin/lib/edge-probe.cjs" \
   "$HOME/.claude/bin/lib/edge-probe.cjs"; do
   [ -f "$_c" ] && { echo "$_c"; break; }
 done)
 
-# Graceful degradation — never silent skip (RR-04). Build ONLY when $_GSD_RT is a verified
+# Graceful degradation — never silent skip (RR-04). Build ONLY when $_ENGINEER_RT is a verified
 # Engineer source checkout (has tsconfig.build.json + src/edge-probe.cts), and pin npm to it with
 # --prefix so we never trigger the CONSUMING project's own build:lib (its cwd package scripts:
 # codegen/migrations/writes) during a spec workflow. Real installs ship the compiled .cjs via
 # prepublishOnly, so this build path only matters in an Engineer dev checkout (review High).
 if [ -z "$EDGE_PROBE_JS" ]; then
-  if [ -f "$_GSD_RT/tsconfig.build.json" ] && [ -f "$_GSD_RT/src/edge-probe.cts" ]; then
-    npm --prefix "$_GSD_RT" run build:lib 2>/dev/null || true
+  if [ -f "$_ENGINEER_RT/tsconfig.build.json" ] && [ -f "$_ENGINEER_RT/src/edge-probe.cts" ]; then
+    npm --prefix "$_ENGINEER_RT" run build:lib 2>/dev/null || true
     EDGE_PROBE_JS=$(for _c in \
-      "$_GSD_RT/engineer/bin/lib/edge-probe.cjs" \
-      "$_GSD_RT/bin/lib/edge-probe.cjs" \
-      "$_GSD_RT/.claude/bin/lib/edge-probe.cjs" \
+      "$_ENGINEER_RT/engineer/bin/lib/edge-probe.cjs" \
+      "$_ENGINEER_RT/bin/lib/edge-probe.cjs" \
+      "$_ENGINEER_RT/.claude/bin/lib/edge-probe.cjs" \
       "$HOME/.claude/engineer/bin/lib/edge-probe.cjs" \
       "$HOME/.claude/bin/lib/edge-probe.cjs"; do
       [ -f "$_c" ] && { echo "$_c"; break; }
@@ -307,7 +307,7 @@ fi
 # `text` alone classifies to zero shapes; `text` itself stays the SPEC's own requirement text
 # and is never translated. Keep every `id` exactly as it appears in the SPEC.
 # BSD/macOS mktemp only randomizes XXXXXX when it is the final path component, so make a
-# suffixless temp then append the extension — portable across BSD + GNU (#1520).
+# suffixless temp then append the extension — portable across BSD + GNU.
 REQS_JSON=$(mktemp "${TMPDIR:-/tmp}/edge-probe-reqs-XXXXXX") && mv "$REQS_JSON" "${REQS_JSON}.json" && REQS_JSON="${REQS_JSON}.json" || exit 1
 cat > "$REQS_JSON" <<'JSON'
 [
@@ -323,11 +323,11 @@ if ! node -e 'const a=require(process.argv[1]);if(!Array.isArray(a)||a.length===
   exit 1
 fi
 # Invoke the compiled engine and CAPTURE its report — it computes which categories apply per
-# requirement. The report is RENDERED into context below (#3102); its resolved/dismissed/
+# requirement. The report is RENDERED into context below; its resolved/dismissed/
 # unresolved rows (resolved items carry verification: explicit|backstop) are the deterministic
 # FLOOR the resolution loop consumes and unions with its own classification — the loop no longer
 # re-derives the taxonomy from prose unaided. Floor, never ceiling: the classifier has a measured
-# recall gap (ADR-857 §98 / ADR-550 D7b), so the model still ADDS any category the engine missed.
+# recall gap, so the model still ADDS any category the engine missed.
 # The engine FAILS CLOSED (exit 2) on an invalid authored shape or bad input — so the capture
 # MUST be exit-checked. A bare `COVERAGE=$(node …)` swallows that exit code, leaves $COVERAGE
 # empty, and lets the workflow fall through to prose re-derivation: fail-OPEN at the boundary
@@ -344,12 +344,12 @@ if ! printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d
   echo "ERROR: edge-probe produced an unparseable or malformed coverage report — refusing to proceed with the resolution loop." >&2
   exit 1
 fi
-# Render the validated report into the model's visible context (#3102). Until here $COVERAGE was
+# Render the validated report into the model's visible context. Until here $COVERAGE was
 # captured, shape-checked, and reduced to coverage.applicable — the engine's per-requirement
 # items[] never reached the model, so the resolution loop below re-derived edge categories from
-# requirement PROSE (the data-flow twin of #2733's control-flow discard). These rows are the
+# requirement PROSE (the data-flow twin of 's control-flow discard). These rows are the
 # deterministic FLOOR the resolution loop consumes. Printed RAW (not a bespoke table) so this
-# step holds NO knowledge of the item schema: an ADR-550 D7a-style re-cut of the item/coverage
+# step holds NO knowledge of the item schema: a re-cut of the item/coverage
 # shape cannot silently desync a hand-rolled renderer here — the engine stays the single source.
 echo "### Edge-probe coverage report (deterministic proposals — the FLOOR for the resolution loop below):"
 printf '%s\n' "$COVERAGE"
@@ -361,14 +361,14 @@ echo "### (end edge-probe coverage report)"
 # below rather than silently emitting a green empty ## Edge Coverage section.
 APPLICABLE=$(printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let n=0;try{n=JSON.parse(s).coverage.applicable}catch{n=0}process.stdout.write(String(n))})')
 UNCLASSIFIED=$(printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let n=0;try{n=JSON.parse(s).coverage.unclassified}catch{n=0}process.stdout.write(String(n))})')
-# #4656: all-unclassified is the accidental-miss case the applicable:0 guard could never
-# reach — #1110's soft-signal rows make applicable non-zero by construction there.
+# All-unclassified is the accidental-miss case the applicable:0 guard could never
+# reach — 's soft-signal rows make applicable non-zero by construction there.
 if [ "$APPLICABLE" = "0" ] || [ "$UNCLASSIFIED" = "$APPLICABLE" ]; then
   echo "WARNING: edge-probe proposed ZERO applicable edges across all requirements — likely a classification miss or malformed requirements, not a genuinely edge-free spec. Do NOT silently write an empty Edge Coverage section." >&2
 fi
 ```
 
-If the guard above fired (`$APPLICABLE` is `0`, or every requirement is unclassified — `$UNCLASSIFIED = $APPLICABLE`, #4656), do NOT proceed silently: ask the author to confirm via AskUserQuestion
+If the guard above fired (`$APPLICABLE` is `0`, or every requirement is unclassified — `$UNCLASSIFIED = $APPLICABLE`), do NOT proceed silently: ask the author to confirm via AskUserQuestion
 ("The edge probe found no applicable edges for any requirement — is this genuinely an
 edge-free spec, or should we revisit the requirement wording / authored shapes?"). Only write
 an empty `## Edge Coverage` section after explicit confirmation.
@@ -378,7 +378,7 @@ For each Requirement gathered so far:
    every proposed `(requirement_id, category)` MUST be resolved below (Specify / Dismiss-with-
    reason / Backstop / Defer), none silently dropped. Then raise any applicable category the
    engine MISSED — the rows are a floor, never a ceiling: the classifier has a measured recall
-   gap on terse prose (ADR-857 §98 / ADR-550 D7b), e.g. a CSV-export requirement whose
+   gap on terse prose, e.g. a CSV-export requirement whose
    `encoding` edge the shape cue under-fires. Union the engine's rows with your own
    classification (relevance filter — see the taxonomy in the reference); do not narrow to them.
    Reuse any edges the Round-4 Failure Analyst already surfaced as pre-resolved.
@@ -392,7 +392,7 @@ For each Requirement gathered so far:
      "held-out edge test" for plan-phase.
    - **Defer** → leave `unresolved`.
    - An `unclassified` row (probe `unclassified — review manually`) means the requirement's
-     prose matched no shape cue (#1110) — treat it like any other candidate (**Specify**,
+     prose matched no shape cue — treat it like any other candidate (**Specify**,
      **Dismiss (reason)**, or **Defer**). A manual-review nudge, not a hard block.
 
 **Soft gate (after resolving):**
@@ -405,19 +405,19 @@ For each Requirement gathered so far:
   - On "anyway": write SPEC.md with those rows marked `⚠ Edge unresolved — planner must
     treat as assumption`.
 
-**`--auto` mode:** resolve over the **same rendered floor** (#3102) — every engine-proposed row
+**`--auto` mode:** resolve over the **same rendered floor** — every engine-proposed row
 from Step 5.5's report (step 1) plus any category the classifier missed, never a narrower set.
 For each: auto-`resolved` (verification: explicit) where a defensible acceptance criterion can be
 written; otherwise auto-`resolved` (verification: backstop) (never auto-dismiss — a wrong
 dismissal is the exact silent failure being eliminated). Log:
 `[auto] edge coverage: E explicit, B backstop, U unresolved`.
 
-**`unclassified` exception (#1110):** `--auto` leaves an `unclassified` candidate
+**`unclassified` exception:** `--auto` leaves an `unclassified` candidate
 **`unresolved`** (the soft gate surfaces it as a flagged planner assumption) — it never
 auto-resolves it with `verification: backstop`. A missing shape is not evidence an edge exists, so minting a held-out
 edge obligation on a requirement that may be genuinely edge-free would be a false claim and
 risks a vacuous edge test. Leaving it `unresolved` keeps the zero-cue requirement visible
-(never a silent drop) without fabricating an edge — which is exactly #1110's purpose: surface
+(never a silent drop) without fabricating an edge — which is exactly 's purpose: surface
 it for review, do not auto-handle it.
 
 Populate the `## Edge Coverage` section of SPEC.md from the resolved edges.
@@ -429,7 +429,7 @@ requirement list). Reference: @~/.claude/engineer/references/prohibition-probe.m
 portable two-stage protocol, the canon-referral rule, and the status×verification schema
 live there (size-cap discipline; keep this step lean).
 
-**D1 — no compiled engine (ADR-550 D7b).** Unlike Step 5.5, the prohibition probe has NO
+**D1 — no compiled engine.** Unlike Step 5.5, the prohibition probe has NO
 compiled recall engine and runs NO `node` invocation here. The recall stage is an LLM prose
 pass: the closed eight-category edge taxonomy a classifier can apply does not exist for the
 open values/safety/ethics must-NOT axis. Do NOT copy the Step 5.5 engine-resolution block.
@@ -445,7 +445,7 @@ For each Requirement gathered so far, run the two-stage recall→precision pass:
    "must not throw on empty" — owned by the edge probe or code review); **KEEP
    values / safety / ethics** items (manipulative framing, protected-attribute proxies, raw
    PII in plaintext). This collapses ~10 → ~2–3 genuine prohibitions.
-3. **Canon-referral (ADR-550 D6, PROB-13).** A kept candidate that is canon security/compliance
+3. **Canon-referral.** A kept candidate that is canon security/compliance
    (OWASP / prototype-pollution / path-traversal / injection / GDPR / generic fairness) is
    NOT minted here — emit a one-line breadcrumb (*"prototype-pollution is canon — owned by
    /secure-phase + eslint; not minted here"*) and DROP it. Minting canon items duplicates
@@ -455,7 +455,7 @@ For each Requirement gathered so far, run the two-stage recall→precision pass:
      Criteria AND mark the prohibition `resolved` with a verification tier: `test` (a
      mechanical negative test/lint/assertion exists) or `judgment` (real but not mechanically
      checkable — routes to judgment review).
-     - **Capture the wired-check descriptor on `test`-tier (#1278, SOFT).** When a prohibition is
+     - **Capture the wired-check descriptor on `test`-tier (SOFT).** When a prohibition is
        resolved `verification: test`, ALSO capture the descriptor of the wired check so
        `verify-phase` can LOCATE it deterministically (no verifier invention at verify time).
        Capture the flat scalars — persisted into SPEC and projected onto the
@@ -464,29 +464,29 @@ For each Requirement gathered so far, run the two-stage recall→precision pass:
        - `check_target` — the negative-test file path (for `node-test`), or the path to lint
          (for `lint-rule`).
        - `check_rule` — the eslint rule id (e.g. `local/no-source-grep`); `lint-rule` only.
-       - `check_violation_fixture` (#1279) — path to a KNOWN-BAD subject the wired check is run
+       - `check_violation_fixture` — path to a KNOWN-BAD subject the wired check is run
          against to **machine-prove fail-first**; rides BOTH kinds. Capture it to let the item green
          end-to-end with zero hand-authoring at verify time; for `node-test` the negative test should
-         read its subject from the `GSD_PROHIB_SUBJECT` env var so the prover can inject this fixture.
-       - `check_clean_fixture` (#1346; **REQUIRED for `node-test` as of #1906**) — path to a
+         read its subject from the `ENGINEER_PROHIB_SUBJECT` env var so the prover can inject this fixture.
+       - `check_clean_fixture` (**REQUIRED for `node-test` as of **) — path to a
          KNOWN-CLEAN control subject. The `node-test` prover runs the check against it and requires
          GREEN — proving the violation's RED is caused by the subject's *content*, not by
-         `GSD_PROHIB_SUBJECT` merely being set. For a `node-test` this is **mandatory**: omit it and
+         `ENGINEER_PROHIB_SUBJECT` merely being set. For a `node-test` this is **mandatory**: omit it and
          the check is un-provable (fail-closed), never proven on the violation alone — so a deceptive
          content-independent test cannot pass. (`lint-rule` needs no clean fixture: its subject IS the
-         linted file, no `GSD_PROHIB_SUBJECT` indirection.)
-       This is a **SOFT capture (CHK-04): a `test`-tier prohibition WITHOUT a descriptor is still
+         linted file, no `ENGINEER_PROHIB_SUBJECT` indirection.)
+       This is a **SOFT capture: a `test`-tier prohibition WITHOUT a descriptor is still
        allowed** — if the author cannot yet name the wired check, leave the descriptor empty and
        proceed. It is NOT a hard authoring block; the item simply stays fail-closed/flagged
        downstream (an absent/partial descriptor — or one with no `check_violation_fixture` —
        → `descriptorFromProjection` null/under-specified/fixture-less → producer fail-closed
        locate-or-unprovable, never green). Do NOT capture `failFirst` here — it is a
-       verify-time caller attestation, not a spec-authored field (#1279).
-   - **Dismiss (reason)** → mark `dismissed` with a REQUIRED non-empty reason (PROB-05). The
+       verify-time caller attestation, not a spec-authored field.
+   - **Dismiss (reason)** → mark `dismissed` with a REQUIRED non-empty reason. The
      reason string is the audit trail; silence is not a valid dismissal.
    - **Defer** → leave `unresolved`.
 
-**Soft gate (after resolving) — PROB-06:**
+**Soft gate (after resolving):**
 - All applicable prohibitions resolved → proceed to Step 6.
 - Any `unresolved` → AskUserQuestion:
   - header: "Prohibitions"
@@ -499,14 +499,14 @@ For each Requirement gathered so far, run the two-stage recall→precision pass:
 
 **`--auto` mode:** auto-`resolved` where a defensible negative acceptance criterion can be
 written (test or judgment tier); otherwise leave `unresolved`. **`--auto` NEVER auto-dismisses
-a prohibition** — a wrong dismissal is the exact silent failure this probe eliminates (PROB-06,
-the load-bearing safety property). On a `test`-tier auto-resolution, capture the `check_kind` /
+a prohibition** — a wrong dismissal is the exact silent failure this probe eliminates (the load-bearing safety property).
+On a `test`-tier auto-resolution, capture the `check_kind` /
 `check_target` / `check_rule` / `check_violation_fixture` / `check_clean_fixture` descriptor **only when a wired check is unambiguous**; otherwise
 leave it empty — `--auto` NEVER fabricates a check path or fixture (a wrong locate is re-validated and
 fails closed at the producer, but a fabricated path is still noise to avoid). Log:
 `[auto] prohibitions: R resolved, U unresolved`.
 
-**Text mode (PROB-09):** per Step 5's text-mode rule, replace the AskUserQuestion menus above
+**Text mode:** per Step 5's text-mode rule, replace the AskUserQuestion menus above
 with plain-text numbered lists — there is NO hard AskUserQuestion dependency, so the probe
 runs identically for non-Claude / text-mode hosts.
 
@@ -514,7 +514,7 @@ Populate the `## Prohibitions` section of SPEC.md from the resolved prohibitions
 `resolved`/`test` row is a checkable negative acceptance criterion; `resolved`/`judgment`
 rows route to judgment review; `⚠ UNRESOLVED` rows are flagged as assumptions). A
 `resolved`/`test` row ALSO carries its captured `check_kind` / `check_target` / `check_rule` /
-`check_violation_fixture` / `check_clean_fixture` descriptor when present (so the projection feeds `verify-phase`'s deterministic locate + machine-proof + causation control, #1278 + #1279 + #1346);
+`check_violation_fixture` / `check_clean_fixture` descriptor when present (so the projection feeds `verify-phase`'s deterministic locate + machine-proof + causation control, + + );
 a `test` row with no captured descriptor is still valid — it stays fail-closed/flagged
 downstream rather than blocking authoring.
 
@@ -552,7 +552,7 @@ Write to: `{phase_dir}/{padded_phase}-SPEC.md`
 ## Step 7: Commit
 
 ```bash
-engineer_run query commit "spec(phase-${phase_number}): add SPEC.md for ${phase_name} — ${requirement_count} requirements (#2213)" --files "${phase_dir}/${padded_phase}-SPEC.md"
+engineer_run query commit "spec(phase-${phase_number}): add SPEC.md for ${phase_name} — ${requirement_count} requirements " --files "${phase_dir}/${padded_phase}-SPEC.md"
 ```
 
 If `commit_docs` is false the CLI returns `skipped`; SPEC.md is written, not committed.

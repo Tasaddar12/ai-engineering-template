@@ -40,7 +40,7 @@ a problem you're trying to solve, or something you're not sure about yet.
 Bootstrap the Engineer launcher once for this session — later steps reach the launcher through the PATH this persists, and Step 5's commit must not depend on the optional research offer having run:
 
 ```bash
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then engineer_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then engineer_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f engineer_run; _G="$(command -v engineer_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; engineer_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving engineer_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok engineer_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
+_ENGINEER_SHIM_NAME="engineer_run"; _ENGINEER_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; ENGINEER_TOOLS="${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}"; _engineer_at() { for _p; do if [ -f "$_p" ]; then ENGINEER_TOOLS="$_p"; return 0; fi; done; return 1; }; _engineer_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"engineer-runtime"'*'}') return 0;; *) return 1;; esac; }; _engineer_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _engineer_at "$_h/engineer/bin/${_ENGINEER_SHIM_NAME}" && return 0; done; return 1; }; if _engineer_at "${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.claude/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.codex/engineer/bin/${_ENGINEER_SHIM_NAME}"; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif _engineer_homes; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif unset -f engineer_run; _G="$(command -v engineer_run)"; [ -n "$_G" ] && _engineer_id_ok "$_G"; then ENGINEER_TOOLS="$_G"; engineer_run() { "$ENGINEER_TOOLS" "$@"; }; else echo "ERROR: engineer_run not found at $ENGINEER_TOOLS and no identity-proving engineer_run is on PATH. Run: python -I bin/install.py --source <local-source> --ref <pinned-ref> --target <project-root> --host claude --local" >&2; exit 1; fi; ENGINEER_IDENTITY_STATUS=unverified; _engineer_id_ok engineer_run && ENGINEER_IDENTITY_STATUS=ok; export ENGINEER_IDENTITY_STATUS; [ "$ENGINEER_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$ENGINEER_TOOLS\" did not prove it is engineer-runtime - it is either a different package or an engineer-runtime older than the runtime-identity verb." >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${ENGINEER_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${ENGINEER_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
 # Canonical resolver (engineer/workflows/_runtime-launcher.snippet.sh). Exactly one per
 # workflow: define here, use in later blocks. Placed in Step 1 rather than Step 3 so
 # declining the research offer cannot leave Step 5's commit call unbootstrapped.
@@ -71,7 +71,7 @@ This would take ~30 seconds and might surface useful context.
 
 If yes, spawn a research agent:
 
-<!-- #2508 runtime-aware-dispatch -->
+<!-- runtime-aware-dispatch -->
 
 
 Resolve the researcher's **tier** and its model before dispatching. `--pick tier` returns the effective
@@ -94,9 +94,9 @@ Agent(
 )
 ```
 
-<!-- #2517 model-omit-on-inherit -->
+<!-- model-omit-on-inherit -->
 
-**Omit `model=` entirely when `RESEARCHER_MODEL` is `inherit` or empty** (#2517) — passing either
+**Omit `model=` entirely when `RESEARCHER_MODEL` is `inherit` or empty** — passing either
 value through as an argument 404s on runtimes without native tier aliases. Every opus-tier agent
 resolves to the literal `inherit`, so omission is the normal case, not an error path. See
 @~/.claude/engineer/references/model-profile-resolution.md.
@@ -188,7 +188,7 @@ Suppress any section with no entries — an empty heading reads as a claim that 
 If **every** finding landed in Unresolved, say so in one line rather than presenting an empty
 admitted section: that outcome is itself the useful signal.
 
-This is the claims-side analogue of the **#1154** honest verifier (abstain-and-flag on the non-inferable; ADR-550 D4 — *never a silent pass*). Here it is a **prompt-level** judgment on this ideation surface, reusing the #1154 *pattern* — it does **not** call the verify-time `probe-core` disposition, which sits on the verifier↔predicate rail (ADR-857) and is out of altitude for an ideation flow. It is also distinct from the `engineer_run query classify-confidence` seam the researcher **does** call (ADR-0656): that stamps a provider-**authority** tier (HIGH/MEDIUM/LOW) as a **separate** signal — it informs how much weight a source carries inside the refute pass — but it runs no refute pass and yields no admit/refute/abstain verdict, and it is neither an input to the tier floor above nor a substitute for the disposition.
+This is the claims-side analogue of the **** honest verifier (abstain-and-flag on the non-inferable; *never a silent pass*). Here it is a **prompt-level** judgment on this ideation surface, reusing the *pattern* — it does **not** call the verify-time `probe-core` disposition, which sits on the verifier↔predicate rail and is out of altitude for an ideation flow. It is also distinct from the `engineer_run query classify-confidence` seam the researcher **does** call: that stamps a provider-**authority** tier (HIGH/MEDIUM/LOW) as a **separate** signal — it informs how much weight a source carries inside the refute pass — but it runs no refute pass and yields no admit/refute/abstain verdict, and it is neither an input to the tier floor above nor a substitute for the disposition.
 
 If the topic doesn't warrant research, skip this step entirely. **Don't force it.**
 
@@ -222,7 +222,7 @@ Create these? You can select specific ones or modify them.
 
 **Never write artifacts without explicit user selection.**
 
-**Carry the research disposition into every crystallized artifact (#2543 B3).** A claim that came
+**Carry the research disposition into every crystallized artifact ( B3).** A claim that came
 from the research pass (Step 3) keeps its disposition when it lands in a durable file. Only an
 **admitted** claim may be written as a settled fact, and it carries its source. A claim from the
 **Unresolved ledger** must never be crystallized as a flat assertion — in a Note, Requirement, Seed,
@@ -243,7 +243,7 @@ For each selected output, write the file:
 
 - **Notes:** Create `.planning/notes/{slug}.md` with frontmatter (title, date, context)
 - **Todos:** Create `.planning/todos/pending/{slug}.md` with frontmatter (title, date, priority)
-- **Seeds:** Use the existing `/capture --seed` command via SlashCommand, passing the idea with its trigger in the text (#4648) — capture routes to the plant-seed workflow, which mints the next `SEED-` id and writes the canonical frontmatter (`status`, `trigger_when`, `planted_during`, `scope`) that `list-seeds`, `audit-open` and `/new-milestone` read. Carry the #2543 B3 untrusted-input fence rules into the idea text you pass. Do NOT hand-write `.planning/seeds/{slug}.md`: that shape has no `SEED-` prefix, `status`, or `trigger_when`, so every seed reader misses it
+- **Seeds:** Use the existing `/capture --seed` command via SlashCommand, passing the idea with its trigger in the text — capture routes to the plant-seed workflow, which mints the next `SEED-` id and writes the canonical frontmatter (`status`, `trigger_when`, `planted_during`, `scope`) that `list-seeds`, `audit-open` and `/new-milestone` read. Carry the B3 untrusted-input fence rules into the idea text you pass. Do NOT hand-write `.planning/seeds/{slug}.md`: that shape has no `SEED-` prefix, `status`, or `trigger_when`, so every seed reader misses it
 - **Research questions:** Append to `.planning/research/questions.md`
 - **Requirements:** Append to `.planning/REQUIREMENTS.md` with next available REQ ID
 - **Phases:** Use the existing `/phase` command via SlashCommand, passing the phase description

@@ -19,10 +19,10 @@ Read all files referenced by the invoking prompt's execution_context before star
 Parse arguments and load project state:
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 _engineer_identity_ok() {
   [ -f "$1" ] || return 1
   [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
@@ -73,20 +73,20 @@ PHASE_ARG="${1}"
 # logic (e.g., --all and --auto imply --fix). Resolved BEFORE the init call below so
 # the section-manifest gate forwards the RESOLVED (post-implication) fix decision, not
 # just a literal --fix token check.
-# gsd-resolve-lib begin code-review-flags.cjs (#5640): load helpers from the installed runtime, not the cwd
-_gsd_lib_probe="code-review-flags.cjs"
-_gsd_rt="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-_gsd_gr="$(command -v engineer_run 2>/dev/null || true)"
-case "$_gsd_gr" in /*) ;; *) _gsd_gr="" ;; esac # a engineer_run shell function prints its bare name: not a path
-[ -n "$_gsd_gr" ] && _gsd_gr="$(dirname "$(node -p "require('fs').realpathSync(process.argv[1])" "$_gsd_gr" 2>/dev/null || echo "$_gsd_gr")")/lib"
-GSD_LIB_DIR=""
-_gsd_pick() { for _gsd_d; do if [ -n "$_gsd_d" ] && [ -f "$_gsd_d/$_gsd_lib_probe" ]; then GSD_LIB_DIR="$_gsd_d"; return 0; fi; done; return 1; }
-_gsd_pick "${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib}" "$_gsd_rt/engineer/bin/lib" "$_gsd_rt/.claude/engineer/bin/lib" "$_gsd_rt/.codex/engineer/bin/lib" "$_gsd_gr" "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib" "${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib" || true
-if [ -z "$GSD_LIB_DIR" ]; then echo "ERROR: code-review-flags.cjs not found in the Engineer runtime. Looked in: ${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib, }${_gsd_rt}/engineer/bin/lib (and its .claude and .codex forms), ${_gsd_gr:-next to engineer_run (not on PATH)}, ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib, ${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib. Reinstall: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi
-export GSD_LIB_DIR
-# gsd-resolve-lib end
+# engineer-resolve-lib begin code-review-flags.cjs: load helpers from the installed runtime, not the cwd
+_engineer_lib_probe="code-review-flags.cjs"
+_engineer_rt="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+_engineer_gr="$(command -v engineer_run 2>/dev/null || true)"
+case "$_engineer_gr" in /*) ;; *) _engineer_gr="" ;; esac # a engineer_run shell function prints its bare name: not a path
+[ -n "$_engineer_gr" ] && _engineer_gr="$(dirname "$(node -p "require('fs').realpathSync(process.argv[1])" "$_engineer_gr" 2>/dev/null || echo "$_engineer_gr")")/lib"
+ENGINEER_LIB_DIR=""
+_engineer_pick() { for _engineer_d; do if [ -n "$_engineer_d" ] && [ -f "$_engineer_d/$_engineer_lib_probe" ]; then ENGINEER_LIB_DIR="$_engineer_d"; return 0; fi; done; return 1; }
+_engineer_pick "${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib}" "$_engineer_rt/engineer/bin/lib" "$_engineer_rt/.claude/engineer/bin/lib" "$_engineer_rt/.codex/engineer/bin/lib" "$_engineer_gr" "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib" "${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib" || true
+if [ -z "$ENGINEER_LIB_DIR" ]; then echo "ERROR: code-review-flags.cjs not found in the Engineer runtime. Looked in: ${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib, }${_engineer_rt}/engineer/bin/lib (and its .claude and .codex forms), ${_engineer_gr:-next to engineer_run (not on PATH)}, ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib, ${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib. Reinstall: python -I bin/install.py --source <local-source> --ref <pinned-ref> --target <project-root> --host claude --local" >&2; exit 1; fi
+export ENGINEER_LIB_DIR
+# engineer-resolve-lib end
 FLAGS_JSON=$(node -e "
-  const { parseCodeReviewFlags } = require(require('path').join(process.env.GSD_LIB_DIR, 'code-review-flags.cjs'));
+  const { parseCodeReviewFlags } = require(require('path').join(process.env.ENGINEER_LIB_DIR, 'code-review-flags.cjs'));
   const flags = parseCodeReviewFlags(process.argv.slice(1));
   process.stdout.write(JSON.stringify(flags));
 " -- "$@" 2>/dev/null)
@@ -104,11 +104,11 @@ FILES_OVERRIDE=$(echo "$FLAGS_JSON" | node -e "process.stdout.write(JSON.parse(r
 FIX_PARAM=""
 if [ "$FIX_FLAG" = "true" ]; then FIX_PARAM="--fix"; fi
 
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.code-review ${GSD_WS:+--ws=${GSD_WS##* }} "${PHASE_ARG}" $FIX_PARAM)
+ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
+INIT=$(engineer_run query init.code-review ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} "${PHASE_ARG}" $FIX_PARAM)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_REVIEWER=$(engineer_run query agent-skills code-reviewer ${GSD_WS:+--ws=${GSD_WS##* }})
-# #2072: resolve the routed model so model_overrides / models.verification are honored
+AGENT_SKILLS_REVIEWER=$(engineer_run query agent-skills code-reviewer ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
+# Resolve the routed model so model_overrides / models.verification are honored
 # (the resolver maps code-reviewer → phaseType "verification"); thread it below.
 REVIEWER_MODEL=$(engineer_run query resolve-model code-reviewer --raw)
 ```
@@ -164,7 +164,7 @@ Compute the phase's last review commit, if any. This narrows Tiers 2 and 3 below
 changed since that review (wave-scoped reviews under `workflow.code_review_point=execute:wave:post`):
 
 ```bash
-# #3661: incremental scoping — when this phase has a prior review, later tiers
+# Incremental scoping — when this phase has a prior review, later tiers
 # narrow to what changed since it (wave-scoped reviews under
 # workflow.code_review_point=execute:wave:post). Empty on a phase's first review
 # (the entire execute:post-default path), in which case Tiers 2 and 3 below are
@@ -178,21 +178,21 @@ If FILES_OVERRIDE is set (from --files flag):
 ```bash
 if [ -n "$FILES_OVERRIDE" ]; then
   REVIEW_FILES=()
-  # #5519: compare the repository root and each resolved path in ONE form. On Windows Git Bash,
+  # Compare the repository root and each resolved path in ONE form. On Windows Git Bash,
   # `git rev-parse --show-toplevel` (a native program) reports a mixed path (C:/Users/..) while
   # GNU `realpath` reports an MSYS POSIX path (/c/Users/..); the two never share a prefix, so
   # every entry looked "outside". `cygpath -m` exists exactly where the forms differ and maps both
   # to the mixed form; elsewhere the value passes through unchanged.
-  _gsd_norm_path() {
+  _engineer_norm_path() {
     if command -v cygpath >/dev/null 2>&1; then cygpath -m "$1"; else printf '%s' "$1"; fi
   }
-  REPO_ROOT=$(_gsd_norm_path "$(git rev-parse --show-toplevel 2>/dev/null)")
+  REPO_ROOT=$(_engineer_norm_path "$(git rev-parse --show-toplevel 2>/dev/null)")
   
   for file_path in "${FILES_ARRAY[@]}"; do
     # Security: validate path is within repository (prevent path traversal). Compare on a path
     # boundary: the root itself or anything under "<root>/" — a sibling such as "<root>-other"
     # shares the prefix but is not inside.
-    ABS_PATH=$(_gsd_norm_path "$(realpath -m "${file_path}" 2>/dev/null || echo "${file_path}")")
+    ABS_PATH=$(_engineer_norm_path "$(realpath -m "${file_path}" 2>/dev/null || echo "${file_path}")")
     # Fail closed on two shapes that cannot be trusted: an empty root (git failed, so nothing can be
     # "inside" it) and a path that still holds ".." segments (a resolved path never does, so it was
     # not resolved — no GNU realpath).
@@ -243,7 +243,7 @@ if [ -z "$FILES_OVERRIDE" ]; then
         raw = raw.replace(/^['"]|['"]$/g, '');
         raw = raw.replace(/\s+\([^)]*\)\s*$/, '');
         raw = raw.split(/\s+—\s/)[0].trim();
-        // #2666: accept root-level paths (no `/`) and known extensionless build
+        // Accept root-level paths (no `/`) and known extensionless build
         // files, not only nested paths with a trailing extension. The pre-fix
         // guard required BOTH a directory separator AND a trailing dot-extension,
         // which silently dropped every repository-root file (Dockerfile,
@@ -267,11 +267,11 @@ NODE
   }
   
   if [ -n "$SUMMARIES" ]; then
-    # Rewrapped through unquoted command substitution (gsd-core#4109): a bare
+    # Rewrapped through unquoted command substitution (): a bare
     # `$VAR` word-splits under bash but not zsh, collapsing every element onto
     # one iteration there.
     for summary in $(printf '%s' "$SUMMARIES"); do
-      # #3661: skip a SUMMARY.md unchanged since the phase's last review — this
+      # Skip a SUMMARY.md unchanged since the phase's last review — this
       # summary's plan was already reviewed. No-op (every summary is "changed") when
       # LAST_REVIEW_COMMIT is empty. Fails OPEN on any git error (file stays in scope)
       # — never silently drop a file because a git command errored.
@@ -300,25 +300,25 @@ NODE
 fi
 ```
 
-**Tier 3 — Phase evaluation scope (per D-02, #5164) and SUMMARY/scope cross-check (per #2666):**
+**Tier 3 — Phase evaluation scope and SUMMARY/scope cross-check:**
 
 If no SUMMARY.md files found OR no files extracted from them, fall back to the phase's evaluation scope.
 Additionally, whenever the resolver returns a scope, cross-check the SUMMARY scope against it and warn
 about (then add) any in-scope files the SUMMARY extractor did not surface — so a partial SUMMARY result
 can no longer silently mask the rest of the phase.
 
-The scope is computed by the ONE resolver, `check evaluation-scope` (ADR-5057 §4, #5164) — this step
+The scope is computed by the ONE resolver, `check evaluation-scope` — this step
 derives no commit range of its own. The resolver returns the UNION of the phase's own commits' file
 sets (the `## Task Commits` rows of the phase's SUMMARYs), restricted to commits reachable from `HEAD`
 (a commit that lives only on another branch is named, never counted), with planning artifacts and
 lockfiles excluded. A range (`base..HEAD`) is deliberately not used: it keeps every interleaved
-non-phase commit in its window (#3926, #4563). The resolver also reports, by name rather than by
+non-phase commit in its window. The resolver also reports, by name rather than by
 count, what the union dropped: `outsideUnion` (changed in the phase window by other commits) and
 `unreachable` (task commits not on this branch). When the union is empty — a phase with no SUMMARY,
 no task rows, or only planning paths — the resolver widens to the phase-directory range and says so
 (`status: degraded`, `reason`); an unreadable phase or repository is `unresolvable`, never an empty
 scope that reports success. Its `rangeBase` (the parent of the commit that first added the phase
-directory, or `LAST_REVIEW_COMMIT` when a prior review exists — #3661) is `DIFF_BASE`, kept only for
+directory, or `LAST_REVIEW_COMMIT` when a prior review exists) is `DIFF_BASE`, kept only for
 the reviewer lanes that need an anchor sha.
 ```bash
 # Exit 69 (UNAVAILABLE) is the resolver saying "could not look" (`status: unresolvable`): its JSON
@@ -369,13 +369,13 @@ if [ ${#REVIEW_FILES[@]} -eq 0 ]; then
     echo "Use --files flag to specify files explicitly: /code-review ${PHASE_ARG} --files=file1,file2,..."
   fi
 elif [ -z "$FILES_OVERRIDE" ] && [ -n "$SCOPE_FILES" ]; then
-  # #4460: gated on FILES_OVERRIDE being unset — without this, REVIEW_FILES is
+  # Gated on FILES_OVERRIDE being unset — without this, REVIEW_FILES is
   # already non-empty under --files (Tier 1 filled it), so this elif was
-  # reached anyway and the #2666 cross-check below appended the whole phase
+  # reached anyway and the cross-check below appended the whole phase
   # scope onto an explicit user-supplied file list, contradicting "Skip
   # SUMMARY/git scoping entirely when --files is provided" and Tier 2's
   # own --files guard.
-  # #2666 cross-check: SUMMARY yielded a non-empty (possibly partial) scope.
+  # cross-check: SUMMARY yielded a non-empty (possibly partial) scope.
   # Warn about — and add — any in-scope files the SUMMARY extractor did not surface,
   # so a partial result can no longer silently ship an incomplete review scope.
 
@@ -431,7 +431,7 @@ done
 REVIEW_FILES=("${FILTERED_FILES[@]}")
 ```
 
-3. **Filter deleted files:** Remove paths that don't exist on disk, and name each one (#5164) — a count hides whether the dropped file held the phase's entire deliverable
+3. **Filter deleted files:** Remove paths that don't exist on disk, and name each one — a count hides whether the dropped file held the phase's entire deliverable
 ```bash
 EXISTING_FILES=()
 DELETED_FILES=()
@@ -503,20 +503,20 @@ DEPTH_PAYLOAD=$(printf '%s\n' "${REVIEW_FILES[@]}" | FLAG_DEPTH="$DEPTH_OVERRIDE
   }));
 ")
 
-# gsd-resolve-lib begin code-review-depth.cjs (#5640): load helpers from the installed runtime, not the cwd
-_gsd_lib_probe="code-review-depth.cjs"
-_gsd_rt="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-_gsd_gr="$(command -v engineer_run 2>/dev/null || true)"
-case "$_gsd_gr" in /*) ;; *) _gsd_gr="" ;; esac # a engineer_run shell function prints its bare name: not a path
-[ -n "$_gsd_gr" ] && _gsd_gr="$(dirname "$(node -p "require('fs').realpathSync(process.argv[1])" "$_gsd_gr" 2>/dev/null || echo "$_gsd_gr")")/lib"
-GSD_LIB_DIR=""
-_gsd_pick() { for _gsd_d; do if [ -n "$_gsd_d" ] && [ -f "$_gsd_d/$_gsd_lib_probe" ]; then GSD_LIB_DIR="$_gsd_d"; return 0; fi; done; return 1; }
-_gsd_pick "${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib}" "$_gsd_rt/engineer/bin/lib" "$_gsd_rt/.claude/engineer/bin/lib" "$_gsd_rt/.codex/engineer/bin/lib" "$_gsd_gr" "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib" "${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib" || true
-if [ -z "$GSD_LIB_DIR" ]; then echo "ERROR: code-review-depth.cjs not found in the Engineer runtime. Looked in: ${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib, }${_gsd_rt}/engineer/bin/lib (and its .claude and .codex forms), ${_gsd_gr:-next to engineer_run (not on PATH)}, ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib, ${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib. Reinstall: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi
-export GSD_LIB_DIR
-# gsd-resolve-lib end
+# engineer-resolve-lib begin code-review-depth.cjs: load helpers from the installed runtime, not the cwd
+_engineer_lib_probe="code-review-depth.cjs"
+_engineer_rt="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+_engineer_gr="$(command -v engineer_run 2>/dev/null || true)"
+case "$_engineer_gr" in /*) ;; *) _engineer_gr="" ;; esac # a engineer_run shell function prints its bare name: not a path
+[ -n "$_engineer_gr" ] && _engineer_gr="$(dirname "$(node -p "require('fs').realpathSync(process.argv[1])" "$_engineer_gr" 2>/dev/null || echo "$_engineer_gr")")/lib"
+ENGINEER_LIB_DIR=""
+_engineer_pick() { for _engineer_d; do if [ -n "$_engineer_d" ] && [ -f "$_engineer_d/$_engineer_lib_probe" ]; then ENGINEER_LIB_DIR="$_engineer_d"; return 0; fi; done; return 1; }
+_engineer_pick "${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib}" "$_engineer_rt/engineer/bin/lib" "$_engineer_rt/.claude/engineer/bin/lib" "$_engineer_rt/.codex/engineer/bin/lib" "$_engineer_gr" "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib" "${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib" || true
+if [ -z "$ENGINEER_LIB_DIR" ]; then echo "ERROR: code-review-depth.cjs not found in the Engineer runtime. Looked in: ${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib, }${_engineer_rt}/engineer/bin/lib (and its .claude and .codex forms), ${_engineer_gr:-next to engineer_run (not on PATH)}, ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib, ${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib. Reinstall: python -I bin/install.py --source <local-source> --ref <pinned-ref> --target <project-root> --host claude --local" >&2; exit 1; fi
+export ENGINEER_LIB_DIR
+# engineer-resolve-lib end
 DEPTH_JSON=$(echo "$DEPTH_PAYLOAD" | node -e "
-  const { resolveCodeReviewDepth } = require(require('path').join(process.env.GSD_LIB_DIR, 'code-review-depth.cjs'));
+  const { resolveCodeReviewDepth } = require(require('path').join(process.env.ENGINEER_LIB_DIR, 'code-review-depth.cjs'));
   const input = JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf-8'));
   process.stdout.write(JSON.stringify(resolveCodeReviewDepth(input)));
 ")
@@ -609,7 +609,7 @@ This `if`/`else`/`fi` is the entire guard: unless `DEPTH_OK` is the literal stri
 </step>
 
 <step name="check_empty_scope">
-An empty `REVIEW_FILES` (#3661) means nothing new to re-review — NOT a phase with no standing findings. #4665: with `--fix` + an existing REVIEW.md, route to `dispatch-fix` (the flag covers "if REVIEW.md already exists"):
+An empty `REVIEW_FILES` means nothing new to re-review — NOT a phase with no standing findings.: with `--fix` + an existing REVIEW.md, route to `dispatch-fix` (the flag covers "if REVIEW.md already exists"):
 
 ```bash
 REVIEW_PATH="${PHASE_DIR}/${PADDED_PHASE}-REVIEW.md"
@@ -637,7 +637,7 @@ Defaults are fail-closed and opt-in:
 - `profile=standard` (maps to `--max-crap 30`; minimal=50, standard=30, strict=15 — fallow has no native profile concept)
 - `mcp=false`
 
-<!-- gsd:section id="structural-pre-pass" when="state:fallow-enabled" -->
+<!-- engineer:section id="structural-pre-pass" when="state:fallow-enabled" -->
 If `section_manifest` is `null` or `"structural-pre-pass"` is in its `included` list: read and execute `engineer/workflows/code-review/steps/structural-pre-pass.md`. Otherwise skip — do not read the file.
 <!-- /section -->
 
@@ -648,11 +648,11 @@ FALLOW_JSON_PATH=""
 </step>
 
 <step name="dispatch_reviewer_lanes">
-Optional external source-reviewer lanes (#4209, DISP-01..05). A canonical reviewer-lane flag
+Optional external source-reviewer lanes (DISP-01..05). A canonical reviewer-lane flag
 (e.g. `--codex`) requests that lane independently review the SAME already-resolved
 scope alongside the internal `code-reviewer` agent below. **No canonical flag present is
 the default and by far the common case:** this step is then inert — and the internal reviewer
-dispatch in `spawn_reviewer` stays unchanged from before #4209 (COMP-01).
+dispatch in `spawn_reviewer` stays unchanged from before (COMP-01).
 
 This step is itself opt-in at the capability layer (see `engineer/references/loop-hook-dispatch.md`
 for the `supportsReviewerLanes` trait), not just the CLI-flag layer. The trait check itself lives
@@ -668,7 +668,7 @@ reads it must run as a single shell control-flow decision, start to finish:
 ```bash
 CODE_REVIEW_POINT_STDERR=$(mktemp)
 CODE_REVIEW_POINT=$(engineer_run query config-get workflow.code_review_point --raw 2>"$CODE_REVIEW_POINT_STDERR") || {
-  # #4209 RQ-03: `config-get` already resolves capabilities/code-review/capability.json's own
+  # RQ-03: `config-get` already resolves capabilities/code-review/capability.json's own
   # declared schema default (execute:post) in the normal case — this fallback is reached only
   # when the config-get COMMAND ITSELF fails, an already-anomalous state that must be visible,
   # not silently papered over with a literal that could itself drift from the manifest.
@@ -682,7 +682,7 @@ rm -f "$CODE_REVIEW_POINT_STDERR"
 # are parsed separately, straight from the merged first-party + installed-overlay roster
 # (review-lane-descriptor.cjs), so a flag with more than one alias
 # resolves to its one canonical slug.
-# #4209 RQ-02: `review-lane explicit-from-argv` owns matching this workflow's raw CLI argv
+# RQ-02: `review-lane explicit-from-argv` owns matching this workflow's raw CLI argv
 # against the merged first-party+installed-overlay roster — the SAME roster-merge logic
 # `dispatch-step` and `plan`/`invoke` already share, not a second copy re-derived here.
 EXPLICIT_JOINED_STDERR=$(mktemp)
@@ -711,9 +711,9 @@ if [ ${#EXPLICIT_REVIEWER_SLUGS[@]} -gt 0 ] && [ -z "$DIFF_BASE" ]; then
   # generic rejection stand unexplained.
   echo "Warning: external reviewer lane(s) requested (${EXPLICIT_REVIEWER_SLUGS[*]}) but no diff base could be resolved (no prior review, no phase-start commit) — skipping external dispatch." >&2
 elif [ ${#EXPLICIT_REVIEWER_SLUGS[@]} -gt 0 ]; then
-  # #4209 R5: a dedicated run-scoped temp dir (same `${TMPDIR:-/tmp}/gsd-review-*` convention
+  # R5: a dedicated run-scoped temp dir (same `${TMPDIR:-/tmp}/engineer-review-*` convention
   # review.md's gather_context step uses), not $PHASE_DIR directly — lane artifacts
-  # (gsd-review-prompt.md, gsd-review-<slug>.md/.err) are read-once evidence for THIS run, never
+  # (engineer-review-prompt.md, engineer-review-<slug>.md/.err) are read-once evidence for THIS run, never
   # meant to be committed, and a second dispatch on the same phase would otherwise silently
   # overwrite the prior run's files in place. Removed by commit_review once the reviewer agent
   # has read every cited evidence path. An early exit between here and commit_review (a
@@ -721,7 +721,7 @@ elif [ ${#EXPLICIT_REVIEWER_SLUGS[@]} -gt 0 ]; then
   # gather_context/cleanup pair already accepts for the identical resource class: a leftover
   # $TMPDIR entry is cheaper than a cleanup mechanism (e.g. a trap) that could fire before a
   # later step reads it. Not a regression to fix; matches established precedent.
-  LANE_RUN_DIR=$(mktemp -d "${TMPDIR:-/tmp}/gsd-review-lanes-XXXXXX")
+  LANE_RUN_DIR=$(mktemp -d "${TMPDIR:-/tmp}/engineer-review-lanes-XXXXXX")
   DISPATCH_JSON=$(printf '%s\n' "${REVIEW_FILES[@]}" | engineer_run review-lane dispatch-step \
     --repo-root "$REPO_ROOT" --depth "$REVIEW_DEPTH" --base-sha "$DIFF_BASE" \
     --run-dir "$LANE_RUN_DIR" --explicit "$EXPLICIT_JOINED" \
@@ -784,12 +784,12 @@ REVIEW_PATH="${PHASE_DIR}/${PADDED_PHASE}-REVIEW.md"
 ```
 
 `DIFF_BASE` for agent context (in case the agent needs it) is already set by `compute_file_scope`
-above — reuse it verbatim rather than re-deriving it here. #3191/#3995/#3661: this MUST be the
-SAME value the Tier-3 file-scope step and (#4209) the external reviewer-lane dispatch both use —
+above — reuse it verbatim rather than re-deriving it here. //: this MUST be the
+SAME value the Tier-3 file-scope step and the external reviewer-lane dispatch both use —
 the reviewer agent consumes `diff_base` exactly when `files:` is empty, i.e. the same fail-closed
 scenario Tier 3 protects, so a second, divergent recomputation here would silently re-arm the
 mis-scoping one tier down AND make the external lane review a different diff than the internal
-reviewer (a previously-latent bug #4209 made observable — see B3 in `.wolf/buglog.json`).
+reviewer (a previously-latent bug made observable — see B3 in `.wolf/buglog.json`).
 
 Build required_reading block for agent:
 ```bash
@@ -815,21 +815,21 @@ if [ -n "$FALLOW_JSON_PATH" ] && [ -f "$FALLOW_JSON_PATH" ]; then
   # Normalize fallow's raw report into the compact {summary, findings[]} contract
   # the reviewer consumes (real fallow schema -> normalized findings).
   FALLOW_NORMALIZED_PATH="${PHASE_DIR}/FALLOW-normalized.json"
-  # gsd-resolve-lib begin fallow-runner.cjs (#5640): load helpers from the installed runtime, not the cwd
-  _gsd_lib_probe="fallow-runner.cjs"
-  _gsd_rt="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-  _gsd_gr="$(command -v engineer_run 2>/dev/null || true)"
-  case "$_gsd_gr" in /*) ;; *) _gsd_gr="" ;; esac # a engineer_run shell function prints its bare name: not a path
-  [ -n "$_gsd_gr" ] && _gsd_gr="$(dirname "$(node -p "require('fs').realpathSync(process.argv[1])" "$_gsd_gr" 2>/dev/null || echo "$_gsd_gr")")/lib"
-  GSD_LIB_DIR=""
-  _gsd_pick() { for _gsd_d; do if [ -n "$_gsd_d" ] && [ -f "$_gsd_d/$_gsd_lib_probe" ]; then GSD_LIB_DIR="$_gsd_d"; return 0; fi; done; return 1; }
-  _gsd_pick "${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib}" "$_gsd_rt/engineer/bin/lib" "$_gsd_rt/.claude/engineer/bin/lib" "$_gsd_rt/.codex/engineer/bin/lib" "$_gsd_gr" "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib" "${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib" || true
-  if [ -z "$GSD_LIB_DIR" ]; then echo "ERROR: fallow-runner.cjs not found in the Engineer runtime (looked in ${_gsd_rt}/engineer/bin/lib (and its .claude and .codex forms), ${_gsd_gr:-next to engineer_run (not on PATH)}, ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib, ${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib); continuing without it." >&2; fi
-  export GSD_LIB_DIR
-  # gsd-resolve-lib end
+  # engineer-resolve-lib begin fallow-runner.cjs: load helpers from the installed runtime, not the cwd
+  _engineer_lib_probe="fallow-runner.cjs"
+  _engineer_rt="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+  _engineer_gr="$(command -v engineer_run 2>/dev/null || true)"
+  case "$_engineer_gr" in /*) ;; *) _engineer_gr="" ;; esac # a engineer_run shell function prints its bare name: not a path
+  [ -n "$_engineer_gr" ] && _engineer_gr="$(dirname "$(node -p "require('fs').realpathSync(process.argv[1])" "$_engineer_gr" 2>/dev/null || echo "$_engineer_gr")")/lib"
+  ENGINEER_LIB_DIR=""
+  _engineer_pick() { for _engineer_d; do if [ -n "$_engineer_d" ] && [ -f "$_engineer_d/$_engineer_lib_probe" ]; then ENGINEER_LIB_DIR="$_engineer_d"; return 0; fi; done; return 1; }
+  _engineer_pick "${ENGINEER_RUN:+${ENGINEER_RUN%/*}/lib}" "$_engineer_rt/engineer/bin/lib" "$_engineer_rt/.claude/engineer/bin/lib" "$_engineer_rt/.codex/engineer/bin/lib" "$_engineer_gr" "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib" "${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib" || true
+  if [ -z "$ENGINEER_LIB_DIR" ]; then echo "ERROR: fallow-runner.cjs not found in the Engineer runtime (looked in ${_engineer_rt}/engineer/bin/lib (and its .claude and .codex forms), ${_engineer_gr:-next to engineer_run (not on PATH)}, ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/lib, ${CODEX_HOME:-$HOME/.codex}/engineer/bin/lib); continuing without it." >&2; fi
+  export ENGINEER_LIB_DIR
+  # engineer-resolve-lib end
   FALLOW_SRC="$FALLOW_JSON_PATH" FALLOW_OUT="$FALLOW_NORMALIZED_PATH" node -e "
     const fs = require('fs');
-    const { normalizeFallowReportFile } = require(require('path').join(process.env.GSD_LIB_DIR, 'fallow-runner.cjs'));
+    const { normalizeFallowReportFile } = require(require('path').join(process.env.ENGINEER_LIB_DIR, 'fallow-runner.cjs'));
     const n = normalizeFallowReportFile(process.env.FALLOW_SRC);
     fs.writeFileSync(process.env.FALLOW_OUT, JSON.stringify(n, null, 2));
   " 2>/dev/null && FALLOW_EMBED_PATH="$FALLOW_NORMALIZED_PATH" || FALLOW_EMBED_PATH="$FALLOW_JSON_PATH"
@@ -844,7 +844,7 @@ if [ -n "$FALLOW_JSON_PATH" ] && [ -f "$FALLOW_JSON_PATH" ]; then
 fi
 ```
 
-Gather the capability review rules addressed to this reviewer (#4790): active `contribution` hooks with `into: code-reviewer`,
+Gather the capability review rules addressed to this reviewer: active `contribution` hooks with `into: code-reviewer`,
 read from the loop point the review step is registered at (`workflow.code_review_point`, default `execute:post`). This is
 advisory by construction: any failure leaves the prompt without them and never blocks the review. The fragments are handed over once,
 below, beside — never instead of — `${AGENT_SKILLS_REVIEWER}`:
@@ -861,9 +861,9 @@ Spawn the code-reviewer agent:
 
 Print: `◆ Spawning code reviewer... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)`
 
-<!-- #2517 model-omit-on-inherit -->
+<!-- model-omit-on-inherit -->
 
-> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`REVIEWER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
+> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`REVIEWER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```
 Agent(subagent_type="code-reviewer", model="{REVIEWER_MODEL}", prompt="
@@ -909,7 +909,7 @@ Do NOT proceed to commit_review step. Do NOT create a partial or empty REVIEW.md
 After agent completes successfully, verify REVIEW.md was created and has valid structure:
 
 ```bash
-# #4209 R5: remove the reviewer-lane run dir now that the agent has read every evidence path it
+# R5: remove the reviewer-lane run dir now that the agent has read every evidence path it
 # cited (the agent ran to completion before this step, per `dispatch_reviewer_lanes` above) — a
 # no-op when no reviewer lane was dispatched (LANE_RUN_DIR stays unset).
 if [ -n "${LANE_RUN_DIR:-}" ]; then
@@ -944,7 +944,7 @@ fi
 ```
 </step>
 
-<!-- gsd:section id="dispatch-fix" when="flag:--fix" -->
+<!-- engineer:section id="dispatch-fix" when="flag:--fix" -->
 If `section_manifest` is `null` or `"dispatch-fix"` is in its `included` list: read and execute `engineer/workflows/code-review/steps/dispatch-fix.md`. Otherwise skip — do not read the file; proceed to `present_results`.
 <!-- /section -->
 
@@ -1033,7 +1033,7 @@ The `--files` containment check compares the repository root with each resolved 
 reports them in different forms (`git rev-parse` returns `C:/Users/...`, GNU `realpath` returns
 `/c/Users/...`), so both are normalized with `cygpath -m` (shipped with Git Bash) before the
 comparison. Relative paths and absolute paths in either form are accepted when they are inside the
-repository (#5519).
+repository.
 
 **macOS:** macOS ships with bash 3.2 (GPL licensing). This workflow does NOT use `mapfile` (bash 4+
 only) — all array construction uses portable `while IFS= read -r` loops compatible with bash 3.2.

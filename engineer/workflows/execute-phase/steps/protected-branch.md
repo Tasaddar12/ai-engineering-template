@@ -1,4 +1,4 @@
-# Protected-branch warning for `branching_strategy: none` (#3552)
+# Protected-branch warning for `branching_strategy: none` 
 
 Run this from the `handle_branching` step's `"none"` arm, after deciding to
 continue on the current branch. It warns without refusing execution — the
@@ -59,4 +59,4 @@ fi
 The `IS_PROTECTED=""` fallback on the first line, and the second `elif`, exist
 so a failed or missing `engineer_run` invocation degrades **visibly** (an explicit
 "could not determine" warning) rather than silently reading as "not
-protected" under `set -e` (#3648 review, round 5).
+protected" under `set -e` ( review, round 5).

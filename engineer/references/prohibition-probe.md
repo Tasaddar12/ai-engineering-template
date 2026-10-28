@@ -31,7 +31,7 @@ The technique is adversarial elicitation, not deterministic computation. Unlike 
 taxonomy (a closed eight categories a classifier can apply), the recall stage is inherently
 model-driven: it asks an open question and reads prose. There is **no compiled
 `prohibition-probe.cjs` engine** — the recall stage is an LLM prose pass, and only the
-schema/projection layer is real code (ADR-550 Decision 7b). Building a deterministic
+schema/projection layer is real code. Building a deterministic
 recall adapter would be the scope-creep the maintainer flags.
 
 ## Inputs
@@ -88,12 +88,12 @@ The breadcrumb reads like: *"prototype-pollution is canon — covered by /secure
 eslint; not minted here."* This keeps the surfaced list to the ~2–3 **bespoke** items that
 no other tool would catch — the manipulative-framing prohibition, the product-specific
 fairness constraint — which is the whole value of the probe. Minting canon items both
-duplicates other tooling and drowns the bespoke signal (ADR-550 Decision 6).
+duplicates other tooling and drowns the bespoke signal.
 
 ## Resolution states
 
 Each surfaced prohibition carries two orthogonal axes — a resolution **lifecycle** and, when
-resolved, a **verification** tier (ADR-550 Decision 7, the shared probe-core model; the
+resolved, a **verification** tier (the shared probe-core model; the
 lifecycle is identical to the edge-probe, the verification tiers differ):
 
 - **status** — `resolved | dismissed | unresolved` (IDENTICAL to the edge-probe):
@@ -110,9 +110,9 @@ lifecycle is identical to the edge-probe, the verification tiers differ):
     human/LLM judgment that the framing is not manipulative). It records intent and routes
     to a judgment-based review rather than a green/red test.
 
-  At verify time these tiers are routed differently (ADR-550 D4):
+  At verify time these tiers are routed differently:
   - A **test**-tier prohibition is enforced + hard-gates via the deterministic
-    `check prohibition-enforcement` sub-command (#1259 + #1279, ADR-550 D5d): it locates the wired
+    `check prohibition-enforcement` sub-command: it locates the wired
     mechanical check (a `node --test` negative test OR a lint/AST rule run as
     `eslint --format json` and filtered by `ruleId`), **machine-proves it is fail-first** against a
     known violation, runs it for a genuine **non-vacuous** pass, and emits the
@@ -121,7 +121,7 @@ lifecycle is identical to the edge-probe, the verification tiers differ):
     **hard-gates** (flagged, never green → `gaps_found`) in BOTH interactive and autonomous modes —
     never a silent pass.
 
-    **Machine-proven fail-first (#1279).** `failFirst` is now **machine-proven, not caller-attested**:
+    **Machine-proven fail-first.** `failFirst` is now **machine-proven, not caller-attested**:
     before a clean pass greens, the producer independently runs the wired check against a KNOWN
     VIOLATION and confirms it goes RED (any other outcome — passes-on-violation, can't-prove, throws,
     times out, no violation source — hard-gates). The violation is sourced from a descriptor field:
@@ -129,8 +129,8 @@ lifecycle is identical to the edge-probe, the verification tiers differ):
       whose content violates `rule`; the prover lints it and requires the rule id to appear in the
       JSON report (the rule must have teeth). For `node-test`: a subject the negative test exercises,
       expected to drive it RED.
-    - **`GSD_PROHIB_SUBJECT`** — the node-test subject-injection convention: the producer spawns the
-      negative test with `GSD_PROHIB_SUBJECT=<violationFixture>` in the child env; the test reads that
+    - **`ENGINEER_PROHIB_SUBJECT`** — the node-test subject-injection convention: the producer spawns the
+      negative test with `ENGINEER_PROHIB_SUBJECT=<violationFixture>` in the child env; the test reads that
       env var to locate its subject-under-test and is expected to go red against the violating subject.
     - **lint-fixture authoring gotcha** — the violating fixture must actually trigger the rule. For the
       `local/no-source-grep` dogfood anchor specifically, use the `path.join('lib','foo.cjs')` form
@@ -138,12 +138,12 @@ lifecycle is identical to the edge-probe, the verification tiers differ):
       rule, so a mis-authored fixture makes the prover report "not proven" and hard-gate a legitimately
       wired check. (`no-source-grep` has no filename guard — any `.cjs` with the pattern fires.)
 
-    > **PROPOSED, renamable conventions (zero live consumers).** Both `GSD_PROHIB_SUBJECT` and
+    > **PROPOSED, renamable conventions (zero live consumers).** Both `ENGINEER_PROHIB_SUBJECT` and
     > `violationFixture` are net-new surface with **no live in-tree consumer yet** — there is no
     > in-tree `node --test` prohibition; node-test fail-first proof is exercised only by SYNTHETIC
     > temp fixtures in the tests, and the real dogfood remains the LINT-rule `local/no-source-grep`.
     > They are therefore **open to maintainer adjustment (rename, or replacing the env var with an
-    > argv) at PR review with zero migration cost.** See the ADR-550 2026-06-15 addendum (#1279).
+    > argv) at PR review with zero migration cost.**
   - A **judgment**-tier prohibition routes to a never-silent / never-hard-halt soft gate
     (autonomous emits an `unverified-prohibition — human review recommended` flag).
 
@@ -151,7 +151,7 @@ Splitting these axes keeps the lifecycle enum free of a verification fact and le
 prohibition adapter declare `test | judgment` without forking the shared lifecycle enum that
 the edge-probe's `explicit | backstop` also uses.
 
-## Optional wired-check descriptor (deterministic locate + machine-proof, #1278 + #1346)
+## Optional wired-check descriptor (deterministic locate + machine-proof, + )
 
 A `resolved`/`test`-tier prohibition MAY carry an **optional `check` descriptor** that names
 the wired mechanical check, so verify-phase locates it deterministically instead of inventing
@@ -163,19 +163,18 @@ object:
 - `check_kind` — `node-test` | `lint-rule` (which producer mechanism runs the check).
 - `check_target` — the test file (`node-test`) or the file the rule runs against (`lint-rule`).
 - `check_rule` — the `ruleId` to filter on, **lint-rule only** (absent for `node-test`).
-- `check_violation_fixture` — path to a KNOWN-BAD subject the #1279 prover runs the check against to
-  machine-prove fail-first (rides BOTH kinds; for `node-test` it is injected via `GSD_PROHIB_SUBJECT`).
-- `check_clean_fixture` — **optional** path to a KNOWN-CLEAN control subject (#1346). When present the
+- `check_violation_fixture` — path to a KNOWN-BAD subject the prover runs the check against to
+  machine-prove fail-first (rides BOTH kinds; for `node-test` it is injected via `ENGINEER_PROHIB_SUBJECT`).
+- `check_clean_fixture` — **optional** path to a KNOWN-CLEAN control subject. When present the
   node-test prover also runs the check against it and requires GREEN, proving the violation's RED is
-  caused by the subject's *content* (not merely by `GSD_PROHIB_SUBJECT` being set). Absent → no control.
+  caused by the subject's *content* (not merely by `ENGINEER_PROHIB_SUBJECT` being set). Absent → no control.
 
 The flat-scalar shape is load-bearing: the shared `parseMustHavesBlock` is a flat parser and a
-nested object would flatten/mangle the round-trip (ADR-550 2026-06-15 addendum; #644 "no parser
-rewrite" precedent). `projectProhibitions` emits these keys **only for a well-formed descriptor**
+nested object would flatten/mangle the round-trip. `projectProhibitions` emits these keys **only for a well-formed descriptor**
 (valid `check_kind` + non-empty `check_target`; `check_rule` only on the lint-rule path;
 `check_violation_fixture` and `check_clean_fixture` only when non-empty), and verify-phase reads them
 back via `descriptorFromProjection` into the `CheckDescriptor` handed to `check prohibition-enforcement`.
-This closes the locate (#1278), the machine-proof-fixture (#1279), and the causation-control (#1346)
+This closes the locate, the machine-proof-fixture, and the causation-control 
 halves with **zero manual descriptor authoring**: a prohibition authored with the scalars greens
 end-to-end through the projection alone.
 
@@ -184,8 +183,8 @@ unknown `check_kind`, an **absent** descriptor, OR a descriptor with **no `check
 falls through to the producer's fail-closed paths (`located: false`, or located-but-unprovable) —
 never a silent green. A prohibition with no descriptor parses and disposes byte-identically to today.
 `failFirst` is **not** sourced from the descriptor and is **demoted** (machine-proven fail-first
-DELIVERED in #1279 — no path greens on attestation alone, FF-08); the `dispositionForProhibition`
-policy is unchanged. Causation (**#1346**): the node-test proof confirms the fixture exists and the
+DELIVERED in — no path greens on attestation alone, FF-08); the `dispositionForProhibition`
+policy is unchanged. Causation (****): the node-test proof confirms the fixture exists and the
 check goes RED; supplying `check_clean_fixture` adds an opt-in control that *also* requires GREEN on a
 known-clean subject, proving the red is content-caused. With no clean fixture the control cannot run,
 so that one residual case (a deceptive test reding merely because the env var is set) stays a
@@ -202,7 +201,7 @@ The probe emits, per kept prohibition, an item of the form:
 
 where `statement` is the must-NOT sentence and `category` is the values/safety/ethics class
 (`values`, `fairness`, `privacy`, `transparency`, `safety`, …). The optional **flat-scalar
-`check_*` descriptor** (#1278) is present only on a resolved `test`-tier prohibition carrying a
+`check_*` descriptor** is present only on a resolved `test`-tier prohibition carrying a
 wired check: `check_kind` (`node-test` | `lint-rule`), `check_target`, and `check_rule` (lint-rule
 only). `projectProhibitions` emits these into `must_haves.prohibitions` and `descriptorFromProjection`
 reads them back into a `{ kind, target, rule? }` `CheckDescriptor`; they are flat scalars (never a

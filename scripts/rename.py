@@ -20,31 +20,7 @@ def substitutions(text, role_renames, launcher=None):
         text = re.sub(current_launcher, refresh, text)
         if refreshed:
             counts["launcher-refresh"] = refreshed
-    update_launcher = r'(?ms)^# Resolve gsd-tools\.cjs WITHOUT.*?(?=^if \[ -n "\$UC" \]; then)'
-    # Replace complete upstream one-line launchers before token substitutions.
-    launcher_pattern = r'^_GSD_SHIM_NAME=[^\n]*(?:\n|$)'
-    if re.search(launcher_pattern, text, re.MULTILINE) or re.search(update_launcher, text):
-        if not launcher or not launcher.strip() or any(token in launcher for token in ("gsd-tools", "gsd_run", "_GSD_SHIM")):
-            raise ValueError("Port engineer/workflows/_runtime-launcher.snippet.sh to engineer_run before replacing upstream launchers")
-        text, count = re.subn(launcher_pattern, lambda _: launcher.rstrip() + "\n", text, flags=re.MULTILINE)
-        text, update_count = re.subn(update_launcher, lambda _: launcher.rstrip() + '\nUC="$(engineer_run query update-context --config-dir "$PREFERRED_CONFIG_DIR" --runtime "$PREFERRED_RUNTIME" --json 2>/dev/null)"\n\n', text)
-        counts["launcher"] = count + update_count
     replacements = [
-        ("runtime", r'\bgsd_run\b', "engineer_run"),
-        ("tools-query", r'(?<![A-Za-z0-9_./-])gsd-tools\s+query\b', "engineer_run query"),
-        ("references", re.escape("~/.claude/gsd-core/references/"), "engineer/references/"),
-        ("templates", re.escape("~/.claude/gsd-core/templates/"), "engineer/templates/"),
-        ("workflows", r'(?:~\/\.claude\/)?gsd-core/workflows/', "engineer/workflows/"),
-        ("source-paths", r'gsd-core/(references|templates|bin)/', r'engineer/\1/'),
-        ("installed-paths", r'((?:~|\$HOME)/\.(?:claude|codex))/gsd-core(?=/|\s|$)', r'\1/engineer'),
-        ("runtime-script", r'\bgsd-tools\.cjs\b', "engineer.py"),
-        ("tools-name", r'\bgsd-tools\b', "engineer_run"),
-        ("launcher-variable", r'(?<=\$)GSD_TOOLS\b|(?<=\$\{)GSD_TOOLS\b', "ENGINEER_RUN"),
-        ("shim-invocation", r'\bnode\s+"\$ENGINEER_RUN"\s+(?:query\s+)?', "engineer_run query "),
-        ("shim-direct-invocation", r'"\$ENGINEER_RUN"\s+(?=query\b)', "engineer_run "),
-        ("commands", r'/gsd:([A-Za-z][A-Za-z0-9_-]*)', r'/\1'),
-        ("command-alias", r'(?<![A-Za-z0-9_./{}$-])/gsd-([A-Za-z][A-Za-z0-9_-]*|\[command\])', r'/\1'),
-        ("command-name", r'(?m)^(name:\s*)gsd:', r'\1'),
         ("local-methods", re.escape(".ai/references/methods/"), "engineer/references/"),
         ("local-paths", r'\.ai/(references|templates|workflows)/', r'engineer/\1/'),
         ("local-runtime", r'\bphase_run(?=\s+query\b)', "engineer_run"),
@@ -54,10 +30,8 @@ def substitutions(text, role_renames, launcher=None):
         ("runtime-invocation", r'\bnode\s+(?=[^\s`]*engineer\.py\b)', "python -I "),
         ("removed-host-alias", re.escape(', `--agy`'), ""),
     ]
-    roles = sorted({Path(source).stem for source in role_renames} | {"gsd-executor"}, key=len, reverse=True)
-    replacements.append(("roles", r'(?<![A-Za-z0-9_-])(?:' + "|".join(map(re.escape, roles)) + r')(?![A-Za-z0-9_-])', None))
     for label, pattern, replacement in replacements:
-        text, count = re.subn(pattern, (lambda match: match[0][4:]) if replacement is None else replacement, text)
+        text, count = re.subn(pattern, replacement, text)
         if count:
             counts[label] = count
     return text, counts

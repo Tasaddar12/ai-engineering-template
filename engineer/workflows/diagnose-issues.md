@@ -60,12 +60,12 @@ gaps = [
 **Read worktree config:**
 
 ```bash
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/engineer/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/engineer/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/engineer/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/engineer/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/engineer/bin/${_GSD_SHIM_NAME}"; then engineer_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then engineer_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f engineer_run; _G="$(command -v engineer_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; engineer_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving engineer_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok engineer_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
+_ENGINEER_SHIM_NAME="engineer_run"; _ENGINEER_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; ENGINEER_TOOLS="${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}"; _engineer_at() { for _p; do if [ -f "$_p" ]; then ENGINEER_TOOLS="$_p"; return 0; fi; done; return 1; }; _engineer_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"engineer-runtime"'*'}') return 0;; *) return 1;; esac; }; _engineer_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _engineer_at "$_h/engineer/bin/${_ENGINEER_SHIM_NAME}" && return 0; done; return 1; }; if _engineer_at "${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.claude/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.codex/engineer/bin/${_ENGINEER_SHIM_NAME}"; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif _engineer_homes; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif unset -f engineer_run; _G="$(command -v engineer_run)"; [ -n "$_G" ] && _engineer_id_ok "$_G"; then ENGINEER_TOOLS="$_G"; engineer_run() { "$ENGINEER_TOOLS" "$@"; }; else echo "ERROR: engineer_run not found at $ENGINEER_TOOLS and no identity-proving engineer_run is on PATH. Run: python -I bin/install.py --source <local-source> --ref <pinned-ref> --target <project-root> --host claude --local" >&2; exit 1; fi; ENGINEER_IDENTITY_STATUS=unverified; _engineer_id_ok engineer_run && ENGINEER_IDENTITY_STATUS=ok; export ENGINEER_IDENTITY_STATUS; [ "$ENGINEER_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$ENGINEER_TOOLS\" did not prove it is engineer-runtime - it is either a different package or an engineer-runtime older than the runtime-identity verb." >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${ENGINEER_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${ENGINEER_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
 USE_WORKTREES=$(engineer_run query config-get workflow.use_worktrees --raw 2>/dev/null || echo "true")
 RUNTIME=$(engineer_run query config-get runtime --default claude --raw 2>/dev/null || echo "claude")
 ```
 
-**Resolve isolation now (#2584/#2652).** Read @~/.claude/engineer/references/dispatch-isolation-gate.md
+**Resolve isolation now.** Read @~/.claude/engineer/references/dispatch-isolation-gate.md
 and run its `Resolve ISOLATION`, `Single-agent dispatch sites`, and `Resolve the harness flag`
 blocks in order; they set `ISOLATION`/`HARNESS_FLAG` via `query dispatch-isolation`.
 `ISOLATION` — not `RUNTIME` — gates the worktree decision at spawn; the `spawn_agents` step
@@ -97,16 +97,16 @@ This runs in parallel - all gaps investigated simultaneously.
 **Load agent skills:**
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-AGENT_SKILLS_DEBUGGER=$(engineer_run query agent-skills debugger ${GSD_WS:+--ws=${GSD_WS##* }})
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
+ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
+AGENT_SKILLS_DEBUGGER=$(engineer_run query agent-skills debugger ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 EXPECTED_BASE=$(git rev-parse HEAD)
 ```
 
-**Pre-dispatch worktree base-check (#2649, mirrors execute-phase #683/#1369 and quick #1941).**
+**Pre-dispatch worktree base-check (mirrors execute-phase and quick ).**
 Claude Code's `isolation="worktree"` forks new worktrees from `origin/HEAD`, not the live local
 HEAD. If local HEAD has advanced without an intervening `git push` (the documented Engineer steady
 state — commit every step, push only on request), `origin/HEAD` is pinned to a stale ancestor
@@ -122,26 +122,26 @@ if [ "$ISOLATION" = "harness-worktree" ]; then
   if [ "$_DIAG_SHOULD_DEGRADE" = "true" ]; then
     _DIAG_DEGRADE_MSG=$(engineer_run query worktree.base-check --mode "$ISOLATION" --pick message 2>/dev/null || true)
     [ -n "$_DIAG_DEGRADE_MSG" ] && printf '%s\n' "$_DIAG_DEGRADE_MSG" >&2
-    echo "⚠ [#2649] Worktree fork base diverged from orchestrator HEAD — auto-degrading to sequential mode for diagnosis to avoid a base-mismatch halt." >&2
+    echo "⚠  Worktree fork base diverged from orchestrator HEAD — auto-degrading to sequential mode for diagnosis to avoid a base-mismatch halt." >&2
     ISOLATION=none
     USE_WORKTREES=false
   fi
 fi
 
 # Re-record after the base-check degrade, immediately before the spawn below, so the
-# #3045 sentinel matches the dispatch the guard is about to see (#3045).
+# sentinel matches the dispatch the guard is about to see.
 engineer_run query dispatch-isolation --raw --force-isolation "$ISOLATION" >/dev/null 2>&1 || true
 
-# Model resolution for the debugger spawns below (#3602).
+# Model resolution for the debugger spawns below.
 DEBUGGER_MODEL=$(engineer_run query resolve-model debugger --raw)
 ```
 
 **Spawn debug agents — parallel only when each one is isolated:**
 
-**`ISOLATION` decides the fan-out, not just the flag (#2652).** When
+**`ISOLATION` decides the fan-out, not just the flag.** When
 `ISOLATION = "harness-worktree"`, spawn all agents in a single message: each gets its own
 worktree, so concurrent edits cannot collide. When `ISOLATION = "none"` — including after the
-`orchestrator-worktree` fallback and after the #2649 base-check degrade — the agents would all
+`orchestrator-worktree` fallback and after the base-check degrade — the agents would all
 run against the **primary checkout**, so spawn them **one at a time**, waiting for each to
 return before spawning the next. Fanning out unisolated debuggers is the outcome the
 `orchestrator-worktree` degrade exists to avoid; degrading the flag while keeping the
@@ -181,16 +181,16 @@ Before spawning, materialize the guard into WORKTREE_GUARD: read `engineer/refer
 **Only when `ISOLATION = "harness-worktree"`.** When `ISOLATION = "none"` the agent runs on
 the main working tree, where the guard's HEAD assertion cannot hold — set `WORKTREE_GUARD` to
 the empty string instead, or every diagnostic agent halts on a base mismatch it was never
-meant to check (#2652).
+meant to check.
 
 **Substitute `{harnessFlag}` in the `Agent()` call below** with `$HARNESS_FLAG` followed by a
 comma when `ISOLATION = "harness-worktree"`, and with the empty string otherwise — the same
 build-time substitution `execute-phase.md` performs. `{harnessFlag}` is a template
 placeholder, not a shell variable.
 
-<!-- #2517 model-omit-on-inherit -->
+<!-- model-omit-on-inherit -->
 
-> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`DEBUGGER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
+> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`DEBUGGER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```
 Agent(
@@ -204,7 +204,7 @@ Agent(
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above to spawn debug agent(s), stop working on this task immediately. Do not read more files, edit code, or run tests related to these gaps while the subagent(s) are active. Wait for all subagents to return before proceeding. This prevents duplicate work, conflicting edits, and wasted context.
 
-**All agents spawn in a single message (parallel execution) ONLY when `ISOLATION = "harness-worktree"`.** When `ISOLATION = "none"`, spawn one agent per message and wait for each to return — see the fan-out rule above (#2652).
+**All agents spawn in a single message (parallel execution) ONLY when `ISOLATION = "harness-worktree"`.** When `ISOLATION = "none"`, spawn one agent per message and wait for each to return — see the fan-out rule above.
 
 Template placeholders:
 - `{truth}`: The expected behavior that failed

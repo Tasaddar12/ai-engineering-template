@@ -1,7 +1,7 @@
 @~/.claude/engineer/references/response-language-directive.md
 <purpose>
-Batch several `/quick`-shaped tasks together (#3676, epic #3344, ADR-1239
-"Quick-batch binding"). ONE coordinator (this workflow) owns every shared
+Batch several `/quick`-shaped tasks together.
+ONE coordinator (this workflow) owns every shared
 write — `BATCH.json`, STATE.md, worktree create/merge/cleanup — and never
 delegates them to a leaf. Leaves (planner/researcher/checker/executor/
 verifier) return structured results only; they never invoke `/quick`,
@@ -82,9 +82,9 @@ Validate the command's `<arguments>` block through the CLI's own grammar — nev
 
 ```bash
 QB_PARSE_FILE=$(mktemp)
-engineer_run quick-batch parse-args --raw --stdin > "$QB_PARSE_FILE" 2>&1 <<'GSD_QUICK_BATCH_ARGS_END'
+engineer_run quick-batch parse-args --raw --stdin > "$QB_PARSE_FILE" 2>&1 <<'ENGINEER_QUICK_BATCH_ARGS_END'
 <the exact contents of the `<arguments>` block, verbatim>
-GSD_QUICK_BATCH_ARGS_END
+ENGINEER_QUICK_BATCH_ARGS_END
 QB_PARSE_RC=$?
 QB_PARSE_JSON=$(cat "$QB_PARSE_FILE"); rm -f "$QB_PARSE_FILE"
 if [ $QB_PARSE_RC -ne 0 ]; then
@@ -99,27 +99,27 @@ Parse `$QB_PARSE_JSON` for `jobs` (`"auto"` or an integer), `validate` (bool), `
 Extract the raw task-list text / `--file <path>` from the `<arguments>` block (everything that is not `--jobs <v>`, `--validate`, `--research`, `--resume <id>`, or `--file <path>`'s own flag pair).
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 VALIDATE_PARAM=""; if [ "$VALIDATE_MODE" = true ]; then VALIDATE_PARAM="--validate"; fi
 RESEARCH_PARAM=""; if [ "$RESEARCH_MODE" = true ]; then RESEARCH_PARAM="--research"; fi
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.quick-batch ${GSD_WS:+--ws=${GSD_WS##* }} $VALIDATE_PARAM $RESEARCH_PARAM)
+ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
+INIT=$(engineer_run query init.quick-batch ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} $VALIDATE_PARAM $RESEARCH_PARAM)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_PLANNER=$(engineer_run query agent-skills planner ${GSD_WS:+--ws=${GSD_WS##* }})
-AGENT_SKILLS_EXECUTOR=$(engineer_run query agent-skills executor ${GSD_WS:+--ws=${GSD_WS##* }})
-AGENT_SKILLS_CHECKER=$(engineer_run query agent-skills plan-checker ${GSD_WS:+--ws=${GSD_WS##* }})
-AGENT_SKILLS_VERIFIER=$(engineer_run query agent-skills verifier ${GSD_WS:+--ws=${GSD_WS##* }})
-AGENT_SKILLS_RESEARCHER=$(engineer_run query agent-skills phase-researcher ${GSD_WS:+--ws=${GSD_WS##* }})
+AGENT_SKILLS_PLANNER=$(engineer_run query agent-skills planner ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
+AGENT_SKILLS_EXECUTOR=$(engineer_run query agent-skills executor ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
+AGENT_SKILLS_CHECKER=$(engineer_run query agent-skills plan-checker ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
+AGENT_SKILLS_VERIFIER=$(engineer_run query agent-skills verifier ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
+AGENT_SKILLS_RESEARCHER=$(engineer_run query agent-skills phase-researcher ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 ```
 
 Parse `$INIT` for: `planner_model`, `executor_model`, `checker_model`, `verifier_model`, `researcher_model`, `commit_docs`, `quick_dir`, `quick_batches_dir`, `roadmap_exists`, `planning_exists`.
 
-<!-- #2517 model-omit-on-inherit -->
+<!-- model-omit-on-inherit -->
 
-> **Model omission (#2517).** Every `Agent()` dispatch below (planner, researcher, plan-checker, executor, verifier) MUST omit the `model` parameter entirely when the value it would carry (`planner_model`, `checker_model`, `executor_model`, `verifier_model`, `researcher_model`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes, where the installer writes `resolve_model_ids:"omit"`. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
+> **Model omission.** Every `Agent()` dispatch below (planner, researcher, plan-checker, executor, verifier) MUST omit the `model` parameter entirely when the value it would carry (`planner_model`, `checker_model`, `executor_model`, `verifier_model`, `researcher_model`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes, where the installer writes `resolve_model_ids:"omit"`. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```bash
 STATE_PATH="${quick_dir%/quick}/STATE.md"
@@ -140,7 +140,7 @@ else
 fi
 ```
 
-**Resolve capacity now (#3676 design row 3-4).** `--jobs auto`/omitted uses this
+**Resolve capacity now.** `--jobs auto`/omitted uses this
 value alone; `--jobs N` is capped by it (`min(taskCount, N, capacity)` — the
 `quick-batch effective-concurrency` verb, called per-wave below, does the
 arithmetic; this is only the raw resolve):
@@ -148,7 +148,7 @@ arithmetic; this is only the raw resolve):
 CAPACITY=$(engineer_run query dispatch-capacity --raw 2>/dev/null || echo 1)
 ```
 
-**Resolve isolation now (row 6, 20-22).** Read
+**Resolve isolation now.** Read
 @~/.claude/engineer/references/dispatch-isolation-gate.md and run its `Resolve
 ISOLATION`, `Single-agent dispatch sites`, and `Resolve the harness flag`
 blocks in order; they set `ISOLATION`/`HARNESS_FLAG` via `query
@@ -188,7 +188,7 @@ Either path converges on the same post-condition — continue to Step 3.
 
 ---
 
-<!-- gsd:section id="research-phase" when="flag:--research" -->
+<!-- engineer:section id="research-phase" when="flag:--research" -->
 If `section_manifest` is `null` or `"research-phase"` is in its `included` list: read and execute `engineer/workflows/quick-batch/steps/research-phase.md`. Otherwise skip — do not read the file.
 <!-- /section -->
 
@@ -222,7 +222,7 @@ merge-eligible`), never completion order.
 
 ---
 
-<!-- gsd:section id="verification-wave" when="flag:--validate" -->
+<!-- engineer:section id="verification-wave" when="flag:--validate" -->
 If `section_manifest` is `null` or `"verification-wave"` is in its `included` list: read and execute `engineer/workflows/quick-batch/steps/verification-wave.md`. Otherwise skip — do not read the file.
 <!-- /section -->
 

@@ -14,10 +14,10 @@ Read all files referenced by the invoking prompt's execution_context before star
 **Load progress context (paths only):**
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 _engineer_identity_ok() {
   [ -f "$1" ] || return 1
   [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
@@ -60,19 +60,19 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
-FORENSIC_PARAM=""; if [[ "$GSD_ARGS" =~ (^|[[:space:]])--forensic([[:space:]]|$) ]]; then FORENSIC_PARAM="--forensic"; fi
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.progress ${GSD_WS:+--ws=${GSD_WS##* }} $FORENSIC_PARAM)
+FORENSIC_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--forensic([[:space:]]|$) ]]; then FORENSIC_PARAM="--forensic"; fi
+ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
+INIT=$(engineer_run query init.progress ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} $FORENSIC_PARAM)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
-Extract from init JSON: `project_exists`, `roadmap_exists`, `state_exists`, `requirements_exists`, `planning_exists`, `milestones_exists`, `init_incomplete`, `phases`, `current_phase`, `next_phase`, `milestone_version`, `completed_count`, `phase_count`, `paused_at`, `state_path`, `roadmap_path`, `project_path`, `config_path`, `phase_mvp_mode`.
+Extract from init JSON: `project_exists`, `roadmap_exists`, `state_exists`, `requirements_exists`, `planning_exists`, `milestones_exists`, `init_incomplete`, `phases`, `current_phase`, `next_phase`, `milestone_version`, `completed_count`, `phase_count`, `paused_at`, `state_path`, `roadmap_path`, `project_path`, `config_path`.
 
 ```bash
 DISCUSS_MODE=$(engineer_run query config-get workflow.discuss_mode --raw 2>/dev/null || echo "discuss")
 ```
 
-**If `init_incomplete` is true (#4040 — interrupted bootstrap):**
+**If `init_incomplete` is true (interrupted bootstrap):**
 
 `.planning/` exists but the core initialization artifacts are missing (one or more of `REQUIREMENTS.md`, `ROADMAP.md`, `STATE.md` were never created — a bootstrap that stopped partway, e.g. after PROJECT.md). This is NOT a new project, NOT a missing STATE.md, and NOT a between-milestones state — do not fall through to any of those routes. Route to initialization recovery:
 
@@ -223,9 +223,6 @@ Render `Open Windows` only when `$WINDOWS_OPEN` is greater than `0` (or `$WINDOW
 
 </step>
 
-<!-- gsd:section id="mvp-display" when="state:phase-mvp-mode" -->
-If `section_manifest` is `null` or `"mvp-display"` is in its `included` list: read and execute `engineer/workflows/progress/steps/mvp-display.md`. Otherwise skip — do not read the file.
-<!-- /section -->
 
 <step name="route">
 **Determine next action based on verified counts.**
@@ -244,12 +241,12 @@ If `$ROADMAP` is empty or the query failed, surface a warning rather than silent
 INCOMPLETE_PHASE=""
 if [ -z "$ROADMAP" ]; then
   echo "⚠ WARNING: resume-incomplete-phase scan could not run (\$ROADMAP is empty)." >&2
-  echo "  The incomplete-phase invariant (#160) could not be verified." >&2
+  echo "  The incomplete-phase invariant  could not be verified." >&2
   echo "  Review project state carefully before continuing." >&2
 else
   for PHASE_NUM in $(echo "$ROADMAP" | jq -r '.phases[] | (.number // .phase_number)'); do
     PHASE_DATA=$(echo "$ROADMAP" | jq --arg n "$PHASE_NUM" '.phases[] | select((.number // .phase_number) == ($n | tonumber))')
-    # #3218: $PHASE_DATA is a `.phases[]` entry from `roadmap.analyze`, which
+    # $PHASE_DATA is a `.phases[]` entry from `roadmap.analyze`, which
     # emits `plan_count`/`summary_count` SCALARS (src/roadmap.cts) — it has
     # never emitted `.plans`/`.summaries` ARRAYS. Reading those absent keys
     # (even with a `// []` fallback) always produced 0, permanently disabling
@@ -274,7 +271,7 @@ fi
 
 `/clear` then:
 
-`/execute-phase ${INCOMPLETE_PHASE} ${GSD_WS}`
+`/execute-phase ${INCOMPLETE_PHASE} ${ENGINEER_WS}`
 
 (plans without summaries detected; use --no-resume to skip this check and route by current_phase instead; --force to skip all gates)
 
@@ -287,7 +284,7 @@ Then exit the route step. Do NOT run Steps 1 through Routes A-F.
 
 **Step 1: Count plans, summaries, and issues in current phase**
 
-Get plan/summary counts for the current phase from the single owner (#3218 — LIVE
+Get plan/summary counts for the current phase from the single owner (LIVE
 counts, i.e. `status: superseded` plans excluded, matching "outstanding work"):
 
 ```bash
@@ -314,7 +311,7 @@ Track:
 
 **Step 1.6: Cross-phase health check**
 
-Scan ALL phases for outstanding verification debt using the CLI. Milestone scoping note (#3782): the audit milestone-filters the ACTIVE phase tree (`getMilestonePhaseFilter`), and deliberately adds ARCHIVED milestone trees unfiltered — each archived result carries an `archived_milestone` stamp. `summary.total_items` spans BOTH populations, so never read it as current-milestone debt.
+Scan ALL phases for outstanding verification debt using the CLI. Milestone scoping note: the audit milestone-filters the ACTIVE phase tree (`getMilestonePhaseFilter`), and deliberately adds ARCHIVED milestone trees unfiltered — each archived result carries an `archived_milestone` stamp. `summary.total_items` spans BOTH populations, so never read it as current-milestone debt.
 
 ```bash
 DEBT=$(engineer_run query audit-uat --raw 2>/dev/null)
@@ -325,7 +322,7 @@ DEBT=$(engineer_run query audit-uat --raw 2>/dev/null)
 if [[ "$DEBT" == @file:* ]]; then DEBT=$(cat "${DEBT#@file:}"); fi
 ```
 
-Segment the debt by population before counting (#3782):
+Segment the debt by population before counting:
 
 ```bash
 CURRENT_DEBT=$(printf '%s' "$DEBT" | jq '[.results[] | select(has("archived_milestone") | not)] | map(.items | length) | add // 0' 2>/dev/null || echo 0)
@@ -336,7 +333,7 @@ Track: `outstanding_debt` — `CURRENT_DEBT`, the non-archived (current-mileston
 
 Archived debt stays VISIBLE — an item archived still-open is still open (the archived set can include an unrun security-boundary test). Render it as its own labeled line; never fold it into the current-milestone total and never filter it away.
 
-`summary.parse_gap_files` counts EVERY file with `parse_gap: true`, archived or not — deliberately cross-population, unlike `outstanding_debt` (which #3782 scopes to non-archived results). An outstanding item does not stop mattering because its phase belongs to an already-archived milestone: a deferred human-UAT scenario or a `skipped` live-stack test is exactly what gets archived still-open, so an archived parse gap is exactly as much unread outstanding work as an archived `result: pending` row — it surfaces through `parse_gap_files` and the unparsed row below, keeping the whole cross-population picture visible.
+`summary.parse_gap_files` counts EVERY file with `parse_gap: true`, archived or not — deliberately cross-population, unlike `outstanding_debt` (which scopes to non-archived results). An outstanding item does not stop mattering because its phase belongs to an already-archived milestone: a deferred human-UAT scenario or a `skipped` live-stack test is exactly what gets archived still-open, so an archived parse gap is exactly as much unread outstanding work as an archived `result: pending` row — it surfaces through `parse_gap_files` and the unparsed row below, keeping the whole cross-population picture visible.
 
 **If outstanding_debt > 0 OR archived_debt > 0 OR parse_gap_files > 0:** Add a warning section to the progress report output (in the `report` step), placed between "## What's Next" and the route suggestion:
 
@@ -350,15 +347,15 @@ Archived debt stays VISIBLE — an item archived still-open is still open (the a
 | {phase} | {filename} | {unresolved_count} deferred items |
 | {phase} | {filename} | unparsed — test blocks with no readable `result:` line |
 
-Review: `/audit-uat ${GSD_WS}` — full cross-phase audit
-Resume testing: `/verify-work {phase} ${GSD_WS}` — retest specific phase
+Review: `/audit-uat ${ENGINEER_WS}` — full cross-phase audit
+Resume testing: `/verify-work {phase} ${ENGINEER_WS}` — retest specific phase
 ```
 
 The unparsed row comes from `results` entries with `parse_gap: true` (`summary.parse_gap_files` counts exactly those, archived or not). This is a WARNING, not a blocker — routing proceeds normally. The debt is visible so the user can make an informed choice.
 
 **Step 1.7: Check verification status for the current phase**
 
-A phase whose verification is anything but `passed` is NOT complete, even when every PLAN.md has a matching SUMMARY.md. The count-based status (`roadmap.analyze`) only sees plans/summaries, so without this check such a phase is reported complete and routing skips straight to the next phase. When the phase appears count-complete (`summaries = plans AND plans > 0`), consult the verification report (the same `verification.status` gate `ship` and `execute-phase` use, from #651), on the phase directory the locator resolved (a workstream project does not keep its phases under `.planning/phases/`):
+A phase whose verification is anything but `passed` is NOT complete, even when every PLAN.md has a matching SUMMARY.md. The count-based status (`roadmap.analyze`) only sees plans/summaries, so without this check such a phase is reported complete and routing skips straight to the next phase. When the phase appears count-complete (`summaries = plans AND plans > 0`), consult the verification report (the same `verification.status` gate `ship` and `execute-phase` use, from ), on the phase directory the locator resolved (a workstream project does not keep its phases under `.planning/phases/`):
 
 ```bash
 PHASE_DIR=$(engineer_run query find-phase "${CURRENT_PHASE}" --pick directory)
@@ -368,7 +365,7 @@ VERIFICATION_NEXT_ACTION=$(printf '%s' "$VERIFICATION" | jq -r '.next_action')
 VERIFICATION_NEXT_COMMAND=$(printf '%s' "$VERIFICATION" | jq -r '.next_command')
 ```
 
-Track: `verification_status` — the `.status` field of the closed set (#5118); the query projects stale verification (`stale`, covered source changed after the verifier ran) and a missing report (`missing`) itself. A non-zero exit is a hard error (a report `status` outside `passed | gaps_found | human_needed`): surface it, never read it as "no status". Only `passed` routes as phase complete (Step 3); every other status routes back to close verification debt (Step 2) with the owner's `next_action` / `next_command`.
+Track: `verification_status` — the `.status` field of the closed set ; the query projects stale verification (`stale`, covered source changed after the verifier ran) and a missing report (`missing`) itself. A non-zero exit is a hard error (a report `status` outside `passed | gaps_found | human_needed`): surface it, never read it as "no status". Only `passed` routes as phase complete (Step 3); every other status routes back to close verification debt (Step 2) with the owner's `next_action` / `next_command`.
 
 **Step 2: Route based on counts**
 
@@ -401,7 +398,7 @@ Read its `<objective>` section.
 
 `/clear` then:
 
-`/execute-phase {phase} ${GSD_WS}`
+`/execute-phase {phase} ${ENGINEER_WS}`
 
 ---
 ```
@@ -431,7 +428,7 @@ PHASE_HAS_UI=$(echo "$PHASE_SECTION" | grep -qi "UI hint.*yes" && echo "true" ||
 
 `/clear` then:
 
-`/plan-phase {phase-number} ${GSD_WS}`
+`/plan-phase {phase-number} ${ENGINEER_WS}`
 
 ---
 ```
@@ -470,13 +467,13 @@ PHASE_HAS_UI=$(echo "$PHASE_SECTION" | grep -qi "UI hint.*yes" && echo "true" ||
 
 `/clear` then:
 
-`/discuss-phase {phase} ${GSD_WS}` — gather context and clarify approach
+`/discuss-phase {phase} ${ENGINEER_WS}` — gather context and clarify approach
 
 ---
 
 **Also available:**
-- `/plan-phase {phase} ${GSD_WS}` — skip discussion, plan directly
-- `/discuss-phase {phase} ${GSD_WS}` — include assumptions check before planning
+- `/plan-phase {phase} ${ENGINEER_WS}` — skip discussion, plan directly
+- `/discuss-phase {phase} ${ENGINEER_WS}` — include assumptions check before planning
 
 ---
 ```
@@ -496,13 +493,13 @@ UAT.md exists with gaps (diagnosed issues). User needs to plan fixes.
 
 `/clear` then:
 
-`/plan-phase {phase} --gaps ${GSD_WS}`
+`/plan-phase {phase} --gaps ${ENGINEER_WS}`
 
 ---
 
 **Also available:**
-- `/execute-phase {phase} ${GSD_WS}` — execute phase plans
-- `/verify-work {phase} ${GSD_WS}` — run more UAT testing
+- `/execute-phase {phase} ${ENGINEER_WS}` — execute phase plans
+- `/verify-work {phase} ${ENGINEER_WS}` — run more UAT testing
 
 ---
 ```
@@ -522,13 +519,13 @@ UAT.md exists with `status: partial` — testing session ended before all items 
 
 `/clear` then:
 
-`/verify-work {phase} ${GSD_WS}` — resume testing from where you left off
+`/verify-work {phase} ${ENGINEER_WS}` — resume testing from where you left off
 
 ---
 
 **Also available:**
-- `/audit-uat ${GSD_WS}` — full cross-phase UAT audit
-- `/execute-phase {phase} ${GSD_WS}` — execute phase plans
+- `/audit-uat ${ENGINEER_WS}` — full cross-phase UAT audit
+- `/execute-phase {phase} ${ENGINEER_WS}` — execute phase plans
 
 ---
 ```
@@ -537,7 +534,7 @@ UAT.md exists with `status: partial` — testing session ended before all items 
 
 **Route V: verification not passed**
 
-All plans have summaries, but canonical verification has not passed (`missing`, `stale`, `unparseable`, `phase_dir_not_found` — the owner's closed set, #5118). The phase is implementation-complete, not phase-complete. Present the owner's answer; never name a command of your own for these statuses:
+All plans have summaries, but canonical verification has not passed (`missing`, `stale`, `unparseable`, `phase_dir_not_found` — the owner's closed set). The phase is implementation-complete, not phase-complete. Present the owner's answer; never name a command of your own for these statuses:
 
 ```
 ---
@@ -568,7 +565,7 @@ VERIFICATION.md exists with `status: gaps_found` — verification identified gap
 
 `/clear` then:
 
-`${VERIFICATION_NEXT_COMMAND} ${GSD_WS}` — plan the gap fixes (the owner's route: plan-phase --gaps)
+`${VERIFICATION_NEXT_COMMAND} ${ENGINEER_WS}` — plan the gap fixes (the owner's route: plan-phase --gaps)
 
 ---
 ```
@@ -588,7 +585,7 @@ VERIFICATION.md exists with `status: human_needed` — automated checks passed b
 
 `/clear` then:
 
-`${VERIFICATION_NEXT_COMMAND} ${GSD_WS}` — resume human verification (the owner's route: verify-work)
+`${VERIFICATION_NEXT_COMMAND} ${ENGINEER_WS}` — resume human verification (the owner's route: verify-work)
 
 ---
 ```
@@ -663,13 +660,13 @@ NEXT_HAS_UI=$(echo "$NEXT_PHASE_SECTION" | grep -qi "UI hint.*yes" && echo "true
 
 `/clear` then:
 
-`/discuss-phase {Z+1} ${GSD_WS}` — gather context and clarify approach
+`/discuss-phase {Z+1} ${ENGINEER_WS}` — gather context and clarify approach
 
 ---
 
 **Also available:**
-- `/plan-phase {Z+1} ${GSD_WS}` — skip discussion, plan directly
-- `/verify-work {Z} ${GSD_WS}` — user acceptance test before continuing
+- `/plan-phase {Z+1} ${ENGINEER_WS}` — skip discussion, plan directly
+- `/verify-work {Z} ${ENGINEER_WS}` — user acceptance test before continuing
 
 ---
 ```
@@ -691,12 +688,12 @@ All {N} phases finished!
 
 `/clear` then:
 
-`/complete-milestone ${GSD_WS}`
+`/complete-milestone ${ENGINEER_WS}`
 
 ---
 
 **Also available:**
-- `/verify-work ${GSD_WS}` — user acceptance test before completing milestone
+- `/verify-work ${ENGINEER_WS}` — user acceptance test before completing milestone
 
 ---
 ```
@@ -722,7 +719,7 @@ Ready to plan the next milestone.
 
 `/clear` then:
 
-`/new-milestone ${GSD_WS}`
+`/new-milestone ${ENGINEER_WS}`
 
 ---
 ```
@@ -732,13 +729,13 @@ Ready to plan the next milestone.
 <step name="edge_cases">
 **Handle edge cases:**
 
-- Phase complete but next phase not planned → offer `/plan-phase [next] ${GSD_WS}`
+- Phase complete but next phase not planned → offer `/plan-phase [next] ${ENGINEER_WS}`
 - All work complete → offer milestone completion
 - Blockers present → highlight before offering to continue
-- Handoff file exists → mention it, offer `/resume-work ${GSD_WS}`
+- Handoff file exists → mention it, offer `/resume-work ${ENGINEER_WS}`
 </step>
 
-<!-- gsd:section id="forensic-audit" when="flag:--forensic" -->
+<!-- engineer:section id="forensic-audit" when="flag:--forensic" -->
 If `section_manifest` is `null` or `"forensic-audit"` is in its `included` list: read and execute `engineer/workflows/progress/steps/forensic-audit.md`. Otherwise skip — do not read the file.
 <!-- /section -->
 
@@ -751,5 +748,5 @@ If `section_manifest` is `null` or `"forensic-audit"` is in its `included` list:
 - [ ] What's next clearly explained
 - [ ] Smart routing: /execute-phase if plans exist, /plan-phase if not
 - [ ] User confirms before any action
-- [ ] Seamless handoff to appropriate gsd command
+- [ ] Seamless handoff to appropriate engineer command
       </success_criteria>

@@ -85,9 +85,9 @@ What does Claude assume exists or needs to be in place?
 - "This will be consumed by..."
 
 Be honest about uncertainty. Mark assumptions with confidence levels:
-- "Fairly confident: ..." (clear from roadmap)
-- "Assuming: ..." (reasonable inference)
-- "Unclear: ..." (could go multiple ways)
+- "Fairly confident:..." (clear from roadmap)
+- "Assuming:..." (reasonable inference)
+- "Unclear:..." (could go multiple ways)
 </step>
 
 <step name="present_assumptions">

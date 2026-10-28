@@ -88,16 +88,16 @@ Trimming MCPs and tuning `model_profile` are independent levers that **compound*
 
 # Phase Sizing (planner)
 
-## Estimate Emission (#2631, ADR-2629)
+## Estimate Emission
 
-Every plan carries an `estimate` block. It is the quantitative reason a phase must be sliced — tracer-first says *slice thin*, the estimate says *how thin, for this codebase*.
+Every plan carries an `estimate` block. It is the quantitative reason a phase must be sliced — the estimate says *how thin, for this codebase*.
 
 **Compute it:**
 1. Sum `estimateTokens`-scale cost across the plan: implementation + the files each task reads + verification output. Roughly chars/4 over what the executor will actually touch.
 2. Run `estimate-calibration` and **multiply your raw figure by its `factor`.** It is the measured estimate-vs-actual ratio for THIS project — a factor of 1 means there is not yet enough history to correct.
 3. `confidence` is **derived, not judged**: it is the `confidence` value from the same calibration query, keyed to the sample count (`low` <3, `med` 3–5, `high` ≥6). **Do not rate your own certainty.** Self-rated confidence was measured in this project and found weak (`references/honest-verifier.md:25-29`); every signal here routes on measured history instead.
 
-**Over budget?** The plan-checker flags a plan whose estimate exceeds `workflow.smart_zone_tokens`. This is advisory — it never blocks. When flagged, re-slice: a tracer plus expansion slices, each inside the budget. Prefer more, smaller plans over one that spends the agent's best early-context tokens and finishes degraded.
+**Over budget?** The plan-checker flags a plan whose estimate exceeds `workflow.smart_zone_tokens`. This is advisory — it never blocks. When flagged, re-slice into smaller plans, each inside the budget. Prefer more, smaller plans over one that spends the agent's best early-context tokens and finishes degraded.
 
 ## Context Budget Rules
 

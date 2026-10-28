@@ -19,10 +19,10 @@ Valid Engineer subagent types (use exact names — do not fall back to 'general-
 ## 1. Initialize
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 _engineer_identity_ok() {
   [ -f "$1" ] || return 1
   [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
@@ -65,11 +65,11 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.plan-phase ${GSD_WS:+--ws=${GSD_WS##* }} "$PHASE")
+ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
+INIT=$(engineer_run query init.plan-phase ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} "$PHASE")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_UI=$(engineer_run query agent-skills ui-researcher ${GSD_WS:+--ws=${GSD_WS##* }})
-AGENT_SKILLS_UI_CHECKER=$(engineer_run query agent-skills ui-checker ${GSD_WS:+--ws=${GSD_WS##* }})
+AGENT_SKILLS_UI=$(engineer_run query agent-skills ui-researcher ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
+AGENT_SKILLS_UI_CHECKER=$(engineer_run query agent-skills ui-checker ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 ```
 
 Parse JSON for: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `has_context`, `has_research`, `commit_docs`, `response_language`.
@@ -210,9 +210,9 @@ padded_phase: {padded_phase}
 
 Omit null file paths from `<required_reading>`.
 
-<!-- #2517 model-omit-on-inherit -->
+<!-- model-omit-on-inherit -->
 
-> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`UI_RESEARCHER_MODEL`, `UI_CHECKER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
+> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`UI_RESEARCHER_MODEL`, `UI_CHECKER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```
 Agent(
@@ -359,7 +359,7 @@ never silently no-ops (a silent skip would drop the whole state-coverage axis).
 **Non-English projects — `text_en` carries the classifier-facing translation; the UI-SPEC is
 not.** The element cues the classifier matches are **English** word-boundary patterns, so
 element prose written in another language matches nothing, classifies to zero kinds, and lands
-every element in `unclassified` (#1110) — the taxonomy contributes nothing and `--auto` leaves
+every element in `unclassified` — the taxonomy contributes nothing and `--auto` leaves
 it all `unresolved`. When this project has `response_language` set, add an optional `text_en`
 key to each `$ELEMENTS_JSON` entry: a faithful **English** translation of that element's
 `text`. `text_en` is **engine input, never user-facing output**, so the `response_language`
@@ -368,42 +368,42 @@ write it as the element's own wording, exactly as it appears in the UI-SPEC. The
 the original language — only `text_en` is translated, and element `id`s are never translated
 or renumbered (coverage rows join back on `id`). Populate `text_en` for **every** element, not
 only the ones that look UI-relevant: the zero-applicable guard below fires when `$APPLICABLE`
-is `0` and again on the all-unclassified case (`$UNCLASSIFIED = $APPLICABLE`, #4656), so a
+is `0` and again on the all-unclassified case (`$UNCLASSIFIED = $APPLICABLE`), so a
 partly-classified surface slips through both arms with no signal at all. When
 `response_language` is unset (an English-language project), omit `text_en` —
 `text` is already English and the engine falls back to it automatically (`text_en ?? text`).
 If an element still classifies to zero kinds with `text_en` populated, it carries no cue in
-any language (the recorded recall gap — ADR-857 §98 / ADR-550 D7b, not a translation failure);
+any language (the recorded recall gap, not a translation failure);
 author an explicit `elements` array on that element instead of relying on the prose classifier.
-(#4657)
+
 
 **Runtime coverage compute — resolve and invoke ui-consideration-probe.cjs:**
 
 ```bash
 # Resolve the compiled ui-consideration-probe.cjs against the Engineer install dir via RUNTIME_DIR
-# (#448) — NOT the consuming project's git root — falling back to git toplevel / $HOME/.claude.
+# — NOT the consuming project's git root — falling back to git toplevel / $HOME/.claude.
 # Mirrors spec-phase.md Step 5.5's edge-probe resolution idiom verbatim (same candidate paths).
-_GSD_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+_ENGINEER_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 UI_PROBE_JS=$(for _c in \
-  "$_GSD_RT/engineer/bin/lib/ui-consideration-probe.cjs" \
-  "$_GSD_RT/bin/lib/ui-consideration-probe.cjs" \
-  "$_GSD_RT/.claude/bin/lib/ui-consideration-probe.cjs" \
+  "$_ENGINEER_RT/engineer/bin/lib/ui-consideration-probe.cjs" \
+  "$_ENGINEER_RT/bin/lib/ui-consideration-probe.cjs" \
+  "$_ENGINEER_RT/.claude/bin/lib/ui-consideration-probe.cjs" \
   "$HOME/.claude/engineer/bin/lib/ui-consideration-probe.cjs" \
   "$HOME/.claude/bin/lib/ui-consideration-probe.cjs"; do
   [ -f "$_c" ] && { echo "$_c"; break; }
 done)
 
-# Graceful degradation — never a silent skip. Build ONLY when $_GSD_RT is a verified Engineer source
+# Graceful degradation — never a silent skip. Build ONLY when $_ENGINEER_RT is a verified Engineer source
 # checkout (has tsconfig.build.json + src/ui-consideration-probe.cts), pinned with --prefix so we
 # never trigger the CONSUMING project's own build during a ui-phase. Real installs ship the
 # compiled .cjs via prepublishOnly, so this path only matters in an Engineer dev checkout.
 if [ -z "$UI_PROBE_JS" ]; then
-  if [ -f "$_GSD_RT/tsconfig.build.json" ] && [ -f "$_GSD_RT/src/ui-consideration-probe.cts" ]; then
-    npm --prefix "$_GSD_RT" run build:lib 2>/dev/null || true
+  if [ -f "$_ENGINEER_RT/tsconfig.build.json" ] && [ -f "$_ENGINEER_RT/src/ui-consideration-probe.cts" ]; then
+    npm --prefix "$_ENGINEER_RT" run build:lib 2>/dev/null || true
     UI_PROBE_JS=$(for _c in \
-      "$_GSD_RT/engineer/bin/lib/ui-consideration-probe.cjs" \
-      "$_GSD_RT/bin/lib/ui-consideration-probe.cjs" \
-      "$_GSD_RT/.claude/bin/lib/ui-consideration-probe.cjs" \
+      "$_ENGINEER_RT/engineer/bin/lib/ui-consideration-probe.cjs" \
+      "$_ENGINEER_RT/bin/lib/ui-consideration-probe.cjs" \
+      "$_ENGINEER_RT/.claude/bin/lib/ui-consideration-probe.cjs" \
       "$HOME/.claude/engineer/bin/lib/ui-consideration-probe.cjs" \
       "$HOME/.claude/bin/lib/ui-consideration-probe.cjs"; do
       [ -f "$_c" ] && { echo "$_c"; break; }
@@ -462,13 +462,13 @@ fi
 # classification miss (or malformed elements) than a genuinely state-free UI. Surface it loudly.
 APPLICABLE=$(printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let n=0;try{n=JSON.parse(s).coverage.applicable}catch{n=0}process.stdout.write(String(n))})')
 UNCLASSIFIED=$(printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let n=0;try{n=JSON.parse(s).coverage.unclassified}catch{n=0}process.stdout.write(String(n))})')
-# #4656: all-unclassified reads as a non-zero applicable — widen the guard to fire there too.
+# All-unclassified reads as a non-zero applicable — widen the guard to fire there too.
 if [ "$APPLICABLE" = "0" ] || [ "$UNCLASSIFIED" = "$APPLICABLE" ]; then
   echo "WARNING: ui-consideration-probe proposed ZERO applicable categories across all elements — likely a classification miss or malformed elements, not a genuinely state-free UI. Do NOT silently write an empty UI Considerations section." >&2
 fi
 ```
 
-If the guard above fired (`$APPLICABLE` is `0`, or every element is unclassified — `$UNCLASSIFIED = $APPLICABLE`, #4656), do NOT proceed silently: ask via AskUserQuestion ("The UI probe found no
+If the guard above fired (`$APPLICABLE` is `0`, or every element is unclassified — `$UNCLASSIFIED = $APPLICABLE`), do NOT proceed silently: ask via AskUserQuestion ("The UI probe found no
 applicable state considerations — is this genuinely a state-free surface, or should we revisit the
 element descriptions?"). Only write an empty section after explicit confirmation.
 
@@ -499,11 +499,11 @@ resolution runs.
 **`--auto` mode (two layers).** The adapter's `autoResolve` is the CODE floor: every applicable
 consideration auto-resolves with `verification: backstop` (carrying the taxonomy question as its
 resolution) and an `unclassified` candidate stays `unresolved` — it NEVER auto-`dismiss`es and never
-auto-resolves an unclassified item with backstop (#1110). On top of that floor the workflow MAY
+auto-resolves an unclassified item with backstop. On top of that floor the workflow MAY
 upgrade an item to `resolved` (verification: explicit) when a
 defensible acceptance criterion can be written (the same judgment spec-phase 5.5 applies in prose).
 An auto `--auto` run therefore leaves un-upgraded items as `resolved` (verification: backstop): at verify time each one
-with no wired evidence routes to `insufficient_spec → human_needed` — never a silent pass (#1154).
+with no wired evidence routes to `insufficient_spec → human_needed` — never a silent pass.
 That surfacing is the intended honest-verifier behavior, not over-flagging.
 
 **Write-back.** Populate a `## UI Considerations` section in the UI-SPEC from the resolved

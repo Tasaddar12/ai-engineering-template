@@ -24,7 +24,7 @@ For each UI checkpoint listed in the phase's UI-SPEC.md (or inferred from SUMMAR
 5. Flag items that require human judgment (subjective aesthetics, content accuracy)
    and present only those as manual UAT questions.
 
-<!-- gsd:live-dom-families -->
+<!-- engineer:live-dom-families -->
 **If `workflow.live_dom_uat` is enabled AND a Chrome-family browser MCP responds
 (`mcp__chrome-devtools__*` or `mcp__claude-in-chrome__*`):**
 

@@ -12,10 +12,10 @@ Read all files referenced by the invoking prompt's execution_context before star
 Load todo context:
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 _engineer_identity_ok() {
   [ -f "$1" ] || return 1
   [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
@@ -58,8 +58,8 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.todos ${GSD_WS:+--ws=${GSD_WS##* }})
+ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
+INIT=$(engineer_run query init.todos ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
@@ -191,8 +191,8 @@ files:
 <step name="update_state">
 If `.planning/STATE.md` exists:
 
-1. Re-run `engineer_run query init.todos ${GSD_WS:+--ws=${GSD_WS##* }}` (same workstream flag as the first call) to get a fresh, post-write JSON snapshot (the count and rendering must reflect the change just made).
-2. **Fail-safe check (#2618):** if the JSON failed to parse, or `pending_read_ok` is not `true`, or `pending_todos_markdown` is not a string, do NOT touch the "### Pending Todos" section — leave it exactly as-is and continue to the next step. A partial or malformed `init.todos` result must never overwrite a good existing section.
+1. Re-run `engineer_run query init.todos ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }}` (same workstream flag as the first call) to get a fresh, post-write JSON snapshot (the count and rendering must reflect the change just made).
+2. **Fail-safe check:** if the JSON failed to parse, or `pending_read_ok` is not `true`, or `pending_todos_markdown` is not a string, do NOT touch the "### Pending Todos" section — leave it exactly as-is and continue to the next step. A partial or malformed `init.todos` result must never overwrite a good existing section.
 3. Otherwise, replace the entire body of "### Pending Todos" (under "## Accumulated Context") with the literal value of `pending_todos_markdown` — verbatim, one bullet per pending todo already rendered and length-capped by `init.todos`. Do not reformat, re-wrap, re-order, or hand-edit the bullets; do not append to the old body — replace it wholesale (this is what makes an old run-on-sentence section get superseded cleanly with no migration step).
 </step>
 

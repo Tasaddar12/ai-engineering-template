@@ -32,7 +32,7 @@ Plans:
 
 - [x] {{PHASE}}-01: {{PLAN_DESCRIPTION}}
 - [x] {{PHASE}}-02: {{PLAN_DESCRIPTION}}
-      [... all plans ...]
+      [... all plans...]
 
 **Details:**
 {{PHASE_DETAILS_FROM_ROADMAP}}
@@ -113,7 +113,7 @@ _For current project status, see .planning/ROADMAP.md_
 **Archive location:**
 
 - Save to `.planning/milestones/v{VERSION}-{NAME}.md`
-- Example: `.planning/milestones/v1.0-mvp.md`
+- Example: `.planning/milestones/v1.0.md`
 
 **After archiving:**
 

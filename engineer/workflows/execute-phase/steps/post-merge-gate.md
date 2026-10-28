@@ -57,7 +57,7 @@ if [ -z "$BUILD_CMD" ]; then
   if [ -n "$XCODEPROJ" ]; then
     # Xcode project: get first scheme from xcodebuild -list -json
     XCODE_SCHEME=$(xcodebuild -list -json -project "$XCODEPROJ" 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('project',{}).get('schemes',[None])[0] or '')" 2>/dev/null || true)
-    # #4784: a concrete simulator NAME is machine state, not project state — the
+    # A concrete simulator NAME is machine state, not project state — the
     # hardcoded 'iPhone 16' can never match on machines whose simulators were
     # never created. Resolve the first available iOS simulator (id= works for
     # both build and test); with none available, skip the Xcode gates loudly
@@ -73,7 +73,7 @@ if [ -z "$BUILD_CMD" ]; then
       XCODEPROJ=""
     else
       XCODE_DEST="id=$XCODE_SIM"
-      # #4784 review F2: the command string is re-parsed by `bash -c`, so an
+      # review F2: the command string is re-parsed by `bash -c`, so an
       # apostrophe in a repo/scheme name would terminate the quote (unbalanced-
       # quote failure; a crafted path shape reaches command injection). Escape
       # for the single-quoted span at the only boundary Engineer owns.
@@ -96,7 +96,7 @@ if [ -z "$BUILD_CMD" ]; then
   elif [ -f "pyproject.toml" ] || [ -f "requirements.txt" ]; then
     BUILD_CMD="python -m py_compile $(find . -name '*.py' -not -path './.planning/*' -not -path './node_modules/*' | head -20 | tr '\n' ' ')"
   elif [ -f "package.json" ] && grep -q '"build"' package.json; then
-    # #5346: the project's own package manager (packageManager field, then lockfile), npm if unresolved.
+    # The project's own package manager (packageManager field, then lockfile), npm if unresolved.
     BUILD_CMD=$(engineer_run query resolve-package-manager build --cwd . 2>/dev/null || echo "npm run build")
     [ -n "$BUILD_CMD" ] || BUILD_CMD="npm run build"
     echo "⚠ Build command not configured — running this project's build script (${BUILD_CMD}). Set workflow.build_command to pin it."
@@ -116,10 +116,10 @@ if [ -n "$BUILD_CMD" ]; then
     echo "⚠ Post-merge build gate timed out after 5 minutes"
   else
     echo "✗ Post-merge build gate failed (exit code ${BUILD_EXIT})"
-    # gsd-handoff:begin wave-failure-record
-    _GSD_HANDOFF="$( { git rev-parse --absolute-git-dir 2>/dev/null || echo "${TMPDIR:-/tmp}/gsd-$(pwd | cksum | cut -d' ' -f1)"; } )/handoff"; mkdir -p "$_GSD_HANDOFF"
-    printf '.\n' >> "$_GSD_HANDOFF/wave-failures"  # one line per failed gate; a variable would not survive the next block (#4915)
-    # gsd-handoff:end wave-failure-record
+    # engineer-handoff:begin wave-failure-record
+    _ENGINEER_HANDOFF="$( { git rev-parse --absolute-git-dir 2>/dev/null || echo "${TMPDIR:-/tmp}/engineer-$(pwd | cksum | cut -d' ' -f1)"; } )/handoff"; mkdir -p "$_ENGINEER_HANDOFF"
+    printf '.\n' >> "$_ENGINEER_HANDOFF/wave-failures"  # one line per failed gate; a variable would not survive the next block 
+    # engineer-handoff:end wave-failure-record
   fi
 fi
 ```
@@ -142,7 +142,7 @@ if [ -z "$TEST_CMD" ]; then
     if [ -z "${XCODE_SCHEME:-}" ]; then
       XCODE_SCHEME=$(xcodebuild -list -json -project "$XCODEPROJ" 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('project',{}).get('schemes',[None])[0] or '')" 2>/dev/null || true)
     fi
-    # #4784: reuse the simulator resolved by the build gate; re-detect if this
+    # Reuse the simulator resolved by the build gate; re-detect if this
     # block runs in a fresh shell. No simulator → skip loudly, same as Step A.
     if [ -z "${XCODE_SIM:-}" ]; then
       XCODE_SIM=$(xcrun simctl list devices available 2>/dev/null | sed -n 's/.*(\([A-F0-9-]\{8,\}\)).*/\1/p' | head -1)
@@ -166,7 +166,7 @@ if [ -z "$TEST_CMD" ]; then
   elif [ -f "Justfile" ] || [ -f "justfile" ]; then
     TEST_CMD="just test"
   elif [ -f "package.json" ]; then
-    # #5346: same resolver as the build gate.
+    # Same resolver as the build gate.
     TEST_CMD=$(engineer_run query resolve-package-manager test --cwd . 2>/dev/null || echo "npm test")
     [ -n "$TEST_CMD" ] || TEST_CMD="npm test"
   elif [ -f "Cargo.toml" ]; then
@@ -180,7 +180,7 @@ if [ -z "$TEST_CMD" ]; then
     echo "⚠ No test runner detected — skipping post-merge test gate"
   fi
 fi
-# #1857: normalize to a one-shot form (defeat vitest/jest watch mode) via the
+# Normalize to a one-shot form (defeat vitest/jest watch mode) via the
 # same shared normalize-test-command helper the regression gate uses, then bound
 # with the configured timeout so a watch-mode runner cannot hang the gate.
 TEST_CMD=$(engineer_run query normalize-test-command "$TEST_CMD" --cwd . 2>/dev/null || echo "$TEST_CMD")
@@ -194,17 +194,17 @@ elif [ "${TEST_EXIT}" -eq 124 ]; then
   echo "⚠ POST-MERGE TEST GATE TIMED OUT after ${TEST_GATE_TIMEOUT}s — the runner did not exit, likely stuck in watch/dev mode (e.g. vitest without 'run'). Verify tests with a one-shot command (e.g. 'vitest run') or raise workflow.test_gate_timeout. For Xcode suites: xcodebuild collects a sysdiagnose into the .xcresult by default (~10 minutes on a passing suite) — add '-collect-test-diagnostics never' to the test command or raise workflow.test_gate_timeout."
 else
   echo "✗ Post-merge test gate failed (exit code ${TEST_EXIT})"
-  # gsd-handoff:begin wave-failure-record
-  _GSD_HANDOFF="$( { git rev-parse --absolute-git-dir 2>/dev/null || echo "${TMPDIR:-/tmp}/gsd-$(pwd | cksum | cut -d' ' -f1)"; } )/handoff"; mkdir -p "$_GSD_HANDOFF"
-  printf '.\n' >> "$_GSD_HANDOFF/wave-failures"  # one line per failed gate; a variable would not survive the next block (#4915)
-  # gsd-handoff:end wave-failure-record
+  # engineer-handoff:begin wave-failure-record
+  _ENGINEER_HANDOFF="$( { git rev-parse --absolute-git-dir 2>/dev/null || echo "${TMPDIR:-/tmp}/engineer-$(pwd | cksum | cut -d' ' -f1)"; } )/handoff"; mkdir -p "$_ENGINEER_HANDOFF"
+  printf '.\n' >> "$_ENGINEER_HANDOFF/wave-failures"  # one line per failed gate; a variable would not survive the next block 
+  # engineer-handoff:end wave-failure-record
 fi
 ```
 
 **If `TEST_EXIT` is 0 (pass):** `✓ Post-merge test gate: {N} tests passed — no cross-plan conflicts` → continue to orchestrator tracking update.
 
-**If `TEST_EXIT` is 124 (timeout):** The runner did not exit within the budget — surface the printed message clearly (watch/dev mode is the likely cause; #1857). Treated as non-blocking (a genuinely long suite may just need a larger `workflow.test_gate_timeout`), but it is NEVER silently ignored — the watch-mode cause is named so the user can fix it (one-shot command / `workflow.test_command` / larger timeout).
+**If `TEST_EXIT` is 124 (timeout):** The runner did not exit within the budget — surface the printed message clearly (watch/dev mode is the likely cause). Treated as non-blocking (a genuinely long suite may just need a larger `workflow.test_gate_timeout`), but it is NEVER silently ignored — the watch-mode cause is named so the user can fix it (one-shot command / `workflow.test_command` / larger timeout).
 
 **If `TEST_EXIT` is non-zero (test failure):** The block above has recorded the failure in the cumulative wave-failure handoff file, which tracks
-failures across waves (a shell counter cannot: every fenced block is its own shell, #4915). Subsequent waves should report:
+failures across waves (a shell counter cannot: every fenced block is its own shell). Subsequent waves should report:
 `⚠ Note: ${WAVE_FAILURE_COUNT} prior wave(s) had test failures` (`WAVE_FAILURE_COUNT` is read from the handoff file, as in step 5.8 of `execute-phase.md`)

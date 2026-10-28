@@ -1,8 +1,8 @@
-# Completion reconciliation (#4217, split A of #3754)
+# Completion reconciliation (split A of )
 
 Read and follow this fragment from `execute-phase.md` step 4 whenever an executor's
 completion is in question. It owns the whole reconciliation policy — both arms — so the
-host wait step stays inside the ADR-857 Phase 6 byte ceiling (#1168).
+host wait step stays inside the ADR-857 Phase 6 byte ceiling.
 
 **Reconcile FIRST, classify SECOND.** How the child's session ended is bookkeeping
 about the transport; what it wrote to disk and to git is the evidence about the work.
@@ -14,7 +14,7 @@ about the transport; what it wrote to disk and to git is the evidence about the 
 2. **Abnormal end** — the child's session ended without a normal terminal completion
    response: interrupted, aborted, closed, killed, timed out, or ended `turn_aborted` —
    INCLUDING ends the orchestrator itself initiated. **An abnormally-ended child is
-   not evidence of failure (#4217):** the orchestrator's own interrupt/close says
+   not evidence of failure:** the orchestrator's own interrupt/close says
    nothing about whether the work completed; only the artifacts do.
 
 This policy applies to EVERY runtime and every isolation path — harness `Agent()`
@@ -68,8 +68,8 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
 fi
 # For each plan in this wave, check if the executor finished:
 SUMMARY_EXISTS=$(test -f "{phase_dir}/{plan_number}-{plan_padded}-SUMMARY.md" && echo "true" || echo "false")
-# #5164: the plan's commits come from the evaluation-scope resolver — anchored on the SUBJECT,
-# zero-pad tolerant (#4003, #4619, #4748), reachable from THIS branch only (the former
+# The plan's commits come from the evaluation-scope resolver — anchored on the SUBJECT,
+# zero-pad tolerant, reachable from THIS branch only (the former
 # any-branch lookup let a commit on another branch satisfy the probe); the 1-hour window stays.
 # Exit 69 (UNAVAILABLE) is the resolver saying "could not look": an empty COMMITS_FOUND is then NOT "no commits".
 COMMITS_SCOPE=$(engineer_run check evaluation-scope --plan "{phase_number}-{plan_padded}" --ref "${EXPECTED_BRANCH}" --commits-only --committed-since "1 hour ago" --raw 2>/dev/null) && COMMITS_SCOPE_RC=0 || COMMITS_SCOPE_RC=$?
@@ -80,7 +80,7 @@ COMMITS_SINCE_DISPATCH=$(git log "${EXPECTED_BRANCH}" --since="${DISPATCH_TS}" -
 
 ## Verdicts
 
-**If `COMMITS_SCOPE_RC` is non-zero** (`69` `UNAVAILABLE`: the commit scope could not be resolved, #5170): the commit probe has no answer. Do not read the empty `COMMITS_FOUND` as "no matching commits", do not route to the failure handler on it, and do not re-dispatch an executor: surface `⚠ Commit probe unavailable for {Plan ID} (evaluation-scope exit {COMMITS_SCOPE_RC})` and stop for the user.
+**If `COMMITS_SCOPE_RC` is non-zero** (`69` `UNAVAILABLE`: the commit scope could not be resolved): the commit probe has no answer. Do not read the empty `COMMITS_FOUND` as "no matching commits", do not route to the failure handler on it, and do not re-dispatch an executor: surface `⚠ Commit probe unavailable for {Plan ID} (evaluation-scope exit {COMMITS_SCOPE_RC})` and stop for the user.
 
 **If SUMMARY.md exists AND matching commits are found:** the agent completed
 successfully — treat the plan as complete WITHOUT requiring another terminal child

@@ -25,7 +25,7 @@ files_deleted: []           # OPTIONAL. Files this plan REMOVES. Declaring a pat
 coupling_justified: []      # OPTIONAL. Deliberate, order-independent same-wave couplings: one
                             # "plan-id: reason" string per coupled peer, e.g.
                             # ["03-02: both append independent config keys"]. Exempts the pair
-                            # from the plan-checker's Dimension 3b advisory (#3724).
+                            # from the plan-checker's Dimension 3b advisory.
 autonomous: true            # false if plan has checkpoints requiring user interaction
 requirements: []            # REQUIRED — Requirement IDs from ROADMAP this plan addresses. MUST NOT be empty.
 user_setup: []              # Human-required setup Claude cannot automate (see below)

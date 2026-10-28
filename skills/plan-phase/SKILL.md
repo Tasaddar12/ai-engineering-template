@@ -1,7 +1,7 @@
 ---
 name: plan-phase
 description: Create detailed phase plan (PLAN.md) with verification loop
-argument-hint: "[phase] [--auto] [--research] [--skip-research] [--research-phase <N>] [--view] [--gaps] [--skip-verify] [--skip-ui] [--prd <file>] [--ingest <path-or-glob>] [--ingest-format <auto|nygard|madr|narrative>] [--reviews] [--text] [--bounce] [--skip-bounce] [--tdd] [--granularity <coarse|standard|fine>] [--no-tracer] [--no-reversibility-gates]"
+argument-hint: "[phase] [--auto] [--research] [--skip-research] [--research-phase <N>] [--view] [--gaps] [--skip-verify] [--skip-ui] [--prd <file>] [--ingest <path-or-glob>] [--ingest-format <auto|nygard|madr|narrative>] [--reviews] [--text] [--bounce] [--skip-bounce] [--tdd] [--granularity <coarse|standard|fine>] [--no-reversibility-gates]"
 effort: max
 allowed-tools:
   - Read
@@ -25,7 +25,7 @@ Create executable phase prompts (PLAN.md files) for a roadmap phase with integra
 
 **Default flow:** Research (if needed) → Plan → Verify → Done
 
-**Research-only mode (`--research-phase <N>`):** Spawn `phase-researcher` for phase `N`, write `RESEARCH.md`, then exit before the planner runs. Useful for cross-phase research, doc review before committing to a planning approach, and correction-without-replanning loops where iterating on research alone is dramatically cheaper than re-spawning the planner. Replaces the deleted research-phase command (#3042).
+**Research-only mode (`--research-phase <N>`):** Spawn `phase-researcher` for phase `N`, write `RESEARCH.md`, then exit before the planner runs. Useful for cross-phase research, doc review before committing to a planning approach, and correction-without-replanning loops where iterating on research alone is dramatically cheaper than re-spawning the planner.
 
 **Research-only modifiers:**
 - **No flag** — when `RESEARCH.md` already exists, auto-uses it: emits a one-line notice and exits cleanly, no prompt.
@@ -53,7 +53,6 @@ Phase number: the `<arguments>` block (optional — when omitted, the orchestrat
 - `--ingest-format <auto|nygard|madr|narrative>` — Optional ADR parser format override (`auto` default).
 - `--reviews` — Replan incorporating cross-AI review feedback from REVIEWS.md (produced by `/review`)
 - `--text` — Use plain-text numbered lists instead of TUI menus (required for `/rc` remote sessions)
-- `--no-tracer` — Opt out of the default **tracer-first** decomposition and plan horizontal layers (the legacy default). By default every plan LEADS with one production-quality end-to-end `tracer` slice that is verified before any expansion task.
 - `--no-reversibility-gates` — Suppress the human checkpoint that a **one-way-door** decision normally earns, for runs you intend to leave unattended. By default a decision rated `one-way` (undo needs a migration, breaks a published contract, or is impossible) gets a `checkpoint:decision` before the task implementing it. Ratings are still recorded on tasks and `costly` items still flagged — the flag changes what stops the run, not what the plan remembers.
 
 Normalize phase input in step 2 before any directory lookups.

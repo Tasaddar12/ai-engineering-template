@@ -97,7 +97,7 @@ Based on focus, determine which documents you'll write:
 - `quality` → CONVENTIONS.md, TESTING.md
 - `concerns` → CONCERNS.md
 
-**Optional `--paths` scope hint (#2003):**
+**Optional `--paths` scope hint:**
 The prompt may include a line of the form:
 
 ```text
@@ -350,22 +350,22 @@ Ready for orchestrator summary.
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│                      [Top Layer Name]                        │
+│                      [Top Layer Name]                       │
 ├──────────────────┬──────────────────┬───────────────────────┤
 │   [Component A]  │   [Component B]  │    [Component C]      │
 │  `[path/to/a]`   │  `[path/to/b]`   │   `[path/to/c]`       │
 └────────┬─────────┴────────┬─────────┴──────────┬────────────┘
-         │                  │                     │
-         ▼                  ▼                     ▼
+         │                  │                    │
+         ▼                  ▼                    ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    [Middle Layer Name]                       │
-│         `[path/to/layer]`                                    │
+│                    [Middle Layer Name]                      │
+│         `[path/to/layer]`                                   │
 └─────────────────────────────────────────────────────────────┘
          │
          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  [Store / Output / External]                                 │
-│  `[path/to/store]`                                           │
+│  [Store / Output / External]                                │
+│  `[path/to/store]`                                          │
 └─────────────────────────────────────────────────────────────┘
 ```
 

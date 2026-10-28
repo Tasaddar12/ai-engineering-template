@@ -22,7 +22,7 @@ When a milestone completes:
 2. Archive requirements to `.planning/milestones/v[X.Y]-REQUIREMENTS.md`
 3. Update ROADMAP.md — overwrite in place with milestone grouping (preserve Backlog section)
 4. Safety commit archive files + updated ROADMAP.md, then `git rm REQUIREMENTS.md` (fresh for next milestone)
-5. Perform full PROJECT.md evolution review (flat mode only — skipped under an active workstream, #5195)
+5. Perform full PROJECT.md evolution review (flat mode only — skipped under an active workstream)
 6. Offer to create next milestone inline
 7. Archive UI artifacts (`*-UI-SPEC.md`, `*-UI-REVIEW.md`) alongside other phase documents
 8. Clean up `.planning/ui-reviews/` screenshot files (binary assets, never archived)
@@ -106,7 +106,7 @@ These items are open. Choose an action:
 
 If output shows all clear (no open items): set `closeout_type=verified_closeout` — but if any items are `acknowledged.total` from a PRIOR close, note that carried-forward suppression explicitly rather than implying everything was fixed this time.
 
-<!-- gsd:protected -->
+<!-- engineer:protected -->
 SECURITY: Audit JSON output is structured data from the `audit-open` query handler (same JSON contract as legacy `engineer_run query audit-open`) — validated and sanitized at source. The `audit-open acknowledge` writer is the only path that sets the `audit_acknowledged` suppression marker — it snapshots each artifact's current state itself from the identifiers passed on the command line, so this workflow never hand-authors the marker. When writing the STATE.md disclosure table, item identifiers, statuses, and deferred-item text are sanitized via `sanitizeForDisplay()` before inclusion. Never inject raw user-supplied content into STATE.md without sanitization.
 
 Exact per-category bash (including the `@file:` large-payload handling, the `todos` 5-per-scan cap, and the phase-scoped `--archived-milestone` handling) and the exact STATE.md table shape: `engineer/workflows/complete-milestone/detail/elaboration.md` § 1.
@@ -117,12 +117,12 @@ Exact per-category bash (including the `@file:` large-payload handling, the `tod
 **Use `init.manager` for canonical readiness check:**
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT_MANAGER=$(engineer_run query init.manager ${GSD_WS:+--ws=${GSD_WS##* }})
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
+ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
+INIT_MANAGER=$(engineer_run query init.manager ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_MANAGER" == @file:* ]]; then INIT_MANAGER=$(cat "${INIT_MANAGER#@file:}"); fi
 ```
 
@@ -156,7 +156,7 @@ Parse REQUIREMENTS.md traceability table:
 Present:
 
 ```
-Milestone: [Name, e.g., "v1.0 MVP"]
+Milestone: [Name, e.g., "v1.0"]
 
 Includes:
 - Phase 1: Foundation (2/2 plans complete)
@@ -206,7 +206,7 @@ Proceed to gather_stats.
 
 </if>
 
-<if mode="interactive" AND="gates.confirm_milestone_scope != false">
+<if mode="interactive" AND="gates.confirm_milestone_scope!= false">
 
 ```
 Ready to mark this milestone as shipped?
@@ -253,7 +253,7 @@ Milestone Stats:
 Extract one-liners from SUMMARY.md files using summary-extract:
 
 ```bash
-# #2962: zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
+# Zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
 shopt -s nullglob 2>/dev/null; setopt NULL_GLOB 2>/dev/null
 
 # For each phase in milestone, extract one-liner
@@ -284,28 +284,28 @@ If additional details are needed (e.g., user-provided "Delivered" summary, git r
 
 </step>
 
-**Resolve the PROJECT.md review gate first.** This is the first `init.complete-milestone` call in the workflow, so the section manifest does not exist before it; reading `section_manifest` without making this call would fall into the fail-open `null` branch below and rewrite the shared PROJECT.md under `--ws` (#5195). `init.complete-milestone` is a pure read, so the later full call in `reorganize_roadmap_and_delete_originals` is unaffected.
+**Resolve the PROJECT.md review gate first.** This is the first `init.complete-milestone` call in the workflow, so the section manifest does not exist before it; reading `section_manifest` without making this call would fall into the fail-open `null` branch below and rewrite the shared PROJECT.md under `--ws`. `init.complete-milestone` is a pure read, so the later full call in `reorganize_roadmap_and_delete_originals` is unaffected.
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT_EARLY=$(engineer_run query init.complete-milestone ${GSD_WS:+--ws=${GSD_WS##* }})
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
+ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
+INIT_EARLY=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_EARLY" == @file:* ]]; then INIT_EARLY=$(cat "${INIT_EARLY#@file:}"); fi
 node -e "const m=JSON.parse(process.argv[1]).section_manifest; console.log('PROJECT_MD_REVIEW=' + (m==null||m.included.includes('project-md-evolution-review') ? 'run' : 'skip'))" "$INIT_EARLY"
 ```
 
-<!-- gsd:section id="project-md-evolution-review" when="state:flat-mode" -->
-If the line above printed `PROJECT_MD_REVIEW=run` (the manifest is `null` or lists `"project-md-evolution-review"` in `included`): read and execute `engineer/workflows/complete-milestone/steps/project-md-evolution-review.md`. If it printed `PROJECT_MD_REVIEW=skip` (a workstream is active) — do not read the file; PROJECT.md is shared across workstreams, so a workstream's milestone close never rewrites it (#2308, #5195); proceed to `archive_milestone`.
+<!-- engineer:section id="project-md-evolution-review" when="state:flat-mode" -->
+If the line above printed `PROJECT_MD_REVIEW=run` (the manifest is `null` or lists `"project-md-evolution-review"` in `included`): read and execute `engineer/workflows/complete-milestone/steps/project-md-evolution-review.md`. If it printed `PROJECT_MD_REVIEW=skip` (a workstream is active) — do not read the file; PROJECT.md is shared across workstreams, so a workstream's milestone close never rewrites it; proceed to `archive_milestone`.
 <!-- /section -->
 
 <step name="archive_milestone">
 
 **Text mode (`workflow.text_mode: true` in config or `--text` flag):** Set `TEXT_MODE=true` if `--text` is present in `$ARGUMENTS` OR `text_mode` from init JSON is `true`. When TEXT_MODE is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for non-Claude runtimes (OpenAI Codex) where `AskUserQuestion` is not available.
 
-**Quick-task archival (opt-in — NOT symmetrical with phase archival below, #2142):** unlike phase archival, quick-task archival is **opt-in, default OFF**. Doing nothing leaves `.planning/quick/` untouched, exactly like today's behavior. Decide this BEFORE calling `milestone complete` below, so the flag can be folded into that single invocation rather than issuing a second, redundant call.
+**Quick-task archival (opt-in — NOT symmetrical with phase archival below):** unlike phase archival, quick-task archival is **opt-in, default OFF**. Doing nothing leaves `.planning/quick/` untouched, exactly like today's behavior. Decide this BEFORE calling `milestone complete` below, so the flag can be folded into that single invocation rather than issuing a second, redundant call.
 
 If `.planning/quick/` contains at least one directory, ask:
 
@@ -313,7 +313,7 @@ AskUserQuestion: "Archive completed quick tasks into this milestone too?" with o
 
 If "Yes": set `ARCHIVE_QUICK_FLAG="--archive-quick"`. If "Skip" (or `.planning/quick/` is empty): set `ARCHIVE_QUICK_FLAG=""`.
 
-**Per-repository release mapping (opt-in, #3628).** Set `PER_REPO_TAGGING=true` only when `INIT_EARLY` has `repo_tagging` equal to `per_repo` AND a non-empty `sub_repos`; otherwise it is `false` and this paragraph changes nothing. Shell state does not persist between commands, so later steps recompute it from their own `init.complete-milestone` JSON (`INIT_REORG`). When `true`, read and execute `engineer/workflows/complete-milestone/steps/release-map.md` Part 1 now (collect, validate, one consolidated confirmation, create the tags, record the outcome in `release-map.json`), and append `--release-map "${TMPDIR:-/tmp}/gsd-release-map-v[X.Y]/release-map.json"` to EVERY `milestone complete` call below (including the `--no-archive-phases` form); when `false`, append nothing. A Engineer milestone version may differ from every repository's release version.
+**Per-repository release mapping (opt-in).** Set `PER_REPO_TAGGING=true` only when `INIT_EARLY` has `repo_tagging` equal to `per_repo` AND a non-empty `sub_repos`; otherwise it is `false` and this paragraph changes nothing. Shell state does not persist between commands, so later steps recompute it from their own `init.complete-milestone` JSON (`INIT_REORG`). When `true`, read and execute `engineer/workflows/complete-milestone/steps/release-map.md` Part 1 now (collect, validate, one consolidated confirmation, create the tags, record the outcome in `release-map.json`), and append `--release-map "${TMPDIR:-/tmp}/engineer-release-map-v[X.Y]/release-map.json"` to EVERY `milestone complete` call below (including the `--no-archive-phases` form); when `false`, append nothing. A Engineer milestone version may differ from every repository's release version.
 
 **Delegate archival to `engineer_run query milestone.complete`:**
 
@@ -321,7 +321,7 @@ If "Yes": set `ARCHIVE_QUICK_FLAG="--archive-quick"`. If "Skip" (or `.planning/q
 ARCHIVE=$(engineer_run query milestone.complete "v[X.Y]" --name "[Milestone Name]" --confirm $ARCHIVE_QUICK_FLAG)
 ```
 
-`--confirm` is required (#3726): the archive is irreversible (ROADMAP/REQUIREMENTS archived, phase
+`--confirm` is required: the archive is irreversible (ROADMAP/REQUIREMENTS archived, phase
 directories MOVED, STATE.md rewritten), so `milestone complete` refuses to mutate without it. This
 workflow has already gathered the user's explicit intent by this step, so passing the flag here is
 correct; `--dry-run` previews the exact move list without mutating if a preview is ever needed first.
@@ -343,7 +343,7 @@ Verify: `✅ Milestone archived to .planning/milestones/`
 
 Verify after `--archive-quick` was passed: `✅ Quick tasks archived to .planning/milestones/v[X.Y]-quick/`
 
-**Phase archival (default-on):** `milestone complete` archives phase directories to `milestones/v[X.Y]-phases/` by default (#1871), so the next `/new-milestone` never inherits un-archived dirs. No manual `mkdir`/`mv` or `--archive-phases` flag is needed.
+**Phase archival (default-on):** `milestone complete` archives phase directories to `milestones/v[X.Y]-phases/` by default, so the next `/new-milestone` never inherits un-archived dirs. No manual `mkdir`/`mv` or `--archive-phases` flag is needed.
 
 If the user explicitly wants to keep phase directories in place as raw execution history, invoke `milestone complete` with `--no-archive-phases`:
 
@@ -372,15 +372,15 @@ After `milestone complete` has archived, reorganize ROADMAP.md with milestone gr
 Extract the Backlog section from the current ROADMAP.md before making any changes:
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT_REORG=$(engineer_run query init.complete-milestone ${GSD_WS:+--ws=${GSD_WS##* }})
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
+ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
+INIT_REORG=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
-_gsd_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
-ROADMAP_PATH=$(_gsd_field "$INIT_REORG" roadmap_path)
+_engineer_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
+ROADMAP_PATH=$(_engineer_field "$INIT_REORG" roadmap_path)
 # Extract lines under ## Backlog through end of file (or next ## section)
 BACKLOG_SECTION=$(awk '/^## Backlog/{found=1} found{print}' "$ROADMAP_PATH")
 ```
@@ -389,21 +389,21 @@ If `$BACKLOG_SECTION` is empty, there is no Backlog section — skip silently.
 
 **Reorganize ROADMAP.md** — overwrite in place (do NOT delete first) with milestone groupings.
 
-This rewrite is an *intentional* catastrophic shrink: phase detail was just archived to `milestones/v[X.Y]-ROADMAP.md`, and a multi-hundred-line ROADMAP.md collapses to a compact grouped summary. The `gsd-write-guard` PreToolUse hook (#2255) hard-blocks exactly that shape on curated `.planning/` files — this step is the legitimate milestone reset its escape hatch exists for. A hook inherits the *runtime's* environment, so no per-step env var can reach it; the hatch is a **single-use sentinel file the guard itself consumes**. Arm it, then write:
+This rewrite is an *intentional* catastrophic shrink: phase detail was just archived to `milestones/v[X.Y]-ROADMAP.md`, and a multi-hundred-line ROADMAP.md collapses to a compact grouped summary. The `engineer-write-guard` PreToolUse hook hard-blocks exactly that shape on curated `.planning/` files — this step is the legitimate milestone reset its escape hatch exists for. A hook inherits the *runtime's* environment, so no per-step env var can reach it; the hatch is a **single-use sentinel file the guard itself consumes**. Arm it, then write:
 
 1. Arm the sentinel (single-use; the guard checks it is fresh — within 15 minutes — and names exactly this file, then consumes it):
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT_REORG=$(engineer_run query init.complete-milestone ${GSD_WS:+--ws=${GSD_WS##* }})
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
+ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
+INIT_REORG=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
-_gsd_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
-ROADMAP_PATH=$(_gsd_field "$INIT_REORG" roadmap_path)
-printf '%s\n' "$ROADMAP_PATH" > .planning/.gsd-allow-shrink
+_engineer_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
+ROADMAP_PATH=$(_engineer_field "$INIT_REORG" roadmap_path)
+printf '%s\n' "$ROADMAP_PATH" > .planning/.engineer-allow-shrink
 echo "Write target: $ROADMAP_PATH"
 ```
 
@@ -416,13 +416,13 @@ Template for the composed content:
 
 ## Milestones
 
-- ✅ **v1.0 MVP** — Phases 1-4 (shipped YYYY-MM-DD)
+- ✅ **v1.0** — Phases 1-4 (shipped YYYY-MM-DD)
 - 🚧 **v1.1 Security** — Phases 5-6 (in progress)
 
 ## Phases
 
 <details>
-<summary>✅ v1.0 MVP (Phases 1-4) — SHIPPED YYYY-MM-DD</summary>
+<summary>✅ v1.0 (Phases 1-4) — SHIPPED YYYY-MM-DD</summary>
 
 - [x] Phase 1: Foundation (2/2 plans) — completed YYYY-MM-DD
 - [x] Phase 2: Authentication (2/2 plans) — completed YYYY-MM-DD
@@ -437,41 +437,41 @@ Append the extracted Backlog content verbatim to the end of the newly written RO
 **Safety commit — commit archive files BEFORE deleting any originals:**
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT_REORG=$(engineer_run query init.complete-milestone ${GSD_WS:+--ws=${GSD_WS##* }})
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
+ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
+INIT_REORG=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
-_gsd_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
-STATE_PATH=$(_gsd_field "$INIT_REORG" state_path)
-ROADMAP_PATH=$(_gsd_field "$INIT_REORG" roadmap_path)
-ARCHIVE_DIR=$(_gsd_field "$INIT_REORG" archive_dir)
-MILESTONES_PATH=$(_gsd_field "$INIT_REORG" milestones_path)
-PROJECT_PATH=$(_gsd_field "$INIT_REORG" project_path)
-# #5195: PROJECT.md is shared across workstreams. Stage it only when init's own section manifest says this run edited it (the evolution review is included in flat mode only) — the same source the review step is gated on, so the two cannot disagree.
-_gsd_has_section() { node -e "const m=JSON.parse(process.argv[1]).section_manifest; process.exit(m==null||m.included.includes(process.argv[2])?0:1)" "$1" "$2"; }
-_gsd_has_section "$INIT_REORG" project-md-evolution-review || PROJECT_PATH=""
+_engineer_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
+STATE_PATH=$(_engineer_field "$INIT_REORG" state_path)
+ROADMAP_PATH=$(_engineer_field "$INIT_REORG" roadmap_path)
+ARCHIVE_DIR=$(_engineer_field "$INIT_REORG" archive_dir)
+MILESTONES_PATH=$(_engineer_field "$INIT_REORG" milestones_path)
+PROJECT_PATH=$(_engineer_field "$INIT_REORG" project_path)
+# PROJECT.md is shared across workstreams. Stage it only when init's own section manifest says this run edited it (the evolution review is included in flat mode only) — the same source the review step is gated on, so the two cannot disagree.
+_engineer_has_section() { node -e "const m=JSON.parse(process.argv[1]).section_manifest; process.exit(m==null||m.included.includes(process.argv[2])?0:1)" "$1" "$2"; }
+_engineer_has_section "$INIT_REORG" project-md-evolution-review || PROJECT_PATH=""
 engineer_run query commit "chore: archive v[X.Y] milestone files" --files "${ARCHIVE_DIR}/v[X.Y]-ROADMAP.md" "${ARCHIVE_DIR}/v[X.Y]-REQUIREMENTS.md" "${ARCHIVE_DIR}/v[X.Y]-MILESTONE-AUDIT.md" "$MILESTONES_PATH" ${PROJECT_PATH:+"$PROJECT_PATH"} "$STATE_PATH" "$ROADMAP_PATH"
 ```
 
 This creates a durable checkpoint in git history. If anything fails after this point, the working tree can be reconstructed from git.
 
-MILESTONES.md is workstream-scoped the same way STATE.md/ROADMAP.md are (`planningPaths(cwd).planning`) — under an active workstream this commits the actual files `milestone complete` wrote, not the root copies. PROJECT.md is NOT: it is shared across workstreams, so under an active workstream it is neither reviewed nor staged here (#5195).
+MILESTONES.md is workstream-scoped the same way STATE.md/ROADMAP.md are (`planningPaths(cwd).planning`) — under an active workstream this commits the actual files `milestone complete` wrote, not the root copies. PROJECT.md is NOT: it is shared across workstreams, so under an active workstream it is neither reviewed nor staged here.
 
 **Remove REQUIREMENTS.md via git rm** (preserves history, stages deletion atomically):
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT_REORG=$(engineer_run query init.complete-milestone ${GSD_WS:+--ws=${GSD_WS##* }})
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
+ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
+INIT_REORG=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
-_gsd_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
-REQUIREMENTS_PATH=$(_gsd_field "$INIT_REORG" requirements_path)
+_engineer_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
+REQUIREMENTS_PATH=$(_engineer_field "$INIT_REORG" requirements_path)
 git rm "$REQUIREMENTS_PATH"
 ```
 
@@ -562,7 +562,7 @@ See: .planning/PROJECT.md (updated [today])
 
 <step name="handle_branches">
 
-Check the project's `branching_strategy` (from `init.execute-phase`/`init.complete-milestone`). `"none"` skips straight to `git_tag`. For `"phase"` or `"milestone"`, list the matching branches (by the configured prefix template); no branches found also skips to `git_tag`. Resolve the base branch through the single shared resolver, never a bare `main`/`master` fallback (Issue #1146):
+Check the project's `branching_strategy` (from `init.execute-phase`/`init.complete-milestone`). `"none"` skips straight to `git_tag`. For `"phase"` or `"milestone"`, list the matching branches (by the configured prefix template); no branches found also skips to `git_tag`. Resolve the base branch through the single shared resolver, never a bare `main`/`master` fallback:
 ```bash
 BASE_BRANCH=$(engineer_run query git.base-branch)
 ```
@@ -573,7 +573,7 @@ Exact bash for each of the four options (squash, history-preserving merge, delet
 
 </step>
 
-<!-- gsd:section id="git-tag" when="state:git-create-tag" -->
+<!-- engineer:section id="git-tag" when="state:git-create-tag" -->
 If `PER_REPO_TAGGING` is `true`, skip this section: the per-repository tags were created in `archive_milestone`, and no `v[X.Y]` tag is created in the current directory. Otherwise, if `section_manifest` is `null` or `"git-tag"` is in its `included` list: read and execute `engineer/workflows/complete-milestone/steps/git-tag.md`. Otherwise skip — do not read the file; proceed to `git_commit_milestone`.
 <!-- /section -->
 
@@ -593,7 +593,7 @@ git commit -m "chore: remove REQUIREMENTS.md for v[X.Y] milestone"
 
 Confirm: "Committed: chore: remove REQUIREMENTS.md for v[X.Y] milestone"
 
-When `PER_REPO_TAGGING` was `true`, remove the scratch directory: `rm -rf "${TMPDIR:-/tmp}/gsd-release-map-v[X.Y]"` (the archived copy lives in `.planning/milestones/`).
+When `PER_REPO_TAGGING` was `true`, remove the scratch directory: `rm -rf "${TMPDIR:-/tmp}/engineer-release-map-v[X.Y]"` (the archived copy lives in `.planning/milestones/`).
 
 </step>
 
@@ -633,11 +633,11 @@ Tag: v[X.Y]
 <milestone_naming>
 
 **Version conventions:**
-- **v1.0** — Initial MVP
+- **v1.0** — Initial release
 - **v1.1, v1.2** — Minor updates, new features, fixes
 - **v2.0, v3.0** — Major rewrites, breaking changes, new direction
 
-**Names:** Short 1-2 words (v1.0 MVP, v1.1 Security, v1.2 Performance, v2.0 Redesign).
+**Names:** Short 1-2 words (v1.0, v1.1 Security, v1.2 Performance, v2.0 Redesign).
 
 </milestone_naming>
 

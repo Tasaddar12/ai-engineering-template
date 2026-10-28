@@ -94,7 +94,7 @@ After completion, create SUMMARY.md with:
 **RED - Write failing test:**
 1. Create test file following project conventions
 2. Write test describing expected behavior (from `<behavior>` element)
-3. Run test - it MUST fail **intentionally** (#3770): the TARGET test you named must be the test that fails, on an assertion for the planned behavior. A nonzero exit alone is NOT RED — syntax errors, zero-test discovery, fixture crashes, parser errors, and unrelated assertions are INVALID_RED and must not authorize GREEN.
+3. Run test - it MUST fail **intentionally**: the TARGET test you named must be the test that fails, on an assertion for the planned behavior. A nonzero exit alone is NOT RED — syntax errors, zero-test discovery, fixture crashes, parser errors, and unrelated assertions are INVALID_RED and must not authorize GREEN.
 4. Persist the RED evidence from the actual command: `{command, exitCode, output, targetTest, targetFile, expected, actual}`. Preserve the real exit status and unmodified report; record the planned expected result and observed actual result. Write the record inside the project directory; the classifier refuses a path outside it. It reads only these fields, so the further fields below stay in the record for review.
    - Select evidence by **report format**, regardless of runner or package manager. The classifier has a shared TAP adapter for Node's built-in test runner and Vitest (`tap` / `tap-flat`), a JUnit XML adapter for Maven Surefire/Failsafe, a swift-testing console adapter for `swift test`, a Python `unittest` text adapter, and a `go test` text adapter. Other producers of these formats use the same adapters.
    - TAP: capture the complete reporter output, including its test plan. Node summary comments are optional. The report must start with its TAP output: capture the reporter's own stdout (for npm scripts, `npm run --silent`), not package-manager banners. Use the target test's exact name; when names repeat, use its qualified name as emitted in the report (`tap-flat` emits only the full `file > suite > test` name). Suite/file summary failures are not target assertions. If the reporter is incompatible, rerun the planned target with a supported reporter through the project's test command, capture that real command and result, then submit the rerun's record to the classifier below. Preserve other console output separately rather than editing the report to make it parse.
@@ -199,14 +199,14 @@ RED commits go unseen:
 - `*_test.exs` — Elixir
 - `*_spec.rb` / `*_test.rb` — Ruby
 
-**Cost of the broad pathspec (#4379).** `*.spec.*` can match a non-test file that happens to carry
+**Cost of the broad pathspec.** `*.spec.*` can match a non-test file that happens to carry
 the word — `api.spec.json`, `openapi.spec.yaml` — which lets the RED gate pass on a commit touching
 only that. This is not new: the previous `**/*.spec.*` already matched those at any nested path, so
 dropping the `**/` prefix only extends the same false-positive class to the repo root. It is
 accepted rather than narrowed, because narrowing it is a behaviour change to the
 currently-supported case and not part of making other languages visible.
 
-**Known gap — Rust (#4379).** `#[test]` conventionally lives inside the implementation file, so a
+**Known gap — Rust.** `#[test]` conventionally lives inside the implementation file, so a
 Rust RED commit touches `src/*.rs` and no path-based gate can distinguish it from ordinary source.
 Widening the pathspec to cover it would match all source and make the gate meaningless. `cargo test`
 works; the RED-*commit* gate cannot see it, so a Rust project using `workflow.tdd_mode` should
@@ -293,7 +293,7 @@ When `workflow.tdd_mode` is enabled in config, the RED/GREEN/REFACTOR gate seque
 ### Fail-Fast Rules
 
 1. **Unexpected GREEN in RED phase:** If the test passes before any implementation code is written, STOP. The feature may already exist or the test is wrong. Investigate before proceeding.
-2. **INVALID_RED in RED phase (#3770):** A nonzero exit is not RED by itself. Follow the format-based evidence contract in RED step 4, including reporter reruns and report freshness. An `INVALID_RED` verdict or failed semantic assessment halts GREEN. Unsupported, incomplete, ambiguous, or contradictory evidence cannot authorize implementation.
+2. **INVALID_RED in RED phase:** A nonzero exit is not RED by itself. Follow the format-based evidence contract in RED step 4, including reporter reruns and report freshness. An `INVALID_RED` verdict or failed semantic assessment halts GREEN. Unsupported, incomplete, ambiguous, or contradictory evidence cannot authorize implementation.
 3. **Missing RED commit:** If no `test(...)` commit precedes the `feat(...)` commit, the TDD discipline was violated. Flag in SUMMARY.md.
 4. **REFACTOR breaks tests:** Undo the refactor immediately. Commit was premature — refactor in smaller steps.
 
@@ -302,9 +302,9 @@ When `workflow.tdd_mode` is enabled in config, the RED/GREEN/REFACTOR gate seque
 After completing a `type: tdd` plan, the executor validates the git log:
 ```bash
 # The commit protocol promises no zero-padding for ${PHASE}/${PLAN} — strip both and
-# match the commit-scope position anchored (#4003). #4619: PHASE may be decimal/
+# match the commit-scope position anchored.: PHASE may be decimal/
 # N-segment; zero-strip only the leading integer segment, escape the rest.
-# #4748: it may also carry a letter suffix (03A), so split at the first non-digit.
+# It may also carry a letter suffix (03A), so split at the first non-digit.
 PHASE_INT=${PHASE%%[!0-9]*}; PHASE_REST=${PHASE#"$PHASE_INT"}
 PHASE_N="$((10#$PHASE_INT))${PHASE_REST//./\\.}"
 PLAN_N=$((10#${PLAN}))
@@ -316,7 +316,7 @@ git log --oneline -E --grep="^feat\((0*${PHASE_N})-(0*${PLAN_N})\):" | head -1
 git log --oneline -E --grep="^refactor\((0*${PHASE_N})-(0*${PLAN_N})\):" | head -1
 ```
 
-If RED or GREEN gate commits are missing, or no GREEN commit follows a RED commit (#5275), add a `## TDD Gate Compliance` section to SUMMARY.md with the violation details.
+If RED or GREEN gate commits are missing, or no GREEN commit follows a RED commit, add a `## TDD Gate Compliance` section to SUMMARY.md with the violation details.
 </gate_enforcement>
 
 <end_of_phase_review>
@@ -342,7 +342,7 @@ TDD Plans: {count} | Gate violations: {count}
 
 ### What the Review Checks
 
-1. **Gate sequence:** Each TDD plan has RED → GREEN commits in order (#5275). Order is commit ancestry, not log position or commit date: a GREEN counts only when it descends from a RED commit of the plan, so a history merged from worktree branches is judged by what each commit descends from. A plan with both commit kinds but no GREEN after a RED fails with `reason: green_before_red` and the line `Plan {id} GREEN precedes RED: no feat(...) commit descends from a test(...) commit.`, distinct from the `missing` row for a plan without a RED or GREEN commit. If git cannot answer the ancestry question, the GREEN keeps its credit rather than becoming a violation. A plan is scored on its own `test(<plan>):` / `feat(<plan>):` commits, with one exception (#4867): a RED-only probe plan is satisfied by a `feat(...)` commit under a plan that declares it in `depends_on`, directly or through a chain. That is the gap-closure shape (probe plan, then the fix plan that depends on it). The plan's own RED is still required, a plan nothing depends on is scored alone, and the report names the plan that supplied the GREEN (`Plan {id} GREEN is supplied by dependent plan {id}.`).
+1. **Gate sequence:** Each TDD plan has RED → GREEN commits in order. Order is commit ancestry, not log position or commit date: a GREEN counts only when it descends from a RED commit of the plan, so a history merged from worktree branches is judged by what each commit descends from. A plan with both commit kinds but no GREEN after a RED fails with `reason: green_before_red` and the line `Plan {id} GREEN precedes RED: no feat(...) commit descends from a test(...) commit.`, distinct from the `missing` row for a plan without a RED or GREEN commit. If git cannot answer the ancestry question, the GREEN keeps its credit rather than becoming a violation. A plan is scored on its own `test(<plan>):` / `feat(<plan>):` commits, with one exception: a RED-only probe plan is satisfied by a `feat(...)` commit under a plan that declares it in `depends_on`, directly or through a chain. That is the gap-closure shape (probe plan, then the fix plan that depends on it). The plan's own RED is still required, a plan nothing depends on is scored alone, and the report names the plan that supplied the GREEN (`Plan {id} GREEN is supplied by dependent plan {id}.`).
 2. **Test quality:** RED phase tests fail for the right reason (not import errors or syntax)
 3. **Minimal GREEN:** Implementation is minimal — no premature optimization in GREEN phase
 4. **Refactor discipline:** If REFACTOR commit exists, tests still pass

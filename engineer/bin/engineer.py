@@ -17,6 +17,9 @@ from lib import planning_review
 from lib import requirements
 from lib import planning_integrity
 from lib import manager, pipelines, ideas
+from lib import archive as archive_service
+from lib import capabilities, dispatch, installation, onboarding, planning, quality, research, review_ledger, runtime_tools, specs, workflow_ops
+from lib import review_execution, security_tracking
 from lib.core import Args, Failure, pick, raw, root, slug
 
 IDENTITY = {"packageName": "engineer-runtime", "contract": "2.0"}
@@ -30,12 +33,12 @@ def registry():
         "resolve-model": lambda a: models.resolution(a, "model"), "resolve-effort": lambda a: models.resolution(a, "effort"),
         "resolve-agent": lambda a: models.resolution(a, "agent"), "agent-skills": models.agent_skills,
         "agent.classify-failure": models.classify, "commit": gitops.commit, "git.base-branch": gitops.base_branch,
-        "dispatch-isolation": worktrees.isolation, "dispatch-capacity": quick_batch.capacity,
+        "dispatch-isolation": dispatch.descriptor, "dispatch-capacity": quick_batch.capacity,
         "find-phase": lambda a: records.find(a.need()), "phases.list": records.phase_list,
         "phase-plan-index": records.plan_index, "roadmap.analyze": records.roadmap_analyze,
         "roadmap.get-phase": lambda a: records.roadmap_phase(a.need()),
         "roadmap.set-plans": lambda a: records.phase_change(a, "set-plans"),
-        "roadmap.update-plan-progress": misc.roadmap_progress, "phase.mvp-mode": records.mvp,
+        "roadmap.update-plan-progress": misc.roadmap_progress,
         "phase.tdd-applicable": tdd.applicable, "task.is-behavior-adding": tdd.behavior,
         "user-story.validate": records.user_story, "state.get": records.state_view,
         "state.load": records.state_view, "state.patch": records.state_patch,
@@ -67,11 +70,61 @@ def registry():
         "init.seeds": lambda a: ideas.command(a, "init-seeds"),
         "list-seeds": lambda a: ideas.command(a, "list-seeds"),
         "seed-enrich": lambda a: ideas.command(a, "seed-enrich"),
+        "inspect-dispatch-isolation": lambda a: dispatch.descriptor(a, inspect=True),
+        "commit-to-subrepo": gitops.commit_subrepo,
+        "current-timestamp": planning.timestamp,
+        "history-digest": planning.history,
+        "state-snapshot": planning.snapshot,
+        "state.json": planning.snapshot,
+        "smart-entry": planning.smart_entry,
+        "docs-init": lambda a: bundles.init(a, "docs-update"),
+        "project.init": lambda a: onboarding.command(a, "init"),
+        "project.create": lambda a: onboarding.command(a, "init"),
+        "onboard": lambda a: onboarding.command(a, "init"),
+        "new-project": lambda a: onboarding.command(a, "init"),
+        "phase.list-plans": lambda a: planning.artifacts(a, True),
+        "phase.list-artifacts": lambda a: planning.artifacts(a, False),
+        "phase.next-decimal": planning.next_decimal,
+        "phases.clear": misc.clear_phases,
+        "roadmap.milestone-scope": planning.milestone_scope,
+        "roadmap.annotate-dependencies": planning.annotate_dependencies,
+        "quick-tasks-append": planning.quick_append,
+        "quick-tasks-migrate": planning.quick_migrate,
+        "estimate-calibrate": planning.calibration,
+        "estimate-check": planning.estimate_check,
+        "verify-summary": misc.verify_summary,
+        "research-plan": research.plan,
+        "research-store": research.store_command,
+        "classify-confidence": research.confidence,
+        "check": workflow_ops.check,
+        "check.predicate": workflow_ops.predicate,
+        "check.auto-mode": workflow_ops.auto_mode,
+        "check.ui-safety-gate": lambda a: __import__("lib.ui", fromlist=["safety_gate"]).safety_gate(a),
+        "review.flags": workflow_ops.review_flags,
+        "review.depth": workflow_ops.review_depth,
+        "review.field": workflow_ops.review_field,
+        "review.scope": workflow_ops.review_scope,
+        "review.disposition": workflow_ops.review_disposition,
+        "review.reconcile": review_ledger.reconcile,
+        "teams-status": lambda a: workflow_ops.command(a, "teams-status"),
+        "review-lane": review_lane,
+        "resolve-package-manager": runtime_tools.package_manager,
+        "normalize-test-command": runtime_tools.normalize_test_command,
+        "update-context": installation.context,
+        "detect-custom-files": installation.custom_files,
+        "custom-files.backup": installation.backup,
+        "restore-custom-files": installation.restore,
+        "update.changes": installation.changes,
+        "stamp-codebase-map": codebase.stamp,
+        "verify.codebase-drift": codebase.drift,
+        "verify.context-drift": codebase.context_drift,
+        "review.run": lambda a: review_execution.command(a, "run"),
+        "review.collect": lambda a: review_execution.command(a, "collect"),
     }
     for action in ("add", "insert", "edit", "remove", "complete"):
         verbs["phase."+action] = lambda a, action=action: records.phase_change(a, action)
     verbs["phase.complete"] = misc.complete_phase
-    for action in ("update", "begin-phase", "record-session", "add-roadmap-evolution", "add-decision", "add-blocker", "resolve-blocker", "advance-plan", "update-progress", "record-metric", "sync-todos", "add-deferred"):
+    for action in ("update", "begin-phase", "record-session", "add-roadmap-evolution", "add-decision", "add-blocker", "resolve-blocker", "advance-plan", "update-progress", "record-metric", "sync-todos", "add-deferred", "planned-phase", "milestone-switch"):
         verbs["state."+action] = lambda a, action=action: records.state_action(a, action)
     for action in ("get", "set", "validate"):
         verbs["frontmatter."+action] = lambda a, action=action: frontmatter.command(a, action)
@@ -82,15 +135,15 @@ def registry():
     for action in ("add", "list", "match-phase", "complete"):
         verbs["todo."+action] = lambda a, action=action: records.todo(a, action)
     for action in ("mark-complete", "complete", "reopen"):
-        verbs["requirements."+action] = lambda a, action=action: records.requirements(a, "complete" if action != "reopen" else "reopen")
+        verbs["requirements."+action] = lambda a, action=action: requirements.command(a, "complete" if action != "reopen" else "reopen")
     for action in ("set-status", "close-phase", "outstanding"):
         verbs["requirements."+action] = lambda a, action=action: requirements.command(a, action)
     verbs["state.clear-blocker"] = lambda a: records.state_action(a, "resolve-blocker")
-    for action in ("cleanup-entry", "complete", "create", "effective-concurrency", "filter-executed", "merge-eligible", "merge-routing", "parse-args", "resume", "spawn-plan", "update", "verification-routing"):
+    for action in ("cleanup-entry", "complete", "create", "effective-concurrency", "filter-executed", "merge-eligible", "merge-routing", "parse-args", "resume", "spawn-plan", "update", "verification-routing", "list", "get"):
         verbs["quick-batch."+action] = lambda a, action=action: quick_batch.command(a, action)
-    for action in ("create", "record-agent", "list", "merge-wave", "cleanup-wave", "reap-orphans", "health"):
+    for action in ("create", "record-agent", "list", "merge-wave", "cleanup-wave", "reap-orphans", "health", "base-check", "worker-record", "worker-status", "worker-complete", "manifest"):
         verbs["worktree."+action] = lambda a, action=action: worktrees.command(a, action)
-    for action in ("create", "complete", "list"):
+    for action in ("create", "complete", "list", "archive-quick"):
         verbs["milestone."+action] = lambda a, action=action: misc.milestone(a, action)
     for action in ("open", "adopt", "status", "close"):
         verbs["session."+action] = lambda a, action=action: sessions.command(a, action)
@@ -113,7 +166,38 @@ def registry():
         verbs["idea."+action] = lambda a, action=action: ideas.command(a, action)
     for action in ("list", "search", "get", "close", "reopen", "link", "capture", "finding", "validate"):
         verbs["issue."+action] = lambda a, action=action: issues.command(a, action)
-    for kind in ("code-review", "complete-milestone", "execute-phase", "new-milestone", "new-project", "onboard", "phase-op", "plan-phase", "progress", "quick", "quick-batch", "todos", "verify-work", "ship"):
+    for action in ("get", "update", "status"):
+        verbs["project."+action] = lambda a, action=action: onboarding.command(a, action)
+    for action in ("capture", "recover", "list"):
+        verbs["archive."+action] = lambda a, action=action: archive_service.command(a, action)
+    for action in ("render-hooks", "events", "list"):
+        verbs["loop."+action] = lambda a, action=action: capabilities.command(a, action)
+    for action in ("put", "get", "list", "query"):
+        verbs["research-store."+action] = lambda a, action=action: research.store(a, action)
+    for action in ("discussion", "research", "patterns"):
+        verbs["phase."+action+"-inputs"] = lambda a, action=action: research.inputs(a, "discuss" if action == "discussion" else action)
+    for action in ("prohibitions", "ui", "project", "coverage"):
+        verbs["spec."+action] = lambda a, action=action: specs.command(a, action)
+    verbs["spec.ui-probe"] = lambda a: specs.command(a, "ui")
+    verbs["spec.prohibition-probe"] = lambda a: specs.command(a, "prohibitions")
+    for action in ("status", "append", "fixed", "waive"):
+        verbs["windows."+action] = lambda a, action=action: quality.command(a, action)
+    for action in ("status", "resolve", "fingerprint", "threat-review", "threat-preview", "threat-publish", "threat-audit"):
+        verbs["security."+action] = lambda a, action=action: security_tracking.command(a, action)
+    for action in ("threat-review", "threat-preview", "threat-publish", "threat-audit"):
+        verbs["phase."+action] = lambda a, action=action: security_tracking.command(a, action)
+    for action in ("review-dispatch", "review-record", "review-status", "context", "health", "intel", "intel-query", "learnings-query", "learnings-extract", "learnings-copy", "threadscan", "debug", "validation", "tdd-review-checkpoint"):
+        key = {"review-dispatch": "review.dispatch", "review-record": "review.record", "review-status": "review.status",
+               "context": "validate.context", "health": "validate.health", "intel": "intel.api-surface", "intel-query": "intel.query",
+               "learnings-query": "learnings.query", "learnings-extract": "learnings.extract", "learnings-copy": "learnings.copy",
+               "threadscan": "threadscan", "debug": "debug.status", "validation": "validation.coverage",
+               "tdd-review-checkpoint": "tdd.review-checkpoint"}[action]
+        verbs[key] = lambda a, action=action: workflow_ops.command(a, action)
+    for action in ("get", "read", "length", "lines", "commits", "exec-ready", "has-section", "predicate", "validate", "encode-lines", "depth-input", "depth-fields", "status-reason"):
+        verbs["json."+action] = lambda a, action=action: runtime_tools.json_command(a, action)
+    for action in ("frontmatter", "summary-files", "contributions", "evidence", "normalize-structural"):
+        verbs["review."+action] = lambda a, action=action: runtime_tools.review_adapter(a, action)
+    for kind in ("code-review", "complete-milestone", "execute-phase", "new-milestone", "new-project", "onboard", "phase-op", "plan-phase", "progress", "quick", "quick-batch", "todos", "verify-work", "ship", "debug", "docs-update", "map-codebase", "milestone-op", "resume", "update"):
         verbs["init."+kind] = lambda a, kind=kind: bundles.init(a, kind)
     return verbs
 
@@ -121,6 +205,13 @@ def registry():
 def ui_gate(args):
     from lib.ui import plan_gate
     return plan_gate(args)
+
+
+def review_lane(args):
+    if not args.pos:
+        raise Failure("review-lane-action-required", "Select flags, sections, explicit-from-argv or dispatch-step", 2)
+    action = args.pos.pop(0)
+    return workflow_ops.review_lane(args, action)
 
 
 VERBS = registry()
@@ -144,10 +235,20 @@ def main(argv=None):
     if not values:
         return 2
     name = values.pop(0)
-    if name in ("init", "check", "verify", "frontmatter", "quick-batch", "spec", "phase", "state", "roadmap", "worktree", "uat", "pipeline", "manager", "idea", "issue") and values and not values[0].startswith("-"):
+    if name in ("init", "check", "verify", "verification", "frontmatter", "quick-batch", "quick", "todo", "milestone", "spec", "phase", "phases", "state", "roadmap", "worktree", "uat", "pipeline", "manager", "idea", "issue", "project", "archive", "loop", "review", "json", "windows", "security", "validation", "validate", "requirements", "update", "custom-files", "codebase", "handoff", "session", "pr", "intel", "learnings", "planning", "research-store", "cleanup", "tdd", "task", "agent", "progress") and values and not values[0].startswith("-"):
         name += "."+values.pop(0)
-    args = Args(values)
+    extra_flags = {"context"} if name in ("validate.health", "validate.context") else {"completed"} if name.startswith("worktree.") else set()
+    args = Args(values, flags=extra_flags)
     try:
+        if args.has("host"):
+            if args.get("host") not in ("claude", "codex"):
+                raise Failure("unsupported-host", str(args.get("host")), 2)
+            os.environ["ENGINEER_HOST"] = str(args.get("host"))
+        if args.has("ws"):
+            raise Failure("workspace-selection-unavailable", "Select the project's checkout with --cwd; retired workstream storage is not restored", 2)
+        if name.startswith("check.") and name not in VERBS:
+            args.pos.insert(0, name[len("check."):])
+            name = "check"
         before = planning_integrity.capture()
         if name in ("help", "verbs", "--help", "-h"):
             result = {"usage": "engineer_run query <verb>", "verbs": sorted([*VERBS, "help", "verbs"])}
@@ -161,12 +262,17 @@ def main(argv=None):
         status = 0
         if isinstance(result, tuple) and len(result) == 2 and isinstance(result[1], int):
             result, status = result
+        if name == "run-with-timeout" and not args.has("json") and isinstance(result, dict):
+            sys.stdout.write(str(result.get("stdout", "")))
+            sys.stderr.write(str(result.get("stderr", "")))
+            return status
         if args.has("pick") and status == 0:
             result = pick(result, str(args.get("pick")))
         if name == "check.tdd-red-evidence" and args.has("raw"):
             print(result["verdict"])
         else:
-            print(raw(result) if args.has("raw") or args.has("pick") else json.dumps(result, ensure_ascii=False, indent=2))
+            text_verbs = {"git.base-branch", "resolve-package-manager", "normalize-test-command", "review-lane"}
+            print(raw(result) if args.has("raw") or args.has("pick") or name in text_verbs and isinstance(result, str) and not args.has("json") else json.dumps(result, ensure_ascii=False, indent=2))
         return status
     except Failure as exc:
         print(json.dumps({"error": exc.code, "message": exc.message, **exc.details}, ensure_ascii=False), file=sys.stderr)

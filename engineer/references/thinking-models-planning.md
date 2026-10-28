@@ -1,6 +1,6 @@
 # Thinking Models: Planning Cluster
 
-Structured reasoning models for the **planner** and **roadmapper** agents. Apply these at decision points during plan creation, not continuously. Each model counters a specific documented failure mode.
+Structured reasoning models for the **planner** agents. Apply these at decision points during plan creation, not continuously. Each model counters a specific documented failure mode.
 
 Source: Curated from [thinking-partner](https://github.com/mattnowdev/thinking-partner) model catalog (150+ models). Selected for direct applicability to Engineer planning workflow.
 

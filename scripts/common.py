@@ -30,6 +30,16 @@ def manifest() -> dict:
     return json.loads(Path(__file__).with_name("manifest.json").read_text(encoding="utf-8"))
 
 
+def historical_path(paths, canonical):
+    """Resolve a canonical label against an immutable tree's actual file names."""
+    if canonical in paths:
+        return canonical
+    target = PurePosixPath(canonical)
+    matches = [name for name in paths if PurePosixPath(name).parent == target.parent
+               and PurePosixPath(name).name.endswith("-"+target.name)]
+    return matches[0] if len(matches) == 1 else canonical
+
+
 def safe_path(root: Path, relative: str, *, forbid_legacy: bool = True) -> Path:
     """Reject absolute/traversal paths, symlinks, junctions and root itself."""
     root = root.resolve(strict=True)
