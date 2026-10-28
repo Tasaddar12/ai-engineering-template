@@ -26,6 +26,7 @@ Deviations:
     here they are ``argv[0]``/``argv[1]``. It is keyword-driven instead of an
     options object, and defaults to ``sys.argv[1:]``.
   - JSON parse error text comes from Python's ``json`` module, not V8.
+  - Default output is always UTF-8 bytes, matching Node, regardless of the console code page.
   - The upstream tests that round-trip ``projectProhibitions`` / ``projectTruths``
     through ``frontmatter.parseMustHavesBlock`` are not ported: this repository has
     no ``must_haves`` block parser at the pinned base commit.
@@ -329,6 +330,19 @@ def disposition_for_unverifiable_truth(truth, context=None):
             "reason": "backstop truth confirmed by explicit evidence (a passing wired held-out/property test or directly-observed behavior)"}
 
 
+def _stream_writer(stream):
+    """Write UTF-8 to a real text stream's byte layer; fall back to ``stream.write``."""
+    def emit(text):
+        buffer = getattr(stream, "buffer", None)
+        if buffer is None:
+            stream.write(text)
+            return
+        stream.flush()
+        buffer.write(text.encode("utf-8"))
+        buffer.flush()
+    return emit
+
+
 def run_probe_cli(analyze, usage, argv=None, read_file=None, write=None, write_err=None, exit=None):
     """Read the requirements (and optional resolutions) file, run ``analyze``, print the report.
 
@@ -344,8 +358,8 @@ def run_probe_cli(analyze, usage, argv=None, read_file=None, write=None, write_e
             return stream.read()
 
     read_file = read_file or default_read
-    write = write or sys.stdout.write
-    write_err = write_err or sys.stderr.write
+    write = write or _stream_writer(sys.stdout)
+    write_err = write_err or _stream_writer(sys.stderr)
 
     def default_exit(code):
         raise ExitError(code)
