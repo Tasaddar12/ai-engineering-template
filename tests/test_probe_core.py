@@ -1,4 +1,6 @@
 """Ports of upstream tests/probe-core.test.cjs and tests/probe-core.property.test.cjs."""
+import importlib
+import importlib.util
 import json
 from pathlib import Path
 import random
@@ -7,8 +9,20 @@ import sys
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT/"engineer/bin"))
-from lib import probe_core as pc  # noqa: E402
+LIB = ROOT/"engineer/bin/lib"
+
+
+def _load(name):
+    """Load engineer/bin/lib as an isolated package (another ``lib`` package exists under .ai/runtime)."""
+    if "engineer_bin_lib" not in sys.modules:
+        spec = importlib.util.spec_from_file_location("engineer_bin_lib", LIB/"__init__.py", submodule_search_locations=[str(LIB)])
+        package = importlib.util.module_from_spec(spec)
+        sys.modules["engineer_bin_lib"] = package
+        spec.loader.exec_module(package)
+    return importlib.import_module("engineer_bin_lib."+name)
+
+
+pc = _load("probe_core")
 
 VALIDATORS = {
     "categories": ["adjacency", "empty", "ordering"],

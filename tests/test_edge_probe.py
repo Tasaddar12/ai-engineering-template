@@ -1,6 +1,8 @@
 """Port of upstream tests/edge-probe.test.cjs for engineer/bin/lib/edge_probe.py."""
 import contextlib
 import io
+import importlib
+import importlib.util
 import json
 from pathlib import Path
 import subprocess
@@ -10,8 +12,20 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 BIN = ROOT/"engineer/bin"
-sys.path.insert(0, str(BIN))
-from lib import edge_probe as ep  # noqa: E402
+LIB = ROOT/"engineer/bin/lib"
+
+
+def _load(name):
+    """Load engineer/bin/lib as an isolated package (another ``lib`` package exists under .ai/runtime)."""
+    if "engineer_bin_lib" not in sys.modules:
+        spec = importlib.util.spec_from_file_location("engineer_bin_lib", LIB/"__init__.py", submodule_search_locations=[str(LIB)])
+        package = importlib.util.module_from_spec(spec)
+        sys.modules["engineer_bin_lib"] = package
+        spec.loader.exec_module(package)
+    return importlib.import_module("engineer_bin_lib."+name)
+
+
+ep = _load("edge_probe")
 
 FIXTURES = ROOT/"engineer/references/edge-probe-fixtures"
 ZERO_COVERAGE_2 = {"applicable": 2, "resolved": 0, "unresolved": 2, "unclassified": 0, "byVerification": {"explicit": 0, "backstop": 0}}

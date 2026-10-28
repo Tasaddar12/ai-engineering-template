@@ -1,4 +1,6 @@
 """Port of upstream tests/spec-section.test.cjs plus parity checks against spec.section."""
+import importlib
+import importlib.util
 import json
 from pathlib import Path
 import subprocess
@@ -8,8 +10,20 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 BIN = ROOT/"engineer/bin"
-sys.path.insert(0, str(BIN))
-from lib import spec_section as ss  # noqa: E402
+LIB = ROOT/"engineer/bin/lib"
+
+
+def _load(name):
+    """Load engineer/bin/lib as an isolated package (another ``lib`` package exists under .ai/runtime)."""
+    if "engineer_bin_lib" not in sys.modules:
+        spec = importlib.util.spec_from_file_location("engineer_bin_lib", LIB/"__init__.py", submodule_search_locations=[str(LIB)])
+        package = importlib.util.module_from_spec(spec)
+        sys.modules["engineer_bin_lib"] = package
+        spec.loader.exec_module(package)
+    return importlib.import_module("engineer_bin_lib."+name)
+
+
+ss = _load("spec_section")
 
 PROHIB_SUFFIX_SPEC = "\n".join([
     "## Prohibitions (must-NOT)", "",
