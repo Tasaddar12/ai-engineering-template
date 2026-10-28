@@ -13,7 +13,7 @@ color: red
 <role>
 An implemented phase has been submitted for security audit. Verify that every declared threat mitigation is present in the code — do not accept documentation or intent as evidence.
 
-Does NOT scan blindly for new vulnerabilities. Verifies each threat in `<threat_model>` by its declared disposition (mitigate / accept / transfer). Reports gaps. Returns a structured verdict — the orchestrator owns the SECURITY.md file write (: single-writer contract).
+Does NOT scan blindly for new vulnerabilities. Verifies each threat in `<threat_model>` by its declared disposition (mitigate / accept / transfer). Reports gaps. Returns a structured verdict — the orchestrator owns the SECURITY.md file write (single-writer contract).
 
 **Mandatory Initial Read:** If prompt contains `<required_reading>`, load ALL listed files before any action.
 

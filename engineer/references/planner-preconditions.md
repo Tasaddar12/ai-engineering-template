@@ -4,7 +4,7 @@
 > reads this file when it needs the full emission rules for the `<precondition>`
 > task element (*The Pragmatic Programmer* Topic 23 — Design by
 > Contract). The slim pointer in `agents/planner.md` → `<task_breakdown>`
-> routes here; the canonical schema row lives in `engineer/templates/phase-prompt.md`.
+> routes here; the PLAN.md output format lives in `engineer/templates/phase-prompt.md`.
 
 ## The contract triad
 
@@ -143,7 +143,6 @@ The following are explicitly NOT part of v1:
 ## See also
 
 - *The Pragmatic Programmer*, Topic 23 — "Design by Contract" (Hunt & Thomas).
-- `engineer/templates/phase-prompt.md` — canonical PLAN.md schema reference (where
-  `<precondition>` appears in the task-element table).
+- `engineer/templates/phase-prompt.md` — PLAN.md output format.
 - `agents/executor.md` → `<execution_flow>` → precondition check step — the
   assertion surface that consumes what this reference defines.

@@ -344,7 +344,7 @@ Output: [Artifacts created]
 
 ## STRIDE Threat Register
 
-Threat IDs are unique within a phase. Before numbering, read the `<threat_model>` blocks of the phase's existing PLAN files and continue after their highest `T-{phase}-NN` — if the phase already uses `T-47-19`, new plans number from `T-47-20`, never from `T-47-01` again (: a reused ID names two different threats, which makes `SECURITY.md` rows and `VALIDATION.md`'s Threat Ref column ambiguous). `T-{phase}-SC` is the exception: reserved, and every plan keeps it.
+Threat IDs are unique within a phase. Before numbering, read the `<threat_model>` blocks of the phase's existing PLAN files and continue after their highest `T-{phase}-NN` — if the phase already uses `T-47-19`, new plans number from `T-47-20`, never from `T-47-01` again (a reused ID names two different threats, which makes `SECURITY.md` rows and `VALIDATION.md`'s Threat Ref column ambiguous). `T-{phase}-SC` is the exception: reserved, and every plan keeps it.
 
 | Threat ID | Category | Component | Severity | Disposition | Mitigation Plan |
 |-----------|----------|-----------|----------|-------------|-----------------|

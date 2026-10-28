@@ -136,7 +136,7 @@ same rule; if they ever diverge, this file wins.
 
 ## Related
 
-- `engineer/templates/phase-prompt.md` → Reversibility — the schema reference.
+- `engineer/templates/phase-prompt.md` — the PLAN.md output format.
 - `engineer/references/thinking-models-planning.md` → Reversibility Test — the
   reasoning model that produces the rating; it consumes this taxonomy.
 - `engineer/references/checkpoints.md` → `checkpoint:decision` — the checkpoint

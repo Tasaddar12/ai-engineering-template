@@ -145,7 +145,7 @@ EXECUTOR_MODEL=$(engineer_run query resolve-model executor --raw)
 
 > **Model omission.** Omit the `model` parameter entirely when the value it would carry (`EXECUTOR_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
-**a. Spawn executor agent** (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)**:**
+**a. Spawn executor agent** (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze):
 ```
 Agent(
   prompt="Fix finding {ID}: {description}. Files: {file_refs}. Make the minimal change to resolve this specific finding. Do not refactor surrounding code.",

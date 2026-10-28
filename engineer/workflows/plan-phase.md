@@ -143,7 +143,7 @@ When `CONTEXT_WINDOW >= 500000`, the planner prompt includes the 3 most recent p
 
 Parse JSON for: `researcher_model`, `planner_model`, `checker_model`, `research_enabled`, `plan_checker_enabled`, `nyquist_validation_enabled`, `commit_docs`, `text_mode`, `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `has_research`, `has_context`, `has_reviews`, `has_plans`, `plan_count`, `phase_status`, `planning_exists`, `roadmap_exists`, `phase_req_ids`, `response_language`, `granularity`, `prior_verify_commands` (array of `{phase, plan, task, command}`, possibly empty; emitted at every context window), `threat_id_duplicates` + `threat_id_duplicate_count` (cross-plan threat-ID collisions; consumed at step 5.55).
 
-**:** omit the `model=` param from an `Agent()` call when its `researcher`/`planner`/`checker`_model is `"inherit"` or empty — passing `model=""` 404s on non-Claude runtimes; omitting inherits the orchestrator model (mirrors execute-phase).
+Omit the `model=` param from an `Agent()` call when its `researcher`/`planner`/`checker`_model is `"inherit"` or empty — passing `model=""` 404s on non-Claude runtimes; omitting inherits the orchestrator model (mirrors execute-phase).
 
 **If `response_language` is set:** All user-facing orchestrator output — narration between tool calls, status updates, progress notes, findings, questions, prompts, and explanations — MUST be in `{response_language}`; technical terms, code, paths, and subagent prompts stay in English. Pass `response_language: {value}` into every spawned subagent prompt.
 
@@ -1341,7 +1341,7 @@ no CONTEXT.md exists for this phase, or its `<decisions>` block is empty.
 ```bash
 GATE_CFG=$(engineer_run query config-get workflow.context_coverage_gate --raw 2>/dev/null || echo "true")
 if [ "$GATE_CFG" != "false" ]; then
-  #: CONTEXT_PATH from step-1 init doesn't survive into this Bash block;
+  # CONTEXT_PATH from step-1 init doesn't survive into this Bash block;
   # recompute it. Only run when a CONTEXT.md exists (handler fails closed on an
   # empty arg, so an unguarded empty glob would halt a context-less phase).
   CONTEXT_PATH=$(ls "${PHASE_DIR}"/*-CONTEXT.md 2>/dev/null | head -1)
@@ -1451,8 +1451,7 @@ PHASE_REQ_IDS="${PHASE_REQ_IDS:-TBD}"
 
 Read the `activeHooks` array from `PLAN_POST_HOOKS_JSON` in-context. If
 `activeHooks` is empty or absent, skip this step silently — do NOT key the skip
-on any one capability's gate being absent (: that skip silently dropped
-every other registered hook at this point).
+on any one capability's gate being absent.
 
 **Step and contribution dispatch:** dispatch every `kind == "step"` hook and inject every `kind == "contribution"` fragment per @~/.claude/engineer/references/loop-hook-dispatch.md (skip each kind silently when none), before gate evaluation below.
 

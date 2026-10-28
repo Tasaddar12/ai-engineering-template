@@ -459,7 +459,7 @@ if [ -f "${FIX_REPORT_PATH}" ]; then
     echo "REVIEW-FIX.md created at ${FIX_REPORT_PATH}"
     
     if [ "$COMMIT_DOCS" = "true" ]; then
-      #: --auto's re-review loop overwrote REVIEW.md each iteration
+      # --auto's re-review loop overwrote REVIEW.md each iteration
       # (auto_iteration_loop), but the only prior REVIEW.md commit is the
       # initial code-review pass (iteration-1 content). Stage the converged
       # REVIEW.md alongside REVIEW-FIX.md in this single docs commit so the two

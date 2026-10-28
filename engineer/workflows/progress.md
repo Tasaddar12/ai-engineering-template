@@ -246,7 +246,7 @@ if [ -z "$ROADMAP" ]; then
 else
   for PHASE_NUM in $(echo "$ROADMAP" | jq -r '.phases[] | (.number // .phase_number)'); do
     PHASE_DATA=$(echo "$ROADMAP" | jq --arg n "$PHASE_NUM" '.phases[] | select((.number // .phase_number) == ($n | tonumber))')
-    #: $PHASE_DATA is a `.phases[]` entry from `roadmap.analyze`, which
+    # $PHASE_DATA is a `.phases[]` entry from `roadmap.analyze`, which
     # emits `plan_count`/`summary_count` SCALARS (src/roadmap.cts) — it has
     # never emitted `.plans`/`.summaries` ARRAYS. Reading those absent keys
     # (even with a `// []` fallback) always produced 0, permanently disabling

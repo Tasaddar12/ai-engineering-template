@@ -334,7 +334,7 @@ else
 
   # Create a temp branch from the current branch tip so the worktree
   # attaches to that NEW branch rather than the user's currently-checked-out
-  # branch (: git refuses to check out the same branch in two
+  # branch (Git refuses to check out the same branch in two
   # worktrees by default; the original `git worktree add "$wt" "$branch"`
   # failed before the agent could do any work). The temp branch shares
   # history with $branch up to the moment of creation, so commits made
