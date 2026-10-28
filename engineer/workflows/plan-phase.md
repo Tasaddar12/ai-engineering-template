@@ -816,13 +816,14 @@ Historical findings already incorporated, explicitly deferred/rejected in PLAN.m
 **Tracked-source paths :** Every path you write into PLAN.md —
 `files_modified`, `must_haves.artifacts`, action paths, and paths inherited
 from `{PATTERNS_PATH}` or prior-phase plans — must name git-tracked source,
-never a gitignored install/runtime mirror (e.g. `<root>/.engineer/capabilities/<id>/...`
-synced from a plugin's tracked tree; executor edits to a mirror die on the
-next capability sync). Verify existing-file paths with `git ls-files -- <path>`
-(non-empty = tracked); resolve a gitignored hit to its tracked origin
-(`plugins/*/.engineer/capabilities/<id>/...`, root `capabilities/<id>/...`). A
-not-yet-existing path is a new file — keep the intended path. Re-verify
-inherited paths: fix a mirror path, never inherit. Submodule files: check
+never a gitignored build or install output (e.g. `dist/<module>.js`,
+`build/generated/...`, `.venv/lib/python3.*/site-packages/<pkg>/...`; executor
+edits to an output die on the next build or install). Verify existing-file
+paths with `git ls-files -- <path>` (non-empty = tracked); resolve a gitignored
+hit to the tracked source it is built or installed from (`src/<module>.ts`, the
+generator's `.proto`/schema file, `src/<pkg>/...`). A not-yet-existing path is
+a new file — keep the intended path. Re-verify inherited paths: fix an output
+path, never inherit. Submodule files: check
 from within the submodule.
 </tracked_source_paths>
 

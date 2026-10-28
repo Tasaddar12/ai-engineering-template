@@ -117,14 +117,15 @@ Grep("router\.(get|post|put|delete)", type: "ts")
 4. Most recently modified — prefer current patterns over legacy
 
 **Tracked-source gate:** every analog path you name must be git-TRACKED
-source, never a gitignored install/runtime mirror (e.g. `<root>/.engineer/capabilities/
-<id>/...` synced from a plugin's tracked tree). Before naming an analog whose
-file exists on disk, verify `git ls-files -- <path>` prints it (non-empty =
-tracked); if the closest analog is a gitignored mirror, substitute its tracked
-origin (e.g. `plugins/*/.engineer/capabilities/<id>/...`, or root
-`capabilities/<id>/...`). PATTERNS.md must never emit mirror paths — the
-planner builds later phases on your output, so one mirror path self-propagates
-across phases and the executor's edits die on the next capability sync. For
+source, never a gitignored build or install output (e.g. `dist/<module>.js`,
+`build/generated/...`, `.venv/lib/python3.*/site-packages/<pkg>/...`). Before
+naming an analog whose file exists on disk, verify `git ls-files -- <path>`
+prints it (non-empty = tracked); if the closest analog is a gitignored output,
+substitute the tracked source it is built or installed from (e.g.
+`src/<module>.ts`, the `.proto`/schema file the generator reads, or
+`src/<pkg>/...`). PATTERNS.md must never emit output paths — the planner builds
+later phases on your output, so one output path self-propagates across phases
+and the executor's edits die on the next build or install. For
 files inside a nested submodule, run the check from within the submodule.
 
 ## Step 4: Extract Patterns from Analogs
