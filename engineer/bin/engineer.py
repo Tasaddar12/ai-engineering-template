@@ -186,11 +186,11 @@ def registry():
         verbs["security."+action] = lambda a, action=action: security_tracking.command(a, action)
     for action in ("threat-review", "threat-preview", "threat-publish", "threat-audit"):
         verbs["phase."+action] = lambda a, action=action: security_tracking.command(a, action)
-    for action in ("review-dispatch", "review-record", "review-status", "context", "health", "intel", "intel-query", "learnings-query", "learnings-extract", "learnings-copy", "threadscan", "debug", "security", "validation", "tdd-review-checkpoint"):
+    for action in ("review-dispatch", "review-record", "review-status", "context", "health", "intel", "intel-query", "learnings-query", "learnings-extract", "learnings-copy", "threadscan", "debug", "validation", "tdd-review-checkpoint"):
         key = {"review-dispatch": "review.dispatch", "review-record": "review.record", "review-status": "review.status",
                "context": "validate.context", "health": "validate.health", "intel": "intel.api-surface", "intel-query": "intel.query",
                "learnings-query": "learnings.query", "learnings-extract": "learnings.extract", "learnings-copy": "learnings.copy",
-               "threadscan": "threadscan", "debug": "debug.status", "security": "security.status", "validation": "validation.coverage",
+               "threadscan": "threadscan", "debug": "debug.status", "validation": "validation.coverage",
                "tdd-review-checkpoint": "tdd.review-checkpoint"}[action]
         verbs[key] = lambda a, action=action: workflow_ops.command(a, action)
     for action in ("get", "read", "length", "lines", "commits", "exec-ready", "has-section", "predicate", "validate", "encode-lines", "depth-input", "depth-fields", "status-reason"):

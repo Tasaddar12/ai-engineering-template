@@ -14,6 +14,7 @@ from .text import join_frontmatter, split_frontmatter
 
 SUFFIXES = ('-SUMMARY.md', '-REVIEW.md', '-VERIFICATION.md', '-SECURITY.md', '-VALIDATION.md', '-UAT.md')
 CLOSED = {'resolved', 'fixed', 'dismissed'}
+RELATIONSHIPS = {'followup', 'references', 'reference', 'closes', 'close', 'fixes', 'resolving'}
 
 
 def artifacts(directory):
@@ -28,6 +29,8 @@ def _refs(entries):
         if not isinstance(entry, dict) or not isinstance(entry.get('id'), str) or not entry['id'].strip() or entry['id'] in ids:
             raise Failure('invalid-finding-declarations', 'Finding IDs must be unique nonempty strings')
         ids.add(entry['id'])
+        if entry.get('relationship', 'followup') not in RELATIONSHIPS:
+            raise Failure('invalid-finding-relationship', 'Use an explicit followup/reference or closing relationship', id=entry['id'])
         state = str(entry.get('state', entry.get('status', 'unresolved'))).lower()
         if state in CLOSED and (not entry.get('evidence') or not entry.get('reason')):
             raise Failure('finding-resolution-unproved', 'Resolved entries require both actual evidence and reason', id=entry['id'])
@@ -195,11 +198,13 @@ def human_evidence(fields, issue_url=None, scope_reference=None):
     packet = json.loads(issues.provider(['api', '--hostname', origin['hostname'], endpoint], origin).stdout)
     author = packet.get('user') or {}
     body = packet.get('body', '')
+    visible = '\n'.join(issue_format.visible_lines(body))
+    affirmations = re.findall(r'(?im)^\s*(?:i\s+(?:accept|approve)\b|(?:decision|acceptance)\s*:\s*(?:accepted|approved)\b)[^\r\n]*', visible)
+    affirmative = any(str(fields['decision']).strip().casefold() in line.casefold() for line in affirmations)
     if (packet.get('html_url') != url or author.get('type') != 'User' or author.get('login', '').lower() != reviewer.lower()
             or not str(packet.get('created_at', '')).startswith(str(fields['date'])[:10])
-            or str(fields['decision']).strip().lower() not in body.lower()
-            or not re.search(r'(?i)\b(?:accepted|approved|i accept|i approve)\b', body)
-            or re.search(r'(?i)\b(?:pending|rejected)\b|\bnot\s+(?:accepted|approved)\b|\bdo not\b', body)):
+            or not affirmative
+            or re.search(r"(?i)\b(?:pending|reject(?:ed)?|declin(?:e|ed)|never|not|no|cannot|withdrawn)\b|\b(?:don't|can't)\b", visible)):
         raise Failure('human-acceptance-unverified', 'Provider did not confirm the named human accepted this exact recorded decision')
     if scope_reference and str(scope_reference) not in body:
         raise Failure('human-acceptance-scope-pending', 'Human reply does not identify this individual risk')
@@ -233,11 +238,13 @@ def audit_pr(phase, body):
             forms = '(?:' + re.escape(base) + '|' + re.escape(origin['owner'] + '/' + origin['repository']) + '#' + str(number) + '|#' + str(number) + r')(?!\d)'
             closes = bool(re.search(r'(?i)\b(?:closes?|closed|fix(?:es|ed)?|resolves?|resolved)\s+' + forms, body))
             relationship = item.get('relationship', 'followup')
+            if relationship not in RELATIONSHIPS:
+                failures.append({'id': item['id'], 'reason': 'Unknown declared relationship'})
             if str(url) not in body:
                 failures.append({'id': item['id'], 'reason': 'Exact canonical finding URL missing from PR body'})
-            if relationship == 'followup' and closes:
+            if relationship in ('followup', 'reference', 'references') and closes:
                 failures.append({'id': item['id'], 'reason': 'Follow-up must not be closed by this PR'})
-            if relationship in ('closes', 'close', 'fixes', 'resolving'):
+            if closes or relationship in ('closes', 'close', 'fixes', 'resolving'):
                 if not closes or str(item.get('state', '')).lower() not in CLOSED:
                     failures.append({'id': item['id'], 'reason': 'Closing relationship requires complete resolved scope and actual evidence'})
                 if str(item.get('variant', '')).upper() == 'UAT' or '## Human acceptance' in issue.get('body', ''):

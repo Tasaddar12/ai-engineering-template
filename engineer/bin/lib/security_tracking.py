@@ -606,10 +606,20 @@ def security_status(args, proposed=None):
         reasons.append('Duplicate security threat rows')
     if any(t['threat_id'] not in ids for t in plans):
         reasons.append('Report omits a planned threat')
-    threshold = RANK.get(str(config.lookup(config.load(), 'workflow.security_block_on', 'high')).lower(), 3)
+    policy = str(config.lookup(config.load(), 'workflow.security_block_on', 'high')).lower()
+    threshold = 5 if policy == 'none' else RANK.get(policy, 3)
     blocking = 0
     for row in rows:
         identifier = row['threat_id'].strip('` ')
+        planned = [item for item in plans if item['threat_id'] == identifier]
+        if len(planned) > 1:
+            reasons.append(identifier + ': planned threat identity is ambiguous')
+        elif planned:
+            disposition = lambda value: re.split(r'[\s:;,]+', value.strip('` ').lower(), 1)[0]
+            if row['severity'].strip('` ').lower() != planned[0]['severity'].strip('` ').lower():
+                reasons.append(identifier + ': audit severity differs from the declared PLAN threat')
+            if disposition(row['disposition']) != disposition(planned[0]['disposition']):
+                reasons.append(identifier + ': audit disposition differs from the declared PLAN threat')
         evidence = [e for e in declared if isinstance(e, dict) and e.get('id', e.get('threat_id')) == identifier]
         citations = evidence[0].get('citations', []) if len(evidence) == 1 else []
         supported = valid_revision and bool(citations) and all(_citation(c, frozen) for c in citations)
