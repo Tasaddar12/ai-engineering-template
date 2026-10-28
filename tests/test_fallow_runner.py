@@ -14,12 +14,24 @@ import tempfile
 import unittest
 from unittest import mock
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]/"engineer/bin"))
+import importlib
+import importlib.util
 
-from lib import fallow_runner  # noqa: E402
-from lib.fallow_runner import (  # noqa: E402
-    normalize_fallow_report, normalize_fallow_report_file, require_fallow_binary, resolve_fallow_binary,
-)
+LIB = Path(__file__).resolve().parents[1]/"engineer/bin/lib"
+
+
+def _load(name):
+    # Load engineer/bin/lib as an isolated package: ".ai/runtime/lib" is also named "lib".
+    if "engineer_bin_lib" not in sys.modules:
+        spec = importlib.util.spec_from_file_location("engineer_bin_lib", LIB/"__init__.py", submodule_search_locations=[str(LIB)])
+        package = importlib.util.module_from_spec(spec)
+        sys.modules["engineer_bin_lib"] = package
+        spec.loader.exec_module(package)
+    return importlib.import_module("engineer_bin_lib."+name)
+
+fallow_runner = _load("fallow_runner")
+normalize_fallow_report, normalize_fallow_report_file = fallow_runner.normalize_fallow_report, fallow_runner.normalize_fallow_report_file
+require_fallow_binary, resolve_fallow_binary = fallow_runner.require_fallow_binary, fallow_runner.resolve_fallow_binary
 
 NO_BINARY = ("Fallow is enabled but no binary was found. "
              "Please install fallow via `npm install -D fallow` or `cargo install fallow`.")
