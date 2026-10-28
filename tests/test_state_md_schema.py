@@ -22,7 +22,7 @@ schema = _load("state_md_schema")
 class StateMdSchema(unittest.TestCase):
     def test_key_order_matches_upstream_literal_order(self):
         self.assertEqual(
-            ["gsd_state_version", "milestone", "milestone_name", "current_phase", "current_phase_name",
+            ["workflow_state_version", "milestone", "milestone_name", "current_phase", "current_phase_name",
              "current_plan", "status", "stopped_at", "paused_at", "last_updated", "last_activity",
              "last_activity_desc", "state_head", "progress", "progress.total_phases",
              "progress.completed_phases", "progress.total_plans", "progress.completed_plans",

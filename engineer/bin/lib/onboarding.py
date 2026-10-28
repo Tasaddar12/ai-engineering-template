@@ -120,7 +120,7 @@ def _render(project, requirements, phases):
     roadmap += "## Progress\n\n| Phase | Plans Complete | Status | Completed |\n|---|---|---|---|\n"
     for index, phase in enumerate(phases, 1):
         roadmap += "| "+str(index)+". "+cell(phase["name"])+" | 0/0 | Not started | - |\n"
-    state = join_frontmatter({"engineer_state_version": "1.0", "status": "planning", "progress": {"total_phases": len(phases), "completed_phases": 0, "total_plans": 0, "completed_plans": 0, "percent": 0}},
+    state = join_frontmatter({"workflow_state_version": "1.0", "status": "planning", "progress": {"total_phases": len(phases), "completed_phases": 0, "total_plans": 0, "completed_plans": 0, "percent": 0}},
             "# Project State\n\n## Project Reference\n\nSee: .planning/PROJECT.md\n\n**Core value:** "+project["core_value"]+
             "\n\n## Current Position\n\nPhase: "+("1 of "+str(len(phases))+" ("+phases[0]["name"]+")" if phases else "None")+
             "\nPlan: None\nStatus: Ready to discuss\nLast activity: "+now()[:10]+" — Onboarding initialized\nProgress: 0%\n\n## Performance Metrics\n\nNo execution metrics yet.\n\n## Accumulated Context\n\n### Decisions\n\nNone recorded.\n\n### Pending Todos\n\nNone.\n\n### Blockers/Concerns\n\nNone.\n\n## Session Continuity\n\nLast session: "+now()+"\nStopped at: Onboarding initialized\nResume file: None\n")

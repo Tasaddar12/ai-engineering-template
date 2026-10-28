@@ -18,9 +18,7 @@ Deviations:
 - ``loadCompiledModule`` (``npm run build:lib`` artifact check) is replaced by importing
   ``health_diagnostic.RULES``; ``COMPILED_MODULE_*`` constants are not ported.
 - The default target is ``engineer/workflows/health.md``.
-- The ``--check`` remedy text names ``python -m lib.gen_health_docs --write``; the generated
-  footnote paragraph is kept verbatim from upstream (it still names ``node scripts/gen-health-docs.cjs``,
-  ``src/health-diagnostic.cts`` and ``#3309``), so a hand-edited footnote in ``health.md`` reads as drift.
+- The generated footnote names the installed Python helper and Python rule table.
 - ``ExitError`` / ``runMain`` are inlined as a private ``_ExitError`` handled by ``main``.
 - Rule descriptions come from the Python rule table verbatim, so wording the repo's ``health.md``
   localised (``Engineer`` for upstream ``GSD`` in W010, W019 and W028) reads as drift.
@@ -75,16 +73,16 @@ STATIC_NOT_REPAIRABLE_BULLETS = ("PROJECT.md, ROADMAP.md content", "Phase direct
 
 FOOTNOTE_PARAGRAPH = (
     "Note: this table is **generated** — do not hand-edit it. It is produced by "
-    "`node scripts/gen-health-docs.cjs --write` from `src/health-diagnostic.cts`'s `RULES` table "
+    "`python -I engineer/bin/helper.py gen-health-docs --write` from `engineer/bin/lib/health_diagnostic.py`'s `RULES` table "
     "(31 rules as of #3309, each carrying a static `description`/`repairable` on its `Rule` entry — "
-    "see `src/health-diagnostic-types.cts`) plus the 3 pre-checks that stay outside the rule table by "
-    "design (`E001`, `E010`, `I010` — safety rails in `cmdValidateHealth`, `src/verify.cts`, never "
-    "`.planning/` findings). `scripts/lint-health-diagnostic-rule-table.cjs` already enforces the 1:1 "
+    "see `engineer/bin/lib/health_diagnostic_rules.py`) plus the 3 pre-checks that stay outside the rule table by "
+    "design (`E001`, `E010`, `I010` — safety rails in the health validator, never "
+    "`.planning/` findings). `python -I engineer/bin/helper.py lint-health-diagnostic-rule-table` enforces the 1:1 "
     "code invariant this table depends on (no duplicate codes; severity is always a `Rule` property, "
     "never set per emit call) — before assigning a new code, add a `Rule` entry under "
-    "`src/health-diagnostic-rules/` (its `code` is simply the next free number the lint guard has not "
-    "yet seen) and run `node scripts/gen-health-docs.cjs --write` to regenerate this table; "
-    "`npm run lint:generated-sync` fails if it drifts. `W025` (the `workflow.use_worktrees`/"
+    "`engineer/bin/lib/health_diagnostic_rules.py` (its `code` is the next free number the lint guard has not "
+    "yet seen) and run `python -I engineer/bin/helper.py gen-health-docs --write` to regenerate this table; "
+    "`python -I engineer/bin/helper.py gen-health-docs --check` fails if it drifts. `W025` (the `workflow.use_worktrees`/"
     "`dispatch.isolation` check, #2486) is a workflow-layer diagnostic emitted directly by this file's "
     "own `run_health_check` step, not by `cmdValidateHealth` — it stays documented in that step, not in "
     "this generated table.")

@@ -218,6 +218,10 @@ VERBS = registry()
 
 
 def main(argv=None):
+    # JSON is UTF-8 across source and installed runtimes, including Windows hosts.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     values = list(sys.argv[1:] if argv is None else argv)
     if values and (values[0] == "--cwd" or values[0].startswith("--cwd=")):
         option = values.pop(0)
