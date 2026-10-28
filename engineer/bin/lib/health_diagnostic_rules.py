@@ -554,3 +554,397 @@ def to_comparable_path_key(path, platform=None):
 # ``health_diagnostic.py`` concatenates them in upstream order.
 
 RULE_GROUPS = {}
+
+_W = SEVERITY["WARNING"]
+_E = SEVERITY["ERROR"]
+_INFO = SEVERITY["INFO"]
+_NONE = REMEDY_RISK["NONE"]
+_DESTRUCTIVE = REMEDY_RISK["DESTRUCTIVE"]
+
+
+def _remedy(action, risk, args=None):
+    return {"action": REMEDY_ACTION[action], "risk": risk, "args": args or {}}
+
+
+# --- root-existence: E002, E003, E004, W001 ----------------------------------------------
+
+def _check_e002(snapshot):
+    if snapshot["projectSections"]["exists"]:
+        return []
+    return [_diag("E002", _E, "PROJECT.md not found", advise_remedy("/gsd-new-project"))]
+
+
+def _check_e003(snapshot):
+    # Known ambiguity (upstream): UNREADABLE covers both an absent and an unreadable ROADMAP.md.
+    if snapshot["milestone"]["scope"] != SCOPE["UNREADABLE"]:
+        return []
+    return [_diag("E003", _E, "ROADMAP.md not found", advise_remedy("/gsd-new-milestone"))]
+
+
+def _check_e004(snapshot):
+    # Known gap (upstream): UNREADABLE covers both an absent and an unreadable STATE.md.
+    if snapshot["currentPhaseLabel"]["scope"] != SCOPE["UNREADABLE"]:
+        return []
+    return [_diag("E004", _E, "STATE.md not found", _remedy("REGENERATE_STATE", _DESTRUCTIVE))]
+
+
+REQUIRED_SECTIONS = ["## What This Is", "## Core Value", "## Requirements"]
+
+
+def _check_w001(snapshot):
+    value = snapshot["projectSections"]["value"]
+    if value is None:
+        return []
+    diagnostics = []
+    for required in REQUIRED_SECTIONS:
+        heading = re.sub(r"^##\s+", "", required)
+        if heading not in value:
+            diagnostics.append(_diag("W001", _W, f"PROJECT.md missing section: {required}", advise_remedy("Add section manually")))
+    return diagnostics
+
+
+RULE_GROUPS["root-existence"] = [
+    _rule("E002", _E, "PROJECT.md not found", False, _check_e002),
+    _rule("E003", _E, "ROADMAP.md not found", False, _check_e003),
+    _rule("E004", _E, "STATE.md not found", False, _check_e004),
+    _rule("W001", _W, "PROJECT.md missing required section", False, _check_w001),
+]
+
+
+# --- config-validation: W003, E005, W004, W008, W016, W012, W013, W014, W015, W022, W029 -----
+
+def _check_w003(snapshot):
+    if snapshot["config"]["exists"]:
+        return []
+    return [_diag("W003", _W, "config.json not found", _remedy("CREATE_CONFIG", _NONE))]
+
+
+def _check_e005(snapshot):
+    config = snapshot["config"]
+    if not config["exists"] or config["value"] is not None:
+        return []
+    return [_diag("E005", _E, "config.json: JSON parse error", _remedy("RESET_CONFIG", _DESTRUCTIVE))]
+
+
+def _check_w004(snapshot):
+    value = snapshot["config"]["value"]
+    if not value:
+        return []
+    profile = _get(value, "model_profile")
+    if _truthy(profile) and profile not in VALID_PROFILES:
+        return [_diag("W004", _W, f'config.json: invalid model_profile "{_js_string(profile)}"',
+                      advise_remedy(f"Valid values: {', '.join(VALID_PROFILES)}"))]
+    return []
+
+
+def _workflow_of(snapshot):
+    value = snapshot["config"]["value"]
+    return _get(value, "workflow") if value else _UNDEF
+
+
+def _check_w008(snapshot):
+    workflow = _workflow_of(snapshot)
+    if _truthy(workflow) and _get(workflow, "nyquist_validation") is _UNDEF:
+        return [_diag("W008", _W, "config.json: workflow.nyquist_validation absent (defaults to enabled but agents may skip)",
+                      _remedy("ADD_NYQUIST_KEY", _NONE))]
+    return []
+
+
+def _check_w016(snapshot):
+    workflow = _workflow_of(snapshot)
+    if _truthy(workflow) and _get(workflow, "ai_integration_phase") is _UNDEF:
+        return [_diag("W016", _W,
+                      "config.json: workflow.ai_integration_phase absent (defaults to enabled — run /gsd-ai-integration-phase before planning AI system phases)",
+                      _remedy("ADD_AI_INTEGRATION_PHASE_KEY", _NONE))]
+    return []
+
+
+def _check_w012(snapshot):
+    value = snapshot["config"]["value"]
+    if not value:
+        return []
+    strategy = _get(value, "branching_strategy")
+    if _truthy(strategy) and strategy not in VALID_BRANCHING_STRATEGIES:
+        return [_diag("W012", _W, f'config.json: invalid branching_strategy "{_js_string(strategy)}"',
+                      advise_remedy(f"Valid values: {', '.join(VALID_BRANCHING_STRATEGIES)}"))]
+    return []
+
+
+def _check_w013(snapshot):
+    value = snapshot["config"]["value"]
+    if not value:
+        return []
+    cw = _get(value, "context_window")
+    if cw is _UNDEF:
+        return []
+    is_number = isinstance(cw, (int, float)) and not isinstance(cw, bool)
+    if not is_number or cw <= 0 or (isinstance(cw, float) and not cw.is_integer()):
+        return [_diag("W013", _W, f'config.json: context_window should be a positive integer, got "{_js_string(cw)}"',
+                      advise_remedy("Set to 200000 (default) or 1000000 (for 1M models)"))]
+    return []
+
+
+def _template_check(snapshot, key, placeholder, code, message, fix):
+    value = snapshot["config"]["value"]
+    if not value:
+        return []
+    template = _get(value, key)
+    if _truthy(template) and isinstance(template, str) and placeholder not in template:
+        return [_diag(code, _W, message, advise_remedy(fix))]
+    return []
+
+
+def _check_w014(snapshot):
+    return _template_check(snapshot, "phase_branch_template", "{phase}", "W014",
+                           "config.json: phase_branch_template missing {phase} placeholder",
+                           "Template must include {phase} for phase number substitution")
+
+
+def _check_w015(snapshot):
+    return _template_check(snapshot, "milestone_branch_template", "{milestone}", "W015",
+                           "config.json: milestone_branch_template missing {milestone} placeholder",
+                           "Template must include {milestone} for version substitution")
+
+
+def _check_w022(snapshot):
+    value = snapshot["config"]["value"]
+    if not value:
+        return []
+    diagnostics = []
+    models = _get(value, "models")
+    if isinstance(models, dict):
+        for phase_type, tier in models.items():
+            if phase_type not in VALID_PHASE_TYPES:
+                diagnostics.append(_diag("W022", _W, f'config.json: models has an unknown phase type "{phase_type}" which will be ignored',
+                                         advise_remedy(f"Valid phase types: {', '.join(VALID_PHASE_TYPES)}")))
+            elif not isinstance(tier, str) or tier not in VALID_TIERS:
+                diagnostics.append(_diag("W022", _W,
+                                         f"config.json: models.{phase_type} has an invalid tier value {_json(tier)} which will be ignored",
+                                         advise_remedy(f"Valid tiers: {', '.join(VALID_TIERS)}")))
+    elif models is not _UNDEF and models is not None:
+        diagnostics.append(_diag("W022", _W,
+                                 f"config.json: models is set to {_json(models)}, but must be an object mapping phase types to tiers — this value will be ignored",
+                                 advise_remedy('Set models to an object like {"planning": "sonnet"}, or remove the key to use profile defaults')))
+    return diagnostics
+
+
+def _check_w029(snapshot):
+    field = snapshot.get("planningTracked")
+    if not field or field.get("scope") != SCOPE["COMPLETE"]:
+        return []
+    if not field["value"].get("ignored") or not field["value"].get("tracked"):
+        return []
+    return [_diag("W029", _W,
+                  ".planning/ matches a gitignore rule but is still tracked by git — .gitignore has no effect on already-tracked files, so staging keeps picking them up",
+                  advise_remedy("Run `git rm -r --cached .planning/` to untrack it (the ignore rule then takes effect); this does not delete the files on disk"))]
+
+
+RULE_GROUPS["config-validation"] = [
+    _rule("W003", _W, "config.json not found", True, _check_w003),
+    _rule("E005", _E, "config.json parse error", False, _check_e005),
+    _rule("W004", _W, "config.json invalid field value", False, _check_w004),
+    _rule("W008", _W, "config.json: workflow.nyquist_validation absent (defaults to enabled but agents may skip)", True, _check_w008),
+    _rule("W016", _W, "config.json: workflow.ai_integration_phase absent (defaults to enabled but agents may skip AI-integration-phase planning)", True, _check_w016),
+    _rule("W012", _W, "config.json invalid branching_strategy value", False, _check_w012),
+    _rule("W013", _W, "config.json context_window not a positive integer", False, _check_w013),
+    _rule("W014", _W, "config.json phase_branch_template missing {phase} placeholder", False, _check_w014),
+    _rule("W015", _W, "config.json milestone_branch_template missing {milestone} placeholder", False, _check_w015),
+    _rule("W022", _W, "config.json models entry malformed (unknown phase type, invalid tier, or non-object value)", False, _check_w022),
+    _rule("W029", _W, ".planning/ matches a gitignore rule but is still tracked by git (gitignore has no effect on already-tracked files)", False, _check_w029),
+]
+
+
+# --- agent-install: W010 --------------------------------------------------------------------
+
+def _check_agent_install(snapshot):
+    field = snapshot["agentInstall"]
+    status, scope = field["value"], field["scope"]
+    if scope == SCOPE["UNREADABLE"]:
+        return []
+    if status["agents_installed"]:
+        return []
+    missing, incomplete = status["missing_agents"], status["incomplete_agents"]
+    if len(status["installed_agents"]) == 0:
+        return [_diag("W010", _W, f'No GSD agents found in {status["agents_dir"]} — Task(subagent_type="gsd-*") will fall back to general-purpose',
+                      advise_remedy(f"Run the GSD installer: npx {PACKAGE_NAME}@latest"))]
+    if len(incomplete) > 0 and len(missing) == 0:
+        return [_diag("W010", _W,
+                      f"Incomplete agent installs (missing generated file): {', '.join(incomplete)} — affected workflows may fall back to general-purpose",
+                      advise_remedy(f"Re-run the GSD installer to complete the install: npx {PACKAGE_NAME}@latest"))]
+    if len(incomplete) > 0:
+        return [_diag("W010", _W,
+                      f"Missing {len(missing)} GSD agents: {', '.join(missing)}; incomplete agent installs (missing generated file): {', '.join(incomplete)} — affected workflows will fall back to general-purpose",
+                      advise_remedy(f"Run the GSD installer: npx {PACKAGE_NAME}@latest"))]
+    return [_diag("W010", _W, f"Missing {len(missing)} GSD agents: {', '.join(missing)} — affected workflows will fall back to general-purpose",
+                  advise_remedy(f"Run the GSD installer: npx {PACKAGE_NAME}@latest"))]
+
+
+RULE_GROUPS["agent-install"] = [
+    _rule("W010", _W, "GSD agent installation missing or incomplete", False, _check_agent_install),
+]
+
+
+# --- milestone-archive-hygiene: W018, W019 ----------------------------------------------------
+
+def _check_w018(snapshot):
+    status = snapshot["milestoneArchiveStatus"]["value"]
+    archived, documented = status["archivedVersions"], set(status["documentedVersions"])
+    if len(archived) == 0:
+        return []
+    missing = [version for version in archived if version not in documented]
+    if len(missing) == 0:
+        return []
+    return [_diag("W018", _W, f"MILESTONES.md missing {len(missing)} archived milestone(s): {', '.join(missing)}",
+                  _remedy("BACKFILL_MILESTONES", _NONE))]
+
+
+def _check_w019(snapshot):
+    diagnostics = []
+    for filename in snapshot["planningRootFiles"]["value"]:
+        if not filename.endswith(".md") or is_canonical_planning_file(filename):
+            continue
+        diagnostics.append(_diag("W019", _W, f"Unrecognized .planning/ file: {filename} — not a canonical GSD artifact",
+                                 advise_remedy("Move to .planning/milestones/ archive subdir or delete if stale. See templates/README.md for the canonical artifact list.")))
+    return diagnostics
+
+
+RULE_GROUPS["milestone-archive-hygiene"] = [
+    _rule("W018", _W, "MILESTONES.md missing entry for archived milestone snapshot", True, _check_w018),
+    _rule("W019", _W, "Unrecognized .planning/ root file — not a canonical GSD artifact", False, _check_w019),
+]
+
+
+# --- worktree-health: W020, W017, W027 --------------------------------------------------------
+
+def _check_w020(snapshot):
+    diagnostics = []
+    health = snapshot["worktreeHealth"]
+    degraded = health.get("scope") == SCOPE["UNREADABLE"]
+    reason = health.get("reason")
+    if degraded and reason == "git_timed_out":
+        diagnostics.append(_diag("W020", _W,
+                                 "Worktree health check degraded: git worktree list timed out after 10s — orphan/stale worktrees could not be inspected",
+                                 advise_remedy("Run: git worktree list --porcelain to diagnose; check for .git/index.lock or a hung git process")))
+    if degraded and reason == "git_list_failed":
+        diagnostics.append(_diag("W020", _W,
+                                 "Worktree health check degraded: git worktree list failed — orphan/stale worktrees could not be inspected",
+                                 advise_remedy("Run: git worktree list --porcelain to diagnose; check git repository state and permissions")))
+    for finding in health["value"]:
+        if finding.get("kind") != "unverified":
+            continue
+        diagnostics.append(_diag("W020", _W,
+                                 f"Worktree health check degraded: could not stat {finding['path']} — presence/staleness could not be verified",
+                                 advise_remedy("Check filesystem permissions on the worktree path, or investigate why statSync failed for it")))
+    return diagnostics
+
+
+def _check_w017(snapshot):
+    return [_diag("W017", _W, f"Orphan git worktree: {finding['path']} (path no longer exists on disk)", advise_remedy("git worktree prune"))
+            for finding in snapshot["worktreeHealth"]["value"] if finding.get("kind") == "orphan"]
+
+
+def is_active_worktree_path(active_cwd, worktree_path, platform=None):
+    """True when ``active_cwd`` equals or is nested under ``worktree_path`` (case-folded on win32 only)."""
+    active = to_comparable_path_key(active_cwd, platform)
+    worktree = to_comparable_path_key(worktree_path, platform)
+    return active == worktree or active.startswith(worktree + "/")
+
+
+def _check_w027(snapshot):
+    diagnostics = []
+    active_cwd = snapshot["cwd"]
+    for finding in snapshot["worktreeHealth"]["value"]:
+        if finding.get("kind") != "stale" or is_active_worktree_path(active_cwd, finding["path"]):
+            continue
+        path = finding["path"]
+        diagnostics.append(_diag(
+            "W027", _W,
+            f"Stale git worktree: {path} (last modified {_js_string(finding['ageMinutes'])} minutes ago). Inspect uncommitted work first: "
+            f"git -C {path} status --porcelain; if clean run: git worktree remove {path}; only add --force to discard changes",
+            advise_remedy("git -C <path> status --porcelain; if clean: git worktree remove <path>; add --force only to discard changes")))
+    return diagnostics
+
+
+RULE_GROUPS["worktree-health"] = [
+    _rule("W020", _W, "Worktree health scan degraded — git worktree list timed out, failed, or a finding could not be verified", False, _check_w020),
+    _rule("W017", _W, "Orphan git worktree (path no longer exists on disk)", False, _check_w017),
+    _rule("W027", _W, "Stale git worktree (not modified in a long time)", False, _check_w027),
+]
+
+
+# --- consistency (validate.consistency only): C001-C004 -----------------------------------------
+
+def _check_c001(snapshot):
+    config = snapshot["config"]["value"]
+    if _get(config, "phase_naming") == "custom":
+        return []
+    numbers = []
+    for name in snapshot["allPhaseDirNames"]["value"]:
+        if "." in name or is_sentinel_phase_dir(name):
+            continue
+        number = _parse_int(name)
+        if number is not None:
+            numbers.append(number)
+    numbers.sort()
+    return [_diag("C001", _W, f"Gap in phase numbering: {numbers[i - 1]} → {numbers[i]}",
+                  advise_remedy("Create the missing phase directory or renumber to close the gap"))
+            for i in range(1, len(numbers)) if numbers[i] != numbers[i - 1] + 1]
+
+
+def _check_c002(snapshot):
+    diagnostics = []
+    for entry in snapshot["perPhasePlanNumbering"]["value"]:
+        nums = entry["planNums"]
+        for i in range(1, len(nums)):
+            if nums[i] != nums[i - 1] + 1:
+                diagnostics.append(_diag("C002", _W, f"Gap in plan numbering in {entry['phaseDir']}: plan {nums[i - 1]} → {nums[i]}",
+                                         advise_remedy("Create the missing plan or renumber to close the gap")))
+    return diagnostics
+
+
+def _check_c003(snapshot):
+    return [_diag("C003", _W, f"Summary {entry['orphanSummary']} in {entry['phaseDir']} has no matching PLAN.md",
+                  advise_remedy("Create the matching PLAN.md or remove the orphan summary"))
+            for entry in snapshot["perPhaseOrphanSummaries"]["value"]]
+
+
+def _check_c004(snapshot):
+    return [_diag("C004", _W, f"{entry['phaseDir']}/{entry['plan']}: missing 'wave' in frontmatter",
+                  advise_remedy("Add a 'wave' key to the plan's frontmatter"))
+            for entry in snapshot["perPhaseWaveMissingPlans"]["value"]]
+
+
+RULE_GROUPS["consistency"] = [
+    _rule("C001", _W, "Gap in disk phase numbering (integer sequence)", False, _check_c001),
+    _rule("C002", _W, "Gap in plan numbering within a phase", False, _check_c002),
+    _rule("C003", _W, "Orphan SUMMARY with no matching live PLAN", False, _check_c003),
+    _rule("C004", _W, "PLAN missing 'wave' in frontmatter", False, _check_c004),
+]
+
+
+# --- install-surface-shadowing: W028 ------------------------------------------------------------
+
+_INSTALL_SHADOW_RENDERER = None
+
+
+def set_install_shadow_renderer(renderer):
+    """Register ``renderer(cwd) -> (runtime, lines)`` (``None`` unregisters); W028 is inert without one."""
+    global _INSTALL_SHADOW_RENDERER
+    _INSTALL_SHADOW_RENDERER = renderer
+
+
+def _check_install_surface_shadowing(snapshot):
+    if _INSTALL_SHADOW_RENDERER is None:
+        return []
+    try:
+        runtime, lines = _INSTALL_SHADOW_RENDERER(snapshot["cwd"])
+    except Exception:  # noqa: BLE001 - advisory rule: never break the health run
+        return []
+    if len(lines) == 0:
+        return []
+    return [_diag("W028", _W, " ".join(lines), advise_remedy(f"Review install scopes for {runtime}: npx {PACKAGE_NAME}@latest"))]
+
+
+RULE_GROUPS["install-surface-shadowing"] = [
+    _rule("W028", _W, "A GSD-owned install scope shadows another on this machine", False, _check_install_surface_shadowing),
+]
