@@ -948,3 +948,307 @@ def _check_install_surface_shadowing(snapshot):
 RULE_GROUPS["install-surface-shadowing"] = [
     _rule("W028", _W, "A GSD-owned install scope shadows another on this machine", False, _check_install_surface_shadowing),
 ]
+
+
+def _directory_context(snapshot, known_ids):
+    context = snapshot.get("directoryContext")
+    if context is not None:
+        return context
+    return phase_directory_context(snapshot["config"]["value"] or {}, "", known_ids)
+
+
+# --- state-consistency: W024, W002, W011, W021, W026 ----------------------------------------------
+
+def _check_w024(snapshot):
+    # Deliberately inert upstream: no snapshot field backs the git-log freshness probe.
+    return []
+
+
+def _build_valid_phase_set(snapshot):
+    valid = set()
+    for name in snapshot["phaseDirs"]["value"]:
+        token = extract_phase_token(name, snapshot.get("phaseIdConvention"))
+        if token:
+            valid.add(token)
+    for entry in snapshot["roadmapDeclaredPhases"]["value"]:
+        valid.add(entry["phaseId"])
+    for token in snapshot["archivedPhaseTokens"]["value"]:
+        valid.add(token)
+    return valid
+
+
+def _split_phase_token(token):
+    dot = token.find(".")
+    return (token, "") if dot == -1 else (token[:dot], token[dot:])
+
+
+def _pad_phase_head(head, tail):
+    return head.rjust(2, "0") + tail if re.fullmatch(r"\d+", head, _A) else None
+
+
+def _normalize_phase_token_set(valid):
+    normalized = set()
+    for token in valid:
+        normalized.add(token)
+        head, tail = _split_phase_token(token)
+        padded = _pad_phase_head(head, tail)
+        if padded is not None:
+            normalized.add(padded)
+    return normalized
+
+
+def _check_w002(snapshot):
+    valid = _build_valid_phase_set(snapshot)
+    if len(valid) == 0:
+        return []
+    normalized_valid = _normalize_phase_token_set(valid)
+    sorted_valid = sorted(valid, key=_locale_key)
+    scope_clause = f" in workstream {snapshot['workstream']}" if snapshot.get("workstream") else ""
+    diagnostics = []
+    for ref in snapshot["statePhaseTokens"]["value"]:
+        head, tail = _split_phase_token(ref)
+        padded = _pad_phase_head(head, tail)
+        padded = ref if padded is None else padded
+        if ref in normalized_valid or padded in normalized_valid:
+            continue
+        diagnostics.append(_diag(
+            "W002", _W,
+            f"STATE.md references phase {ref}, but only phases {', '.join(sorted_valid)} are declared{scope_clause}",
+            advise_remedy("Review STATE.md manually before changing it; /gsd-health --repair will not overwrite an existing STATE.md for phase mismatches")))
+    return diagnostics
+
+
+def _current_phase_id_from_label(label):
+    if not label:
+        return None
+    match = re.match(r"^0*(" + PHASE_NUMBER_TOKEN_SOURCE + r")", label, _A)
+    return match.group(1) if match else None
+
+
+def _check_w011(snapshot):
+    phase_id = _current_phase_id_from_label(snapshot["currentPhaseLabel"]["value"])
+    if phase_id is None:
+        return []
+    if snapshot["roadmapPhaseCheckboxes"]["value"].get(phase_id) is not True:
+        return []
+    status = (snapshot["stateStatus"]["value"] or "").strip()
+    if normalize_state_status(status, None) == "completed":
+        return []
+    return [_diag("W011", _W,
+                  f"STATE.md says current phase is {phase_id} (status: {status.lower() or 'unknown'}) but ROADMAP.md shows it as [x] complete — state files may be out of sync",
+                  advise_remedy("Run /gsd-progress to re-derive current position, or manually update STATE.md"))]
+
+
+def _check_milestone_prefix_w021(snapshot):
+    diagnostics = []
+    for entry in snapshot["roadmapDeclaredPhases"]["value"]:
+        if entry.get("milestone") is None:
+            continue
+        expected = get_milestone_from_phase_id(entry["phaseId"])
+        if expected is None or expected == entry["milestone"]:
+            continue
+        diagnostics.append(_diag("W021", _W,
+                                 f"Phase {entry['phaseId']}: integer prefix implies {expected} but listed under {entry['milestone']}",
+                                 advise_remedy("gsd-tools roadmap upgrade --convention milestone-prefixed")))
+    return diagnostics
+
+
+def _check_w021(snapshot):
+    diagnostics = []
+    root_convention = _get(snapshot["config"]["value"], "phase_id_convention")
+    if root_convention == "milestone-prefixed":
+        diagnostics.extend(_check_milestone_prefix_w021(snapshot))
+    if snapshot.get("phaseIdConvention") == "bracket":
+        for mm in snapshot["roadmapBracketIncoherences"]["value"]:
+            if mm["kind"] == "missing-bracket":
+                message = (f"Phase {mm['phaseId']}: heading is not in bracket form under the 'bracket' convention "
+                           f"(expected `[CODE.{mm['sectionMilestone']}] {mm['phaseId']}:`)")
+            else:
+                message = f"Phase {mm['phaseId']}: bracket milestone {mm['phaseMilestone']} does not match its section milestone {mm['sectionMilestone']}"
+            diagnostics.append(_diag("W021", _W, message, advise_remedy(
+                "Bracket migration lands with the #612 migrator (PR-3); until then, manually align the bracket milestone in this heading to match the enclosing section.")))
+    return diagnostics
+
+
+def _check_w026(snapshot):
+    status = (snapshot["stateStatus"]["value"] or "").strip().lower()
+    if not re.search(r"milestone complete|archived", status):
+        return []
+    phase_ids = snapshot["currentMilestoneRoadmapPhaseIds"]["value"]
+    context = _directory_context(snapshot, phase_ids)
+    unstarted = []
+    for phase_id in phase_ids:
+        found = match_phase_dirs(snapshot["allPhaseDirNames"]["value"], phase_lookup_query(phase_id, context),
+                                 snapshot.get("phaseIdConvention"), None, context)
+        if len(found["matches"]) == 0:
+            unstarted.append(phase_id)
+    if len(unstarted) == 0:
+        return []
+    return [_diag("W026", _W,
+                  f"STATE says milestone complete but ROADMAP lists {len(unstarted)} unstarted phase(s) (e.g. Phase {unstarted[0]})",
+                  advise_remedy("Run validate consistency or re-run complete-milestone after verifying all phases are done"))]
+
+
+RULE_GROUPS["state-consistency"] = [
+    _rule("W024", _W, "STATE.md was written many commits ago — treat its contents as approximate", False, _check_w024),
+    _rule("W002", _W, "STATE.md references invalid phase", False, _check_w002),
+    _rule("W011", _W, "STATE.md current-phase status disagrees with ROADMAP.md checkbox", False, _check_w011),
+    _rule("W021", _W, "Phase's integer prefix implies a different milestone than its ROADMAP section (phase_id_convention: milestone-prefixed)",
+          False, _check_w021),
+    _rule("W026", _W, "STATE says milestone complete but ROADMAP lists an unstarted phase for that milestone", False, _check_w026),
+]
+
+
+# --- phase-structure: W005, W023, I001, W009, W030 --------------------------------------------------
+
+def _check_w005(snapshot):
+    diagnostics = []
+    convention = snapshot.get("phaseIdConvention")
+    for name in snapshot["phaseDirs"]["value"]:
+        if not is_phase_dir_name(name, convention):
+            diagnostics.append(_diag("W005", _W, f'Phase directory "{name}" doesn\'t follow NN-name format',
+                                     advise_remedy("Rename to match pattern (e.g., 01-setup)")))
+    return diagnostics
+
+
+def _check_w023(snapshot):
+    groups = {}
+    for name in snapshot["phaseDirs"]["value"]:
+        groups.setdefault(normalize_phase_name(extract_phase_token(name)), []).append(name)
+    phase_by_dir = {p["dir"]: p for p in snapshot["phases"]["value"]}
+    context = snapshot.get("directoryContext")
+
+    def order(a, b):
+        return compare_phase_num(a, b, context) or _locale_compare(str(a), str(b))
+
+    diagnostics = []
+    for key, dirs in groups.items():
+        if len(dirs) < 2:
+            continue
+        described = []
+        for name in sorted(dirs, key=functools.cmp_to_key(order)):
+            phase = phase_by_dir.get(name)
+            status = to_display_label(phase_status_from_facts({
+                "planCount": phase["planCount"] if phase else 0,
+                "summaryCount": phase["summaryCount"] if phase else 0,
+                "complete": phase["complete"] if phase else False,
+                "verificationStatus": phase["verificationStatus"] if phase else None,
+            }), "Not Started")
+            described.append(f"{name} ({status})")
+        diagnostics.append(_diag("W023", _W, f'Phase directories collide on normalized key "{key}": {", ".join(described)}',
+                                 advise_remedy("Inspect each directory; rename or remove the duplicate so only one directory maps to this phase key")))
+    return diagnostics
+
+
+def _check_i001(snapshot):
+    diagnostics = []
+    for phase in snapshot["phases"]["value"]:
+        deficit = phase["planCount"] - phase["summaryCount"]
+        if deficit > 0:
+            diagnostics.append(_diag("I001", _INFO, f"Phase {phase['dir']} has {deficit} plan(s) without a matching summary",
+                                     advise_remedy("May be in progress")))
+    return diagnostics
+
+
+def _check_w009(snapshot):
+    diagnostics = []
+    for entry in snapshot["researchValidationStatus"]["value"]:
+        if entry["hasValidationArchitecture"] and not entry["hasValidationMd"]:
+            diagnostics.append(_diag("W009", _W, f"Phase {entry['dir']}: has Validation Architecture in RESEARCH.md but no VALIDATION.md",
+                                     advise_remedy("Re-run /gsd-plan-phase with --research to regenerate")))
+    return diagnostics
+
+
+def _check_w030(snapshot):
+    diagnostics = []
+    for phase in snapshot["phases"]["value"]:
+        invalid = phase.get("verificationStatusError")
+        if not invalid:
+            continue
+        target = legacy_status_repair_target(invalid.get("rawStatus"))
+        if target is None:
+            remedy = advise_remedy("Set the report frontmatter `status` to one of passed | gaps_found | human_needed, "
+                                   "or delete the report and re-run the phase verification")
+        else:
+            remedy = _remedy("REPAIR_VERIFICATION_STATUS", _NONE, {"file": invalid["file"], "from": invalid["rawStatus"], "to": target})
+        diagnostics.append(_diag("W030", _W, f"Phase {phase['dir']}: {invalid['message']}", remedy))
+    return diagnostics
+
+
+RULE_GROUPS["phase-structure"] = [
+    _rule("W005", _W, "Phase directory naming mismatch", False, _check_w005),
+    _rule("W023", _W, "Phase directories collide on normalized key", False, _check_w023),
+    _rule("I001", _INFO, "Plan without SUMMARY (may be in progress)", False, _check_i001),
+    _rule("W009", _W, "Phase has Validation Architecture in RESEARCH.md but no VALIDATION.md", False, _check_w009),
+    _rule("W030", _W, "Phase verification report status is outside the closed set", True, _check_w030),
+]
+
+
+# --- roadmap-disk-consistency: W006, W007 -------------------------------------------------------------
+
+def _dirs_for_phase(dirs, phase_id, convention, context):
+    canonical = match_phase_dirs(dirs, phase_lookup_query(phase_id, context), convention, None, context)["matches"]
+    if canonical:
+        return canonical
+    variants = phase_variants(phase_id)
+    matched = []
+    for name in dirs:
+        token = extract_phase_token(name, convention).upper()
+        if any(token == variant.upper() for variant in variants):
+            matched.append(name)
+    return matched
+
+
+def _is_phase_not_started(phase_id, checkboxes):
+    return any(variant in checkboxes and checkboxes[variant] is False for variant in phase_variants(phase_id))
+
+
+def _check_w006(snapshot):
+    if snapshot["roadmapDeclaredPhases"]["scope"] != SCOPE["COMPLETE"]:
+        return []
+    dirs = snapshot["allPhaseDirNames"]["value"]
+    convention = snapshot.get("phaseIdConvention")
+    declared = snapshot["roadmapDeclaredPhases"]["value"]
+    context = _directory_context(snapshot, [entry["phaseId"] for entry in declared])
+    archived = set(snapshot["archivedPhaseTokens"]["value"])
+    sentinel_tokens = set(snapshot["roadmapSentinelPhaseTokens"]["value"])
+    checkboxes = snapshot["roadmapPhaseCheckboxes"]["value"]
+    diagnostics = []
+    for entry in declared:
+        phase_id = entry["phaseId"]
+        if phase_id in sentinel_tokens or is_sentinel_phase_id(phase_id):
+            continue
+        if _dirs_for_phase(dirs, phase_id, convention, context):
+            continue
+        if any(variant in archived for variant in phase_variants(phase_id)):
+            continue
+        if _is_phase_not_started(phase_id, checkboxes):
+            continue
+        diagnostics.append(_diag("W006", _W, f"Phase {phase_id} in ROADMAP.md but no directory on disk",
+                                 advise_remedy("Create phase directory or remove from roadmap")))
+    return diagnostics
+
+
+def _check_w007(snapshot):
+    if snapshot["roadmapDeclaredPhases"]["scope"] != SCOPE["COMPLETE"]:
+        return []
+    dirs = snapshot["allPhaseDirNames"]["value"]
+    convention = snapshot.get("phaseIdConvention")
+    declared = snapshot["roadmapDeclaredPhases"]["value"]
+    context = _directory_context(snapshot, [entry["phaseId"] for entry in declared])
+    claimed = set()
+    for entry in declared:
+        claimed.update(_dirs_for_phase(dirs, entry["phaseId"], convention, context))
+    diagnostics = []
+    for name in dirs:
+        token = extract_phase_token(name, convention)
+        if is_sentinel_phase_dir(name) or name in claimed:
+            continue
+        diagnostics.append(_diag("W007", _W, f"Phase {token} exists on disk but not in ROADMAP.md", advise_remedy("Add to roadmap or remove directory")))
+    return diagnostics
+
+
+RULE_GROUPS["roadmap-disk-consistency"] = [
+    _rule("W006", _W, "Phase in ROADMAP but no directory", False, _check_w006),
+    _rule("W007", _W, "Phase on disk but not in ROADMAP", False, _check_w007),
+]

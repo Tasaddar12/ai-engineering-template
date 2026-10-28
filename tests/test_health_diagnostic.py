@@ -681,6 +681,479 @@ class JavaScriptSemanticsHelpers(unittest.TestCase):
         self.assertEqual(["null", "true", "false", "5", "1.5", "a,b", "[object Object]", "x"],
                          [js(None), js(True), js(False), js(5.0), js(1.5), js(["a", "b"]), js({}), js("x")])
 
+def declared(*phase_ids, milestone=None):
+    return field([{"phaseId": p, "milestone": milestone} for p in phase_ids])
+
+
+class StateConsistency(unittest.TestCase):
+    def test_table(self):
+        rules = group("state-consistency")
+        self.assertEqual(["W024", "W002", "W011", "W021", "W026"], list(rules))
+        self.assertEqual({"warning"}, {r["severity"] for r in rules.values()})
+        self.assertEqual("STATE.md was written many commits ago — treat its contents as approximate", rules["W024"]["description"])
+
+    def test_w024_is_inert(self):
+        self.assertEqual([], run_rule("state-consistency", "W024", make_snapshot()))
+        self.assertEqual([], run_rule("state-consistency", "W024", {}))
+
+    def test_w002_fires_for_an_undeclared_reference(self):
+        snapshot = make_snapshot(phaseDirs=field(["01-setup", "02-api"]), roadmapDeclaredPhases=declared("01", "02", "10"),
+                                 statePhaseTokens=field(["02", "7"]))
+        found = run_rule("state-consistency", "W002", snapshot)
+        self.assertEqual(["STATE.md references phase 7, but only phases 01, 02, 10 are declared"], [d["message"] for d in found])
+        self.assertEqual("Review STATE.md manually before changing it; /gsd-health --repair will not overwrite an existing STATE.md for phase mismatches",
+                         found[0]["remedy"]["args"]["command"])
+
+    def test_w002_padding_tolerant_and_silent_cases(self):
+        ok = make_snapshot(phaseDirs=field(["01-setup"]), statePhaseTokens=field(["1", "01"]))
+        self.assertEqual([], run_rule("state-consistency", "W002", ok))
+        dotted = make_snapshot(roadmapDeclaredPhases=declared("2.1"), statePhaseTokens=field(["02.1", "2.1"]))
+        self.assertEqual([], run_rule("state-consistency", "W002", dotted))
+        self.assertEqual([], run_rule("state-consistency", "W002", make_snapshot(statePhaseTokens=field(["5"]))))
+        archived = make_snapshot(archivedPhaseTokens=field(["03"]), statePhaseTokens=field(["3"]))
+        self.assertEqual([], run_rule("state-consistency", "W002", archived))
+
+    def test_w002_names_workstream_scope_and_sorts_numerically(self):
+        snapshot = make_snapshot(roadmapDeclaredPhases=declared("10", "2", "1"), statePhaseTokens=field(["99"]), workstream="alpha")
+        found = run_rule("state-consistency", "W002", snapshot)
+        self.assertEqual("STATE.md references phase 99, but only phases 1, 2, 10 are declared in workstream alpha", found[0]["message"])
+
+    def test_w002_bracket_directories_tokenize_under_the_convention(self):
+        snapshot = make_snapshot(phaseDirs=field(["GSD.02-05-slug"]), phaseIdConvention="bracket", statePhaseTokens=field(["05"]))
+        self.assertEqual([], run_rule("state-consistency", "W002", snapshot))
+        legacy = make_snapshot(phaseDirs=field(["GSD.02-05-slug"]), statePhaseTokens=field(["05"]))
+        self.assertEqual(1, len(run_rule("state-consistency", "W002", legacy)))
+
+    def w011(self, label="3 of 8 (User Auth)", checked=True, status="executing"):
+        return make_snapshot(currentPhaseLabel=field(label), roadmapPhaseCheckboxes=field({"3": checked}), stateStatus=field(status))
+
+    def test_w011_fires_when_roadmap_checked_but_state_is_not_complete(self):
+        found = run_rule("state-consistency", "W011", self.w011(status="Executing Phase 3"))
+        self.assertEqual("STATE.md says current phase is 3 (status: executing phase 3) but ROADMAP.md shows it as [x] complete — state files may be out of sync",
+                         found[0]["message"])
+        self.assertEqual("Run /gsd-progress to re-derive current position, or manually update STATE.md", found[0]["remedy"]["args"]["command"])
+        self.assertIn("(status: unknown)", run_rule("state-consistency", "W011", self.w011(status=""))[0]["message"])
+
+    def test_w011_silent_cases(self):
+        for status in ("completed", "done", "complete", "All phases complete", "Phase 3 complete"):
+            self.assertEqual([], run_rule("state-consistency", "W011", self.w011(status=status)), status)
+        self.assertEqual([], run_rule("state-consistency", "W011", self.w011(checked=False)))
+        self.assertEqual([], run_rule("state-consistency", "W011", self.w011(label=None)))
+        self.assertEqual([], run_rule("state-consistency", "W011", self.w011(label="no number here")))
+        self.assertEqual([], run_rule("state-consistency", "W011", make_snapshot(currentPhaseLabel=field("4"),
+                                                                                  roadmapPhaseCheckboxes=field({"3": True}))))
+
+    def test_w011_bare_and_zero_padded_labels(self):
+        self.assertEqual(1, len(run_rule("state-consistency", "W011", self.w011(label="3"))))
+        self.assertEqual(1, len(run_rule("state-consistency", "W011", self.w011(label="03 of 8"))))
+
+    def test_w021_milestone_prefixed(self):
+        config = field({"phase_id_convention": "milestone-prefixed"}, exists=True)
+        snapshot = make_snapshot(config=config, roadmapDeclaredPhases=field([
+            {"phaseId": "2-01", "milestone": "v1.0"}, {"phaseId": "1-01", "milestone": "v1.0"}, {"phaseId": "3-01", "milestone": None},
+            {"phaseId": "999-01", "milestone": "v1.0"}, {"phaseId": "5", "milestone": "v1.0"}]))
+        found = run_rule("state-consistency", "W021", snapshot)
+        self.assertEqual(["Phase 2-01: integer prefix implies v2.0 but listed under v1.0"], [d["message"] for d in found])
+        self.assertEqual("gsd-tools roadmap upgrade --convention milestone-prefixed", found[0]["remedy"]["args"]["command"])
+        self.assertEqual([], run_rule("state-consistency", "W021", make_snapshot(roadmapDeclaredPhases=field([{"phaseId": "2-01", "milestone": "v1.0"}]))))
+
+    def test_w021_bracket_incoherences_and_independent_gates(self):
+        incoherences = field([
+            {"kind": "missing-bracket", "phaseId": "07", "sectionMilestone": "02", "phaseMilestone": None},
+            {"kind": "mismatch", "phaseId": "08", "sectionMilestone": "02", "phaseMilestone": "03"}])
+        snapshot = make_snapshot(phaseIdConvention="bracket", roadmapBracketIncoherences=incoherences)
+        found = run_rule("state-consistency", "W021", snapshot)
+        self.assertEqual(["Phase 07: heading is not in bracket form under the 'bracket' convention (expected `[CODE.02] 07:`)",
+                          "Phase 08: bracket milestone 03 does not match its section milestone 02"], [d["message"] for d in found])
+        self.assertEqual([], run_rule("state-consistency", "W021", make_snapshot(roadmapBracketIncoherences=incoherences)))
+        both = make_snapshot(phaseIdConvention="bracket", roadmapBracketIncoherences=incoherences,
+                             config=field({"phase_id_convention": "milestone-prefixed"}, exists=True),
+                             roadmapDeclaredPhases=field([{"phaseId": "2-01", "milestone": "v1.0"}]))
+        self.assertEqual(3, len(run_rule("state-consistency", "W021", both)))
+
+    def w026(self, status="Milestone complete", phase_ids=("1", "2"), dirs=("01-a", "02-b")):
+        return make_snapshot(stateStatus=field(status), currentMilestoneRoadmapPhaseIds=field(list(phase_ids)), allPhaseDirNames=field(list(dirs)))
+
+    def test_w026_fires_for_unstarted_phases(self):
+        found = run_rule("state-consistency", "W026", self.w026(phase_ids=("1", "2", "3"), dirs=("01-a",)))
+        self.assertEqual(["STATE says milestone complete but ROADMAP lists 2 unstarted phase(s) (e.g. Phase 2)"], [d["message"] for d in found])
+        self.assertEqual("Run validate consistency or re-run complete-milestone after verifying all phases are done", found[0]["remedy"]["args"]["command"])
+        self.assertEqual(1, len(run_rule("state-consistency", "W026", self.w026(status="archived", phase_ids=("4",), dirs=()))))
+        self.assertEqual(1, len(run_rule("state-consistency", "W026", self.w026(status="v1.2 milestone complete", phase_ids=("4",), dirs=()))))
+
+    def test_w026_silent_cases(self):
+        self.assertEqual([], run_rule("state-consistency", "W026", self.w026()))
+        self.assertEqual([], run_rule("state-consistency", "W026", self.w026(status="executing", phase_ids=("9",), dirs=())))
+        self.assertEqual([], run_rule("state-consistency", "W026", self.w026(status=None, phase_ids=("9",), dirs=())))
+
+    def test_w026_resolves_directories_through_the_selector(self):
+        self.assertEqual([], run_rule("state-consistency", "W026", self.w026(phase_ids=("5",), dirs=("05-80-20-cleanup",))))
+        self.assertEqual([], run_rule("state-consistency", "W026", self.w026(phase_ids=("1A",), dirs=("01a-x",))))
+        # W026 uses the selector only (no padding-variant fallback, unlike W006/W007).
+        self.assertEqual(1, len(run_rule("state-consistency", "W026", self.w026(phase_ids=("1A",), dirs=("1a-x",)))))
+        bracket = self.w026(phase_ids=("07",), dirs=("GSD.02-07-x",))
+        bracket["phaseIdConvention"] = "bracket"
+        self.assertEqual([], run_rule("state-consistency", "W026", bracket))
+        legacy = self.w026(phase_ids=("07",), dirs=("GSD.02-07-x",))
+        self.assertEqual(1, len(run_rule("state-consistency", "W026", legacy)))
+
+
+def verification_error(raw="verified", file="/p/01-VERIFICATION.md"):
+    return {"file": file, "rawStatus": raw, "message": f'Verification report "{file}" has status "{raw}", which is outside the closed set'}
+
+
+class PhaseStructure(unittest.TestCase):
+    def test_table(self):
+        rules = group("phase-structure")
+        self.assertEqual(["W005", "W023", "I001", "W009", "W030"], list(rules))
+        self.assertEqual(["warning", "warning", "info", "warning", "warning"], [r["severity"] for r in rules.values()])
+        self.assertEqual({"W030"}, {c for c, r in rules.items() if r["repairable"]})
+
+    def test_w005(self):
+        snapshot = make_snapshot(phaseDirs=field(["01-setup", "setup", "1-short", "02-01-deep", "GSD-03-x", "readme"]))
+        found = run_rule("phase-structure", "W005", snapshot)
+        self.assertEqual(['Phase directory "setup" doesn\'t follow NN-name format', 'Phase directory "1-short" doesn\'t follow NN-name format',
+                          'Phase directory "readme" doesn\'t follow NN-name format'], [d["message"] for d in found])
+        self.assertEqual("Rename to match pattern (e.g., 01-setup)", found[0]["remedy"]["args"]["command"])
+        self.assertEqual([], run_rule("phase-structure", "W005", make_snapshot(phaseDirs=field(["01-setup"]))))
+
+    def test_w005_bracket_directories_only_under_the_convention(self):
+        snapshot = make_snapshot(phaseDirs=field(["GSD.02-05-delta"]))
+        self.assertEqual(1, len(run_rule("phase-structure", "W005", snapshot)))
+        snapshot["phaseIdConvention"] = "bracket"
+        self.assertEqual([], run_rule("phase-structure", "W005", snapshot))
+
+    def test_w023_collisions_with_status_labels(self):
+        phases = [{"dir": "01-a", "planCount": 2, "summaryCount": 2, "complete": True, "verificationStatus": "passed"},
+                  {"dir": "1-b", "planCount": 0, "summaryCount": 0, "complete": False, "verificationStatus": None},
+                  {"dir": "02-c", "planCount": 1, "summaryCount": 0, "complete": False, "verificationStatus": None}]
+        snapshot = make_snapshot(phaseDirs=field(["1-b", "01-a", "02-c"]), phases=field(phases))
+        found = run_rule("phase-structure", "W023", snapshot)
+        self.assertEqual(['Phase directories collide on normalized key "01": 01-a (Complete), 1-b (Not Started)'], [d["message"] for d in found])
+        self.assertEqual("Inspect each directory; rename or remove the duplicate so only one directory maps to this phase key",
+                         found[0]["remedy"]["args"]["command"])
+
+    def test_w023_unknown_phase_defaults_and_ladder(self):
+        snapshot = make_snapshot(phaseDirs=field(["03-x", "3-y"]))
+        self.assertEqual('Phase directories collide on normalized key "03": 03-x (Not Started), 3-y (Not Started)',
+                         run_rule("phase-structure", "W023", snapshot)[0]["message"])
+        self.assertEqual([], run_rule("phase-structure", "W023", make_snapshot(phaseDirs=field(["01-a", "02-b"]))))
+        ladder = {"planned": (1, 0, False, None), "in_progress": (2, 1, False, None), "executed": (1, 1, False, None),
+                  "needs_review": (1, 1, False, "human_needed")}
+        labels = {"planned": "Planned", "in_progress": "In Progress", "executed": "Executed", "needs_review": "Needs Review"}
+        for status, (plans, summaries, complete, verification) in ladder.items():
+            phases = [{"dir": "04-a", "planCount": plans, "summaryCount": summaries, "complete": complete, "verificationStatus": verification}]
+            snapshot = make_snapshot(phaseDirs=field(["04-a", "4-b"]), phases=field(phases))
+            self.assertIn(f"04-a ({labels[status]})", run_rule("phase-structure", "W023", snapshot)[0]["message"])
+
+    def test_w023_orders_by_phase_number_then_name(self):
+        snapshot = make_snapshot(phaseDirs=field(["02B-x", "2B-a", "02b-c"]))
+        message = run_rule("phase-structure", "W023", snapshot)[0]["message"]
+        self.assertTrue(message.startswith('Phase directories collide on normalized key "02B": '))
+
+    def test_i001(self):
+        phases = [{"dir": "01-a", "planCount": 3, "summaryCount": 1, "complete": False, "verificationStatus": None},
+                  {"dir": "02-b", "planCount": 1, "summaryCount": 1, "complete": True, "verificationStatus": None},
+                  {"dir": "03-c", "planCount": 0, "summaryCount": 1, "complete": False, "verificationStatus": None}]
+        found = run_rule("phase-structure", "I001", make_snapshot(phases=field(phases)))
+        self.assertEqual([{"code": "I001", "severity": "info", "message": "Phase 01-a has 2 plan(s) without a matching summary",
+                           "remedy": {"action": "advise", "risk": "none", "args": {"command": "May be in progress"}}}], found)
+
+    def test_w009(self):
+        entries = [{"dir": "01-a", "hasValidationArchitecture": True, "hasValidationMd": False},
+                   {"dir": "02-b", "hasValidationArchitecture": True, "hasValidationMd": True},
+                   {"dir": "03-c", "hasValidationArchitecture": False, "hasValidationMd": False}]
+        found = run_rule("phase-structure", "W009", make_snapshot(researchValidationStatus=field(entries)))
+        self.assertEqual(["Phase 01-a: has Validation Architecture in RESEARCH.md but no VALIDATION.md"], [d["message"] for d in found])
+        self.assertEqual("Re-run /gsd-plan-phase with --research to regenerate", found[0]["remedy"]["args"]["command"])
+
+    def test_w030_unknown_status_stays_advise_only(self):
+        phase = {"dir": "01-a", "planCount": 1, "summaryCount": 1, "complete": False, "verificationStatus": None,
+                 "verificationStatusError": verification_error("verified")}
+        clean = {"dir": "02-b", "planCount": 1, "summaryCount": 1, "complete": True, "verificationStatus": "passed", "verificationStatusError": None}
+        found = run_rule("phase-structure", "W030", make_snapshot(phases=field([phase, clean])))
+        self.assertEqual(1, len(found))
+        self.assertTrue(found[0]["message"].startswith("Phase 01-a: Verification report"))
+        self.assertEqual("advise", found[0]["remedy"]["action"])
+        self.assertIn("passed | gaps_found | human_needed", found[0]["remedy"]["args"]["command"])
+
+    def test_w030_known_legacy_status_is_repairable_per_finding(self):
+        phase = {"dir": "01-a", "planCount": 1, "summaryCount": 1, "complete": False, "verificationStatus": None,
+                 "verificationStatusError": verification_error("pass_with_caveats", "/p/x-VERIFICATION.md")}
+        found = run_rule("phase-structure", "W030", make_snapshot(phases=field([phase])))
+        self.assertEqual({"action": "repairVerificationStatus", "risk": "none",
+                          "args": {"file": "/p/x-VERIFICATION.md", "from": "pass_with_caveats", "to": "passed"}}, found[0]["remedy"])
+
+    def test_severity_matches_the_rule_entry(self):
+        phases = [{"dir": "01-a", "planCount": 2, "summaryCount": 0, "complete": False, "verificationStatus": None,
+                   "verificationStatusError": verification_error("zzz")}]
+        snapshot = make_snapshot(phases=field(phases), phaseDirs=field(["x", "01-a"]),
+                                 researchValidationStatus=field([{"dir": "01-a", "hasValidationArchitecture": True, "hasValidationMd": False}]))
+        for rule in group("phase-structure").values():
+            for diagnostic in rule["check"](snapshot):
+                self.assertEqual(rule["severity"], diagnostic["severity"], diagnostic["code"])
+
+
+class RoadmapDiskConsistency(unittest.TestCase):
+    def snapshot(self, phase_ids, dirs, checkboxes=None, **extra):
+        return make_snapshot(roadmapDeclaredPhases=declared(*phase_ids), allPhaseDirNames=field(list(dirs)),
+                             roadmapPhaseCheckboxes=field(checkboxes or {}), **extra)
+
+    def test_table(self):
+        rules = group("roadmap-disk-consistency")
+        self.assertEqual(["W006", "W007"], list(rules))
+        self.assertEqual({"warning"}, {r["severity"] for r in rules.values()})
+
+    def test_w006_fires_for_exactly_the_missing_directory(self):
+        found = run_rule("roadmap-disk-consistency", "W006", self.snapshot(["1", "2", "3"], ["01-a", "03-c"]))
+        self.assertEqual(["Phase 2 in ROADMAP.md but no directory on disk"], [d["message"] for d in found])
+        self.assertEqual("Create phase directory or remove from roadmap", found[0]["remedy"]["args"]["command"])
+
+    def test_w006_silent_cases(self):
+        rule = "roadmap-disk-consistency"
+        self.assertEqual([], run_rule(rule, "W006", self.snapshot(["1", "02", "3A"], ["1-a", "2-b", "03A-c"])))
+        self.assertEqual([], run_rule(rule, "W006", self.snapshot(["999.1", "0.5"], [])))
+        self.assertEqual([], run_rule(rule, "W006", self.snapshot(["2"], [], {"2": False})))
+        self.assertEqual(1, len(run_rule(rule, "W006", self.snapshot(["2"], [], {"2": True}))))
+        self.assertEqual(1, len(run_rule(rule, "W006", self.snapshot(["2", "3"], [], {"2": False}))))
+        self.assertEqual([], run_rule(rule, "W006", self.snapshot([], [])))
+        unreadable = self.snapshot(["2"], [])
+        unreadable["roadmapDeclaredPhases"] = field([], "unreadable")
+        self.assertEqual([], run_rule(rule, "W006", unreadable))
+
+    def test_w006_archived_and_sentinel_tokens(self):
+        rule = "roadmap-disk-consistency"
+        self.assertEqual([], run_rule(rule, "W006", self.snapshot(["4"], [], archivedPhaseTokens=field(["04"]))))
+        self.assertEqual([], run_rule(rule, "W006", self.snapshot(["07"], [], roadmapSentinelPhaseTokens=field(["07"]))))
+        self.assertEqual(1, len(run_rule(rule, "W006", self.snapshot(["07"], []))))
+
+    def test_w006_zero_padding_variants_against_disk(self):
+        rule = "roadmap-disk-consistency"
+        self.assertEqual([], run_rule(rule, "W006", self.snapshot(["01A"], ["1A-suffix-phase"])))
+        self.assertEqual([], run_rule(rule, "W006", self.snapshot(["5"], ["05-80-20-cleanup"])))
+
+    def test_w007_fires_for_the_unclaimed_directory(self):
+        found = run_rule("roadmap-disk-consistency", "W007", self.snapshot(["1", "2"], ["01-a", "02-b", "04-extra"]))
+        self.assertEqual(["Phase 04 exists on disk but not in ROADMAP.md"], [d["message"] for d in found])
+        self.assertEqual("Add to roadmap or remove directory", found[0]["remedy"]["args"]["command"])
+
+    def test_w007_silent_cases(self):
+        rule = "roadmap-disk-consistency"
+        self.assertEqual([], run_rule(rule, "W007", self.snapshot(["1", "2"], ["01-a", "02-b"])))
+        self.assertEqual([], run_rule(rule, "W007", self.snapshot(["1"], ["01-a", "999-interim", "0-drafts"])))
+        self.assertEqual([], run_rule(rule, "W007", self.snapshot([], [])))
+        unreadable = self.snapshot([], ["04-extra"])
+        unreadable["roadmapDeclaredPhases"] = field([], "unreadable")
+        self.assertEqual([], run_rule(rule, "W007", unreadable))
+
+    def test_w007_bracket_sentinel_directories(self):
+        rule = "roadmap-disk-consistency"
+        for name in ("GSD.999-07-icebox", "GSD.00-01-backlog"):
+            snapshot = self.snapshot(["1"], ["01-a", name], phaseIdConvention="bracket")
+            self.assertEqual([], run_rule(rule, "W007", snapshot), name)
+        ordinary = self.snapshot(["1"], ["01-a", "P0.3-2-notes"])
+        self.assertEqual(["Phase P0.3-2 exists on disk but not in ROADMAP.md"], [d["message"] for d in run_rule(rule, "W007", ordinary)])
+
+    def test_w007_bracket_directories_are_claimed_by_bracket_phase_ids(self):
+        rule = "roadmap-disk-consistency"
+        snapshot = self.snapshot(["05"], ["GSD.02-05-delta"], phaseIdConvention="bracket")
+        self.assertEqual([], run_rule(rule, "W007", snapshot))
+        self.assertEqual([], run_rule(rule, "W006", snapshot))
+        legacy = self.snapshot(["05"], ["GSD.02-05-delta"])
+        self.assertEqual(1, len(run_rule(rule, "W007", legacy)))
+
+
+class RuleTable(unittest.TestCase):
+    EXPECTED = ["E002", "E003", "E004", "W001", "W024", "W002", "W011", "W021", "W026", "W003", "E005", "W004", "W008", "W016",
+                "W012", "W013", "W014", "W015", "W022", "W029", "W005", "W023", "I001", "W009", "W030", "W010", "W006", "W007",
+                "W020", "W017", "W027", "W018", "W019", "W028"]
+
+    def test_rules_is_the_full_34_rule_table_in_upstream_order(self):
+        self.assertEqual(34, len(hd.RULES))
+        self.assertEqual(self.EXPECTED, [r["code"] for r in hd.RULES])
+        self.assertEqual(len(set(self.EXPECTED)), len(self.EXPECTED))
+
+    def test_every_rule_carries_the_full_shape(self):
+        for rule in hd.RULES:
+            self.assertEqual({"code", "severity", "description", "repairable", "check"}, set(rule), rule["code"])
+            self.assertIn(rule["severity"], SEVERITY.values())
+            self.assertTrue(callable(rule["check"]))
+            self.assertIsInstance(rule["description"], str)
+            self.assertIsInstance(rule["repairable"], bool)
+
+    def test_severity_follows_the_code_prefix(self):
+        prefixes = {"E": "error", "W": "warning", "I": "info", "C": "warning"}
+        for rule in hd.RULES + hd.CONSISTENCY_RULES:
+            self.assertEqual(prefixes[rule["code"][0]], rule["severity"], rule["code"])
+
+    def test_repairable_codes(self):
+        self.assertEqual(["W003", "W008", "W016", "W030", "W018"], [r["code"] for r in hd.RULES if r["repairable"]])
+
+    def test_consistency_rules_reuse_the_same_rule_objects(self):
+        self.assertEqual(["W006", "W007", "W030", "C001", "C002", "C003", "C004"], [r["code"] for r in hd.CONSISTENCY_RULES])
+        by_code = {r["code"]: r for r in hd.RULES}
+        for code in ("W006", "W007", "W030"):
+            self.assertIs(by_code[code], next(r for r in hd.CONSISTENCY_RULES if r["code"] == code))
+
+    def test_healthy_snapshot_produces_no_diagnostics(self):
+        self.assertEqual([], hd.evaluate_rules(make_snapshot()))
+        self.assertEqual([], hd.evaluate_consistency_rules(make_snapshot()))
+
+    def test_evaluate_rules_flattens_in_table_order(self):
+        snapshot = make_snapshot(projectSections={"exists": False, "value": None, "scope": "unreadable"},
+                                 config=field(None, exists=False), currentPhaseLabel=field(None, "unreadable"))
+        self.assertEqual(["E002", "E004", "W003"], codes(hd.evaluate_rules(snapshot)))
+
+    def test_consistency_evaluation_matches_the_health_evaluation_for_reused_rules(self):
+        snapshot = make_snapshot(roadmapDeclaredPhases=declared("1", "2"), allPhaseDirNames=field(["01-a", "04-x"]),
+                                 perPhasePlanNumbering=field([{"phaseDir": "01-a", "planNums": [1, 3]}]))
+        health = [d for d in hd.evaluate_rules(snapshot) if d["code"] in ("W006", "W007")]
+        consistency = [d for d in hd.evaluate_consistency_rules(snapshot) if d["code"] in ("W006", "W007")]
+        self.assertEqual(health, consistency)
+        self.assertEqual(["W006", "W007", "C001", "C002"], codes(hd.evaluate_consistency_rules(snapshot)))
+
+    def test_apply_repairs_over_a_real_rule_finding(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / ".planning").mkdir()
+            snapshot = make_snapshot(config=field(None, exists=False), currentPhaseLabel=field(None, "unreadable"))
+            diagnostics = hd.evaluate_rules(snapshot)
+            result = hd.apply_repairs(tmp, diagnostics, True, False)
+            self.assertEqual(["W003"], result["applied"])
+            self.assertEqual(["E004"], result["refused"])
+            self.assertTrue((Path(tmp) / ".planning" / "config.json").is_file())
+            self.assertFalse((Path(tmp) / ".planning" / "STATE.md").exists())
+
+
+class PhaseIdHelpers(unittest.TestCase):
+    def test_normalize_phase_name(self):
+        n = rules_mod.normalize_phase_name
+        self.assertEqual(["01", "01", "12A", "12.1", "02-01", "02-04-01", "01", "42", "05a"],
+                         [n("1"), n("01"), n("12A"), n("12.1"), n("2-1"), n("2-4-1"), n("CK-01"), n("PROJ-42"), n("5a")])
+
+    def test_extract_phase_token(self):
+        x = rules_mod.extract_phase_token
+        self.assertEqual(["01", "02-01", "GSD-02-01", "46", "14", "05-80-20", "P0.3-2", "notes", "30.1", "12A"],
+                         [x("01-setup"), x("02-01-setup"), x("GSD-02-01-setup"), x("46-6-rs-thing"), x("14-2026-photos"),
+                          x("05-80-20-cleanup"), x("P0.3-2-foo"), x("notes"), x("30.1-follow-up"), x("12A-hotfix")])
+        self.assertEqual("05", x("GSD.02-05-delta", "bracket"))
+        self.assertEqual("05.1", x("GSD.02-05.1-delta", "bracket"))
+        self.assertEqual("GSD.02-05-delta", x("GSD.02-05-delta"))
+        self.assertEqual("10", x("10-24x-thing"))
+
+    def test_compare_phase_num(self):
+        c = rules_mod.compare_phase_num
+        self.assertLess(c("1", "2"), 0)
+        self.assertGreater(c("10", "2"), 0)
+        self.assertEqual(0, c("01", "1"))
+        self.assertLess(c("1", "1A"), 0)
+        self.assertLess(c("1A", "1B"), 0)
+        self.assertLess(c("1", "1.1"), 0)
+        self.assertLess(c("1.2", "1.10"), 0)
+        self.assertLess(c("02-01", "02-02"), 0)
+        self.assertLess(c("2-1", "2-1-3"), 0)
+        self.assertNotEqual(0, c("alpha", "beta"))
+
+    def test_milestone_and_sentinel(self):
+        m, s, d = rules_mod.get_milestone_from_phase_id, rules_mod.is_sentinel_phase_id, rules_mod.is_sentinel_phase_dir
+        self.assertEqual(["v2.0", None, None, None, "v1.0"], [m("2-01"), m("0-01"), m("999-01"), m("5"), m("CK-01-02")])
+        self.assertEqual("v2.0", m("GSD.02-05", "bracket"))
+        self.assertIsNone(m("GSD.999-05", "bracket"))
+        self.assertIsNone(m("2-01", "bracket"))
+        self.assertEqual([True, True, False, True, False], [s("999.1"), s("0.5"), s("12"), s("GSD.999-07", "bracket"), s("GSD.02-07", "bracket")])
+        self.assertFalse(s("0-bootstrap", "bracket"))
+        self.assertTrue(s("999-x", "bracket"))
+        self.assertTrue(d("GSD.999-07-icebox"))
+        self.assertTrue(d("999-interim"))
+        self.assertFalse(d("P0.3-2-notes"))
+        self.assertTrue(d("P0.0-1-notes"))
+
+    def test_phase_variants(self):
+        v = rules_mod.phase_variants
+        self.assertEqual({"1", "01"}, v("01"))
+        self.assertEqual({"1A", "01A"}, v("1A"))
+        self.assertEqual({"2.1", "02.1"}, v("2.1"))
+        self.assertEqual({"2-01", "02-01", "2-1", "02-1"}, v("2-01"))
+        self.assertEqual({"x-y"}, v("x-y"))
+
+    def test_phase_dir_names(self):
+        ok = rules_mod.is_phase_dir_name
+        self.assertTrue(all(ok(n) for n in ("01-setup", "02-01-setup", "GSD-02-01-setup", "30.1-follow-up", "10-a_b")))
+        self.assertFalse(any(ok(n) for n in ("1-setup", "setup", "01", "01-")))
+        self.assertTrue(ok("GSD.02-05-delta", "bracket"))
+        self.assertTrue(ok("GSD.02-05", "bracket"))
+        self.assertFalse(ok("GSD.02-12A-hotfix", "bracket"))
+        self.assertFalse(ok("GSD.2-05-x", "bracket"))
+        with self.assertRaises(TypeError):
+            ok(42)
+
+    def test_match_phase_dirs(self):
+        match = rules_mod.match_phase_dirs
+        self.assertEqual({"matches": ["01-a"], "usedBareFallback": False}, match(["01-a", "02-b"], "1"))
+        self.assertEqual({"matches": ["05-80-20-cleanup"], "usedBareFallback": True}, match(["05-80-20-cleanup"], "5"))
+        self.assertEqual({"matches": [], "usedBareFallback": False}, match(["01-a"], "7"))
+        self.assertEqual({"matches": ["02-01-x"], "usedBareFallback": False}, match(["02-01-x", "02-02-y"], "02-01"))
+        self.assertEqual({"matches": ["GSD.02-05-x"], "usedBareFallback": False}, match(["GSD.02-05-x", "GSD.03-05-y"], "GSD.02-05", "bracket"))
+        self.assertEqual({"matches": ["GSD.02-05-x", "GSD.03-05-y"], "usedBareFallback": False}, match(["GSD.02-05-x", "GSD.03-05-y"], "05", "bracket"))
+        context = {"project": "GSD", "milestone": "03"}
+        self.assertEqual(["GSD.03-05-y"], match(["GSD.02-05-x", "GSD.03-05-y"], "05", "bracket", context)["matches"])
+        self.assertEqual(["05-legacy"], match(["GSD.02-05-x", "05-legacy"], "05", "bracket", {"project": "GSD", "milestone": "09"})["matches"])
+
+    def test_bracket_qualified_key_and_token_matching(self):
+        k = rules_mod.bracket_qualified_key
+        self.assertEqual("GSD.2-5", k("gsd.02-05-slug", "bracket"))
+        self.assertIsNone(k("gsd.02-05-slug"))
+        self.assertIsNone(k("05", "bracket"))
+        self.assertTrue(rules_mod.phase_token_matches("CK-01-foundation", "01"))
+        self.assertFalse(rules_mod.phase_token_matches("01-a", "02"))
+
+    def test_phase_keys_and_lookup(self):
+        self.assertEqual(["05", "05", "30.1"], [rules_mod.phase_key_from_dir("05-schedule-8"), rules_mod.phase_key_from_dir("PROJ-5-x"),
+                                               rules_mod.phase_key_from_dir("30.1-follow-up")])
+        self.assertEqual("05", rules_mod.phase_key_from_dir("GSD.02-05-delta", "bracket"))
+        self.assertEqual("05", rules_mod.phase_key_from_token("005"))
+        self.assertEqual("07", rules_mod.phase_lookup_query("7", {}))
+        context = rules_mod.phase_directory_context({"phase_naming": "Custom", "project_code": "CK"}, "road", ["a"])
+        self.assertEqual({"phaseNaming": "custom", "projectCode": "CK", "roadmap": "road", "knownIds": ["a"]}, context)
+
+    def test_strip_project_code_prefix(self):
+        s = rules_mod.strip_project_code_prefix
+        self.assertEqual(["01-x", "01-x", "ck-01-x", "01-x"], [s("CK-01-x"), s("ck-01-x"), s("ck-01-x", False), s("01-x")])
+
+
+class StatusAndLadderHelpers(unittest.TestCase):
+    def test_normalize_state_status(self):
+        n = rules_mod.normalize_state_status
+        self.assertEqual(["unknown", "unknown", "paused", "completed", "completed", "executing", "planning", "verifying", "completed"],
+                         [n(None), n(""), n("anything", "since yesterday"), n("  DONE "), n("Phase 3 complete"), n("Executing   Phase 5"),
+                          n("Ready to plan"), n("Phase complete — ready for verification"), n("Complete ✓")])
+        self.assertEqual("completed", n("v1.2 milestone complete"))
+        self.assertEqual("Executing Phase 5 — final stretch", n("Executing Phase 5 — final stretch"))
+        self.assertEqual("see .planning/ notes", n("see .planning/ notes"))
+
+    def test_phase_status_from_facts_validation(self):
+        f = rules_mod.phase_status_from_facts
+        self.assertEqual("complete", f({"planCount": 0, "summaryCount": 0, "complete": True, "verificationStatus": None}))
+        with self.assertRaises(TypeError):
+            f({"planCount": -1, "summaryCount": 0, "complete": False})
+        with self.assertRaises(TypeError):
+            f({"planCount": 1, "summaryCount": 0, "complete": "no"})
+        with self.assertRaises(TypeError):
+            f({"planCount": 1, "summaryCount": 1, "complete": False, "verificationStatus": "bogus"})
+        with self.assertRaises(TypeError):
+            f(None)
+
+    def test_to_display_label(self):
+        label = rules_mod.to_display_label
+        self.assertEqual(["Pending", "Not Started", "Complete"], [label("not_started", "Pending"), label("not_started"), label("complete")])
+        with self.assertRaises(TypeError):
+            label("nope")
+        with self.assertRaises(TypeError):
+            label("complete", "Idle")
+
+    def test_legacy_status_repair_target(self):
+        t = rules_mod.legacy_status_repair_target
+        self.assertEqual(["passed", None, None], [t("pass_with_caveats"), t("partial"), t(5)])
+
 
 if __name__ == "__main__":
     unittest.main()
