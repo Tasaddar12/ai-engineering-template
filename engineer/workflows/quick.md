@@ -449,9 +449,8 @@ fi
 # Re-resolve (and, as a side effect, re-persist) now that the base-check
 # auto-degrade above may have changed $ISOLATION since the Step 2 gate's
 # `dispatch-isolation` call. That first call recorded the NATURALLY
-# resolved mode into the run-scoped sentinel the isolation guard hooks read
-# (hooks/engineer-agent-isolation-guard.js via
-# hooks/lib/isolation-sentinel.js). The degrade above is decided HERE, in
+# resolved mode into the run-scoped sentinel the Python isolation hook reads
+# (hooks/worktree-path-guard.py). The degrade above is decided HERE, in
 # shell — the resolver cannot see it — so without this the sentinel still
 # asserts `harness-worktree` while the dispatch below correctly omits the
 # harness flag, and the guard denies the dispatch with exit 2. `--force-isolation`
