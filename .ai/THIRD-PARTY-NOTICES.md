@@ -1,6 +1,6 @@
 # Third-party notices
 
-The complete adapted agents in `.ai/agents/` derive from the upstream project, revision `4713ffba761a069bbd79e4833b4bea4e14848388`. No compact agents are used.
+The complete adapted agents in `.ai/agents/` derive from [open-gsd/gsd-core](https://github.com/open-gsd/gsd-core/blob/4713ffba761a069bbd79e4833b4bea4e14848388/agents), revision `4713ffba761a069bbd79e4833b4bea4e14848388`. No compact agents are used.
 
 The retained project templates derive from the same MIT-licensed project at
 revision `c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977`; their original adaptation
@@ -24,7 +24,7 @@ This is attribution, not an additional runtime dependency.
 ## Worktree isolation provenance
 
 The worktree isolation references derive from
-the upstream project at revision
+[open-gsd/gsd-core](https://github.com/open-gsd/gsd-core) at revision
 `b956bb7`, which is **later** than the `4713ffba` revision the agents and
 methods above are pinned to. The worktree work in that project moved
 substantially after `4713ffba` — the persisted isolation resolution, orphan
@@ -33,9 +33,9 @@ record their own, newer revision rather than claiming the older pin.
 
 | Bundled local reference | Upstream relative path |
 |---|---|
-| [references/worktree-branch-check.md](references/worktree-branch-check.md) | `references/worktree-branch-check.md` |
-| [references/worktree-path-safety.md](references/worktree-path-safety.md) | `references/worktree-path-safety.md` |
-| [references/worktree-recovery-policy.md](references/worktree-recovery-policy.md) | `workflows/execute-phase/steps/worktree-recovery-policy.md` |
+| [references/worktree-branch-check.md](references/worktree-branch-check.md) | `gsd-core/references/worktree-branch-check.md` |
+| [references/worktree-path-safety.md](references/worktree-path-safety.md) | `gsd-core/references/worktree-path-safety.md` |
+| [references/worktree-recovery-policy.md](references/worktree-recovery-policy.md) | `gsd-core/workflows/execute-phase/steps/worktree-recovery-policy.md` |
 
 The two guard blocks are adapted closely, because they are portable shell with
 no upstream tooling dependency: the branch namespaces are respelled for the
@@ -60,14 +60,14 @@ conditions (a diverged fork base, a submodule in scope, an unresolvable
 capability) degrade to sequential execution. This project requires isolation, so
 that setting does not exist here, `none` is not a mode, and those conditions
 either raise or warn instead of degrading. The enforcement upstream places in
-the upstream isolation guard is served here by
+`hooks/gsd-agent-isolation-guard.js` is served here by
 [hooks/worktree-guard.sh](hooks/worktree-guard.sh), which is an independent
 implementation reading the dispatch payload rather than a persisted sentinel.
 
 ## Bundled method provenance
 
 All entries below originate at revision `4713ffba761a069bbd79e4833b4bea4e14848388`
-in the upstream repository's `references/` directory. The table maps
+in the upstream repository's `gsd-core/references/` directory. The table maps
 each adapted method's current local location to its original upstream path.
 The content is adapted, not an exact source mirror.
 
@@ -86,7 +86,7 @@ The content is adapted, not an exact source mirror.
 | [methods/debugger-sbfl.md](references/methods/debugger-sbfl.md) | `debugger-sbfl.md` |
 | [methods/debugger-semantic-recall.md](references/methods/debugger-semantic-recall.md) | `debugger-semantic-recall.md` |
 | [methods/debugger-techniques.md](references/methods/debugger-techniques.md) | `debugger-techniques.md` |
-| [methods/tdd-evidence-gate.md](references/methods/tdd-evidence-gate.md) | Component TDD evidence gate |
+| [methods/execute-mvp-tdd.md](references/methods/execute-mvp-tdd.md) | `execute-mvp-tdd.md` |
 | [methods/executor-examples.md](references/methods/executor-examples.md) | `executor-examples.md` |
 | [methods/failing-direction.md](references/methods/failing-direction.md) | `failing-direction.md` |
 | [methods/few-shot-examples/plan-checker.md](references/methods/few-shot-examples/plan-checker.md) | `few-shot-examples/plan-checker.md` |
@@ -126,9 +126,10 @@ The content is adapted, not an exact source mirror.
 | [methods/verifier-phase-gates.md](references/methods/verifier-phase-gates.md) | `verifier-phase-gates.md` |
 | [methods/verifier-wiring-patterns.md](references/methods/verifier-wiring-patterns.md) | `verifier-wiring-patterns.md` |
 | [methods/verify-command-path-resolvability.md](references/methods/verify-command-path-resolvability.md) | `verify-command-path-resolvability.md` |
+| [methods/verify-mvp-mode.md](references/methods/verify-mvp-mode.md) | `verify-mvp-mode.md` |
 
 [templates/milestone.md](templates/milestone.md) derives from
-`templates/milestone.md` at revision
+`gsd-core/templates/milestone.md` at revision
 `4713ffba761a069bbd79e4833b4bea4e14848388`. Its File Template, structure block,
 guidelines and example are the upstream text, reduced to the fields this
 project's runtime and complete-milestone workflow actually produce: the task
@@ -141,7 +142,7 @@ not copied — it describes per-milestone archive files under
 workflow owns instead.
 
 The PROJECT evolution guidance was reconciled against the source
-`workflows/transition.md` and `complete-milestone.md` at template revision
+`gsd-core/workflows/transition.md` and `complete-milestone.md` at template revision
 `c0b2a05d2f310adc0a1f35fd71fbc9f28f4e4977`. Its relevant checklist remains in the
 local project template; unsupported source lifecycle commands are not copied.
 The STATE template's inherited `src/state-md-schema.cts` was inspected at that

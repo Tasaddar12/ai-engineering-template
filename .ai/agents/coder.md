@@ -182,11 +182,23 @@ For each task:
    - Commit (see task_commit_protocol)
    - Track completion + commit hash for Summary
 
-2. **If `type="checkpoint:*"`:**
+2. **For an early integration slice:** represent executable work as `type="auto"`
+   with explicit end-to-end verification and done criteria. The local runtime
+   does not execute a special tracer task type or synthesize a feedback gate.
+   Before any expansion task, rerun the slice's assigned end-to-end verification.
+   Failure halts dependent expansion. If the task carries `blocking-human`, stop
+   for the human response even when automated checks pass. If a human-check is
+   required before expansion, return the concrete checkpoint to the coordinator.
+   Continue only after required evidence and responses are present; production
+   quality and real error handling apply to the tracer just as to any other task.
+   If an assigned plan uses an unsupported task type, report
+   it for plan correction before execution.
+
+3. **If `type="checkpoint:*"`:**
    - STOP immediately — return structured checkpoint message
    - A fresh agent will be spawned to continue
 
-3. After all tasks: run overall verification, confirm success criteria, document deviations
+4. After all tasks: run overall verification, confirm success criteria, document deviations
 </step>
 
 </execution_flow>
@@ -414,7 +426,7 @@ If spawned as continuation agent (`<completed_tasks>` in prompt):
 <tdd_execution>
 When the committed PLAN requires TDD, follow the complete
 [local TDD method](../references/methods/tdd.md) and
-[evidence gate](../references/methods/tdd-evidence-gate.md).
+[evidence gate](../references/methods/execute-mvp-tdd.md).
 Record the intended failing assertion, test command and result, RED commit,
 implementation commit and GREEN result in SUMMARY. Infrastructure errors or
 zero discovered tests are not valid RED evidence. Honor explicit user limits on

@@ -60,11 +60,11 @@ Features that seem good but create problems.
 - **[Feature D] enhances [Feature A]:** [how they work together]
 - **[Feature E] conflicts with [Feature F]:** [why they're incompatible]
 
-## Initial Release Definition
+## MVP Definition
 
 ### Launch With (v1)
 
-Initial release — what's needed to validate the concept.
+Minimum viable product — what's needed to validate the concept.
 
 - [ ] [Feature] — [why essential]
 - [ ] [Feature] — [why essential]
@@ -139,9 +139,9 @@ Features to defer until product-market fit is established.
 - If A requires B, B must be in an earlier phase
 - Conflicts inform what NOT to combine in same phase
 
-**Initial Release Definition:**
+**MVP Definition:**
 - Be ruthless about what's truly minimum
-- "Nice to have" is outside the initial release
+- "Nice to have" is not MVP
 - Launch with less, validate, then expand
 
 </guidelines>

@@ -679,6 +679,23 @@ Deferred items are informational only — they do not require closure plans.
 
 </verification_process>
 
+<mvp_mode_verification>
+
+## MVP Mode Verification
+
+When the assignment explicitly requests user-story verification, follow
+[the bundled user-flow method](../references/methods/verify-mvp-mode.md). The local
+runtime has no automatic MVP mode resolver or special MVP command. Read the
+approved user story from CONTEXT; clarify an unspecified role, capability or
+outcome through the coordinator without inventing product requirements.
+
+Add a User Flow Coverage table mapping each user action to expected outcome,
+source evidence and observed status, followed by the standard technical sections.
+The user-story framing does not narrow other approved acceptance, omit failed
+technical checks, or waive required UAT.
+
+</mvp_mode_verification>
+
 <output>
 
 ## Create VERIFICATION.md
