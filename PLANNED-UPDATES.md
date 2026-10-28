@@ -1775,7 +1775,7 @@ Runtime note: `engineer_run` (port of `.ai/runtime/phase.py`) has no `state.plan
 | R-WF-172 | REMOVE | engineer/workflows/plan-phase.md:126-147 | — | Delete research-only mode (`--research-phase`/`--view`) because its step files are deleted. |
 | R-WF-173 | REMOVE | engineer/workflows/plan-phase.md:149 | — | Delete `--granularity` because `init.plan-phase` emits no granularity. |
 | R-WF-174 | KEEP-UPSTREAM | engineer/workflows/plan-phase.md:151 | .ai/workflows/plan-phase.md:110 | Text mode matches local `--text`/`text_mode`. |
-| R-WF-175 | REMOVE | engineer/workflows/plan-phase.md:153-195 | — | Delete TDD/reversibility flag handling, Walking Skeleton and `--prd`/`--ingest` express-path argument parsing. |
+| R-WF-175 | REMOVE | engineer/workflows/plan-phase.md:153-195 | — | Delete TDD/reversibility flag handling and `--prd`/`--ingest` express-path argument parsing. |
 | R-WF-176 | REPLACE | engineer/workflows/plan-phase.md:197 | .ai/commands/plan-phase.md:36 | Replace phase auto-detect with "phase number is required; `phase.locate` validates it". |
 | R-WF-177 | KEEP-UPSTREAM | engineer/workflows/plan-phase.md:199-206 | — | Creates phase dir from `expected_phase_dir`; runtime emits it. |
 | R-WF-178 | REMOVE | engineer/workflows/plan-phase.md:208-223 | — | Delete `CHUNKED_MODE` and the reviews-prerequisite step read. |
