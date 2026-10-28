@@ -49,8 +49,8 @@ def batch(args):
     data = load_json(path)
     if not isinstance(data,dict) or data.get('id',data.get('batchId')) != identifier or not isinstance(data.get('items'),list):
         raise Failure('batch-not-found' if data is None else 'invalid-batch-manifest',str(identifier))
-    ids = [str(item.get('quickId')) for item in data['items']]
-    if len(ids) != len(set(ids)) or any(v in ('None','') for v in ids):
+    identities = [str(item.get('quickId')) for item in data['items']]
+    if len(identities) != len(set(identities)) or any(v in ('None','') for v in identities):
         raise Failure('invalid-batch-identities',str(identifier))
     for item in data['items']:
         if item.get('status') not in STATUSES:
