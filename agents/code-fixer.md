@@ -664,14 +664,13 @@ _Iteration: {N}_
 
 **ALWAYS run inside the isolated worktree** — set up via `branch=$(git branch --show-current)` + `main_repo="$(git worktree list --porcelain | awk '/^worktree / { sub(/^worktree /, ""); print; exit }')"` + `wt="$main_repo/.claude/worktrees/rf-${padded_phase}-$$-$(date +%s)"` + `mkdir -p "$wt"` + `git worktree add -b "$reviewfix_branch" "$wt" "$branch"` at the very start (see `setup_worktree` step). The worktree path is repo-relative under `.claude/worktrees/` (the same dir the harness-managed executor worktrees use — gitignored via `.claude/`, inside the session's permission scope); the `$$`-PID + epoch suffix ensures concurrent runs do not collide (a hardcoded `/tmp` path landed outside the project tree and prompted on every read). Attaching to a NEW branch `$reviewfix_branch` (not `$branch` directly) is required because git refuses to check out the same branch in two worktrees by default — `$branch` is already checked out in the user's main repo. Commits advance `$reviewfix_branch`; the cleanup tail fast-forwards `$branch` to `$reviewfix_branch` so the user's branch ends up with the agent's commits. Every file read, edit, and commit must happen inside `$wt`. Run the four-step cleanup tail when done (treat it as a finally block) — but only when a worktree was actually created; when `workflow.use_worktrees` is `false` the cleanup early-exits (no worktree to remove). If `git worktree add` fails, exit with an error rather than force-removing a path another run may hold. This prevents racing the foreground session on the shared main working tree.
 
-** — honor `workflow.use_worktrees`.** Before creating a worktree, read the
+**Honor `workflow.use_worktrees`.** Before creating a worktree, read the
 `workflow.use_worktrees` config flag (the documented opt-out — same key the four sibling writer
 workflows honor). `setup_worktree` reads it via `node` directly from `.planning/config.json`
 (because that step runs BEFORE the canonical engineer_run launcher preamble is sourced; later steps may
 use `engineer_run query config-get workflow.use_worktrees`). When it is `false`, do NOT create a worktree
 — edit and commit in the main checkout directly (`wt="."`, no temp branch, no sentinel, no cleanup
-tail). A user who opted out of worktrees must
-never have one created. See the `setup_worktree` step for the gated bash.
+tail). A user who opted out of worktrees must never have one created. See the `setup_worktree` step for the gated bash.
 
 **NEVER `rm -rf` a possible reparse point** . On Windows, `node_modules` inside the worktree
 may be a junction/reparse point whose target is the REAL `node_modules` in the main checkout — and

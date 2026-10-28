@@ -197,7 +197,7 @@ Before trusting `STATE.md` or dispatching any executor, derive `CURRENT_PLAN_ID`
 from the active incomplete plan in `INIT`, then search recent history:
 ```bash
 SUMMARY_PATH="{phase_dir}/{plan_padded}-SUMMARY.md"
-# The plan's commits come from the evaluation-scope resolver (ADR-5057 §4): anchored
+# The plan's commits come from the evaluation-scope resolver: anchored
 # on the commit SUBJECT, zero-pad tolerant and tolerant of a decimal / N-segment /
 # letter-suffixed phase number, reachable from THIS branch only, bounded to
 # the latest reachable tag (milestone marker). One `<sha> <subject>` line per commit, newest first.

@@ -726,8 +726,8 @@ Continue to step 8.
 ## 7.95. Spec-less Probe Fallback (gate)
 
 When the SPEC did not supply `## Edge Coverage` / `## Prohibitions`, plan-phase runs the probe protocol
-and authors the predicates into PLAN.md `must_haves` (ADR-857 Phase 6 — the *else branch* of the
-`<downstream_consumer>` lift below). Core workflow-body substrate, not a capability rail (D-03). Runs
+and authors the predicates into PLAN.md `must_haves` (The *else branch* of the
+`<downstream_consumer>` lift below). Core workflow-body substrate, not a capability rail. Runs
 after `$SPEC_FILE` (Step 7), before the planner spawn (Step 8).
 
 **Read and run** the gate + edge probe in `engineer/references/specless-probe-fallback.md`
@@ -816,13 +816,14 @@ Historical findings already incorporated, explicitly deferred/rejected in PLAN.m
 **Tracked-source paths :** Every path you write into PLAN.md —
 `files_modified`, `must_haves.artifacts`, action paths, and paths inherited
 from `{PATTERNS_PATH}` or prior-phase plans — must name git-tracked source,
-never a gitignored install/runtime mirror (e.g. `<root>/.engineer/capabilities/<id>/...`
-synced from a plugin's tracked tree; executor edits to a mirror die on the
-next capability sync). Verify existing-file paths with `git ls-files -- <path>`
-(non-empty = tracked); resolve a gitignored hit to its tracked origin
-(`plugins/*/.engineer/capabilities/<id>/...`, root `capabilities/<id>/...`). A
-not-yet-existing path is a new file — keep the intended path. Re-verify
-inherited paths: fix a mirror path, never inherit. Submodule files: check
+never a gitignored build or install output (e.g. `dist/<module>.js`,
+`build/generated/...`, `.venv/lib/python3.*/site-packages/<pkg>/...`; executor
+edits to an output die on the next build or install). Verify existing-file
+paths with `git ls-files -- <path>` (non-empty = tracked); resolve a gitignored
+hit to the tracked source it is built or installed from (`src/<module>.ts`, the
+generator's `.proto`/schema file, `src/<pkg>/...`). A not-yet-existing path is
+a new file — keep the intended path. Re-verify inherited paths: fix an output
+path, never inherit. Submodule files: check
 from within the submodule.
 </tracked_source_paths>
 
@@ -885,9 +886,9 @@ Output consumed by /execute-phase. Plans need:
 - Tasks in XML format with read_first and acceptance_criteria fields (MANDATORY on every task)
 - Verification criteria
 - must_haves for goal-backward verification
-- If the SPEC has an `## Edge Coverage` section, lift every resolved (verification: explicit) edge's acceptance criterion into `must_haves.truths` as a plain string, and every resolved (verification: backstop) edge **as a structured flat-scalar marker** — an object item `{ statement: <the check>, verification: backstop }`, NOT a prose note (the verifier branches deterministically on the `verification: backstop` field; a parenthetical is unparseable — the  fragility). Use a flat scalar `verification:` continuation key, never a nested object (ADR-550). At verify time a `backstop` truth the verifier cannot confirm with explicit evidence abstains → `human_needed` (reason `insufficient_spec`), never a silent pass (see `engineer/references/honest-verifier.md`). `unresolved` edges are explicit assumptions — surface them in the plan, do not silently drop them. **Otherwise** (`EDGE_ABSENT`): apply the SAME lift to the fallback report `{COVERAGE}` (per §C of `engineer/references/specless-probe-fallback.md`); a SPEC-supplied section is never re-run.
-- If the SPEC has a `## Prohibitions` section, lift every resolved prohibition into the `must_haves.prohibitions:` sibling block (NOT `truths` — ADR-550 D3) with `statement`+`status`+`verification`, via the single `projectProhibitions` serializer (Hyrum — no second serializer); unresolved -> flagged assumptions, don't drop; never put a must-NOT under `truths`. **Otherwise** (`PROHIB_ABSENT`), author the recalled prohibitions into the SAME block via the SAME `projectProhibitions` contract but **descriptor-less** (no `check_*`) so each disposes flagged-unverified; never auto-dismiss. Section-level precedence + no-silent-drop equality apply (§C).
-- If a `-UI-SPEC.md` exists (resolved above as `UI_SPEC_PATH`) with a `## UI Considerations` section, lift it by the **identical rule** as `## Edge Coverage` above — resolved (explicit) → `must_haves.truths` string, resolved (backstop) → flat scalar `{ statement, verification: backstop }`, `unresolved` → explicit planner assumption (no new verb — ADR-550 /; ). Read it from `UI_SPEC_PATH` (the SPEC glob excludes `-UI-SPEC.md`).
+- If the SPEC has an `## Edge Coverage` section, lift every resolved (verification: explicit) edge's acceptance criterion into `must_haves.truths` as a plain string, and every resolved (verification: backstop) edge **as a structured flat-scalar marker** — an object item `{ statement: <the check>, verification: backstop }`, NOT a prose note (the verifier branches deterministically on the `verification: backstop` field; a parenthetical is unparseable — the  fragility). Use a flat scalar `verification:` continuation key, never a nested object. At verify time a `backstop` truth the verifier cannot confirm with explicit evidence abstains → `human_needed` (reason `insufficient_spec`), never a silent pass (see `engineer/references/honest-verifier.md`). `unresolved` edges are explicit assumptions — surface them in the plan, do not silently drop them. **Otherwise** (`EDGE_ABSENT`): apply the SAME lift to the fallback report `{COVERAGE}` (per §C of `engineer/references/specless-probe-fallback.md`); a SPEC-supplied section is never re-run.
+- If the SPEC has a `## Prohibitions` section, lift every resolved prohibition into the `must_haves.prohibitions:` sibling block (NOT `truths`) with `statement`+`status`+`verification`, via the single `projectProhibitions` serializer (Hyrum — no second serializer); unresolved -> flagged assumptions, don't drop; never put a must-NOT under `truths`. **Otherwise** (`PROHIB_ABSENT`), author the recalled prohibitions into the SAME block via the SAME `projectProhibitions` contract but **descriptor-less** (no `check_*`) so each disposes flagged-unverified; never auto-dismiss. Section-level precedence + no-silent-drop equality apply (§C).
+- If a `-UI-SPEC.md` exists (resolved above as `UI_SPEC_PATH`) with a `## UI Considerations` section, lift it by the **identical rule** as `## Edge Coverage` above — resolved (explicit) → `must_haves.truths` string, resolved (backstop) → flat scalar `{ statement, verification: backstop }`, `unresolved` → explicit planner assumption (no new verb). Read it from `UI_SPEC_PATH` (the SPEC glob excludes `-UI-SPEC.md`).
 - **"Artifacts this phase produces" section (MANDATORY)** — list every symbol this phase creates: decorators, classes, functions, CLI flags, struct/dataclass fields, new file paths. The plan-review-convergence source-grounding pass reads this section to exclude newly-created symbols from drift verification; omitting it causes new symbols to be flagged for acknowledgement.
 </downstream_consumer>
 <!-- engineer:protected:end -->
@@ -1435,7 +1436,7 @@ This commits all PLAN.md files for the phase plus the updated STATE.md and ROADM
 
 Proactive, non-blocking coverage report gated on `workflow.post_planning_gaps`
 (default `true`). Dispatched via the `plan:post` capability gate owned by the
-`gap-analysis` capability (ADR-857 §53). Reads REQUIREMENTS.md and CONTEXT.md
+`gap-analysis` capability. Reads REQUIREMENTS.md and CONTEXT.md
 `<decisions>` and cross-references each REQ-ID / D-ID against `${PHASE_DIR}/*-PLAN.md`.
 
 ```bash
@@ -1463,7 +1464,7 @@ on any one capability's gate being absent.
 # named-query gate:
 GATE_RESULT=$(engineer_run check ${hook.check.query} "${PHASE_DIR}" "${PHASE_REQ_IDS}" --raw) && CHECK_EXIT=0 || CHECK_EXIT=$?
 ```
-OR, for a generic `predicate` gate (ADR-2008 / ), inline the predicate as compact JSON (note the `--phase-dir`/`--phase-number`/`--phase-req-ids` flags feed `${PHASE_DIR}`/`${PHASE_NUMBER}`/`${PHASE_REQ_IDS}` interpolation):
+OR, for a generic `predicate` gate, inline the predicate as compact JSON (note the `--phase-dir`/`--phase-number`/`--phase-req-ids` flags feed `${PHASE_DIR}`/`${PHASE_NUMBER}`/`${PHASE_REQ_IDS}` interpolation):
 ```bash
 GATE_RESULT=$(engineer_run check predicate --predicate '<hook.check.predicate as JSON>' --phase-dir "${PHASE_DIR}" --phase-number "${PHASE_NUMBER}" --phase-req-ids "${PHASE_REQ_IDS}" --raw) && CHECK_EXIT=0 || CHECK_EXIT=$?
 ```

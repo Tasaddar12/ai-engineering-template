@@ -3,9 +3,8 @@
 Lazy-loaded by `workflows/plan-phase.md` step 7.95 (the gate) and the `<specless_probe_fallback>`
 planner block. When a phase SPEC did NOT supply `## Edge Coverage` / `## Prohibitions`, plan-phase
 runs the same probe protocol the SPEC path uses and authors the predicates into PLAN.md `must_haves`
-(ADR-857 Phase 6 — the *else branch* of the `<downstream_consumer>` SPEC-conditional lift). This is
-core workflow-body substrate — NOT the `PLAN_PRE_HOOKS_JSON contribution into planner` capability rail
-(D-03). Section absence is detected by the shared `spec-section` helper in the gate; this file holds the
+(The *else branch* of the `<downstream_consumer>` SPEC-conditional lift). This is
+core workflow-body substrate — NOT the `PLAN_PRE_HOOKS_JSON contribution into planner` capability rail. Section absence is detected by the shared `spec-section` helper in the gate; this file holds the
 *run-the-probe* half so the capped plan-phase.md stays lean (/ budget).
 
 ## 0. Gate — toggle + per-section absence (run first, in the orchestrator)
@@ -16,11 +15,11 @@ skip, never a hard-fail). Sets `SPECLESS_FALLBACK`, `EDGE_ABSENT`, `PROHIB_ABSEN
 `SPECLESS_FALLBACK_DISABLED` for §A and the planner prompt.
 
 ```bash
-# Toggle defaults ON (D-04 / RAIL-05): any value other than literal "false" enables.
+# Toggle defaults ON: any value other than literal "false" enables.
 SPECLESS_CFG=$(engineer_run query config-get workflow.specless_probe_fallback 2>/dev/null || echo "true")
 SPECLESS_FALLBACK=true; [[ "$SPECLESS_CFG" == "false" ]] && SPECLESS_FALLBACK=false
 
-# Per-section absence (D-05 / RAIL-03): "not supplied" = header absent OR present-but-empty. The
+# Per-section absence: "not supplied" = header absent OR present-but-empty. The
 # shared, tested `spec-section` helper (src/spec-section.cts -> bin/lib/spec-section.cjs) is the SINGLE
 # source of truth for the canonical SPEC headings (suffix-tolerant) and table-row counting, replacing
 # ad-hoc awk (contract pinned by tests/spec-section.test.cjs). Resolve via the edge-probe install-dir
@@ -125,7 +124,7 @@ fi
 **structured flat-scalar marker** `{ statement: <the check>,
 verification: backstop }` in `must_haves.truths`, NOT a prose note (the verifier branches
 deterministically on the `verification: backstop` field; a parenthetical is unparseable — the 
-fragility; flat scalar `verification:` key, never a nested object, ADR-550 ). A `backstop` truth
+fragility; flat scalar `verification:` key, never a nested object). A `backstop` truth
 the verifier cannot confirm with explicit evidence abstains → `human_needed` (reason
 `insufficient_spec`), never a silent pass (`engineer/references/honest-verifier.md`). **Never
 auto-dismiss** (a wrong dismissal is the exact silent failure this eliminates). An `unclassified` row
@@ -135,7 +134,7 @@ prompt (Step 8). When `EDGE_ABSENT=0`, `$COVERAGE` is empty and this does not ru
 
 ## B. Prohibition recall (LLM prose pass) — run when `PROHIB_ABSENT=1`
 
-There is NO compiled prohibition engine and NO `node` invocation (ADR-550 D7b) — the planner runs
+There is NO compiled prohibition engine and NO `node` invocation — the planner runs
 this in-prompt. Full two-stage protocol, canon-referral rule, and status×verification schema live in
 `engineer/references/prohibition-probe.md` (do not inline it). Summary:
 

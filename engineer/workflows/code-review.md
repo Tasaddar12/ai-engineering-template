@@ -300,14 +300,14 @@ NODE
 fi
 ```
 
-**Tier 3 — Phase evaluation scope (per D-02) and SUMMARY/scope cross-check:**
+**Tier 3 — Phase evaluation scope and SUMMARY/scope cross-check:**
 
 If no SUMMARY.md files found OR no files extracted from them, fall back to the phase's evaluation scope.
 Additionally, whenever the resolver returns a scope, cross-check the SUMMARY scope against it and warn
 about (then add) any in-scope files the SUMMARY extractor did not surface — so a partial SUMMARY result
 can no longer silently mask the rest of the phase.
 
-The scope is computed by the ONE resolver, `check evaluation-scope` (ADR-5057 §4) — this step
+The scope is computed by the ONE resolver, `check evaluation-scope` — this step
 derives no commit range of its own. The resolver returns the UNION of the phase's own commits' file
 sets (the `## Task Commits` rows of the phase's SUMMARYs), restricted to commits reachable from `HEAD`
 (a commit that lives only on another branch is named, never counted), with planning artifacts and

@@ -31,7 +31,7 @@ The technique is adversarial elicitation, not deterministic computation. Unlike 
 taxonomy (a closed eight categories a classifier can apply), the recall stage is inherently
 model-driven: it asks an open question and reads prose. There is **no compiled
 `prohibition-probe.cjs` engine** — the recall stage is an LLM prose pass, and only the
-schema/projection layer is real code (ADR-550 Decision 7b). Building a deterministic
+schema/projection layer is real code. Building a deterministic
 recall adapter would be the scope-creep the maintainer flags.
 
 ## Inputs
@@ -88,13 +88,12 @@ The breadcrumb reads like: *"prototype-pollution is canon — covered by /secure
 eslint; not minted here."* This keeps the surfaced list to the ~2–3 **bespoke** items that
 no other tool would catch — the manipulative-framing prohibition, the product-specific
 fairness constraint — which is the whole value of the probe. Minting canon items both
-duplicates other tooling and drowns the bespoke signal (ADR-550 Decision 6).
+duplicates other tooling and drowns the bespoke signal.
 
 ## Resolution states
 
 Each surfaced prohibition carries two orthogonal axes — a resolution **lifecycle** and, when
-resolved, a **verification** tier (ADR-550 Decision 7, the shared probe-core model; the
-lifecycle is identical to the edge-probe, the verification tiers differ):
+resolved, a **verification** tier (The lifecycle is identical to the edge-probe, the verification tiers differ):
 
 - **status** — `resolved | dismissed | unresolved` (IDENTICAL to the edge-probe):
   - **resolved** — the prohibition is addressed; *how* it is addressed is the verification tier.
@@ -110,9 +109,9 @@ lifecycle is identical to the edge-probe, the verification tiers differ):
     human/LLM judgment that the framing is not manipulative). It records intent and routes
     to a judgment-based review rather than a green/red test.
 
-  At verify time these tiers are routed differently (ADR-550 D4):
+  At verify time these tiers are routed differently:
   - A **test**-tier prohibition is enforced + hard-gates via the deterministic
-    `check prohibition-enforcement` sub-command ( +, ADR-550 D5d): it locates the wired
+    `check prohibition-enforcement` sub-command: it locates the wired
     mechanical check (a `node --test` negative test OR a lint/AST rule run as
     `eslint --format json` and filtered by `ruleId`), **machine-proves it is fail-first** against a
     known violation, runs it for a genuine **non-vacuous** pass, and emits the
@@ -143,7 +142,7 @@ lifecycle is identical to the edge-probe, the verification tiers differ):
     > in-tree `node --test` prohibition; node-test fail-first proof is exercised only by SYNTHETIC
     > temp fixtures in the tests, and the real dogfood remains the LINT-rule `local/no-source-grep`.
     > They are therefore **open to maintainer adjustment (rename, or replacing the env var with an
-    > argv) at PR review with zero migration cost.** See the ADR-550 2026-06-15 addendum.
+    > argv) at PR review with zero migration cost.**
   - A **judgment**-tier prohibition routes to a never-silent / never-hard-halt soft gate
     (autonomous emits an `unverified-prohibition — human review recommended` flag).
 
@@ -170,8 +169,7 @@ object:
   caused by the subject's *content* (not merely by `ENGINEER_PROHIB_SUBJECT` being set). Absent → no control.
 
 The flat-scalar shape is load-bearing: the shared `parseMustHavesBlock` is a flat parser and a
-nested object would flatten/mangle the round-trip (ADR-550 2026-06-15 addendum; "no parser
-rewrite" precedent). `projectProhibitions` emits these keys **only for a well-formed descriptor**
+nested object would flatten/mangle the round-trip. `projectProhibitions` emits these keys **only for a well-formed descriptor**
 (valid `check_kind` + non-empty `check_target`; `check_rule` only on the lint-rule path;
 `check_violation_fixture` and `check_clean_fixture` only when non-empty), and verify-phase reads them
 back via `descriptorFromProjection` into the `CheckDescriptor` handed to `check prohibition-enforcement`.

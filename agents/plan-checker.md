@@ -302,14 +302,14 @@ issue:
 1. Count tasks per plan
 2. Estimate files modified per plan
 3. Check against thresholds
-4. **Smart-zone estimate check (ADR-2629).** For each plan carrying an `estimate` block, run the
+4. **Smart-zone estimate check.** For each plan carrying an `estimate` block, run the
    `estimate-check --calibrated` verb against its `estimate.tokens` (the `--calibrated` flag is required —
    the plan's figure already has the factor applied, and omitting it would square the correction) (invoked in Step 1 below, after the launcher
    preamble). The verb reads `workflow.smart_zone_tokens` and applies the project's calibration. Report
    one line per plan: plan id, estimated tokens, the budget, and — when `over_budget` is true — the
    returned `recommendation`, which names how many slices the phase should become.
 
-   **Over budget is a WARNING, never a blocker** (ADR-2629 Decision 5). Recommend re-slicing into smaller plans; never fail the check on it. Report `estimate.confidence` alongside: `low` means
+   **Over budget is a WARNING, never a blocker**. Recommend re-slicing into smaller plans; never fail the check on it. Report `estimate.confidence` alongside: `low` means
    fewer than 3 completed phases carry actuals, so the figure is not yet calibrated for this project — say
    so rather than presenting it as precise, and weigh the task/file thresholds above more heavily.
 

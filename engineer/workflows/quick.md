@@ -635,7 +635,7 @@ If no active code-review step hook exists, skip with message "Code review skippe
 
 **Scope files from executor's commits:**
 ```bash
-# The quick task's files come from the evaluation-scope resolver (ADR-5057 §4): the
+# The quick task's files come from the evaluation-scope resolver: the
 # UNION of the commits naming the quick task id, on THIS branch only, planning artifacts and
 # lockfiles excluded. A `base..tip` range (the bound) still folds in every unrelated
 # commit interleaved inside the task's window (worktree merge-back, a shared tree, another
@@ -711,8 +711,8 @@ Insert after `### Blockers/Concerns` section:
 
 **7c. Append new row to table:**
 
-Append the row through the schema-backed `engineer_run quick-tasks-append` command (`appendQuickTaskRow`,
-/, ADR-2143 §3/§7) rather than authoring the row as raw markdown — this shares the exact
+Append the row through the schema-backed `engineer_run quick-tasks-append` command (`appendQuickTaskRow`)
+rather than authoring the row as raw markdown — this shares the exact
 escaping the reader (`parseMarkdownTable`) requires, so a `${DESCRIPTION}` containing a literal `|`
 (a Jinja filter, an Ansible task name) can never permanently rag the table ( Phase 3).
 Do NOT use the Edit tool to write this row directly; that raw-interpolation path is the defect this

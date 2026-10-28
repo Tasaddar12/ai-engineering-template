@@ -103,7 +103,7 @@ Agent(
 )
 ```
 
-**Foreground, blocking spawn — .** `run_in_background: false` is REQUIRED, for the same
+**Foreground, blocking spawn.** `run_in_background: false` is REQUIRED, for the same
 reason `/debug` requires it when spawning this agent: Claude Code backgrounds
 subagents by default, and only that flag makes the spawn return the debugger's structured header
 for Step 3 to classify. Backgrounded, Step 3 has nothing to inspect, so this agent returns
@@ -117,7 +117,7 @@ only "spawn continuation agent" without naming a format, so they inherit this ru
 a flag written at each one — which is exactly why Step 2 must remain the only `Agent()` spawn
 literal in this file.
 
-**Never spawn the debugger through Bash — .** The only way to start `debugger` is the Step 2
+**Never spawn the debugger through Bash.** The only way to start `debugger` is the Step 2
 `Agent()` call above. A `Bash` command such as `claude --agent debugger …`, with or without
 `run_in_background`, starts a detached process that returns no structured header, so the checkpoint
 never advances. The Bash guard hook denies it (`debugger-cli-spawn`). If the `Agent` call itself fails,

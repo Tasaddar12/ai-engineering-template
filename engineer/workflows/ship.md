@@ -210,7 +210,7 @@ Verify the work is ready to ship:
 
      (The named-query argument convention — a single `"${PHASE_DIR}"` positional — mirrors `verify-work.md`'s `verify:pre` arm verbatim. No capability declares a `check.query` gate at `ship:pre` today; the arm exists so the documented check contract is complete rather than half-implemented.)
 
-     For a `predicate` gate (ADR-2008 / ), serialize `hook.check.predicate` to compact JSON and pass it as a **single argv element**:
+     For a `predicate` gate, serialize `hook.check.predicate` to compact JSON and pass it as a **single argv element**:
      ```bash
      GATE_RESULT=$(engineer_run check predicate --predicate '<hook.check.predicate as JSON>' --phase-dir "${PHASE_DIR}" --phase-number "${PHASE_NUMBER}" --raw) && CHECK_EXIT=0 || CHECK_EXIT=$?
      ```

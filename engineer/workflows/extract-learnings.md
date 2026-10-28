@@ -195,7 +195,7 @@ The body follows this structure:
 </step>
 
 <step name="calibrate_estimates">
-Rebuild the estimate-vs-actual calibration from every completed phase (ADR-2629).
+Rebuild the estimate-vs-actual calibration from every completed phase.
 
 ```bash
 engineer_run query estimate-calibrate

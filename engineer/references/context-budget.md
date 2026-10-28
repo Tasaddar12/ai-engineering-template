@@ -88,7 +88,7 @@ Trimming MCPs and tuning `model_profile` are independent levers that **compound*
 
 # Phase Sizing (planner)
 
-## Estimate Emission (ADR-2629)
+## Estimate Emission
 
 Every plan carries an `estimate` block. It is the quantitative reason a phase must be sliced — the estimate says *how thin, for this codebase*.
 

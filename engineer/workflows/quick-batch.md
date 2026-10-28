@@ -1,7 +1,7 @@
 @~/.claude/engineer/references/response-language-directive.md
 <purpose>
-Batch several `/quick`-shaped tasks together (ADR-1239
-"Quick-batch binding"). ONE coordinator (this workflow) owns every shared
+Batch several `/quick`-shaped tasks together.
+ONE coordinator (this workflow) owns every shared
 write — `BATCH.json`, STATE.md, worktree create/merge/cleanup — and never
 delegates them to a leaf. Leaves (planner/researcher/checker/executor/
 verifier) return structured results only; they never invoke `/quick`,
@@ -140,7 +140,7 @@ else
 fi
 ```
 
-**Resolve capacity now ( design row 3-4).** `--jobs auto`/omitted uses this
+**Resolve capacity now.** `--jobs auto`/omitted uses this
 value alone; `--jobs N` is capped by it (`min(taskCount, N, capacity)` — the
 `quick-batch effective-concurrency` verb, called per-wave below, does the
 arithmetic; this is only the raw resolve):
@@ -148,7 +148,7 @@ arithmetic; this is only the raw resolve):
 CAPACITY=$(engineer_run query dispatch-capacity --raw 2>/dev/null || echo 1)
 ```
 
-**Resolve isolation now (row 6, 20-22).** Read
+**Resolve isolation now.** Read
 @~/.claude/engineer/references/dispatch-isolation-gate.md and run its `Resolve
 ISOLATION`, `Single-agent dispatch sites`, and `Resolve the harness flag`
 blocks in order; they set `ISOLATION`/`HARNESS_FLAG` via `query

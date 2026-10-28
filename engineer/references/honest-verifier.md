@@ -14,8 +14,7 @@ touching `[2,3]` merge?", "is a 'character' a grapheme or a code unit?"). On the
 not know that it does not know*: measured behavior is a **confident PASS on the blind-spot check ~100%
 of the time** (mean confidence ~0.93), because a model cannot self-detect a gap it does not perceive.
 
-The edge-probe already detects these at spec time and tags them `verification: backstop` (ADR-550
-D7a). The honest verifier consumes that tag so the verifier **abstains** instead of confidently
+The edge-probe already detects these at spec time and tags them `verification: backstop`. The honest verifier consumes that tag so the verifier **abstains** instead of confidently
 false-passing — converting a silent false-pass (the worst failure: you don't know to look) into an
 explicit, actionable "write a held-out test." Measured: the confident-false-pass rate on the blind
 spot drops **100% → 17%** (N17).
@@ -51,14 +50,13 @@ For each `must_haves.truths` item:
 - **Distinguishable reason.** The abstain disposition carries `reason: insufficient_spec` so the
   `human_needed` outcome is never conflated with an ordinary manual-UAT `human_needed`.
 
-This is the verify-time half of ADR-550 Decision 4 (the never-silent-pass disposition), applied to the
-edge `backstop` truth tier instead of the prohibition judgment tier — the same machinery, opposite
+This is the verify-time half applied to the edge `backstop` truth tier instead of the prohibition judgment tier — the same machinery, opposite
 polarity (must-HAVE under-specified vs must-NOT irreducible).
 
 ## Deterministic engine surface
 
 The CI-testable surface is the **deterministic disposition + projection**, never the LLM's judgment
-(ADR-550 D5 — a test asserting the model's verdict is vacuous and rejected). In `probe-core`:
+(A test asserting the model's verdict is vacuous and rejected). In `probe-core`:
 
 - `truthStatement(t)` / `truthVerification(t)` — normalizers; read a truth's statement and tier from
   either the plain-string or object form (a truth-reader MUST normalize, never assume a string).

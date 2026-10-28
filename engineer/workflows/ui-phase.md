@@ -373,7 +373,7 @@ partly-classified surface slips through both arms with no signal at all. When
 `response_language` is unset (an English-language project), omit `text_en` —
 `text` is already English and the engine falls back to it automatically (`text_en ?? text`).
 If an element still classifies to zero kinds with `text_en` populated, it carries no cue in
-any language (the recorded recall gap — ADR-857 §98 / ADR-550 D7b, not a translation failure);
+any language (not a translation failure);
 author an explicit `elements` array on that element instead of relying on the prose classifier.
 
 

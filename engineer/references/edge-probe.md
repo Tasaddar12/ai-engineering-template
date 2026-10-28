@@ -101,7 +101,7 @@ ninth taxonomy category: the closed eight above are unchanged, and an explicit `
 opt-out stays silent (the author's deliberate "no edge surface").
 
 Each raised edge carries two orthogonal axes — a resolution **lifecycle** and, when
-resolved, a **verification** tier (ADR-550 Decision 7, the shared probe-core model):
+resolved, a **verification** tier (The shared probe-core model):
 
 - **status** — `resolved | dismissed | unresolved`:
   - **resolved** — the edge is addressed; *how* it is addressed is the verification tier.

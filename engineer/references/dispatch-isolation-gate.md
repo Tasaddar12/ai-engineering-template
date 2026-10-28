@@ -1,4 +1,4 @@
-# Dispatch isolation gate (ADR-1239 / )
+# Dispatch isolation gate
 
 The single source of truth for **how a dispatch site decides whether it may run an agent
 isolated**. Every workflow that spawns an executor-like subagent reads this file and follows
