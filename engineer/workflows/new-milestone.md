@@ -1,6 +1,6 @@
 <purpose>
 
-Start a new milestone cycle for an existing project. Loads project context, gathers milestone goals (from MILESTONE-CONTEXT.md or conversation), updates PROJECT.md and STATE.md, optionally runs parallel research, defines scoped requirements with REQ-IDs, spawns the roadmapper to create phased execution plan, and commits all artifacts. Brownfield equivalent of new-project.
+Start a new milestone cycle for an existing project. Loads project context, gathers milestone goals (from MILESTONE-CONTEXT.md or conversation), updates PROJECT.md and STATE.md, optionally runs parallel research, defines scoped requirements with REQ-IDs, spawns the planner to create phased execution plan, and commits all artifacts. Brownfield equivalent of new-project.
 
 </purpose>
 
@@ -12,9 +12,9 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <available_agent_types>
 Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
-- project-researcher — Researches project-level technical decisions
-- research-synthesizer — Synthesizes findings from parallel research agents
-- roadmapper — Creates phased execution roadmaps
+- phase-researcher — Researches the assigned project-level technical decisions
+- doc-writer — Synthesizes the complete findings from parallel research agents
+- planner — Proposes phased execution roadmaps for coordinator application
 </available_agent_types>
 
 <process>
@@ -90,7 +90,7 @@ RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --defa
 # which must stay AFTER Step 6's phase archival/phases.clear so its
 # phase_dir_count / roadmap_exists / latest_completed_milestone fields
 # reflect POST-archival state — moving that call here would compute those
-# fields too early and corrupt the roadmapper's phase-numbering context.
+# fields too early and corrupt the planner's phase-numbering context.
 # init.new-milestone is a pure read (no mutation), so calling it twice is
 # safe; only `section_manifest` is consumed from this early call.
 # : $ENGINEER_WS forwarded (same fence as the parse above, no round-trip
@@ -349,23 +349,23 @@ RESET_PHASE_NUMBERS_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--reset-p
 ENGINEER_WS_ARG=$(cat .planning/.engineer-ws-arg 2>/dev/null || true)
 INIT=$(engineer_run query init.new-milestone $RESET_PHASE_NUMBERS_PARAM ${ENGINEER_WS_ARG:+--ws=${ENGINEER_WS_ARG##* }})
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_RESEARCHER=$(engineer_run query agent-skills project-researcher ${ENGINEER_WS_ARG:+--ws=${ENGINEER_WS_ARG##* }})
-AGENT_SKILLS_SYNTHESIZER=$(engineer_run query agent-skills research-synthesizer ${ENGINEER_WS_ARG:+--ws=${ENGINEER_WS_ARG##* }})
-AGENT_SKILLS_ROADMAPPER=$(engineer_run query agent-skills roadmapper ${ENGINEER_WS_ARG:+--ws=${ENGINEER_WS_ARG##* }})
+AGENT_SKILLS_RESEARCHER=$(engineer_run query agent-skills phase-researcher ${ENGINEER_WS_ARG:+--ws=${ENGINEER_WS_ARG##* }})
+AGENT_SKILLS_DOC_WRITER=$(engineer_run query agent-skills doc-writer ${ENGINEER_WS_ARG:+--ws=${ENGINEER_WS_ARG##* }})
+AGENT_SKILLS_PLANNER=$(engineer_run query agent-skills planner ${ENGINEER_WS_ARG:+--ws=${ENGINEER_WS_ARG##* }})
 ```
 <!-- : .planning/.engineer-ws-arg is NOT cleaned up here — Steps 9 and 10
 below still need to re-read it (each is its own shell) to resolve
 REQUIREMENTS.md/ROADMAP.md/STATE.md correctly under a workstream. It is
 removed in Step 10, its true last consumer. -->
 
-Extract from init JSON: `researcher_model`, `synthesizer_model`, `roadmapper_model`, `commit_docs`, `research_enabled`, `current_milestone`, `project_exists`, `roadmap_exists`, `latest_completed_milestone`, `phase_dir_count`, `phase_archive_path`, `agents_installed`, `missing_agents`, `project_path`, `roadmap_path`, `requirements_path`, `config_path`, `research_dir`, `milestones_path`, `phases_dir`, `archive_dir`.
+Extract from init JSON: `researcher_model`, `doc_writer_model`, `planner_model`, `commit_docs`, `research_enabled`, `current_milestone`, `project_exists`, `roadmap_exists`, `latest_completed_milestone`, `phase_dir_count`, `phase_archive_path`, `agents_installed`, `missing_agents`, `project_path`, `roadmap_path`, `requirements_path`, `config_path`, `research_dir`, `milestones_path`, `phases_dir`, `archive_dir`.
 
 **If `agents_installed` is false:** Display a warning before proceeding:
 ```
 ⚠ Engineer agents not installed. The following agents are missing from your agents directory:
   {missing_agents joined with newline}
 
-Subagent spawns (project-researcher, research-synthesizer, roadmapper) will fail
+Subagent spawns (phase-researcher, doc-writer, planner) will fail
 with "agent type not found". Run the installer with --global to make agents available:
 
   python -I bin/install.py --source <local-source> --ref <pinned-ref> --target <project-root> --host claude --local
@@ -409,12 +409,12 @@ AskUserQuestion: "Research the domain ecosystem for new features before defining
 mkdir -p .planning/research
 ```
 
-Spawn 4 parallel project-researcher agents. Each uses this template with dimension-specific fields:
+Spawn 4 parallel phase-researcher agents. Each uses this template with dimension-specific fields:
 
 **Common structure for all 4 researchers:**
 <!-- model-omit-on-inherit -->
 
-> **Model omission .** Omit the `model` parameter entirely when the value it would carry (`researcher_model`, `synthesizer_model`, `roadmapper_model`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
+> **Model omission .** Omit the `model` parameter entirely when the value it would carry (`researcher_model`, `doc_writer_model`, `planner_model`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```text
 Agent(prompt="
@@ -442,7 +442,7 @@ ${AGENT_SKILLS_RESEARCHER}
 Write to: {research_dir}/{FILE}
 Use template: engineer/templates/research-project/{FILE}
 </output>
-", subagent_type="project-researcher", model="{researcher_model}", description="{DIMENSION} research")
+", subagent_type="phase-researcher", model="{researcher_model}", description="{DIMENSION} research")
 ```
 
 **Dimension-specific fields:**
@@ -455,9 +455,9 @@ Use template: engineer/templates/research-project/{FILE}
 | GATES | Versions current (verify with Context7), rationale explains WHY, integration considered | Categories clear, complexity noted, dependencies identified | Integration points identified, new vs modified explicit, build order considers deps | Pitfalls specific to adding these features, integration pitfalls covered, prevention actionable |
 | FILE | STACK.md | FEATURES.md | ARCHITECTURE.md | PITFALLS.md |
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling all 4 researcher Agent() calls above, do NOT read research files or synthesize content independently while the subagents are active. Wait for all 4 researchers to complete before spawning the synthesizer. This prevents duplicate work and wasted context.
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling all 4 researcher Agent() calls above, do NOT read research files or synthesize content independently while the subagents are active. Wait for all 4 researchers to complete before spawning the doc-writer. This prevents duplicate work and wasted context.
 
-After all 4 complete, spawn synthesizer:
+After all 4 complete, spawn doc-writer:
 
 ```text
 Agent(prompt="
@@ -470,23 +470,23 @@ Synthesize research outputs into SUMMARY.md.
 - {research_dir}/PITFALLS.md
 </required_reading>
 
-${AGENT_SKILLS_SYNTHESIZER}
+${AGENT_SKILLS_DOC_WRITER}
 
 Write to: {research_dir}/SUMMARY.md
 Use template: engineer/templates/research-project/SUMMARY.md
 Commit after writing.
-", subagent_type="research-synthesizer", model="{synthesizer_model}", description="Synthesize research")
+", subagent_type="doc-writer", model="{doc_writer_model}", description="Synthesize research")
 ```
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
-**Synthesizer output self-heal — verify SUMMARY.md materialized:** The synthesizer's canonical output is `.planning/research/SUMMARY.md` on disk; its brief structured return (`## SYNTHESIS COMPLETE` plus a few `###` confirmation lines) is NOT the file content. The restriction is not always fabricated: Claude Code refuses a subagent's `Write` to a few exact basenames — `SUMMARY.md` among them — with `Subagents should return findings as text, not write report files` (observed on Claude Code 2.1.301), and the synthesizer is told to return the full document inline when its `Write` hits that error; the refusal is real, not fabricated. It depends on the exact basename (`SUMMARY.md`, `REPORT.md`, `FINDINGS.md`, `ANALYSIS.md`, case-insensitive; a prefixed name such as `01-01-SUMMARY.md` and other agents' files write fine), so do not tell other agents to avoid `Write`. Either cause lands in step 2. A known LLM false-refusal sometimes makes the agent return the full SUMMARY.md document inline — fabricating a write restriction (e.g. "the runtime is blocking file writes") — instead of writing the file. Prompt hardening alone does not fully eliminate it, so the orchestrator MUST absorb either cause deterministically before spawning `roadmapper`:
+**Doc-writer output self-heal — verify SUMMARY.md materialized:** The doc-writer's canonical output is `.planning/research/SUMMARY.md` on disk; its brief structured return (`## SYNTHESIS COMPLETE` plus a few `###` confirmation lines) is NOT the file content. The restriction is not always fabricated: Claude Code refuses a subagent's `Write` to a few exact basenames — `SUMMARY.md` among them — with `Subagents should return findings as text, not write report files` (observed on Claude Code 2.1.301), and the doc-writer is told to return the full document inline when its `Write` hits that error; the refusal is real, not fabricated. It depends on the exact basename (`SUMMARY.md`, `REPORT.md`, `FINDINGS.md`, `ANALYSIS.md`, case-insensitive; a prefixed name such as `01-01-SUMMARY.md` and other agents' files write fine), so do not tell other agents to avoid `Write`. Either cause lands in step 2. A known LLM false-refusal sometimes makes the agent return the full SUMMARY.md document inline — fabricating a write restriction (e.g. "the runtime is blocking file writes") — instead of writing the file. Prompt hardening alone does not fully eliminate it, so the orchestrator MUST absorb either cause deterministically before spawning `planner`:
 
 1. Verify `.planning/research/SUMMARY.md` exists AND is substantive — non-empty, and free of any leftover `<!-- engineer:write-continue -->` continuation sentinel (which marks a truncated/incomplete write). You may validate with `engineer_run verify-summary .planning/research/SUMMARY.md` — it exits 0 regardless, so check its JSON `passed` field (`"passed": false` means missing or invalid), not the process exit code. If it passes, continue normally.
-2. If it is MISSING or invalid AND the synthesizer's return message contains the FULL SUMMARY.md document — recognizable by the template's top-level markers `# Project Research Summary`, `## Key Findings`, `## Implications for Roadmap`, and `## Sources`, not merely the brief `## SYNTHESIS COMPLETE` confirmation — the synthesizer returned the document inline (the false-refusal, or the runtime's real refusal of the name `SUMMARY.md`): write that returned document to `.planning/research/SUMMARY.md` with the Write tool, then commit ALL research artifacts the synthesizer owns (it commits on behalf of the four researchers) with `engineer_run query commit "docs: complete project research" --files .planning/research/` unless they are already committed. Log `⚠  self-heal: synthesizer returned SUMMARY.md inline without writing it; orchestrator persisted the file.`
-3. If it is MISSING or invalid AND the return is only a brief confirmation (no full SUMMARY document to recover), the synthesizer genuinely failed — surface the error and stop; do NOT spawn `roadmapper` against a missing or incomplete SUMMARY.md.
+2. If it is MISSING or invalid AND the doc-writer's return message contains the FULL SUMMARY.md document — recognizable by the template's top-level markers `# Project Research Summary`, `## Key Findings`, `## Implications for Roadmap`, and `## Sources`, not merely the brief `## SYNTHESIS COMPLETE` confirmation — the doc-writer returned the document inline (the false-refusal, or the runtime's real refusal of the name `SUMMARY.md`): write that returned document to `.planning/research/SUMMARY.md` with the Write tool, then commit ALL research artifacts the doc-writer owns (it commits on behalf of the four researchers) with `engineer_run query commit "docs: complete project research" --files .planning/research/` unless they are already committed. Log `⚠  self-heal: doc-writer returned SUMMARY.md inline without writing it; orchestrator persisted the file.`
+3. If it is MISSING or invalid AND the return is only a brief confirmation (no full SUMMARY document to recover), the doc-writer genuinely failed — surface the error and stop; do NOT spawn `planner` against a missing or incomplete SUMMARY.md.
 
-This guarantees `roadmapper` (which lists SUMMARY.md as required reading) never runs against a missing or truncated SUMMARY.md.
+This guarantees `planner` (which lists SUMMARY.md as required reading) never runs against a missing or truncated SUMMARY.md.
 
 Display key findings from SUMMARY.md:
 ```
@@ -580,7 +580,7 @@ engineer_run query commit "docs: define milestone v[X.Y] requirements" --files "
 ```
 ### Engineer ► CREATING ROADMAP
 
-◆ Spawning roadmapper... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
+◆ Spawning planner... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
 
 **Starting phase number:**
@@ -598,7 +598,7 @@ Agent(prompt="
 - {milestones_path}
 </required_reading>
 
-${AGENT_SKILLS_ROADMAPPER}
+${AGENT_SKILLS_PLANNER}
 
 </planning_context>
 
@@ -611,12 +611,12 @@ Create roadmap for milestone v[X.Y]:
 3. Map every requirement to exactly one phase
 4. Derive 2-5 success criteria per phase (observable user behaviors)
 5. Validate 100% coverage
-6. Write files immediately (ROADMAP.md, STATE.md, update REQUIREMENTS.md traceability)
-7. Return ROADMAP CREATED with summary
+6. Return the complete roadmap proposal, including every phase, success criterion, dependency and requirement-to-phase mapping; do not edit ROADMAP.md, STATE.md or REQUIREMENTS.md
+7. Return ## ROADMAP PROPOSED with the full proposal
 
-Write files first, then return.
+Return the full proposal before ending. The coordinator owns every shared-record write.
 </instructions>
-", subagent_type="roadmapper", model="{roadmapper_model}", description="Create roadmap")
+", subagent_type="planner", model="{planner_model}", description="Create roadmap")
 ```
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
@@ -625,7 +625,11 @@ Write files first, then return.
 
 **If `## ROADMAP BLOCKED`:** Present blocker, work with user, re-spawn.
 
-**If `## ROADMAP CREATED`:** Read ROADMAP.md, present inline:
+**If `## ROADMAP PROPOSED`:**
+
+The planner return is a complete proposal, not published shared records. The coordinator applies it only through supported runtime writes: `project.init --resume` for missing initialization artifacts, and `phase.add` / `phase.edit` plus the applicable `state.*` verbs for existing records. Before writing, compare every proposal field with the handler's supported inputs. If a success criterion, requirement-to-phase traceability mapping, numbering choice or other exact field cannot be preserved by the available runtime, stop, identify that unsupported field, and retain the full pending proposal. Do not hand-edit shared structures, invent a verb, or claim the roadmap was created. After supported writes succeed, read back and compare all phase fields and requirement ownership before presenting canonical records.
+
+Read the runtime-created ROADMAP.md, present inline:
 
 ```
 ## Proposed Roadmap
@@ -651,7 +655,7 @@ Success criteria:
 - "Adjust phases" — Tell me what to change
 - "Review full file" — Show raw ROADMAP.md
 
-**If "Adjust":** Get notes, re-spawn roadmapper with revision context, loop until approved.
+**If "Adjust":** Get notes, re-spawn planner with revision context and the complete current proposal. The planner returns a full revised proposal without editing shared records. Apply the same guarded coordinator runtime handoff above before canonical readback; stop with the exact unsupported field if fidelity cannot be preserved. Loop until approved.
 **If "Review":** Display raw ROADMAP.md, re-ask.
 
 **Commit roadmap** (after approval):
@@ -755,8 +759,8 @@ Also: `/plan-phase [N] ${ENGINEER_WS}` — skip discussion, plan directly
 - [ ] Research completed (if selected) — 4 parallel agents, milestone-aware
 - [ ] Requirements gathered and scoped per category
 - [ ] REQUIREMENTS.md created with REQ-IDs
-- [ ] roadmapper spawned with phase numbering context
-- [ ] Roadmap files written immediately (not draft)
+- [ ] planner spawned with phase numbering context
+- [ ] Complete roadmap proposal applied by the coordinator through supported runtime writes and canonical records read back
 - [ ] User feedback incorporated (if any)
 - [ ] Phase numbering mode respected (continued or reset)
 - [ ] All commits made (if planning docs committed)
