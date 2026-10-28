@@ -178,7 +178,7 @@ def accepted_human(body):
 
 def human_evidence(fields, issue_url=None, scope_reference=None):
     """Verify actual non-bot authored acceptance in the canonical issue comment."""
-    if not isinstance(fields, dict) or not all(fields.get(k) for k in ('reviewer', 'date', 'decision', 'evidence')):
+    if not isinstance(fields, dict) or not all(isinstance(fields.get(k), str) and fields[k].strip() for k in ('reviewer', 'date', 'decision', 'evidence')):
         raise Failure('human-acceptance-pending', 'Actual reviewer/date/decision/evidence are required')
     urls = re.findall(r'https://[^\s)\]>]+', str(fields['evidence']))
     candidates = [u for u in urls if re.search(r'#issuecomment-\d+$', u)]
