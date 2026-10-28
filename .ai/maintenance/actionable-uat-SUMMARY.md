@@ -7,7 +7,6 @@ documentation:
   - .ai/templates/issue.md
   - .ai/templates/UAT.md
   - .ai/workflows/verify-work.md
-  - .ai/references/methods/verify-mvp-mode.md
   - .ai/agents/verifier.md
 plan_head_before: 320574f9b3f07628789058e2aaccc7b6a7fc677d
 ---
@@ -56,8 +55,6 @@ created or updated.
   a gaps-found result. Its single issue-author ownership rule assigns one named
   author, explicit issue URL/number and owned draft per issue, prohibits concurrent
   edits and leaves review/publication with the authorized coordinator.
-- `.ai/references/methods/verify-mvp-mode.md` separates the human walk-through
-  from maintainer technical/coverage checks and links the same contract.
 - `.ai/agents/verifier.md` minimally links direct human-check generation to the
   canonical script and keeps the verifier read-only.
 - This summary records the bounded source change and worker evidence.

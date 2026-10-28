@@ -87,7 +87,6 @@ Keep .ai/references/git-workflow.md, its issue and pull-request templates, runti
 <verification>
 Commands run from the repository root. On this Windows host, resolve the python argv element to C:/Users/killi/AppData/Local/Microsoft/WindowsApps/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/python.exe; execution and Git metadata writes may require the host's escalation mechanism. Existing test paths and installer fixture interfaces were inspected at the base. The focused test is created by this task before its check runs; no future test result is claimed during preparation.
 Security review: not applicable. This changes instruction routing and regression tests; no authentication, secret handling, privilege boundary or runtime input-validation implementation changes.
-Tracer exception: instruction-only maintenance has no new production execution path. Real installed entrypoint output supplies the end-to-end evidence in this single coherent task.
 </verification>
 
 <source_audit>

@@ -101,7 +101,6 @@ PROJECT, STATE, ROADMAP and REQUIREMENTS are unfilled adoption skeletons. No rea
 
 Observed seams: phase-preparer.md has a PLAN STRIDE register and boundary-triggered security gate; coder.md emits only new-surface Threat Flags; summary.md lacks that section; execute-phase.md aggregates SUMMARYs; quick.md makes checking and verification optional. issue_format.py derives ordered headings from issue.md, with extra field/table checks only for UAT. delivery.py and todo_issues.py implement GitHub/gh only. Reuse these contracts rather than assuming PR76/77 adds a prerequisite.
 
-Tracer exception: this changes agent instructions/templates, not an executable product pipeline. Task1 makes the existing issue-to-PR reporting contract usable; Task2 wires its actual producers and consumers; offline structural tests and independent source review provide evidence. Tests do not prove that agents perform live deduplication, redaction or provider publication.
 </context>
 
 <tasks>

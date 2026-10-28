@@ -86,7 +86,7 @@ The content is adapted, not an exact source mirror.
 | [methods/debugger-sbfl.md](references/methods/debugger-sbfl.md) | `debugger-sbfl.md` |
 | [methods/debugger-semantic-recall.md](references/methods/debugger-semantic-recall.md) | `debugger-semantic-recall.md` |
 | [methods/debugger-techniques.md](references/methods/debugger-techniques.md) | `debugger-techniques.md` |
-| [methods/execute-mvp-tdd.md](references/methods/execute-mvp-tdd.md) | `execute-mvp-tdd.md` |
+| [methods/tdd-evidence-gate.md](references/methods/tdd-evidence-gate.md) | Component TDD evidence gate |
 | [methods/executor-examples.md](references/methods/executor-examples.md) | `executor-examples.md` |
 | [methods/failing-direction.md](references/methods/failing-direction.md) | `failing-direction.md` |
 | [methods/few-shot-examples/plan-checker.md](references/methods/few-shot-examples/plan-checker.md) | `few-shot-examples/plan-checker.md` |
@@ -126,7 +126,6 @@ The content is adapted, not an exact source mirror.
 | [methods/verifier-phase-gates.md](references/methods/verifier-phase-gates.md) | `verifier-phase-gates.md` |
 | [methods/verifier-wiring-patterns.md](references/methods/verifier-wiring-patterns.md) | `verifier-wiring-patterns.md` |
 | [methods/verify-command-path-resolvability.md](references/methods/verify-command-path-resolvability.md) | `verify-command-path-resolvability.md` |
-| [methods/verify-mvp-mode.md](references/methods/verify-mvp-mode.md) | `verify-mvp-mode.md` |
 
 [templates/milestone.md](templates/milestone.md) derives from
 `gsd-core/templates/milestone.md` at revision

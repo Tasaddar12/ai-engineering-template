@@ -196,7 +196,6 @@ All listed threats have planned mitigation; no acceptance or transfer substitute
 <verification>
 The preparer did not run tests. Each implementation task runs its named offline regression file and reports actual results/revision. The coordinator runs configured repository checks and independent plan/code/outcome review after integration. Reuse valid receipts and repeat only checks affected by corrections. Live publication/merge is not a test prerequisite.
 
-Tracer: Task 1 delivers the phase record through preview/publication/readback/handoff path with denied-input cases; Task 2 adds truthful delivery/retirement; Task 3 makes mandatory producers consume that path.
 
 Security review is applicable to the changed untrusted-input/publication/path/closure boundaries; the plan-local threat_model maps mitigation to Tasks 1-2 and their negative tests. No application authentication behavior or PR #80 threat template/architecture changes are assigned.
 </verification>

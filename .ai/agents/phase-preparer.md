@@ -284,37 +284,6 @@ Exceptions where `tdd="true"` is not needed: `type="checkpoint:*"` tasks, config
 
 When human verification is assigned to the end of the phase, record it in the plan and hand it to the coordinator for UAT; do not invent a configuration switch.
 
-## Tracer-First Decomposition (default)
-
-Lead each phase plan with the thinnest production-quality end-to-end path through
-the changed layers, then expand from that proven slice. This is the default
-planning method, not an opt-in runtime feature. For a non-behavioral assignment
-where a tracer cannot supply meaningful evidence, state the exception and its
-validation rationale explicitly in the plan; do not silently skip the method. Read
-[planner-mvp-mode](../references/methods/planner-mvp-mode.md) for examples.
-Use a supported `type="auto"` task; "tracer" describes the design, not a new
-runtime task type. Unsupported syntax must not erase the tracer's production
-quality, end-to-end verification or feedback gate. A human gate before expansion
-belongs in coordinator-held preparation/continuation, not an executable checkpoint
-task the runner cannot process.
-
-```xml
-<task type="auto">
-  <name>End-to-end "[capability]" — one path only</name>
-  <files>[one file per layer the phase touches]</files>
-  <action>Wire one entry point through every layer, with real error handling.</action>
-  <verify><automated>[a real end-to-end check]</automated></verify>
-  <done>The single path works end-to-end and is committed.</done>
-</task>
-```
-
-A tracer is retained production code. Do not substitute stubs for required
-acceptance. When useful, express the approved goal as "As a [user], I want [action],
-so that [benefit]"; missing product decisions go to the coordinator. Record
-architecture choices in existing phase context/specifications through their
-owner, rather than requiring a new skeleton file. Under assigned TDD, start the
-slice with a failing end-to-end behavioral check.
-
 See [planner-guidance](../references/methods/planner-guidance.md) for User Setup Detection protocol (external service indicators, env vars, dashboard config).
 
 </task_breakdown>
@@ -748,7 +717,6 @@ At decision points during plan creation, apply structured reasoning:
 
 Decompose phase into tasks. **Think dependencies first, not sequence.**
 
-**By default, lead with a thin end-to-end slice** using `type="auto"` (see Tracer-First Decomposition), then expand from the proven path.
 
 For each task:
 1. What does it NEED? (files, types, APIs that must exist)

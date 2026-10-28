@@ -19,11 +19,6 @@ the missing side: it states, in runnable/checkable terms, what must be true
 assumption is false, instead of building ten atomic commits on top of a
 migration that never ran.
 
-This is the front-of-task companion to the tracer-bullet proposal:
-tracers prove the *architecture* end-to-end before expansion; preconditions prove
-each expansion task's *assumptions* before it runs. Together they close both ends
-of the "outrunning your headlights" failure mode.
-
 ## When to emit `<precondition>`
 
 Emit `<precondition>` ONLY when a task relies on state the plan's own `depends_on`
@@ -75,7 +70,7 @@ environment variable or runtime config that exists *now* (not at plan time).
 ```xml
 <task type="auto">
   <name>Add /reveal endpoint handler</name>
-  <precondition>server bootstraps and responds to GET /health (from the tracer slice)</precondition>
+  <precondition>server bootstraps and responds to GET /health</precondition>
   <files>server/reveal.ts</files>
   <action>...</action>
   <verify>curl /reveal?path=... opens the OS file manager</verify>
@@ -142,6 +137,5 @@ This method does not add:
 
 - *The Pragmatic Programmer*, Topic 23 — "Design by Contract" (Hunt & Thomas).
 - [runtime contract](../../runtime/TEMPLATE-CONTRACT.md) — supported execution fields.
-- [Thin end-to-end slices](planner-mvp-mode.md) — architectural evidence before expansion.
 - [coder](../../agents/coder.md) → `<execution_flow>` → precondition check step — the
   assertion surface that consumes what this reference defines.

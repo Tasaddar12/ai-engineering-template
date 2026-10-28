@@ -174,7 +174,6 @@ How roadmap phases should address these pitfalls.
 
 **Technical Debt:**
 - Be realistic — some shortcuts are acceptable
-- Note when shortcuts are "never acceptable" vs. "only in MVP"
 - Include the long-term cost to inform tradeoff decisions
 
 **Performance Traps:**

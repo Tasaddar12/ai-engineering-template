@@ -140,7 +140,6 @@ At input revision, plan-phase revision_loop is prose without a revision_context 
 <verification>
 Security review: not applicable. This changes workflow documentation and read-only bundle role enumeration, with no authentication, authorization, secret handling, tenant isolation or untrusted-input validation boundary change. Mandatory security planning checks for consuming project PLANs remain intact.
 
-Tracer-first: Task 1 traces the real caller/result/author/checker correction path. This maintenance has no product request endpoint; source-backed route inspection is the meaningful evidence for documentation. Task 2 supplies the observable runtime regression.
 
 Preparer runs no tests. The coordinator/assigned executors run the above focused checks after implementation and the required existing CI Python command: python -m unittest discover -s tests -v. Nonzero exit or zero tests blocks acceptance. CI validate.yml also requires bash .ai/hooks/ai-tier-notice.test.sh, bash .ai/hooks/worktree-guard.test.sh, bash .ai/hooks/context-handoff.test.sh and bash .ai/hooks/worktree-location.test.sh; run on an available Bash host or retain the remote platform results as pending, never claim unrun checks passed. No benchmarks. Record exact tested revision, commands/results and pending/failed checks. The adoption config has no configured project commands; do not populate it with template-maintenance checks.
 

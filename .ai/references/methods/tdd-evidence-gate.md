@@ -7,7 +7,7 @@
 ## Applicability
 
 Apply when the committed assignment requires TDD (for example `type: tdd` or a
-`tdd="true"` task) and the task adds or changes behavior. MVP status is irrelevant.
+`tdd="true"` task) and the task adds or changes behavior.
 Read the task's expected behavior and files: a behavior change in non-test source
 requires RED evidence before implementation. A documentation-only or test-only
 task is not behavior-adding. Treat executable configuration according to its

@@ -137,14 +137,6 @@ notes; do not rely on an unimplemented mode flag to suppress or approve checkpoi
 </task>
 ```
 
-### Early integration feedback
-
-When a plan uses a thin end-to-end slice, validate that slice before expanding it.
-Use supported `type="auto"` tasks to express this ordering. A failed check blocks
-dependent expansion. If the next step requires a new human decision, return the
-facts to the coordinator; a successful automated check cannot stand in for that
-human decision. No special tracer task type or synthesized runtime checkpoint is
-assumed by this method.
 </type>
 
 <type name="decision">
