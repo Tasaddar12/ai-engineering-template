@@ -190,16 +190,16 @@ Every task has four required fields:
 
 **Nyquist Rule:** Every `<verify>` includes `<automated>`. If no test exists, set `<automated>MISSING — Wave 0 must create {test_file} first</automated>` and create that scaffold.
 
-**Inherit the command that already worked :** reuse `prior_verify_commands` verbatim, prefer `npm --prefix <dir> run <script>`, ground every path you author. @~/.claude/engineer/references/planner-verify-command-grounding.md
+**Inherit the command that already worked:** reuse `prior_verify_commands` verbatim, prefer `npm --prefix <dir> run <script>`, ground every path you author. @~/.claude/engineer/references/planner-verify-command-grounding.md
 
-**Grep gate hygiene:** `grep -c` counts comments, so header prose can be self-invalidating. Use `grep -v '^#' | grep -c token`. Bare `== 0` gates on unfiltered files are forbidden. Run every count/match gate against the current tree and record its baseline : a gate that already passes at HEAD, or whose literal differs in case from the deliverable, is wrong. @~/.claude/engineer/references/planner-verify-command-grounding.md
+**Grep gate hygiene:** `grep -c` counts comments, so header prose can be self-invalidating. Use `grep -v '^#' | grep -c token`. Bare `== 0` gates on unfiltered files are forbidden. Run every count/match gate against the current tree and record its baseline: a gate that already passes at HEAD, or whose literal differs in case from the deliverable, is wrong. @~/.claude/engineer/references/planner-verify-command-grounding.md
 
 <comment_text_discipline>
 **Comment-text discipline (HARD GATE):** A literal an acceptance criterion negative-greps for must NOT appear verbatim in any `<action>` body. Rules + `<!-- planner-discipline-allow: LIT -->` allowlist + examples: @~/.claude/engineer/references/planner-antipatterns.md ("Comment-Text Discipline").
 </comment_text_discipline>
 
 <region_scoped_negative_gate>
-**Region-scoped negative gates (WARN)** and **Verify-gate hygiene :** @~/.claude/engineer/references/planner-antipatterns.md.
+**Region-scoped negative gates (WARN)** and **Verify-gate hygiene:** @~/.claude/engineer/references/planner-antipatterns.md.
 </region_scoped_negative_gate>
 
 **<done>:** Acceptance criteria - measurable state of completion.
@@ -780,7 +780,7 @@ These PLAN.md files are the canonical output of this agent. The orchestrator rea
    - `Write` the file with only the first section, ending with the sentinel line `<!-- engineer:write-continue -->`.
    - `Read` the file, then `Edit` it, replacing `<!-- engineer:write-continue -->` with the next section followed by the sentinel again. Repeat, one section per `Edit`.
    - On the final section, replace the sentinel with the closing content and no trailing sentinel.
-5. **Verify the write landed .** A `Write` that returns success can still have stored a truncated payload. After writing each PLAN.md, run `verify.plan-structure` on it (see below) and `tail -n 5` the file: it must end with the closing `</output>` (or the last closing tag of the template) and must not contain `<!-- engineer:write-continue -->`. If it ends mid-tag, rewrite it with the incremental method in rule 4.
+5. **Verify the write landed.** A `Write` that returns success can still have stored a truncated payload. After writing each PLAN.md, run `verify.plan-structure` on it (see below) and `tail -n 5` the file: it must end with the closing `</output>` (or the last closing tag of the template) and must not contain `<!-- engineer:write-continue -->`. If it ends mid-tag, rewrite it with the incremental method in rule 4.
 6. **If writing still fails, surface the actual error in your return message.** **Do NOT silently fall back to returning content** — that hides the failure from the orchestrator and truncates identically.
 
 **CRITICAL — File naming convention (enforced):**
@@ -824,7 +824,7 @@ Also validate plan structure:
 STRUCTURE=$(engineer_run query verify.plan-structure "$PLAN_PATH") && STRUCTURE_EXIT=0 || STRUCTURE_EXIT=$?
 ```
 
-Returns JSON: `{ valid, errors, warnings, task_count, tasks }`. The exit status follows the verdict : `0` = `valid: true`, `1` = `valid: false` (read `errors` from the JSON); any other status (`69`: the plan file is missing or unreadable) means the structure was not evaluated — do not commit the plan as validated.
+Returns JSON: `{ valid, errors, warnings, task_count, tasks }`. The exit status follows the verdict: `0` = `valid: true`, `1` = `valid: false` (read `errors` from the JSON); any other status (`69`: the plan file is missing or unreadable) means the structure was not evaluated — do not commit the plan as validated.
 
 **If errors exist:** Fix before committing:
 - Missing `<name>` in task → add name element
@@ -873,7 +873,7 @@ Return structured planning outcome to orchestrator.
 
 <structured_returns>
 
-See @~/.claude/engineer/references/planner-guidance.md for return formats; gap-closure returns are artifact-based .
+See @~/.claude/engineer/references/planner-guidance.md for return formats; gap-closure returns are artifact-based.
 
 </structured_returns>
 

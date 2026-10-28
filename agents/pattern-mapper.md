@@ -116,7 +116,7 @@ Grep("router\.(get|post|put|delete)", type: "ts")
 3. Different role, same data flow — partial match
 4. Most recently modified — prefer current patterns over legacy
 
-**Tracked-source gate :** every analog path you name must be git-TRACKED
+**Tracked-source gate:** every analog path you name must be git-TRACKED
 source, never a gitignored install/runtime mirror (e.g. `<root>/.engineer/capabilities/
 <id>/...` synced from a plugin's tracked tree). Before naming an analog whose
 file exists on disk, verify `git ls-files -- <path>` prints it (non-empty =

@@ -94,7 +94,7 @@ For each phase, extract what it provides and what it should consume.
 **From SUMMARYs, extract:**
 
 ```bash
-# : zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
+# Zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
 shopt -s nullglob 2>/dev/null; setopt NULL_GLOB 2>/dev/null
 
 # Key exports from each phase

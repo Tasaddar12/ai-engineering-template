@@ -255,7 +255,7 @@ ARTIFACT_RESULT=$(engineer_run query verify.artifacts "$PLAN_PATH") && ARTIFACT_
 
 Parse JSON result: `{ all_passed, passed, total, artifacts: [{path, exists, issues, passed}] }`
 
-The exit status follows the verdict : `0` = every artifact passed; `1` = negative verdict (`all_passed: false`), the JSON is still authoritative, so map each artifact below; `66` (`NO_INPUT`) = the plan declares no `must_haves.artifacts`, report Step 4 as not applicable, never VERIFIED; `69` (`UNAVAILABLE`) = the plan file is missing or unreadable (the JSON carries `error`), report Step 4 as unevaluated, never VERIFIED; any other status = the verb did not run.
+The exit status follows the verdict: `0` = every artifact passed; `1` = negative verdict (`all_passed: false`), the JSON is still authoritative, so map each artifact below; `66` (`NO_INPUT`) = the plan declares no `must_haves.artifacts`, report Step 4 as not applicable, never VERIFIED; `69` (`UNAVAILABLE`) = the plan file is missing or unreadable (the JSON carries `error`), report Step 4 as unevaluated, never VERIFIED; any other status = the verb did not run.
 
 For each artifact in result:
 - `exists=false` → MISSING
@@ -333,7 +333,7 @@ LINKS_RESULT=$(engineer_run query verify.key-links "$PLAN_PATH") && LINKS_EXIT=0
 
 Parse JSON result: `{ all_verified, verified, total, links: [{from, to, via, verified, detail}] }`
 
-The exit status follows the verdict : `0` = every link verified; `1` = negative verdict (`all_verified: false`), the JSON is still authoritative; `66` (`NO_INPUT`) = the plan declares no `must_haves.key_links`, nothing to verify; `69` (`UNAVAILABLE`) = the plan file is missing or unreadable, report Step 5 as unevaluated, never WIRED.
+The exit status follows the verdict: `0` = every link verified; `1` = negative verdict (`all_verified: false`), the JSON is still authoritative; `66` (`NO_INPUT`) = the plan declares no `must_haves.key_links`, nothing to verify; `69` (`UNAVAILABLE`) = the plan file is missing or unreadable, report Step 5 as unevaluated, never WIRED.
 
 For each link:
 - `verified=true` → WIRED
@@ -421,7 +421,7 @@ grep -n -B 2 -A 2 "console\.log" "$file" 2>/dev/null | grep -E "^\s*(const|funct
 
 **Debt marker gate:** Any `TBD`, `FIXME`, or `XXX` marker in a file modified by this phase is a 🛑 BLOCKER unless the same line references formal follow-up work (`canonical issue URL`, `canonical pull-request URL`, `issue number`, or `DEF-*`). Unreferenced markers mean completion is not auditable; set `status: gaps_found` and list each marker under `gaps`.
 
-**Re-verification evidence gate :** in re-verification mode, a 🛑 Blocker other than an unresolved debt marker (always self-evidencing) blocks unconditionally only if it is a carried-forward gap (Step 0's `gaps:`) or the flagged file was git-modified since the prior `verified:` timestamp (fail closed: unresolvable history counts as modified). Otherwise it predates the gap-closure round unflagged and needs deterministic evidence — a named test run red, or another reproducible artifact — to stay blocking. Algorithm: @~/.claude/engineer/references/verifier-evidence-gate.md. Unevidenced → 📋 Advisory: record in `advisory:` frontmatter, exclude from Step 9 Rule 1, never revert a completed must-have.
+**Re-verification evidence gate:** in re-verification mode, a 🛑 Blocker other than an unresolved debt marker (always self-evidencing) blocks unconditionally only if it is a carried-forward gap (Step 0's `gaps:`) or the flagged file was git-modified since the prior `verified:` timestamp (fail closed: unresolvable history counts as modified). Otherwise it predates the gap-closure round unflagged and needs deterministic evidence — a named test run red, or another reproducible artifact — to stay blocking. Algorithm: @~/.claude/engineer/references/verifier-evidence-gate.md. Unevidenced → 📋 Advisory: record in `advisory:` frontmatter, exclude from Step 9 Rule 1, never revert a completed must-have.
 
 Categorize: 🛑 Blocker (prevents goal or unresolved debt marker) | ⚠️ Warning (incomplete) | ℹ️ Info (notable) | 📋 Advisory (re-verification only — new-scope, unevidenced; see above)
 
@@ -522,7 +522,7 @@ done
 
 **Behavior-unverified truths (Step 3):** Every truth left ⚠️ PRESENT_BEHAVIOR_UNVERIFIED is recorded in the `behavior_unverified_items` frontmatter list (emitted whenever the count > 0, regardless of overall status, so it survives a gaps_found phase) and surfaces for human verification; when the overall status is human_needed it also appears in the human_verification section. Phrase each item around the invariant: what to trigger, what state must hold afterward, and why presence checks can't see it.
 
-**Harvest deferred items from PLAN.md ( / `workflow.human_verify_mode = end-of-phase`):** Scan every PLAN file in the phase for `<verify><human-check>` blocks on `auto` tasks. These are verification items the planner deliberately deferred from `checkpoint:human-verify` to end-of-phase to avoid the executor cold-start cost. Each block has the same shape used by the planner:
+**Harvest deferred items from PLAN.md (`workflow.human_verify_mode = end-of-phase`):** Scan every PLAN file in the phase for `<verify><human-check>` blocks on `auto` tasks. These are verification items the planner deliberately deferred from `checkpoint:human-verify` to end-of-phase to avoid the executor cold-start cost. Each block has the same shape used by the planner:
 
 ```xml
 <verify>
@@ -564,7 +564,7 @@ Classify status using this decision tree IN ORDER (most restrictive first):
 
 **A ⚠️ PRESENT_BEHAVIOR_UNVERIFIED truth is never FAILED and never VERIFIED.** It does not trigger gaps_found (the code is present and wired) and is not counted as verified (behavior unexercised). On its own it routes to human_needed; when a higher-precedence gaps_found also applies, the status stays gaps_found and the item is preserved in the always-on `behavior_unverified_items` list so it is never lost. Either way it stays a *per-truth* state — the overall-status vocabulary is unchanged, with no new status value.
 
-> **Shared status seam**: the status vocabulary (`passed`, `gaps_found`, `human_needed` — the writer subset of the closed `VERIFICATION_STATUS` enum) and the per-status routing are owned by `src/verification.cts` via `engineer_run query verification.status`. Any other value is a hard error there ; the `<output>` self-check catches it. This agent is the single emitter of the frontmatter status field; consumers (ship.md, execute-phase.md) read routing from that query instead of re-deriving it.
+> **Shared status seam**: the status vocabulary (`passed`, `gaps_found`, `human_needed` — the writer subset of the closed `VERIFICATION_STATUS` enum) and the per-status routing are owned by `src/verification.cts` via `engineer_run query verification.status`. Any other value is a hard error there; the `<output>` self-check catches it. This agent is the single emitter of the frontmatter status field; consumers (ship.md, execute-phase.md) read routing from that query instead of re-deriving it.
 
 **Score (presence- vs behavior-verified split):**
 
@@ -651,7 +651,7 @@ Deferred items are informational only — they do not require closure plans.
 
 **ALWAYS use the Write tool to create files** — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
 
-** / :** the fingerprint command adds the phase's own PLAN/SUMMARY files automatically (+superseded, nested `plans/`) and never counts the report itself — list only the changed implementation files (and any other evidence), ROOT-relative; planning-root docs are inert . `engineer_run query verification.fingerprint {phaseDir} {file}...`, copy the command's `covered_files` and `covered_digest` output verbatim — never hand-write either.
+The fingerprint command adds the phase's own PLAN/SUMMARY files automatically (+superseded, nested `plans/`) and never counts the report itself — list only the changed implementation files (and any other evidence), ROOT-relative; planning-root docs are inert. `engineer_run query verification.fingerprint {phaseDir} {file}...`, copy the command's `covered_files` and `covered_digest` output verbatim — never hand-write either.
 
 Create `.planning/phases/{phase_dir}/{phase_num}-VERIFICATION.md`:
 

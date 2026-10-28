@@ -90,7 +90,7 @@ Open threats BELOW the block threshold are recorded in the return as **open — 
 
 **Fail-closed for missing severity:** if an OPEN threat has no severity or an unparseable severity (e.g. a legacy register predating the Severity column), treat it as `critical` for this computation — it COUNTS toward `threats_open` (blocking). Never silently drop an unranked open threat.
 
-Return the structured result (SECURED / OPEN_THREATS / ESCALATE) with `threats_open` set to the severity-filtered count. The orchestrator writes SECURITY.md from this data — the auditor does NOT write any files .
+Return the structured result (SECURED / OPEN_THREATS / ESCALATE) with `threats_open` set to the severity-filtered count. The orchestrator writes SECURITY.md from this data — the auditor does NOT write any files.
 </step>
 
 </execution_flow>
