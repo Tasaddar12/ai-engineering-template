@@ -489,32 +489,32 @@ class AgentInstall(unittest.TestCase):
         base.update(status)
         return run_rule("agent-install", "W010", make_snapshot(agentInstall=field(base)))
 
-    def test_single_rule(self):
+    def test_w010_single_rule(self):
         self.assertEqual(["W010"], list(group("agent-install")))
 
-    def test_all_installed(self):
+    def test_w010_all_installed(self):
         self.assertEqual([], self.check(agents_installed=True))
 
-    def test_unreadable_scan_is_silent(self):
+    def test_w010_unreadable_scan_is_silent(self):
         snapshot = make_snapshot(agentInstall=field({"agents_installed": False}, "unreadable"))
         self.assertEqual([], run_rule("agent-install", "W010", snapshot))
 
-    def test_zero_agents(self):
+    def test_w010_zero_agents(self):
         found = self.check(installed_agents=[])
         self.assertEqual('No GSD agents found in /a — Task(subagent_type="gsd-*") will fall back to general-purpose', found[0]["message"])
         self.assertEqual("Run the GSD installer: npx @opengsd/gsd-core@latest", found[0]["remedy"]["args"]["command"])
 
-    def test_incomplete_only(self):
+    def test_w010_incomplete_only(self):
         found = self.check(incomplete_agents=["p", "q"])
         self.assertEqual("Incomplete agent installs (missing generated file): p, q — affected workflows may fall back to general-purpose", found[0]["message"])
         self.assertEqual("Re-run the GSD installer to complete the install: npx @opengsd/gsd-core@latest", found[0]["remedy"]["args"]["command"])
 
-    def test_missing_and_incomplete(self):
+    def test_w010_missing_and_incomplete(self):
         found = self.check(missing_agents=["m"], incomplete_agents=["p"])
         self.assertEqual("Missing 1 GSD agents: m; incomplete agent installs (missing generated file): p — affected workflows will fall back to general-purpose",
                          found[0]["message"])
 
-    def test_missing_only(self):
+    def test_w010_missing_only(self):
         found = self.check(missing_agents=["m", "n"])
         self.assertEqual("Missing 2 GSD agents: m, n — affected workflows will fall back to general-purpose", found[0]["message"])
 
@@ -648,17 +648,17 @@ class InstallSurfaceShadowing(unittest.TestCase):
     def tearDown(self):
         rules_mod.set_install_shadow_renderer(None)
 
-    def test_inert_without_a_renderer(self):
+    def test_w028_inert_without_a_renderer(self):
         self.assertEqual(["W028"], list(group("install-surface-shadowing")))
         self.assertEqual([], run_rule("install-surface-shadowing", "W028", make_snapshot()))
 
-    def test_renderer_lines_become_one_diagnostic(self):
+    def test_w028_renderer_lines_become_one_diagnostic(self):
         rules_mod.set_install_shadow_renderer(lambda cwd: ("claude", [f"scope shadowed in {cwd}", "second line"]))
         found = run_rule("install-surface-shadowing", "W028", make_snapshot(cwd="/proj"))
         self.assertEqual("scope shadowed in /proj second line", found[0]["message"])
         self.assertEqual("Review install scopes for claude: npx @opengsd/gsd-core@latest", found[0]["remedy"]["args"]["command"])
 
-    def test_no_lines_or_a_throwing_renderer_degrade_to_nothing(self):
+    def test_w028_no_lines_or_a_throwing_renderer_degrade_to_nothing(self):
         rules_mod.set_install_shadow_renderer(lambda cwd: ("claude", []))
         self.assertEqual([], run_rule("install-surface-shadowing", "W028", make_snapshot()))
 
