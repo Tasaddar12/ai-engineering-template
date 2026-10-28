@@ -14,7 +14,8 @@ PR_FIELDS = "number,url,state,isDraft,headRefName,baseRefName,statusCheckRollup,
 
 def gh(args, check=True, timeout=60):
     environment = {**os.environ, "GH_PROMPT_DISABLED": "1", "GIT_TERMINAL_PROMPT": "0"}
-    return run(["gh", *args, "--repo", repository.identity()["slug"]], root(), check=check,
+    selection = [] if args and args[0] == "api" else ["--repo", repository.identity()["slug"]]
+    return run(["gh", *args, *selection], root(), check=check,
                timeout=timeout, env=environment, stdin=subprocess.DEVNULL)
 
 

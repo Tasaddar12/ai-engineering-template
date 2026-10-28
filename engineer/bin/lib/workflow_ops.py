@@ -129,8 +129,13 @@ def review_disposition(args):
         raise Failure("review-report-missing", str(path))
     metadata, body = split_frontmatter(read(path))
     findings = metadata.get("findings", [])
-    if not isinstance(findings, list):
-        raise Failure("invalid-review-findings", "Frontmatter findings must be an array")
+    counts = findings if isinstance(findings, dict) else None
+    if counts is not None:
+        if any(isinstance(value, bool) or not isinstance(value, int) or value < 0 for value in counts.values()):
+            raise Failure("invalid-review-findings", "Finding counts must be nonnegative integers")
+        findings = []
+    elif not isinstance(findings, list):
+        raise Failure("invalid-review-findings", "Frontmatter findings must be an array or count mapping")
     # Preserve authored table cells; never infer resolved/open from prose tone.
     table_findings = []
     header = None
@@ -151,6 +156,7 @@ def review_disposition(args):
     return {"status": metadata.get("status", "unknown"), "depth": metadata.get("depth", "standard"),
             "files_reviewed_list": metadata.get("files_reviewed_list", []), "findings": rows,
             "code_issue_ids": identifiers, "has_status": "status" in metadata,
+            "finding_counts": counts,
             "frontmatter": metadata, "source": str(path), "digest": digest([path]), "behaviorVerified": False}
 
 
@@ -340,7 +346,7 @@ def review_record(args):
             raise Failure("review-independence-missing", "Record distinct actual reviewer and author identities")
         known = set()
         for finding in packet["findings"]:
-            if not isinstance(finding, dict) or not finding.get("id") or not finding.get("required_property") or finding.get("severity") not in ("critical", "high", "medium", "low", "info"):
+            if not isinstance(finding, dict) or not finding.get("id") or not finding.get("required_property") or finding.get("severity") not in ("critical", "warning", "high", "medium", "low", "info"):
                 raise Failure("invalid-review-finding", "Findings need stable id, severity and required property", 2)
             if finding["id"] in known:
                 raise Failure("duplicate-review-finding", finding["id"], 2)

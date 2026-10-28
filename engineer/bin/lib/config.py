@@ -22,7 +22,7 @@ DEFAULTS = {
         "specless_probe_fallback": True, "ui_interaction_capture": False,
         "ui_phase": "auto", "nyquist_validation": True, "tdd_mode": False,
         "research": True, "plan_check": True, "verifier": True, "research_before_questions": False,
-        "task_cap": 5, "code_review_point": "execute:post", "test_command": "", "test_gate_timeout": 600,
+        "task_cap": 5, "code_review_point": "execute:post", "build_command": "", "test_command": "", "test_gate_timeout": 600,
         "pattern_mapping": True, "broken_windows": True,
         "drift_threshold": 3, "drift_action": "warn", "context_drift_action": "warn",
     },
