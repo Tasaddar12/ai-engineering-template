@@ -23,6 +23,22 @@ def load(name, path):
     return module
 
 
+def seed_installer_skills(source):
+    """Give the template installer the `.agents/skills/` source layout it reads.
+
+    The repository's own skills live in `skills/` since 45b28e8 deleted
+    `.agents/`; the template installer still consumes `.agents/skills/<name>/
+    SKILL.md` from its pinned source, so each fixture mirrors `.ai/commands/`
+    one-for-one there, exactly as the deleted tree did.
+    """
+    for command in sorted((ROOT / ".ai" / "commands").glob("*.md")):
+        if command.name in ("README.md", "install.md"):
+            continue
+        skill = source / ".agents" / "skills" / command.stem / "SKILL.md"
+        skill.parent.mkdir(parents=True, exist_ok=True)
+        skill.write_bytes(command.read_bytes())
+
+
 installer = load("migration_installer", ROOT / ".ai/install.py")
 migration = load("install_migration", ROOT / ".ai/install_migration.py")
 update = load("migration_followup_update", ROOT / ".ai/install_update.py")
@@ -213,9 +229,10 @@ class MigrationTests(unittest.TestCase):
     def setUpClass(cls):
         cls.source_temp = tempfile.TemporaryDirectory(prefix="migration-source-")
         cls.source = Path(cls.source_temp.name)
-        for name in (".ai", ".agents", ".planning"):
+        for name in (".ai", ".planning"):
             shutil.copytree(ROOT / name, cls.source / name,
                             ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+        seed_installer_skills(cls.source)
         subprocess.run(["git", "init", "--quiet", str(cls.source)], check=True)
         subprocess.run(["git", "add", "."], cwd=cls.source, check=True,
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
