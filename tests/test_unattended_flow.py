@@ -59,7 +59,7 @@ class UnattendedFlow(unittest.TestCase):
         self.assertNotIn("workflows/ship.md", text)
 
     def test_ship_is_described_as_merging_on_instruction(self):
-        for path in (ROOT / ".ai" / "commands" / "ship.md", ROOT / ".agents" / "skills" / "ship" / "SKILL.md",
+        for path in (ROOT / ".ai" / "commands" / "ship.md", ROOT / "skills" / "ship" / "SKILL.md",
                      ROOT / "AGENTS.md", ROOT / ".ai" / "install-assets" / "agent-entry.txt"):
             with self.subTest(file=str(path.relative_to(ROOT))):
                 text = read(path)
