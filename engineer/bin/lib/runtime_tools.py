@@ -12,16 +12,8 @@ def payload(args):
     if args.has("payload"):
         return args.json("payload")
     if args.has("input") or args.has("file"):
-        path = Path(str(args.get("input", args.get("file")))).resolve()
-        if path.is_symlink():
-            raise Failure("linked-json-input", str(path))
-        content = read(path)
-    else:
-        content = sys.stdin.read()
-    try:
-        return json.loads(content)
-    except (TypeError, ValueError) as exc:
-        raise Failure("invalid-json-input", str(exc), 2) from exc
+        return input_json(args.get("input", args.get("file")))
+    return input_json()
 
 
 def json_command(args, action):
@@ -240,11 +232,19 @@ def review_adapter(args, action):
                 raise Failure("review-evidence-schema", "Each result must be a mapping")
             path = result.get("reviewPath")
             if result.get("status") in ("success", "passed", "complete", "completed") and isinstance(path, str):
-                actual = safe_path(path)
-                if actual.is_file():
+                try:
+                    selected = Path(path).expanduser()
+                    actual = (root()/selected).resolve() if not selected.is_absolute() else selected.resolve()
+                    if not actual.is_relative_to(root().resolve()):
+                        from .review_execution import verify_result
+                        actual = verify_result(result)
+                    else:
+                        actual = safe_path(path)
+                    if not actual.is_file():
+                        raise Failure("review-file-missing", "Referenced review file is missing")
                     paths.append(str(actual))
-                else:
-                    failures.append({**result, "reason": "Referenced review file is missing"})
+                except (Failure, OSError, ValueError, TypeError, KeyError) as exc:
+                    failures.append({**result, "reason": str(exc), "error": getattr(exc, "code", "review-evidence-invalid")})
             else:
                 failures.append(result)
         return {"review_paths": paths, "failures": failures, "results": results}

@@ -40,7 +40,9 @@ class Args:
                 self.opts[active].append(token)
             elif token.startswith("--"):
                 key, sep, value = token[2:].partition("=")
-                self.opts[key] = [value] if sep else []
+                self.opts.setdefault(key, [])
+                if sep:
+                    self.opts[key].append(value)
                 active = None if key in boolean_flags else key
             elif active:
                 self.opts[active].append(token)

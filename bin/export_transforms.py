@@ -184,9 +184,9 @@ def _node_calls(text, command, source):
         elif "JSON.parse" in script and ".coverage.unclassified" in script:
             replacement = command("json.get")+" --field coverage.unclassified --raw"
         elif "Array.isArray(parsed.errors)" in script and "for (const err of errors)" in script:
-            replacement = command("json.lines")+" --field errors --raw >&2"
+            replacement = command("json.get")+" --field errors --raw >&2"
         elif "JSON.parse" in script and len(script) < 1200 and not re.search(r"writeFile|copyFile|unlink|spawn|exec\(|fetch\(|for\s*\(", script):
-            fields = ("fix", "all", "auto", "depth", "files", "concurrency", "custom_count", "verdict")
+            fields = ("fix", "all", "auto", "depth", "files", "concurrency", "custom_count", "verdict", "ok")
             field = next((field for field in fields if re.search(r"\."+field+r"\b", script)), None)
             if field and "readFileSync(process.env" not in script:
                 replacement = command("json.get")+" --field "+field+" --raw"
