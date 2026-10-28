@@ -53,6 +53,7 @@ def review_flags(args):
 
 
 def review_depth(args):
+    from .code_review_depth import resolve_code_review_depth
     payload = _payload(args)
     if not isinstance(payload, dict):
         raise Failure("invalid-depth-input", "Depth input must be a mapping", 2)
@@ -66,36 +67,9 @@ def review_depth(args):
     flag = str(payload.get("flagDepth", args.get("flag-depth", args.get("depth", ""))))
     configured = str(payload.get("configDepth", args.get("config-depth", config.lookup(settings, "workflow.code_review_depth", "standard"))))
     overrides = payload.get("overrides", args.json("overrides", config.lookup(settings, "workflow.code_review_depth_overrides", [])))
-    errors, rules = [], []
-    if not isinstance(overrides, list):
-        errors.append("Overrides must be an array")
-    else:
-        for index, rule in enumerate(overrides):
-            if not isinstance(rule, dict) or not isinstance(rule.get("path"), str) or rule.get("depth") not in ("quick", "standard", "deep"):
-                errors.append(f"Override {index} needs path and quick/standard/deep depth")
-                continue
-            path = rule["path"].replace("\\", "/")
-            if not path or path.startswith("/") or ":" in path or ".." in path.split("/") or any(ord(char) < 32 or ord(char) == 127 for char in path):
-                errors.append(f"Override {index} has an unsafe path")
-                continue
-            rules.append({"index": index, "path": path, "depth": rule["depth"]})
-    choices = ("quick", "standard", "deep")
-    result = {"ok": not errors, "depth": "standard", "source": "default", "matchedRule": None,
-              "invalidFlagDepth": bool(flag and flag not in choices), "invalidConfigDepth": bool(configured and configured not in choices),
-              "downgraded": False, "errors": errors}
-    if errors:
-        return result
-    if flag:
-        result.update({"depth": flag if flag in choices else "standard", "source": "flag"})
-    else:
-        matched = next((rule for rule in rules if any(fnmatch.fnmatchcase(path, rule["path"]) or (rule["path"].startswith("**/") and fnmatch.fnmatchcase(path, rule["path"][3:])) for path in files)), None)
-        if matched:
-            result.update({"depth": matched["depth"], "source": "rule", "matchedRule": {"index": matched["index"], "path": matched["path"]}})
-        elif configured:
-            result.update({"depth": configured if configured in choices else "standard", "source": "config"})
-    if result["depth"] == "deep" and len(files) > int(args.get("deep-file-limit", 50)):
-        result.update({"depth": "standard", "downgraded": True})
-    return result
+    return resolve_code_review_depth({"flagDepth": flag, "configDepth": configured,
+                                      "overrides": overrides, "files": files,
+                                      "repoRoot": str(root())})
 
 
 def review_field(args):

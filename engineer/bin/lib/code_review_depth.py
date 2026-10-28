@@ -19,8 +19,8 @@ Deviations:
   from an explicit ``null``; here an absent dict key is treated as ``[]`` and an
   explicit ``None`` is rejected as ``not_an_array``.
 - The upstream ``REASON`` object is a read-only ``MappingProxyType``.
-- ``engineer/bin/lib/workflow_ops.py`` ``review_depth`` is a separate
-  implementation bound to this repo's config and is not wired to this module.
+- ``engineer_run query review.depth`` binds this resolver to project config and
+  validates its file inputs at the repository boundary.
 """
 from __future__ import annotations
 

@@ -174,6 +174,20 @@ def normalize_test_command(args):
 
 
 def review_adapter(args, action):
+    if action == "normalize-fallow":
+        from .fallow_runner import normalize_fallow_report
+        data = input_json(None if args.has("stdin") else args.get("input", args.arg(0)))
+        if not isinstance(data, dict) or not any(key in data for key in ("dead_code", "duplication")):
+            raise Failure("fallow-schema-unrecognized", "Expected a native Fallow report with dead_code or duplication", 2)
+        normalized = normalize_fallow_report(data)
+        if args.has("output"):
+            output = Path(str(args.get("output"))).expanduser()
+            if output.is_symlink():
+                raise Failure("structural-output-linked", str(output))
+            if output.exists() and input_json(output) != normalized:
+                raise Failure("structural-output-exists", "Refusing to overwrite a different explicit structural report")
+            write_json(output, normalized)
+        return normalized
     if action == "normalize-structural":
         data = input_json(args.get("input"))
         if not isinstance(data, dict) or not isinstance(data.get("findings"), list) or not isinstance(data.get("summary"), (str, dict)):

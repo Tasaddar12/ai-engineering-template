@@ -21,6 +21,7 @@ def edge(args):
 
 def section(args):
     from .issue_format import visible_lines
+    from .spec_section import spec_section_status
     path, kind = safe_path(args.need()), args.need(1)
     if kind not in ("edges", "prohibitions"):
         raise Failure("unknown-spec-section", kind, 2)
@@ -28,7 +29,7 @@ def section(args):
     heading = r"edge(?: cases?)?|boundar" if kind == "edges" else r"prohibition|must.not|non.goals|forbidden"
     match = re.search(r"(?mi)^(#{1,6})\s+[^\n]*(?:"+heading+r")[^\n]*$", content)
     if not match:
-        return {"supplied": False, "items": []}
+        return {**spec_section_status(path, kind), "items": []}
     end = re.search(r"(?m)^#{1,"+str(len(match[1]))+r"}\s", content[match.end():])
     body = content[match.end():match.end()+end.start() if end else len(content)]
     items, in_table = [], False
@@ -46,4 +47,21 @@ def section(args):
             in_table = True
         elif in_table and any(cell and not re.fullmatch(r"TBD|TODO|none|n/a|—|-", cell, re.I) for cell in cells):
             items.append(" | ".join(cells))
-    return {"supplied": bool(items), "items": items}
+    return {**spec_section_status(path, kind), "supplied": bool(items), "items": items}
+
+
+def ui(args):
+    """Expose the tested UI taxonomy with explicit proposal and auto modes."""
+    from . import ui_consideration_probe as probe
+    value = input_json(None if args.has("stdin") else args.get("input", args.arg(0)))
+    elements = value.get("elements") if isinstance(value, dict) else value
+    resolutions = value.get("resolutions", []) if isinstance(value, dict) else []
+    if args.has("resolutions"):
+        resolutions = input_json(args.get("resolutions"))
+    if not isinstance(elements, list) or not isinstance(resolutions, list):
+        raise Failure("invalid-ui-input", "Elements and resolutions must be arrays", 2)
+    if args.has("propose"):
+        return probe.propose_elements(elements)
+    if args.has("auto"):
+        resolutions = probe.auto_resolve(probe.analyze_coverage(elements)["items"])
+    return {**probe.analyze_coverage(elements, resolutions), "behaviorVerified": False}
