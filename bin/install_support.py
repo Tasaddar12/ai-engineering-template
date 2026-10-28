@@ -159,7 +159,7 @@ def adapt(content, host, ns, source_name, findings):
     # Replace the complete obsolete bootstrap, preserving every surrounding method.
     launcher = ('ENGINEER_RUN=' + json.dumps(str(ns / 'engineer/bin/engineer_run')) + '\n'
                 'engineer_run() { sh "$ENGINEER_RUN" "$@"; }\nexport ENGINEER_RUN')
-    text = re.sub(r'(?m)^ENGINEER_SHIM_NAME=.*$', lambda _: launcher, text)
+    text = re.sub(r'(?m)^_ENGINEER_SHIM_NAME=.*$', lambda _: launcher, text)
     for directory in ('references', 'templates', 'workflows'):
         text = text.replace('@~/.claude/' + directory + '/', '@' + str(ns / 'engineer' / directory).replace('\\', '/') + '/')
     text = text.replace('@~/.claude/', '@' + str(ns).replace('\\', '/') + '/')
