@@ -282,5 +282,278 @@ class ModuleUnits(FixtureCase):
         self.assertEqual("'a'\"'\"'b'", parity.quote("a'b"))
 
 
+
+@needs_shell
+class StandaloneExecutable(FixtureCase):
+    """Upstream (#381): the shipped launcher delegates beside itself; the preamble persists its bin dir."""
+
+    def test_i_launcher_executable_delegates_to_engineer_py_beside_it(self):
+        base = self.temp("engineer-381-I-")
+        bin_dir = base / "engineer" / "bin"
+        bin_dir.mkdir(parents=True)
+        launcher = bin_dir / parity.LAUNCHER
+        launcher.write_bytes((SOURCE / "engineer" / "bin" / parity.LAUNCHER).read_bytes())
+        launcher.chmod(0o755)
+        (bin_dir / "engineer.py").write_text("import sys\nprint('ENGINEER_STUB:' + ' '.join(sys.argv[1:]))\n", encoding="utf-8")
+        wrappers = parity.python_wrapper_dir(self.temp("engineer-py-"), sys.executable)
+        env = {**os.environ, "PATH": os.pathsep.join([parity.posix(wrappers), os.environ.get("PATH", "")])}
+        result = parity.run_launcher_executable(launcher, ["query", "x"], env)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("ENGINEER_STUB:query x", result.stdout)
+
+    def persisted(self, directory_name):
+        base = self.temp("engineer-381-J-") / directory_name
+        stub = parity.write_runtime_stub(base, "ENGINEER_RUN_STUB", kind="")
+        env_file = base.parent / "envfile"
+        result = self.launch("", exports={"RUNTIME_DIR": parity.posix(base)}, env={"CLAUDE_ENV_FILE": parity.posix(env_file)})
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertTrue(env_file.exists(), "CLAUDE_ENV_FILE must be created after the preamble runs")
+        return stub, env_file
+
+    def test_j_preamble_persists_the_bin_dir_to_claude_env_file(self):
+        _, env_file = self.persisted("has space")
+        line = parity.env_file_path_line(parity.read_text(env_file))
+        self.assertTrue(line.startswith('export PATH="'), line)
+        self.assertIn("has space/engineer/bin", line.replace("\\", "/"))
+        self.assertTrue(line.endswith(':$PATH"'), line)
+        if os.name == "nt":
+            return  # Git Bash keeps `C:/` drive paths colon-joined in PATH; upstream skips this half on win32 too.
+        # A later fresh shell gets the launcher by sourcing the file; it never had the bin dir on PATH before.
+        result = parity.run_shell_text('. "$CLAUDE_ENV_FILE"; engineer_run hello',
+                                       parity.snippet_env({"CLAUDE_ENV_FILE": parity.posix(env_file), "PATH": os.environ.get("PATH", "")}))
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("ENGINEER_RUN_STUB:hello", result.stdout)
+
+    def test_j_persisted_line_escapes_shell_metacharacters(self):
+        _, env_file = self.persisted("a$b`c")
+        line = parity.env_file_path_line(parity.read_text(env_file))
+        self.assertIn("a\\$b\\`c", line, "$ and backtick must be escaped inside the double-quoted export")
+        result = parity.run_shell_text('. "$CLAUDE_ENV_FILE"; printf %s "$PATH"',
+                                       parity.snippet_env({"CLAUDE_ENV_FILE": parity.posix(env_file), "PATH": os.environ.get("PATH", "")}))
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("a$b`c/engineer/bin", result.stdout.replace("\\", "/"))
+
+
+class AgentParity(unittest.TestCase):
+    @unittest.expectedFailure
+    def test_b_agents_hold_exactly_one_canonical_preamble_before_first_use(self):
+        # Violation: agents/code-fixer.md, code-reviewer.md, debug-session-manager.md, debugger.md,
+        # phase-researcher.md and ui-researcher.md use engineer_run without the canonical preamble
+        # (code-fixer.md carries the legacy one-line `_ENGINEER_SHIM_NAME=` launcher; the rest carry none).
+        files = parity.collect_markdown(parity.AGENTS_DIR)
+        self.assertGreater(len(files), 0)
+        self.assertEqual([], parity.preamble_violations(files, parity.AGENTS_DIR, PREAMBLE))
+
+
+class ClaudeHomeFallback(FixtureCase):
+    """Upstream bug-211: the Claude config home is probed before the hard error."""
+
+    def test_a_snippet_contains_the_claude_home_arm(self):
+        self.assertIn(".claude/engineer/bin/", SNIPPET)
+
+    def test_b_representative_propagated_file_contains_the_arm(self):
+        self.assertIn(".claude/engineer/bin/", parity.read_text(parity.WORKFLOWS_DIR / "add-phase.md"))
+
+    @needs_shell
+    def test_c_resolves_the_claude_home_stub_when_nothing_else_matches(self):
+        home = self.temp("engineer-211-home-")
+        parity.write_runtime_stub(home, "CLAUDE_HOME_STUB", kind=".claude")
+        result = self.launch('printf "ENGINEER_RUN=%s\\n" "$ENGINEER_RUN"\nengineer_run ping test',
+                             home=home, exports={"RUNTIME_DIR": parity.posix(self.temp("engineer-211-rt-"))})
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn(".claude/engineer/bin/", result.stdout.replace("\\", "/"))
+        self.assertIn("CLAUDE_HOME_STUB:ping test", result.stdout)
+
+    @needs_shell
+    def test_c2_claude_config_dir_outranks_the_default_home(self):
+        home, config = self.temp("engineer-211-home-"), self.temp("engineer-211-cfg-")
+        parity.write_runtime_stub(home, "DEFAULT_HOME", kind=".claude")
+        parity.write_runtime_stub(config, "CONFIG_DIR", kind="")
+        result = self.launch("engineer_run ping test", home=home, env={"CLAUDE_CONFIG_DIR": parity.posix(config)},
+                             exports={"RUNTIME_DIR": parity.posix(self.temp("engineer-211-rt-"))})
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("CONFIG_DIR:ping test", result.stdout)
+        self.assertNotIn("DEFAULT_HOME", result.stdout)
+
+    @needs_shell
+    def test_d_hard_error_when_local_path_and_claude_home_all_miss(self):
+        result = self.launch("engineer_run ping test", exports={"RUNTIME_DIR": parity.posix(self.temp("engineer-211-nort-"))})
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn(parity.HARD_ERROR, result.stderr)
+
+
+class NonClaudeRuntimeHomes(FixtureCase):
+    """Upstream bug-891, narrowed to the runtime homes this repo has: Claude and Codex."""
+
+    EXPECTED_PROBES = {"codex": "${CODEX_HOME:-$HOME/.codex}/engineer/bin/"}
+
+    def test_a_snippet_contains_every_non_claude_runtime_home_probe(self):
+        missing = [name for name, probe in self.EXPECTED_PROBES.items() if probe not in SNIPPET]
+        self.assertEqual([], missing)
+
+    def test_a_other_runtime_home_probes(self):
+        self.skipTest("hermes, cursor, copilot, windsurf, augment, trae, qwen, codebuddy, cline, grok, antigravity, "
+                      "opencode, kilo, zcode, pi, kimi and kimi-code runtime homes absent in this repo")
+
+    def test_a2_codex_probe_follows_the_claude_arm_and_precedes_the_hard_error(self):
+        claude, error = SNIPPET.index(".claude/engineer/bin/"), hard_error_position(SNIPPET)
+        self.assertLess(claude, SNIPPET.index(self.EXPECTED_PROBES["codex"]))
+        self.assertLess(SNIPPET.index(self.EXPECTED_PROBES["codex"]), error)
+
+    def test_b0_isolated_path_invariants(self):
+        # Upstream also asserts node survives on the isolated PATH; the launcher here is a shell script.
+        has, empty = self.temp("engineer-891-colocated-"), self.temp("engineer-891-empty-")
+        parity.write_launcher_stub(has, "X")
+        self.assertFalse(parity.has_launcher(empty))
+        self.assertTrue(parity.has_launcher(has))
+        sep = os.pathsep
+        cases = {
+            "emptyElement": (f"{empty}{sep}{sep}{empty}", [str(empty), str(empty)]),
+            "dotElement": (f"{empty}{sep}.{sep}{empty}", [str(empty), str(empty)]),
+            "relativeElement": (f"{empty}{sep}sub/dir", [str(empty)]),
+            "fullyFiltered": (str(has), []),
+            "launcherDirDropped": (f"{has}{sep}{empty}", [str(empty)]),
+        }
+        for label, (base_path, expected) in cases.items():
+            with self.subTest(label):
+                result = parity.build_isolated_path(base_path)
+                self.assertEqual(expected, result.split(sep) if result else [], f"{label}: {result}")
+
+    @needs_shell
+    def test_b_isolated_path_strips_a_leaked_launcher_and_codex_home_wins(self):
+        sentinel = self.temp("engineer-4205-sentinel-")
+        parity.write_launcher_stub(sentinel, "SENTINEL_INVOKED", identity=False)
+        isolated = parity.build_isolated_path(os.pathsep.join([str(sentinel), os.environ.get("PATH", "")]))
+        self.assertNotIn(str(sentinel), isolated.split(os.pathsep))
+        codex_home, home = self.temp("engineer-891-codex-"), self.temp("engineer-891-home-")
+        parity.write_runtime_stub(codex_home, "CODEX_HOME_STUB", kind="")
+        result = self.launch('printf "ENGINEER_RUN=%s\\n" "$ENGINEER_RUN"\nengineer_run ping test', home=home, path=isolated,
+                             env={"CODEX_HOME": parity.posix(codex_home)}, exports={"RUNTIME_DIR": parity.posix(self.temp("engineer-891-rt-"))})
+        normalized = result.stdout.replace("\\", "/")
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertNotIn("SENTINEL_INVOKED", normalized)
+        self.assertNotIn(sentinel.name, normalized)
+        self.assertIn(parity.posix(codex_home), normalized)
+        self.assertIn("CODEX_HOME_STUB:ping test", normalized)
+
+    @needs_shell
+    def test_c_default_codex_home_is_used_when_codex_home_is_unset(self):
+        home = self.temp("engineer-891-home-")
+        parity.write_runtime_stub(home, "CODEX_DEFAULT_STUB", kind=".codex")
+        result = self.launch("engineer_run status", home=home, exports={"RUNTIME_DIR": parity.posix(self.temp("engineer-891-rt2-"))},
+                             unset=("ENGINEER_RUN", "CODEX_HOME"))
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("CODEX_DEFAULT_STUB:status", result.stdout)
+
+    def test_d_resolution_order_claude_then_codex_then_error(self):
+        candidates = parity.select_candidates(SNIPPET)
+        self.assertLess(parity.candidate_index(candidates, "$HOME/.claude}"), parity.candidate_index(candidates, "$HOME/.codex}"))
+        self.assertLess(SNIPPET.index("_engineer_select \\"), hard_error_position(SNIPPET))
+
+    def test_e_every_inline_workflow_carries_the_codex_probe(self):
+        files = parity.collect_markdown(parity.WORKFLOWS_DIR)
+        self.assertGreater(len(files), 0)
+        self.assertEqual([], parity.files_missing_probe(files, parity.WORKFLOWS_DIR, "$HOME/.codex}"))
+
+
+class WorkflowResolution(FixtureCase):
+    """Upstream bug-3668: the resolver extracted from a shipped workflow supports installed user projects."""
+
+    def resolver(self):
+        return parity.extract_resolver_snippet(parity.read_text(parity.WORKFLOWS_DIR / "next.md"))
+
+    def run_resolver(self, runtime_dir, path_dir, home=None):
+        self.assertTrue(runtime_dir, "an empty RUNTIME_DIR silently resolves the real repo root")
+        body = 'printf "ENGINEER_RUN=%s\\n" "$ENGINEER_RUN"\nengineer_run query state.json'
+        path = os.pathsep.join([parity.posix(path_dir), parity.build_isolated_path()])
+        script = "set -e\n" + parity.snippet_script(self.resolver(), body, {"RUNTIME_DIR": parity.posix(runtime_dir)})
+        work, fake_home = self.temp("engineer work "), home or self.temp("engineer home ")
+        env = parity.snippet_env({"HOME": parity.posix(fake_home), "PATH": path})
+        return parity.run_script(script, work, env)
+
+    def test_resolver_is_extractable_from_a_shipped_workflow(self):
+        self.assertIn("engineer_run() {", self.resolver())
+
+    @needs_shell
+    def test_falls_back_to_installed_launcher_when_project_local_copy_is_absent(self):
+        tmp = self.temp("engineer-3668-")
+        parity.write_launcher_stub(tmp / "bin", "installed")
+        (tmp / "runtime-no-local").mkdir()
+        result = self.run_resolver(tmp / "runtime-no-local", tmp / "bin")
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertRegex(result.stdout.replace("\\", "/"), r"(?m)^ENGINEER_RUN=.+/bin/engineer_run$")
+        self.assertIn("installed:query state.json", result.stdout)
+
+    @needs_shell
+    def test_preserves_runtime_dir_local_launcher_preference_over_path(self):
+        tmp = self.temp("engineer-3668-")
+        parity.write_launcher_stub(tmp / "bin", "path-installed")
+        parity.write_runtime_stub(tmp / "runtime", "runtime", kind="")
+        result = self.run_resolver(tmp / "runtime", tmp / "bin")
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertRegex(result.stdout.replace("\\", "/"), r"(?m)^ENGINEER_RUN=.+/runtime/engineer/bin/engineer_run$")
+        self.assertIn("runtime:query state.json", result.stdout)
+        self.assertNotIn("path-installed:query state.json", result.stdout)
+
+
+class RepoLocalClaudeInstall(FixtureCase):
+    """Upstream bug-444: a project-local `.claude` install outranks the config home."""
+
+    def test_a_repo_local_claude_arm_precedes_the_config_home_arm(self):
+        candidates = parity.select_candidates(SNIPPET)
+        local = parity.candidate_index(candidates, "$_engineer_root/.claude/engineer/bin/")
+        home = parity.candidate_index(candidates, "${CLAUDE_CONFIG_DIR:-$HOME/.claude}")
+        self.assertNotEqual(-1, local, "snippet must contain the repo-local .claude check")
+        self.assertNotEqual(-1, home, "Claude arm must honor CLAUDE_CONFIG_DIR with $HOME/.claude as the fallback")
+        self.assertLess(local, home, "local overrides global")
+
+    def fixture(self, with_home):
+        root, home = self.temp("engineer-444-root-"), self.temp("engineer-444-home-")
+        parity.write_runtime_stub(root, "LOCAL_WINS" if with_home else "LOCAL_CLAUDE_STUB", kind=".claude")
+        if with_home:
+            parity.write_runtime_stub(home, "HOME_WINS", kind=".claude")
+        return root, home
+
+    @needs_shell
+    def test_b_resolves_the_repo_local_claude_stub_when_it_is_the_only_location(self):
+        root, home = self.fixture(with_home=False)
+        result = self.launch('printf "ENGINEER_RUN=%s\\n" "$ENGINEER_RUN"\nengineer_run ping test', home=home, work=root,
+                             exports={"RUNTIME_DIR": parity.posix(root)})
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn(".claude/engineer/bin/engineer_run", result.stdout.replace("\\", "/"))
+        self.assertIn("LOCAL_CLAUDE_STUB:ping test", result.stdout)
+
+    @needs_shell
+    def test_c_repo_local_claude_install_wins_over_the_home_install(self):
+        root, home = self.fixture(with_home=True)
+        result = self.launch("engineer_run check", home=home, work=root, exports={"RUNTIME_DIR": parity.posix(root)})
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("LOCAL_WINS:check", result.stdout)
+        self.assertNotIn("HOME_WINS", result.stdout)
+
+class ModuleUnitsExtra(FixtureCase):
+    def test_extract_resolver_snippet_returns_the_preamble_span(self):
+        text = "```bash\nx=1\n" + "\n".join(PREAMBLE) + "\nengineer_run query\n```\n"
+        self.assertEqual("\n".join(PREAMBLE), parity.extract_resolver_snippet(text))
+        with self.assertRaises(ValueError):
+            parity.extract_resolver_snippet("```bash\necho hi\n```\n")
+        with self.assertRaises(ValueError):
+            parity.extract_resolver_snippet("```bash\n_engineer_identity_ok() {\n}\n```\n")
+
+    def test_env_file_path_line(self):
+        self.assertEqual('export PATH="a:$PATH"', parity.env_file_path_line('x\nexport PATH="a:$PATH"\n'))
+        self.assertEqual("", parity.env_file_path_line("nothing"))
+
+    @needs_shell
+    def test_write_launcher_stub_identity_modes(self):
+        base = self.temp("units-")
+        stub = parity.write_launcher_stub(base, "M")
+        proved = parity.run_launcher_executable(stub, ["query", "runtime-identity", "--pick", "packageName", "--raw"], dict(os.environ))
+        self.assertEqual(parity.EXPECTED_IDENTITY, proved.stdout.strip())
+        foreign = parity.write_launcher_stub(base / "f", "F", identity=False)
+        refused = parity.run_launcher_executable(foreign, ["query", "runtime-identity"], dict(os.environ))
+        self.assertEqual("F:query runtime-identity", refused.stdout.strip())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -300,3 +300,50 @@ def run_script(script_text: str, workdir, env: dict, name: str = "fixture.sh") -
 
 def make_temp(prefix: str) -> str:
     return tempfile.mkdtemp(prefix=prefix)
+
+
+# --- Standalone executable and env-file persistence --------------------------
+
+def python_wrapper_dir(directory, interpreter) -> Path:
+    """A directory whose `python3` and `python` exec `interpreter`, for hosts where the bare names are stubs."""
+    directory = Path(directory)
+    directory.mkdir(parents=True, exist_ok=True)
+    for name in ("python3", "python"):
+        wrapper = directory / name
+        wrapper.write_bytes(f'#!/bin/sh\nexec {quote(posix(interpreter))} "$@"\n'.encode("utf-8"))
+        wrapper.chmod(0o755)
+    return directory
+
+
+def run_launcher_executable(launcher, args, env: dict) -> subprocess.CompletedProcess:
+    """Run the shipped `engineer_run` script with `sh`, as the snippet does."""
+    return subprocess.run(["sh", posix(launcher), *args], env=env, capture_output=True, text=True)
+
+
+def env_file_path_line(env_file_text: str) -> str:
+    """The `export PATH=` line the preamble persisted, or an empty string."""
+    for line in env_file_text.splitlines():
+        if line.startswith("export PATH="):
+            return line
+    return ""
+
+
+def run_shell_text(command: str, env: dict, cwd=None) -> subprocess.CompletedProcess:
+    return subprocess.run(["bash", "-c", command], env=env, cwd=cwd, capture_output=True, text=True)
+
+
+# --- Resolver extraction from a workflow ----------------------------------------
+
+def extract_resolver_snippet(content: str) -> str:
+    """The inline resolver block of a workflow, from the identity helper through the env-file `fi`."""
+    lines = shell_text(content).split("\n")
+    start = next((index for index, line in enumerate(lines) if line.strip() == PREAMBLE_MARKER), -1)
+    if start == -1:
+        raise ValueError("workflow does not contain the canonical runtime preamble")
+    function_end = next((index for index in range(start, len(lines)) if lines[index].startswith("engineer_run() {")), -1)
+    if function_end == -1:
+        raise ValueError("runtime preamble does not define engineer_run")
+    end = next((index for index in range(function_end, len(lines)) if lines[index] == "fi"), -1)
+    if end == -1:
+        raise ValueError("runtime preamble must end with a closing `fi`")
+    return "\n".join(lines[start:end + 1])
