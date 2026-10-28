@@ -242,14 +242,14 @@ passed as one shell argument. `--raw`, `--json`, and `--pick FIELD` are global.
 | `quick-batch.create` | `--file FILE [--base-revision SHA --id ID]` | batch path/id/items and one quick record per item |
 | `quick-batch.update` | `ID --updates JSON_ARRAY` | batch with updates merged by quickId |
 | `quick-batch.resume` | `ID [--current-base-revision SHA]` | eligible/in_flight/done/base_drift |
-| `quick-batch.complete` | `ID [--outcomes JSON_ARRAY]` | complete batch; pending/running items block |
+| `quick-batch.complete` | `ID --quick-id QUICK_ID [--commit SHA --description TEXT --date YYYY-MM-DD --directory DIR]` | completes one item after verifying its integrated commit, PLAN scope and SUMMARY task commits, appends its STATE row, and completes the batch when every item is terminal |
 | `quick-batch.effective-concurrency` | `[--jobs N --task-count N --capacity N --mutating --isolation MODE]` | concurrency/effective_concurrency |
 | `quick-batch.filter-executed` | `--eligible JSON_ARRAY --executed JSON_ARRAY` | spawnEligible/alreadyExecuted |
 | `quick-batch.merge-eligible` | `--wave-order JSON_ARRAY --ready JSON_ARRAY` | mergeable prefix |
 | `quick-batch.spawn-plan` | `--eligible JSON_ARRAY --capacity N --in-flight N_OR_JSON_ARRAY` | spawn/pending/available |
-| `quick-batch.merge-routing` | `--kind merge_failed|conflict|scope_violation [--detail TEXT]` | action/message/preserveWorktree |
-| `quick-batch.verification-routing` | `--status STATUS` | merge/fix/human/block route |
-| `quick-batch.cleanup-entry` | `QUICK_ID --path PATH --branch BRANCH` | quickId/path/branch/merged |
+| `quick-batch.merge-routing` | `--kind merge_failed|conflict|scope_violation [--detail TEXT]` | action `retry` (merge_failed) or `block`, retryable, message, preserveWorktree |
+| `quick-batch.verification-routing` | `--status STATUS` | action/route `complete`, `human_needed` or `fail`, plus status/failureReason |
+| `quick-batch.cleanup-entry` | `--worktree-path PATH --branch BRANCH --expected-base SHA --allowed-bases JSON_ARRAY --plan-content PLAN_TEXT [--agent-id ID]` | recorded worktree ownership bound to the fresh PLAN `files_modified`/`files_deleted`; drift fails |
 | `session.open`, `session.adopt` | `phase|quick|milestone|onboard LABEL [--base REF]` | kind/label/branch/worktree/base/status/created/adopted/reused |
 | `session.status` | none | sessions/count/open/open_count |
 | `session.close` | `BRANCH` | closed session; dirty/unintegrated/active checkout blocks |

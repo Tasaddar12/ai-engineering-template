@@ -73,6 +73,17 @@ class MiscVerbs(RuntimeCase):
         with unittest.mock.patch.object(packages, "urlopen", side_effect=OSError("offline")):
             self.assertEqual("UNKNOWN", packages.check(Args(["requests"]))["packages"][0]["verdict"])
 
+    def test_args_take_triple_dash_values_and_keep_option_parsing(self):
+        Args = _load("core").Args
+        content = "---" + chr(10) + "files_modified: []" + chr(10) + "---"
+        parsed = Args(["--plan-content", content, "--raw", "positional", "--key=value", "--", "--body", "---"])
+        self.assertEqual([content], parsed.all("plan-content"))
+        self.assertTrue(parsed.has("raw"))
+        self.assertEqual(["positional"], parsed.pos)
+        self.assertEqual("value", parsed.get("key"))
+        self.assertEqual(["--body", "---"], parsed.all("_body"))
+        self.assertTrue(Args(["--other", "--flag"]).has("flag"))
+
     def test_integrity_is_strict_and_validate_is_warning_only(self):
         directory = self.phase()
         path = self.plan(directory)
