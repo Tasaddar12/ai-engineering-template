@@ -12,7 +12,6 @@ allowed-tools:
   - Agent
   - AskUserQuestion
   - WebFetch
-  - mcp__context7__*
 requires: [discuss-phase, phase, review, update]
 ---
 

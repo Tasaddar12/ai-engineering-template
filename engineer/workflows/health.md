@@ -89,14 +89,14 @@ it: W025's claim is that the config **sets** the key to a non-false value, so an
 collapses that distinction and makes the check fire on a config that never set the key —
 correct only on an emit where `_stampNonClaudeRuntimeDefaults` happened to rewrite the line to
 `--default false`, and wrong on the un-stamped source/Claude emit. The `[ -n … ]` guard below
-removes that dependency on stamping entirely ( review, Major 1).
+removes that dependency on stamping entirely.
 
 A failed query is **not** a capability verdict. `|| echo "none"` would collapse "this runtime
 declares no primitive" and "the query did not answer" into the same value, and W025's text asserts
 the former — telling a Claude Code user their runtime declares no executor-isolation primitive,
 which is false. Track the two apart and report which one happened.
 
-Know the limit of that signal ( review): the verb itself fail-closes an unknown, undeclared or
+Know the limit of that signal: the verb itself fail-closes an unknown, undeclared or
 out-of-vocabulary runtime — and any internal resolution error — to `none` and exits 0, so `INSPECTED_RESOLVED=true` means "the query
 answered", not "the runtime published a declaration". W025's resolved-case wording below is
 therefore written to be true of every path that reaches it — a declared `none` and an

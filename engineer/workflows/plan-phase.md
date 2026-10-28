@@ -286,21 +286,6 @@ If "Run discuss-phase first":
   ```
   **Exit the plan-phase workflow. Do not continue.**
 
-## 4.5. Resolve AI-SPEC Artifact
-
-AI integration activation is owned by the `ai-integration` capability's `plan:pre` step hook. The plan-phase host only discovers existing artifacts here so the planner can consume them; it must not read the capability's config key directly.
-
-```bash
-AI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-AI-SPEC.md 2>/dev/null | head -1)
-AI_SPEC_PATH="${AI_SPEC_FILE}"
-FRAMEWORK_LINE=""
-if [ -n "$AI_SPEC_FILE" ]; then
-  FRAMEWORK_LINE=$(grep "Selected Framework:" "${AI_SPEC_FILE}" | head -1)
-fi
-```
-
-If `AI_SPEC_FILE` is non-empty, pass `AI_SPEC_PATH` and `FRAMEWORK_LINE` to the planner in step 8 so it can reference the AI design contract. If it is empty, the active `ai-integration` capability hook in step 5.6 handles any AI-system nudge or `/ai-integration-phase` dispatch.
-
 ## 4.6. Context Drift Pre-Check (drift plan:pre gate)
 
 Capability-driven dispatch, same lazy-init pattern already used elsewhere in this file for
@@ -399,7 +384,7 @@ Display banner:
 
 ```bash
 if engineer_run query teams-status --active >/dev/null 2>&1; then
-  echo "⚠️  CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS detected. Engineer's multi-agent orchestration is not validated under claude-code agent-teams and may stall (a subagent's completion can fail to route to the orchestrator). Recommend disabling agent-teams for Engineer workflows. See  >&2
+  echo "⚠️  CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS detected. Engineer's multi-agent orchestration is not validated under claude-code agent-teams and may stall (a subagent's completion can fail to route to the orchestrator). Recommend disabling agent-teams for Engineer workflows." >&2
 fi
 ```
 
@@ -517,10 +502,6 @@ Read the `activeHooks` array directly from `PLAN_PRE_HOOKS_JSON` / `HOOKS_JSON` 
 - If `ref.agent` is set, dispatch with `Agent(prompt=filled_hook_fragment, subagent_type=ref.agent, model="{researcher_model}")`. Use the hook's `fragment.inline` as the prompt body and fill phase fields before spawning.
 - The `research` hook is handled by §5.1's research decision. The `pattern-mapper` hook is handled by §7.8 after `RESEARCH_PATH` is known. Future plan:pre agent hooks use the same `ref.agent` fragment contract.
 
-**AI integration capability:** If the active `ai-integration` step hook is present, `AI_SPEC_PATH` is empty, and the phase goal contains AI keywords (`agent`, `llm`, `rag`, `chatbot`, `embedding`, `langchain`, `llamaindex`, `crewai`, `langgraph`, `openai`, `anthropic`, `vector`, `llm eval`), then:
-- In pipeline / `--auto` mode, invoke the hook's `ref.skill` via `Skill(skill="${ref.skill}", args="${PHASE} --auto ${ENGINEER_WS}")`.
-- In manual mode, display the existing non-blocking `/ai-integration-phase {N}` recommendation and let the user continue planning without AI-SPEC or stop to run the capability workflow first.
-
 Run the UI deterministic gate whenever **any** `plan:pre` UI hook is active — including the step-only case (`workflow.ui_safety_gate` off). (`check.query` = `"ui.plan-gate"`, dot-normalized to `ui-plan-gate` per `loop-hook-dispatch.md` § `gate`.)
 
 ```bash
@@ -621,14 +602,10 @@ CONTEXT_PATH=$(_engineer_field "$INIT" context_path)
 REVIEWS_PATH=$(_engineer_field "$INIT" reviews_path)
 PATTERNS_PATH=$(_engineer_field "$INIT" patterns_path)
 
-# Detect spike/sketch findings skills (project-local)
-SPIKE_FINDINGS_PATH=$(ls ./.claude/skills/spike-findings-*/SKILL.md 2>/dev/null | head -1 || true)
-SKETCH_FINDINGS_PATH=$(ls ./.claude/skills/sketch-findings-*/SKILL.md 2>/dev/null | head -1 || true)
-
 # Resolve the phase SPEC (carries the ## Edge Coverage section the planner lifts resolved
 # edges from). UNCONDITIONAL — must NOT live in §4.5 Check AI-SPEC, which is skipped
 # on non-AI phases; gating it there silently starves the planner of the SPEC ( review).
-# init resolves the plain phase SPEC (never the -AI-SPEC.md / -UI-SPEC.md variants) through the one shared predicate.
+# init resolves the plain phase SPEC (never the -UI-SPEC.md variants) through the one shared predicate.
 PHASE_DIR_FOR_SPEC=$(_engineer_field "$INIT" phase_dir)
 SPEC_PATH=$(_engineer_field "$INIT" spec_path)
 SPEC_FILE="${SPEC_PATH}"
@@ -767,11 +744,8 @@ Planner prompt:
 - {verification_path} (Verification Gaps - if --gaps)
 - {uat_path} (UAT Gaps - if --gaps)
 - {reviews_path} (Cross-AI Review Feedback - if --reviews; actionable findings must be incorporated or explicitly deferred/rejected in PLAN.md)
-- {AI_SPEC_PATH} (AI Design Contract — framework and evaluation strategy, if exists)
 - {UI_SPEC_PATH} (UI Design Contract — visual/interaction specs, if exists)
 - {SPEC_PATH} (Phase SPEC — carries the ## Edge Coverage section to lift resolved edges from, if exists)
-- {SPIKE_FINDINGS_PATH} (Spike Findings — validated patterns, constraints, landmines from experiments, if exists)
-- {SKETCH_FINDINGS_PATH} (Sketch Findings — validated design decisions, CSS patterns, visual direction, if exists)
 - {API_SURFACE_PATH} (API Surface — HINT ONLY, when intel capability is active; see <intel_surface_hint> below)
 ${CONTEXT_WINDOW >= 500000 ? `
 **Cross-phase context (1M model enrichment):**
