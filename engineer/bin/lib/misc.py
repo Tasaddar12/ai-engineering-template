@@ -75,19 +75,58 @@ def instruction_file(args):
 
 
 def timeout(args):
-    argv = args.all("_body") or args.pos
-    seconds = float(args.get("timeout", args.get("seconds", 300)))
-    if not argv:
-        raise Failure("missing-command", "Pass the command after --", 2)
+    import math
+    import sys
+    import tempfile
+    from . import processes
+    positional = list(args.pos)
+    body = args.all('_body')
+    named = args.get('timeout',args.get('seconds'))
+    if args.has('timeout') and args.has('seconds'):
+        raise Failure('ambiguous-timeout','Choose --timeout or --seconds',2)
+    budget = named
+    if body:
+        if positional:
+            if named is not None or len(positional) != 1:
+                raise Failure('ambiguous-timeout','Supply one positional budget before -- or one named budget',2)
+            budget = positional.pop(0)
+        argv = body
+    else:
+        if named is None and positional:
+            try:
+                float(positional[0])
+                budget = positional.pop(0)
+            except ValueError:
+                pass
+        argv = positional
     try:
-        result = run(argv, root(), check=False, timeout=seconds)
-        return {"exit_code": result.returncode, "stdout": result.stdout, "stderr": result.stderr, "timed_out": False}, result.returncode
-    except Failure as exc:
-        if exc.code != "command-timeout":
-            raise
-        return {"exit_code": 124, "stdout": "", "stderr": exc.message, "timed_out": True, "command": argv, "timeout": seconds}, 124
-    except subprocess.TimeoutExpired as exc:
-        return {"exit_code": 124, "stdout": str(exc.stdout or ""), "stderr": str(exc.stderr or ""), "timed_out": True}, 124
+        seconds = float(300 if budget is None else budget)
+    except (TypeError,ValueError) as exc:
+        raise Failure('invalid-timeout','Budget must be a finite positive number of seconds',2) from exc
+    if not math.isfinite(seconds) or not 0 < seconds <= 604800:
+        raise Failure('invalid-timeout','Budget must be within (0,604800] seconds',2)
+    if not argv:
+        raise Failure('missing-command','Pass exact command argv after --',2)
+    process = None
+    maximum = 8*1024*1024
+    try:
+        with tempfile.TemporaryFile() as stdout,tempfile.TemporaryFile() as stderr:
+            process = processes.start_owned(argv,root(),stdin=getattr(sys.stdin,'buffer',sys.stdin),
+                stdout=stdout,stderr=stderr,timeout=seconds,output_limit=maximum)
+            code = process.wait()
+            stdout.seek(0)
+            stderr.seek(0)
+            return {'exit_code':code,'stdout':stdout.read(maximum).decode('utf-8',errors='replace'),
+                'stderr':stderr.read(maximum).decode('utf-8',errors='replace'),
+                'timed_out':process.proof.get('reason') == 'timeout','command':argv,'timeout':seconds,
+                'tree_stopped':True,'process_ownership':process.ownership,'process_terminal':process.proof},code
+    except BaseException:
+        if process is not None:
+            process.stop('runner-error')
+        raise
+    finally:
+        if process is not None and process.proof:
+            process.close()
 
 
 def progress_bar(args):

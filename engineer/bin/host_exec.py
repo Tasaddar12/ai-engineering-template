@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import dispatch
 from lib.core import Failure, load_json, now, run, write_json
 from lib.locking import acquire
-from lib.pipelines import _WindowsJob, _stop
+from lib import processes
 
 
 def execute(path):
@@ -28,50 +28,27 @@ def execute(path):
                     "branch": run(["git", "branch", "--show-current"], cwd, timeout=30).stdout.strip(),
                     "base": base, "pid": os.getpid(), "started": now(), "status": "launching"}
         write_json(path.with_suffix(".started.json"), identity)
-        job = _WindowsJob()
         process = None
-        timed_out = False
         try:
-            options = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP | 0x4} if os.name == "nt" else {"start_new_session": True}
-            process = subprocess.Popen([request["command"], *request["args"]], cwd=cwd, stdin=subprocess.PIPE,
-                                       env={**os.environ, "ENGINEER_ROOT": str(cwd), "ENGINEER_HOST": request["host"]},
-                                       shell=False, **options)
-            job.assign(process)
-            if os.name == "nt":
-                job.resume(process)
-            def send_prompt():
-                try:
-                    process.stdin.write(request["prompt"].encode("utf-8"))
-                    process.stdin.close()
-                except (BrokenPipeError, OSError):
-                    pass
-            sender = threading.Thread(target=send_prompt, daemon=True)
-            sender.start()
-            try:
-                code = process.wait(timeout=request["timeout"])
-            except subprocess.TimeoutExpired:
-                timed_out = True
-                if not _stop(process, job):
-                    raise Failure("dispatch-worker-uncertain", "Cannot prove host descendants stopped")
-                code = 124
-            if os.name == "nt":
-                job.stop()
-            else:
-                # Kill only the owned group; normal leader exit may leave children.
-                if not _stop(process):
-                    raise Failure("dispatch-worker-uncertain", "Cannot prove host descendants stopped")
-            sender.join(timeout=5)
-            head = run(["git", "rev-parse", "HEAD"], cwd, timeout=30).stdout.strip()
-            write_json(terminal, {**identity, "status": "terminal", "head": head, "exit_code": code,
-                                  "timed_out": timed_out, "finished": now(), "terminal": True,
-                                  "verification": "not-certified", "job_terminated": True})
+            def record_ownership(ownership):
+                write_json(path.with_suffix('.started.json'),{**identity,'process_ownership':ownership})
+            process = processes.start_owned([request["command"],*request["args"]],cwd,
+                env={**os.environ,"ENGINEER_ROOT":str(cwd),"ENGINEER_HOST":request["host"]},
+                input=request["prompt"],timeout=request["timeout"],on_prepare=record_ownership)
+            write_json(path.with_suffix(".started.json"),{**identity,"status":"running","process_ownership":process.ownership})
+            code = process.wait()
+            head = run(["git","rev-parse","HEAD"],cwd,timeout=30).stdout.strip()
+            write_json(terminal,{**identity,"status":"terminal","head":head,"exit_code":code,
+                "timed_out":process.proof.get("reason") == "timeout","finished":now(),"terminal":True,
+                "verification":"not-certified","job_terminated":True,"process_ownership":process.ownership,"process_terminal":process.proof})
             return code
         except BaseException:
             if process is not None:
-                _stop(process, job)
+                process.stop("runner-error")
             raise
         finally:
-            job.close()
+            if process is not None and process.proof:
+                process.close()
 
 
 def main():

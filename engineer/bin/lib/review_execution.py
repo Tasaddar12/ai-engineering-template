@@ -19,7 +19,7 @@ import time
 import uuid
 from . import config, models
 from .core import Failure, now, read, root, run
-from .pipelines import _WindowsJob, _stop
+from . import processes
 from .text import split_frontmatter
 
 HOSTS = ("claude", "codex")
@@ -95,6 +95,9 @@ def _snapshot(repo):
     status = _git(repo, "status", "--porcelain=v1", "-z", "--untracked-files=all").stdout
     if status:
         raise Failure("review-source-not-frozen", "Independent review requires a clean captured checkout; commit or preserve current changes first")
+    concealed = _git(repo, "ls-files", "-v", "-z").stdout.split("\0")
+    if any(row and (row[0].islower() or row[0].upper() == "S") for row in concealed):
+        raise Failure("review-hidden-index-state", "Clear assume-unchanged and skip-worktree flags before capturing source evidence")
     head = _git(repo, "rev-parse", "HEAD").stdout.strip()
     # Hash actual tracked bytes as well as Git identity: a writer cannot conceal
     # source drift with assume-unchanged or skip-worktree index bits.
@@ -195,106 +198,45 @@ def _argv(host, model, schema):
 
 
 def _execute(argv, prompt, repo, stdout_path, stderr_path, timeout):
-    """Include process startup/prompt delivery in one owned, bounded attempt."""
+    """Run the exact reviewed native CLI through shared owned supervision."""
     started = time.monotonic()
-    job, process = _WindowsJob(), None
-    assigned = False
-    exceeded, pump_errors = threading.Event(), []
-    threads = []
-    stopped = False
+    executable = shutil.which(argv[0]+".exe") if os.name == "nt" else shutil.which(argv[0])
+    executable = executable or shutil.which(argv[0])
+    if not executable:
+        raise Failure("review-cli-unavailable","Selected retained CLI is not installed on PATH",host=argv[0])
+    executable = Path(executable).resolve()
+    if executable.is_relative_to(repo) or os.name == "nt" and executable.suffix.lower() != ".exe":
+        raise Failure("review-cli-unsafe","Use the installed native CLI executable",executable=str(executable))
+    with executable.open("rb") as stream:
+        shebang = stream.read(256).split(b"\n",1)[0]
+    if shebang.startswith(b"#!") and re.search(rb"(?:/|\s)(?:ba|z|fi|da|k)?sh(?:\s|$)",shebang):
+        raise Failure("review-cli-shell-wrapper","Review drivers do not execute shell wrappers")
+    executed_argv = [str(executable),*argv[1:]]
+    process = None
     try:
-        executable = shutil.which(argv[0]+".exe") if os.name == "nt" else shutil.which(argv[0])
-        executable = executable or shutil.which(argv[0])
-        if not executable:
-            raise Failure("review-cli-unavailable", "Selected retained CLI is not installed on PATH", host=argv[0])
-        executable = Path(executable).resolve()
-        if executable.is_relative_to(repo) or (os.name == "nt" and executable.suffix.lower() != ".exe"):
-            raise Failure("review-cli-unsafe", "Use the installed native CLI executable; repository executables and Windows shell wrappers are refused", executable=str(executable))
-        with executable.open("rb") as stream:
-            shebang = stream.read(256).split(b"\n", 1)[0]
-        if shebang.startswith(b"#!") and re.search(rb"(?:/|\s)(?:ba|z|fi|da|k)?sh(?:\s|$)", shebang):
-            raise Failure("review-cli-shell-wrapper", "Review drivers do not execute shell wrappers")
-        executed_argv = [str(executable), *argv[1:]]
-        options = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW | 0x4} if os.name == "nt" else {"start_new_session": True}
-        process = subprocess.Popen(executed_argv, cwd=repo, env={**os.environ, "GIT_OPTIONAL_LOCKS": "0", "ENGINEER_ROOT": str(repo),
-                                                       "ENGINEER_HOST": argv[0], "CLAUDE_CODE_SKIP_PROMPT_HISTORY": "1"},
-                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False, **options)
-        job.assign(process)
-        assigned = True
-        if os.name == "nt":
-            job.resume(process)
-        _write_new(stdout_path.with_name(argv[0]+".process.json"), _json({"pid": process.pid, "started": now(), "command": executed_argv,
-                   "repository": str(repo), "group_owned": True, "windows_job": os.name == "nt"}))
-        if time.monotonic()-started >= timeout:
-            stopped = _terminate(process, job if assigned else None)
-            return {"pid": process.pid, "executed_argv": executed_argv, "launched": True, "exit_code": process.returncode, "tree_stopped": True,
-                    "reason": "startup-timeout", "stream_errors": [], "elapsed_seconds": time.monotonic()-started}
-        def pump(source, destination):
-            size = 0
+        flags = os.O_WRONLY|os.O_CREAT|os.O_EXCL|getattr(os,"O_NOFOLLOW",0)
+        with os.fdopen(os.open(stdout_path,flags,0o600),"wb") as stdout,os.fdopen(os.open(stderr_path,flags,0o600),"wb") as stderr:
+            process = processes.start_owned(executed_argv,repo,input=prompt,stdout=stdout,stderr=stderr,
+                env={**os.environ,"GIT_OPTIONAL_LOCKS":"0","ENGINEER_ROOT":str(repo),"ENGINEER_HOST":argv[0],"CLAUDE_CODE_SKIP_PROMPT_HISTORY":"1"},
+                timeout=max(0.001,timeout-(time.monotonic()-started)),output_limit=MAX_OUTPUT)
+            _write_new(stdout_path.with_name(argv[0]+".process.json"),_json({"pid":process.pid,"started":now(),"command":executed_argv,
+                "repository":str(repo),"process_ownership":process.ownership,"windows_job":os.name == "nt"}))
+            code = process.wait()
+            return {"pid":process.pid,"executed_argv":executed_argv,"launched":True,"exit_code":code,"tree_stopped":True,
+                "reason":process.proof.get("reason"),"stream_errors":[process.proof['error']] if process.proof.get('error') else [],
+                "elapsed_seconds":time.monotonic()-started,"process_ownership":process.ownership,"process_terminal":process.proof}
+    except BaseException as exc:
+        if process is not None:
             try:
-                flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
-                with os.fdopen(os.open(destination, flags, 0o600), "wb") as stream:
-                    while True:
-                        chunk = source.read(32768)
-                        if not chunk:
-                            break
-                        available = max(0, MAX_OUTPUT-size)
-                        stream.write(chunk[:available])
-                        size += len(chunk)
-                        if size > MAX_OUTPUT:
-                            exceeded.set()
-            except BaseException as exc:
-                pump_errors.append(str(exc))
-                exceeded.set()
-        def send():
-            try:
-                process.stdin.write(prompt.encode("utf-8"))
-                process.stdin.close()
-            except (BrokenPipeError, OSError) as exc:
-                pump_errors.append(str(exc))
-        for target, values in ((pump, (process.stdout, stdout_path)), (pump, (process.stderr, stderr_path)), (send, ())):
-            thread = threading.Thread(target=target, args=values, daemon=True)
-            thread.start()
-            threads.append(thread)
-        reason = None
-        deadline = started+timeout
-        while process.poll() is None:
-            remaining = deadline-time.monotonic()
-            if remaining <= 0:
-                reason = "timeout"
-                break
-            if exceeded.wait(min(0.1, remaining)):
-                reason = "output-limit" if not pump_errors else "stream-error"
-                break
-        code = process.poll()
-        stopped = _terminate(process, job if assigned else None)
-        if not stopped:
-            raise Failure("review-worker-uncertain", "Cannot confirm termination of the owned CLI descendants")
-        for thread in threads:
-            thread.join(timeout=5)
-        if any(thread.is_alive() for thread in threads):
-            raise Failure("review-worker-uncertain", "CLI output/prompt threads have not stopped")
-        if time.monotonic() > deadline and reason is None:
-            reason = "timeout"
-        if pump_errors and reason is None:
-            reason = "stream-error"
-        return {"pid": process.pid, "executed_argv": executed_argv, "launched": True, "exit_code": code if code is not None else process.returncode, "tree_stopped": True,
-                "reason": reason, "stream_errors": pump_errors, "elapsed_seconds": time.monotonic()-started}
+                process.stop("runner-error")
+            except (Failure,OSError) as stop_error:
+                raise Failure("review-worker-uncertain","Preserve the supervisor and review artifacts until terminal proof exists",ownership=process.ownership) from stop_error
+        if isinstance(exc,Failure) and exc.code.startswith('process-'):
+            raise Failure("review-worker-uncertain",str(exc),ownership=process.ownership if process else exc.details.get('ownership')) from exc
+        raise
     finally:
-        try:
-            if process is not None and not stopped:
-                _terminate(process, job if assigned else None)
-        finally:
-            job.close()
-
-
-def _terminate(process, job):
-    try:
-        if not _stop(process, job):
-            raise Failure("review-worker-uncertain", "Cannot confirm termination of the owned CLI descendants")
-    except (Failure, OSError, subprocess.SubprocessError) as exc:
-        raise Failure("review-worker-uncertain", "Owned CLI descendant termination is uncertain", detail=str(exc)) from exc
-    return True
+        if process is not None and process.proof:
+            process.close()
 
 
 def _response(host, raw):
@@ -382,7 +324,7 @@ def _validate(packet, request, blobs):
             start, end = citation.get("line"), citation.get("end_line")
             if content is None or type(start) is not int or type(end) is not int or not 1 <= start <= end <= len(content.splitlines()):
                 raise Failure("review-citation-range", finding["id"])
-    if (status in ("clean", "skipped") and findings) or (status == "issues_found" and not findings):
+    if (status == "skipped" and findings) or (status == "clean" and any(item["severity"] != "info" for item in findings)) or (status == "issues_found" and not findings):
         raise Failure("review-finding-count", "Review status contradicts its actual finding list")
     markdown = packet.get("review_markdown")
     if not isinstance(markdown, str) or not markdown.strip() or "<replace:" in markdown or "[TODO]" in markdown:
@@ -467,6 +409,8 @@ def validate_provenance(provenance, review_path=None, require_complete=True):
             raise Failure("review-provenance-binding", "Provenance packet does not match its actual request", field=key)
     if receipt.get("tree_stopped") is not True or receipt.get("launched") is not True or type(receipt.get("exit_code")) is not int or receipt["exit_code"] != 0 or receipt.get("reason") is not None:
         raise Failure("review-provenance-terminal", "A successful actual CLI exit and confirmed descendant stop are required")
+    if processes.terminal(receipt.get('process_ownership',{})) != receipt.get('process_terminal'):
+        raise Failure('review-provenance-terminal','The owned supervisor terminal receipt changed')
     if receipt.get("status") not in ("complete", "partial", "skipped") or (require_complete and receipt["status"] != "complete"):
         raise Failure("review-provenance-incomplete", "Partial/skipped review is not complete independent evidence")
     if request.get("repository") != str(repo) or not isinstance(request.get("files"), list) or request.get("scope_sha256") != _sha(_json(request["files"])):

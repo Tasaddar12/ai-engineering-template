@@ -85,18 +85,21 @@ def current_evidence(value):
     if not revision or run(["git", "merge-base", "--is-ancestor", str(revision), head], root(), check=False).returncode:
         reasons.append("verified revision is absent or outside current history")
     if revision and revision != head:
-        changed = run(["git", "diff", "--name-only", str(revision), head], root(), check=False)
-        allowed = {str(report.relative_to(root())).replace("\\", "/"), ".planning/STATE.md", ".planning/ROADMAP.md", ".planning/REQUIREMENTS.md"}
-        if changed.returncode or any(path not in allowed for path in changed.stdout.splitlines()):
+        commits = run(["git","rev-list",str(revision)+".."+head],root(),check=False)
+        allowed = {report.relative_to(root()).as_posix()}
+        stale = bool(commits.returncode)
+        for commit in commits.stdout.splitlines():
+            changed = run(["git","diff-tree","--root","--no-commit-id","--name-only","-r","-m",commit],root(),check=False)
+            if changed.returncode or any(path and path not in allowed for path in changed.stdout.splitlines()):
+                stale = True
+        if stale:
             reasons.append("source changed since the frozen verification revision")
     if run(["git", "status", "--porcelain"], root()).stdout:
         reasons.append("working tree is dirty")
     settings = configured_checks()
     if settings:
         receipt_status = check_status(None)
-        names = {check["id"] for check in settings if check["required"]}
-        passed = {r["name"] for r in receipt_status["receipts"] if r["status"] == "passed"}
-        if not names.issubset(passed) or not receipt_status.get('current_receipts_intact',True):
+        if receipt_status.get("passed") is not True:
             reasons.append("configured checks lack passing receipts at current HEAD")
     return {"current": not reasons, "reasons": reasons, "revision": head, "verified_revision": revision, "fingerprint": expected}
 
@@ -248,6 +251,13 @@ def _valid_receipt(item,path):
         return False
     if not isinstance(item.get('finished_ns'),int) or not isinstance(item.get('revision'),str):
         return False
+    try:
+        from . import processes
+        proof = processes.terminal(item.get('process_ownership',{}))
+        if proof != item.get('process_terminal') or proof['exit_code'] != item['exit_code']:
+            return False
+    except (Failure,OSError,ValueError,KeyError,TypeError):
+        return False
     return all(isinstance(item.get(k),str) and re.fullmatch(r'[0-9a-f]{64}',item[k]) for k in ('fingerprint','specification_hash','sources_hash','environment_hash'))
 
 
@@ -373,8 +383,9 @@ def _run_checks(args):
     def execute(check):
         started = now()
         binding = bindings[check['id']]
+        execution = {**check,'_execution_environment':binding['environment']}
         try:
-            code,stdout,stderr = _execute_check({**check,'_execution_environment':binding['environment']})
+            code,stdout,stderr = _execute_check(execution)
         except OSError as exc:
             code,stdout,stderr = 127,'',str(exc)
         except Failure as exc:
@@ -390,7 +401,8 @@ def _run_checks(args):
             'started':started,'finished':now(),'finished_ns':finished_ns,'exit_code':code,'timed_out':code == 124,
             'stdout':_redact(stdout,binding['environment'],check.get('environment')),'stderr':_redact(stderr,binding['environment'],check.get('environment')),
             'status':'passed' if code == 0 else 'failed','required':check['required'],'independent':check['independent'],
-            'resources':check['resources'],'exact_revision':check['revision'],'reuse_allowed':settings['reuse'] and check['reuse']}
+            'resources':check['resources'],'exact_revision':check['revision'],'reuse_allowed':settings['reuse'] and check['reuse'],
+            'process_ownership':execution.get('_process_ownership'),'process_terminal':execution.get('_process_terminal')}
         receipt['receipt_hash'] = _receipt_hash(receipt)
         return receipt
     # Consecutive independent checks may share a wave only with disjoint resources.
@@ -478,46 +490,24 @@ def check_status(args):
 
 
 def _execute_check(check):
-    """Own the process tree and bound captured output, including after timeout."""
+    """Capture bounded output only after shared owned-subtree terminal proof."""
     import tempfile
-    from .pipelines import _WindowsJob,_stop
-    options = {'creationflags':subprocess.CREATE_NEW_PROCESS_GROUP | 0x4} if os.name == 'nt' else {'start_new_session':True}
-    job,process,assigned = _WindowsJob(),None,False
-    def tail(stream):
-        stream.seek(0,2)
-        size = stream.tell()
-        stream.seek(max(0,size-1024*1024))
-        value = stream.read().decode('utf-8',errors='replace')
-        return ('[output truncated to last 1 MiB]\n' if size > 1024*1024 else '')+value
+    from . import processes
+    process = None
     try:
         with tempfile.TemporaryFile() as output,tempfile.TemporaryFile() as errors:
-            environment = check.get('_execution_environment') or _environment(check)[0]
-            process = subprocess.Popen(check['argv'],cwd=_safe(check.get('cwd','.')),stdin=subprocess.DEVNULL,
-                stdout=output,stderr=errors,env=environment,shell=False,**options)
-            job.assign(process)
-            assigned = True
-            if os.name == 'nt':
-                job.resume(process)
-            try:
-                code = process.wait(timeout=float(check.get('timeout',300)))
-            except subprocess.TimeoutExpired:
-                if not _stop(process,job):
-                    raise Failure('check-process-uncertain','Cannot establish all check descendants stopped')
-                code = 124
-            if os.name == 'nt':
-                job.stop()
-            elif not _stop(process):
-                raise Failure('check-process-uncertain','Cannot establish all check descendants stopped')
-            return code,tail(output),tail(errors)
+            process = processes.start_owned(check['argv'],_safe(check.get('cwd','.')),
+                env=check.get('_execution_environment') or _environment(check)[0],stdin=subprocess.DEVNULL,
+                stdout=output,stderr=errors,timeout=check.get('timeout',300),output_limit=1024*1024)
+            code = process.wait()
+            check['_process_ownership'],check['_process_terminal'] = process.ownership,process.proof
+            output.seek(0)
+            errors.seek(0)
+            return code,output.read(1024*1024).decode('utf-8',errors='replace'),errors.read(1024*1024).decode('utf-8',errors='replace')
     except BaseException:
         if process is not None:
-            if os.name == 'nt' and not assigned:
-                # A failed job assignment leaves an unstarted suspended process;
-                # it cannot be stopped through a job it never joined.
-                process.kill()
-                process.wait(timeout=30)
-            else:
-                _stop(process,job)
+            process.stop('runner-error')
         raise
     finally:
-        job.close()
+        if process is not None and process.proof:
+            process.close()
