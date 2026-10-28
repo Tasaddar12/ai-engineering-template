@@ -78,6 +78,6 @@ Files archived by `/complete-milestone`. These are never checked by W019.
 
 When a new workflow produces a `.planning/` root file:
 
-1. Add the file name to `CANONICAL_EXACT` in `engineer/bin/lib/artifacts.cjs`
+1. Add the file name to `CANONICAL_EXACT` in `engineer/bin/lib/artifacts.py`
 2. Add a row to the **`.planning/` Root Artifacts** table above
 3. Add the template to `engineer/templates/` if one exists

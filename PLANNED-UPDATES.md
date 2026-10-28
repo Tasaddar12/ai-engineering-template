@@ -15,6 +15,15 @@ runtime driven from bash.
 - **Original local adaptation:** `.ai/` and `.planning/`, adapted from upstream
   `c0b2a05` (templates, workflows, references) and `4713ffba` (agents).
 
+The rows below preserve historical baseline paths and proposed work. Current
+Python replacements are documented in the live workflows: the edge and section
+probes use `engineer/bin/lib/probes.py`; UI coverage uses
+`engineer/bin/lib/ui_consideration_probe.py`; review flag/depth and Fallow report
+normalization use the `review.flags`, `review.depth`, and
+`review.normalize-fallow` runtime verbs; state and health tables use the Python
+helper dispatcher and Python schemas. These historical rows are not live
+invocation instructions.
+
 ### Review scope override — PR #127, review 5669934629
 
 The [human review](https://github.com/Tasaddar12/ai-engineering-template/pull/127#pullrequestreview-5669934629) overrides conflicting deletion/reconciliation rows below. Retain these complete copied upstream methods:

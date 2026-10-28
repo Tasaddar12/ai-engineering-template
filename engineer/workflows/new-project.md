@@ -125,7 +125,7 @@ if [ -n "$CODEX_HOME" ]; then RUNTIME="codex"
 else RUNTIME="claude"; fi
 ```
 
-Set the instruction file variable via the shared runtime-name policy adapter (`engineer_run query project-instruction-file`, backed by `getProjectInstructionFile` in `runtime-name-policy.cjs` — the single source of truth shared with `profile-output.cjs`):
+Set the instruction file variable via the Python runtime's shared instruction-file policy (`engineer_run query project-instruction-file`, backed by `models.instruction` in `engineer/bin/lib/models.py`):
 ```bash
 INSTRUCTION_FILE=$(engineer_run query project-instruction-file --runtime "$RUNTIME")
 ```

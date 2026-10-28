@@ -64,7 +64,7 @@ fi
 # ISOLATION at all, so the recording cannot be skipped the way a separate
 # "and now also run this to record it" prose instruction could be. `--phase`
 # threads the phase identifier into that same atomic write (mode + harnessFlag
-# + phase together — see hooks/lib/isolation-sentinel.js for how the guards
+# + phase together — see `hooks/worktree-path-guard.py` for the installed hook
 # consume it).
 # Keep the resolver's own failure DISTINGUISHABLE from a genuine `none`, exactly
 # as references/dispatch-isolation-gate.md does — this site declares that gate
@@ -116,7 +116,7 @@ fi
 # base-check degrade is decided here, not inside engineer.py) through the
 # SAME single write path (`--force-isolation none` also clears the stored
 # harnessFlag, since none applies to sequential dispatch). The isolation
-# guard hooks (hooks/engineer-agent-isolation-guard.js)
+# guard hook (`hooks/worktree-path-guard.py`)
 # read this sentinel instead of
 # re-deriving a host CAPABILITY from the registry — the registry's
 # harness-worktree entry means "this host CAN isolate", not "this dispatch
@@ -155,8 +155,7 @@ Read the flag once before dispatching; it is descriptor data, never hardcoded pe
 # engineer/bin/engineer.py) — there is no separate "now also record the
 # flag" step, and therefore no flagless window between recording the mode and
 # recording the flag.
-HARNESS_FLAG=$(engineer_run query dispatch-isolation --json --phase "${PHASE_NUMBER:-}" 2>/dev/null \
-  | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(j&&j.harnessFlag?j.harnessFlag:"")}catch{process.stdout.write("")}})')
+HARNESS_FLAG=$(engineer_run query dispatch-isolation --phase "${PHASE_NUMBER:-}" --pick harnessFlag --raw 2>/dev/null)
 [ -n "$HARNESS_FLAG" ] || { echo "FATAL: runtime declares dispatch.isolation=harness-worktree but no harnessIsolationFlag — refusing to dispatch executors that would believe they are isolated." >&2; exit 1; }
 ```
 
@@ -368,7 +367,7 @@ EXEC_JSON=$(engineer_run query dispatch-isolation --json \
 # effect), so an unusable exec must NOT be spawned and must NOT be left
 # behind as an orphan: tear it down through the manifest-scoped cleanup
 # and halt rather than silently running the wave unisolated.
-EXEC_OK=$(printf '%s' "$EXEC_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(j&&j.isolation==="orchestrator-worktree"&&j.exec&&j.exec.command?"true":"false")}catch{process.stdout.write("false")}})')
+EXEC_OK=$(printf '%s' "$EXEC_JSON" | python -c 'import json,sys; j=json.load(sys.stdin); print("true" if j.get("isolation")=="orchestrator-worktree" and isinstance(j.get("exec"),dict) and j["exec"].get("command") else "false")')
 if [ "$EXEC_OK" != "true" ]; then
   echo "FATAL: could not resolve an orchestrator-exec invocation for plan {plan_number} after its worktree was created. The wave is halted rather than run unisolated. Retained for inspection: $WT_PATH (branch $WT_BRANCH, recorded in $WAVE_WORKTREE_MANIFEST) — run 'engineer_run query worktree.cleanup-wave --manifest \"$WAVE_WORKTREE_MANIFEST\"' to merge/clean it." >&2
   exit 1
