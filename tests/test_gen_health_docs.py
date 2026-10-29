@@ -133,10 +133,7 @@ class CheckWriteRoundTrip(TempHealthMd):
         self.assertIn("up to date", done.stdout)
         self.assertEqual(1, run("--bogus").returncode)
 
-    @unittest.expectedFailure
     def test_shipped_health_md_already_passes_check(self):
-        # KNOWN DRIFT: engineer/workflows/health.md localises W010/W019/W028 descriptions
-        # ("Engineer" for upstream "GSD") and rewords the generated footnote paragraph.
         code, _, err = run_gen(["--check"])
         self.assertEqual(0, code, err)
 

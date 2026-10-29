@@ -145,6 +145,7 @@ def registry():
         verbs["worktree."+action] = lambda a, action=action: worktrees.command(a, action)
     for action in ("create", "complete", "list", "archive-quick"):
         verbs["milestone."+action] = lambda a, action=action: misc.milestone(a, action)
+    verbs["milestone.release-tags"] = lambda a: __import__("lib.release_tags", fromlist=["command"]).command(a)
     for action in ("open", "adopt", "status", "close"):
         verbs["session."+action] = lambda a, action=action: sessions.command(a, action)
     for action in ("open", "status", "checks", "ready", "merge", "sync"):

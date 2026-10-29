@@ -237,6 +237,10 @@ def _complete_milestone(args, version, name):
                 raise Failure("milestone-journal-conflict", str(journal_path))
             if journal.get("archive_phases") != (not args.has("no-archive-phases")):
                 raise Failure("milestone-journal-conflict", "Resume must preserve the reviewed archive choice")
+            if args.has("release-map"):
+                from .release_tags import load_map
+                if load_map(args.get("release-map"))[0] != journal.get("release_map"):
+                    raise Failure("milestone-journal-conflict", "Resume must preserve the recorded release map")
         else:
             progress = records.roadmap_analyze()
             if not progress["phases"]:
@@ -260,6 +264,9 @@ def _complete_milestone(args, version, name):
                        "phase_count": len(progress["phases"]), "plan_count": len(summaries), "task_count": task_count,
                        "phase_inventory": archive_module._inventory(records.planning()/"phases"), "record_hashes": record_hashes,
                        "archive_phases": not args.has("no-archive-phases"), "archive_id": "milestone-"+version+"-"+uuid.uuid4().hex[:12]}
+            if args.has("release-map"):
+                from .release_tags import load_map
+                journal["release_map"] = load_map(args.get("release-map"))[0]
             write_json(journal_path, journal)
         import hashlib
         for record, expected in journal.get("record_hashes", {}).items():
@@ -278,6 +285,8 @@ def _complete_milestone(args, version, name):
             archive_result = archive_module.capture(Args([version, "--id", journal["archive_id"], "--confirm"]))
             journal["state"], journal["archive"] = "archived", archive_result
             write_json(journal_path, journal)
+        if "release_map" in journal:
+            write_json(safe(records.planning()/"milestones"/(version+"-RELEASE-MAP.json")), journal["release_map"])
         block = journal["block"]
         if archive_result:
             block += "**Archive:** "+archive_result["path"]+"\n**Provenance ID:** "+archive_result["id"]+"\n\n"
