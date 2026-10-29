@@ -1,4 +1,5 @@
 """Real Git lifecycle checks for attaching terminal native-host evidence."""
+import importlib.util
 import json
 from pathlib import Path
 import shlex
@@ -17,9 +18,10 @@ class NativeWorkerReceipts(RuntimeCase):
         self.cli("worktree.record-agent", *arguments, "--terminal-receipt", source)
         workflow = (Path(__file__).resolve().parents[1]/"engineer/workflows/execute-phase.md").read_text(encoding="utf-8")
         runtime = Path(__file__).resolve().parents[1]/"engineer/bin/engineer.py"
-        sys.path.insert(0, str(runtime.parent))
-        from lib.posix_shell import find_posix_shell
-        shell = find_posix_shell()
+        spec = importlib.util.spec_from_file_location("_native_worker_shell_helper", runtime.parent/"lib/posix_shell.py")
+        helper = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(helper)
+        shell = helper.find_posix_shell()
         self.assertIsNotNone(shell)
         preamble = "\n".join([
             "set -e",
