@@ -9,6 +9,7 @@ import subprocess
 import sys
 import time
 import unittest
+from unittest import mock
 
 try:
     from .test_engineer_runtime import RuntimeCase, SOURCE
@@ -162,6 +163,66 @@ class RuntimeProcessExecution(RuntimeCase):
                 self.assertEqual(snapshot, heartbeat.read_bytes(), "Grandchild continued after terminal proof")
             finally:
                 child.close()
+
+    @unittest.skipUnless(sys.platform == "linux", "Linux supervisor bootstrap regression")
+    def test_stop_during_supervisor_bootstrap_preserves_terminal_proof(self):
+        ready = self.root / "supervisor-bootstrap-ready"
+        # Delay the real supervisor before it can install signal handlers. The
+        # subprocess and supervisor remain real; only startup order is controlled.
+        bootstrap = r'''
+import pathlib, runpy, sys, time
+script, request, ready = sys.argv[1:]
+pathlib.Path(ready).touch()
+deadline = time.monotonic() + 5
+while not pathlib.Path(request).with_name("cancel.json").exists() and time.monotonic() < deadline:
+    time.sleep(0.01)
+time.sleep(0.1)
+sys.argv = [script, request]
+runpy.run_path(script, run_name="__main__")
+'''
+        real_popen = subprocess.Popen
+
+        def launch(argv, **kwargs):
+            self.assertEqual("process_supervisor.py", Path(argv[2]).name)
+            return real_popen([argv[0], "-I", "-c", bootstrap, *argv[2:], str(ready)], **kwargs)
+
+        with (self.root / "bootstrap.out").open("wb") as output:
+            with mock.patch.object(processes.subprocess, "Popen", side_effect=launch):
+                child = processes.start_owned([sys.executable, "-c", "import time; time.sleep(60)"], self.root,
+                    env=self.env, stdout=output, stderr=output, timeout=10)
+            try:
+                deadline = time.monotonic() + 5
+                while not ready.exists() and time.monotonic() < deadline:
+                    time.sleep(0.01)
+                self.assertTrue(ready.exists(), "Supervisor bootstrap did not become active")
+                child.stop()
+                proof = processes.terminal(child.ownership)
+                self.assertEqual("cancelled", proof["reason"])
+                self.assertTrue(proof["tree_stopped"])
+                self.assertIsNone(proof["error"])
+                self.assertEqual(0, child.process.wait(timeout=5))
+            finally:
+                # Missing proof must retain the uncertain attempt and expose the
+                # original stop failure rather than replace it with close().
+                if (child.directory / "terminal.json").exists():
+                    child.close()
+
+    @unittest.skipUnless(sys.platform == "linux", "Linux supervisor cancellation protocol")
+    def test_supervisor_ignores_cancellation_for_another_attempt(self):
+        for changed in ("token", "request_hash"):
+            with self.subTest(changed=changed), (self.root / (changed + ".out")).open("wb") as output:
+                child = processes.start_owned([sys.executable, "-c", "import time; time.sleep(60)"], self.root,
+                    env=self.env, stdout=output, stderr=output, timeout=0.3)
+                try:
+                    packet = {key: child.ownership[key] for key in ("token", "request_hash")}
+                    packet.update({changed: "another-attempt", "reason": "cancelled"})
+                    processes._new(child.directory / "cancel.json", processes._encoded(packet))
+                    child.wait()
+                    proof = processes.terminal(child.ownership)
+                    self.assertEqual("timeout", proof["reason"])
+                    self.assertTrue(proof["tree_stopped"])
+                finally:
+                    child.close()
 
 
 if __name__ == "__main__":
