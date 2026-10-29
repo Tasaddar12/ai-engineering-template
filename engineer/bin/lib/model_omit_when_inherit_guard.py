@@ -2,7 +2,7 @@
 
 Ported from upstream gsd-core ``tests/model-omit-when-inherit-guard.test.cjs``
 at commit d37ff11b47258b560f0cf8f1132b42ecd90e0c79 (MIT, Copyright (c) 2026 Open GSD).
-Rule owner: ``engineer/references/model-profile-resolution.md``.
+Rule owner: ``AGENTS.md`` (Dispatch).
 
 Workflow orchestrators must omit the ``model=`` parameter from ``Agent()`` calls
 when the bound ``*_model`` value is ``inherit`` or empty, every ``model="{X}"``
@@ -12,8 +12,6 @@ an empty list means the rule holds.
 
 Deviations:
 - ``gsd-core/workflows`` -> ``engineer/workflows``;
-  ``gsd-core/references/model-profile-resolution.md`` ->
-  ``engineer/references/model-profile-resolution.md``;
   ``gsd_run`` -> ``engineer_run``; ``gsd-<agent>`` -> ``<agent>`` (names come
   from ``agents/*.md``).
 - Agent names carry no ``gsd-`` prefix here, so the spawn collector matches only
@@ -44,7 +42,7 @@ SOURCE = Path(__file__).resolve().parents[3]
 WORKFLOWS = SOURCE/"engineer/workflows"
 AGENTS = SOURCE/"agents"
 RUNTIME = SOURCE/"engineer/bin/engineer.py"
-MODEL_REFERENCE = SOURCE/"engineer/references/model-profile-resolution.md"
+MODEL_REFERENCE = SOURCE/"AGENTS.md"
 
 OMIT_RULE_MARKER = "<!-- model-omit-on-inherit -->"
 MODEL_PLACEHOLDER_RE = re.compile(r'model="\{([A-Za-z0-9_]+)\}"')
@@ -257,9 +255,9 @@ def spawn_coverage_findings(workflows_dir, resolve_init, agents=None):
     return findings, spawning, covered
 
 
-# --- reference document and ship hook gate ----------------------------------
+# --- authoritative model dispatch contract ----------------------------------
 
-def reference_violations(content, label="model-profile-resolution.md"):
+def reference_violations(content, label="AGENTS.md"):
     findings = []
     if re.search(r'model="inherit"', content):
         findings.append('%s: must not instruct passing model="inherit"; an inherit/empty model 404s on '

@@ -729,6 +729,8 @@ class EndToEnd(FixtureCase):
         self.assertEqual(1, code)
         found = next(v for v in report["violations"] if v["kind"] == "read_tag_gate_missing")
         self.assertEqual("alpha", found["agent"])
+        self.assertIn("AGENTS.md", drift.remedy_for(found["kind"]))
+        self.assertTrue((ROOT / "AGENTS.md").is_file())
 
     def test_gate_delivered_by_an_included_reference_counts(self):
         self.write_fixture(FIXTURE_REGISTRY,

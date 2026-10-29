@@ -365,6 +365,9 @@ def validate_worker(entry):
     if dirty(target):
         raise Failure('worker-dirty', 'Preserve uncommitted or untracked work', path=str(target))
     revision = head(target)
+    worker = entry.get('worker', {})
+    if worker.get('source') == 'native-host' and worker.get('terminal_receipt', {}).get('head') != revision:
+        raise Failure('native-terminal-receipt-stale', 'Current worker HEAD differs from the terminal host receipt')
     bases = entry.get('allowed_bases', [entry['base']])
     if entry['base'] not in bases or not ancestor(entry['base'], revision, target):
         raise Failure('worker-base-drift', entry['plan'])
@@ -441,6 +444,27 @@ def remove_owned(entry, expected_head, require_ancestry=True):
     return entry
 
 
+def _native_terminal_receipt(args, agent, branch, target, actual):
+    """Validate supplied terminal host evidence against this exact current checkout."""
+    receipt_path = no_links(args.get('terminal-receipt'))
+    try:
+        raw = receipt_path.read_bytes()
+        receipt = json.loads(raw)
+    except (OSError, ValueError) as exc:
+        raise Failure('native-terminal-receipt-invalid', 'Unreadable terminal host receipt') from exc
+    expected = {'agent_id': agent, 'branch': branch, 'head': actual['head']}
+    if (not isinstance(receipt, dict) or receipt.get('host') not in ('claude', 'codex')
+            or receipt.get('source') != 'native-host'
+            or receipt.get('status') not in ('complete', 'completed', 'stopped')
+            or any(receipt.get(k) != v for k, v in expected.items())
+            or not isinstance(receipt.get('worktree_path'), str) or not receipt['worktree_path']
+            or normalized(receipt['worktree_path']) != normalized(target)):
+        raise Failure('native-terminal-receipt-invalid', 'Supply actual terminal host metadata bound to this exact worker')
+    summary = scope_path(receipt['summary_path']) if receipt.get('summary_path') else None
+    return {'source': 'native-host', 'status': 'complete', 'completedAt': now(),
+            'terminal_receipt': receipt, 'terminal_receipt_sha256': hashlib.sha256(raw).hexdigest()}, summary
+
+
 def _create_or_record(args, action):
     path = manifest_path(args)
     with lifecycle_lock():
@@ -474,14 +498,52 @@ def _create_or_record(args, action):
                        and (e.get('agent_id') == agent or e.get('plan') == plan and unresolved(e)))]
         if duplicates:
             existing = duplicates[0]
-            if action == 'record-agent' and len(duplicates) == 1 and all(existing.get(k) == v for k, v in
-                    {'path': str(target), 'branch': branch, 'base': base, 'files': files, 'deletions': deletions}.items()):
-                identity(target, branch)
-                if existing.get('worker'):
-                    if not args.has('terminal-receipt') or existing['worker'].get('terminal_receipt_sha256') != hashlib.sha256(no_links(args.get('terminal-receipt')).read_bytes()).hexdigest():
-                        raise Failure('worker-already-dispatched', 'Do not redispatch a durable worker', worker=existing)
-                return {**existing, 'worktree_path': str(target), 'worktree': str(target), 'reused': True}
-            raise Failure('worker-already-owned', 'Reconcile existing ownership instead of redispatch', entries=duplicates)
+            expected = {'id': existing['id'], 'kind': 'worker', 'plan': plan, 'path': str(target), 'branch': branch, 'base': base,
+                        'files': files, 'deletions': deletions, 'allowed_bases': allowed, 'orchestrator_root': str(owner)}
+            if (action != 'record-agent' or len(duplicates) != 1
+                    or any(existing.get(k) != v for k, v in expected.items())
+                    or existing.get('agent_id') not in (plan, agent)):
+                raise Failure('worker-already-owned', 'Reconcile existing ownership instead of redispatch', entries=duplicates)
+            actual = identity(target, branch)
+            if not ancestor(base, actual['head'], target):
+                raise Failure('worker-base-drift', str(target))
+            fork = git('merge-base', head(owner), actual['head'], cwd=target).stdout.strip()
+            if fork not in allowed:
+                raise Failure('worker-fork-base-unapproved', 'Actual branch fork is outside the captured allowed bases', actual_base=fork, allowed_bases=allowed)
+            mirrors = [(i, item) for i, item in enumerate(manifest_data['worktrees'])
+                       if item.get('id') == existing['id'] or item.get('branch') == branch
+                       or normalized(item.get('path', item.get('worktree_path', ''))) == normalized(target)]
+            if len(mirrors) != 1 or any(mirrors[0][1].get(k) != v for k, v in expected.items()):
+                raise Failure('manifest-ownership-drift', str(target))
+            mirror = mirrors[0][1]
+            if (mirror.get('agent_id') not in (plan, existing.get('agent_id'))
+                    or mirror.get('worker') and mirror['worker'].get('terminal_receipt_sha256') != existing.get('worker', {}).get('terminal_receipt_sha256')):
+                raise Failure('manifest-ownership-drift', 'Worker evidence conflicts with durable ownership')
+            if args.has('summary-path') and existing.get('summary_path') and scope_path(args.get('summary-path')) != existing['summary_path']:
+                raise Failure('worker-summary-drift', 'Owned SUMMARY path cannot be replaced')
+            if args.has('terminal-receipt'):
+                worker, summary = _native_terminal_receipt(args, agent, branch, target, actual)
+                previous = existing.get('worker')
+                if previous and previous.get('terminal_receipt_sha256') != worker['terminal_receipt_sha256']:
+                    raise Failure('worker-already-dispatched', 'Conflicting worker evidence must be reconciled', worker=existing)
+                selected_summary = scope_path(args.get('summary-path')) if args.has('summary-path') else existing.get('summary_path')
+                if summary and selected_summary and summary != selected_summary:
+                    raise Failure('worker-summary-drift', 'Receipt and owned SUMMARY paths disagree')
+                # Creation uses a plan ID until the host supplies its actual terminal agent ID.
+                # An already bound native identity cannot be replaced by another agent.
+                existing['agent_id'] = agent
+                existing['worker'] = previous or worker
+                if summary or selected_summary:
+                    existing['summary_path'] = summary or selected_summary
+                existing['status'] = 'recorded'
+                save_registry(ownership)
+                manifest_data['worktrees'][mirrors[0][0]] = dict(existing)
+                write_json(path, manifest_data)
+            elif existing.get('worker'):
+                raise Failure('worker-already-dispatched', 'Repeat the exact terminal receipt for this durable worker', worker=existing)
+            elif args.has('completed'):
+                raise Failure('native-terminal-receipt-required', '--completed alone does not prove worker termination')
+            return {**existing, 'worktree_path': str(target), 'worktree': str(target), 'manifest': str(path), 'reused': True}
         entry = {'id': uuid.uuid4().hex, 'kind': 'worker', 'agent_id': agent, 'plan': plan, 'path': str(target),
                  'worktree_path': str(target), 'branch': branch, 'base': base, 'expected_base': base,
                  'allowed_bases': allowed, 'files': files, 'deletions': deletions, 'orchestrator_root': str(owner),
@@ -509,20 +571,12 @@ def _create_or_record(args, action):
             if fork not in allowed:
                 raise Failure('worker-fork-base-unapproved', 'Actual branch fork is outside the captured allowed bases', actual_base=fork, allowed_bases=allowed)
             if args.has('terminal-receipt'):
-                receipt_path = no_links(args.get('terminal-receipt'))
-                raw = receipt_path.read_bytes()
-                receipt = json.loads(raw)
-                expected = {'agent_id': agent, 'branch': branch, 'head': actual['head']}
-                if (not isinstance(receipt, dict) or receipt.get('host') not in ('claude', 'codex')
-                        or receipt.get('source') != 'native-host'
-                        or receipt.get('status') not in ('complete', 'completed', 'stopped')
-                        or any(receipt.get(k) != v for k, v in expected.items())
-                        or normalized(receipt.get('worktree_path', '')) != normalized(target)):
-                    raise Failure('native-terminal-receipt-invalid', 'Supply actual terminal host metadata bound to this exact worker')
-                entry['worker'] = {'source': 'native-host', 'status': 'complete', 'completedAt': now(),
-                                   'terminal_receipt': receipt, 'terminal_receipt_sha256': hashlib.sha256(raw).hexdigest()}
-                if receipt.get('summary_path'):
-                    entry['summary_path'] = scope_path(receipt['summary_path'])
+                worker, summary = _native_terminal_receipt(args, agent, branch, target, actual)
+                if summary and entry.get('summary_path') and summary != entry['summary_path']:
+                    raise Failure('worker-summary-drift', 'Receipt and owned SUMMARY paths disagree')
+                entry['worker'] = worker
+                if summary:
+                    entry['summary_path'] = summary
             elif args.has('completed'):
                 raise Failure('native-terminal-receipt-required', '--completed alone does not prove worker termination')
             ownership['entries'].append(entry)

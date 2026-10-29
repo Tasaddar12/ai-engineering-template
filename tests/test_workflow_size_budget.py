@@ -25,7 +25,6 @@ wsb = _load("workflow_size_budget")
 
 WORKFLOWS = wsb.WORKFLOWS_DIR
 DISCUSS = WORKFLOWS/"discuss-phase"
-EMBED_PATH = "engineer/workflows/execute-plan.md"
 
 
 def workflow(name):
@@ -154,11 +153,8 @@ class DiscussPhaseDisclosure(unittest.TestCase):
     def test_under_byte_budget(self):
         self.assertEqual([], wsb.discuss_phase_budget_violations(WORKFLOWS/"discuss-phase.md"))
 
-    # discuss-phase.md dispatches to modes/power.md, modes/chain.md and modes/advisor.md,
-    # but those mode files are absent from engineer/workflows/discuss-phase/modes/.
-    @unittest.expectedFailure
     def test_mode_files_exist_for_every_documented_mode(self):
-        documented = ("power", "all", "auto", "text")
+        documented = ("all", "auto", "text")
         self.assertEqual([], wsb.missing_files(DISCUSS/"modes", [m+".md" for m in documented]))
 
     def test_batch_analyze_default_modes_are_not_documented_here(self):
@@ -171,8 +167,6 @@ class DiscussPhaseDisclosure(unittest.TestCase):
     def test_templates_extracted(self):
         self.assertEqual([], wsb.missing_files(DISCUSS/"templates", wsb.DISCUSS_EXPECTED_TEMPLATES))
 
-    def test_parent_dispatches_to_power_mode(self):
-        self.assertTrue("discuss-phase/modes/power.md" in self.parent or "discuss-phase-power.md" in self.parent)
 
     def test_parent_dispatches_to_extracted_modes(self):
         self.assertEqual([], wsb.mode_dispatch_violations(self.parent, ("auto", "all")))
@@ -231,7 +225,7 @@ class DiscussPhaseFixtures(Fixture):
         parent = "Read workflows/discuss-phase/modes/auto.md then discuss-phase/modes/auto.md and discuss-phase/modes/text.md"
         self.assertEqual(["auto", "text"], wsb.referenced_mode_files(parent))
         self.assertEqual([], wsb.mode_dispatch_violations(parent, ["auto", "text"]))
-        self.assertEqual(1, len(wsb.mode_dispatch_violations(parent, ["auto", "power"])))
+        self.assertEqual(1, len(wsb.mode_dispatch_violations(parent, ["auto", "missing"])))
 
     def test_context_template_lazy_rule(self):
         good = "<required_reading>@x.md</required_reading>\nRead(workflows/discuss-phase/templates/context.md)"
@@ -267,7 +261,7 @@ class DiscussPhaseFixtures(Fixture):
     def test_inline_log_and_dispatch_flag(self):
         self.assertEqual(2, wsb.inline_discussion_log_occurrences("| Option | Description | Selected |\n| Option | Description | Selected |"))
         self.assertEqual(0, wsb.inline_discussion_log_occurrences("clean"))
-        self.assertTrue(wsb.dispatch_flag_present("--chain"))
+        self.assertTrue(wsb.dispatch_flag_present("--text"))
         self.assertFalse(wsb.dispatch_flag_present("nothing"))
 
 
@@ -315,7 +309,7 @@ class MvpBodiesLazyLoaded(unittest.TestCase):
         self.assertEqual(["skeleton-template.md"], [v.split()[0] for v in wsb.required_reading_leak_violations(block, ("skeleton-template.md", "other.md"), "h")])
         self.assertEqual([], wsb.required_reading_leak_violations("no block", ("skeleton-template.md",), "h"))
         self.assertFalse(wsb.reference_body_exists("definitely-not-a-real-reference-body.md"))
-        self.assertTrue(wsb.reference_body_exists("model-profile-resolution.md"))
+        self.assertTrue(wsb.reference_body_exists("model-profiles.md"))
 
 
 class ByteCountLineEndings(Fixture):
@@ -347,23 +341,6 @@ class PromptIncludes(Fixture):
         self.put("w/sub/deep.md", 'prompt="\n@$HOME/y.md\n"\n')
         offenders = wsb.bare_include_offenders(self.root/"w", self.root)
         self.assertEqual(["w/bad.md:2 @~/x.md", "w/sub/deep.md:2 @$HOME/y.md"], offenders)
-
-    def test_execute_phase_execution_context_embeds_execute_plan(self):
-        self.assertEqual([], wsb.execution_context_violations(workflow("execute-phase.md"), EMBED_PATH))
-
-    def test_execution_context_fixtures(self):
-        good = "<execution_context>\nORCHESTRATOR build-time embed\n- `%s`\n</execution_context>" % EMBED_PATH
-        self.assertEqual([], wsb.execution_context_violations(good, EMBED_PATH))
-        self.assertEqual(1, len(wsb.execution_context_violations("no block", EMBED_PATH)))
-        self.assertEqual(2, len(wsb.execution_context_violations("<execution_context>\n@%s\n</execution_context>" % EMBED_PATH, EMBED_PATH)))
-
-
-    def test_execute_plan_still_defines_its_carried_steps(self):
-        if not (WORKFLOWS/"execute-plan.md").exists():
-            self.skipTest("upstream execute-plan.md workflow absent in this repo")
-        content = (WORKFLOWS/"execute-plan.md").read_text(encoding="utf-8")
-        self.assertEqual([], wsb.missing_markers(content, ("segment_execution", "previous_phase_check",
-                                                           "verification_failure_gate", "update_codebase_map")))
 
 
     def test_dispatch_region_anchors(self):

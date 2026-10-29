@@ -24,8 +24,8 @@ Deviations:
 - ``unmatched_consumer_tokens`` scans ``engineer/workflows/`` and ``commands/`` (upstream
   ``gsd-core/workflows/`` and ``commands/``). Retired GRAPHIFY completion markers
   have no exemption from contract checks.
-- The ``read_tag_gate_missing`` remedy points at ``engineer/references/mandatory-initial-read.md``
-  instead of upstream's ``docs/reference/agents.md``, which this repo does not have.
+- The ``read_tag_gate_missing`` remedy points to the surviving ``AGENTS.md``
+  entry point and the assigned role's instructions.
 - Helpers of ``command-contract-helpers.cjs`` this script never calls (``parseFrontmatter``,
   ``executionContextRefs``, ``workflowPathRefs``, ``unreachableWorkflows``, ``CANONICAL_TOOLS``)
   are not ported; they belong to the command-contract lint.
@@ -298,7 +298,7 @@ REMEDIES = {
     "legacy_read_tag":
         "replace <files_to_read> with <required_reading> (#3423 standardized on the gate tag)",
     "read_tag_gate_missing":
-        "add the <required_reading> MUST-Read gate clause to this agent's instructions (see engineer/references/mandatory-initial-read.md)",
+        "add the <required_reading> MUST-Read gate clause to this agent's instructions (see AGENTS.md and the assigned role's required-reading instructions)",
     "unmatched_consumer_token":
         "declare the producing agent and marker in the registry, or remove the dispatch — nothing emits this token",
     "unresolved_reference_include":

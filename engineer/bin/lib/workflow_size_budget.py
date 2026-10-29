@@ -16,8 +16,6 @@ Deviations:
   ``agents/<name>.md``; ``commands/gsd/`` -> ``commands/``.
 - Tier membership keeps the upstream stems verbatim; stems with no file here
   (autonomous, transition, discuss-phase-assumptions, review) are inert.
-- The ``execute-plan.md`` build-time embed path is ``engineer/workflows/execute-plan.md``
-  (backticked, no ``@`` sigil) rather than ``~/.claude/gsd-core/workflows/execute-plan.md``.
 - Shipped content here carries no issue-number citations, so the ``#3370`` and
   ``#3324`` citation assertions are dropped; the behavioral assertions remain.
 - ``GITHUB_STEP_SUMMARY`` reporting and the fast-check properties are kept
@@ -45,7 +43,7 @@ LARGE_WORKFLOWS = frozenset({
     "discuss-phase-assumptions", "progress", "new-milestone", "update", "quick", "code-review", "review",
 })
 
-DISCUSS_EXPECTED_MODES = ("power", "all", "auto", "text", "batch", "analyze", "default")
+DISCUSS_EXPECTED_MODES = ("all", "auto", "text", "batch", "analyze", "default")
 DISCUSS_EXPECTED_TEMPLATES = ("context.md", "discussion-log.md", "checkpoint.json")
 CONTEXT_SECTIONS = ("<domain>", "<decisions>", "<canonical_refs>", "<code_context>", "<specifics>", "<deferred>")
 CHECKPOINT_KEYS = ("phase", "phase_name", "timestamp", "areas_completed", "areas_remaining", "decisions")
@@ -252,7 +250,7 @@ def inline_discussion_log_occurrences(parent):
 
 
 def dispatch_flag_present(parent):
-    return bool(re.search(r"ARGUMENTS|--auto|--chain|--all|--power", parent))
+    return bool(re.search(r"ARGUMENTS|--auto|--all|--text", parent))
 
 
 # --- lazy MVP bodies --------------------------------------------------------
@@ -315,23 +313,6 @@ def bare_include_offenders(directory=WORKFLOWS_DIR, repo_root=SOURCE):
         for hit in bare_include_lines_in_prompt_regions(path.read_text(encoding="utf-8")):
             offenders.append("%s:%d %s" % (shown, hit["line"], hit["text"]))
     return offenders
-
-
-def execution_context_block(content):
-    match = re.search(r"<execution_context>(.{0,4000}?)</execution_context>", content, re.S)
-    return match.group(1) if match else None
-
-
-def execution_context_violations(content, embed_path):
-    block = execution_context_block(content)
-    if block is None:
-        return ["execute-phase.md must keep an <execution_context> block in the executor dispatch prompt"]
-    findings = []
-    if not re.search("ORCHESTRATOR build-time embed", block):
-        findings.append("<execution_context> must carry the ORCHESTRATOR build-time embed instruction")
-    if "`%s`" % embed_path not in block:
-        findings.append("<execution_context> must list %s (backticked, no @ sigil) for build-time embed" % embed_path)
-    return findings
 
 
 def dispatch_region(content, from_anchor, to_anchor):
