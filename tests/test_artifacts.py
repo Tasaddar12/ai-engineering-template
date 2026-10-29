@@ -26,7 +26,7 @@ is_canonical_planning_file = _m.is_canonical_planning_file
 
 EXPECTED_EXACT = {
     "PROJECT.md", "ROADMAP.md", "STATE.md", "REQUIREMENTS.md", "MILESTONES.md", "BACKLOG.md", "LEARNINGS.md",
-    "THREADS.md", "config.json", "CLAUDE.md", "RETROSPECTIVE.md", "WINDOWS.md", "STATE-ARCHIVE.md",
+    "THREADS.md", "config.json", "CLAUDE.md", "RETROSPECTIVE.md", "WINDOWS.md", "windows.json", "STATE-ARCHIVE.md",
     "milestone.lock", "state.json", "skill-manifest.json", "PATTERNS.md",
 }
 
@@ -64,7 +64,7 @@ class IsCanonicalPlanningFileTests(unittest.TestCase):
             self.assertIs(True, is_canonical_planning_file(name), name)
 
     def test_specific_registry_entries(self):
-        for name in ("STATE.md", "config.json", "state.json", "WINDOWS.md", "PATTERNS.md", "RETROSPECTIVE.md"):
+        for name in ("STATE.md", "config.json", "state.json", "WINDOWS.md", "windows.json", "PATTERNS.md", "RETROSPECTIVE.md"):
             self.assertIs(True, is_canonical_planning_file(name))
 
     def test_unrecognized_files(self):

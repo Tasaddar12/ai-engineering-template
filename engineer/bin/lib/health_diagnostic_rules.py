@@ -518,7 +518,7 @@ def normalize_state_status(status, paused_at=None):
 
 CANONICAL_EXACT = frozenset([
     "PROJECT.md", "ROADMAP.md", "STATE.md", "REQUIREMENTS.md", "MILESTONES.md", "BACKLOG.md", "LEARNINGS.md",
-    "THREADS.md", "config.json", "CLAUDE.md", "RETROSPECTIVE.md", "WINDOWS.md", "STATE-ARCHIVE.md",
+    "THREADS.md", "config.json", "CLAUDE.md", "RETROSPECTIVE.md", "WINDOWS.md", "windows.json", "STATE-ARCHIVE.md",
     "milestone.lock", "state.json", "skill-manifest.json", "PATTERNS.md",
 ])
 CANONICAL_PATTERNS = (
