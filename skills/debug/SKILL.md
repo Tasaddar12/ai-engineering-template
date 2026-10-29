@@ -28,6 +28,7 @@ Debug issues using scientific method with subagent isolation.
 
 <available_agent_types>
 Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
+- debug-session-manager — manages debug checkpoint/continuation loop in isolated context
 - debugger — investigates bugs using scientific method
 </available_agent_types>
 

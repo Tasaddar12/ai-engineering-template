@@ -25,6 +25,7 @@ DEFAULTS = {
         "pattern_mapping": True,
         "drift_threshold": 3, "drift_action": "warn",
     },
+    "features": {"global_learnings": False},
     "executor": {"stall_detect_interval_minutes": 5, "stall_threshold_minutes": 10},
     "planner": {"stall_detection_enabled": True, "stall_detect_interval_minutes": 5, "stall_threshold_minutes": 10},
     "quick_batch": {"capacity": 3}, "worktree": {"directory": ".worktrees", "branch_prefix": "codex/"},
@@ -37,8 +38,8 @@ DEFAULTS = {
         "claude": {"command": "claude", "args": ["--print"], "harness": False},
         "codex": {"command": "codex", "args": ["exec", "--sandbox", "workspace-write", "-"], "harness": False}}},
 }
-ROLES = {"coordinator", "executor", "planner", "plan-checker", "phase-researcher", "verifier", "code-reviewer", "debugger", "doc-writer", "doc-verifier", "integration-checker", "codebase-mapper", "scout", "targeted-fixer", "security-auditor", "nyquist-auditor", "pattern-mapper", "code-fixer", "ui-researcher", "ui-checker", "ui-auditor", "dom-verifier"}
-DROPPED = {"use_worktrees", "worktree_skip_hooks", "_auto_chain_active", "global_learnings", "plan_review_convergence"}
+ROLES = {"coordinator", "executor", "planner", "plan-checker", "phase-researcher", "verifier", "code-reviewer", "debugger", "doc-writer", "doc-verifier", "integration-checker", "codebase-mapper", "scout", "targeted-fixer", "security-auditor", "nyquist-auditor", "pattern-mapper", "code-fixer", "ui-researcher", "ui-checker", "ui-auditor", "dom-verifier", "debug-session-manager"}
+DROPPED = {"use_worktrees", "worktree_skip_hooks", "_auto_chain_active", "plan_review_convergence"}
 ROLE_ALIASES = {"coder":"executor", "phase-preparer":"planner", "phase-checker":"plan-checker", "researcher":"phase-researcher"}
 
 

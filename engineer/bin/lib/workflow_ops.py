@@ -2,6 +2,8 @@
 import fnmatch
 import hashlib
 import json
+import os
+from pathlib import Path
 import re
 import sys
 from . import config, models, records
@@ -314,6 +316,61 @@ def _health(args):
             "counts": {"errors": len(errors), "warnings": len(warnings), "info": len(info)}, "structuralOnly": True}
 
 
+def _learnings(args, action):
+    directory = records.planning()/"learnings"
+    enabled = config.lookup(config.load(), "features.global_learnings", False) is True
+    knowledge = Path(os.environ.get("ENGINEER_KNOWLEDGE_DIR", str(Path.home()/".engineer/knowledge"))).expanduser()
+    if action == "learnings-query":
+        query = str(args.get("query", args.arg(0, ""))).casefold()
+        items = [load_json(safe_path(path)) for path in sorted(directory.glob("*.json"))]
+        if enabled:
+            for path in sorted(knowledge.glob("*.md")):
+                metadata, body = split_frontmatter(read(path))
+                items.append({**metadata, "text": body, "source": str(path)})
+            items.extend(load_json(path) for path in sorted(knowledge.glob("*.json")))
+        tag = str(args.get("tag", "")).casefold()
+        try:
+            limit = int(args.get("limit", 5))
+        except (TypeError, ValueError) as exc:
+            raise Failure("invalid-learning-limit", "Supply a positive integer", 2) from exc
+        if limit < 1:
+            raise Failure("invalid-learning-limit", "Supply a positive integer", 2)
+        matches = [item for item in items if query in json.dumps(item).casefold()
+                   and (not tag or tag in json.dumps(item).casefold())]
+        return {"items": matches[:limit]}
+    if action == "learnings-copy" and not args.has("input"):
+        if not enabled:
+            return {"stored": False, "copied": False, "reason": "feature-disabled"}
+        phase = _phase(args)
+        sources = sorted(phase.glob("*-LEARNINGS.md"))
+        if not sources:
+            raise Failure("learnings-not-found", str(phase), 2)
+        copied = []
+        for source in sources:
+            source = safe_path(source)
+            metadata, _ = split_frontmatter(read(source))
+            if not metadata.get("project"):
+                raise Failure("invalid-learnings", "Learning artifact needs its source project", 2)
+            key = hashlib.sha256((str(root())+"\n"+source.relative_to(root()).as_posix()).encode()).hexdigest()
+            destination = knowledge/(key+".md")
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(source.read_bytes())
+            copied.append(str(destination))
+        return {"stored": True, "copied": True, "paths": copied, "globalCopy": True}
+    packet = load_json(safe_path(args.get("input", "")))
+    if not isinstance(packet, dict) or not isinstance(packet.get("items"), list):
+        raise Failure("invalid-learnings", "Supply authored items; source interpretation belongs to the specialist", 2)
+    for item in packet["items"]:
+        if not isinstance(item, dict) or item.get("category") not in ("decisions", "lessons", "patterns", "surprises") or not item.get("text"):
+            raise Failure("invalid-learning", "Each item needs an allowed category, actual text and citations", 2)
+        item["citations"] = _citations(item.get("citations"))
+    key = hashlib.sha256(json.dumps(packet, sort_keys=True).encode()).hexdigest()
+    destination = safe_path(args.get("destination"))/ (key+".json") if action == "learnings-copy" and args.has("destination") else directory/(key+".json")
+    with planning_lock():
+        write_json(destination, {**packet, "id": key, "recorded": now()})
+    return {"stored": True, "copied": action == "learnings-copy", "id": key, "path": str(destination), "globalCopy": False}
+
+
 def command(args, action):
     if action == "security":
         from .security_tracking import command as security_command
@@ -340,6 +397,8 @@ def command(args, action):
                 "message": f"Context utilization: {percent:.1f}% ({state})"}
     if action == "health":
         return _health(args)
+    if action.startswith("learnings-"):
+        return _learnings(args, action)
     if action == "threadscan":
         path = safe_path(args.get("input", args.arg(0, "")))
         packet = load_json(path)

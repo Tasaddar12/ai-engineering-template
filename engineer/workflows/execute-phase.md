@@ -1155,6 +1155,36 @@ engineer_run query commit "docs(phase-{X}): complete phase execution" --files .p
 After canonical phase completion, run the retained `engineer/workflows/graduation.md` method for its bounded improvement scan and disposition. Preserve manual `/extract-learnings` as the explicit learning extraction owner.
 </step>
 
+<step name="auto_copy_learnings">
+**Auto-extract and copy phase learnings to global store (when enabled).**
+
+This step runs AFTER phase completion and SUMMARY.md is written. It produces the phase's
+learnings artifact (the sole producer is otherwise the user-invoked
+`/extract-learnings`) and copies it to the global learnings store at
+`~/.engineer/knowledge/`.
+
+**Check config gate:**
+
+```bash
+GL_ENABLED=$(engineer_run query config-get features.global_learnings --raw 2>/dev/null || echo "false")
+```
+
+**If `GL_ENABLED` is not `true`:** Skip this step entirely (feature disabled by default).
+
+**If enabled:**
+
+1. Run the `extract-learnings` workflow for the JUST-COMPLETED phase (its
+   `write_learnings` step writes `{phase_dir}/{PADDED_PHASE}-LEARNINGS.md`). Extraction
+   failure must NOT block phase completion — report the failure and continue.
+2. Copy the phase artifact to the global store:
+
+```bash
+engineer_run query learnings.copy --phase "${PHASE_NUMBER}" 2>/dev/null || echo "⚠ Learnings copy failed — continuing"
+```
+
+Copy failure must NOT block phase completion.
+</step>
+
 <step name="close_phase_todos">
 **Auto-close todos whose `resolves_phase` matches this phase **, after `update_roadmap`.
 

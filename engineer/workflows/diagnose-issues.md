@@ -147,7 +147,7 @@ placeholder, not a shell variable.
 
 <!-- model-omit-on-inherit -->
 
-> **Model omission.** Omit the `effort` parameter entirely when `DEBUGGER_EFFORT` is `"inherit"` or empty. Omit the `model` parameter entirely when the value it would carry (`DEBUGGER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model.
+> **Model omission.** Omit the `effort` parameter entirely when `DEBUGGER_EFFORT` is `"inherit"` or empty. Omit the `model` parameter entirely when the value it would carry (`DEBUGGER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```
 Agent(

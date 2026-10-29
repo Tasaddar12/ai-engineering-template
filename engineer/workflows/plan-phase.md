@@ -139,11 +139,11 @@ Omit the `model=` param from an `Agent()` call when its `researcher`/`planner`/`
 
 ## 1.5. Closed-Phase Gate
 
-Read and execute `engineer/workflows/plan-phase/steps/closed-phase-gate.md` — it parses `phase_status` from the init JSON, sets `FORCE_REPLAN` from `$ARGUMENTS`, and hard-stops replanning a `Complete` phase: on a closed phase is never overridable (exit 1), and replanning otherwise requires `--force` (else exit 1, pointing at `${verification_path}`); under `--force` it continues but emits a WARNING banner. Only `Complete` is gated — `Executed` / `Needs Review` are legitimate replans.
+Read and execute `engineer/workflows/plan-phase/steps/closed-phase-gate.md` — it parses `phase_status` from the init JSON, sets `FORCE_REPLAN` from `$ARGUMENTS`, and hard-stops replanning a `Complete` phase: `--reviews` on a closed phase is never overridable (exit 1), and replanning otherwise requires `--force` (else exit 1, pointing at `${verification_path}`); under `--force` it continues but emits a WARNING banner. Only `Complete` is gated — `Executed` / `Needs Review` are legitimate replans.
 
 ## 2. Parse and Normalize Arguments
 
-Extract from $ARGUMENTS: phase number (integer or decimal like `2.1`), flags (`--research`, `--skip-research`, `--gaps`, `--skip-verify`, `--skip-ui`, `--text`, `--no-reversibility-gates`, `--tdd`, `--granularity <coarse|standard|fine>`, `--force` (override closed-phase gate, see §1.5)).
+Extract from $ARGUMENTS: phase number (integer or decimal like `2.1`), flags (`--research`, `--skip-research`, `--gaps`, `--skip-verify`, `--skip-ui`, `--reviews`, `--text`, `--no-reversibility-gates`, `--tdd`, `--granularity <coarse|standard|fine>`, `--force` (override closed-phase gate, see §1.5)).
 
 
 **Baseline-discipline flags.** `REVERSIBILITY_GATES` defaults to `true`; it is not persisted per-phase or read from config.
@@ -174,6 +174,8 @@ Set `phase_dir="${expected_phase_dir}"` after creation.
 
 **Existing artifacts from init:** `has_research`, `has_plans`, `plan_count`.
 
+
+**Reviews mode:** When `--reviews` is present, require the phase's existing `REVIEWS.md` snapshot and set `reviews_path`/`REVIEWS_PATH` to its actual path. If it is missing, stop with an actionable missing-review error. Pass the snapshot to planner and checker; load `engineer/references/planner-reviews.md` and preserve its review-disposition ledger and revision-conflict handling. Skip research and the ordinary existing-plan menu for this mode. Do not silently fall back to standard planning.
 
 ## 3. Validate Phase
 
@@ -237,7 +239,7 @@ If "Run discuss-phase first":
 
 ## 5. Handle Research
 
-**Skip if:** `--gaps` flag or `--skip-research` flag .
+**Skip if:** `--gaps` flag or `--skip-research` flag or `--reviews` flag.
 
 
 **If `has_research` is true (from init) AND no `--research` flag:** Use existing, skip to step 6.
@@ -346,7 +348,7 @@ When the UI safety gate is enabled, run `engineer_run check ui-plan-gate "${PHAS
 ls "${PHASE_DIR}"/*-PLAN.md 2>/dev/null || true
 ```
 
-**If exists AND no flag:** Offer: 1) Add more plans, 2) View existing, 3) Replan from scratch.
+**If exists AND no `--reviews` flag:** Offer: 1) Add more plans, 2) View existing, 3) Replan from scratch.
 
 ## 7. Use Context Paths from INIT
 
@@ -471,6 +473,7 @@ Planner prompt:
 - {PATTERNS_PATH} (Pattern Map — analog files and code excerpts, if exists)
 - {verification_path} (Verification Gaps - if --gaps)
 - {uat_path} (UAT Gaps - if --gaps)
+- {reviews_path} (Review Feedback - if --reviews; disposition every actionable finding)
 - {UI_SPEC_PATH} (UI Design Contract — visual/interaction specs, if exists)
 - {SPEC_PATH} (Phase SPEC — carries the ## Edge Coverage section to lift resolved edges from, if exists)
 ${CONTEXT_WINDOW >= 500000 ? `
@@ -723,6 +726,7 @@ Checker prompt:
 - {requirements_path} (Requirements)
 - {context_path} (USER DECISIONS from /discuss-phase)
 - {research_path} (Technical Research — includes Validation Architecture)
+- {reviews_path} (Review Feedback - if --reviews; check the disposition ledger)
 </required_reading>
 
 ${AGENT_SKILLS_CHECKER}

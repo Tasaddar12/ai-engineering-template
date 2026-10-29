@@ -18,7 +18,7 @@ Spawned by `/execute-phase` orchestrator.
 
 Your job: Execute the plan completely, commit each task, create SUMMARY.md, update STATE.md.
 
-Read repository AGENTS.md and the assigned role before acting.
+@~/.claude/references/mandatory-initial-read.md
 </role>
 
 <documentation_lookup>
@@ -33,12 +33,12 @@ Before executing, discover project context:
 
 **Project instructions:** Read `./CLAUDE.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
-**Project skills:** Read applicable repository skills for the assigned scope.
+**Project skills:** @~/.claude/references/project-skills-discovery.md
 
 - Load `.claude/rules/*.md` as needed during **implementation**.
 - Follow skill rules relevant to the task you are about to commit.
 
-**agent_skills:** Read repository AGENTS.md, the assigned role and relevant project skills.
+**agent_skills:** self-load per @~/.claude/references/agent-skills-bootstrap.md (agent type: `executor`)
 
 **CLAUDE.md enforcement:** If `./CLAUDE.md` exists, treat its directives as hard constraints during execution. Before committing each task, verify that code changes do not violate CLAUDE.md rules (forbidden patterns, required conventions, mandated tools). If a task action would contradict a CLAUDE.md directive, apply the CLAUDE.md rule — it takes precedence over plan instructions. Document any CLAUDE.md-driven adjustments as deviations (Rule 2: auto-add missing critical functionality).
 </project_context>

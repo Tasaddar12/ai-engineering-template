@@ -380,10 +380,16 @@ roadmap phases/counts/percent, progress_percent, and all_phases_verified.
 
 The retired dynamic `check`, `check.predicate`, capability `loop.*`, external
 `review.run`/`review.collect` and `review-lane`, PID `worktree.worker-*`,
-`research-store.*`, estimator, broken-windows, intel and learning-copy routes are
+`research-store.*`, estimator, broken-windows and intel routes are
 not registered. Unknown `check.*` names are rejected. Native review uses
 `review.dispatch`, `review.record` and `review.status`.
 
 `check.prohibition-enforcement --payload JSON` (or a positional request file)
 runs the direct prohibition gate. Missing enforcement proof stays flagged and
 unverified; a caller assertion never replaces an actual fail-first check.
+
+`learnings.extract --input FILE` retains authored items with repository citations.
+With `features.global_learnings` enabled, `learnings.copy --phase N` copies the
+phase's existing LEARNINGS.md artifact into `~/.engineer/knowledge/`, preserving
+its source project and bytes. `learnings.query --tag TAG --limit 5` reads matching
+local and enabled global knowledge; project decisions still take precedence.

@@ -1,5 +1,6 @@
 """Behavioral checks for retired CLI rejection and retained native safety routes."""
 import json
+from pathlib import Path
 try:
     from .test_engineer_runtime import RuntimeCase
 except ImportError:
@@ -7,6 +8,46 @@ except ImportError:
 
 
 class LegacyRuntimeRetirement(RuntimeCase):
+    def test_retained_global_learnings_copy_query_and_refresh(self):
+        self.init_records()
+        store = self.root / "global-knowledge"
+        self.env["ENGINEER_KNOWLEDGE_DIR"] = str(store)
+        artifact = self.put(".planning/phases/01-fixture/01-LEARNINGS.md",
+                            "---\nproject: Source Project\ntags: [worktrees]\n---\n# Lessons\nKeep fixes isolated.\n")
+        disabled = self.cli("learnings.copy", "--phase", "1")
+        self.assertFalse(disabled["copied"])
+        self.assertFalse(store.exists())
+        self.cli("config-set", "features.global_learnings", "true")
+        self.assertEqual("debug-session-manager", self.cli("resolve-agent", "debug-session-manager")["name"])
+        copied = self.cli("learnings.copy", "--phase", "1")
+        self.assertTrue(copied["globalCopy"])
+        destination = store / (Path(copied["paths"][0]).name)
+        self.assertEqual(artifact.read_bytes(), destination.read_bytes())
+        found = self.cli("learnings.query", "--tag", "worktrees", "--limit", "1")["items"]
+        self.assertEqual("Source Project", found[0]["project"])
+        self.assertIn("Keep fixes isolated.", found[0]["text"])
+        self.assertEqual([], self.cli("learnings.query", "--tag", "unrelated")["items"])
+        artifact.write_text(artifact.read_text() + "Use a fresh branch.\n", encoding="utf-8")
+        self.assertEqual(copied["paths"], self.cli("learnings.copy", "--phase", "1")["paths"])
+        self.assertEqual(1, len(list(store.glob("*.md"))))
+        self.assertEqual(artifact.read_bytes(), destination.read_bytes())
+        self.cli("learnings.query", "--limit", "0", status=2, raw=True)
+        self.cli("learnings.query", "--limit", "invalid", status=2, raw=True)
+        self.cli("config-set", "features.global_learnings", "false")
+        self.assertEqual([], self.cli("learnings.query", "--tag", "worktrees")["items"])
+
+    def test_retained_learning_extraction_requires_real_citations(self):
+        self.init_records()
+        packet = {"items": [{"category": "lessons", "text": "Retain user-approved behavior.",
+                             "citations": ["README.md"]}]}
+        source = self.put("learning-input.json", json.dumps(packet))
+        result = self.cli("learnings.extract", "--input", source)
+        self.assertTrue(result["stored"])
+        self.assertEqual(1, len(self.cli("learnings.query", "--query", "user-approved")["items"]))
+        packet["items"][0]["citations"] = ["missing.md"]
+        source.write_text(json.dumps(packet), encoding="utf-8")
+        self.cli("learnings.extract", "--input", source, status=2, raw=True)
+
     def test_retired_routes_are_unknown_and_do_not_mutate_records(self):
         self.init_records()
         state = (self.root / ".planning/STATE.md").read_bytes()
@@ -16,7 +57,7 @@ class LegacyRuntimeRetirement(RuntimeCase):
                    "normalize-test-command", "detect-custom-files", "custom-files.backup", "restore-custom-files",
                    "verify.context-drift", "worktree.worker-record", "worktree.worker-status", "worktree.worker-complete",
                    "loop.render-hooks", "loop.events", "loop.list", "windows.append", "windows.status",
-                   "intel.api-surface", "learnings.extract", "roadmap.annotate-dependencies", "quick-tasks-append",
+                   "intel.api-surface", "roadmap.annotate-dependencies", "quick-tasks-append",
                    "quick-tasks-migrate", "review.contributions"]
         verbs = self.cli("verbs")["verbs"]
         for verb in retired:

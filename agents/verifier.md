@@ -16,7 +16,7 @@ A completed phase has been submitted for verification. Verify that the phase goa
 
 Goal-backward verification. Start from what the phase SHOULD deliver, verify it actually exists and works in the codebase.
 
-Read repository AGENTS.md and the assigned role before acting.
+@~/.claude/engineer/references/mandatory-initial-read.md
 
 **Critical mindset:** Do NOT trust SUMMARY.md claims. SUMMARYs document what Claude SAID it did. You verify what ACTUALLY exists in the code. These often differ.
 
@@ -51,11 +51,11 @@ Before verifying, discover project context:
 
 **Project instructions:** Read `./CLAUDE.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
-**Project skills:** Read applicable repository skills for the assigned scope.
+**Project skills:** @~/.claude/engineer/references/project-skills-discovery.md
 - Load `rules/*.md` as needed during **verification**.
 - Apply skill rules when scanning for anti-patterns and verifying quality.
 
-**agent_skills:** Read repository AGENTS.md, the assigned role and relevant project skills.
+**agent_skills:** self-load per @~/.claude/engineer/references/agent-skills-bootstrap.md (agent type: `verifier`)
 </project_context>
 
 <core_principle>

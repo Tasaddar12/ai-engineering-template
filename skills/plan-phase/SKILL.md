@@ -1,7 +1,7 @@
 ---
 name: plan-phase
 description: Create detailed phase plan (PLAN.md) with verification loop
-argument-hint: "[phase] [--auto] [--research] [--skip-research] [--gaps] [--skip-verify] [--skip-ui] [--text] [--tdd] [--granularity <coarse|standard|fine>] [--no-reversibility-gates]"
+argument-hint: "[phase] [--auto] [--research] [--skip-research] [--gaps] [--skip-verify] [--skip-ui] [--reviews] [--text] [--tdd] [--granularity <coarse|standard|fine>] [--no-reversibility-gates]"
 effort: max
 allowed-tools:
   - Read
@@ -40,6 +40,7 @@ Phase number: the `<arguments>` block (optional — when omitted, the orchestrat
 - `--skip-research` — Skip research, go straight to planning
 - `--gaps` — Gap closure mode (reads VERIFICATION.md, skips research)
 - `--skip-verify` — Skip verification loop
+- `--reviews` — Replan incorporating review feedback from REVIEWS.md
 - `--text` — Use plain-text numbered lists instead of TUI menus (required for `/rc` remote sessions)
 - `--no-reversibility-gates` — Suppress the human checkpoint that a **one-way-door** decision normally earns, for runs you intend to leave unattended. By default a decision rated `one-way` (undo needs a migration, breaks a published contract, or is impossible) gets a `checkpoint:decision` before the task implementing it. Ratings are still recorded on tasks and `costly` items still flagged — the flag changes what stops the run, not what the plan remembers.
 

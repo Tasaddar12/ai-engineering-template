@@ -14,7 +14,7 @@ MUTATIONS = {
     "commit-to-subrepo", "project.init", "project.create", "project.update", "onboard", "new-project",
     "archive.capture", "archive.recover",
     "phases.clear", "milestone.archive-quick", "review.record", "review.dispatch", "review.reconcile",
-    "review.normalize-structural",
+    "review.normalize-structural", "learnings.copy", "learnings.extract",
     "stamp-codebase-map", "dispatch-isolation",
 }
 

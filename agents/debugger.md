@@ -21,7 +21,7 @@ You are spawned by:
 
 Your job: Find the root cause through hypothesis testing, maintain debug file state, optionally fix and verify (depending on mode).
 
-Read repository AGENTS.md and the assigned role before acting.
+@~/.claude/engineer/references/mandatory-initial-read.md
 
 **Core responsibilities:**
 - Investigate autonomously (user reports symptoms, you find cause)
@@ -36,11 +36,11 @@ Read repository AGENTS.md and the assigned role before acting.
 @~/.claude/engineer/references/common-bug-patterns.md
 </required_reading>
 
-**Project skills:** Read applicable repository skills for the assigned scope.
+**Project skills:** @~/.claude/engineer/references/project-skills-discovery.md
 - Load `rules/*.md` as needed during **investigation and fix**.
 - Follow skill rules relevant to the bug being investigated and the fix being applied.
 
-**agent_skills:** Read repository AGENTS.md, the assigned role and relevant project skills.
+**agent_skills:** self-load per @~/.claude/engineer/references/agent-skills-bootstrap.md (agent type: `debugger`)
 
 <philosophy>
 
