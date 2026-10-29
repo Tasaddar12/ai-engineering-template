@@ -4,6 +4,9 @@ import re
 import shutil
 import importlib.util
 import os
+import json
+import subprocess
+import shlex
 from pathlib import Path
 import sys
 import tempfile
@@ -36,9 +39,21 @@ needs_fast_bash = unittest.skipUnless(
     "POSIX-only executed fence matrix (set ENGINEER_CRP_FORCE_BASH=1 to force on Windows)")
 
 
-def scope_section(src=WORKFLOW):
-    start = src.index("const files = [];")
-    return src[start:src.index("if (files.length)", start)]
+def runtime_query(directory, *arguments, input=None):
+    """Exercise the registered CLI, isolated from ambient Python packages."""
+    return subprocess.run([sys.executable, "-I", str(SOURCE / "engineer/bin/engineer.py"),
+                           "query", *arguments], cwd=directory, input=input,
+                          capture_output=True, text=True, encoding="utf-8", timeout=60,
+                          env={**os.environ, "ENGINEER_ROOT": str(directory)})
+
+
+def summary_files(text):
+    with tempfile.TemporaryDirectory(prefix="engineer-summary-") as directory:
+        Path(directory, "SUMMARY.md").write_text("---\n" + text + "\n---\n", encoding="utf-8")
+        result = runtime_query(directory, "review.summary-files", "SUMMARY.md", "--raw")
+        if result.returncode:
+            raise AssertionError(result.stderr or result.stdout)
+        return result.stdout.splitlines()
 
 
 class TempCase(unittest.TestCase):
@@ -61,7 +76,11 @@ class ComputeFileScopeParser(unittest.TestCase):
         self.assertEqual("", crp.bash_syntax_error(script), "bash rejected the shipped fence")
 
     def test_4461_shipped_extractor_helper_with_adversarial_input(self):
-        self.skipTest("the shipped extract_summary_files helper runs `node -`; Node is never executed by this suite")
+        self.assertEqual(["Dockerfile", "app/page.tsx", "tests/bar.test.ts"], summary_files(
+            "key-files:\n  created:\n    - Dockerfile — multi-stage build\n"
+            "    - app/page.tsx — filters for topic/mode/date\n"
+            "    - tests/bar.test.ts (122 lines — 17 assertions)\n"
+            "key-decisions:\n  - ignore/a/prose narrative"))
 
     def test_extracts_only_created_and_modified_entries(self):
         yaml = "\n".join([
@@ -115,19 +134,34 @@ class ComputeFileScopeParser(unittest.TestCase):
         yaml = "key-files:\n  modified:\n    - Dockerfile — multi-stage build"
         self.assertEqual(["Dockerfile"], crp.parse_key_files(yaml))
 
-    def test_workflow_contains_hyphen_aware_boundary_regex(self):
-        self.assertTrue("[\\\\w-]" in scope_section() or "[\\w-]" in scope_section())
+    def test_runtime_stops_at_hyphenated_section_boundaries(self):
+        self.assertEqual(["src/index.ts"], summary_files(
+            "key-files:\n  created:\n    - src/index.ts\nkey-decisions:\n  - topic/mode/date filters"))
 
-    def test_workflow_contains_em_dash_split_and_parenthetical_strip(self):
-        section = scope_section()
-        self.assertIn("replace(/\\s+\\([^)]*\\)\\s*$, '')".replace("$,", "$/,"), section)
-        self.assertIn("split(/\\s+—\\s", section)
+    def test_runtime_strips_em_dash_and_parenthetical_narrative(self):
+        self.assertEqual(["app/foo.tsx", "tests/bar.test.ts"], summary_files(
+            "key-files:\n  created:\n    - app/foo.tsx — topic/mode/date filters\n"
+            "    - tests/bar.test.ts (122 lines — 17 assertions)"))
 
-    def test_2666_workflow_does_not_carry_the_buggy_slash_and_extension_predicate(self):
-        self.assertNotIn("/\\//.test(raw) && /\\.[A-Za-z0-9]+$/.test(raw)", scope_section())
+    def test_runtime_accepts_nested_and_root_paths_without_the_slash_extension_bug(self):
+        self.assertEqual(["package.json", "docker/Dockerfile"], summary_files(
+            "key-files:\n  created:\n    - package.json\n    - docker/Dockerfile"))
 
-    def test_2666_workflow_accepts_known_extensionless_build_files(self):
-        self.assertRegex(scope_section(), r"(?i)dockerfile")
+    def test_runtime_accepts_known_extensionless_build_files(self):
+        self.assertEqual(["Dockerfile", "Makefile", "Justfile", "Containerfile", "Procfile"], summary_files(
+            "key-files:\n  modified:\n" + "".join("    - " + name + "\n" for name in
+            ["Dockerfile", "Makefile", "Justfile", "Containerfile", "Procfile"])))
+
+    def test_runtime_rejects_summary_paths_outside_project(self):
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "SUMMARY.md").write_text(
+                "---\nkey-files:\n  created:\n    - ../outside.py\n---\n", encoding="utf-8")
+            result = runtime_query(directory, "review.summary-files", "SUMMARY.md", "--raw")
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("path", (result.stdout + result.stderr).lower())
+
+    def test_shipped_extractor_delegates_to_registered_summary_parser(self):
+        self.assertIn('engineer_run query review.summary-files "$1"', WORKFLOW_LF)
 
     def test_2666_tier3_cross_check_uses_exact_whole_line_matching(self):
         self.assertIn("grep -Fxq", WORKFLOW)
@@ -148,12 +182,37 @@ class SeverityLabelParser(unittest.TestCase):
     def test_neither_label_returns_zero(self):
         self.assertEqual(0, crp.parse_frontmatter_critical("findings:\n  warning: 3\n  info: 1\n  total: 4"))
 
-    def test_present_results_grep_accepts_both_labels(self):
-        self.assertIn('grep -E "^[[:space:]]*(critical|blocker):"', WORKFLOW)
+    @needs_bash
+    def test_present_results_accepts_both_labels(self):
+        script = crp.fence_containing(WORKFLOW_LF, "CRITICAL=$(", WORKFLOW_LF.index('<step name="present_results">'))
+        for label in ("critical", "blocker"):
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as directory:
+                Path(directory, "REVIEW.md").write_text(
+                    "---\nfindings:\n  " + label + ": 8\n---\n", encoding="utf-8")
+                prefix = "engineer_run() { " + shlex.quote(crp.posix(sys.executable)) + " -I " + shlex.quote(crp.posix(SOURCE / "engineer/bin/engineer.py")) + ' "$@"; }\nREVIEW_PATH=REVIEW.md\n'
+                result = crp.run_bash(prefix + script + '\nprintf "%s" "$CRITICAL"',
+                                      cwd=directory, env={**os.environ, "ENGINEER_ROOT": directory})
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertEqual("8", result.stdout.strip())
 
     def test_present_results_includes_bl_headings_alongside_cr_and_wr(self):
         self.assertTrue("### BL-" in WORKFLOW and "### CR-" in WORKFLOW and "### WR-" in WORKFLOW
                         or "^### CR-\\|^### BL-\\|^### WR-" in WORKFLOW)
+
+
+class CommitReviewStatusGate(TempCase):
+    @needs_bash
+    def test_valid_status_is_accepted_and_missing_status_is_rejected(self):
+        script = crp.fence_containing(WORKFLOW_LF, "HAS_STATUS=$(", WORKFLOW_LF.index('<step name="commit_review">'))
+        for status in ("clean", "issues_found", None):
+            with self.subTest(status=status):
+                directory = self.temp()
+                report = directory / "REVIEW.md"
+                report.write_text("---\n" + ("status: " + status if status else "phase: 01") + "\n---\n", encoding="utf-8")
+                prefix = "engineer_run() { " + shlex.quote(crp.posix(sys.executable)) + " -I " + shlex.quote(crp.posix(SOURCE / "engineer/bin/engineer.py")) + ' "$@"; }\nREVIEW_PATH=REVIEW.md\nCOMMIT_DOCS=false\n'
+                result = crp.run_bash(prefix + script, cwd=directory, env={**os.environ, "ENGINEER_ROOT": str(directory)})
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertEqual(status is not None, "REVIEW.md created at" in result.stdout, result.stdout)
 
 
 class FixerBlockerTier(unittest.TestCase):
@@ -254,7 +313,7 @@ class TildePathExpansion(TempCase):
         self.assertIn("\n  - this/relative/path/does-not-exist.md\n", "\n" + result.stdout.replace("\r", "") + "\n")
 
 
-class DiffBaseSingleOwner(unittest.TestCase):
+class DiffBaseSingleOwner(TempCase):
     """Upstream Bug 5/6 -> #5164: every diff-base site asks the one evaluation-scope owner."""
 
     def test_no_workflow_fence_hand_rolls_an_anchor_grep_or_range(self):
@@ -272,13 +331,35 @@ class DiffBaseSingleOwner(unittest.TestCase):
         self.assertIn("engineer_run check evaluation-scope", WORKFLOW_LF)
 
     def test_t1_tier3_and_fallow_bases_are_the_same_anchor(self):
-        self.skipTest("fallow pre-pass step absent in this repo, and the Tier-3 fence reads resolver JSON through `node -e`")
+        self.skipTest("upstream fallow pre-pass fixture absent in this repo")
 
     def test_t2_tier3_scope_is_the_union_of_recorded_task_commits(self):
-        self.skipTest("the Tier-3 fence reads resolver JSON through `node -e`; Node is never executed by this suite")
+        directory = self.temp()
+        subprocess.run(["git", "init", "-q", str(directory)], check=True, capture_output=True)
+        def commit(name, subject):
+            (directory / name).write_text(name, encoding="utf-8")
+            subprocess.run(["git", "add", name], cwd=directory, check=True, capture_output=True)
+            subprocess.run(["git", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                            "commit", "-qm", subject], cwd=directory, check=True, capture_output=True)
+        commit("first.py", "feat(01-01): first task")
+        commit("outside.py", "chore: interleaved change")
+        commit("second.py", "feat(01-02): second task")
+        result = runtime_query(directory, "review.scope", "--phase", "01")
+        self.assertEqual(0, result.returncode, result.stderr)
+        scope = json.loads(result.stdout)
+        self.assertEqual(["first.py", "second.py"], scope["files"])
+        self.assertEqual(["outside.py"], scope["outsideUnion"])
 
     def test_t3_no_committed_phase_directory_leaves_base_and_scope_empty(self):
-        self.skipTest("the Tier-3 fence reads resolver JSON through `node -e`; Node is never executed by this suite")
+        directory = self.temp()
+        subprocess.run(["git", "init", "-q", str(directory)], check=True, capture_output=True)
+        subprocess.run(["git", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                        "commit", "--allow-empty", "-qm", "initial"], cwd=directory, check=True, capture_output=True)
+        result = runtime_query(directory, "review.scope", "--phase", "01")
+        self.assertEqual(0, result.returncode, result.stderr)
+        scope = json.loads(result.stdout)
+        self.assertEqual([], scope["files"])
+        self.assertEqual("unresolved", scope["status"])
 
 
 class ModuleUnitsA(TempCase):
@@ -683,23 +764,64 @@ class LocalePinCensus(unittest.TestCase):
         self.assertRegex(DISPOSITION, r"\|\s*cut -d: -f2-")
 
 
-class DispositionLedgerNodeScript(unittest.TestCase):
-    """The per-finding ledger builder is the step's embedded `node -e` script; Node is never executed here."""
+class DispositionLedgerRuntime(TempCase):
+    """Previously Node-only ledger cases exercise the shipped Python verb."""
 
-    def test_ledger_rows_defaults_reconciliation_and_carrying(self):
-        self.skipTest("remaining cases that only the shipped `node -e` ledger script can answer are not executed: pipe escaping in "
-                      "deferral reasons (escaped, bare, adjacent, backslash-pipe), hostile/CRLF frontmatter in the ledger, "
-                      "title-whitespace/case identity, `.iterN` fix-report precedence, ledger YAML validity and empty-title records "
-                      "(the behaviours review.reconcile shares with the script are asserted above)")
+    def test_ledger_rows_preserve_pipe_reasons_and_crlf(self):
+        for reason in (r"wait \| vendor", "wait | vendor", r"one\|\|two", r"back\\|slash"):
+            with self.subTest(reason=reason):
+                fixture = crp.ReconcileFixture(self.temp())
+                prior = "| CR-01 | critical | deferred | " + reason + " |\r\n"
+                first = fixture.run(review_doc("### CR-01: a"), prior=prior)
+                self.assertEqual(0, first["returncode"], first["stderr"])
+                again = fixture.run(review_doc("### CR-01: a"))
+                self.assertEqual(first["rows"], again["rows"])
+                self.assertEqual("deferred", again["rows"][0]["disposition"])
 
-    def test_block2_derivation_and_shortfall_cases(self):
-        self.skipTest("block 2 ends in the `node -e` ledger script (#3861 round 2 derivation, round 12 shortfall cases)")
+    def test_shortfall_and_invalid_count_cases(self):
+        for count in (0, 1, 2):
+            with self.subTest(count=count):
+                out = crp.ReconcileFixture(self.temp()).run(review_doc("### CR-01: a"), review_total=count)
+                self.assertEqual(0, out["returncode"], out["stderr"])
+                self.assertEqual(max(0, count - 1), out["result"]["unparsed"])
 
     def test_ledger_write_refuses_non_regular_files(self):
-        self.skipTest("symlink/FIFO/directory ledger refusal is implemented inside the `node -e` ledger script")
+        fixture = crp.ReconcileFixture(self.temp())
+        fixture.ledger_path.mkdir()
+        result = runtime_query(fixture.directory, "review.reconcile", "--phase", "01",
+                               "--review-file", "01-REVIEW.md", "--disposition-file", fixture.ledger_path.name)
+        self.assertNotEqual(0, result.returncode)
+        self.assertTrue(fixture.ledger_path.is_dir())
+        self.assertIn("review-source-not-regular", result.stdout + result.stderr)
 
-    def test_embedded_script_fits_a_windows_command_line(self):
-        self.skipTest("the `node -e` script is rewritten to an engineer_run verb by export_transforms; Node is never executed here")
+    def test_ledger_write_refuses_symlinks_without_touching_target(self):
+        fixture = crp.ReconcileFixture(self.temp())
+        target = fixture.directory / "target.txt"
+        target.write_text("preserve target", encoding="utf-8")
+        try:
+            fixture.ledger_path.symlink_to(target)
+        except OSError as error:
+            self.skipTest("host cannot create symlinks: " + str(error))
+        result = runtime_query(fixture.directory, "review.reconcile", "--phase", "01",
+                               "--review-file", "01-REVIEW.md", "--disposition-file", fixture.ledger_path.name)
+        self.assertNotEqual(0, result.returncode)
+        self.assertEqual("preserve target", target.read_text(encoding="utf-8"))
+        self.assertTrue(fixture.ledger_path.is_symlink())
+
+    @unittest.skipUnless(hasattr(os, "mkfifo"), "host has no FIFO support")
+    def test_ledger_write_refuses_fifo_without_blocking(self):
+        fixture = crp.ReconcileFixture(self.temp())
+        os.mkfifo(fixture.ledger_path)
+        result = runtime_query(fixture.directory, "review.reconcile", "--phase", "01",
+                               "--review-file", "01-REVIEW.md", "--disposition-file", fixture.ledger_path.name)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("review-source-not-regular", result.stdout + result.stderr)
+
+    def test_runtime_has_no_embedded_command_line_script(self):
+        command = [sys.executable, "-I", str(SOURCE / "engineer/bin/engineer.py"),
+                   "query", "review.reconcile", "--phase", "01", "--review-file", "01-REVIEW.md",
+                   "--disposition-file", "01-REVIEW-DISPOSITION.md"]
+        self.assertLess(len(subprocess.list2cmdline(command)), 24576)
 
 
 # --- Increment C: workflow structure, id census, lookup, fixer, resolver ------------------
@@ -757,41 +879,41 @@ class DispositionStepStructure(unittest.TestCase):
 
 
 class EmbeddedScriptBudget(unittest.TestCase):
-    """Upstream #3861 round 16: the embedded script fits a Windows command line."""
+    """Runtime calls stay below the Windows command-line budget."""
 
-    CMDLINE_BUDGET = 24576  # the 32767 cap less ~8 KiB of deliberate headroom
+    def test_disposition_invocation_stays_under_windows_command_line_budget(self):
+        # Check the shipped call site once docs are integrated; no embedded script extraction.
+        calls = [fence for fence in crp.bash_fences(DISPOSITION) if "review.reconcile" in fence]
+        self.assertTrue(calls, "the disposition step must call the installed Python adapter")
+        for fence in calls:
+            invocation = fence[fence.index("engineer_run query review.reconcile"):]
+            self.assertLess(len(invocation), 24576)
 
-    def test_extracted_node_script_stays_under_the_windows_command_line_budget(self):
-        script = crp.disposition_script(DISPOSITION)
-        self.assertGreater(len(script), 4096, f"the extractor returned {len(script)} characters; it is not reading the shipped script")
-        self.assertLessEqual(len(script), self.CMDLINE_BUDGET)
 
+class FindingIdCensus(TempCase):
+    """Every emitted reviewer prefix must survive the registered ledger parser."""
 
-class FindingIdCensus(unittest.TestCase):
-    """Upstream #3861 round 1: every copy of the finding-id prefix set agrees."""
-
-    def test_every_copy_of_the_prefix_set_agrees_with_every_other(self):
-        script = crp.disposition_script(DISPOSITION)
-        alternations = crp.id_alternations(script)
-        self.assertGreaterEqual(len(alternations), 2, "the script must still enumerate finding-id prefixes")
-        self.assertEqual(1, len(set(alternations)), "the prefix enumerations have drifted apart: " + " vs ".join(alternations))
-        mapped, admitted = set(crp.severity_map_keys(script)), alternations[0].split("|")
-        self.assertEqual(["IN"], [prefix for prefix in admitted if prefix not in mapped],
-                         "only IN may rely on the info default; every other admitted prefix needs an explicit tier")
-        self.assertEqual([], [prefix for prefix in mapped if prefix not in admitted])
+    def test_all_canonical_prefixes_have_the_correct_tier(self):
+        review = review_doc("### CR-01: critical", "### BL-01: blocker", "### WR-01: warning", "### IN-01: info")
+        out = crp.ReconcileFixture(self.temp()).run(review)
+        self.assertEqual(0, out["returncode"], out["stderr"])
+        self.assertEqual([("CR-01", "critical"), ("BL-01", "critical"), ("WR-01", "warning"), ("IN-01", "info")],
+                         [(row["id"], row["severity"]) for row in out["rows"]])
 
     def test_prefix_set_covers_every_id_shape_the_reviewer_agent_emits(self):
         emitted = crp.emitted_id_prefixes(REVIEWER)
-        self.assertGreater(len(emitted), 0, "the reviewer agent must still declare its finding-id shapes")
-        known = set(crp.id_alternations(crp.disposition_script(DISPOSITION))[0].split("|"))
-        self.assertEqual(set(), emitted - known, "findings with these prefixes would get no disposition row at all")
+        self.assertTrue(emitted, "reviewer must declare its finding-id shapes")
+        for prefix in sorted(emitted):
+            with self.subTest(prefix=prefix):
+                out = crp.ReconcileFixture(self.temp()).run(review_doc("### " + prefix + "-01: finding"))
+                self.assertEqual([prefix + "-01"], [row["id"] for row in out["rows"]])
 
-    def test_one_letter_finding_prefix_in_the_agent_template_is_not_invisible(self):
+    def test_one_letter_finding_prefix_in_agent_template_is_not_invisible(self):
         self.assertGreater(len(re.findall(r"^###\s+([A-Z]+)-\d+:", REVIEWER, re.M)), 0)
         self.assertEqual({"C"}, crp.emitted_id_prefixes("### C-01: x"))
 
 
-class FixWorkflowReachability(unittest.TestCase):
+class FixWorkflowReachability(TempCase):
     """Upstream #3861 round 2: the disposition ledger is reachable in a shipped path."""
 
     FIX = crp.read_text(crp.FIX_WORKFLOW_PATH)
@@ -813,7 +935,19 @@ class FixWorkflowReachability(unittest.TestCase):
         self.assertIsNone(re.search(r'rm -f "\$\{REVIEW_PATH%\.md\}\.iter"', loop), "the loop must no longer delete the backups it just wrote")
 
     def test_gate_writes_all_open_and_the_fix_path_resolves_it(self):
-        self.skipTest("the two call sites are driven through the shipped `node -e` ledger script, which is never executed here")
+        fixture = crp.ReconcileFixture(self.temp())
+        review = review_doc("### CR-01: a")
+        first = fixture.run(review)
+        self.assertEqual("open", first["rows"][0]["disposition"])
+        subprocess.run(["git", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                        "commit", "--allow-empty", "-qm", "fix: repair CR-01"],
+                       cwd=fixture.directory, check=True, capture_output=True)
+        revision = subprocess.run(["git", "rev-parse", "HEAD"], cwd=fixture.directory,
+                                  check=True, capture_output=True, text=True, encoding="utf-8").stdout.strip()
+        fixed = fixture.run(review, fix="## Fixed Issues\n### CR-01: a\n**Commit:** " + revision)
+        self.assertEqual(0, fixed["returncode"], fixed["stderr"])
+        self.assertEqual("fixed", fixed["rows"][0]["disposition"])
+        self.assertEqual(0, fixed["result"]["open"])
 
 
 STEP_LINES = DISPOSITION.replace("\r\n", "\n").split("\n")
@@ -926,138 +1060,187 @@ class FixerTypeScriptCheck(unittest.TestCase):
 
 
 class HelperModuleResolver(unittest.TestCase):
-    """Upstream #5640: helper modules resolve from the installed runtime, not the cwd."""
+    """Review operations share the identity-checked Python runtime launcher."""
 
-    SITES = [{"file": crp.WORKFLOW_PATH, "module": "code-review-flags.cjs", "fatal": True},
-             {"file": crp.WORKFLOW_PATH, "module": "code-review-depth.cjs", "fatal": True},
-             {"file": crp.WORKFLOW_PATH, "module": "fallow-runner.cjs", "fatal": False}]
-
-    @staticmethod
-    def block(site):
-        siblings = [s for s in HelperModuleResolver.SITES if s["file"] == site["file"]]
-        return crp.resolver_blocks(crp.read_text(site["file"]))[siblings.index(site)]
-
-    def test_every_helper_loading_step_resolves_its_module_through_the_resolver(self):
-        for site in self.SITES:
-            with self.subTest(site["module"]):
-                src = crp.read_text(site["file"])
-                self.assertIn(site["module"], [b["module"] for b in crp.resolver_blocks(src)])
-                self.assertNotIn("require('./engineer/bin/lib", src)
-                self.assertNotIn('require("./engineer/bin/lib', src)
+    def test_every_helper_loading_step_uses_the_runtime_dispatcher(self):
+        for verb in ("review.flags", "review.depth", "review.normalize-fallow"):
+            with self.subTest(verb=verb):
+                self.assertIn("engineer_run query " + verb, WORKFLOW_LF)
+        self.assertNotRegex(WORKFLOW_LF, r"require\(['\"]\./engineer/bin/lib")
 
     def test_other_resolver_sites(self):
-        self.skipTest("workflows/review.md (pattern.cjs) and code-review/steps/structural-pre-pass.md (fallow-runner.cjs) absent in this repo")
+        self.skipTest("upstream review.md and structural-pre-pass.md fixtures absent in this repo")
 
-    def test_every_site_carries_the_same_resolver(self):
-        shapes = [crp.resolver_shape(self.block(site)["text"], site["module"]) for site in self.SITES]
-        for shape in shapes:
-            self.assertEqual(shapes[0], shape, "a site drifted from the shared resolver")
+    def test_one_identity_checked_resolver_initializes_all_operations(self):
+        self.assertEqual(1, WORKFLOW_LF.count("_engineer_identity_ok()"))
+        self.assertIn('query runtime-identity --pick packageName --raw', WORKFLOW_LF)
 
 
 @needs_bash
 class HelperModuleResolverExecuted(TempCase):
-    """Upstream #5640: the shipped resolver blocks, run as shipped in sandboxed installs (bash only; no node on PATH)."""
-
-    SITES = HelperModuleResolver.SITES
+    """Run the actual resolver preamble against copied Python installations."""
 
     def setUp(self):
-        sandbox = self.temp("engineer-5640-")
-        self.sandbox = sandbox
-        self.install_home, self.empty_home, self.project = sandbox / "home", sandbox / "empty-home", sandbox / "project"
-        for directory in (self.empty_home, self.project):
-            directory.mkdir()
-        self.lib = self.install_home / ".claude" / "engineer" / "bin" / "lib"
-        self.lib.mkdir(parents=True)
-        for site in self.SITES:
-            (self.lib / site["module"]).write_text("", encoding="utf-8")
-        self.path = os.environ.get("PATH", "")
+        self.sandbox = self.temp("engineer-launcher-")
+        self.project = self.sandbox / "project"
+        self.home = self.sandbox / "home"
+        self.project.mkdir()
+        self.home.mkdir()
+        start = WORKFLOW_LF.index("_engineer_identity_ok()")
+        self.script = WORKFLOW_LF[start:WORKFLOW_LF.index('if [ -n "${CLAUDE_ENV_FILE:-}"', start)]
 
-    def run_block(self, site, env=None, prefix="", cwd=None):
-        base = {"PATH": self.path, "HOME": crp.posix(self.empty_home), **(env or {})}
-        return crp.run_resolver_block(HelperModuleResolver.block(site)["text"], base, cwd or self.project, prefix)
+    def install(self, root):
+        target = root / "engineer" / "bin"
+        shutil.copytree(SOURCE / "engineer" / "bin", target)
+        return target / "engineer_run"
 
-    def test_global_install_resolves_from_the_default_home_for_every_site(self):
-        for site in self.SITES:
-            with self.subTest(site["module"]):
-                result = self.run_block(site, {"HOME": crp.posix(self.install_home)})
-                self.assertEqual(0, result.returncode, result.stderr)
-                self.assertTrue(result.stdout.replace("\\", "/").endswith(".claude/engineer/bin/lib"), result.stdout)
+    def run_block(self, env=None, prefix=""):
+        clean = {key: value for key, value in os.environ.items() if key not in
+                 {"ENGINEER_RUN", "RUNTIME_DIR", "CLAUDE_CONFIG_DIR", "CODEX_HOME", "ENGINEER_ROOT"}}
+        clean.update({"HOME": crp.posix(self.home), "CODEX_HOME": crp.posix(self.home / ".codex"),
+                      "CLAUDE_CONFIG_DIR": crp.posix(self.home / ".claude"), **(env or {})})
+        return crp.run_bash(prefix + self.script + '\nprintf "%s\n" "$ENGINEER_RUN"\n'
+                            + 'engineer_run query review.flags -- --fix --depth deep', cwd=self.project, env=clean)
+
+    def assert_selected(self, result, path):
+        self.assertEqual(0, result.returncode, result.stderr)
+        lines = result.stdout.splitlines()
+        # Git Bash may alias the host temporary root as /tmp.
+        expected_suffix = "/" + path.relative_to(self.sandbox.parent).as_posix()
+        self.assertTrue(lines[0].replace("\\", "/").endswith(expected_suffix), lines[0])
+        flags = json.loads("\n".join(lines[1:]))
+        self.assertTrue(flags["fix"])
+        self.assertEqual("deep", flags["depth"])
+
+    def test_global_install_resolves_from_the_default_home(self):
+        launcher = self.install(self.home / ".claude")
+        self.assert_selected(self.run_block(), launcher)
 
     def test_launcher_on_path_locates_the_install(self):
-        bin_dir = self.sandbox / "path-install" / "engineer" / "bin"
-        bin_dir.mkdir(parents=True)
-        (bin_dir / "engineer_run").write_bytes(b"#!/bin/sh\n")
-        (bin_dir / "lib").mkdir()
-        (bin_dir / "lib" / "code-review-depth.cjs").write_text("", encoding="utf-8")
-        result = self.run_block(self.SITES[1], {"PATH": crp.posix(bin_dir) + os.pathsep + self.path})
-        self.assertEqual(0, result.returncode, result.stderr)
-        self.assertTrue(result.stdout.replace("\\", "/").endswith("path-install/engineer/bin/lib"), result.stdout)
+        launcher = self.install(self.sandbox / "path-install")
+        self.assert_selected(self.run_block({"PATH": crp.posix(launcher.parent) + ":" + os.environ.get("PATH", "").replace("\\", "/")}) , launcher)
 
     def test_local_install_resolves_from_runtime_dir(self):
-        result = self.run_block(self.SITES[1], {"RUNTIME_DIR": crp.posix(self.install_home / ".claude")})
-        self.assertEqual(0, result.returncode, result.stderr)
-        self.assertTrue(result.stdout.replace("\\", "/").endswith(".claude/engineer/bin/lib"), result.stdout)
+        root = self.sandbox / "explicit-root"
+        launcher = self.install(root)
+        self.assert_selected(self.run_block({"RUNTIME_DIR": crp.posix(root)}), launcher)
 
-    def test_engineer_run_set_in_the_environment_is_the_first_candidate(self):
-        runtime = self.sandbox / "explicit" / "bin"
-        (runtime / "lib").mkdir(parents=True)
-        (runtime / "lib" / "code-review-flags.cjs").write_text("", encoding="utf-8")
-        result = self.run_block(self.SITES[0], {"ENGINEER_RUN": crp.posix(runtime / "engineer_run"), "HOME": crp.posix(self.install_home)})
-        self.assertEqual(0, result.returncode, result.stderr)
-        self.assertTrue(result.stdout.replace("\\", "/").endswith("explicit/bin/lib"), result.stdout)
+    def test_engineer_run_environment_is_the_first_candidate(self):
+        launcher = self.install(self.sandbox / "explicit")
+        self.install(self.home / ".claude")
+        self.assert_selected(self.run_block({"ENGINEER_RUN": crp.posix(launcher)}), launcher)
 
-    def test_missing_runtime_names_the_searched_locations(self):
-        for site in self.SITES:
-            with self.subTest(site["module"]):
-                result = self.run_block(site)
-                self.assertIn(crp.posix(self.empty_home).split("/")[-1] + "/.claude/engineer/bin/lib", result.stderr.replace("\\", "/"))
-                self.assertIn(site["module"], result.stderr)
-                self.assertEqual("", result.stdout, "nothing is exported for a miss")
-                if site["fatal"]:
-                    self.assertNotEqual(0, result.returncode, "a miss stops the step")
-                else:
-                    self.assertEqual(0, result.returncode, "the fallow normalizer warns and keeps its raw-report fallback")
-
-    def test_local_install_under_claude_or_codex_resolves_from_the_project_root(self):
-        for name in (".claude", ".codex"):
-            with self.subTest(name):
-                root = self.sandbox / ("local-" + name[1:])
-                (root / name / "engineer" / "bin").mkdir(parents=True)
-                shutil.copytree(self.lib, root / name / "engineer" / "bin" / "lib")
-                result = self.run_block(self.SITES[1], {"RUNTIME_DIR": crp.posix(root)})
-                self.assertEqual(0, result.returncode, result.stderr)
-                self.assertTrue(result.stdout.replace("\\", "/").endswith(f"{name}/engineer/bin/lib"), result.stdout)
-
-    def test_a_launcher_shell_function_is_not_read_as_a_path(self):
-        (self.project / "lib").mkdir()
-        (self.project / "lib" / "code-review-depth.cjs").write_text("", encoding="utf-8")
-        result = self.run_block(self.SITES[1], prefix="engineer_run() { :; }\n")
-        self.assertNotEqual(0, result.returncode, "a lone ./lib must not satisfy the resolver")
+    def test_missing_runtime_stops_with_actionable_error(self):
+        result = self.run_block()
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("No engineer-runtime launcher was found", result.stderr)
         self.assertEqual("", result.stdout)
 
-    def test_symlinked_launcher_and_flag_parsing_need_node(self):
-        self.skipTest("symlink realpath resolution and `--fix` flag parsing run `node -p` / `node -e`; Node is never executed here")
+    def test_malformed_explicit_runtime_does_not_fall_back(self):
+        bad = self.sandbox / "wrong-runtime"
+        bad.write_text('#!/bin/sh\nprintf wrong-package', encoding="utf-8")
+        self.install(self.home / ".claude")
+        result = self.run_block({"ENGINEER_RUN": crp.posix(bad)})
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("does not identify engineer-runtime", result.stderr)
+
+    def test_local_install_under_claude_or_codex_resolves_from_project_root(self):
+        for name in (".claude", ".codex"):
+            with self.subTest(name):
+                launcher = self.install(self.project / name)
+                self.assert_selected(self.run_block(), launcher)
+                shutil.rmtree(self.project / name)
+
+    def test_launcher_shell_function_is_not_read_as_a_path(self):
+        result = self.run_block(prefix="engineer_run() { :; }\n")
+        self.assertNotEqual(0, result.returncode)
+        self.assertEqual("", result.stdout)
+
+    def test_symlinked_launcher_preserves_runtime_and_flag_parsing(self):
+        launcher = self.install(self.sandbox / "real")
+        link = self.sandbox / "linked-launcher"
+        try:
+            link.symlink_to(launcher)
+        except OSError as error:
+            self.skipTest("host cannot create symlinks: " + str(error))
+        self.assert_selected(self.run_block({"ENGINEER_RUN": crp.posix(link)}), link)
 
 
-class LegacyLedgerGroups(unittest.TestCase):
-    """Upstream groups whose subject is the shipped `node -e` ledger script (never executed here)."""
+class ReviewOptionsViaCLI(TempCase):
+    def test_flags_preserve_literal_values_and_implied_fix(self):
+        for flag in ("--fix", "--all", "--auto"):
+            with self.subTest(flag=flag):
+                result = runtime_query(self.temp(), "review.flags", "--", "02", flag,
+                                       "--files", "src/a file.py", "--files", "Dockerfile", "--depth=deep")
+                self.assertEqual(0, result.returncode, result.stderr)
+                value = json.loads(result.stdout)
+                self.assertTrue(value["fix"])
+                self.assertEqual("02", value["phase"])
+                self.assertEqual("src/a file.py,Dockerfile", value["files"])
+                self.assertEqual("deep", value["depth"])
 
-    def test_fence_tracking_status_gating_and_count_consistency(self):
-        self.skipTest("#3861 round 1 fence tracking, `~~~`/info-string closers, status gating in block 2 and count consistency "
-                      "drive the `node -e` ledger script")
+    def test_malformed_flags_fail_instead_of_becoming_success(self):
+        for arguments in (("--depth",), ("--unknown",), ("--files", "--fix")):
+            with self.subTest(arguments=arguments):
+                result = runtime_query(self.temp(), "review.flags", "--", *arguments)
+                self.assertNotEqual(0, result.returncode)
 
-    def test_stale_fix_reports_titles_and_iteration_reports(self):
-        self.skipTest("#3861 round 1 stale/iteration fix reports, reused ids, title identity and carried-marker cases drive the "
-                      "`node -e` ledger script")
+    @needs_bash
+    def test_shipped_depth_fence_dispatches_effective_depth_after_large_scope_downgrade(self):
+        script = crp.fence_containing(WORKFLOW_LF, "DEPTH_FIELDS=$(", WORKFLOW_LF.index('<step name="resolve_depth">'))
+        for count, expected in ((50, "deep"), (51, "standard")):
+            with self.subTest(count=count):
+                directory = self.temp()
+                result = runtime_query(directory, "review.depth", "--stdin", input=json.dumps({
+                    "flagDepth": "deep", "files": ["src/file" + str(number) + ".py" for number in range(count)]}))
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertEqual(expected, json.loads(result.stdout)["depth"])
+                executed = crp.run_bash(script + '\nprintf "EFFECTIVE_DEPTH=%s\n" "$REVIEW_DEPTH"', cwd=directory,
+                                        env={**os.environ, "DEPTH_OK": "true", "DEPTH_JSON": result.stdout})
+                self.assertEqual(0, executed.returncode, executed.stderr)
+                self.assertIn("EFFECTIVE_DEPTH=" + expected, executed.stdout)
 
-    def test_bash_expansion_of_the_node_argument(self):
-        self.skipTest("asserts bash's expansion of the `node -e` argument matches the extracted script; no Node here")
+    def test_depth_rejects_outside_project_paths(self):
+        result = runtime_query(self.temp(), "review.depth", "--stdin", input=json.dumps({"files": ["../outside.py"]}))
+        self.assertNotEqual(0, result.returncode)
+
+
+class LegacyLedgerGroups(TempCase):
+    """Exercise the Python equivalents of the former embedded-script cases."""
+
+    def test_fence_tracking_status_and_count_consistency(self):
+        for fence in ("```", "~~~"):
+            with self.subTest(fence=fence):
+                text = review_doc(fence + "text", "### CR-01: example", fence + "extra", fence,
+                                  "### WR-01: real", status="clean")
+                out = crp.ReconcileFixture(self.temp()).run(text)
+                self.assertEqual(["WR-01"], [row["id"] for row in out["rows"]])
+
+    def test_iteration_fix_reports_prefer_the_latest_decision(self):
+        out = crp.ReconcileFixture(self.temp()).run(review_doc("### CR-01: a"), iterations={
+            1: "## Skipped Issues\n### CR-01: a\nreason one",
+            2: "## Skipped Issues\n### CR-01: a\nreason two"})
+        self.assertEqual("01-REVIEW-FIX.iter2.md", out["rows"][0]["source"])
+        self.assertEqual("skipped", out["rows"][0]["disposition"])
+
+    def test_cli_keeps_shell_metacharacters_literal(self):
+        title = 'literal $(touch injected) `whoami` "$HOME" — review'
+        fixture = crp.ReconcileFixture(self.temp())
+        out = fixture.run(review_doc("### CR-01: " + title))
+        self.assertEqual(title, out["result"]["findings"][0]["title"])
+        self.assertFalse((fixture.directory / "injected").exists())
 
     def test_absent_review_still_reconciles(self):
-        self.skipTest("#3861 round 1 absent-review reconciliation drives the `node -e` ledger script")
+        out = crp.ReconcileFixture(self.temp()).run(prior="| CR-01 | critical | deferred | wait |")
+        self.assertEqual(0, out["returncode"], out["stderr"])
+        self.assertEqual(("CR-01", "deferred", True),
+                         (out["rows"][0]["id"], out["rows"][0]["disposition"], out["rows"][0]["carried"]))
 
-    def test_count_validation_executed_through_block_2(self):
-        self.skipTest("#3861 round 1 count validation and limit-1/limit/limit+1 cases run block 2 through to the `node -e` script")
+    def test_invalid_count_values_are_rejected(self):
+        for value in ("-1", "garbage", "1.5"):
+            with self.subTest(value=value):
+                out = crp.ReconcileFixture(self.temp()).run(review_doc("### CR-01: a"), review_total=value)
+                self.assertNotEqual(0, out["returncode"])
 
 
 class ModuleUnitsC(TempCase):
@@ -1125,23 +1308,30 @@ class ModuleUnitsC(TempCase):
         self.assertEqual({"reported": False}, crp.read_gate_message(""))
 
 
-class LedgerLegendText(unittest.TestCase):
-    """Upstream #3861 round 5: the shipped ledger text states exactly what the step does (read from the script text)."""
+class LedgerLegendText(TempCase):
+    """The rendered Python ledger explains retained history and decision behavior."""
 
-    SCRIPT = crp.disposition_script(DISPOSITION)
+    def test_ledger_does_not_promise_unconditional_preservation(self):
+        out = crp.ReconcileFixture(self.temp()).run(review_doc("### CR-01: a"))
+        self.assertNotIn("preserves every row and every disposition", out["ledger"])
+        self.assertIn("Reused labels retain the displaced finding in history", out["ledger"])
 
-    def test_ledger_does_not_promise_an_unconditional_preservation(self):
-        self.assertNotIn("preserves every row and every disposition", self.SCRIPT)
-        self.assertIn("id is REUSED", self.SCRIPT, "the one exception must be stated where a reader meets it")
+    def test_reused_id_keeps_displaced_open_record_in_history(self):
+        fixture = crp.ReconcileFixture(self.temp())
+        fixture.run(review_doc("### CR-01: old"))
+        out = fixture.run(review_doc("### CR-01: new"))
+        self.assertEqual("open", out["rows"][0]["disposition"])
+        self.assertTrue(any(event.get("action") == "finding-id-reused" and
+                            event["finding"]["title"] == "old" for event in json.loads(runtime_query(fixture.directory, "frontmatter.get", fixture.ledger_path.name, "--field", "history").stdout)))
 
-    def test_an_open_prior_replaced_silently_is_stated_in_the_legend(self):
-        self.assertIn("a row still at `open` is replaced silently", self.SCRIPT)
+    def test_displaced_decision_remains_in_history_with_id_and_disposition(self):
+        fixture = crp.ReconcileFixture(self.temp())
+        fixture.run(review_doc("### CR-01: old"), prior="| CR-01 | critical | deferred | waiting |")
+        out = fixture.run(review_doc("### CR-01: new"))
+        displaced = [event["finding"] for event in json.loads(runtime_query(fixture.directory, "frontmatter.get", fixture.ledger_path.name, "--field", "history").stdout) if event.get("action") == "finding-id-reused"]
+        self.assertTrue(any(row["id"] == "CR-01" and row["disposition"] == "deferred" for row in displaced))
 
-    def test_dropped_decision_is_reported_and_names_the_id_and_decision(self):
-        self.assertIn("decision(s) DROPPED", self.SCRIPT)
-        self.assertNotIn("\nsuperseded:", self.SCRIPT, "no preservation block is written")
-
-    def test_block_2_gates_on_review_status_in_shell_not_in_prose(self):
+    def test_block_2_gates_on_review_status_in_shell(self):
         fences = crp.bash_fences(DISPOSITION)
         self.assertGreaterEqual(len(fences), 2)
         self.assertRegex(fences[1], "REVIEW_STATUS")
@@ -1162,8 +1352,7 @@ def triple(rows):
 
 
 class DispositionLedgerViaVerb(TempCase):
-    """Upstream #3829/#3861: per-finding disposition. The installer rewrites the step's `node -e` ledger script to
-    `engineer_run query review.reconcile`, so the behaviours are asserted against that verb."""
+    """Upstream #3829/#3861 behavior through the registered Python review.reconcile command."""
 
     def fixture(self, phase="01"):
         return crp.ReconcileFixture(self.temp("engineer-3829-"), phase)
