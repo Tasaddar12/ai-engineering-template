@@ -3441,8 +3441,8 @@
       "reviewer": "B-workflows",
       "review": "full-content",
       "disposition": "modified",
-      "after_sha256": "b489235a5383861a31e54a1d4fb9d056420827eb63cbbebac0a2b34126c15152",
-      "after_lines": 1217
+      "after_sha256": "04c1f779c06cab7d7026176e9146ee2d8c6887adba099ac1430d8658ab14c53c",
+      "after_lines": 1220
     },
     {
       "path": "engineer/workflows/execute-phase/steps/code-review-disposition.md",
@@ -3485,8 +3485,8 @@
       "reviewer": "B-workflows",
       "review": "full-content",
       "disposition": "modified",
-      "after_sha256": "560b0c733c07f32feeafeffca9720f70cdf4925b681f2aaded7b076a5e058ad3",
-      "after_lines": 180
+      "after_sha256": "06af6f999187c2656d5ada9aa5375d90225f9a213d4e9a160ff96b77ee238266",
+      "after_lines": 184
     },
     {
       "path": "engineer/workflows/execute-phase/steps/executor-progress-policy.md",
@@ -4013,8 +4013,8 @@
       "reviewer": "B-workflows",
       "review": "full-content",
       "disposition": "modified",
-      "after_sha256": "5db8e153d2de58d8b914cec5a1187b08f756ebb1a11bdfbc78d93192889c3788",
-      "after_lines": 120
+      "after_sha256": "43eb1764e91a78f0fd61a56af357aa8fa2502415645a966861fda81d0b00a81e",
+      "after_lines": 121
     },
     {
       "path": "engineer/workflows/quick-batch/steps/plan-checker-loop.md",
@@ -4090,8 +4090,8 @@
       "reviewer": "B-workflows",
       "review": "full-content",
       "disposition": "modified",
-      "after_sha256": "2ddf2ef69f4bb1dce7d30c1b120de927bd53f3bf9078e6725bcbdaa46b4eaf42",
-      "after_lines": 785
+      "after_sha256": "419c152c89e2cd2fe5dce3aa1e9ee0789cb5bf5de974821c0a6b34fa19993b00",
+      "after_lines": 786
     },
     {
       "path": "engineer/workflows/quick/steps/discussion-phase.md",
@@ -4776,7 +4776,7 @@
       "after_lines": 44
     }
   ],
-  "implementation_revision": "a48ea610b76ba87b0752bbb3fd862e7a3e5098b0",
+  "implementation_revision": "67e49bbf255381f7a35229a1d5528a8f7782d121",
   "coverage_note": "All files read completely at revision; changed-source review and final check results are recorded in the PR body for its published head.",
   "digest_format": "SHA-256 of the reviewed Windows worktree bytes; Git checkout CRLF conversion can change raw bytes without changing content."
 }
