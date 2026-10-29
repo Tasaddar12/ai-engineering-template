@@ -638,7 +638,7 @@ Plans that assume a tool is available without checking lead to silent failures a
 command -v $TOOL 2>/dev/null && $TOOL --version 2>/dev/null | head -1
 
 # Runtimes — check version meets minimum
-node --version 2>/dev/null
+python --version 2>/dev/null
 python3 --version 2>/dev/null
 ruby --version 2>/dev/null
 

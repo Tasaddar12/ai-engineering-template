@@ -501,11 +501,11 @@ setup and prepares supported executable tasks after the prerequisite is met.
 npm run dev &
 DEV_SERVER_PID=$!
 
-# Wait for ready (max 30s) — uses fetch() for cross-platform compatibility
+# Wait for ready (max 30s) — uses Python urllib for cross-platform compatibility
 # Bound the readiness check; failure is not readiness.
 ready=false
 for attempt in {1..30}; do
-  if node -e "fetch('http://localhost:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"; then
+  if python -c 'import urllib.request; r=urllib.request.urlopen("http://localhost:3000",timeout=2); assert 200 <= r.status < 300'; then
     ready=true
     break
   fi

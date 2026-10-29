@@ -110,21 +110,21 @@ Run syntax/parse check appropriate to file type:
 
 | Language | Check Command |
 |----------|--------------|
-| JavaScript | `node -c {file}` (syntax check) |
+| JavaScript | Resolve the project lint script with `engineer_run query resolve-package-manager lint --raw`, then run that command; if unavailable, use Tier 1. |
 | TypeScript | Project-aware check only, output filtered to `{file}`: the project's own typecheck (`npm run typecheck` / `tsc -b`) if it exists, else `npx tsc --noEmit -p <nearest tsconfig*.json>` whose `--listFilesOnly` output lists `{file}`; no config includes `{file}` → Tier 1 only. Never pass `{file}` to `tsc` positionally. |
 | Python | `python -c "import ast; ast.parse(open('{file}').read())"` |
-| JSON | `node -e "JSON.parse(require('fs').readFileSync('{file}','utf-8'))"` |
+| JSON | `python -m json.tool "{file}" >/dev/null` |
 | Other | Skip to Tier 1 only |
 
 **Scoping syntax checks:**
 - TypeScript: Run the project-aware check from the table above. If it reports errors in OTHER files (not the file you just edited), those are pre-existing project errors — **IGNORE them**. Only fail if errors reference the specific file you modified. A solution-style root `tsconfig.json` (`"files": []` plus `references`) checks no source files and exits 0, so it is NOT a passing check: use a referenced config whose `--listFilesOnly` output includes `{file}`, or fall back to Tier 1.
 - TypeScript procedure: (1) Look for a `typecheck` script in the nearest `package.json` and prefer it. (2) Otherwise start at `{file}`'s directory and walk up to the nearest `tsconfig.json`; if it is solution-style, take each config it references (e.g. `tsconfig.app.json`, `tsconfig.node.json`) and try them in turn. (3) Run from the config's own directory with `npx tsc --noEmit -p <config> --listFilesOnly` and keep the first config whose listing includes `{file}`; if none does, fall back to Tier 1. (4) Run `npx tsc --noEmit -p <config>` (use `-p`, never `-b`, so no build artifacts or `.tsbuildinfo` files are written) and keep only output lines that start with `{file}`'s path as `tsc` prints it relative to that directory. (5) Roll back only for errors on lines you changed; errors you cannot attribute to your edit are pre-existing — fall back to Tier 1 and proceed.
-- JavaScript: `node -c {file}` is reliable for plain .js but NOT for JSX, TypeScript, or ESM with bare specifiers. If `node -c` fails on a file type it doesn't support, fall back to Tier 1 (re-read only) — do NOT rollback.
+- JavaScript: Use the project lint script only when it supports the edited file type. Otherwise fall back to Tier 1 (re-read only); do not roll back for an unsupported file type.
 - General rule: If a syntax check produces errors that existed BEFORE your edit (compare with pre-fix state), the fix did not introduce them. Proceed to commit.
 
 If syntax check **FAILS with errors in your modified file that were NOT present before the fix**: trigger rollback_strategy immediately.
 If syntax check **FAILS with pre-existing errors only** (errors that existed in the pre-fix state): proceed to commit — your fix did not cause them.
-If syntax check **FAILS because the tool doesn't support the file type** (e.g., node -c on JSX): fall back to Tier 1 only.
+If syntax check **FAILS because the tool doesn't support the file type** (e.g., a plain JavaScript parser on JSX): fall back to Tier 1 only.
 
 If syntax check **PASSES**: proceed to commit.
 
@@ -234,19 +234,15 @@ The cleanup tail (commit fixes -> remove worktree -> drop recovery sentinel) MUS
 # Honor workflow.use_worktrees — the documented opt-out. When false,
 # edit/commit in the main checkout (wt=".", no temp branch, no sentinel, no
 # cleanup tail). Read the flag the same way the four sibling writer workflows
-# do. NOTE: this read parses .planning/config.json directly via `node` rather
+# do. NOTE: this read parses .planning/config.json directly via Python rather
 # than the engineer_run CLI, because setup_worktree runs BEFORE the canonical
 # launcher preamble is sourced — invoking the CLI here would be undefined at
 # runtime and violates the runtime-launcher-parity preamble-ordering rule.
 # Once the preamble is sourced (later steps), the CLI is available.
-USE_WORKTREES=$(node -e '
-  try {
-    const fs = require("fs");
-    const p = (process.env.ENGINEER_PROJECT_DIR || process.cwd()) + "/.planning/config.json";
-    const cfg = JSON.parse(fs.readFileSync(p, "utf8"));
-    process.stdout.write(String((cfg.workflow && cfg.workflow.use_worktrees) ?? true));
-  } catch { process.stdout.write("true"); }
-')
+USE_WORKTREES=$(python -c 'import json,os,pathlib
+try:
+ c=json.loads((pathlib.Path(os.environ.get("ENGINEER_PROJECT_DIR") or os.getcwd())/".planning/config.json").read_text(encoding="utf-8")); v=c.get("workflow", {}).get("use_worktrees", True); print(str(True if v is None else v).lower(), end="")
+except (OSError,ValueError,TypeError,AttributeError): print("true", end="")')
 
 # Derive worktree path from padded_phase (parsed from config in next step,
 # but the shell snippet below is illustrative — adapt once config is parsed).
@@ -279,16 +275,11 @@ if [ -f "$sentinel" ]; then
   # `git branch -D`, the orphan branch survives and clutters `git branch`
   # output forever. Emit both fields newline-separated so we can read them
   # independently.
-  prior_recovery=$(node -e '
-    const fs = require("fs");
-    try {
-      const parsed = JSON.parse(fs.readFileSync(process.argv[1], "utf-8"));
-      process.stdout.write((parsed.worktree_path || "") + "\n" + (parsed.reviewfix_branch || ""));
-    } catch (err) {
-      process.stderr.write(`Warning: malformed recovery sentinel ${process.argv[1]}: ${err.message}\n`);
-      process.stdout.write("\n");
-    }
-  ' "$sentinel")
+  prior_recovery=$(python -c 'import json,pathlib,sys
+try:
+ d=json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")); print(str(d.get("worktree_path") or "")+"\n"+str(d.get("reviewfix_branch") or ""),end="")
+except (OSError,ValueError,AttributeError) as e:
+ print("Warning: malformed recovery sentinel "+sys.argv[1]+": "+str(e),file=sys.stderr); print()' "$sentinel")
   prior_wt="$(printf '%s' "$prior_recovery" | sed -n '1p')"
   prior_branch="$(printf '%s' "$prior_recovery" | sed -n '2p')"
   if [ -n "$prior_wt" ] && git worktree list --porcelain | grep -q "^worktree $prior_wt$"; then
@@ -345,17 +336,7 @@ else
   # Write the recovery sentinel ONLY AFTER `git worktree add` succeeds.
   # Writing it before would leave a sentinel pointing at a worktree that does
   # not exist if `git worktree add` itself failed.
-  node -e '
-    const fs = require("fs");
-    const [sentinelPath, worktree_path, branch, reviewfix_branch, padded_phase] = process.argv.slice(1);
-    fs.writeFileSync(sentinelPath, JSON.stringify({
-      worktree_path,
-      branch,
-      reviewfix_branch,
-      padded_phase,
-      started_at: new Date().toISOString()
-    }, null, 2));
-  ' "$sentinel" "$wt" "$branch" "$reviewfix_branch" "$padded_phase"
+  python -c 'import datetime,json,pathlib,sys; keys=["worktree_path","branch","reviewfix_branch","padded_phase"]; data=dict(zip(keys,sys.argv[2:])); data["started_at"]=datetime.datetime.now(datetime.timezone.utc).isoformat(); pathlib.Path(sys.argv[1]).write_text(json.dumps(data,indent=2),encoding="utf-8")' "$sentinel" "$wt" "$branch" "$reviewfix_branch" "$padded_phase"
 
   cd "$wt"
 fi
@@ -666,7 +647,7 @@ _Iteration: {N}_
 
 **Honor `workflow.use_worktrees`.** Before creating a worktree, read the
 `workflow.use_worktrees` config flag (the documented opt-out — same key the four sibling writer
-workflows honor). `setup_worktree` reads it via `node` directly from `.planning/config.json`
+workflows honor). `setup_worktree` reads it via Python directly from `.planning/config.json`
 (because that step runs BEFORE the canonical engineer_run launcher preamble is sourced; later steps may
 use `engineer_run query config-get workflow.use_worktrees`). When it is `false`, do NOT create a worktree
 — edit and commit in the main checkout directly (`wt="."`, no temp branch, no sentinel, no cleanup
@@ -701,7 +682,7 @@ main checkout after teardown).
 
 **DO verify each fix** using 3-tier verification strategy:
 - Minimum: re-read file, confirm fix present
-- Preferred: syntax check (node -c, project-aware tsc -p, python ast.parse, etc.)
+- Preferred: syntax check (project lint, project-aware tsc -p, python ast.parse, etc.)
 - Fallback: accept minimum if no syntax checker available
 
 **DO skip findings that cannot be applied cleanly** — do not force broken fixes. Mark as skipped with clear reason.

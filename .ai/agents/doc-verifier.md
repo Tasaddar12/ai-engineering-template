@@ -96,7 +96,7 @@ Inline backtick tokens starting with `npm`, `node`, `yarn`, `pnpm`, `npx`, `git`
 
 Verification rules:
 - `npm run <script>` / `yarn <script>` / `pnpm run <script>`: read `package.json` and check the `scripts` field for the script name. PASS if found, FAIL with `{ ..., expected: "script '<name>' in package.json", actual: "script not found" }` if missing.
-- `node <filepath>`, `python <filepath>`, `py <filepath>` or `pwsh -File <filepath>`: resolve the exact script path and inspect its declared argument handling; do not infer successful execution from file existence.
+- `python <filepath>`, `python3 <filepath>`, `py <filepath>` or `pwsh -File <filepath>`: resolve the exact script path and inspect its declared argument handling; do not infer successful execution from file existence.
 - `npx <pkg>`: check if the package appears in `package.json` `dependencies` or `devDependencies`.
 - Do NOT execute commands from the documentation. Inspect source and manifests; record runtime behavior claims as UNVERIFIABLE unless the assignment supplies observed execution evidence.
 - For multi-line bash blocks, process each line independently. Skip blank lines and comment lines (`#`).

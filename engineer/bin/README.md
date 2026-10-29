@@ -124,6 +124,26 @@ map revisions and determines freshness from Git history and changed paths.
 shell and returns 124 on timeout. `package-legitimacy --registry npm|pypi|crates`
 returns advisory registry evidence, including `UNKNOWN` when offline.
 
+Workflow JSON helpers use `json.get --field DOTTED --default VALUE --raw`,
+`json.lines --field FIELD [--separator TEXT] --raw`, `json.length --field FIELD`,
+`json.commits [--first] --raw`, `json.depth-fields --raw`, `json.status-reason --raw`,
+and `json.exec-ready --raw`. They read JSON on stdin; `--input PATH` selects an
+explicit regular JSON file. `json.validate --schema requirements|elements|coverage`
+fails with exit 2 for malformed input. `review.frontmatter --report PATH --raw`
+extracts the header; `review.field --report PATH --field FIELD --default VALUE --raw`
+reads a parsed field and prints scalar arrays one value per line.
+`review.summary-files --report PATH --raw` preserves spaces and accepts legacy
+path annotations. `review.evidence-lines --raw` reads a dispatch packet on stdin,
+prints successful lane evidence, and reports failed lanes and selection errors
+on stderr. `review.normalize-structural --input PATH --output PATH` validates and
+normalizes a structural report without dropping unrecognized findings.
+`review.parse-flags -- ARGV...` preserves the workflow flag parser's equals-form
+values and ignores flags owned by other reviewer lanes. `review.resolve-depth`
+reads a depth packet on stdin and applies the upstream `paths[]` override
+contract, strongest matching tier, and large-scope downgrade. These adapters
+preserve the exported workflow contracts; `review.flags` and `review.depth`
+retain their existing project-runtime contracts.
+
 ## Exact argv reference
 
 Run each entry as `engineer_run query VERB ARGS`. Long-option values follow the

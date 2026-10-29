@@ -195,7 +195,7 @@ def registry():
         verbs[key] = lambda a, action=action: workflow_ops.command(a, action)
     for action in ("get", "read", "length", "lines", "commits", "exec-ready", "has-section", "predicate", "validate", "encode-lines", "depth-input", "depth-fields", "status-reason"):
         verbs["json."+action] = lambda a, action=action: runtime_tools.json_command(a, action)
-    for action in ("frontmatter", "summary-files", "contributions", "evidence", "normalize-structural"):
+    for action in ("frontmatter", "summary-files", "contributions", "evidence", "normalize-structural", "evidence-lines", "parse-flags", "resolve-depth"):
         verbs["review."+action] = lambda a, action=action: runtime_tools.review_adapter(a, action)
     for kind in ("code-review", "complete-milestone", "execute-phase", "new-milestone", "new-project", "onboard", "phase-op", "plan-phase", "progress", "quick", "quick-batch", "todos", "verify-work", "ship", "debug", "docs-update", "map-codebase", "milestone-op", "resume", "update"):
         verbs["init."+kind] = lambda a, kind=kind: bundles.init(a, kind)

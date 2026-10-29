@@ -591,7 +591,7 @@ ls "${PHASE_DIR}"/*-PLAN.md 2>/dev/null || true
 Extract from INIT JSON:
 
 ```bash
-_engineer_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
+_engineer_field() { python -c 'import json,sys; v=json.loads(sys.argv[1]).get(sys.argv[2]); print("" if v is None else str(v).lower() if isinstance(v,bool) else v,end="")' "$1" "$2"; }
 STATE_PATH=$(_engineer_field "$INIT" state_path)
 ROADMAP_PATH=$(_engineer_field "$INIT" roadmap_path)
 REQUIREMENTS_PATH=$(_engineer_field "$INIT" requirements_path)

@@ -72,7 +72,7 @@ Inline backtick tokens starting with `npm`, `node`, `yarn`, `pnpm`, `npx`, or `g
 
 Verification rules:
 - `npm run <script>` / `yarn <script>` / `pnpm run <script>`: read `package.json` and check the `scripts` field for the script name. PASS if found, FAIL with `{ ..., expected: "script '<name>' in package.json", actual: "script not found" }` if missing.
-- `node <filepath>`: verify the file exists (same as file path claim).
+- `python <filepath>`: verify the file exists (same as file path claim).
 - `npx <pkg>`: check if the package appears in `package.json` `dependencies` or `devDependencies`.
 - Do NOT execute any commands. Existence check only.
 - For multi-line bash blocks, process each line independently. Skip blank lines and comment lines (`#`).

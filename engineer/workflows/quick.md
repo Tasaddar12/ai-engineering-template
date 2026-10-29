@@ -645,10 +645,10 @@ If no active code-review step hook exists, skip with message "Code review skippe
 QUICK_SCOPE_RC=0
 QUICK_SCOPE_JSON=$(engineer_run check evaluation-scope --quick "${quick_id}" --include-files --raw 2>/dev/null) || QUICK_SCOPE_RC=$?
 if [ "$QUICK_SCOPE_RC" -ne 0 ] && [ "$QUICK_SCOPE_RC" -ne 69 ]; then QUICK_SCOPE_JSON=""; fi
-CHANGED_FILES=$(printf '%s' "$QUICK_SCOPE_JSON" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{process.stdout.write(JSON.parse(s).files.join(' '))}catch{}})")
+CHANGED_FILES=$(printf '%s' "$QUICK_SCOPE_JSON" | engineer_run query json.lines --field files --separator " " --raw)
 if [ -z "$CHANGED_FILES" ]; then
   # Say WHY the scope is empty (no commits for this task, only excluded paths, or git could not be read).
-  QUICK_SCOPE_WHY=$(printf '%s' "$QUICK_SCOPE_JSON" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{const v=JSON.parse(s);process.stdout.write(v.status+(v.reason?': '+v.reason:''))}catch{process.stdout.write('unresolvable: no resolver output')}})")
+  QUICK_SCOPE_WHY=$(printf '%s' "$QUICK_SCOPE_JSON" | engineer_run query json.status-reason --raw)
   echo "Quick-task review scope is empty (${QUICK_SCOPE_WHY})."
 fi
 ```

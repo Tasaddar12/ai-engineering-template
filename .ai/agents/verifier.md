@@ -446,16 +446,16 @@ suite merely to duplicate a more targeted passing receipt.
 
 ```bash
 # API endpoint returns non-empty data
-curl -s http://localhost:$PORT/api/$ENDPOINT 2>/dev/null | node -e "let b='';process.stdin.setEncoding('utf8');process.stdin.on('data',c=>b+=c);process.stdin.on('end',()=>{const d=JSON.parse(b);process.exit(Array.isArray(d)?(d.length>0?0:1):(Object.keys(d).length>0?0:1))})"
+curl -s http://localhost:$PORT/api/$ENDPOINT 2>/dev/null | python -c 'import json,sys; d=json.load(sys.stdin); sys.exit(0 if isinstance(d,(list,dict)) and len(d)>0 else 1)'
 
 # CLI command produces expected output
-node $CLI_PATH --help 2>&1 | grep -q "$EXPECTED_SUBCOMMAND"
+python "$CLI_PATH" --help 2>&1 | grep -q "$EXPECTED_SUBCOMMAND"
 
 # Build produces output files
 ls $BUILD_OUTPUT_DIR/*.{js,css} 2>/dev/null | wc -l
 
 # Module exports expected functions
-node -e "const m = require('$MODULE_PATH'); console.log(typeof m.$FUNCTION_NAME)" 2>/dev/null | grep -q "function"
+python -c 'import importlib.util,sys; spec=importlib.util.spec_from_file_location("subject",sys.argv[1]); m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); print("function" if callable(getattr(m,sys.argv[2],None)) else "undefined")' "$MODULE_PATH" "$FUNCTION_NAME" 2>/dev/null | grep -q "function"
 
 # A test EXISTS (existence proof — enumerate, do NOT run the suite)
 cargo test -- --list 2>/dev/null | grep -q "$PHASE_TEST_PATTERN"   # pytest --collect-only -q · npx vitest list · go test -list '.*'
