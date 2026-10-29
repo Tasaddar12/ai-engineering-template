@@ -360,30 +360,8 @@ def review_lane(args, action):
 
 
 def _health(args):
-    errors, warnings, info = [], [], []
-    for name in ("PROJECT.md", "REQUIREMENTS.md", "ROADMAP.md", "STATE.md", "config.yaml"):
-        if not (records.planning()/name).is_file():
-            errors.append({"code": "missing-record", "path": str(records.planning()/name)})
-    try:
-        config.load()
-    except Failure as exc:
-        errors.append({"code": exc.code, "message": exc.message})
-    for directory in sorted((records.planning()/"phases").glob("*")):
-        if not directory.is_dir():
-            continue
-        if not re.fullmatch(r"\d+(?:\.\d+)?-[a-z0-9-]+", directory.name):
-            warnings.append({"code": "phase-name", "path": str(directory)})
-        for plan in directory.glob("*-PLAN.md"):
-            summary = plan.with_name(plan.name.replace("-PLAN.md", "-SUMMARY.md"))
-            if not summary.exists():
-                info.append({"code": "plan-without-summary", "path": str(plan), "meaning": "May be unexecuted or in progress"})
-        for summary in directory.glob("*-SUMMARY.md"):
-            if not summary.with_name(summary.name.replace("-SUMMARY.md", "-PLAN.md")).exists():
-                warnings.append({"code": "orphan-summary", "path": str(summary)})
-    if args.has("repair") or args.has("backfill"):
-        raise Failure("health-repair-requires-planning-review", "Health never rewrites identity or acceptance; use guarded planning repair", errors=errors, warnings=warnings)
-    return {"status": "broken" if errors else "degraded" if warnings else "healthy", "errors": errors, "warnings": warnings, "info": info,
-            "counts": {"errors": len(errors), "warnings": len(warnings), "info": len(info)}, "structuralOnly": True}
+    from .health_diagnostic import repository_health
+    return repository_health(root(), repair=args.has("repair"), backfill=args.has("backfill"))
 
 
 def _intel(args):

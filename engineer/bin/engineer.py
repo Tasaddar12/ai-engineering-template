@@ -254,14 +254,18 @@ def main(argv=None):
         if name.startswith("check.") and name not in VERBS:
             args.pos.insert(0, name[len("check."):])
             name = "check"
-        before = planning_integrity.capture()
+        health = name == "validate.health"
+        before = planning_integrity.capture(health=health)
+        if health and args.has("repair") and not before.get("readable", False):
+            raise Failure("health-repair-evidence-unavailable", "Health repair requires readable planning records and a complete byte fingerprint",
+                          evidence_gaps=before.get("evidence_gaps", []))
         if name in ("help", "verbs", "--help", "-h"):
             result = {"usage": "engineer_run query <verb>", "verbs": sorted([*VERBS, "help", "verbs"])}
         elif name not in VERBS:
             raise Failure("unknown-verb", f"Unknown runtime verb: {name}", 2)
         else:
             result = VERBS[name](args)
-        warnings = planning_integrity.finish(name, before, planning_integrity.capture())
+        warnings = planning_integrity.finish(name, before, planning_integrity.capture(health=health), args)
         if warnings:
             print(json.dumps({"warning": "planning-integrity", "findings": warnings}, ensure_ascii=False), file=sys.stderr)
         status = 0

@@ -11,8 +11,8 @@ A Diagnostic is ``{"code", "severity", "message", "remedy": {"action", "risk", "
 ``apply_repairs`` returns ``{"applied": [...], "refused": [...], "details": [...]}``.
 
 Deviations:
-- ``planning-snapshot.cts`` is not ported: rules receive a plain dict with the upstream
-  ``PlanningSnapshot`` field names (see ``health_diagnostic_rules``).
+- Pure evaluators accept upstream-shaped dictionaries. ``repository_health`` uses
+  the native stdlib builder in ``health_snapshot.py`` and reports unavailable rules.
 - Repair paths are ``<cwd>/.planning/{config.json,STATE.md,MILESTONES.md,milestones/}`` as upstream;
   ``GSD_PROJECT`` / ``GSD_WORKSTREAM`` scoping (``planning-workspace.cts``) is not ported. The repo's
   own config lives in ``config.yaml``; ``createConfig`` / ``resetConfig`` still write upstream's
@@ -90,6 +90,113 @@ def evaluate_rules(snapshot):
 
 def evaluate_consistency_rules(snapshot):
     return evaluate_rule_table(CONSISTENCY_RULES, snapshot)
+
+
+def repository_health(cwd, repair=False, backfill=False):
+    """Native CLI adapter; pure upstream evaluator/repair APIs remain compatible.
+
+    Native repairs use native handlers only. Upstream config.json creation,
+    destructive state regeneration and archive backfill are never dispatched here.
+    """
+    from .health_snapshot import build_snapshot
+    from .core import Args, Failure, root as repository_root
+    from . import config as native_config
+
+    cwd = Path(cwd).resolve()
+    repairs = {"applied": [], "refused": [], "details": []}
+
+    def diagnostic(code, severity, message):
+        return {"code": code, "severity": severity, "message": message,
+                "remedy": advise_remedy("Review the cited evidence before changing planning records")}
+
+    if cwd == Path.home().resolve():
+        diagnostics = [diagnostic("E010", "error", "Health refuses to inspect the user's home directory"),
+                       diagnostic("I010", "info", f"Resolved CWD: {cwd}")]
+        return _native_health_report(diagnostics, repairs, [], [{"code": r["code"], "reason": "Home-directory safety guard"} for r in RULES], [])
+
+    packet = build_snapshot(cwd)
+    snapshot = packet["snapshot"]
+    skipped = {"W016": "workflow.ai_integration_phase is not a native config.yaml field",
+               "W010": "Upstream GSD agent installation is not the native agent installation contract",
+               "W024": "Upstream rule has no freshness evidence probe",
+               "W028": "No install-shadow renderer is registered by the native runtime"}
+    if snapshot["planningTracked"]["scope"] != "complete":
+        skipped["W029"] = "Git ignore/tracking evidence unavailable"
+    if snapshot["worktreeHealth"]["scope"] != "complete":
+        for code in ("W017", "W027"):
+            skipped[code] = "Git worktree inventory unavailable; W020 reports the evidence failure"
+    native_config_value = snapshot["config"]["value"] or {}
+    if native_config_value.get("phase_naming") == "custom" or snapshot.get("phaseIdConvention") == "bracket":
+        for code in ("W002", "W005", "W006", "W007", "W011", "W021", "W023", "W026"):
+            skipped[code] = "Native snapshot supports numeric phase headings; this convention needs a specialized reader"
+    rules = [r for r in RULES if r["code"] not in skipped]
+    diagnostics = evaluate_rule_table(rules, snapshot)
+    # Retain consistency advisories needed by health (not included in RULES).
+    consistency = [r for r in CONSISTENCY_RULES if r["code"].startswith("C")]
+    diagnostics.extend(evaluate_rule_table(consistency, snapshot))
+    if not packet["planningExists"]:
+        diagnostics.insert(0, diagnostic("E001", "error", ".planning/ directory not found"))
+    if not packet["requirementsReadable"]:
+        diagnostics.append(diagnostic("missing-record", "error", "REQUIREMENTS.md is missing or unreadable"))
+    if not snapshot["config"]["exists"]:
+        diagnostics.append(diagnostic("missing-record", "error", "config.yaml is missing or unreadable"))
+    if packet["configError"]:
+        diagnostics.append(diagnostic(packet["configError"]["code"], "error", packet["configError"]["message"]))
+    if packet["unonboarded"]:
+        diagnostics.append(diagnostic("unonboarded", "info", "Unfilled adoption skeleton; run /onboard before treating example planning records as approved scope"))
+    for gap in packet["gaps"]:
+        # Missing required records already have errors above; preserve every gap as evidence.
+        if gap.get("kind") != "git" and Path(gap["path"]).exists():
+            diagnostics.append(diagnostic("unreadable-evidence", "error", f"{gap['path']}: {gap['reason']}"))
+    config_descriptions = {rule["code"]: rule["description"] for rule in RULE_GROUPS["config-validation"]}
+    for item in diagnostics:
+        if item["code"] in config_descriptions:
+            # Field names and rule descriptions suffice; never echo raw config values.
+            item["message"] = config_descriptions[item["code"]]
+        item["message"] = item["message"].replace("config.json", "config.yaml").replace("JSON parse error", "YAML parse error")
+        if item["code"] == "W003":
+            item["message"] = "config.yaml not found; initialize configuration through onboarding"
+        item["repairable"] = item["code"] == "W008" and packet["configError"] is None and not packet["gaps"]
+        item["fix"] = ("config-set workflow.nyquist_validation true" if item["repairable"] else item["remedy"]["args"].get("command", "Guarded planning review required"))
+        remedy = item["remedy"]
+        requested = repair or (backfill and remedy["action"] == REMEDY_ACTION["BACKFILL_MILESTONES"])
+        if not requested or remedy["action"] == REMEDY_ACTION["ADVISE"]:
+            continue
+        if item["repairable"]:
+            try:
+                if repository_root() != cwd:
+                    raise Failure("health-repair-root-mismatch", "Native config handler root differs from the inspected repository")
+                # Native config-set validates, locks and preserves existing comments and values.
+                native_config.set_value(Args(["workflow.nyquist_validation", "true"]))
+                repairs["applied"].append(item["code"])
+                repairs["details"].append({"code": item["code"], "action": remedy["action"], "success": True,
+                                           "path": ".planning/config.yaml"})
+            except (Failure, OSError) as exc:
+                repairs["details"].append({"code": item["code"], "action": remedy["action"], "success": False,
+                                           "error": getattr(exc, "code", "native-repair-failed")})
+        else:
+            repairs["refused"].append(item["code"])
+            repairs["details"].append({"code": item["code"], "action": remedy["action"], "success": False,
+                                       "error": "No safe native health repair handler; use guarded planning review"})
+    if repairs["applied"]:
+        # Report post-repair findings; never imply a repair succeeded from dispatch alone.
+        result = repository_health(cwd)
+        result.update({"repairs": repairs, "repairs_performed": repairs["details"]})
+        return result
+    return _native_health_report(diagnostics, repairs, [r["code"] for r in rules + consistency],
+                                 [{"code": code, "reason": reason} for code, reason in skipped.items()], packet["gaps"])
+
+
+def _native_health_report(diagnostics, repairs, evaluated, skipped, gaps):
+    groups = {key: [d for d in diagnostics if d["severity"] == severity]
+              for key, severity in (("errors", "error"), ("warnings", "warning"), ("info", "info"))}
+    return {"status": "broken" if groups["errors"] else "degraded" if groups["warnings"] else "healthy",
+            **groups, "counts": {key: len(value) for key, value in groups.items()},
+            "diagnostics": diagnostics, "repairable_count": sum(d.get("repairable", False) for d in diagnostics),
+            "repairs": repairs, "repairs_performed": repairs["details"], "structuralOnly": False,
+            "coverage": {"evaluated": evaluated, "skipped": skipped,
+                         "prechecks": ["E001", "E010", "I010"], "complete": not skipped and not gaps},
+            "evidence_gaps": gaps}
 
 
 # --- Repair handlers ------------------------------------------------------------------
