@@ -374,11 +374,9 @@ class GateCountsMirror(unittest.TestCase):
 
     def test_docs_parity_non_blocking_and_unchanged_run(self):
         self.assertIn("Code review disposition record skipped (non-blocking).", DISPOSITION)
-        self.assertIn("engineer_run query review.reconcile", DISPOSITION)
-        ledger = (LIB / 'review_ledger.py').read_text(encoding='utf-8')
-        self.assertIn('"unchanged": True', ledger)
-        self.assertIn('"Fixed Issues"', ledger)
-        self.assertIn('"Skipped Issues"', ledger)
+        self.assertIn("Code review disposition unchanged: ", DISPOSITION)
+        self.assertIn("const stripTs = (t) => t.replace(/^recorded:.*\\$/m, 'recorded:');", DISPOSITION)
+        self.assertTrue("/^##\\s+Fixed Issues\\s*\\$/" in DISPOSITION and "/^##\\s+Skipped Issues\\s*\\$/" in DISPOSITION)
 
     def test_docs_parity_gate_reaches_the_extracted_step(self):
         parent = crp.read_text(crp.SHARED_VERIFY_STEP_PATH)
@@ -753,29 +751,30 @@ class EmbeddedScriptBudget(unittest.TestCase):
 
     CMDLINE_BUDGET = 24576  # the 32767 cap less ~8 KiB of deliberate headroom
 
-    def test_python_ledger_invocation_stays_under_the_windows_command_line_budget(self):
-        command = next(line for line in DISPOSITION.splitlines() if line.startswith('engineer_run query review.reconcile'))
-        self.assertLessEqual(len(command), self.CMDLINE_BUDGET)
-        self.assertNotIn('node -e', DISPOSITION)
+    def test_extracted_node_script_stays_under_the_windows_command_line_budget(self):
+        script = crp.disposition_script(DISPOSITION)
+        self.assertGreater(len(script), 4096, f"the extractor returned {len(script)} characters; it is not reading the shipped script")
+        self.assertLessEqual(len(script), self.CMDLINE_BUDGET)
 
 
 class FindingIdCensus(unittest.TestCase):
     """Upstream #3861 round 1: every copy of the finding-id prefix set agrees."""
 
-    def test_every_python_identifier_regex_uses_the_same_prefix_set(self):
-        ledger = _load('review_ledger')
-        self.assertIn(ledger.IDENTIFIER, ledger.ID.pattern)
-        self.assertIn(ledger.IDENTIFIER, ledger.FINDING.pattern)
-        self.assertEqual('critical', ledger._prefix('BL-01'))
-        self.assertEqual('warning', ledger._prefix('WR-01'))
-        self.assertEqual('info', ledger._prefix('IN-01'))
+    def test_every_copy_of_the_prefix_set_agrees_with_every_other(self):
+        script = crp.disposition_script(DISPOSITION)
+        alternations = crp.id_alternations(script)
+        self.assertGreaterEqual(len(alternations), 2, "the script must still enumerate finding-id prefixes")
+        self.assertEqual(1, len(set(alternations)), "the prefix enumerations have drifted apart: " + " vs ".join(alternations))
+        mapped, admitted = set(crp.severity_map_keys(script)), alternations[0].split("|")
+        self.assertEqual(["IN"], [prefix for prefix in admitted if prefix not in mapped],
+                         "only IN may rely on the info default; every other admitted prefix needs an explicit tier")
+        self.assertEqual([], [prefix for prefix in mapped if prefix not in admitted])
 
     def test_prefix_set_covers_every_id_shape_the_reviewer_agent_emits(self):
         emitted = crp.emitted_id_prefixes(REVIEWER)
-        self.assertGreater(len(emitted), 0)
-        ledger = _load('review_ledger')
-        for prefix in emitted:
-            self.assertIsNotNone(ledger.ID.fullmatch(prefix+'-01'))
+        self.assertGreater(len(emitted), 0, "the reviewer agent must still declare its finding-id shapes")
+        known = set(crp.id_alternations(crp.disposition_script(DISPOSITION))[0].split("|"))
+        self.assertEqual(set(), emitted - known, "findings with these prefixes would get no disposition row at all")
 
     def test_one_letter_finding_prefix_in_the_agent_template_is_not_invisible(self):
         self.assertGreater(len(re.findall(r"^###\s+([A-Z]+)-\d+:", REVIEWER, re.M)), 0)
@@ -1022,17 +1021,17 @@ class ModuleUnitsC(TempCase):
 class LedgerLegendText(unittest.TestCase):
     """Upstream #3861 round 5: the shipped ledger text states exactly what the step does (read from the script text)."""
 
-    SCRIPT = (LIB / "review_ledger.py").read_text(encoding="utf-8")
+    SCRIPT = crp.disposition_script(DISPOSITION)
 
     def test_ledger_does_not_promise_an_unconditional_preservation(self):
         self.assertNotIn("preserves every row and every disposition", self.SCRIPT)
-        self.assertIn("Reused labels retain the displaced finding in history", self.SCRIPT)
+        self.assertIn("id is REUSED", self.SCRIPT, "the one exception must be stated where a reader meets it")
 
     def test_an_open_prior_replaced_silently_is_stated_in_the_legend(self):
-        self.assertIn("finding-id-reused", self.SCRIPT)
+        self.assertIn("a row still at `open` is replaced silently", self.SCRIPT)
 
     def test_dropped_decision_is_reported_and_names_the_id_and_decision(self):
-        self.assertIn('"history": history', self.SCRIPT)
+        self.assertIn("decision(s) DROPPED", self.SCRIPT)
         self.assertNotIn("\nsuperseded:", self.SCRIPT, "no preservation block is written")
 
     def test_block_2_gates_on_review_status_in_shell_not_in_prose(self):

@@ -493,18 +493,8 @@ I'll verify: vercel whoami returns your account
 npm run dev &
 DEV_SERVER_PID=$!
 
-# Wait for ready (max 30s) — uses Python urllib for cross-platform compatibility
-engineer_run query run-with-timeout --timeout 30 -- python -c '
-import time, urllib.request
-while True:
-    try:
-        with urllib.request.urlopen("http://localhost:3000", timeout=2) as response:
-            if 200 <= response.status < 300:
-                break
-    except OSError:
-        pass
-    time.sleep(1)
-'
+# Wait for ready (max 30s) — uses fetch() for cross-platform compatibility
+engineer_run query run-with-timeout 30 -- bash -c 'until node -e "fetch(\"http://localhost:3000\").then(r=>{process.exit(r.ok?0:1)}).catch(()=>process.exit(1))" 2>/dev/null; do sleep 1; done'
 ```
 
 **Port conflicts:** Kill stale process (`lsof -ti:3000 | xargs kill`) or use alternate port (`--port 3001`).
@@ -539,7 +529,7 @@ while True:
 
 **Never present a checkpoint with broken verification environment.** If the local server isn't responding, don't ask user to "visit localhost:3000".
 
-> **Cross-platform note:** Use `python -c 'import urllib.request; r=urllib.request.urlopen("http://localhost:3000",timeout=2); print(r.status)'` instead of `curl` for health checks. `curl` is broken on Windows MSYS/Git Bash due to SSL/path mangling issues.
+> **Cross-platform note:** Use `node -e "fetch('http://localhost:3000').then(r=>console.log(r.status))"` instead of `curl` for health checks. `curl` is broken on Windows MSYS/Git Bash due to SSL/path mangling issues.
 
 ```xml
 <!-- WRONG: Checkpoint with broken environment -->

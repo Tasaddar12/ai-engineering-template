@@ -549,7 +549,7 @@ if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 
 Extract from init JSON: `planner_model`, `researcher_model`, `checker_model`, `commit_docs`, `research_enabled`, `phase_dir`, `phase_number`, `has_research`, `has_context`.
 
-Also load planning state (position, decisions, blockers) via the SDK — **use `python` to invoke the CLI** (not `npx`):
+Also load planning state (position, decisions, blockers) via the SDK — **use `python` to invoke the CLI**:
 ```bash
 engineer_run query state.load 2>/dev/null
 ```

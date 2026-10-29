@@ -1,5 +1,4 @@
 """Run active documentation helpers against fixtures and guard tracked Markdown."""
-import http.server
 import importlib.util
 import json
 import locale
@@ -11,7 +10,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import threading
 import unittest
 
 try:
@@ -255,27 +253,6 @@ class InlineHelpers(RuntimeCase):
         verdict=self.code('engineer/workflows/ship.md','INVALID_JSON')
         self.assertEqual('APPROVED\n',self.run_code(verdict,stdin='{"verdict":"APPROVED"}').stdout)
         self.assertEqual('INVALID_JSON\n',self.run_code(verdict,stdin='{bad').stdout)
-
-    def test_http_examples_use_actual_local_response(self):
-        class Handler(http.server.BaseHTTPRequestHandler):
-            def do_GET(self):
-                self.send_response(200)
-                self.end_headers()
-            def log_message(self,*args):
-                pass
-        with http.server.ThreadingHTTPServer(('127.0.0.1',0), Handler) as server:
-            thread=threading.Thread(target=server.serve_forever,daemon=True)
-            thread.start()
-            try:
-                codes=set(snippets('engineer/references/checkpoints.md'))
-                self.assertEqual(2,len(codes))
-                for code in codes:
-                    result=self.run_code(code.replace('localhost:3000','127.0.0.1:'+str(server.server_port)))
-                    self.assertIn(result.stdout,('', '200\n'))
-            finally:
-                server.shutdown()
-                thread.join()
-
 
 
 class RuntimeAdapters(RuntimeCase):
