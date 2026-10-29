@@ -1,7 +1,7 @@
 ---
 name: plan-phase
 description: Create detailed phase plan (PLAN.md) with verification loop
-argument-hint: "[phase] [--auto] [--research] [--skip-research] [--research-phase <N>] [--view] [--gaps] [--skip-verify] [--skip-ui] [--prd <file>] [--text] [--bounce] [--skip-bounce] [--tdd] [--granularity <coarse|standard|fine>] [--no-reversibility-gates]"
+argument-hint: "[phase] [--auto] [--research] [--skip-research] [--gaps] [--skip-verify] [--skip-ui] [--text] [--tdd] [--granularity <coarse|standard|fine>] [--no-reversibility-gates]"
 effort: max
 allowed-tools:
   - Read
@@ -24,13 +24,6 @@ Create executable phase prompts (PLAN.md files) for a roadmap phase with integra
 
 **Default flow:** Research (if needed) → Plan → Verify → Done
 
-**Research-only mode (`--research-phase <N>`):** Spawn `phase-researcher` for phase `N`, write `RESEARCH.md`, then exit before the planner runs. Useful for cross-phase research, doc review before committing to a planning approach, and correction-without-replanning loops where iterating on research alone is dramatically cheaper than re-spawning the planner.
-
-**Research-only modifiers:**
-- **No flag** — when `RESEARCH.md` already exists, auto-uses it: emits a one-line notice and exits cleanly, no prompt.
-- **`--research`** — force-refresh: re-spawn the researcher unconditionally, no prompt. Bypasses the existing-RESEARCH.md auto-use path.
-- **`--view`** — view-only: print existing `RESEARCH.md` to stdout. Does not spawn the researcher. Cheapest mode for the correction-without-replanning loop. If no `RESEARCH.md` exists yet, errors with a hint to drop `--view`.
-
 **Orchestrator role:** Parse arguments, validate phase, research domain (unless skipped), spawn planner, verify with plan-checker, iterate until pass or max iterations, present results.
 </objective>
 
@@ -47,7 +40,6 @@ Phase number: the `<arguments>` block (optional — when omitted, the orchestrat
 - `--skip-research` — Skip research, go straight to planning
 - `--gaps` — Gap closure mode (reads VERIFICATION.md, skips research)
 - `--skip-verify` — Skip verification loop
-- `--prd <file>` — Use a PRD/acceptance criteria file instead of discuss-phase. Parses requirements into CONTEXT.md automatically. Skips discuss-phase entirely.
 - `--text` — Use plain-text numbered lists instead of TUI menus (required for `/rc` remote sessions)
 - `--no-reversibility-gates` — Suppress the human checkpoint that a **one-way-door** decision normally earns, for runs you intend to leave unattended. By default a decision rated `one-way` (undo needs a migration, breaks a published contract, or is impossible) gets a `checkpoint:decision` before the task implementing it. Ratings are still recorded on tasks and `costly` items still flagged — the flag changes what stops the run, not what the plan remembers.
 
