@@ -9,7 +9,7 @@ allowed-tools:
   - Grep
   - Glob
   - AskUserQuestion
-requires: [review]
+requires: []
 ---
 
 <arguments>$ARGUMENTS</arguments>

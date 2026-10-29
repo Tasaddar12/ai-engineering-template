@@ -1,7 +1,7 @@
 ---
 name: progress
 description: Check progress, advance workflow, or dispatch freeform intent — the unified Engineer situational command
-argument-hint: "[--forensic | --next [--auto] [--converge]"
+argument-hint: "[--forensic | --next [--auto]]"
 effort: low
 allowed-tools:
   - Read
@@ -29,7 +29,6 @@ Three modes:
 <flags>
 - **--next**: Detect current project state and automatically invoke the next logical Engineer workflow step. Scans all prior phases for incomplete work before routing. `--next --force` bypasses safety gates.
 - **--next --auto**: Like `--next`, but after the determined step completes, automatically re-invokes `/progress --next --auto` to continue chaining steps until completion or a blocking decision. Enables hands-free plan→execute→verify→complete progression.
-- **--next --converge**: When the next action is planning (Route 3), route it through the plan-review **convergence** loop instead of the standard planner. Requires `workflow.plan_review_convergence=true` (enable with `engineer config-set workflow.plan_review_convergence true`). `--cross-ai` is an alias. Reviewer flags (`--codex`, `--claude`, `--all`) and `--max-cycles N` are forwarded to the convergence loop.
 - **--forensic**: Run 6-check integrity audit after the standard progress report.
 - **(no flag)**: Standard progress check + intelligent routing (Routes A through F).
 </flags>

@@ -18,11 +18,11 @@ Spawned by:
 - `/plan-phase` orchestrator (standard phase planning)
 - `/plan-phase --gaps` orchestrator (gap closure from verification failures)
 - `/plan-phase` in revision mode (updating plans based on checker feedback)
-- `/plan-phase --reviews` orchestrator (replanning with cross-AI review feedback)
+- Orchestrator-supplied reviews context (replanning with review feedback)
 
 Your job: Produce PLAN.md files that Claude executors can implement without interpretation. Plans are prompts, not documents that become prompts.
 
-@~/.claude/engineer/references/mandatory-initial-read.md
+Read repository AGENTS.md and the assigned role before acting.
 
 **Core responsibilities:**
 - **FIRST: Parse and honor user decisions from CONTEXT.md** (locked decisions are NON-NEGOTIABLE)
@@ -43,11 +43,11 @@ Before planning, discover project context:
 
 **Project instructions:** Read `./CLAUDE.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
-**Project skills:** @~/.claude/engineer/references/project-skills-discovery.md
+**Project skills:** Read applicable repository skills for the assigned scope.
 - Load `rules/*.md` as needed during **planning**.
 - Ensure plans account for project skill patterns and conventions.
 
-**agent_skills:** self-load per @~/.claude/engineer/references/agent-skills-bootstrap.md (agent type: `planner`)
+**agent_skills:** Read repository AGENTS.md, the assigned role and relevant project skills.
 </project_context>
 
 <context_fidelity>
@@ -532,7 +532,7 @@ start of execution when `<revision_context>` is provided by the orchestrator.
 
 <reviews_mode>
 See `engineer/references/planner-reviews.md`. Load this file at the
-start of execution when `--reviews` flag is present or reviews mode is active.
+start of execution when reviews mode is supplied in the invocation context.
 </reviews_mode>
 
 <execution_flow>
@@ -544,7 +544,6 @@ Load planning context:
 
 ```bash
 INIT=$(engineer_run query init.plan-phase "${PHASE}")
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
 Extract from init JSON: `planner_model`, `researcher_model`, `checker_model`, `commit_docs`, `research_enabled`, `phase_dir`, `phase_number`, `has_research`, `has_context`.
@@ -561,7 +560,7 @@ Check the invocation mode and load the relevant reference file:
 
 - If `--gaps` flag or gap_closure context present: Read `engineer/references/planner-gap-closure.md`
 - If `<revision_context>` provided by orchestrator: Read `engineer/references/planner-revision.md`
-- If `--reviews` flag present or reviews mode active: Read `engineer/references/planner-reviews.md`
+- If reviews mode supplied in the invocation context: Read `engineer/references/planner-reviews.md`
 - If `**Mode:** quick-batch` in `<planning_context>` : Read `engineer/references/planner-quick-batch.md`
 - Standard planning mode: no additional file to read
 
@@ -655,10 +654,6 @@ Read the most recent milestone retrospective and cross-milestone trends. Extract
 - **Patterns to follow** from "What Worked" and "Patterns Established"
 - **Patterns to avoid** from "What Was Inefficient" and "Key Lessons"
 - **Cost patterns** to inform model selection and agent strategy
-</step>
-
-<step name="inject_global_learnings">
-If `features.global_learnings` is `true`: run `engineer_run query learnings.query --tag <tag> --limit 5` once per tag from PLAN.md frontmatter `tags` (or use the single most specific keyword). The handler matches one `--tag` at a time. Prefix matches with `[Prior learning from <project>]` as weak priors. Project-local decisions take precedence. Skip silently if disabled or no matches.
 </step>
 
 <step name="gather_phase_context">

@@ -1,7 +1,7 @@
 ---
 name: map-codebase
 description: Analyze codebase with parallel mapper agents to produce .planning/codebase/ documents
-argument-hint: "[--fast [--focus tech|arch|quality|concerns]] [--query <term>|status|diff|refresh] [area]"
+argument-hint: "[--fast [--focus tech|arch|quality|concerns]] [area]"
 allowed-tools:
   - Read
   - Bash
@@ -9,7 +9,7 @@ allowed-tools:
   - Grep
   - Write
   - Agent
-requires: [config, new-project, plan-phase, onboard]
+requires: [new-project, plan-phase, onboard]
 ---
 
 <arguments>$ARGUMENTS</arguments>
@@ -30,7 +30,6 @@ Output: .planning/codebase/ folder with 7 structured documents about the codebas
 
 <flags>
 - **--fast**: Lightweight scan mode — spawns one mapper agent instead of four. Accepts an optional `--focus` value: `tech`, `arch`, `quality`, `concerns`, or `tech+arch` (default). Faster and lower-context than the full map.
-- **--query**: Codebase intelligence query mode. Sub-commands: `query <term>`, `status`, `diff`, `refresh`. Requires intel to be enabled in config (`intel.enabled: true`). Runs inline for query/status/diff; spawns an agent for refresh.
 - **(no flag)**: Full parallel map — spawns 4 mapper agents to produce all 7 codebase documents.
 </flags>
 
@@ -39,7 +38,6 @@ Arguments: see the `<arguments>` block above.
 
 Parse the first token of the `<arguments>` block:
 - If it is `--fast`: strip the flag, then read and execute `~/.claude/engineer/workflows/scan.md` (passing remaining args including optional --focus). Load it on demand here — it is deliberately not in `<execution_context>`, so the common full-map path does not pay for it.
-- If it is `--query`: strip the flag, run the intel workflow (passing remaining args as the subcommand).
 - Otherwise: pass all of the `<arguments>` block as focus area to the map-codebase workflow.
 
 **Load project state if exists:**

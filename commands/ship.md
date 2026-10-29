@@ -9,7 +9,7 @@ allowed-tools:
   - Glob
   - Write
   - AskUserQuestion
-requires: [review, verify-work]
+requires: [verify-work]
 ---
 
 <arguments>$ARGUMENTS</arguments>

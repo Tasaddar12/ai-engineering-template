@@ -1,7 +1,7 @@
 ---
 name: plan-phase
 description: Create detailed phase plan (PLAN.md) with verification loop
-argument-hint: "[phase] [--auto] [--research] [--skip-research] [--research-phase <N>] [--view] [--gaps] [--skip-verify] [--skip-ui] [--prd <file>] [--ingest <path-or-glob>] [--ingest-format <auto|nygard|madr|narrative>] [--reviews] [--text] [--bounce] [--skip-bounce] [--tdd] [--granularity <coarse|standard|fine>] [--no-reversibility-gates]"
+argument-hint: "[phase] [--auto] [--research] [--skip-research] [--research-phase <N>] [--view] [--gaps] [--skip-verify] [--skip-ui] [--prd <file>] [--text] [--bounce] [--skip-bounce] [--tdd] [--granularity <coarse|standard|fine>] [--no-reversibility-gates]"
 effort: max
 allowed-tools:
   - Read
@@ -12,7 +12,7 @@ allowed-tools:
   - Agent
   - AskUserQuestion
   - WebFetch
-requires: [discuss-phase, phase, review, update]
+requires: [discuss-phase, phase, update]
 ---
 
 <arguments>$ARGUMENTS</arguments>
@@ -48,9 +48,6 @@ Phase number: the `<arguments>` block (optional — when omitted, the orchestrat
 - `--gaps` — Gap closure mode (reads VERIFICATION.md, skips research)
 - `--skip-verify` — Skip verification loop
 - `--prd <file>` — Use a PRD/acceptance criteria file instead of discuss-phase. Parses requirements into CONTEXT.md automatically. Skips discuss-phase entirely.
-- `--ingest <path-or-glob>` — Use one or more ADR files instead of discuss-phase. Parses locked decisions + scope fences into CONTEXT.md automatically. Skips discuss-phase entirely.
-- `--ingest-format <auto|nygard|madr|narrative>` — Optional ADR parser format override (`auto` default).
-- `--reviews` — Replan incorporating cross-AI review feedback from REVIEWS.md (produced by `/review`)
 - `--text` — Use plain-text numbered lists instead of TUI menus (required for `/rc` remote sessions)
 - `--no-reversibility-gates` — Suppress the human checkpoint that a **one-way-door** decision normally earns, for runs you intend to leave unattended. By default a decision rated `one-way` (undo needs a migration, breaks a published contract, or is impossible) gets a `checkpoint:decision` before the task implementing it. Ratings are still recorded on tasks and `costly` items still flagged — the flag changes what stops the run, not what the plan remembers.
 

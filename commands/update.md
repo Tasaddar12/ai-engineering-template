@@ -1,7 +1,7 @@
 ---
 name: update
 description: Update Engineer from a selected pinned source revision
-argument-hint: "[--sync | --reapply]"
+argument-hint: "[source/ref]"
 allowed-tools:
   - Read
   - Write
@@ -33,20 +33,10 @@ Routes to the update workflow which handles:
 </execution_context>
 
 <flags>
-- **--sync**: Sync managed Engineer skills across runtime roots so multi-runtime users stay aligned after an update. Runs the sync-skills workflow (--from, --to, --dry-run, --apply flags supported).
-- **--reapply**: Reapply local modifications after an Engineer update. Uses three-way comparison (pristine baseline, user-modified backup, newly installed version) to merge user customizations back. Runs the reapply-patches workflow.
 - **(no flag)**: Select the requested source/ref, review its pinned changes and exact transaction, then apply the reviewed plan.
 </flags>
 
 <process>
-Parse the first token of the `<arguments>` block:
-- If it is `--sync`: strip the flag, execute the sync-skills workflow (passing remaining args for --from/--to/--dry-run/--apply).
-- If it is `--reapply`: strip the flag, execute the reapply-patches workflow.
-- Otherwise: execute the update workflow end-to-end, passing the `<arguments>` block through so the workflow can select the requested source/ref.
+Execute the update workflow end-to-end, passing the `<arguments>` block through so the workflow can select the requested source/ref.
 
 </process>
-
-<execution_context_extended>
-@~/.claude/engineer/workflows/sync-skills.md
-@~/.claude/engineer/workflows/reapply-patches.md
-</execution_context_extended>

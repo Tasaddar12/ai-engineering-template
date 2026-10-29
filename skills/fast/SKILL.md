@@ -9,7 +9,7 @@ allowed-tools:
   - Bash
   - Grep
   - Glob
-requires: [config, quick]
+requires: [quick]
 ---
 
 <arguments>$ARGUMENTS</arguments>
