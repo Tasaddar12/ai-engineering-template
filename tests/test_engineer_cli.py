@@ -5,8 +5,10 @@ import subprocess
 import sys
 try:
     from .test_engineer_runtime import RuntimeCase, RUNTIME, SOURCE
+    from .test_runtime_launcher_parity import parity
 except ImportError:
     from test_engineer_runtime import RuntimeCase, RUNTIME, SOURCE
+    from test_runtime_launcher_parity import parity
 
 
 class CliContract(RuntimeCase):
@@ -51,8 +53,9 @@ response_language: "en#US"
         self.assertEqual("claude", json.loads(result.stdout)["host"])
 
     def test_shim_when_posix_shell_available(self):
-        shell = shutil.which("sh")
+        shell = parity.sh_path()
         if not shell:
             self.skipTest("POSIX shell unavailable")
-        result = subprocess.run([shell, str(SOURCE/"engineer/bin/engineer_run"), "query", "runtime-identity", "--pick", "packageName"], cwd=self.root, env=self.env, text=True, capture_output=True, check=True)
+        result = subprocess.run([shell, str(SOURCE/"engineer/bin/engineer_run"), "query", "runtime-identity", "--pick", "packageName"], cwd=self.root, env=self.env, text=True, capture_output=True)
+        self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual("engineer-runtime", result.stdout.strip())
