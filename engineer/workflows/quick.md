@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 <purpose>
 Execute small, ad-hoc tasks with Engineer guarantees (atomic commits, STATE.md tracking). Quick mode spawns planner (quick mode) + executor(s), tracks tasks in `.planning/quick/`, and updates STATE.md's "Quick Tasks Completed" table.
 

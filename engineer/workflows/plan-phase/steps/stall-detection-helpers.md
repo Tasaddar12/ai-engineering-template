@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 # Bounded Stall-Detection Helpers 
 
 `planner.stall_detection_enabled` controls the wait policy for the five scoped

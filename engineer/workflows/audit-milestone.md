@@ -5,6 +5,7 @@ Verify milestone achieved its definition of done by aggregating phase verificati
 </purpose>
 
 <required_reading>
+@~/.claude/engineer/references/run-resolver.md
 Read all files referenced by the invoking prompt's execution_context before starting.
 </required_reading>
 

@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 **Step 6: Worktree create + executor dispatch**
 
 This is the batch's MUTATING wave — worktree create/executor dispatch/merge

@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 <!-- engineer:loop-host
 step: ship
 points: ship:pre, ship:post

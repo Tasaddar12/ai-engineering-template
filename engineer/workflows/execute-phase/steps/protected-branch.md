@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 # Protected-branch warning for `branching_strategy: none` 
 
 Run this from the `handle_branching` step's `"none"` arm, after deciding to

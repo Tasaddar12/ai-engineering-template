@@ -65,7 +65,6 @@ class StructuralParity(unittest.TestCase):
         self.assertGreaterEqual(len(extracted), 5, extracted)
         self.assertEqual([], parity.uncovered_default_vars(SNIPPET, covered))
 
-    @unittest.expectedFailure
     def test_b_workflows_hold_exactly_one_canonical_preamble_before_first_use(self):
         # Violation: 20 workflow files (add-backlog.md, audit-milestone.md, debug.md, ...) still carry the
         # legacy one-line `_ENGINEER_SHIM_NAME=` launcher instead of the canonical snippet.
@@ -347,7 +346,6 @@ class StandaloneExecutable(FixtureCase):
 
 
 class AgentParity(unittest.TestCase):
-    @unittest.expectedFailure
     def test_b_agents_hold_exactly_one_canonical_preamble_before_first_use(self):
         # Violation: agents/code-fixer.md, code-reviewer.md, debug-session-manager.md, debugger.md,
         # phase-researcher.md and ui-researcher.md use engineer_run without the canonical preamble

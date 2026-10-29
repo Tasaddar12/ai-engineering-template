@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 **Step 2a: Resume mode (only when `$RESUME_BATCH_ID` is set)**
 
 Skip this step entirely if `$RESUME_BATCH_ID` is empty.

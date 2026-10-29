@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 <purpose>
 Inspect a user-selected pinned source revision, display its complete changes and file transaction, preserve custom files, and apply only the reviewed update with backups and rollback.
 </purpose>

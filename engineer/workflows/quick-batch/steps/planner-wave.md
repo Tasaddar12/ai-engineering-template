@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 **Step 4: Per-DAG-layer planning**
 
 Planning proceeds one DAG layer at a time, driven by the CURRENT wave

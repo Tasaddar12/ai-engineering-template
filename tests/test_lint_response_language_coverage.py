@@ -539,18 +539,8 @@ class RealRepository(unittest.TestCase):
         at = lines.index(anchor)
         self.assertEqual(directive, lines[at + 1])
 
-    @unittest.expectedFailure
     def test_every_real_workflow_is_covered(self):
-        """The real catalog is not fully covered; this stays expected-failing until the content is repaired.
-
-        Violations at the pinned base: engineer/workflows/execute-phase.md @-imports
-        references/execute-phase-response-language.md, which does not exist in engineer/references/, so run()
-        reports one systemic broken-reference failure; with that reference uncovered, find_violations lists
-        WORKFLOW.md (no directive), execute-phase.md, and the execute-phase fragments completion-reconciliation,
-        executor-isolation-dispatch, partial-wave, per-plan-executor-routing, per-plan-worktree-gate,
-        post-merge-gate, protected-branch, ready-wave-gate and tdd-applicability-resolution (each inherits from
-        the uncovered parent).
-        """
+        """Every real workflow must resolve its shared references and carry the directive."""
         io = Recorder()
         self.assertEqual(0, lint.run(io=io), "\n".join(io.errors)[:600])
 
@@ -559,13 +549,13 @@ class RealRepository(unittest.TestCase):
 
 
 class CommandLine(unittest.TestCase):
-    def test_module_runs_from_engineer_bin_and_reports_the_real_failure(self):
+    def test_module_runs_from_engineer_bin_and_reports_the_real_catalog(self):
         completed = subprocess.run([sys.executable, "-m", "lib.lint_response_language_coverage"], cwd=BIN,
                                    env={**os.environ, "PYTHONIOENCODING": "utf-8"},
                                    capture_output=True, text=True, encoding="utf-8")
-        self.assertEqual(1, completed.returncode)
-        self.assertIn("lint-response-language-coverage:", completed.stderr)
-        self.assertEqual("", completed.stdout)
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertEqual("", completed.stderr)
+        self.assertRegex(completed.stdout, r"lint-response-language-coverage: OK \(\d+ workflows covered\)")
 
     def test_main_ignores_arguments_like_upstream(self):
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):

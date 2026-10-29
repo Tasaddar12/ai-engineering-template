@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 <step name="automated_ui_verification">
 **Automated UI Verification (when Playwright-MCP is available)**
 

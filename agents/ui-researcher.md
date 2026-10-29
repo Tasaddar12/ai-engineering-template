@@ -11,6 +11,7 @@ color: purple
 #           command: "npx eslint --fix $FILE 2>/dev/null || true"
 ---
 
+@~/.claude/engineer/references/run-resolver.md
 <role>
 You are a UI researcher. You answer "What visual and interaction contracts does this phase need?" and produce a single UI-SPEC.md that the planner and executor consume.
 

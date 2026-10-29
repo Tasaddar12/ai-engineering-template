@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 <!-- engineer:loop-host
 step: verify
 points: verify:pre, verify:post
@@ -537,7 +539,7 @@ If no more tests → Go to `complete_session`
 </step>
 
 <step name="reconcile_gaps">
-**Reconcile diagnosed gaps against completed gap-closure plans:** when verify-work resumes after `/execute-phase --gaps-only`, UAT `## Gaps` entries still read `status: failed` even though their fix plans already executed — without reconciliation they'd be re-diagnosed as fresh blockers. For each `status: failed` gap with a `*-PLAN.md` whose `gap_ids` names it AND a matching `*-SUMMARY.md`, mark it `resolved` (with `resolved_by`/`resolved_at`) in place; otherwise leave it `failed`. Resolved gaps are never re-diagnosed or re-planned; a later regression gets a fresh `gap_id`, not a reopened old one.
+**Reconcile diagnosed gaps against completed gap-closure plans:** when verify-work resumes after `/execute-phase --gaps-only`, UAT `## Gaps` entries may still read `status: failed` after their fix plans executed. Mark an entry `resolved` only when its unique `gap_id` appears in the `gap_ids` frontmatter of a regular same-phase `*-PLAN.md`, that plan has a matching regular `*-SUMMARY.md`, and `resolved_by` names that plan with a valid ISO date or timestamp in `resolved_at`. Otherwise leave it failed and report the missing or invalid evidence. Resolved gaps are never re-diagnosed or re-planned; a later regression gets a fresh `gap_id`, not a reopened old one.
 
 Exact YAML shape and the announcement line: `engineer/workflows/verify-work/detail/elaboration.md` § 1.
 </step>
@@ -813,7 +815,7 @@ When UAT testing found issues, this sub-flow (diagnose_issues -> plan_gap_closur
 </step>
 
 <step name="plan_gap_closure">
-Spawn planner in --gaps mode against the UAT (with diagnoses), `{state_path}` (Project State), and `{roadmap_path}` (Roadmap). Each created PLAN.md MUST carry `gap_closure: true` and `gap_ids: [...]` in its frontmatter so a later verify-work resume can reconcile it.
+Spawn planner in --gaps mode against the UAT (with diagnoses), `{state_path}` (Project State), and `{roadmap_path}` (Roadmap). Each created PLAN.md MUST list the gap identifiers it addresses in `gap_ids: [...]` frontmatter. A later verify-work resume requires a matching phase SUMMARY before it records a gap as resolved.
 
 <!-- engineer:protected -->
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.

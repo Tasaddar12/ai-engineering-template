@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 @~/.claude/engineer/references/response-language-directive.md
 
 <purpose>

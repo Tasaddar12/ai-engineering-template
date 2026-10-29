@@ -13,6 +13,7 @@ Instantly restore full project context so "Where were we?" has an immediate, com
 </purpose>
 
 <required_reading>
+@~/.claude/engineer/references/run-resolver.md
 @~/.claude/engineer/references/continuation-format.md
 </required_reading>
 

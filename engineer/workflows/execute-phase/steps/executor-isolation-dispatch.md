@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 # Executor isolation dispatch
 
 Read and follow this fragment from `execute-phase.md` step 3 when dispatching a wave.

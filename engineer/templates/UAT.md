@@ -73,6 +73,7 @@ blocked: [N]
 <!-- YAML format for plan-phase --gaps consumption -->
 
 - truth: "[expected behavior from test]"
+  gap_id: "[unique identifier assigned when this gap is recorded]"
   status: failed | resolved
   reason: "User reported: [verbatim response]"
   severity: blocker | major | minor | cosmetic
@@ -81,8 +82,8 @@ blocked: [N]
   artifacts: [] # Filled by diagnosis
   missing: [] # Filled by diagnosis
   debug_session: "" # Filled by diagnosis
-  resolved_by: "" # Written by verify-work's reconcile_gaps  when # an executed gap-closure plan resolves this gap — # never author this directly. Plan basename.
-  resolved_at: "" # Written alongside resolved_by .
+  resolved_by: "" # Written by verify-work reconciliation; basename of the matching plan.
+  resolved_at: "" # ISO date or timestamp written with resolved_by.
 ```
 
 ---
@@ -121,17 +122,18 @@ blocked: [N]
 - APPEND only when issue found (YAML format)
 - After diagnosis: fill `root_cause`, `artifacts`, `missing`, `debug_session`
 - This section feeds directly into /plan-phase --gaps
-- `status: resolved`: when `/verify-work`'s `reconcile_gaps`
-  step finds an executed gap-closure plan (a `*-PLAN.md` naming this entry's
-  `gap_id` with a matching `*-SUMMARY.md`), it updates the entry IN PLACE —
+- `status: resolved`: only when `/verify-work`'s `reconcile_gaps`
+  step finds a valid `resolved_by` plan basename in this phase, its matching
+  `*-SUMMARY.md`, and frontmatter `gap_ids` containing this entry's `gap_id`.
+  The plan and summary must be regular files, not symlinks. It updates the entry IN PLACE —
   `status: failed` → `status: resolved` — and adds `resolved_by` (the
   resolving plan's basename) and `resolved_at` (the date). Only the
   `verify-work` reconciliation step may record this transition, after finding an
   executed gap-closure plan whose `gap_ids` names this entry and a matching
-  summary. Do not author `resolved` or its provenance by hand. The Python
-  implementation in `engineer/bin/lib/uat.py` backs `phase.uat-passed`, which
-  checks UAT item statuses and, when requested, verification status; it does not
-  inspect `resolved_by` or confirm the plan and summary. Follow `verify-work`'s
+  summary, valid ISO-formatted `resolved_at`, and the same `gap_id`. Do not author
+  `resolved` or its provenance by hand. The Python implementation in
+  `engineer/bin/lib/uat.py` backs `phase.uat-passed` and validates recorded
+  gap-resolution evidence alongside UAT outcomes. Follow `verify-work`'s
   reconciliation rule before continuing.
   A later regression against the same test gets a fresh `gap_id`, never a
   reopened resolved one.

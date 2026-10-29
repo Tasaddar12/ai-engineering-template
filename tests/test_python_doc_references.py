@@ -132,8 +132,8 @@ class PythonDocReferences(unittest.TestCase):
             self.assertEqual(populated_status["dataRows"], 1)
             self.assertTrue(populated_status["supplied"])
 
-    def test_full_workflow_tree_has_no_live_node_helper_invocations(self):
-        invocation = re.compile(r"(?im)^\s*node\s+(?:-e|-p|[^\s]*\.cjs)\b")
+    def test_owned_documentation_has_no_live_node_helper_invocations(self):
+        invocation = re.compile(r"(?im)^\s*node\s+(?:-e|-p|[^\s]*\.(?:cjs|cts|mjs|js))\b")
         for path in sorted((ROOT / "engineer/workflows").rglob("*.md")):
             relative = path.relative_to(ROOT).as_posix()
             text = path.read_text(encoding="utf-8")
@@ -146,6 +146,22 @@ class PythonDocReferences(unittest.TestCase):
         self.assertIn("--pick supplied", text)
         self.assertNotRegex(text, r"spec\.section[^\n]*--pick present")
         self.assertIn("Empty headings and header/separator-only tables", text)
+
+    def test_discuss_chain_stops_after_planning(self):
+        chain = (ROOT / "engineer/workflows/discuss-phase/modes/chain.md").read_text(encoding="utf-8")
+        self.assertIn("engineer_run query config-set workflow._auto_chain_active false", chain)
+        self.assertIn("/plan-phase ${PHASE} ${ENGINEER_WS}", chain)
+        self.assertIn("without `--auto` or `--chain`", chain)
+        self.assertIn("Do not dispatch `execute-phase`", chain)
+
+    def test_plan_auto_advance_checks_phase_authorization(self):
+        path = ROOT / "engineer/workflows/plan-phase/steps/auto-advance-check.md"
+        self.assertTrue(path.is_file())
+        text = path.read_text(encoding="utf-8")
+        for evidence in ("<execution_authorization>", "Status: Granted", "current phase",
+                         "fails", "closed.", "Do not invoke the Skill tool for", "--auto", "--chain"):
+            with self.subTest(evidence=evidence):
+                self.assertIn(evidence, text)
 
     def test_active_helper_examples_do_not_execute_legacy_node_scripts(self):
         for relative in ACTIVE_DOCS:

@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 **Step 2b: Create a new batch (only when `$RESUME_BATCH_ID` is empty)**
 
 Skip this step entirely if `$RESUME_BATCH_ID` is set (resume-mode.md owns
