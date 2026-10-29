@@ -64,7 +64,7 @@ engineer_run query dispatch-isolation --raw --force-isolation "$ISOLATION" >/dev
 `isolation == none` to 1 regardless of `--jobs`/capacity — row 6):
 ```bash
 QB_EXEC_CONC_JSON=$(engineer_run quick-batch effective-concurrency --jobs "$JOBS" --task-count "$ITEM_COUNT" --capacity "$CAPACITY" --isolation "$ISOLATION" --mutating --raw)
-EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(String(j.concurrency))}catch{process.stdout.write("1")}})')
+EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | engineer_run query json.get --field concurrency --default 1 --raw 2>/dev/null || printf 1)
 ```
 
 **Dispatch rounds.** Repeat until no item is eligible-and-not-yet-dispatched

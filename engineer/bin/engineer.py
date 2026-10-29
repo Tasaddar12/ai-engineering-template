@@ -6,6 +6,12 @@ import os
 import sys
 from pathlib import Path
 
+# Pipes are UTF-8 protocol boundaries even under Windows legacy code pages and
+# isolated (-I) Python, which deliberately ignores PYTHONUTF8/PYTHONIOENCODING.
+for _stream in (sys.stdin, sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8")
+
 # An explicit source path also supports Python's isolated (-I) invocation.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import bundles, config, decisions, frontmatter, gitops, misc, models, packages
@@ -53,7 +59,8 @@ def registry():
         "verification.run-checks": verification.run_checks, "verification.check-status": verification.check_status,
         "phase.uat-passed": uat.passed, "audit-uat": uat.outstanding, "audit-open": uat.audit_open,
         "uat.classify-coverage": uat.classify, "uat.render-checkpoint": uat.checkpoint, "uat.complete-session": uat.complete,
-        "spec.edge-probe": probes.edge, "spec.section": probes.section, "summary-extract": misc.summary_extract,
+        "spec.edge-probe": probes.edge, "spec.section": probes.section,
+        "spec.section-status": probes.section_status, "summary-extract": misc.summary_extract,
         "package-legitimacy": packages.check, "run-with-timeout": misc.timeout,
         "generate-claude-md": misc.instruction_file, "planning.validate": lambda a: misc.integrity(a, False),
         "planning.integrity": lambda a: misc.integrity(a, True),
@@ -178,7 +185,7 @@ def registry():
         verbs["phase."+action+"-inputs"] = lambda a, action=action: research.inputs(a, "discuss" if action == "discussion" else action)
     for action in ("prohibitions", "ui", "project", "coverage"):
         verbs["spec."+action] = lambda a, action=action: specs.command(a, action)
-    verbs["spec.ui-probe"] = lambda a: specs.command(a, "ui")
+    verbs["spec.ui-probe"] = probes.ui
     verbs["spec.prohibition-probe"] = lambda a: specs.command(a, "prohibitions")
     for action in ("status", "append", "fixed", "waive"):
         verbs["windows."+action] = lambda a, action=action: quality.command(a, action)
@@ -195,7 +202,7 @@ def registry():
         verbs[key] = lambda a, action=action: workflow_ops.command(a, action)
     for action in ("get", "read", "length", "lines", "commits", "exec-ready", "has-section", "predicate", "validate", "encode-lines", "depth-input", "depth-fields", "status-reason"):
         verbs["json."+action] = lambda a, action=action: runtime_tools.json_command(a, action)
-    for action in ("frontmatter", "summary-files", "contributions", "evidence", "normalize-structural"):
+    for action in ("frontmatter", "summary-files", "contributions", "evidence", "normalize-structural", "evidence-lines", "parse-flags", "resolve-depth"):
         verbs["review."+action] = lambda a, action=action: runtime_tools.review_adapter(a, action)
     for kind in ("code-review", "complete-milestone", "execute-phase", "new-milestone", "new-project", "onboard", "phase-op", "plan-phase", "progress", "quick", "quick-batch", "todos", "verify-work", "ship", "debug", "docs-update", "map-codebase", "milestone-op", "resume", "update"):
         verbs["init."+kind] = lambda a, kind=kind: bundles.init(a, kind)

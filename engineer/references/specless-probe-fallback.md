@@ -19,21 +19,10 @@ skip, never a hard-fail). Sets `SPECLESS_FALLBACK`, `EDGE_ABSENT`, `PROHIB_ABSEN
 SPECLESS_CFG=$(engineer_run query config-get workflow.specless_probe_fallback 2>/dev/null || echo "true")
 SPECLESS_FALLBACK=true; [[ "$SPECLESS_CFG" == "false" ]] && SPECLESS_FALLBACK=false
 
-# Per-section absence: "not supplied" = header absent OR present-but-empty. The
-# shared, tested `spec-section` helper (src/spec-section.cts -> bin/lib/spec-section.cjs) is the SINGLE
-# source of truth for the canonical SPEC headings (suffix-tolerant) and table-row counting, replacing
-# ad-hoc awk (contract pinned by tests/spec-section.test.cjs). Resolve via the edge-probe install-dir
-# idiom; build only in a source checkout, else fail loud (never silently mis-detect).
-_ENGINEER_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-_engineer_lib() { for _d in "$_ENGINEER_RT/engineer/bin/lib" "$_ENGINEER_RT/bin/lib" "$_ENGINEER_RT/.claude/bin/lib" "$HOME/.claude/engineer/bin/lib" "$HOME/.claude/bin/lib"; do [ -f "$_d/$1" ] && { echo "$_d/$1"; return; }; done; }
-SPEC_SECTION_JS=$(_engineer_lib spec-section.cjs)
-if [ -z "$SPEC_SECTION_JS" ] && [ -f "$_ENGINEER_RT/tsconfig.build.json" ] && [ -f "$_ENGINEER_RT/src/spec-section.cts" ]; then
-  npm --prefix "$_ENGINEER_RT" run build:lib 2>/dev/null || true; SPEC_SECTION_JS=$(_engineer_lib spec-section.cjs)
-fi
-[ -n "$SPEC_SECTION_JS" ] || { echo "ERROR: spec-section.cjs not found - reinstall Engineer or run build:lib." >&2; exit 1; }
+# The Python spec.section-status verb owns canonical heading and table-row detection.
 # supplied => header present AND >=1 row; missing $SPEC_FILE => supplied:false => fallback fires.
-EDGE_ABSENT=1;   node "$SPEC_SECTION_JS" "$SPEC_FILE" edges       2>/dev/null | grep -q '"supplied":true' && EDGE_ABSENT=0
-PROHIB_ABSENT=1; node "$SPEC_SECTION_JS" "$SPEC_FILE" prohibitions 2>/dev/null | grep -q '"supplied":true' && PROHIB_ABSENT=0
+EDGE_ABSENT=1;   engineer_run query spec.section-status "$SPEC_FILE" edges --pick supplied --raw 2>/dev/null | grep -qx true && EDGE_ABSENT=0
+PROHIB_ABSENT=1; engineer_run query spec.section-status "$SPEC_FILE" prohibitions --pick supplied --raw 2>/dev/null | grep -qx true && PROHIB_ABSENT=0
 
 # Disabled path - record the skip VISIBLY, never silently (RAIL-05 / PROH-4); the note rides into the
 # planner prompt (Step 8) so the plan records that no probe predicates were generated.
@@ -63,26 +52,7 @@ phase requirement IDs (`{phase_req_ids}`) instead of a SPEC interview. Leave `$C
 `EDGE_ABSENT=0` — a SPEC-supplied section is never re-run (section-level precedence).
 
 ```bash
-# Resolve the compiled edge-probe.cjs against the Engineer install dir via RUNTIME_DIR — NOT the
-# consuming project's git root — falling back to git toplevel / $HOME/.claude (spec-phase.md:198 idiom).
-_ENGINEER_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-EDGE_PROBE_JS=$(for _c in \
-  "$_ENGINEER_RT/engineer/bin/lib/edge-probe.cjs" "$_ENGINEER_RT/bin/lib/edge-probe.cjs" \
-  "$_ENGINEER_RT/.claude/bin/lib/edge-probe.cjs" "$HOME/.claude/engineer/bin/lib/edge-probe.cjs" \
-  "$HOME/.claude/bin/lib/edge-probe.cjs"; do [ -f "$_c" ] && { echo "$_c"; break; }; done)
-# Build ONLY inside a verified Engineer source checkout; --prefix pins npm so we never trigger the
-# consuming project's build:lib. Never silent-skip (RR-04) — fail loud if unresolvable.
-if [ -z "$EDGE_PROBE_JS" ]; then
-  if [ -f "$_ENGINEER_RT/tsconfig.build.json" ] && [ -f "$_ENGINEER_RT/src/edge-probe.cts" ]; then
-    npm --prefix "$_ENGINEER_RT" run build:lib 2>/dev/null || true
-    EDGE_PROBE_JS=$(for _c in \
-      "$_ENGINEER_RT/engineer/bin/lib/edge-probe.cjs" "$_ENGINEER_RT/bin/lib/edge-probe.cjs" \
-      "$_ENGINEER_RT/.claude/bin/lib/edge-probe.cjs" "$HOME/.claude/engineer/bin/lib/edge-probe.cjs" \
-      "$HOME/.claude/bin/lib/edge-probe.cjs"; do [ -f "$_c" ] && { echo "$_c"; break; }; done)
-  fi
-  [ -n "$EDGE_PROBE_JS" ] || { echo "ERROR: edge-probe.cjs not found — reinstall Engineer or run \`npm run build:lib\`." >&2; exit 1; }
-fi
-
+# The Python runtime owns probe loading; no build step is needed.
 # THE ONE DIVERGENCE (D-02): source requirements from THIS phase. Populate the heredoc from
 # {phase_req_ids}, pulling each requirement's text from REQUIREMENTS.md: {"id","text","shapes"?}.
 # mktemp suffix trick is BSD/GNU portable.
@@ -94,25 +64,25 @@ cat > "$REQS_JSON" <<'JSON'
 JSON
 # Guard — fail loud on empty/invalid array OR a still-present `<replace:>` placeholder (forgotten
 # substitution would yield a bogus report). Never a silent no-op.
-if ! node -e 'const a=require(process.argv[1]);if(!Array.isArray(a)||a.length===0)process.exit(1);if(a.some(r=>typeof r.text!=="string"||!r.text.trim()||r.text.includes("<replace:")))process.exit(1)' "$REQS_JSON" 2>/dev/null; then
+if ! engineer_run query json.validate --schema requirements --input "$REQS_JSON" 2>/dev/null; then
   echo "ERROR: edge-probe requirements JSON is empty/invalid or still holds the <replace: …> placeholder — populate \$REQS_JSON from {phase_req_ids} before running." >&2
   exit 1
 fi
-# Invoke + CAPTURE, exit-checked (engine FAILS CLOSED exit 2 on bad shape; a bare COVERAGE=$(node …)
+# Invoke + CAPTURE, exit-checked (engine FAILS CLOSED exit 2 on bad shape; an unchecked coverage command substitution
 # would swallow it and fall through to prose re-derivation = fail-OPEN).
-if ! COVERAGE=$(node "$EDGE_PROBE_JS" "$REQS_JSON"); then
+if ! COVERAGE=$(engineer_run query spec.edge-probe "$REQS_JSON"); then
   rm -f "$REQS_JSON"
   echo "ERROR: edge-probe engine failed (invalid shapes or bad input) — fix the requirement(s); never proceed with empty coverage." >&2
   exit 1
 fi
 rm -f "$REQS_JSON"
 # Exit-0-but-garbage guard: report must parse as JSON with { items[], coverage{} }.
-if ! printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let r;try{r=JSON.parse(s)}catch{process.exit(1)}if(!r||!Array.isArray(r.items)||typeof r.coverage!=="object"||r.coverage===null)process.exit(1)})'; then
+if ! printf '%s' "$COVERAGE" | engineer_run query json.validate --schema coverage >/dev/null; then
   echo "ERROR: edge-probe produced an unparseable/malformed coverage report — refusing to proceed." >&2
   exit 1
 fi
 # Zero-applicable guard: surface a likely classification miss loudly (spec-phase 5.5:277 shape).
-APPLICABLE=$(printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let n=0;try{n=JSON.parse(s).coverage.applicable}catch{n=0}process.stdout.write(String(n))})')
+APPLICABLE=$(printf '%s' "$COVERAGE" | engineer_run query json.get --field coverage.applicable --default 0 --raw)
 if [ "$APPLICABLE" = "0" ]; then
   echo "WARNING: edge-probe proposed ZERO applicable edges across all phase requirements — likely a classification miss, not a genuinely edge-free phase. Do NOT silently write an empty fallback Edge Coverage." >&2
 fi

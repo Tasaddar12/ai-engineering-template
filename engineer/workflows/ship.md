@@ -475,12 +475,9 @@ If `REVIEW_CMD` is non-empty and not `"null"`, run the external review:
    If the command succeeded, parse the JSON output and report the verdict:
    ```bash
    # Parse verdict and summary from REVIEW_OUTPUT JSON
-   VERDICT=$(echo "${REVIEW_OUTPUT}" | node -e "
-     let d=''; process.stdin.on('data',c=>d+=c); process.stdin.on('end',()=>{
-       try { const r=JSON.parse(d); console.log(r.verdict); }
-       catch(e) { console.log('INVALID_JSON'); }
-     });
-   ")
+   VERDICT=$(echo "${REVIEW_OUTPUT}" | python -c 'import json,sys
+try: print(json.load(sys.stdin)["verdict"])
+except (ValueError,KeyError,TypeError): print("INVALID_JSON")')
    ```
    - If `verdict` is `"APPROVED"`: report approval with confidence and summary.
    - If `verdict` is `"REVISE"`: report issues found, list each issue with severity, file, line_range, description, and suggestion.

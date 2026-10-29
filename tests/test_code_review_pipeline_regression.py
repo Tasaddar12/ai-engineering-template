@@ -115,19 +115,9 @@ class ComputeFileScopeParser(unittest.TestCase):
         yaml = "key-files:\n  modified:\n    - Dockerfile — multi-stage build"
         self.assertEqual(["Dockerfile"], crp.parse_key_files(yaml))
 
-    def test_workflow_contains_hyphen_aware_boundary_regex(self):
-        self.assertTrue("[\\\\w-]" in scope_section() or "[\\w-]" in scope_section())
-
-    def test_workflow_contains_em_dash_split_and_parenthetical_strip(self):
-        section = scope_section()
-        self.assertIn("replace(/\\s+\\([^)]*\\)\\s*$, '')".replace("$,", "$/,"), section)
-        self.assertIn("split(/\\s+—\\s", section)
-
-    def test_2666_workflow_does_not_carry_the_buggy_slash_and_extension_predicate(self):
-        self.assertNotIn("/\\//.test(raw) && /\\.[A-Za-z0-9]+$/.test(raw)", scope_section())
-
-    def test_2666_workflow_accepts_known_extensionless_build_files(self):
-        self.assertRegex(scope_section(), r"(?i)dockerfile")
+    def test_workflow_delegates_summary_parsing_to_the_python_owner(self):
+        self.assertIn('engineer_run query review.summary-files --report "$1" --raw', WORKFLOW)
+        self.assertNotIn('node - "$1"', WORKFLOW)
 
     def test_2666_tier3_cross_check_uses_exact_whole_line_matching(self):
         self.assertIn("grep -Fxq", WORKFLOW)
@@ -926,117 +916,20 @@ class FixerTypeScriptCheck(unittest.TestCase):
 
 
 class HelperModuleResolver(unittest.TestCase):
-    """Upstream #5640: helper modules resolve from the installed runtime, not the cwd."""
+    """The launcher now owns Python helper resolution for every exported adapter."""
 
-    SITES = [{"file": crp.WORKFLOW_PATH, "module": "code-review-flags.cjs", "fatal": True},
-             {"file": crp.WORKFLOW_PATH, "module": "code-review-depth.cjs", "fatal": True},
-             {"file": crp.WORKFLOW_PATH, "module": "fallow-runner.cjs", "fatal": False}]
+    def test_every_helper_loading_step_uses_the_installed_runtime(self):
+        for verb in ('review.parse-flags', 'review.resolve-depth', 'review.normalize-structural'):
+            self.assertIn('engineer_run query '+verb, WORKFLOW)
+        self.assertEqual([], crp.resolver_blocks(WORKFLOW))
+        self.assertNotIn('ENGINEER_LIB_DIR', WORKFLOW)
+        self.assertNotIn('require(', WORKFLOW)
 
-    @staticmethod
-    def block(site):
-        siblings = [s for s in HelperModuleResolver.SITES if s["file"] == site["file"]]
-        return crp.resolver_blocks(crp.read_text(site["file"]))[siblings.index(site)]
+    def test_each_adapter_is_registered_in_the_python_entrypoint(self):
+        entry = (SOURCE/'engineer/bin/engineer.py').read_text(encoding='utf-8')
+        for action in ('parse-flags', 'resolve-depth', 'normalize-structural'):
+            self.assertIn('"'+action+'"', entry)
 
-    def test_every_helper_loading_step_resolves_its_module_through_the_resolver(self):
-        for site in self.SITES:
-            with self.subTest(site["module"]):
-                src = crp.read_text(site["file"])
-                self.assertIn(site["module"], [b["module"] for b in crp.resolver_blocks(src)])
-                self.assertNotIn("require('./engineer/bin/lib", src)
-                self.assertNotIn('require("./engineer/bin/lib', src)
-
-    def test_other_resolver_sites(self):
-        self.skipTest("workflows/review.md (pattern.cjs) and code-review/steps/structural-pre-pass.md (fallow-runner.cjs) absent in this repo")
-
-    def test_every_site_carries_the_same_resolver(self):
-        shapes = [crp.resolver_shape(self.block(site)["text"], site["module"]) for site in self.SITES]
-        for shape in shapes:
-            self.assertEqual(shapes[0], shape, "a site drifted from the shared resolver")
-
-
-@needs_bash
-class HelperModuleResolverExecuted(TempCase):
-    """Upstream #5640: the shipped resolver blocks, run as shipped in sandboxed installs (bash only; no node on PATH)."""
-
-    SITES = HelperModuleResolver.SITES
-
-    def setUp(self):
-        sandbox = self.temp("engineer-5640-")
-        self.sandbox = sandbox
-        self.install_home, self.empty_home, self.project = sandbox / "home", sandbox / "empty-home", sandbox / "project"
-        for directory in (self.empty_home, self.project):
-            directory.mkdir()
-        self.lib = self.install_home / ".claude" / "engineer" / "bin" / "lib"
-        self.lib.mkdir(parents=True)
-        for site in self.SITES:
-            (self.lib / site["module"]).write_text("", encoding="utf-8")
-        self.path = os.environ.get("PATH", "")
-
-    def run_block(self, site, env=None, prefix="", cwd=None):
-        base = {"PATH": self.path, "HOME": crp.posix(self.empty_home), **(env or {})}
-        return crp.run_resolver_block(HelperModuleResolver.block(site)["text"], base, cwd or self.project, prefix)
-
-    def test_global_install_resolves_from_the_default_home_for_every_site(self):
-        for site in self.SITES:
-            with self.subTest(site["module"]):
-                result = self.run_block(site, {"HOME": crp.posix(self.install_home)})
-                self.assertEqual(0, result.returncode, result.stderr)
-                self.assertTrue(result.stdout.replace("\\", "/").endswith(".claude/engineer/bin/lib"), result.stdout)
-
-    def test_launcher_on_path_locates_the_install(self):
-        bin_dir = self.sandbox / "path-install" / "engineer" / "bin"
-        bin_dir.mkdir(parents=True)
-        (bin_dir / "engineer_run").write_bytes(b"#!/bin/sh\n")
-        (bin_dir / "lib").mkdir()
-        (bin_dir / "lib" / "code-review-depth.cjs").write_text("", encoding="utf-8")
-        result = self.run_block(self.SITES[1], {"PATH": crp.posix(bin_dir) + os.pathsep + self.path})
-        self.assertEqual(0, result.returncode, result.stderr)
-        self.assertTrue(result.stdout.replace("\\", "/").endswith("path-install/engineer/bin/lib"), result.stdout)
-
-    def test_local_install_resolves_from_runtime_dir(self):
-        result = self.run_block(self.SITES[1], {"RUNTIME_DIR": crp.posix(self.install_home / ".claude")})
-        self.assertEqual(0, result.returncode, result.stderr)
-        self.assertTrue(result.stdout.replace("\\", "/").endswith(".claude/engineer/bin/lib"), result.stdout)
-
-    def test_engineer_run_set_in_the_environment_is_the_first_candidate(self):
-        runtime = self.sandbox / "explicit" / "bin"
-        (runtime / "lib").mkdir(parents=True)
-        (runtime / "lib" / "code-review-flags.cjs").write_text("", encoding="utf-8")
-        result = self.run_block(self.SITES[0], {"ENGINEER_RUN": crp.posix(runtime / "engineer_run"), "HOME": crp.posix(self.install_home)})
-        self.assertEqual(0, result.returncode, result.stderr)
-        self.assertTrue(result.stdout.replace("\\", "/").endswith("explicit/bin/lib"), result.stdout)
-
-    def test_missing_runtime_names_the_searched_locations(self):
-        for site in self.SITES:
-            with self.subTest(site["module"]):
-                result = self.run_block(site)
-                self.assertIn(crp.posix(self.empty_home).split("/")[-1] + "/.claude/engineer/bin/lib", result.stderr.replace("\\", "/"))
-                self.assertIn(site["module"], result.stderr)
-                self.assertEqual("", result.stdout, "nothing is exported for a miss")
-                if site["fatal"]:
-                    self.assertNotEqual(0, result.returncode, "a miss stops the step")
-                else:
-                    self.assertEqual(0, result.returncode, "the fallow normalizer warns and keeps its raw-report fallback")
-
-    def test_local_install_under_claude_or_codex_resolves_from_the_project_root(self):
-        for name in (".claude", ".codex"):
-            with self.subTest(name):
-                root = self.sandbox / ("local-" + name[1:])
-                (root / name / "engineer" / "bin").mkdir(parents=True)
-                shutil.copytree(self.lib, root / name / "engineer" / "bin" / "lib")
-                result = self.run_block(self.SITES[1], {"RUNTIME_DIR": crp.posix(root)})
-                self.assertEqual(0, result.returncode, result.stderr)
-                self.assertTrue(result.stdout.replace("\\", "/").endswith(f"{name}/engineer/bin/lib"), result.stdout)
-
-    def test_a_launcher_shell_function_is_not_read_as_a_path(self):
-        (self.project / "lib").mkdir()
-        (self.project / "lib" / "code-review-depth.cjs").write_text("", encoding="utf-8")
-        result = self.run_block(self.SITES[1], prefix="engineer_run() { :; }\n")
-        self.assertNotEqual(0, result.returncode, "a lone ./lib must not satisfy the resolver")
-        self.assertEqual("", result.stdout)
-
-    def test_symlinked_launcher_and_flag_parsing_need_node(self):
-        self.skipTest("symlink realpath resolution and `--fix` flag parsing run `node -p` / `node -e`; Node is never executed here")
 
 
 class LegacyLedgerGroups(unittest.TestCase):

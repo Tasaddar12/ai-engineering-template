@@ -259,45 +259,10 @@ any language (the recorded recall gap, not a translation failure);
 author an explicit `shapes` array on that requirement instead of relying on the prose
 classifier.
 
-**Runtime coverage compute — resolve and invoke edge-probe.cjs:**
+**Runtime coverage compute — invoke spec.edge-probe:**
 
 ```bash
-# Resolve the compiled edge-probe.cjs against the Engineer install dir via RUNTIME_DIR 
-# — NOT the consuming project's git root — falling back to git toplevel / $HOME/.claude.
-# Mirrors the ui-safety-gate.cjs resolution idiom at autonomous.md:290 / plan-phase.md:631.
-_ENGINEER_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-EDGE_PROBE_JS=$(for _c in \
-  "$_ENGINEER_RT/engineer/bin/lib/edge-probe.cjs" \
-  "$_ENGINEER_RT/bin/lib/edge-probe.cjs" \
-  "$_ENGINEER_RT/.claude/bin/lib/edge-probe.cjs" \
-  "$HOME/.claude/engineer/bin/lib/edge-probe.cjs" \
-  "$HOME/.claude/bin/lib/edge-probe.cjs"; do
-  [ -f "$_c" ] && { echo "$_c"; break; }
-done)
-
-# Graceful degradation — never silent skip (RR-04). Build ONLY when $_ENGINEER_RT is a verified
-# Engineer source checkout (has tsconfig.build.json + src/edge-probe.cts), and pin npm to it with
-# --prefix so we never trigger the CONSUMING project's own build:lib (its cwd package scripts:
-# codegen/migrations/writes) during a spec workflow. Real installs ship the compiled .cjs via
-# prepublishOnly, so this build path only matters in an Engineer dev checkout (review High).
-if [ -z "$EDGE_PROBE_JS" ]; then
-  if [ -f "$_ENGINEER_RT/tsconfig.build.json" ] && [ -f "$_ENGINEER_RT/src/edge-probe.cts" ]; then
-    npm --prefix "$_ENGINEER_RT" run build:lib 2>/dev/null || true
-    EDGE_PROBE_JS=$(for _c in \
-      "$_ENGINEER_RT/engineer/bin/lib/edge-probe.cjs" \
-      "$_ENGINEER_RT/bin/lib/edge-probe.cjs" \
-      "$_ENGINEER_RT/.claude/bin/lib/edge-probe.cjs" \
-      "$HOME/.claude/engineer/bin/lib/edge-probe.cjs" \
-      "$HOME/.claude/bin/lib/edge-probe.cjs"; do
-      [ -f "$_c" ] && { echo "$_c"; break; }
-    done)
-  fi
-  if [ -z "$EDGE_PROBE_JS" ]; then
-    echo "ERROR: edge-probe.cjs not found — reinstall Engineer or run \`npm run build:lib\` in your Engineer checkout." >&2
-    exit 1
-  fi
-fi
-
+# The Python runtime owns probe loading; no build step is needed.
 # Write the Requirements gathered in THIS spec session to a temp JSON, then invoke the
 # canonical coverage compute. Populate the heredoc from the SPEC's Requirements — one object
 # per requirement: {"id","text","text_en"?,"shapes"?}. This is the load-bearing step: an empty
@@ -317,7 +282,7 @@ JSON
 # Guard — never invoke on an empty/invalid array, OR one still holding the heredoc
 # `<replace: …>` placeholder (a forgotten substitution would otherwise yield a
 # meaningful-looking but bogus coverage report). Fail loud, not silent no-op.
-if ! node -e 'const a=require(process.argv[1]);if(!Array.isArray(a)||a.length===0)process.exit(1);if(a.some(r=>typeof r.text!=="string"||!r.text.trim()||r.text.includes("<replace:")))process.exit(1)' "$REQS_JSON" 2>/dev/null; then
+if ! engineer_run query json.validate --schema requirements --input "$REQS_JSON" 2>/dev/null; then
   rm -f "$REQS_JSON"
   echo "ERROR: edge-probe requirements JSON is empty/invalid or still holds the <replace: …> placeholder — populate \$REQS_JSON from the SPEC Requirements before Step 5.5 runs." >&2
   exit 1
@@ -329,18 +294,18 @@ fi
 # re-derives the taxonomy from prose unaided. Floor, never ceiling: the classifier has a measured
 # recall gap, so the model still ADDS any category the engine missed.
 # The engine FAILS CLOSED (exit 2) on an invalid authored shape or bad input — so the capture
-# MUST be exit-checked. A bare `COVERAGE=$(node …)` swallows that exit code, leaves $COVERAGE
+# MUST be exit-checked. An unchecked coverage command substitution swallows that exit code, leaves $COVERAGE
 # empty, and lets the workflow fall through to prose re-derivation: fail-OPEN at the boundary
 # the engine validation exists to protect. Make the run fatal, then validate the captured
 # report is well-formed JSON before the resolution loop consumes it.
-if ! COVERAGE=$(node "$EDGE_PROBE_JS" "$REQS_JSON"); then
+if ! COVERAGE=$(engineer_run query spec.edge-probe "$REQS_JSON"); then
   rm -f "$REQS_JSON"
   echo "ERROR: edge-probe engine failed (invalid shapes or bad input) — fix the requirement(s) and re-run; never proceed with empty coverage." >&2
   exit 1
 fi
 rm -f "$REQS_JSON"
 # Exit-0-but-garbage guard: the report must parse as JSON with the expected { items[], coverage{} } shape.
-if ! printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let r;try{r=JSON.parse(s)}catch{process.exit(1)}if(!r||!Array.isArray(r.items)||typeof r.coverage!=="object"||r.coverage===null)process.exit(1)})'; then
+if ! printf '%s' "$COVERAGE" | engineer_run query json.validate --schema coverage >/dev/null; then
   echo "ERROR: edge-probe produced an unparseable or malformed coverage report — refusing to proceed with the resolution loop." >&2
   exit 1
 fi
@@ -359,8 +324,8 @@ echo "### (end edge-probe coverage report)"
 # a genuinely edge-free spec — the same fail-open shape as an invalid shape yielding
 # applicable:0. Surface it loudly; the author must explicitly confirm "no applicable edges"
 # below rather than silently emitting a green empty ## Edge Coverage section.
-APPLICABLE=$(printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let n=0;try{n=JSON.parse(s).coverage.applicable}catch{n=0}process.stdout.write(String(n))})')
-UNCLASSIFIED=$(printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let n=0;try{n=JSON.parse(s).coverage.unclassified}catch{n=0}process.stdout.write(String(n))})')
+APPLICABLE=$(printf '%s' "$COVERAGE" | engineer_run query json.get --field coverage.applicable --default 0 --raw)
+UNCLASSIFIED=$(printf '%s' "$COVERAGE" | engineer_run query json.get --field coverage.unclassified --default 0 --raw)
 # All-unclassified is the accidental-miss case the applicable:0 guard could never
 # reach — 's soft-signal rows make applicable non-zero by construction there.
 if [ "$APPLICABLE" = "0" ] || [ "$UNCLASSIFIED" = "$APPLICABLE" ]; then

@@ -68,11 +68,11 @@ Detection: scan inline code spans (text between single backticks) for tokens mat
 Verification: resolve the path against `project_root` and check if the file exists using the Read or Glob tool. Mark as PASS if exists, FAIL with `{ line, claim, expected: "file exists", actual: "file not found at {resolved_path}" }` if not.
 
 **2. Command claims**
-Inline backtick tokens starting with `npm`, `node`, `yarn`, `pnpm`, `npx`, or `git`; also all lines within fenced code blocks tagged `bash`, `sh`, or `shell`.
+Inline backtick tokens starting with `npm`, `node`, `python`, `python3`, `py`, `yarn`, `pnpm`, `npx`, or `git`; also all lines within fenced code blocks tagged `bash`, `sh`, or `shell`.
 
 Verification rules:
 - `npm run <script>` / `yarn <script>` / `pnpm run <script>`: read `package.json` and check the `scripts` field for the script name. PASS if found, FAIL with `{ ..., expected: "script '<name>' in package.json", actual: "script not found" }` if missing.
-- `node <filepath>`: verify the file exists (same as file path claim).
+- `node <filepath>`, `python <filepath>`, `python3 <filepath>` or `py <filepath>`: verify the file exists (same as file path claim).
 - `npx <pkg>`: check if the package appears in `package.json` `dependencies` or `devDependencies`.
 - Do NOT execute any commands. Existence check only.
 - For multi-line bash blocks, process each line independently. Skip blank lines and comment lines (`#`).

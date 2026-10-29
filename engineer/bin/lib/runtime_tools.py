@@ -21,7 +21,7 @@ def json_command(args, action):
         return [line for line in sys.stdin.read().splitlines() if line]
     if action == "depth-input":
         return {"flagDepth": args.get("flag-depth"), "configDepth": args.get("config-depth", "standard"),
-                "overrides": args.json("overrides", []), "files": sys.stdin.read().splitlines(), "repoRoot": str(root())}
+                "overrides": args.json("overrides", []), "files": [line for line in sys.stdin.read().splitlines() if line], "repoRoot": str(root())}
     data = payload(args)
     field = args.get("field", args.arg(0))
     if field:
@@ -174,6 +174,34 @@ def normalize_test_command(args):
 
 
 def review_adapter(args, action):
+    if action == "parse-flags":
+        from .code_review_flags import parse_code_review_flags
+        return parse_code_review_flags(args.all("_body"))
+    if action == "resolve-depth":
+        from .code_review_depth import resolve_code_review_depth
+        data = payload(args)
+        if not isinstance(data, dict) or not isinstance(data.get("files"), list) or any(not isinstance(item, str) for item in data["files"]):
+            raise Failure("invalid-depth-input", "Supply a mapping with a string files array", 2)
+        return resolve_code_review_depth(data)
+    if action == "evidence-lines":
+        data = payload(args)
+        if not isinstance(data, dict):
+            raise Failure("review-evidence-schema", "Expected dispatch mapping", 2)
+        results = data.get("results", [])
+        if data.get("ok") is False and data.get("reason") and not results:
+            print("Warning: external reviewer dispatch rejected ("+str(data["reason"])+") — no lane ran (SAFE-07).", file=sys.stderr)
+        lines = []
+        for result in results:
+            if not isinstance(result, dict):
+                raise Failure("review-evidence-schema", "Each result must be a mapping", 2)
+            if not result.get("ok"):
+                detail = ": "+str(result["detail"]) if result.get("detail") else ""
+                print("Warning: external reviewer lane '"+str(result.get("slug", ""))+"' failed ("+str(result.get("reason") or "unknown")+detail+") — no raw-CLI fallback attempted (SAFE-07).", file=sys.stderr)
+            elif result.get("reviewPath"):
+                lines.append("- "+str(result.get("slug", ""))+": "+str(result["reviewPath"]))
+        for error in (data.get("selection") or {}).get("errors", []):
+            print("Warning: "+str(error), file=sys.stderr)
+        return "\n".join(lines)
     if action == "normalize-structural":
         data = input_json(args.get("input"))
         if not isinstance(data, dict) or not isinstance(data.get("findings"), list) or not isinstance(data.get("summary"), (str, dict)):
@@ -209,6 +237,10 @@ def review_adapter(args, action):
             name = item.get("path") if isinstance(item, dict) else item
             if not isinstance(name, str) or "\n" in name:
                 raise Failure("review-files-schema", "Expected scalar file paths")
+            # Older summaries annotate scalar paths with a trailing explanation.
+            # Match the original workflow helper while retaining YAML-aware reads.
+            name = re.sub(r"\s+\([^)]*\)\s*$", "", name)
+            name = re.split(r"\s+—\s", name, maxsplit=1)[0].strip()
             paths.append(str(safe_path(name).relative_to(root())).replace("\\", "/"))
         return "\n".join(dict.fromkeys(paths))
     data = payload(args)
