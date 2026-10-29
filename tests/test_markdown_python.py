@@ -7,10 +7,12 @@ from pathlib import Path
 import re
 import shlex
 import shutil
+import socketserver
 import subprocess
 import sys
 import tempfile
 import threading
+import time
 import unittest
 
 try:
@@ -71,6 +73,41 @@ class MarkdownScan(unittest.TestCase):
                      '```sh\nprintf "node ./cli"\ngrep "node -e" file.md\n```',
                      '```sh\necho "node"\n# node -e is an old example\n```']:
             self.assertEqual([], scanner.findings(text), text)
+
+    def test_wrapper_operands_balanced_substitutions_and_markdown_containers(self):
+        positive = [
+            'result=`node -p "1+1"`', 'printf "%s" "`node ./cli`"',
+            'value=$(printf "%s" "$(node ./cli)")',
+            'timeout 5s node ./cli', 'timeout -k 1s --signal TERM 5.5s env -u NODE -- node ./cli',
+            'sudo -u root -g staff -- node ./cli', 'sudo --user=root node ./cli',
+            'env -S "node ./cli"', "env --split-string='node ./cli'",
+            'command -p -- node ./cli', 'exec -a display-name -- node ./cli',
+            "sh -c 'node ./cli'", "bash -c 'printf x | node'",
+        ]
+        negative = [
+            'env -u NODE python -V', 'env --unset NODE -- python -V',
+            'sudo -u node python -V', 'exec -a node python -V',
+            'timeout -s NODE 5s python -V', 'command -v node',
+            "printf '%s' '`node ./cli`'", r'printf "%s" "\`node ./cli\`"',
+            "printf '%s' '$(node ./cli)'", r'printf "%s" "\$(node ./cli)"',
+            "env -S 'printf node'", "env -S 'python -V' node", '# ignored $(node ./cli)',
+        ]
+        for command in positive+negative:
+            with self.subTest(command=command):
+                hits=scanner.findings('```sh\n'+command+'\n```\n')
+                self.assertEqual(command in positive,bool(hits))
+                if hits:
+                    self.assertEqual(2,hits[0][0])
+        containers = ['> ```sh\n> node ./cli\n> ```',
+                      '- ```sh\n  node ./cli\n  ```',
+                      '1. ```sh\n   node ./cli\n   ```',
+                      '> - ```sh\n>   node ./cli\n>   ```']
+        for text in containers:
+            hits=scanner.findings(text)
+            self.assertTrue(hits,text)
+            self.assertEqual(2,hits[0][0])
+        self.assertTrue(scanner.findings('Run node script.js'))
+        self.assertEqual([],scanner.findings('```js\nconst label = `node ./cli`;\n```'))
 
     def test_git_inventory_includes_hidden_case_and_unusual_locations(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -196,6 +233,10 @@ class InlineHelpers(RuntimeCase):
         api=self.code('agents/verifier.md','d=json.load')
         self.run_code(api,stdin='[1]')
         self.run_code(api,stdin='[]',status=1)
+        for value,status in [('"nonempty"',0),('""',1),('123',1),('true',1),('null',1),('{}',1),('{"key":1}',0)]:
+            self.run_code(api,stdin=value,status=status)
+        mirrored=self.code('.ai/agents/verifier.md','d=json.load')
+        self.assertEqual(api,mirrored)
         module=self.put('module with spaces.py','def exposed():\n    return 1\n')
         self.assertEqual('function\n',self.run_code(self.code('agents/verifier.md','importlib.util'),module,'exposed').stdout)
         package=self.put('node_modules/test-pkg/package.json','{"version":"1.2.3","exports":{".":"./index.js"}}')
@@ -228,23 +269,24 @@ class InlineHelpers(RuntimeCase):
                 thread.join()
 
     def test_readiness_deadline_failures_and_http_errors_use_one_total_budget(self):
-        code=self.code('.ai/references/methods/checkpoints.md','time.monotonic')
+        code=self.code('.ai/references/methods/checkpoints.md','subprocess.Popen')
         for mode in ('timeout','http-error','bad-status','eventual-success'):
             with self.subTest(mode=mode):
-                seam='''import json,time,urllib.request,urllib.error
+                seam='''import json,time,urllib.request,urllib.error,subprocess
 clock=[0.0]
 calls=[]
+state={'killed':False,'reaped':False}
 time.monotonic=lambda:clock[0]
 def sleep(delay):
-    assert delay <= 30-clock[0]+1e-9
     clock[0]+=delay
+    if clock[0]>=30: raise subprocess.TimeoutExpired('fixture worker',30)
 time.sleep=sleep
 class Response:
     status=503
     def __enter__(self): return self
     def __exit__(self,*args): pass
 def request(url,timeout):
-    assert 0 < timeout <= min(2,30-clock[0])+1e-9
+    assert timeout==2
     calls.append(timeout)
     if MODE=='timeout':
         clock[0]+=timeout
@@ -254,21 +296,88 @@ def request(url,timeout):
     if MODE=='eventual-success' and len(calls)==3: response.status=200
     return response
 urllib.request.urlopen=request
+class Child:
+    returncode=0
+    def __init__(self,argv): self.worker=argv[-1]
+    def __enter__(self): return self
+    def __exit__(self,*args): pass
+    def communicate(self,timeout=None):
+        if timeout is None:
+            assert state['killed']
+            state['reaped']=True
+        else:
+            assert timeout==30
+            exec(self.worker)
+            state['reaped']=True
+    def kill(self): state['killed']=True; self.returncode=-9
+subprocess.Popen=Child
 result=0
 try:
     exec(CODE)
 except SystemExit as error:
     result=error.code
-print(json.dumps({'time':clock[0],'calls':len(calls),'result':result}))
+print(json.dumps({'time':clock[0],'calls':len(calls),'result':result,**state}))
 '''.replace('MODE',repr(mode)).replace('CODE',repr(code))
                 result=json.loads(self.run_code(seam).stdout)
                 self.assertLessEqual(result['time'],30)
+                self.assertTrue(result['reaped'])
                 if mode=='eventual-success':
                     self.assertEqual(0,result['result'])
                     self.assertEqual(3,result['calls'])
                 else:
                     self.assertEqual(30,result['time'])
                     self.assertEqual('Server did not become ready',result['result'])
+                    self.assertTrue(result['killed'])
+
+    def test_readiness_supervisor_kills_and_reaps_a_real_slow_header_child(self):
+        connected=threading.Event()
+        progress={'bytes':0}
+        headers=b'HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n'
+        class SlowHeaders(socketserver.BaseRequestHandler):
+            def handle(self):
+                self.request.recv(4096)
+                connected.set()
+                try:
+                    for byte in headers:
+                        self.request.sendall(bytes([byte]))
+                        progress['bytes']+=1
+                        time.sleep(0.05)
+                except OSError:
+                    pass
+        class Server(socketserver.ThreadingTCPServer):
+            daemon_threads=True
+        code=self.code('.ai/references/methods/checkpoints.md','subprocess.Popen')
+        with Server(('127.0.0.1',0),SlowHeaders) as server:
+            thread=threading.Thread(target=server.serve_forever,daemon=True)
+            thread.start()
+            receipt=self.root/'child-reap.json'
+            observation='''import atexit,json,pathlib,subprocess
+children=[]
+original=subprocess.Popen
+def observe(*args,**kwargs):
+    child=original(*args,**kwargs)
+    children.append(child)
+    return child
+subprocess.Popen=observe
+atexit.register(lambda:pathlib.Path(RECEIPT).write_text(json.dumps([{'pid':c.pid,'returncode':c.poll()} for c in children]),encoding='utf-8'))
+'''.replace('RECEIPT',repr(str(receipt)))
+            short=code.replace('timeout=30','timeout=0.6').replace('localhost:3000','127.0.0.1:'+str(server.server_address[1]))
+            try:
+                started=time.monotonic()
+                result=self.run_code(observation+short,status=1)
+                elapsed=time.monotonic()-started
+                self.assertLess(elapsed,2.0)
+                self.assertTrue(connected.is_set(),'poller must reach the slow-header server')
+                self.assertGreater(progress['bytes'],0)
+                self.assertLess(progress['bytes'],len(headers),'supervisor must interrupt the incomplete header read')
+                self.assertIn('Server did not become ready',result.stderr)
+                children=json.loads(receipt.read_text(encoding='utf-8'))
+                self.assertEqual(1,len(children))
+                self.assertIsNotNone(children[0]['returncode'],'polling child must be terminated and reaped')
+                self.assertNotEqual(0,children[0]['returncode'])
+            finally:
+                server.shutdown()
+                thread.join()
 
 
 class RuntimeAdapters(RuntimeCase):

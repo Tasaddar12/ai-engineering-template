@@ -446,7 +446,7 @@ suite merely to duplicate a more targeted passing receipt.
 
 ```bash
 # API endpoint returns non-empty data
-curl -s http://localhost:$PORT/api/$ENDPOINT 2>/dev/null | python -X utf8 -c 'import json,sys; d=json.load(sys.stdin); sys.exit(0 if isinstance(d,(list,dict)) and len(d)>0 else 1)'
+curl -s http://localhost:$PORT/api/$ENDPOINT 2>/dev/null | python -X utf8 -c 'import json,sys; d=json.load(sys.stdin); sys.exit(0 if isinstance(d,(list,dict,str)) and len(d)>0 else 1)'
 
 # Python CLI example: set CLI_PATH to a Python script; help exposes the expected subcommand
 python -X utf8 "$CLI_PATH" --help 2>&1 | grep -q "$EXPECTED_SUBCOMMAND"

@@ -16,35 +16,94 @@ TOKEN = re.compile(r'''(?P<space>[ \t\r]+)|(?P<newline>\n)|(?P<comment>\#[^\n]*)
 RETIRED = re.compile(r'''(?:\brequire\s*\([^\n]*(?:code-review-(?:flags|depth)|fallow-runner)|(?:\b(?:python3?|node(?:js)?)\b|\$\([^\n]*)[^\n]*\b(?:edge-probe|spec-section|ui-consideration-probe)\.cjs)''')
 
 
-def node_commands(region):
-    """Locate executable tokens, independent of argument extension or presence.
+def substitutions(text):
+    """Yield balanced executable substitutions, excluding escaped/single-quoted data."""
+    index, quote = 0, None
+    while index < len(text):
+        character = text[index]
+        if quote == "'":
+            if character == "'":
+                quote = None
+            index += 1
+            continue
+        if character == "\\":
+            index += 2
+            continue
+        if character == "#" and quote is None and (index == 0 or text[index-1].isspace()):
+            end = text.find("\n", index)
+            index = len(text) if end == -1 else end
+            continue
+        if character == "'" and quote is None:
+            quote = "'"
+        elif character == '"':
+            quote = None if quote == '"' else '"'
+        elif character == "`":
+            end = index+1
+            while end < len(text):
+                if text[end] == "\\":
+                    end += 2
+                elif text[end] == "`":
+                    break
+                else:
+                    end += 1
+            yield index, min(end+1, len(text)), index+1, text[index+1:end]
+            index = end+1
+            continue
+        elif text.startswith("$(", index):
+            end, depth, inner_quote = index+2, 1, None
+            while end < len(text) and depth:
+                current = text[end]
+                if current == "\\" and inner_quote != "'":
+                    end += 2
+                    continue
+                if inner_quote:
+                    if current == inner_quote:
+                        inner_quote = None
+                elif current in ("'", '"', "`"):
+                    inner_quote = current
+                elif current == "(":
+                    depth += 1
+                elif current == ")":
+                    depth -= 1
+                end += 1
+            body_end = end-1 if depth == 0 else end
+            yield index, end, index+2, text[index+2:body_end]
+            index = end
+            continue
+        index += 1
 
-    Quote-aware words distinguish an executable from data passed to grep/printf
-    or JavaScript string literals. Shell control operators establish fresh command
-    positions; redirection operands do not. Launch wrappers keep that position.
-    """
-    command, redirect, shell, payload, wrapper = True, False, False, False, False
-    for match in TOKEN.finditer(region):
+
+WRAPPER_OPERANDS = {
+    "env": {"-u", "--unset", "-C", "--chdir", "-S", "--split-string"},
+    "sudo": {"-u", "--user", "-g", "--group", "-h", "--host", "-p", "--prompt", "-C", "--close-from", "-R", "--chroot", "-D", "--chdir", "-r", "--role", "-t", "--type"},
+    "exec": {"-a"}, "command": set(),
+    "timeout": {"-k", "--kill-after", "-s", "--signal"},
+    "nohup": set(), "setsid": set(),
+}
+
+
+def node_commands(region, scan_substitutions=True):
+    """Parse ordinary static command positions and launcher option/operand grammar."""
+    masked = list(region)
+    for start, end, body_start, body in substitutions(region) if scan_substitutions else ():
+        for position, token in node_commands(body):
+            yield body_start+position, token
+        masked[start:end] = ["\n" if c == "\n" else " " for c in region[start:end]]
+    command, redirect, shell, payload = True, False, False, False
+    wrapper, operand, options, duration = None, None, True, False
+    for match in TOKEN.finditer("".join(masked)):
         kind, token = match.lastgroup, match[0]
         if kind in ("space", "comment"):
             continue
-        if kind == "newline":
-            command, redirect, shell, payload, wrapper = True, False, False, False, False
+        if kind == "newline" or kind == "operator" and token not in ("<", ">"):
+            command, redirect, shell, payload = token != ")", False, False, False
+            wrapper, operand, options, duration = None, None, True, False
             continue
         if kind == "operator":
-            if token in ("<", ">"):
-                redirect = True
-            else:
-                command, shell, payload, wrapper = token != ")", False, False, False
+            redirect = True
             continue
         if kind != "word":
             continue
-        # Double-quoted shell words still execute command substitutions; quoted
-        # grep/printf data without substitutions remains ordinary argument data.
-        for quoted in re.finditer(r'"(?:\\.|[^"\\])*"', token):
-            for substitution in re.finditer(r'(?<!\\)\$\((.*?)(?:\)|$)', quoted[0], re.S):
-                for position, nested in node_commands(substitution[1]):
-                    yield match.start()+quoted.start()+substitution.start(1)+position, nested
         if redirect:
             redirect = False
             continue
@@ -54,22 +113,44 @@ def node_commands(region):
         except ValueError:
             value = token.strip("\"'")
         basename = value.replace("\\", "/").rsplit("/", 1)[-1].lower()
-        if payload:
+        if payload or operand in ("-S", "--split-string"):
             for position, nested in node_commands(value):
                 yield match.start()+position, nested
-            payload = False
+            payload, operand, command = False, None, False
+            continue
+        if operand:
+            operand = None
+            continue
         if shell and re.fullmatch(r"-[a-z]*c", value):
             payload = True
         if not command:
             continue
+        if wrapper and options and value == "--":
+            options = False
+            continue
+        if wrapper and options and value.startswith("-"):
+            option, equal, argument = value.partition("=")
+            if wrapper == "command" and option in ("-v", "-V"):
+                command = False  # lookup only; its operands are not executed
+            elif wrapper == "env" and option in ("-S", "--split-string") and equal:
+                for position, nested in node_commands(argument):
+                    yield match.start()+len(option)+1+position, nested
+                command = False
+            elif option in WRAPPER_OPERANDS[wrapper] and not equal:
+                operand = option
+            continue
+        if wrapper == "timeout" and not duration:
+            if re.fullmatch(r"(?:\d+(?:\.\d*)?|\.\d+)(?:[smhd])?", value):
+                duration = True
+                continue
+        if re.match(r"^[A-Za-z_][A-Za-z_0-9]*=", value):
+            continue
         if basename in ("node", "node.exe", "nodejs", "nodejs.exe"):
             yield match.start(), token
             command = False
-        elif basename in ("env", "command", "exec", "sudo", "nohup", "setsid", "timeout"):
-            wrapper = True
-        elif (re.match(r"^[A-Za-z_][A-Za-z_0-9]*=", value)
-              or value in ("if", "then", "elif", "else", "while", "until", "do", "!", "{", "}")
-              or wrapper and (value.startswith("-") or value.isdecimal())):
+        elif basename in WRAPPER_OPERANDS:
+            wrapper, operand, options, duration = basename, None, True, False
+        elif value in ("if", "then", "elif", "else", "while", "until", "do", "!", "{", "}"):
             continue
         else:
             shell = basename in ("sh", "bash", "zsh", "dash", "ksh", "eval")
@@ -80,37 +161,48 @@ def node_commands(region):
 def executable_regions(text):
     """Yield (offset, text) for fences and inline code, without broad path exemptions."""
     lines = text.splitlines(keepends=True)
-    offset, fence, body, start = 0, None, [], 0
+    offset, fence, body, start, source = 0, None, [], 0, False
     for line in lines:
-        marker = re.match(r"^\s{0,3}(`{3,}|~{3,})(.*)$", line)
+        # Replace container markers by equal-width spaces so original offsets and
+        # line diagnostics survive blockquotes, nested lists and their fences.
+        prefix = 0
+        containers = r"[ \t]{0,3}>[ \t]?" if fence else r"[ \t]{0,3}>[ \t]?|[ \t]{0,3}(?:[-+*]|\d+[.)])[ \t]+"
+        while container := re.match(containers, line[prefix:]):
+            prefix += container.end()
+        visible = " "*prefix+line[prefix:]
+        marker = re.match(r"^\s*(`{3,}|~{3,})(.*)$", visible)
         if marker:
             if fence is None:
                 fence, start, body = marker[1], offset+len(line), []
+                source = marker[2].strip().lower() in ("js", "javascript", "ts", "typescript", "jsx", "tsx", "mermaid")
             elif marker[1][0] == fence[0] and len(marker[1]) >= len(fence):
-                yield start, "".join(body), False
+                yield start, "".join(body), "source" if source else False
                 fence = None
             else:
-                body.append(line)
+                body.append(visible)
         elif fence is not None:
-            body.append(line)
-        elif line.startswith(("    ", "\t")):
-            yield offset, line, False
+            body.append(visible)
+        elif visible.startswith(("    ", "\t")) and not prefix:
+            yield offset, visible, False
         else:
-            for match in re.finditer(r"(`+)(.+?)\1", line):
+            for match in re.finditer(r"(`+)(.+?)\1", visible):
                 yield offset+match.start(2), match[2], True
+            prose = re.search(r"\b(?:Run|Execute|Invoke|Launch|Start)\s+((?:node(?:js)?)(?:\.exe)?(?:\s+[^\n]+|$))", visible, re.I)
+            if prose:
+                yield offset+prose.start(1), prose[1], False
         offset += len(line)
     if fence is not None:
-        yield start, "".join(body), False
+        yield start, "".join(body), "source" if source else False
 
 
 def findings(text):
     results = []
     for offset, region, inline in executable_regions(text):
         region = re.sub(r"[\\`]\r?\n", lambda m: " "*len(m[0]), region)
-        for position, token in node_commands(region):
+        for position, token in node_commands(region, scan_substitutions=inline != "source"):
             # An isolated inline runtime name is a prose identifier, like `git`.
             # Bare commands remain prohibited in fences and in inline pipelines.
-            if inline and token == region.strip():
+            if inline is True and token == region.strip():
                 prefix = text[text.rfind("\n", 0, offset)+1:offset].rstrip("` ")
                 if not re.search(r"\b(?:run|execute|invoke|launch|start)\s*$", prefix, re.I):
                     continue

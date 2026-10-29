@@ -504,22 +504,28 @@ DEV_SERVER_PID=$!
 # Wait for ready (max 30s) — uses Python urllib for cross-platform compatibility
 # Bound the readiness check; failure is not readiness.
 python -X utf8 -c '
-import sys, time, urllib.request
-end = time.monotonic() + 30
+import subprocess, sys
+worker = """
+import time, urllib.request
 while True:
-    remaining = end - time.monotonic()
-    if remaining <= 0:
-        sys.exit("Server did not become ready")
     try:
-        with urllib.request.urlopen("http://localhost:3000", timeout=min(2, remaining)) as response:
+        with urllib.request.urlopen("http://localhost:3000", timeout=2) as response:
             if 200 <= response.status < 300:
                 break
     except OSError:
         pass
-    remaining = end - time.monotonic()
-    if remaining <= 0:
+    time.sleep(1)
+"""
+# A socket timeout can restart for every byte; the parent enforces total elapsed
+# time and reaps the child even while the child is blocked reading slow headers.
+with subprocess.Popen([sys.executable, "-X", "utf8", "-c", worker]) as child:
+    try:
+        child.communicate(timeout=30)
+    except subprocess.TimeoutExpired:
+        child.kill()
+        child.communicate()
         sys.exit("Server did not become ready")
-    time.sleep(min(1, remaining))
+    sys.exit(child.returncode)
 ' || exit 1
 ```
 

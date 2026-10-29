@@ -103,6 +103,35 @@ Correction checks (same command forms as above, after the corrections):
 
 The correction slice starts from `60446c1a8a969a1fbc2e5ddd79b5b890b0ea1893`.
 
+## Final boundary corrections
+
+Fresh review reproduced additional ordinary shell/Markdown forms and a real
+slow-header response that exceeded the previous in-process deadline. Starting
+from `09665d3e1c2cee6a658f6d579e99f9d632c805b9`, this slice:
+
+- Parses balanced, quote-aware command substitutions; wrapper options and their
+  operands; timeout duration suffixes; quoted shell command strings; and
+  blockquote/list-contained code fences. Variable names and user names used as
+  option operands remain data. Escaped and single-quoted literals stay excluded.
+  Command-shaped prose is scanned, and original source line locations survive
+  Markdown container normalization. No path allowlist was introduced.
+- Uses a portable inline stdlib subprocess supervisor for the .ai readiness
+  example. It enforces the 30-second total budget outside the polling worker,
+  kills the child on expiry and waits for it to exit. This works without an
+  installed engineer runtime and bounds a per-byte slow HTTP header read.
+- Restores nonempty JSON string acceptance in both verifier examples, alongside
+  list/object acceptance. Empty strings and scalar numbers/booleans/null fail.
+
+`python -m unittest discover -s tests -p test_markdown_python.py -v` passes all
+21 tests. The real slow-header fixture uses a 0.6-second budget, confirms the
+connection and incomplete header read, observes failure within 2 seconds and
+checks that the child was terminated and reaped. Deterministic timeout,
+HTTP-error, non-2xx and eventual-success checks remain; all prior Unicode and
+quick-scope fallback checks still pass. The current inventory scan remains
+561 tracked Markdown files with zero findings; `git diff --check` is clean.
+Unchanged broad runtime suites were not repeated for these bounded example and
+scanner changes.
+
 ## Remaining and limits
 
 No required migration gap remains in the scanned Markdown inventory. Independent
