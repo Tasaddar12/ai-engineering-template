@@ -549,13 +549,9 @@ Read and execute `engineer/workflows/execute-phase/steps/per-plan-worktree-gate.
    DISPATCH_TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
    EXPECTED_BRANCH=$(git rev-parse --abbrev-ref HEAD)
     if [ -z "${WAVE_WORKTREE_MANIFEST:-}" ]; then
-     M=$(mktemp "${TMPDIR:-/tmp}/engineer-worktree-wave-XXXXXX") && mv "$M" "$M.json" && WAVE_WORKTREE_MANIFEST="$M.json" || exit 1  # XXXXXX must be path-final on BSD/macOS
-     # Persist the dispatch-time orchestrator worktree root so wave-cleanup can pin back to the
-     # orchestrator's OWN worktree — NOT `git worktree list`'s first entry (always the main
-     # checkout), which pins a non-primary (per-phase lane) orchestrator off its branch.
-     # Dispatch runs from the orchestrator's lane, so show-toplevel here is the correct root.
-     ORCH_ROOT=$(git rev-parse --show-toplevel)
-     ORCH_ROOT="$ORCH_ROOT" MANIFEST="$WAVE_WORKTREE_MANIFEST" python -c 'import json,os,pathlib; pathlib.Path(os.environ["MANIFEST"]).write_text(json.dumps({"orchestrator_root":os.environ.get("ORCH_ROOT") or None,"worktrees":[]})+"\n",encoding="utf-8")'
+     ORCH_ROOT=$(git rev-parse --show-toplevel) || exit $?
+     MANIFEST_STATE=$(engineer_run query worktree.manifest init --phase "$PHASE_NUMBER" --root "$ORCH_ROOT") || exit $?
+     WAVE_WORKTREE_MANIFEST=$(engineer_run query json.get --payload "$MANIFEST_STATE" --field manifest --raw) || exit $?
      export WAVE_WORKTREE_MANIFEST
    fi
    ```
@@ -725,7 +721,7 @@ the wave lands in the phase's own pull request and never touches the base:
 
 ```bash
 git status --porcelain     # must be clean; commit planning records first
-engineer_run query worktree.merge-wave --phase "${PHASE_NUMBER}"
+engineer_run query worktree.merge-wave --phase "${PHASE_NUMBER}" --manifest "$WAVE_WORKTREE_MANIFEST"
 ```
 
 Read the result rather than assuming it worked:
@@ -747,7 +743,7 @@ the reviewer weigh it. It never blocks a merge.
 Once the wave is clean, release its checkouts:
 
 ```bash
-engineer_run query worktree.cleanup-wave --phase "${PHASE_NUMBER}"
+engineer_run query worktree.cleanup-wave --phase "${PHASE_NUMBER}" --manifest "$WAVE_WORKTREE_MANIFEST"
 ```
 
 Cleanup is conservative on purpose. It removes a worktree only when git agrees

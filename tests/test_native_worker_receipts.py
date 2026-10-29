@@ -1,6 +1,10 @@
 """Real Git lifecycle checks for attaching terminal native-host evidence."""
 import json
 from pathlib import Path
+import shlex
+import subprocess
+import sys
+import tempfile
 try:
     from .test_engineer_runtime import RuntimeCase
 except ImportError:
@@ -8,6 +12,36 @@ except ImportError:
 
 
 class NativeWorkerReceipts(RuntimeCase):
+    def test_documented_wave_commands_follow_the_owned_manifest(self):
+        worker, receipt, source, arguments = self.prepared_worker()
+        self.cli("worktree.record-agent", *arguments, "--terminal-receipt", source)
+        workflow = (Path(__file__).resolve().parents[1]/"engineer/workflows/execute-phase.md").read_text(encoding="utf-8")
+        runtime = Path(__file__).resolve().parents[1]/"engineer/bin/engineer.py"
+        sys.path.insert(0, str(runtime.parent))
+        from lib.posix_shell import find_posix_shell
+        shell = find_posix_shell()
+        self.assertIsNotNone(shell)
+        preamble = "\n".join([
+            "set -e",
+            "engineer_run() { "+shlex.quote(Path(sys.executable).as_posix())+" -I "+shlex.quote(runtime.as_posix())+' "$@"; }',
+            "PHASE_NUMBER=999",
+            "WAVE_WORKTREE_MANIFEST="+shlex.quote(Path(worker["manifest"]).as_posix()),
+        ])
+        for verb in ("merge-wave", "cleanup-wave"):
+            command = next(line for line in workflow.splitlines() if line.startswith("engineer_run query worktree."+verb+" "))
+            with tempfile.TemporaryDirectory(prefix="documented-wave-") as directory:
+                script = Path(directory)/"fixture.sh"
+                script.write_text(preamble+"\n"+command+"\n", encoding="utf-8")
+                result = subprocess.run([shell, script.as_posix()], cwd=self.root, env=self.env,
+                                        text=True, encoding="utf-8", capture_output=True, timeout=30)
+            self.assertEqual(0, result.returncode, result.stderr or result.stdout)
+            packet = json.loads(result.stdout)
+            if verb == "merge-wave":
+                self.assertTrue(packet["wave_clean"])
+                self.assertEqual(receipt["head"], self.git("rev-parse", "HEAD"))
+        self.assertEqual("VALUE = 1\n", (self.root/"src/app.py").read_text(encoding="utf-8"))
+        self.assertFalse(Path(worker["path"]).exists())
+
     def prepared_worker(self):
         self.init_records()
         self.put(".gitignore", ".worktrees/\n")
