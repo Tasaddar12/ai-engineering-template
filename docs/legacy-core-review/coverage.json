@@ -8,7 +8,9 @@
       "lines": 0,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "after_lines": 0
     },
     {
       "path": "agents/code-fixer.md",
@@ -17,7 +19,9 @@
       "lines": 769,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "17a616b42bd75175c4c065e93894d5da91e33cf59d8911df8697bb201361b48a",
+      "after_lines": 541
     },
     {
       "path": "agents/code-reviewer.md",
@@ -26,7 +30,9 @@
       "lines": 403,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "db97566a806285d3e0fb96c2d6ff53e4b3e816bfdbc089a0cd9241ce4855ea1f",
+      "after_lines": 403
     },
     {
       "path": "agents/codebase-mapper.md",
@@ -35,7 +41,9 @@
       "lines": 855,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "add694c5a43f42d4df681767fbff5b11040df6d7033f18deff8ed8452dd2f2ef",
+      "after_lines": 855
     },
     {
       "path": "agents/debug-session-manager.md",
@@ -44,7 +52,9 @@
       "lines": 421,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "agents/debugger.md",
@@ -53,7 +63,9 @@
       "lines": 1279,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "86e8b3b61a9be2a9230eaa438b57906a355cc7301bd6c1da715f8c357743073f",
+      "after_lines": 1276
     },
     {
       "path": "agents/doc-verifier.md",
@@ -62,7 +74,9 @@
       "lines": 218,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "e84fe3f1fe17716dce82317d8555e686540e6f2ffaefd3f9c5b8e84beb0faeea",
+      "after_lines": 218
     },
     {
       "path": "agents/doc-writer.md",
@@ -71,7 +85,9 @@
       "lines": 631,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "61face3a7a46212e104881ffa462a85710945a47509bdc77dceae353b940688a",
+      "after_lines": 631
     },
     {
       "path": "agents/dom-verifier.md",
@@ -80,7 +96,9 @@
       "lines": 169,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "4b4d42a2277d3e1313552f1ad05948ca009a8aff5fbfb74dd8e32095d61f63ff",
+      "after_lines": 169
     },
     {
       "path": "agents/executor.md",
@@ -89,7 +107,9 @@
       "lines": 858,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "fdc22bb5aaeebe3f79756084db27c131d97bc07bced17e93c934e21f3deee67f",
+      "after_lines": 841
     },
     {
       "path": "agents/integration-checker.md",
@@ -98,7 +118,9 @@
       "lines": 475,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "f31f68ad9583d7526946682eb26dd147e60dc5cb620b507d6b328358e595de7a",
+      "after_lines": 475
     },
     {
       "path": "agents/nyquist-auditor.md",
@@ -107,7 +129,9 @@
       "lines": 206,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "7047a0a732dac44285adfc2f6a6a02df5f7bc6fea835ebd0011980cc3f473033",
+      "after_lines": 206
     },
     {
       "path": "agents/pattern-mapper.md",
@@ -116,7 +140,9 @@
       "lines": 347,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "daf14a21cef8329a3b740b6bf419894942e71ec6284c68fc1f9e1db0b304800f",
+      "after_lines": 347
     },
     {
       "path": "agents/phase-researcher.md",
@@ -125,7 +151,9 @@
       "lines": 859,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "7855c0f331943dc367689e945046de69535d02c691a1b75e40053f6230843449",
+      "after_lines": 783
     },
     {
       "path": "agents/plan-checker.md",
@@ -134,7 +162,9 @@
       "lines": 1075,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "ba095f9b0ec9802e31c14c4b53996488d049b09243f339d148c9800fcb929ada",
+      "after_lines": 1056
     },
     {
       "path": "agents/planner.md",
@@ -143,7 +173,9 @@
       "lines": 964,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "c2221c51a91e9e40d2eb5a5e08c6196bcc15c8420df34bd148ee536b3a20ecd0",
+      "after_lines": 959
     },
     {
       "path": "agents/security-auditor.md",
@@ -152,7 +184,9 @@
       "lines": 175,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "b267fea6316490b007a9fb3b6571288bd2f6d7424556df47e45431d18fa4ba05",
+      "after_lines": 175
     },
     {
       "path": "agents/ui-auditor.md",
@@ -161,7 +195,9 @@
       "lines": 586,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "8487ba32118c4e867949fa82983576277adc8a708e46c4a14859d54be534deec",
+      "after_lines": 586
     },
     {
       "path": "agents/ui-checker.md",
@@ -170,7 +206,9 @@
       "lines": 416,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "d959435d3f3903ba739a02c136978d068bd2379f71fd6fc3b6adeae654c5cfff",
+      "after_lines": 416
     },
     {
       "path": "agents/ui-researcher.md",
@@ -179,7 +217,9 @@
       "lines": 474,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "4eb182f0a6aeb9318189c02e594e09429e88550c4181a5974bc49c9568c8c86f",
+      "after_lines": 474
     },
     {
       "path": "agents/verifier.md",
@@ -188,7 +228,9 @@
       "lines": 941,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "fbd7215a1f49aef87cd98ffabe754d48ea2bf94bd3a3290697930b384295a1f8",
+      "after_lines": 941
     },
     {
       "path": "commands/COMMAND.md",
@@ -197,7 +239,9 @@
       "lines": 0,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "after_lines": 0
     },
     {
       "path": "commands/add-tests.md",
@@ -206,7 +250,9 @@
       "lines": 47,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "edaa19846fed6058b08563a11213f4ad36804a2f8f96e116c6c881b2b410e257",
+      "after_lines": 47
     },
     {
       "path": "commands/audit-fix.md",
@@ -215,7 +261,9 @@
       "lines": 39,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "879b36a385708fba5d2aa7252c5ca333d6febe5a9a26497bd7c86f074cec5cbe",
+      "after_lines": 39
     },
     {
       "path": "commands/audit-milestone.md",
@@ -224,7 +272,9 @@
       "lines": 42,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "e74d1709063b58a5ddff1fb12dbd36dc7a6ae905d7af1cc29c9a910c8a266148",
+      "after_lines": 42
     },
     {
       "path": "commands/audit-uat.md",
@@ -233,7 +283,9 @@
       "lines": 24,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "ca9a5b0a5002192665999741c825d6c11edee700f03be3cb891731fc7a172476",
+      "after_lines": 24
     },
     {
       "path": "commands/capture.md",
@@ -242,7 +294,9 @@
       "lines": 70,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "04b95e2dfe00fe19f38d82edc1e8e52123561eed52b40c1a83eabc663e2de3c4",
+      "after_lines": 70
     },
     {
       "path": "commands/cleanup.md",
@@ -251,7 +305,9 @@
       "lines": 25,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "2bc06ab30575821a76b3e3bdd425ef40a620f0ea9823d8aca654d3d5cadaefdb",
+      "after_lines": 25
     },
     {
       "path": "commands/code-review.md",
@@ -260,7 +316,9 @@
       "lines": 73,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "b6ec149669f6e2f4867123236a9fda2a0ae94775ebd134e6df7c90395bdf5104",
+      "after_lines": 65
     },
     {
       "path": "commands/complete-milestone.md",
@@ -269,7 +327,9 @@
       "lines": 148,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "34b45ffab1d4e1798f27f20610b42ba9ba972e6d44b95ac34ba544316f1288bf",
+      "after_lines": 149
     },
     {
       "path": "commands/debug.md",
@@ -278,7 +338,9 @@
       "lines": 57,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "48e720ba11856aa580775728f9af93e4ec1cdcc6e531ccbeee7834caed5f7315",
+      "after_lines": 56
     },
     {
       "path": "commands/discuss-phase.md",
@@ -287,7 +349,9 @@
       "lines": 118,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "33410c70bfdf13e412da1ff8424e9131ca6d9df5fc36fe30f00e9065663ee082",
+      "after_lines": 67
     },
     {
       "path": "commands/docs-update.md",
@@ -296,7 +360,9 @@
       "lines": 54,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "113fd178c7b0e1301f1fdbb4f5131c710b7b9be4e0f11b1b41cba54cc3e28d2f",
+      "after_lines": 54
     },
     {
       "path": "commands/execute-phase.md",
@@ -305,7 +371,9 @@
       "lines": 66,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "62f926bf4bf6be9f55e9b5d7ebe1d57cc276842fcf0ab70785df19aca0a2f66c",
+      "after_lines": 66
     },
     {
       "path": "commands/explore.md",
@@ -314,7 +382,9 @@
       "lines": 27,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "9b55364da6d5ff9909a64190701e6620bf51c93f485862838cfae8217b95a0f9",
+      "after_lines": 27
     },
     {
       "path": "commands/extract-learnings.md",
@@ -323,7 +393,9 @@
       "lines": 28,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "7749a207436fbaa96af26f1a606d7d44552bbbd69eeedd0fb7ab1480bd8d2887",
+      "after_lines": 28
     },
     {
       "path": "commands/fast.md",
@@ -332,7 +404,9 @@
       "lines": 35,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "f9b1c3b39185078d64b44613917ddfa6d5261401a94fd7947c2ca76f30846f04",
+      "after_lines": 35
     },
     {
       "path": "commands/forensics.md",
@@ -341,7 +415,9 @@
       "lines": 61,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "3e41b0abac429bb9c629c861a2d31a49bb91a3f0069e4ee40baeb574d113dc8c",
+      "after_lines": 61
     },
     {
       "path": "commands/health.md",
@@ -350,7 +426,9 @@
       "lines": 37,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "95356f21d35162e8870a497e573a1a3dc21dd749e838584f8f847bba8c52ef50",
+      "after_lines": 37
     },
     {
       "path": "commands/inbox.md",
@@ -359,7 +437,9 @@
       "lines": 44,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "57de2a58d442ba3c12bd3b0c2835524f41e60c484a5960228d44d8ecbd455c95",
+      "after_lines": 44
     },
     {
       "path": "commands/manager.md",
@@ -368,7 +448,9 @@
       "lines": 50,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "01e15df2f097f5b4f4b941c3c32941135890d0c4dbd0254ecdea7a60f4d37e80",
+      "after_lines": 50
     },
     {
       "path": "commands/map-codebase.md",
@@ -377,7 +459,9 @@
       "lines": 87,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "7cd908dacf419af95de7fbec61607390a6bbdbbd8ae8170a88d56c649c0356f2",
+      "after_lines": 85
     },
     {
       "path": "commands/milestone-summary.md",
@@ -386,7 +470,9 @@
       "lines": 55,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "0e7d4489ceff87df0bd14532c11919b70bfa61e1a446a49d61f555543f7b057a",
+      "after_lines": 55
     },
     {
       "path": "commands/new-milestone.md",
@@ -395,7 +481,9 @@
       "lines": 51,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "e79c3385d69ab2f86312b150ee999a2b559cc82ea8ac18ef647fc1a3ff00a75e",
+      "after_lines": 51
     },
     {
       "path": "commands/new-project.md",
@@ -404,7 +492,9 @@
       "lines": 49,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "040ad56cb93905246627ee0b4b33745a37f6d982cc543a7f8710c96a9ff18b2d",
+      "after_lines": 49
     },
     {
       "path": "commands/next.md",
@@ -413,7 +503,9 @@
       "lines": 35,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "0732957e7714cdc173d1cf2ba58f889cc2a5869fa80059528b570764dfcfb220",
+      "after_lines": 35
     },
     {
       "path": "commands/onboard.md",
@@ -422,7 +514,9 @@
       "lines": 50,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "c4d709baffc2c322f887620153d828311691a8f39433872c52fb316ecf5d72dc",
+      "after_lines": 50
     },
     {
       "path": "commands/pause-work.md",
@@ -431,7 +525,9 @@
       "lines": 48,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "eda0bc8be0f3f671c1f7e191381db0ff7269286510e01a44ad38d17bf46de9f7",
+      "after_lines": 48
     },
     {
       "path": "commands/phase.md",
@@ -440,7 +536,9 @@
       "lines": 61,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "84995a17e0a9e43e596df3e0931edcc85d1e9eed5f391f301ccfaa8d28201d8b",
+      "after_lines": 61
     },
     {
       "path": "commands/plan-phase.md",
@@ -449,7 +547,9 @@
       "lines": 63,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "c15bbcd1cd532101f91835f73adfef56af84fcdac2f7b3703ea04f506b5cc7c2",
+      "after_lines": 60
     },
     {
       "path": "commands/progress.md",
@@ -458,7 +558,9 @@
       "lines": 50,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "a1edb93cf4d372683d3d87674e77c06c0e66459d686a6d8ef8c09a73a1d41409",
+      "after_lines": 49
     },
     {
       "path": "commands/quick-batch.md",
@@ -467,7 +569,9 @@
       "lines": 116,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "d83d8e6837ff3d55825d71bf5f3c75de49e2749fa86e4d0316a331c29cb7fde0",
+      "after_lines": 116
     },
     {
       "path": "commands/quick.md",
@@ -476,7 +580,9 @@
       "lines": 185,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "67e24724b6a2750fd1c9ccc49eb2331c0ed385cab480f347681d65cc254ea226",
+      "after_lines": 185
     },
     {
       "path": "commands/resume-work.md",
@@ -485,7 +591,9 @@
       "lines": 31,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "270b09b6bd05c81ce05c25b497323b4a17d31ae233a7e0e7aa40f612349fd1ff",
+      "after_lines": 31
     },
     {
       "path": "commands/review-backlog.md",
@@ -494,7 +602,9 @@
       "lines": 65,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "20e86fd73f5b0289f799631d0100720fd7e89e9e800fd01e218c4d94f6fc243e",
+      "after_lines": 65
     },
     {
       "path": "commands/secure-phase.md",
@@ -503,7 +613,9 @@
       "lines": 41,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "3ed29f4f1becd5fad613d6c557a37c08a0ea2c86bfaee19154ec8fbfc1ac4996",
+      "after_lines": 41
     },
     {
       "path": "commands/ship.md",
@@ -512,7 +624,9 @@
       "lines": 29,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "3f10ea21ccd41cf89561afb0a71ee2f14ddbda10cc4d2576a5c995d7906ed73e",
+      "after_lines": 29
     },
     {
       "path": "commands/spec-phase.md",
@@ -521,7 +635,9 @@
       "lines": 63,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "916a2dd7c5a81199e031af993f803d5c9aad8c4b3c06a10ce8bab88ee6cfc58e",
+      "after_lines": 63
     },
     {
       "path": "commands/thread.md",
@@ -530,7 +646,9 @@
       "lines": 29,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "963fbc3f793f2e1e02ca1739c8386684222b2a9c946acaf4645a69c4494e0dc7",
+      "after_lines": 29
     },
     {
       "path": "commands/ui-phase.md",
@@ -539,7 +657,9 @@
       "lines": 39,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "86ab5a9a7a5b30abdd02fe56f0f607be91a98d895e1573e4b84e0a59cf2682ee",
+      "after_lines": 39
     },
     {
       "path": "commands/ui-review.md",
@@ -548,7 +668,9 @@
       "lines": 38,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "744e95b188f8e389dcc3af29288e0f8e65e6fe470d9e85cfcf2f559e46ff2cab",
+      "after_lines": 38
     },
     {
       "path": "commands/update.md",
@@ -557,7 +679,9 @@
       "lines": 52,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "105cd691542bb5f425eba222ce2123b881d783837cacb68e115a98584c3788ac",
+      "after_lines": 42
     },
     {
       "path": "commands/validate-phase.md",
@@ -566,7 +690,9 @@
       "lines": 41,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "2ade6fa51a8011fa17cda99a348badddc63583bb8e49ea755a75bda91ee881d7",
+      "after_lines": 41
     },
     {
       "path": "commands/verify-work.md",
@@ -575,7 +701,9 @@
       "lines": 44,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "f60a05eb638d7a72029ec86749f80e134b89c5dadba495aa3e88d4504de8b0d7",
+      "after_lines": 44
     },
     {
       "path": "engineer/bin/README.md",
@@ -584,7 +712,9 @@
       "lines": 355,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "15a3e07632d5f253c4d30dbb35f5c9af7e8924d7424f28fb4101a41b4fd35327",
+      "after_lines": 366
     },
     {
       "path": "engineer/bin/engineer.py",
@@ -593,7 +723,9 @@
       "lines": 286,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "7e89d87866639a392baab9d83a328af69324b5473c7d8d93ec36eab714d57c07",
+      "after_lines": 248
     },
     {
       "path": "engineer/bin/engineer_run",
@@ -602,7 +734,9 @@
       "lines": 24,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "00e252cd0bd147a943c68949e6a20f438e862417596c6d06fe703d785ff835b4",
+      "after_lines": 24
     },
     {
       "path": "engineer/bin/host_exec.py",
@@ -611,7 +745,9 @@
       "lines": 66,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "f1ebf9d0e6591e076900c32f0383b7b7c5437eb8e290f8045295ca0eb0289145",
+      "after_lines": 66
     },
     {
       "path": "engineer/bin/lib/__init__.py",
@@ -620,7 +756,9 @@
       "lines": 1,
       "reviewer": "coordinator-core",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "409f1f07ff35e4e413e00dcf4b11fc6010f42aaf7eb813d980f805f47e787732",
+      "after_lines": 1
     },
     {
       "path": "engineer/bin/lib/archive.py",
@@ -629,7 +767,9 @@
       "lines": 164,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "0ed9b2ed1fe71fb435e5834cd5e096a0a9ef3d7ce4f122bdef4ac421979c749c",
+      "after_lines": 164
     },
     {
       "path": "engineer/bin/lib/artifacts.py",
@@ -638,7 +778,9 @@
       "lines": 62,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "05cedcd248dcf51a75f3013d9d003da83cc76b39bf0d310dd6fcf214b8a8600e",
+      "after_lines": 61
     },
     {
       "path": "engineer/bin/lib/bundles.py",
@@ -647,7 +789,9 @@
       "lines": 233,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "35a8ae300d0ef72147cca6770f286d07edcf416b18d607007866e94535c49c4c",
+      "after_lines": 233
     },
     {
       "path": "engineer/bin/lib/capabilities.py",
@@ -656,7 +800,9 @@
       "lines": 77,
       "reviewer": "D-runtime",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "engineer/bin/lib/capability_registry.py",
@@ -665,7 +811,9 @@
       "lines": 8367,
       "reviewer": "F-registry-profile",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "engineer/bin/lib/check_contract_drift.py",
@@ -674,7 +822,9 @@
       "lines": 793,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "2393a61f23538e33713459c10495820cd0f3d2e390fceb4cc7b7616b41164322",
+      "after_lines": 791
     },
     {
       "path": "engineer/bin/lib/claude_orchestration.py",
@@ -683,7 +833,9 @@
       "lines": 81,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "engineer/bin/lib/cleanup.py",
@@ -692,7 +844,9 @@
       "lines": 110,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "4fc2bf09d69d07f53a5a41729fff8e4ebcbf7c0cf7112e2f3b4b98f5f3923e12",
+      "after_lines": 110
     },
     {
       "path": "engineer/bin/lib/code_review_depth.py",
@@ -701,7 +855,9 @@
       "lines": 246,
       "reviewer": "D-runtime",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "8fde8c55798fe16afddff7427e6dabf96bb4dd19e3a0508a47269f5760e7cdf3",
+      "after_lines": 246
     },
     {
       "path": "engineer/bin/lib/code_review_flags.py",
@@ -710,7 +866,9 @@
       "lines": 48,
       "reviewer": "D-runtime",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "5d1c81099d2dfdd26ca682d5417dc5a6ca79d7157f905f746654f486969cd73a",
+      "after_lines": 48
     },
     {
       "path": "engineer/bin/lib/code_review_pipeline_regression.py",
@@ -719,7 +877,9 @@
       "lines": 531,
       "reviewer": "D-runtime",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "c6e94989e5a3ec85258d138c3d55db3cda3916da803dab6b0537e28fb2940a2e",
+      "after_lines": 531
     },
     {
       "path": "engineer/bin/lib/codebase.py",
@@ -728,7 +888,9 @@
       "lines": 286,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "0e5865dd73d78ec23424d1b25986df42fc206b73f28add7b4fd7e4f05653d654",
+      "after_lines": 230
     },
     {
       "path": "engineer/bin/lib/config.py",
@@ -737,7 +899,9 @@
       "lines": 365,
       "reviewer": "coordinator-core",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "ddfb265f36f1d97ee4cb44c2f57f10099094657a7bed594b59b69ec8f902b28b",
+      "after_lines": 363
     },
     {
       "path": "engineer/bin/lib/core.py",
@@ -746,7 +910,9 @@
       "lines": 205,
       "reviewer": "coordinator-core",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "05ec1e2019f1eeb257d59763b62b6da31564c552cc103210e62ba62992b9b857",
+      "after_lines": 205
     },
     {
       "path": "engineer/bin/lib/decisions.py",
@@ -755,7 +921,9 @@
       "lines": 22,
       "reviewer": "coordinator-core",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "475d55f8c4a1528984d3be16e9d990f166aaf23e33fa906d2ff2cf0b0d23a3c7",
+      "after_lines": 22
     },
     {
       "path": "engineer/bin/lib/delivery.py",
@@ -764,7 +932,9 @@
       "lines": 137,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "27bf64b708bf3835d6a2cb808666a240427a667a02dfd6af9f3b8a9e2b9f0700",
+      "after_lines": 137
     },
     {
       "path": "engineer/bin/lib/dispatch.py",
@@ -773,7 +943,9 @@
       "lines": 111,
       "reviewer": "D-runtime",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "4537b8ac6b88284543ac4ad7f262fa82fd97bcee71433b22677314f040c3d916",
+      "after_lines": 111
     },
     {
       "path": "engineer/bin/lib/edge_probe.py",
@@ -782,7 +954,9 @@
       "lines": 145,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "be51508e1eb37c769d6f663f4a652fa3a8d9f3aea2322100bfc28b7a7e172f6f",
+      "after_lines": 145
     },
     {
       "path": "engineer/bin/lib/fallow_runner.py",
@@ -791,7 +965,9 @@
       "lines": 246,
       "reviewer": "D-runtime",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "0a4fd04602a5cd8949db052b2c537c86bf97358e027f00b939fc1f789d30aedf",
+      "after_lines": 246
     },
     {
       "path": "engineer/bin/lib/frontmatter.py",
@@ -800,7 +976,9 @@
       "lines": 154,
       "reviewer": "coordinator-core",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "1fb6a3eef55b2186e41105795b2bca0a7ac36ad9cafe7923fb7c5556ce57d8d7",
+      "after_lines": 154
     },
     {
       "path": "engineer/bin/lib/gen_health_docs.py",
@@ -809,7 +987,9 @@
       "lines": 242,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "d46dd2ba98ae4b6358fa04e70b876e8b80e67e1a047044f9c703c2345b811335",
+      "after_lines": 241
     },
     {
       "path": "engineer/bin/lib/gen_state_md_docs.py",
@@ -818,7 +998,9 @@
       "lines": 496,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "62c7d1d155c460d2a974ec997f7ecbe7fa2a8581f653cdcf95c4aa6e1cd93cb8",
+      "after_lines": 496
     },
     {
       "path": "engineer/bin/lib/gitops.py",
@@ -827,7 +1009,9 @@
       "lines": 96,
       "reviewer": "coordinator-core",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "75107f2a90185930355a9b02de09d929c663fba57132513a35cd4719450569d7",
+      "after_lines": 96
     },
     {
       "path": "engineer/bin/lib/handoff.py",
@@ -836,7 +1020,9 @@
       "lines": 192,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "f9dd6b5c6ff123c51fb1f783cdae55f7074b51922a13ac88767cac5489392d6e",
+      "after_lines": 192
     },
     {
       "path": "engineer/bin/lib/health_diagnostic.py",
@@ -845,7 +1031,9 @@
       "lines": 430,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "a038005dbc5226a83acedd2189054fefbdc48403217670ed6cd43ead29c28283",
+      "after_lines": 430
     },
     {
       "path": "engineer/bin/lib/health_diagnostic_rules.py",
@@ -854,7 +1042,9 @@
       "lines": 1254,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "bcbda33cd33704fe8b77be7afc9e712418fdbb749980bb2129568338f081f609",
+      "after_lines": 1245
     },
     {
       "path": "engineer/bin/lib/ideas.py",
@@ -863,7 +1053,9 @@
       "lines": 351,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "a307f454714c80ee38c56cd0b6f8723b1c6aac5704cce989560608251c95803d",
+      "after_lines": 351
     },
     {
       "path": "engineer/bin/lib/installation.py",
@@ -872,7 +1064,9 @@
       "lines": 181,
       "reviewer": "D-runtime",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "33f8189228a9c8865bbf08d0f1cc2496983244f4ec9c98984fd4f6a2b22905d0",
+      "after_lines": 51
     },
     {
       "path": "engineer/bin/lib/io_output.py",
@@ -881,7 +1075,9 @@
       "lines": 592,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "engineer/bin/lib/issue_format.py",
@@ -890,7 +1086,9 @@
       "lines": 139,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "7590a44c8ad301fb7b4b3aedfab76c0de105754469d83e2a46745d71de2c5317",
+      "after_lines": 139
     },
     {
       "path": "engineer/bin/lib/issues.py",
@@ -899,7 +1097,9 @@
       "lines": 423,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "bf8c2a098d4510e059cb7d058a2fa0b6584e40bef09f6bbfbed5356385fcc6bf",
+      "after_lines": 423
     },
     {
       "path": "engineer/bin/lib/lint_health_diagnostic_rule_table.py",
@@ -908,7 +1108,9 @@
       "lines": 252,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "55de3a4ae9afc2c78434e80dea13fa8656fb54c5c76dd0a2c49f86f15be7ac93",
+      "after_lines": 252
     },
     {
       "path": "engineer/bin/lib/lint_response_language_coverage.py",
@@ -917,7 +1119,9 @@
       "lines": 394,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "61ce9ad1f34056f29693331a39a2fd8f6f2316852f522ca5755e0acafdf2cbf9",
+      "after_lines": 394
     },
     {
       "path": "engineer/bin/lib/locking.py",
@@ -926,7 +1130,9 @@
       "lines": 64,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "f102c74897a1548e0cdeb0d7c18f96474bffac18a5d73a27b8cede15d1a5dd34",
+      "after_lines": 64
     },
     {
       "path": "engineer/bin/lib/manager.py",
@@ -935,7 +1141,9 @@
       "lines": 175,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "5ea473db982ec8ecd9fb7fdc71d366e23a8e29f5b03e43ac98a74f90aa66a4b8",
+      "after_lines": 175
     },
     {
       "path": "engineer/bin/lib/markdown_sectionizer.py",
@@ -944,7 +1152,9 @@
       "lines": 739,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "73a4845b1ec0c262650fe798b5907cadcaad36000aefb1722cdcad008e03ff33",
+      "after_lines": 739
     },
     {
       "path": "engineer/bin/lib/markdown_table.py",
@@ -953,7 +1163,9 @@
       "lines": 605,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "85a462059dab53eaf141d63ad064f729ece02e5a9d7eac2d6015b0a41a90e930",
+      "after_lines": 402
     },
     {
       "path": "engineer/bin/lib/misc.py",
@@ -962,7 +1174,9 @@
       "lines": 327,
       "reviewer": "coordinator-core",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "25048228d3578b1954fb2fa495ebdb214e2f601572a98f6d899ec51b2e91c461",
+      "after_lines": 327
     },
     {
       "path": "engineer/bin/lib/model_omit_when_inherit_guard.py",
@@ -971,7 +1185,9 @@
       "lines": 290,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "659dbf1fc259003b2e046469df279a6e1de6012e32da458a84e37a39305e0d72",
+      "after_lines": 272
     },
     {
       "path": "engineer/bin/lib/models.py",
@@ -980,7 +1196,9 @@
       "lines": 142,
       "reviewer": "coordinator-core",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "609571e5d495faba80033cff762cf53bf839e95281e8dae32c56611f960938ab",
+      "after_lines": 142
     },
     {
       "path": "engineer/bin/lib/numbering.py",
@@ -989,7 +1207,9 @@
       "lines": 114,
       "reviewer": "coordinator-core",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "957d926740b1b35080913c9e4682a6955f7e3b5ab317ccd2631f655acec8ca66",
+      "after_lines": 114
     },
     {
       "path": "engineer/bin/lib/onboarding.py",
@@ -998,7 +1218,9 @@
       "lines": 168,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "ef0f958f4cac218678341599110eaf2765e89ee97150423d7b229bfbc1018269",
+      "after_lines": 168
     },
     {
       "path": "engineer/bin/lib/packages.py",
@@ -1007,7 +1229,9 @@
       "lines": 54,
       "reviewer": "coordinator-core",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "a76ac87e12cb3bd1f3f67e040e0044ce7401e16b31611341579d27ccbe899e3b",
+      "after_lines": 54
     },
     {
       "path": "engineer/bin/lib/phase_issues.py",
@@ -1016,7 +1240,9 @@
       "lines": 355,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "07b80541834633708896e5f544b0c28116ae1f2b14984750c4328ba8c82007b2",
+      "after_lines": 355
     },
     {
       "path": "engineer/bin/lib/pipelines.py",
@@ -1025,7 +1251,9 @@
       "lines": 638,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "47f86f5d5b990b41439e52aaad6b33978a7641f144f40cefd0dad94600f027fc",
+      "after_lines": 638
     },
     {
       "path": "engineer/bin/lib/planning.py",
@@ -1034,7 +1262,9 @@
       "lines": 256,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "12061949cb8d7065be372d9e2d093a4085d51fc1e667862ffa411adda3bdb6b3",
+      "after_lines": 130
     },
     {
       "path": "engineer/bin/lib/planning_integrity.py",
@@ -1043,7 +1273,9 @@
       "lines": 72,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "bf54c66d0c5fe672fd15be29c86790393ebf833bd39c427a17def771fe018ce6",
+      "after_lines": 70
     },
     {
       "path": "engineer/bin/lib/planning_review.py",
@@ -1052,7 +1284,9 @@
       "lines": 146,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "8961bebb1b503565ed2c1fdaed43d1b403d46cc5a63edb5d2428ce52d7d4d9c1",
+      "after_lines": 146
     },
     {
       "path": "engineer/bin/lib/plans.py",
@@ -1061,7 +1295,9 @@
       "lines": 99,
       "reviewer": "coordinator-core",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "6428d4b66a0547c5f140c03f5e8ac60c7351bdc8feb515e76df38f5e4a9794d6",
+      "after_lines": 99
     },
     {
       "path": "engineer/bin/lib/posix_shell.py",
@@ -1070,7 +1306,9 @@
       "lines": 79,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "90410b2bbdfcbc6cd52903614717a5e4639035137e14c1ab43c59fa9a6c2c0e8",
+      "after_lines": 79
     },
     {
       "path": "engineer/bin/lib/probe_core.py",
@@ -1079,7 +1317,9 @@
       "lines": 397,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "7e2637cd4685693200a2352e0aa5a7676f77418db37a40606513d43b38a4d048",
+      "after_lines": 397
     },
     {
       "path": "engineer/bin/lib/probes.py",
@@ -1088,7 +1328,9 @@
       "lines": 49,
       "reviewer": "coordinator-core",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "939005c404686ff64a8c01d0b3bcba499dde636e3a8d2028bf125b69908974ce",
+      "after_lines": 62
     },
     {
       "path": "engineer/bin/lib/processes.py",
@@ -1097,7 +1339,9 @@
       "lines": 401,
       "reviewer": "D-runtime",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "a3edcd9dfac94551c91b159bf2f0e1fa06a504c154c17ce144e8893be8f322c7",
+      "after_lines": 401
     },
     {
       "path": "engineer/bin/lib/profile_output.py",
@@ -1106,7 +1350,9 @@
       "lines": 1767,
       "reviewer": "F-registry-profile",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "engineer/bin/lib/prohibition_probe.py",
@@ -1115,7 +1361,9 @@
       "lines": 530,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "0e110eafe2e5ed1a30ed4eb8df218ea03f0940e75a3274b319ab174b2e5fecc9",
+      "after_lines": 530
     },
     {
       "path": "engineer/bin/lib/quality.py",
@@ -1124,7 +1372,9 @@
       "lines": 95,
       "reviewer": "D-runtime",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "engineer/bin/lib/quick_batch.py",
@@ -1133,7 +1383,9 @@
       "lines": 605,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "3eaa96abe2ac2dfb83e0c528bbd37475a5c3e62ac5597923efc22953cdf85dee",
+      "after_lines": 570
     },
     {
       "path": "engineer/bin/lib/records.py",
@@ -1142,7 +1394,9 @@
       "lines": 714,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "6e783b6b963fd9928725cae158aba189cada79c239e4b6384d35214ba872bcf0",
+      "after_lines": 714
     },
     {
       "path": "engineer/bin/lib/repository.py",
@@ -1151,7 +1405,9 @@
       "lines": 28,
       "reviewer": "coordinator-core",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "5c0d38a62b3b83c358e52783b4e7034e3783c1259d19384532150648073f8f9b",
+      "after_lines": 28
     },
     {
       "path": "engineer/bin/lib/requirements.py",
@@ -1160,7 +1416,9 @@
       "lines": 163,
       "reviewer": "coordinator-core",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "0a52cdd23126ccc1f1855221a10bdc7adf689da5e15aba7606e3698c3f5c0741",
+      "after_lines": 163
     },
     {
       "path": "engineer/bin/lib/research.py",
@@ -1169,7 +1427,9 @@
       "lines": 129,
       "reviewer": "D-runtime",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "4ddc52e21e66478efd891f4b4a963c6c44a1a2a3c702613a1db168af25792937",
+      "after_lines": 29
     },
     {
       "path": "engineer/bin/lib/responsive_separators.py",
@@ -1178,7 +1438,9 @@
       "lines": 74,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "7d8321bca4eab6b849528a5efb9d8411cfc708e5490fe5d968ffc8d9a9353075",
+      "after_lines": 74
     },
     {
       "path": "engineer/bin/lib/review_execution.py",
@@ -1187,7 +1449,9 @@
       "lines": 600,
       "reviewer": "D-runtime",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "engineer/bin/lib/review_lane_descriptor.py",
@@ -1196,7 +1460,9 @@
       "lines": 926,
       "reviewer": "D-runtime",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "engineer/bin/lib/review_ledger.py",
@@ -1205,7 +1471,9 @@
       "lines": 434,
       "reviewer": "D-runtime",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "062c95b832ac9eab83c05d9ad9ff1c0ee1a86cb1b2f817ba09160876277846c3",
+      "after_lines": 434
     },
     {
       "path": "engineer/bin/lib/runtime_launcher_parity.py",
@@ -1214,7 +1482,9 @@
       "lines": 360,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "74080c8166ffd7e6893a41cef0737028e9fd3dafab7a451f52bfd4100ea562e1",
+      "after_lines": 360
     },
     {
       "path": "engineer/bin/lib/runtime_name_policy.py",
@@ -1223,7 +1493,9 @@
       "lines": 409,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "engineer/bin/lib/runtime_tools.py",
@@ -1232,7 +1504,9 @@
       "lines": 251,
       "reviewer": "D-runtime",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "82043775354d9b2b1a404272ac3f6555a4f8b5ada9acf8270099e17358ae64f3",
+      "after_lines": 180
     },
     {
       "path": "engineer/bin/lib/scope.py",
@@ -1241,7 +1515,9 @@
       "lines": 63,
       "reviewer": "coordinator-core",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "d69771f8a635c2c23289ee4aec4dbd2f51a43467aaaecc24312e00ee9daea0c3",
+      "after_lines": 63
     },
     {
       "path": "engineer/bin/lib/security_tracking.py",
@@ -1250,7 +1526,9 @@
       "lines": 693,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "0a63cc0dc515be7dde7b58ba92d2dfceac1c2695d61838435dd54001ef51b0b2",
+      "after_lines": 693
     },
     {
       "path": "engineer/bin/lib/sessions.py",
@@ -1259,7 +1537,9 @@
       "lines": 212,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "37d7441cadae688d65db4d69694670d5575c4bd109e2c1f5d67b465bad2cf748",
+      "after_lines": 212
     },
     {
       "path": "engineer/bin/lib/spec_section.py",
@@ -1268,7 +1548,9 @@
       "lines": 91,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "c02c78c672a131f4ad55f4a31124d6a02c66ee687b15a4c2c091336542640f6d",
+      "after_lines": 91
     },
     {
       "path": "engineer/bin/lib/specs.py",
@@ -1277,7 +1559,9 @@
       "lines": 104,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "ae1fa0e034af2ae2a3f3f5ca94859c4cc37d24267c7dee34929fde8cc664e147",
+      "after_lines": 104
     },
     {
       "path": "engineer/bin/lib/state_md_schema.py",
@@ -1286,7 +1570,9 @@
       "lines": 117,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "5cc9899fbec3b819ef852ca5115de45a5b9410ad75ec304154907e20fed1605b",
+      "after_lines": 117
     },
     {
       "path": "engineer/bin/lib/tdd.py",
@@ -1295,7 +1581,9 @@
       "lines": 163,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "c06558895d7471d12a96b44903c395a937bc92feceef29d093f5613b68f38b8b",
+      "after_lines": 163
     },
     {
       "path": "engineer/bin/lib/text.py",
@@ -1304,7 +1592,9 @@
       "lines": 252,
       "reviewer": "coordinator-core",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "907bf33e821381e37dc2e79f3e0056116de4cc31eb5bb2720a6a80abe23e479f",
+      "after_lines": 252
     },
     {
       "path": "engineer/bin/lib/uat.py",
@@ -1313,7 +1603,9 @@
       "lines": 139,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "26a639f9607e89a04caeb8f4d4000f35a3c665a70fe8eaca40d18cbdb7a290ed",
+      "after_lines": 139
     },
     {
       "path": "engineer/bin/lib/ui.py",
@@ -1322,7 +1614,9 @@
       "lines": 58,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "2568575eeb20d2404c0fb802b56e84439f45ac1cb34e9916c77c166138c966f4",
+      "after_lines": 58
     },
     {
       "path": "engineer/bin/lib/ui_consideration_probe.py",
@@ -1331,7 +1625,9 @@
       "lines": 185,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "d5a9d59a842faca80cfc4edcaf8d24723ed3ad8cea9225b96aff3a4eac44c14b",
+      "after_lines": 185
     },
     {
       "path": "engineer/bin/lib/ui_safety_gate.py",
@@ -1340,7 +1636,9 @@
       "lines": 103,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "254a101a333c453e388fc840e0ef8fcbe9891413a1209944f0ed24fd7d7b419f",
+      "after_lines": 103
     },
     {
       "path": "engineer/bin/lib/verification.py",
@@ -1349,7 +1647,9 @@
       "lines": 513,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "c9aee9632a101e0e349be0108e0dd73c3e377a5a9899b4c3b3a7d2a9aeb260ad",
+      "after_lines": 513
     },
     {
       "path": "engineer/bin/lib/verify.py",
@@ -1358,7 +1658,9 @@
       "lines": 56,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "b12a54a7f8a96bd29ca0173c6ab2f7e5aae6c8d009b7f39b083d5dcfa832d741",
+      "after_lines": 56
     },
     {
       "path": "engineer/bin/lib/workflow_ops.py",
@@ -1367,7 +1669,9 @@
       "lines": 563,
       "reviewer": "D-runtime",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "e400c2dbb04354d869a1c8b2b8773ee77ae0960762f6c0085c9d7c01aa1861b9",
+      "after_lines": 398
     },
     {
       "path": "engineer/bin/lib/workflow_size_budget.py",
@@ -1376,7 +1680,9 @@
       "lines": 406,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "372ff7a899a1404378aa35e2c768d53413c8ce782fdb0d7806024c18b9ec1070",
+      "after_lines": 349
     },
     {
       "path": "engineer/bin/lib/worktrees.py",
@@ -1385,7 +1691,9 @@
       "lines": 734,
       "reviewer": "D-runtime",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "dc936f9977f52cd66ba46418c7d3dca2595d4cad2ee59c084e7e4bcd69be42ce",
+      "after_lines": 659
     },
     {
       "path": "engineer/bin/lib/write_set.py",
@@ -1394,7 +1702,9 @@
       "lines": 33,
       "reviewer": "E-support",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "a55e5b383d555d396b62681afd058fa3010e7ebc068f51f4dfe10ccc590007ab",
+      "after_lines": 33
     },
     {
       "path": "engineer/bin/process_supervisor.py",
@@ -1403,7 +1713,9 @@
       "lines": 242,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "a947bb888f49a3a8205da9a0118ea334862ca83a7780741969e9b648bc68c3b0",
+      "after_lines": 242
     },
     {
       "path": "engineer/bin/requirements.txt",
@@ -1412,7 +1724,9 @@
       "lines": 1,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "b547a8fa94ffe85c32dfc454787d3f59742557c5b97b12aea7192c57e775c1e2",
+      "after_lines": 1
     },
     {
       "path": "engineer/references/REFERENCE.md",
@@ -1421,7 +1735,9 @@
       "lines": 0,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "after_lines": 0
     },
     {
       "path": "engineer/references/agent-contracts.md",
@@ -1430,7 +1746,9 @@
       "lines": 83,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "c045ef4606c88d151b8618af5d025da01bf066b9afc4311cb81daa06fa897173",
+      "after_lines": 82
     },
     {
       "path": "engineer/references/agent-skills-bootstrap.md",
@@ -1439,7 +1757,9 @@
       "lines": 66,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "engineer/references/artifact-types.md",
@@ -1448,7 +1768,9 @@
       "lines": 138,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "44ed5be4711de07d383584fd3b18945e25e0a7a57d11f43b634234a4af07106f",
+      "after_lines": 138
     },
     {
       "path": "engineer/references/checkpoints.md",
@@ -1457,7 +1779,9 @@
       "lines": 854,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "6d2eaa8f117a429a6459ff0e20a0756d35475713e08359b37129235d0622eac8",
+      "after_lines": 854
     },
     {
       "path": "engineer/references/common-bug-patterns.md",
@@ -1466,7 +1790,9 @@
       "lines": 127,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "a4cfea8954dede294ac5de0d5fa192558385eaa7a99683de041fb55f42bed374",
+      "after_lines": 127
     },
     {
       "path": "engineer/references/context-budget.md",
@@ -1475,7 +1801,9 @@
       "lines": 125,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "cf246ba1a5b4cd632a6d63bab732feba714988f887b9b76388564a7ed876a79d",
+      "after_lines": 58
     },
     {
       "path": "engineer/references/continuation-format.md",
@@ -1484,7 +1812,9 @@
       "lines": 253,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "engineer/references/debugger-bug-taxonomy.md",
@@ -1493,7 +1823,9 @@
       "lines": 111,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "ca1ac3cbaffa7012d63ea6fa65d37c09430e7b9d9c5688327fad99a8c8e0bab6",
+      "after_lines": 111
     },
     {
       "path": "engineer/references/debugger-fix-acceptance.md",
@@ -1502,7 +1834,9 @@
       "lines": 157,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "e8aec4b9d7d3d0e523bdcd7d221314188cea080cad8120b8ec0abde34671ff08",
+      "after_lines": 158
     },
     {
       "path": "engineer/references/debugger-philosophy.md",
@@ -1511,7 +1845,9 @@
       "lines": 77,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "e2475f789aa676e519bafb5a6d8d7f14a5f510579dec3813725c49f2ce770cdf",
+      "after_lines": 77
     },
     {
       "path": "engineer/references/debugger-prevention.md",
@@ -1520,7 +1856,9 @@
       "lines": 98,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "205da2fd1059005752c518d1e0386d01cc064dfedcfcd673323e2d67d4d85854",
+      "after_lines": 98
     },
     {
       "path": "engineer/references/debugger-rca-branching.md",
@@ -1529,7 +1867,9 @@
       "lines": 98,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "4c8c90174db4a40d753d22d36624aa8c8846d4657aa7d2a7e5b87ccda89c8ebd",
+      "after_lines": 98
     },
     {
       "path": "engineer/references/debugger-repro-hardening.md",
@@ -1538,7 +1878,9 @@
       "lines": 130,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "a936b7e3c0ce0bb7155dc4d978e9b07cd6c66ad47af5c55cef521260429c7071",
+      "after_lines": 130
     },
     {
       "path": "engineer/references/debugger-sbfl.md",
@@ -1547,7 +1889,9 @@
       "lines": 110,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "d4fe5bbb26c8df684701d39ff481e258433c5b3bfffb6e6c4dc1530d38fefe94",
+      "after_lines": 110
     },
     {
       "path": "engineer/references/debugger-semantic-recall.md",
@@ -1556,7 +1900,9 @@
       "lines": 81,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "6b6b1a204fb9e09049ec17e67ec78f2a5ed76bbc095a2bbc27dd97ead58b3f5c",
+      "after_lines": 51
     },
     {
       "path": "engineer/references/debugger-techniques.md",
@@ -1565,7 +1911,9 @@
       "lines": 255,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "1c887f8f1887dcfe4adaeedbe9168ca6b9501986ca14f4550837c68a424ac7d4",
+      "after_lines": 255
     },
     {
       "path": "engineer/references/dispatch-isolation-gate.md",
@@ -1574,7 +1922,9 @@
       "lines": 138,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "15123e3a03878e3910202f565eafa45d0a68571e18a1382e6da14a67c136bae2",
+      "after_lines": 138
     },
     {
       "path": "engineer/references/domain-probes.md",
@@ -1583,7 +1933,9 @@
       "lines": 125,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "7c1c64c122cfab5e8d39341e2e5048c8d60a7cb781df8ebc63158e66b57468b3",
+      "after_lines": 125
     },
     {
       "path": "engineer/references/edge-probe-fixtures/01-round-half-even/expected-coverage.json",
@@ -1592,7 +1944,9 @@
       "lines": 32,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "ca6721633eda6a04a1da149db821adbd129d0468dc070ee47ec2b2abe313e75f",
+      "after_lines": 32
     },
     {
       "path": "engineer/references/edge-probe-fixtures/01-round-half-even/requirements.json",
@@ -1601,7 +1955,9 @@
       "lines": 1,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "a2f14ad93e8c3a11ddc8a7779195b6ded67e476ac3b22b24493aa3f10d3eeb65",
+      "after_lines": 1
     },
     {
       "path": "engineer/references/edge-probe-fixtures/02-merge-intervals/expected-coverage.json",
@@ -1610,7 +1966,9 @@
       "lines": 41,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "b17a1afdb85abb025c683cb8b19fa77fc0b9ba793aa3d101cb3ad2df8c884cf8",
+      "after_lines": 41
     },
     {
       "path": "engineer/references/edge-probe-fixtures/02-merge-intervals/requirements.json",
@@ -1619,7 +1977,9 @@
       "lines": 1,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "d5cc072dfa6647a3f0ce8f0a6f8133b35274c6d4b0498b2fb969c6bc20488de4",
+      "after_lines": 1
     },
     {
       "path": "engineer/references/edge-probe-fixtures/03-truncate-graphemes/expected-coverage.json",
@@ -1628,7 +1988,9 @@
       "lines": 32,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "55b144a1fb54501f3c454d14886ab0930e4e692b87a8f198343fa88e456a60c3",
+      "after_lines": 32
     },
     {
       "path": "engineer/references/edge-probe-fixtures/03-truncate-graphemes/requirements.json",
@@ -1637,7 +1999,9 @@
       "lines": 1,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "b6fc2df087c1afc18a20d8cc18d2cd9a6dc0b34503976be6fa0a67689dc5109a",
+      "after_lines": 1
     },
     {
       "path": "engineer/references/edge-probe-fixtures/04-money-rounding/expected-coverage.json",
@@ -1646,7 +2010,9 @@
       "lines": 32,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "ca6721633eda6a04a1da149db821adbd129d0468dc070ee47ec2b2abe313e75f",
+      "after_lines": 32
     },
     {
       "path": "engineer/references/edge-probe-fixtures/04-money-rounding/requirements.json",
@@ -1655,7 +2021,9 @@
       "lines": 1,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "943793ccc197cd5b3fd056fa2240a42ea38f38bb95879046b9d4f4131c310e28",
+      "after_lines": 1
     },
     {
       "path": "engineer/references/edge-probe-fixtures/05-list-dedupe/expected-coverage.json",
@@ -1664,7 +2032,9 @@
       "lines": 41,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "b17a1afdb85abb025c683cb8b19fa77fc0b9ba793aa3d101cb3ad2df8c884cf8",
+      "after_lines": 41
     },
     {
       "path": "engineer/references/edge-probe-fixtures/05-list-dedupe/requirements.json",
@@ -1673,7 +2043,9 @@
       "lines": 1,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "a8ffd30b32297747174992995858703472fbd10798ca0c8f606a34fede32429a",
+      "after_lines": 1
     },
     {
       "path": "engineer/references/edge-probe-fixtures/06-resolved-mixed/expected-coverage.json",
@@ -1682,7 +2054,9 @@
       "lines": 41,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "667dd9733b5f5cbcccc12989d3bf9316136788dbc6375f82a7dac5fc6cf71fd6",
+      "after_lines": 41
     },
     {
       "path": "engineer/references/edge-probe-fixtures/06-resolved-mixed/requirements.json",
@@ -1691,7 +2065,9 @@
       "lines": 1,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "d5cc072dfa6647a3f0ce8f0a6f8133b35274c6d4b0498b2fb969c6bc20488de4",
+      "after_lines": 1
     },
     {
       "path": "engineer/references/edge-probe-fixtures/06-resolved-mixed/resolutions.json",
@@ -1700,7 +2076,9 @@
       "lines": 4,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "18ab0a57201007f391c784c987609867e8f7cab2ea029ac42edc6bb8e4eb73b1",
+      "after_lines": 4
     },
     {
       "path": "engineer/references/edge-probe.md",
@@ -1709,7 +2087,9 @@
       "lines": 458,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "0a4c582e4792755c8be373739fd28802e7b3bfdb829e4e278f012035317bb873",
+      "after_lines": 458
     },
     {
       "path": "engineer/references/execute-phase-context-guard.md",
@@ -1718,7 +2098,9 @@
       "lines": 16,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "engineer/references/executor-examples.md",
@@ -1727,7 +2109,9 @@
       "lines": 158,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "3a66ead39b2fb268907924a2d81e9c2021c5b3fa747b4d9ba1db74b1f137bef3",
+      "after_lines": 158
     },
     {
       "path": "engineer/references/failing-direction.md",
@@ -1736,7 +2120,9 @@
       "lines": 76,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "983c23a4056df11c33ef955ab0d584447eea6ec54e914013c78119cb80a87a0c",
+      "after_lines": 76
     },
     {
       "path": "engineer/references/few-shot-examples/plan-checker.md",
@@ -1745,7 +2131,9 @@
       "lines": 73,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "4f725e06736086589f5978531a4036911e817917f99970056d29fa9eb9bda80b",
+      "after_lines": 73
     },
     {
       "path": "engineer/references/few-shot-examples/verifier.md",
@@ -1754,7 +2142,9 @@
       "lines": 109,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "cd68e60c192e3d474103836e5355a44ac9bfaf2e7796977054f8196b38440fce",
+      "after_lines": 109
     },
     {
       "path": "engineer/references/gate-prompts.md",
@@ -1763,7 +2153,9 @@
       "lines": 103,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "09db07b40af639a28e7f9928644ec23cc43916acccbe9859d49288aa170733a8",
+      "after_lines": 103
     },
     {
       "path": "engineer/references/gates.md",
@@ -1772,7 +2164,9 @@
       "lines": 70,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "8cce69be1699ede52d1d12b697e380be47e1645369dcdb40e42806f239a349ef",
+      "after_lines": 70
     },
     {
       "path": "engineer/references/git-integration.md",
@@ -1781,7 +2175,9 @@
       "lines": 309,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "3abe36ab6c8fa69be254fbaaf8e37bb51fdcb35803650cfbbce73df5f7e89428",
+      "after_lines": 309
     },
     {
       "path": "engineer/references/git-planning-commit.md",
@@ -1790,7 +2186,9 @@
       "lines": 41,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "engineer/references/honest-verifier.md",
@@ -1799,7 +2197,9 @@
       "lines": 103,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "87fe5518840bcfd69628ac4d220e519121eacf69cb73694e096200df245e53e1",
+      "after_lines": 103
     },
     {
       "path": "engineer/references/mandatory-initial-read.md",
@@ -1808,7 +2208,9 @@
       "lines": 2,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "engineer/references/model-profile-resolution.md",
@@ -1817,7 +2219,9 @@
       "lines": 87,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "engineer/references/model-profiles.md",
@@ -1826,7 +2230,9 @@
       "lines": 268,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "13f2795efae3c940625ece2f2b9afccf817de4281acf22817922f32d02cdc8fe",
+      "after_lines": 268
     },
     {
       "path": "engineer/references/nyquist-compliance.md",
@@ -1835,7 +2241,9 @@
       "lines": 74,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "e2e65e39c2390cb4b31f6e321f27fd5d02be0860a43d8048fc2a19d56fddfa3a",
+      "after_lines": 74
     },
     {
       "path": "engineer/references/offer-next.md",
@@ -1844,7 +2252,9 @@
       "lines": 86,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "engineer/references/phase-argument-parsing.md",
@@ -1853,7 +2263,9 @@
       "lines": 63,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "engineer/references/phase-id-convention.md",
@@ -1862,7 +2274,9 @@
       "lines": 28,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "engineer/references/plan-checker-examples.md",
@@ -1871,7 +2285,9 @@
       "lines": 41,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "b01892754a570b14363c515c2c2d2b194017837d9019e64390beffd688456a52",
+      "after_lines": 41
     },
     {
       "path": "engineer/references/planner-antipatterns.md",
@@ -1880,7 +2296,9 @@
       "lines": 255,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "08ca87ee4eccf163d30e32b1c4a6be1018e66a59a00217108de6df00e96e044a",
+      "after_lines": 230
     },
     {
       "path": "engineer/references/planner-coupling.md",
@@ -1889,7 +2307,9 @@
       "lines": 42,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "36b077f349016a66d66e4d7f6eebc8fed5594d500b85f32e160e1789f7ed33e1",
+      "after_lines": 42
     },
     {
       "path": "engineer/references/planner-gap-closure.md",
@@ -1898,7 +2318,9 @@
       "lines": 64,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "b614c805132783cdc6e2dda581c3603baa003822e80c539a0fbff8569acbe8d1",
+      "after_lines": 64
     },
     {
       "path": "engineer/references/planner-guidance.md",
@@ -1907,7 +2329,9 @@
       "lines": 246,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "c677b4132eafcc2f61ac6679c10bb8d7f8f60ae7ff53748eb0a9c0419d5c9f99",
+      "after_lines": 246
     },
     {
       "path": "engineer/references/planner-interface-context.md",
@@ -1916,7 +2340,9 @@
       "lines": 62,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "b28fa3da6ae739a81de4287e3fe893133e46ec406a8ee73355ec46145a9d9b15",
+      "after_lines": 62
     },
     {
       "path": "engineer/references/planner-preconditions.md",
@@ -1925,7 +2351,9 @@
       "lines": 148,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "341779957af0e7a5b6f0babe8dda6f5cf078790601bee116494b694090e173a3",
+      "after_lines": 148
     },
     {
       "path": "engineer/references/planner-quick-batch.md",
@@ -1934,7 +2362,9 @@
       "lines": 70,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "8aa8603c5c7516370fa94b5d81afbe1305806c307c96885e40574293abf80d2d",
+      "after_lines": 70
     },
     {
       "path": "engineer/references/planner-reversibility.md",
@@ -1943,7 +2373,9 @@
       "lines": 145,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "1b51a0d3f52cc9e25dfc7a75e441fe32f403ca251efe58b575a43e1ea777855c",
+      "after_lines": 145
     },
     {
       "path": "engineer/references/planner-reviews.md",
@@ -1952,7 +2384,9 @@
       "lines": 89,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "436807571d7f6db7b024a745436b01071cd584a43847c664ea963dc9c9569903",
+      "after_lines": 88
     },
     {
       "path": "engineer/references/planner-revision.md",
@@ -1961,7 +2395,9 @@
       "lines": 160,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "d9de61c0d878aee0667b341300ddc7e2a96d35a40d3ebe717497a63db9671a2d",
+      "after_lines": 160
     },
     {
       "path": "engineer/references/planner-source-audit.md",
@@ -1970,7 +2406,9 @@
       "lines": 73,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "c61dd6437974a93f01bc07541bb42af3e5173b3d73f4f2ca36e4d06baba43424",
+      "after_lines": 73
     },
     {
       "path": "engineer/references/planner-verify-command-grounding.md",
@@ -1979,7 +2417,9 @@
       "lines": 49,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "9fb9fee3488cefd65812c7c54dc0224ef5de1ce5b26e9e4c1847a689d18c3dd7",
+      "after_lines": 49
     },
     {
       "path": "engineer/references/prohibition-probe-fixtures/01-streak-reminder/expected.json",
@@ -1988,7 +2428,9 @@
       "lines": 14,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "bff361d98fed0529974ecda5537d76104b5951568872fe30e8e4ac6e69a6d839",
+      "after_lines": 14
     },
     {
       "path": "engineer/references/prohibition-probe-fixtures/02-clean-utility/expected.json",
@@ -1997,7 +2439,9 @@
       "lines": 4,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "85cfbb7a6a050a1ec464d51497f5cbb34b5b95bdd57aae4e370b0b95d665a8b6",
+      "after_lines": 4
     },
     {
       "path": "engineer/references/prohibition-probe-fixtures/03-multi-prohibition/expected.json",
@@ -2006,7 +2450,9 @@
       "lines": 32,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "198490b569b2817bdb03f6abff436bb00dcdd758664406622000d452748e5891",
+      "after_lines": 32
     },
     {
       "path": "engineer/references/prohibition-probe.md",
@@ -2015,7 +2461,9 @@
       "lines": 331,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "6117913571f2ea3048f213d293d97bec8c35a7beb73cb43edd8989380f19741c",
+      "after_lines": 331
     },
     {
       "path": "engineer/references/project-skills-discovery.md",
@@ -2024,7 +2472,9 @@
       "lines": 21,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "engineer/references/questioning.md",
@@ -2033,7 +2483,9 @@
       "lines": 162,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "325ee0b8eb64fa66a060f9c541f03296183be52068f20bde75a33bb9212023cc",
+      "after_lines": 162
     },
     {
       "path": "engineer/references/research-documentation-lookup.md",
@@ -2042,7 +2494,9 @@
       "lines": 31,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "da9b532d11aeaeb3e8ab4079a50ef92165dd0e98e83e425aa22ddcf29df71e81",
+      "after_lines": 31
     },
     {
       "path": "engineer/references/research-philosophy.md",
@@ -2051,7 +2505,9 @@
       "lines": 29,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "62930e66cc979c1a0f9870f1f7725365467f0393ce50780aa5d789ece0ad1b07",
+      "after_lines": 29
     },
     {
       "path": "engineer/references/research-verification-protocol.md",
@@ -2060,7 +2516,9 @@
       "lines": 27,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "9c38c9d9a687e67914c85c9e7e47c8a23366abbee90607065b5398255c2ae572",
+      "after_lines": 27
     },
     {
       "path": "engineer/references/response-language-directive.md",
@@ -2069,7 +2527,9 @@
       "lines": 9,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "82ac157e4419e91a12639bfc6172e80483e52bb0467320adb07dbeae80f41ca5",
+      "after_lines": 9
     },
     {
       "path": "engineer/references/revision-loop.md",
@@ -2078,7 +2538,9 @@
       "lines": 204,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "c273dff24adb1792805fa7052dd3a5d36973533996bc628abf0ded5d3498dc56",
+      "after_lines": 178
     },
     {
       "path": "engineer/references/run-resolver.md",
@@ -2087,7 +2549,9 @@
       "lines": 8,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "3debcc66b369f679c103f3d88e8b0b4c7c45666a2d59dc971aaf05c12acfdd12",
+      "after_lines": 8
     },
     {
       "path": "engineer/references/scout-codebase.md",
@@ -2096,7 +2560,9 @@
       "lines": 51,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "ec45b443db61109aca4caea357d567b7b1a4cf3a1cd24ca6c97a390b14628f6d",
+      "after_lines": 51
     },
     {
       "path": "engineer/references/security-asvs-levels.md",
@@ -2105,7 +2571,9 @@
       "lines": 27,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "b212497d2cc9c3f0b59468d7cb71ca62263489e45835b2a72a9e77d50f6a17eb",
+      "after_lines": 27
     },
     {
       "path": "engineer/references/specless-probe-fallback.md",
@@ -2114,7 +2582,9 @@
       "lines": 172,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "169765b665d5c66da83a532fce817db61f70ab933732a1cbcf2d062de05f96df",
+      "after_lines": 172
     },
     {
       "path": "engineer/references/tdd.md",
@@ -2123,7 +2593,9 @@
       "lines": 366,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "6a23d3aecd749aa9d24adcfc98b786d30dfb10bbced7063c2cfb0800d8cac6ce",
+      "after_lines": 366
     },
     {
       "path": "engineer/references/thinking-models-debug.md",
@@ -2132,7 +2604,9 @@
       "lines": 44,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "5fde4b3f89045269bf056c11c0285258b11054f61260266bd3f413db0c2a5bcd",
+      "after_lines": 44
     },
     {
       "path": "engineer/references/thinking-models-execution.md",
@@ -2141,7 +2615,9 @@
       "lines": 50,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "75d260d09545a05a5fc029460d342af41609702881affcbe8ac82e5821ef3ff6",
+      "after_lines": 50
     },
     {
       "path": "engineer/references/thinking-models-planning.md",
@@ -2150,7 +2626,9 @@
       "lines": 80,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "621b2e6a58fa76249180a3c2388cc6b856c891d309a794b49ba85f171e08e65a",
+      "after_lines": 80
     },
     {
       "path": "engineer/references/thinking-models-research.md",
@@ -2159,7 +2637,9 @@
       "lines": 50,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "8b0e93355ee2f5d88b856d2c389052adae196ffb227ebca799c0659c9d7be047",
+      "after_lines": 50
     },
     {
       "path": "engineer/references/thinking-models-verification.md",
@@ -2168,7 +2648,9 @@
       "lines": 55,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "a006f94b691db6c4e121e9bd32b64b58a900b2093b934419eb2cc96de7a5e079",
+      "after_lines": 55
     },
     {
       "path": "engineer/references/ui-brand.md",
@@ -2177,7 +2659,9 @@
       "lines": 206,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "4b4cfc2394c0156481dff014169e80c17a9b92f5e3f1e9592a715919127dcacf",
+      "after_lines": 206
     },
     {
       "path": "engineer/references/ui-consideration-probe.md",
@@ -2186,7 +2670,9 @@
       "lines": 78,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "aadbaa3c86bc55100799c7683caf39302e73dd611aa746a48bf54ad44a325a3e",
+      "after_lines": 78
     },
     {
       "path": "engineer/references/universal-anti-patterns.md",
@@ -2195,7 +2681,9 @@
       "lines": 59,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "3984b6b535ff653026200c289e332c1026567d56a7cff10444d27e6481f35495",
+      "after_lines": 59
     },
     {
       "path": "engineer/references/untrusted-input-boundary.md",
@@ -2204,7 +2692,9 @@
       "lines": 13,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "d33b80d4d348599a3e34074c295c091886509f6afa594926feeaad415cdfa606",
+      "after_lines": 13
     },
     {
       "path": "engineer/references/verification-overrides.md",
@@ -2213,7 +2703,9 @@
       "lines": 227,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "27b56bddcf5224d1a44551ae8e2ace5da622e160cf2c905ebdc374beb3399b2d",
+      "after_lines": 227
     },
     {
       "path": "engineer/references/verification-patterns.md",
@@ -2222,7 +2714,9 @@
       "lines": 625,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "edd9afb4c204ec6a75acd4b3f638fccd92b4e8e18943c73d1de4a45272538d36",
+      "after_lines": 625
     },
     {
       "path": "engineer/references/verifier-evidence-gate.md",
@@ -2231,7 +2725,9 @@
       "lines": 160,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "6ed04435354f62413a356143be18cee2a7d67094bd5194efd0d4c41fdc6cf7fa",
+      "after_lines": 160
     },
     {
       "path": "engineer/references/verifier-phase-gates.md",
@@ -2240,7 +2736,9 @@
       "lines": 202,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "ba57114239dd2f0fc67499f473c8fd35ad94025b7d8bf2b96f91b7b2f84252d3",
+      "after_lines": 202
     },
     {
       "path": "engineer/references/verifier-wiring-patterns.md",
@@ -2249,7 +2747,9 @@
       "lines": 100,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "1ee5a53672466d4caa4ef4bf1a7b7430487a7f45ec440da9fafd81c53a890f05",
+      "after_lines": 100
     },
     {
       "path": "engineer/references/verify-command-path-resolvability.md",
@@ -2258,7 +2758,9 @@
       "lines": 48,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "a2b67110fab4dc820f4537292b29cc41d71a616f08cbf577ee6488e067b92381",
+      "after_lines": 48
     },
     {
       "path": "engineer/references/worktree-branch-check.md",
@@ -2267,7 +2769,9 @@
       "lines": 44,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "be7e406d8f9b26fcd0adcafab4581607e22f777ee8bbe2f55602b099653f52f0",
+      "after_lines": 44
     },
     {
       "path": "engineer/references/worktree-path-safety.md",
@@ -2276,7 +2780,9 @@
       "lines": 498,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "29931c66121ab250b59bd93c410826dc56059173095b458bc89b745acee7f129",
+      "after_lines": 498
     },
     {
       "path": "engineer/templates/DEBUG.md",
@@ -2285,7 +2791,9 @@
       "lines": 208,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "engineer/templates/README.md",
@@ -2294,7 +2802,9 @@
       "lines": 83,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "059e0457466d15fcb6675a10275eff6b642d027aefd0be3dd8b5e4b236c9fc68",
+      "after_lines": 80
     },
     {
       "path": "engineer/templates/SECURITY.md",
@@ -2303,7 +2813,9 @@
       "lines": 63,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "a7d3e2ddc94f896e2870071f6c08b92ceefe869b2ffb351cc8625b707ef7eeb9",
+      "after_lines": 63
     },
     {
       "path": "engineer/templates/TEMPLATE.md",
@@ -2312,7 +2824,9 @@
       "lines": 0,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "after_lines": 0
     },
     {
       "path": "engineer/templates/UAT.md",
@@ -2321,7 +2835,9 @@
       "lines": 306,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "ab6ad56a58bd504cdf0455aea7287e45b87569f01a07ffd821d9a69a26bccb2d",
+      "after_lines": 306
     },
     {
       "path": "engineer/templates/UI-SPEC.md",
@@ -2330,7 +2846,9 @@
       "lines": 147,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "81aacc1a3dad2374dc23bbf9a393f9423daf048b562747423a12ccbf7f197869",
+      "after_lines": 147
     },
     {
       "path": "engineer/templates/VALIDATION.md",
@@ -2339,7 +2857,9 @@
       "lines": 78,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "a7b67b029f2aba43bfd922eee5ac36a33e0243a39fc6758f423049f5c66d2645",
+      "after_lines": 78
     },
     {
       "path": "engineer/templates/codebase/architecture.md",
@@ -2348,7 +2868,9 @@
       "lines": 255,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "bb0fcd80509a665719fe4c1e835acf52427cf4dfd83f643bf7201c0e3003bdb7",
+      "after_lines": 255
     },
     {
       "path": "engineer/templates/codebase/stack.md",
@@ -2357,7 +2879,9 @@
       "lines": 186,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "116e7e67dd87ddecddc3068cb59de482390cea12e27d8b3672a7444d235b0827",
+      "after_lines": 186
     },
     {
       "path": "engineer/templates/context.md",
@@ -2366,7 +2890,9 @@
       "lines": 352,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "4f1d621a4b4c6191a6934200f0228b0073881b585567947346eac64a98f55259",
+      "after_lines": 352
     },
     {
       "path": "engineer/templates/continue-here.md",
@@ -2375,7 +2901,9 @@
       "lines": 78,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "f522a51b6895fba838c7a9c60408c5a09472466bdf2837f8974330937e682932",
+      "after_lines": 78
     },
     {
       "path": "engineer/templates/discussion-log.md",
@@ -2384,7 +2912,9 @@
       "lines": 63,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "c5160807e91514fca2e66e7096b671a1468a32d53d7a16f8d968c436575ae02a",
+      "after_lines": 63
     },
     {
       "path": "engineer/templates/milestone-archive.md",
@@ -2393,7 +2923,9 @@
       "lines": 123,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "deleted",
+      "after_sha256": null,
+      "after_lines": 0
     },
     {
       "path": "engineer/templates/milestone.md",
@@ -2402,7 +2934,9 @@
       "lines": 115,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "e991f1078f6818e341110a3a04c1ca3e660da344eead9569c595bdb6c6c5c714",
+      "after_lines": 115
     },
     {
       "path": "engineer/templates/phase-prompt.md",
@@ -2411,7 +2945,9 @@
       "lines": 615,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "894a80eb6212c904c86f39f69a90f58395cd25f2605b0468fb1a24305950a3e9",
+      "after_lines": 615
     },
     {
       "path": "engineer/templates/planner-subagent-prompt.md",
@@ -2420,7 +2956,9 @@
       "lines": 117,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "9b11731bfe3c1aa711c0446050826ea686bd1d75d00c55b72d462ed04ae68870",
+      "after_lines": 117
     },
     {
       "path": "engineer/templates/project.md",
@@ -2429,7 +2967,9 @@
       "lines": 203,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "83f2e27023944c89ac7c354adef38a88108c4f7c89a9b6bd19fb730ff332b68e",
+      "after_lines": 203
     },
     {
       "path": "engineer/templates/requirements.md",
@@ -2438,7 +2978,9 @@
       "lines": 231,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "a44de4c2f146e473265777500951b12642553606b613168001ed2577d9e968d4",
+      "after_lines": 231
     },
     {
       "path": "engineer/templates/research-project/ARCHITECTURE.md",
@@ -2447,7 +2989,9 @@
       "lines": 204,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "746b9ef791d758b0222ca03e03d6da314f54c0d560966b5a3d34766b1553b1ea",
+      "after_lines": 204
     },
     {
       "path": "engineer/templates/research-project/FEATURES.md",
@@ -2456,7 +3000,9 @@
       "lines": 147,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "ca3817d31afc0ae763aeff4d73a3bf72f158127c02b58286423573b4586e61d9",
+      "after_lines": 147
     },
     {
       "path": "engineer/templates/research-project/PITFALLS.md",
@@ -2465,7 +3011,9 @@
       "lines": 200,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "917da5b6bb14fecb22657341e9b2119c5284835f549ae1f56a8ea7bf58df147a",
+      "after_lines": 200
     },
     {
       "path": "engineer/templates/research-project/STACK.md",
@@ -2474,7 +3022,9 @@
       "lines": 120,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "82c85799ac4dd344441370e791f09563119f62843034b3a094876a476c2bd4e5",
+      "after_lines": 120
     },
     {
       "path": "engineer/templates/research-project/SUMMARY.md",
@@ -2483,7 +3033,9 @@
       "lines": 170,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "dceb2f346388839d9fce7c8de9ffff2354b8539880e5dadfd10fccfce0062997",
+      "after_lines": 170
     },
     {
       "path": "engineer/templates/research.md",
@@ -2492,7 +3044,9 @@
       "lines": 592,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "fbf3268cd585c7b21c238b255db202bf47c5d414594398e3a0ce1e2b1d2fdb7c",
+      "after_lines": 592
     },
     {
       "path": "engineer/templates/roadmap.md",
@@ -2501,7 +3055,9 @@
       "lines": 202,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "0284f7e61d3cc463a8f590bf531072b3116198c01cad11946e41c76a171e7172",
+      "after_lines": 202
     },
     {
       "path": "engineer/templates/spec.md",
@@ -2510,7 +3066,9 @@
       "lines": 333,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "b1bcc1ec6845b271891403e223105011fd426f006803c40201829aa5b0da8037",
+      "after_lines": 333
     },
     {
       "path": "engineer/templates/state.md",
@@ -2519,7 +3077,9 @@
       "lines": 205,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "ff4f58e5d1e5bc971f502daeff390896b9261f5fc7a1aeccc2d6a87905b729bb",
+      "after_lines": 205
     },
     {
       "path": "engineer/templates/summary.md",
@@ -2528,7 +3088,9 @@
       "lines": 321,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "8c034a1b3e73bac4d368c4cd9c1ca36527fe4843efb04bf3db287f0053d7d482",
+      "after_lines": 321
     },
     {
       "path": "engineer/templates/user-setup.md",
@@ -2537,7 +3099,9 @@
       "lines": 302,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "07c227403d62a9e0cae43a7ee0f9db7d667383e42fefb799067da6b39db145c0",
+      "after_lines": 302
     },
     {
       "path": "engineer/templates/verification-report.md",
@@ -2546,7 +3110,9 @@
       "lines": 348,
       "reviewer": "C-references-templates-entrypoint",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "72b55409f0b2bd818a55406562aaf9a1811d7b2a72a47d961657c82b4c42ce86",
+      "after_lines": 348
     },
     {
       "path": "engineer/workflows/WORKFLOW.md",
@@ -2555,7 +3121,9 @@
       "lines": 1,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "after_lines": 1
     },
     {
       "path": "engineer/workflows/_runtime-launcher.snippet.sh",
@@ -2564,7 +3132,9 @@
       "lines": 42,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "5566b3ede9a0f2642d7302ed6e2c388c406a461e337ef11cf2325d5c2870a69e",
+      "after_lines": 42
     },
     {
       "path": "engineer/workflows/add-backlog.md",
@@ -2573,7 +3143,9 @@
       "lines": 101,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "60e0dfbe4278b826e374010f954e936cfe81e9b19a5d8f69e97a6b894c4266aa",
+      "after_lines": 101
     },
     {
       "path": "engineer/workflows/add-phase.md",
@@ -2582,7 +3154,9 @@
       "lines": 163,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "30d212b00e202d5afb2fb5b8cd9f926269022b9fe20d3c5fb96f4d6c2d93ada5",
+      "after_lines": 161
     },
     {
       "path": "engineer/workflows/add-tests.md",
@@ -2591,7 +3165,9 @@
       "lines": 398,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "47c00bbbc39894179dcf6483d6cb1ca52de9efe92ccad5da555e622c9d4a348f",
+      "after_lines": 396
     },
     {
       "path": "engineer/workflows/add-todo.md",
@@ -2600,7 +3176,9 @@
       "lines": 239,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "96dd1c53c0c344acdd7a77d6a26e3eb4bd52760497e087956a943ec36e2a5258",
+      "after_lines": 237
     },
     {
       "path": "engineer/workflows/analyze-dependencies.md",
@@ -2609,7 +3187,9 @@
       "lines": 98,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "e2cdcbbfd6387db4cfbee491b694e4e4afdd177185698094d721602540d4eb5c",
+      "after_lines": 98
     },
     {
       "path": "engineer/workflows/audit-fix.md",
@@ -2618,7 +3198,9 @@
       "lines": 239,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "514250c6dc15773f6e52547b7ef0932ac02239af215397169923abbdbe83f951",
+      "after_lines": 212
     },
     {
       "path": "engineer/workflows/audit-milestone.md",
@@ -2627,7 +3209,9 @@
       "lines": 387,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "d74278bb595fecfc040b767c50528bd4f4bea64d082e15023165d5a481bc8f16",
+      "after_lines": 385
     },
     {
       "path": "engineer/workflows/audit-uat.md",
@@ -2636,7 +3220,9 @@
       "lines": 168,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "35d888982d8ba1850a2e5145a7bfcac82fa1003887d5c8ae3e9d3b668429d4fe",
+      "after_lines": 168
     },
     {
       "path": "engineer/workflows/check-todos.md",
@@ -2645,7 +3231,9 @@
       "lines": 230,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "62bec4b091251be336ef183ce1e5c3d49fb0e47844616aa06bfc0c2656012da5",
+      "after_lines": 228
     },
     {
       "path": "engineer/workflows/cleanup.md",
@@ -2654,7 +3242,9 @@
       "lines": 303,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "0d4f631bb1478bbc9d10e57d7f057e58274d58d908432e82d598b0b89f849d07",
+      "after_lines": 303
     },
     {
       "path": "engineer/workflows/code-review-fix.md",
@@ -2663,7 +3253,9 @@
       "lines": 675,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "f15f5bbc39b4c53b862652f872409d03711622cf88833f8662905a6d9400e9a0",
+      "after_lines": 654
     },
     {
       "path": "engineer/workflows/code-review.md",
@@ -2672,7 +3264,9 @@
       "lines": 1061,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "d855760b4e279d583a9bb012ca4f046233f8d2af83e1576de74bf7c526876706",
+      "after_lines": 889
     },
     {
       "path": "engineer/workflows/code-review/steps/dispatch-fix.md",
@@ -2681,7 +3275,9 @@
       "lines": 40,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "06b189b99b7cb960c5a53310a9aaad571372499a474aad2b7b41d9dd7a247791",
+      "after_lines": 40
     },
     {
       "path": "engineer/workflows/complete-milestone.md",
@@ -2690,7 +3286,9 @@
       "lines": 683,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "4dd2e43de05533ae02b2c660de0760d2235491f3db4396b4fc7d09dd9954b833",
+      "after_lines": 631
     },
     {
       "path": "engineer/workflows/debug.md",
@@ -2699,7 +3297,9 @@
       "lines": 296,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "367873092561681fcb07edb27bd39cd2440406a8f56dc17f8afa5c68ea7dc505",
+      "after_lines": 304
     },
     {
       "path": "engineer/workflows/diagnose-issues.md",
@@ -2708,7 +3308,9 @@
       "lines": 337,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "3c0107e54d7505653303f2f27b0c533645dc7dc36e67cc1674cca2fef24aef95",
+      "after_lines": 295
     },
     {
       "path": "engineer/workflows/discuss-phase.md",
@@ -2717,7 +3319,9 @@
       "lines": 588,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "8b3020d53824066ee46e5726c70d1493997910bfbb6c0e7fff53f36c07fb1f6a",
+      "after_lines": 532
     },
     {
       "path": "engineer/workflows/discuss-phase/modes/all.md",
@@ -2726,7 +3330,9 @@
       "lines": 30,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "3639b0b277e005060d052e95da3d942a6f5319304c7ad2303335bd3c3e3946ae",
+      "after_lines": 26
     },
     {
       "path": "engineer/workflows/discuss-phase/modes/auto.md",
@@ -2735,7 +3341,9 @@
       "lines": 53,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "a45e91a4eddc99315e751e79e9ffcb8ff7bdacd37a42c0fb514e4e0aaa8e39fb",
+      "after_lines": 48
     },
     {
       "path": "engineer/workflows/discuss-phase/modes/text.md",
@@ -2744,7 +3352,9 @@
       "lines": 57,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "cdf6174eb9027ff1008437f63fb862ecb697fe9282c18cb7a507d7cdb4a2fb52",
+      "after_lines": 57
     },
     {
       "path": "engineer/workflows/discuss-phase/templates/checkpoint.json",
@@ -2753,7 +3363,9 @@
       "lines": 18,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "0c8be72553831e604a81b55b865bd00b70cb2da5cabb7441d083c466af07fd36",
+      "after_lines": 18
     },
     {
       "path": "engineer/workflows/discuss-phase/templates/context.md",
@@ -2762,7 +3374,9 @@
       "lines": 152,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "d872559f846d66dcd11c6a773e13007d7ccc277e218541c2da0255e1070fb81e",
+      "after_lines": 152
     },
     {
       "path": "engineer/workflows/discuss-phase/templates/discussion-log.md",
@@ -2771,7 +3385,9 @@
       "lines": 52,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "e829d02ec03db8bbc4157845e52283074ef57b9491c04f73833f2cb0876456df",
+      "after_lines": 52
     },
     {
       "path": "engineer/workflows/docs-update.md",
@@ -2780,7 +3396,9 @@
       "lines": 1016,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "1ed1b11f4597b84bc46a66e954310e0fd39bcfd378cc5798a31fc497e1821015",
+      "after_lines": 1013
     },
     {
       "path": "engineer/workflows/docs-update/detail/elaboration.md",
@@ -2789,7 +3407,9 @@
       "lines": 177,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "d0643c510ff48c891e4817dc634a7c0c99d7c16cb9e90a3c7d142d08f3095005",
+      "after_lines": 177
     },
     {
       "path": "engineer/workflows/docs-update/steps/dispatch-monorepo-packages.md",
@@ -2798,7 +3418,9 @@
       "lines": 51,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "8139141b8741cc9233ff780af9d487a6f62dd985ce2b1d621050c543fb575833",
+      "after_lines": 51
     },
     {
       "path": "engineer/workflows/edit-phase.md",
@@ -2807,7 +3429,9 @@
       "lines": 368,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "12bf818b46773b5f0a3205679d96c7a256a83b2a4d68b318d0ff7aacaf7ac850",
+      "after_lines": 366
     },
     {
       "path": "engineer/workflows/execute-phase.md",
@@ -2816,7 +3440,9 @@
       "lines": 1438,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "ee8bd49bf69adcaa23ba6c1aa313cca4edcb4dec778dd0eac688b42f1b4c9309",
+      "after_lines": 1204
     },
     {
       "path": "engineer/workflows/execute-phase/steps/code-review-disposition.md",
@@ -2825,7 +3451,9 @@
       "lines": 1060,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "be47b896ab53aec98623d7d62dcb7b399da0e9693958320f629df4c9bec0c95e",
+      "after_lines": 1060
     },
     {
       "path": "engineer/workflows/execute-phase/steps/codebase-drift-gate.md",
@@ -2834,7 +3462,9 @@
       "lines": 127,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "c6bb388f95eb138a2bb2f12f47bf24151828de2a622723c2aa9fcf9c7bf12572",
+      "after_lines": 125
     },
     {
       "path": "engineer/workflows/execute-phase/steps/completion-reconciliation.md",
@@ -2843,7 +3473,9 @@
       "lines": 100,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "3a3a3cdb1ecab9421f01e83ed204ba40740e9077c879debfd0f5ee9b1ff858e6",
+      "after_lines": 100
     },
     {
       "path": "engineer/workflows/execute-phase/steps/executor-isolation-dispatch.md",
@@ -2852,7 +3484,9 @@
       "lines": 415,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "ed15bc456a4e7e8e2e806396342a67f3ccd235000a12132835eadcdd4669b5b7",
+      "after_lines": 131
     },
     {
       "path": "engineer/workflows/execute-phase/steps/executor-progress-policy.md",
@@ -2861,7 +3495,9 @@
       "lines": 43,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "0355fbece6890e770b0a89c33eb62e9f95b836cad504b75b260c04437ce40886",
+      "after_lines": 43
     },
     {
       "path": "engineer/workflows/execute-phase/steps/gap-closure-artifacts.md",
@@ -2870,7 +3506,9 @@
       "lines": 93,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "44093b7ee000c2989e8d02dd8bd66a2d18b793741b1f7bbf8800bdc71b67ef41",
+      "after_lines": 93
     },
     {
       "path": "engineer/workflows/execute-phase/steps/partial-wave.md",
@@ -2879,7 +3517,9 @@
       "lines": 72,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "754a79d970f230744aac9d07b69f2bb098e4358facfb0aca75bc65816d7fd3c1",
+      "after_lines": 72
     },
     {
       "path": "engineer/workflows/execute-phase/steps/per-plan-executor-routing.md",
@@ -2888,7 +3528,9 @@
       "lines": 118,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "e35a179281b83e9d623c2d63fb8834f0961408a476abd1508a4bdacedf361202",
+      "after_lines": 118
     },
     {
       "path": "engineer/workflows/execute-phase/steps/per-plan-worktree-gate.md",
@@ -2897,7 +3539,9 @@
       "lines": 186,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "83e01971cf3cf6682ce7d85def8db366f676cb3ebe2620e5c9691417b64df8ea",
+      "after_lines": 169
     },
     {
       "path": "engineer/workflows/execute-phase/steps/post-merge-gate.md",
@@ -2906,7 +3550,9 @@
       "lines": 210,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "3b5a71364fecbf65015d9b8355484840d6d7be1fe3abba6bf0bfd920854f21a3",
+      "after_lines": 70
     },
     {
       "path": "engineer/workflows/execute-phase/steps/protected-branch.md",
@@ -2915,7 +3561,9 @@
       "lines": 62,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "e10daba47d406b4e252c761e64fc28c4de52c729385d338ad2e203714be2a757",
+      "after_lines": 62
     },
     {
       "path": "engineer/workflows/execute-phase/steps/ready-wave-gate.md",
@@ -2924,7 +3572,9 @@
       "lines": 37,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "7522ce9e0e90a3a1e2a2d8d2d1c6877e7ca401bab2732745f1d5ddb8f9d51da8",
+      "after_lines": 37
     },
     {
       "path": "engineer/workflows/execute-phase/steps/regression-gate-run.md",
@@ -2933,7 +3583,9 @@
       "lines": 103,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "1c3c051af22eb7cd736596f44bf5fb463551f47e17c784832d1944158858b0ae",
+      "after_lines": 73
     },
     {
       "path": "engineer/workflows/execute-phase/steps/regression-gate.md",
@@ -2942,7 +3594,9 @@
       "lines": 67,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "fe8d35c47f24ad4dad988df04658fab2c9dd992a4a5e57a45e0c76cd2891c7ec",
+      "after_lines": 67
     },
     {
       "path": "engineer/workflows/execute-phase/steps/sequential-root-pin.md",
@@ -2951,7 +3605,9 @@
       "lines": 35,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "025d34a4b3beaf297ddacd9fdf7981b9abcf44a0087f4481a56e28c34cc0c4aa",
+      "after_lines": 26
     },
     {
       "path": "engineer/workflows/execute-phase/steps/tdd-applicability-resolution.md",
@@ -2960,7 +3616,9 @@
       "lines": 66,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "73b8d064a422f26f51c5c1857841b59ec9f4b5933aa36a6c0022ddc3470ab642",
+      "after_lines": 66
     },
     {
       "path": "engineer/workflows/execute-phase/steps/threat-id-gate.md",
@@ -2969,7 +3627,9 @@
       "lines": 28,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "54a6c4322a6408084861bf04e4333b4f14f2e4f1e65fc5b68510557434707eea",
+      "after_lines": 28
     },
     {
       "path": "engineer/workflows/execute-phase/steps/verify-phase-goal.md",
@@ -2978,7 +3638,9 @@
       "lines": 232,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "6980b322b957d5b13d4cf2973a380dd7b6f2e555b4707fb0bb921315c9c842cc",
+      "after_lines": 184
     },
     {
       "path": "engineer/workflows/execute-phase/steps/worktree-base-check.md",
@@ -2987,7 +3649,9 @@
       "lines": 24,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "2f053b6381913b0c429a5945894483b2351b9bbe5ccd4ae074f66edd0487dac5",
+      "after_lines": 3
     },
     {
       "path": "engineer/workflows/execute-phase/steps/worktree-recovery-policy.md",
@@ -2996,7 +3660,9 @@
       "lines": 11,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "cb0b60d0a49a78f9297115eecea3d2c330839d586145ac0c870d23f85a3705a1",
+      "after_lines": 11
     },
     {
       "path": "engineer/workflows/explore.md",
@@ -3005,7 +3671,9 @@
       "lines": 278,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "d7c5245c9f2730bf1a702682e5fa25ea073d9e994d44786fafe96a2b220841aa",
+      "after_lines": 278
     },
     {
       "path": "engineer/workflows/extract-learnings.md",
@@ -3014,7 +3682,9 @@
       "lines": 272,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "a58bb944cb0bebca9008380830d571c7a9084768cf510e12bfa6fc49bfcec974",
+      "after_lines": 249
     },
     {
       "path": "engineer/workflows/fast.md",
@@ -3023,7 +3693,9 @@
       "lines": 164,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "a5c949a82f9fd5e7fa6fcda3af2edd21e471119d3e8ac3a1181afe00a09991ff",
+      "after_lines": 156
     },
     {
       "path": "engineer/workflows/forensics.md",
@@ -3032,7 +3704,9 @@
       "lines": 284,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "3d3cad3f8b3d40597dd819de792509c64aadbe9c8c1a1ae804426e425065e7ee",
+      "after_lines": 284
     },
     {
       "path": "engineer/workflows/graduation.md",
@@ -3041,7 +3715,9 @@
       "lines": 199,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "0eb78013c7510e421dd32f07dcf301c0e36959a3245e769cfe21bfb33ea8d99f",
+      "after_lines": 199
     },
     {
       "path": "engineer/workflows/health.md",
@@ -3050,7 +3726,9 @@
       "lines": 298,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "4a4596a605270d16f73d775f893ddc3a8de1c4c03eeec0fb3f68527f95bb6088",
+      "after_lines": 275
     },
     {
       "path": "engineer/workflows/inbox.md",
@@ -3059,7 +3737,9 @@
       "lines": 393,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "61d4d4c21157074b0173c3c21d32411e06e42197aade953d31ecb87655109e29",
+      "after_lines": 393
     },
     {
       "path": "engineer/workflows/insert-phase.md",
@@ -3068,7 +3748,9 @@
       "lines": 200,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "0771b567989ce525c857cf3d43f83b35dbf4c54c9a34e6059f95fcea7d485533",
+      "after_lines": 198
     },
     {
       "path": "engineer/workflows/list-phase-assumptions.md",
@@ -3077,7 +3759,9 @@
       "lines": 180,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "d994d73e24109af2d319a23a54c5b5643d0fd0c352d376fb9e47fdf228e7d84f",
+      "after_lines": 180
     },
     {
       "path": "engineer/workflows/list-seeds.md",
@@ -3086,7 +3770,9 @@
       "lines": 67,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "8dd898bf10577f551829c6c812bb31991fc9bc4c026a4dfb3f959d37753deab2",
+      "after_lines": 66
     },
     {
       "path": "engineer/workflows/manager.md",
@@ -3095,7 +3781,9 @@
       "lines": 446,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "b66cf8eb60554c6c012e0a7975bfb2195a5ce4930e8d6bbf13ef1572ee1c9777",
+      "after_lines": 442
     },
     {
       "path": "engineer/workflows/map-codebase.md",
@@ -3104,7 +3792,9 @@
       "lines": 504,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "ddb2850210d64d7e9ba2f376a561cee6027e6818b8e689c8d1555b7d05410576",
+      "after_lines": 502
     },
     {
       "path": "engineer/workflows/milestone-summary.md",
@@ -3113,7 +3803,9 @@
       "lines": 276,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "a63f1036416d0def1f83c0f58924288256901a76e5913bef3fb8ea8f8541f1c9",
+      "after_lines": 275
     },
     {
       "path": "engineer/workflows/new-milestone.md",
@@ -3122,7 +3814,9 @@
       "lines": 772,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "74a426f64577b87137e0f5f7183c1c6bc0aff74f71457ce6a75d942d22eb4b2e",
+      "after_lines": 735
     },
     {
       "path": "engineer/workflows/new-milestone/steps/project-md-milestone-write.md",
@@ -3131,7 +3825,9 @@
       "lines": 16,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "de2e18c20f2ad9a9ad0208d57d07a895c02d0a2be3c083e04cdd9b65255eec35",
+      "after_lines": 16
     },
     {
       "path": "engineer/workflows/new-project.md",
@@ -3140,7 +3836,9 @@
       "lines": 1251,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "1bbfd27ce13dbac77b2b11a297cb360fb558fc726644804c7bba62825b60b889",
+      "after_lines": 1218
     },
     {
       "path": "engineer/workflows/new-project/steps/codebase-map-offer.md",
@@ -3149,7 +3847,9 @@
       "lines": 18,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "52781de2de5c3fc3cf74857936b15103d8a46b0f5ba188c5c9c6d30f85efcd19",
+      "after_lines": 18
     },
     {
       "path": "engineer/workflows/next.md",
@@ -3158,7 +3858,9 @@
       "lines": 409,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "5f0c68e87ade34d230e610cf38342df6f246345876377a66d380a514cef5f54f",
+      "after_lines": 356
     },
     {
       "path": "engineer/workflows/note.md",
@@ -3167,7 +3869,9 @@
       "lines": 160,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "a8d022096bb84e12fa0cdf29b822415a7a5de4185f09b945a499669c952ce7fb",
+      "after_lines": 160
     },
     {
       "path": "engineer/workflows/onboard.md",
@@ -3176,7 +3880,9 @@
       "lines": 280,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "1ac45ad728b7f6bbd2d15be191857c80fe1a9e13a30bf7755f606bef4c3eaa63",
+      "after_lines": 279
     },
     {
       "path": "engineer/workflows/pause-work.md",
@@ -3185,7 +3891,9 @@
       "lines": 265,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "0f410f18e84b14ec1532407803c84568b08e28dadc54239425ee1a78e5955ce4",
+      "after_lines": 265
     },
     {
       "path": "engineer/workflows/plan-phase.md",
@@ -3194,7 +3902,9 @@
       "lines": 1526,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "762a9303cece9ac15186a474987cccb3247ad5f0c269b6571ea962040965fd63",
+      "after_lines": 1093
     },
     {
       "path": "engineer/workflows/plan-phase/steps/closed-phase-gate.md",
@@ -3203,7 +3913,9 @@
       "lines": 46,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "3ccdaecf2bf8d7898671084a9b0259a78b17348a420350ea711cf62f81fd9c27",
+      "after_lines": 35
     },
     {
       "path": "engineer/workflows/plan-phase/steps/stall-detection-helpers.md",
@@ -3212,7 +3924,9 @@
       "lines": 217,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "a38f4507a425175daf18fdae9ef753d777880af87298749e341a51ca05b6e72e",
+      "after_lines": 214
     },
     {
       "path": "engineer/workflows/plan-phase/steps/windows-troubleshooting.md",
@@ -3221,7 +3935,9 @@
       "lines": 23,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "c3c38eed35978803cb7fece14c5cb3dcbd3859fbe334cbf8191fe4c2af49d558",
+      "after_lines": 23
     },
     {
       "path": "engineer/workflows/plant-seed.md",
@@ -3230,7 +3946,9 @@
       "lines": 279,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "cf686b1b758f3d955894a28d7857905f7e0c12d971e04c0aa4b1e61b60d76535",
+      "after_lines": 279
     },
     {
       "path": "engineer/workflows/progress.md",
@@ -3239,7 +3957,9 @@
       "lines": 752,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "3754de25f97101df16dd5b6a447e92f3eb4383b41421d6bed691f468ba933692",
+      "after_lines": 736
     },
     {
       "path": "engineer/workflows/progress/steps/forensic-audit.md",
@@ -3248,7 +3968,9 @@
       "lines": 125,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "ab3ae77366b0f10d5467cd0d0d2b564193edfbe52bba63722e4ea7d203ac4ca1",
+      "after_lines": 125
     },
     {
       "path": "engineer/workflows/quick-batch.md",
@@ -3257,7 +3979,9 @@
       "lines": 253,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "c8243a19bf6ac7121fda3093624d3d96c77ee3177521b5bd005e066f1fc1a22c",
+      "after_lines": 248
     },
     {
       "path": "engineer/workflows/quick-batch/steps/batch-init.md",
@@ -3266,7 +3990,9 @@
       "lines": 96,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "cb493ac0282c68c790db026288e7346484ec6134efd682ec381339b8d7bc6ab5",
+      "after_lines": 95
     },
     {
       "path": "engineer/workflows/quick-batch/steps/completion.md",
@@ -3275,7 +4001,9 @@
       "lines": 106,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "8d0efa1994cfc1090de619904560103c546d71051d2ec59f218add43cc4a2bf9",
+      "after_lines": 106
     },
     {
       "path": "engineer/workflows/quick-batch/steps/merge-wave.md",
@@ -3284,7 +4012,9 @@
       "lines": 141,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "1ac1590695b1a1fca259a8845b9f9678bfb7ba3b75173b03183d3140804eca63",
+      "after_lines": 137
     },
     {
       "path": "engineer/workflows/quick-batch/steps/plan-checker-loop.md",
@@ -3293,7 +4023,9 @@
       "lines": 148,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "8e1a2bfaf7de192a8a41dc4d3a6dd7d4df032966b32b1d558464df3a334db423",
+      "after_lines": 147
     },
     {
       "path": "engineer/workflows/quick-batch/steps/planner-wave.md",
@@ -3302,7 +4034,9 @@
       "lines": 199,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "38e2f890e54f043f56c0c90fbc6aa61e121d03a2eb743bb056d2c869100eb97e",
+      "after_lines": 195
     },
     {
       "path": "engineer/workflows/quick-batch/steps/research-phase.md",
@@ -3311,7 +4045,9 @@
       "lines": 136,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "1966c41bee7c7d74294cd4a8d6861ddcc8900a0b5ca3d0143ce4f5d8c6d862f1",
+      "after_lines": 136
     },
     {
       "path": "engineer/workflows/quick-batch/steps/resume-mode.md",
@@ -3320,7 +4056,9 @@
       "lines": 90,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "4da6cd73ed1c2ac6e50151d916462fe176be4ca4980d33e67851742464131551",
+      "after_lines": 89
     },
     {
       "path": "engineer/workflows/quick-batch/steps/verification-wave.md",
@@ -3329,7 +4067,9 @@
       "lines": 120,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "7e8d96c8c15dbd41c48e92c6147bcb37ed053aea7f894e16990983def4c39ee7",
+      "after_lines": 120
     },
     {
       "path": "engineer/workflows/quick-batch/steps/worktree-dispatch.md",
@@ -3338,7 +4078,9 @@
       "lines": 210,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "f8056e38a6127c20c47256dc364deaf78612816a86b5e834f10646c93b98c8a1",
+      "after_lines": 145
     },
     {
       "path": "engineer/workflows/quick.md",
@@ -3347,7 +4089,9 @@
       "lines": 837,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "3dc6e09dfec93e5c99f06cf10d4c053f2ff50c1998a026fd2f0c8fb5b12210c4",
+      "after_lines": 740
     },
     {
       "path": "engineer/workflows/quick/steps/discussion-phase.md",
@@ -3356,7 +4100,9 @@
       "lines": 120,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "44546f8ba5028db208221e83b63e9eee95d606b8b8c3271f59ad044b38ac97e8",
+      "after_lines": 120
     },
     {
       "path": "engineer/workflows/quick/steps/plan-checker-loop.md",
@@ -3365,7 +4111,9 @@
       "lines": 212,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "f8b84e9afa6f945443b375bd1d4c9f0440678e0c1ad735de8cb2bac9f4933b93",
+      "after_lines": 208
     },
     {
       "path": "engineer/workflows/quick/steps/quick-verification.md",
@@ -3374,7 +4122,9 @@
       "lines": 106,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "5b32cdab42b0b8637fc0cbaff40731c5827a7226a1bf2c4786211f0f44e7aeb2",
+      "after_lines": 106
     },
     {
       "path": "engineer/workflows/quick/steps/research-phase.md",
@@ -3383,7 +4133,9 @@
       "lines": 66,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "396ebecc4599d3a1d2bf133a2438375821aa73e191f30625e2d778a4980d0149",
+      "after_lines": 66
     },
     {
       "path": "engineer/workflows/quick/steps/worktree-pre-dispatch-commit.md",
@@ -3392,7 +4144,9 @@
       "lines": 104,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "2b2bc2be502c6f6939fd82b8d55054e7416d86d8cd56f1865aca7acc1cc74adc",
+      "after_lines": 93
     },
     {
       "path": "engineer/workflows/remove-phase.md",
@@ -3401,7 +4155,9 @@
       "lines": 204,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "9b5ebfde146fa5203c9670d09ec41afe2ba34685bfb7c51ea659b18941a614ca",
+      "after_lines": 202
     },
     {
       "path": "engineer/workflows/resume-project.md",
@@ -3410,7 +4166,9 @@
       "lines": 360,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "fe0d16409006a7ca67c51ed4450b28c139c76ad9db4f01bd627594597e259fb3",
+      "after_lines": 359
     },
     {
       "path": "engineer/workflows/scan.md",
@@ -3419,7 +4177,9 @@
       "lines": 118,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "dc238423b2c07ed644fc67635ae7925630f7bf1f66a1b00dce724aa590d38e7d",
+      "after_lines": 116
     },
     {
       "path": "engineer/workflows/secure-phase.md",
@@ -3428,7 +4188,9 @@
       "lines": 242,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "d607f97b4ebfd86307a5efe6139d14d00bf44b1c49df7b85564acf13d0345609",
+      "after_lines": 229
     },
     {
       "path": "engineer/workflows/session-report.md",
@@ -3437,7 +4199,9 @@
       "lines": 149,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "4a7b9237c74f66dffd1fd8041add318bd562df74fb87fff9685b0cfcb6d036d7",
+      "after_lines": 149
     },
     {
       "path": "engineer/workflows/ship.md",
@@ -3446,7 +4210,9 @@
       "lines": 656,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "34acb3e66644763c616e38e6c92964d31c440d2d02f814b86375be74f15c9c03",
+      "after_lines": 407
     },
     {
       "path": "engineer/workflows/spec-phase.md",
@@ -3455,7 +4221,9 @@
       "lines": 600,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "58cd1fb70dfa3e337b555bde9824eabc10ee3caf71ffb375a3cecab06564a44d",
+      "after_lines": 599
     },
     {
       "path": "engineer/workflows/thread.md",
@@ -3464,7 +4232,9 @@
       "lines": 236,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "0e6003175c903ce788d2373765cbcf65e53d6604b71d9a1fedc8df04ca88fbaa",
+      "after_lines": 236
     },
     {
       "path": "engineer/workflows/ui-phase.md",
@@ -3473,7 +4243,9 @@
       "lines": 576,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "0b612f634bfd9496d279d3536168c080c4a3defb69342fcaf273f64d9829b841",
+      "after_lines": 574
     },
     {
       "path": "engineer/workflows/ui-review.md",
@@ -3482,7 +4254,9 @@
       "lines": 251,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "4710ea10ff6690a60aa5bdc56074c66bbf7680a39fcbe9a84b247f4f51c3c2ae",
+      "after_lines": 249
     },
     {
       "path": "engineer/workflows/update.md",
@@ -3491,7 +4265,9 @@
       "lines": 380,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "4cd1c2cd17420e9a6c36bf6cf89c3c9326ca93f7daa2c21b7999df690b0ed20b",
+      "after_lines": 239
     },
     {
       "path": "engineer/workflows/validate-phase.md",
@@ -3500,7 +4276,9 @@
       "lines": 234,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "7c372484cd773e0eff879f2d5b33a061119513e11f89f8afe61db7e8e079f111",
+      "after_lines": 227
     },
     {
       "path": "engineer/workflows/verify-work.md",
@@ -3509,7 +4287,9 @@
       "lines": 971,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "a05ece637f0423bdd84165d925592b18b1524ffabeddf5edc1495e680551e5bc",
+      "after_lines": 848
     },
     {
       "path": "engineer/workflows/verify-work/steps/automated-ui-verification.md",
@@ -3518,7 +4298,9 @@
       "lines": 101,
       "reviewer": "B-workflows",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "6668b393ba9900f6134ec0cdb96fcb48716027290a0f432e791761bc29766eb8",
+      "after_lines": 101
     },
     {
       "path": "skills/SKILL/SKILL.md",
@@ -3527,7 +4309,9 @@
       "lines": 0,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "after_lines": 0
     },
     {
       "path": "skills/add-tests/SKILL.md",
@@ -3536,7 +4320,9 @@
       "lines": 47,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "edaa19846fed6058b08563a11213f4ad36804a2f8f96e116c6c881b2b410e257",
+      "after_lines": 47
     },
     {
       "path": "skills/audit-fix/SKILL.md",
@@ -3545,7 +4331,9 @@
       "lines": 39,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "879b36a385708fba5d2aa7252c5ca333d6febe5a9a26497bd7c86f074cec5cbe",
+      "after_lines": 39
     },
     {
       "path": "skills/audit-milestone/SKILL.md",
@@ -3554,7 +4342,9 @@
       "lines": 42,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "e74d1709063b58a5ddff1fb12dbd36dc7a6ae905d7af1cc29c9a910c8a266148",
+      "after_lines": 42
     },
     {
       "path": "skills/audit-uat/SKILL.md",
@@ -3563,7 +4353,9 @@
       "lines": 24,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "ca9a5b0a5002192665999741c825d6c11edee700f03be3cb891731fc7a172476",
+      "after_lines": 24
     },
     {
       "path": "skills/capture/SKILL.md",
@@ -3572,7 +4364,9 @@
       "lines": 70,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "04b95e2dfe00fe19f38d82edc1e8e52123561eed52b40c1a83eabc663e2de3c4",
+      "after_lines": 70
     },
     {
       "path": "skills/cleanup/SKILL.md",
@@ -3581,7 +4375,9 @@
       "lines": 25,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "2bc06ab30575821a76b3e3bdd425ef40a620f0ea9823d8aca654d3d5cadaefdb",
+      "after_lines": 25
     },
     {
       "path": "skills/code-review/SKILL.md",
@@ -3590,7 +4386,9 @@
       "lines": 73,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "b6ec149669f6e2f4867123236a9fda2a0ae94775ebd134e6df7c90395bdf5104",
+      "after_lines": 65
     },
     {
       "path": "skills/complete-milestone/SKILL.md",
@@ -3599,7 +4397,9 @@
       "lines": 148,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "34b45ffab1d4e1798f27f20610b42ba9ba972e6d44b95ac34ba544316f1288bf",
+      "after_lines": 149
     },
     {
       "path": "skills/debug/SKILL.md",
@@ -3608,7 +4408,9 @@
       "lines": 57,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "48e720ba11856aa580775728f9af93e4ec1cdcc6e531ccbeee7834caed5f7315",
+      "after_lines": 56
     },
     {
       "path": "skills/discuss-phase/SKILL.md",
@@ -3617,7 +4419,9 @@
       "lines": 118,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "33410c70bfdf13e412da1ff8424e9131ca6d9df5fc36fe30f00e9065663ee082",
+      "after_lines": 67
     },
     {
       "path": "skills/docs-update/SKILL.md",
@@ -3626,7 +4430,9 @@
       "lines": 54,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "113fd178c7b0e1301f1fdbb4f5131c710b7b9be4e0f11b1b41cba54cc3e28d2f",
+      "after_lines": 54
     },
     {
       "path": "skills/execute-phase/SKILL.md",
@@ -3635,7 +4441,9 @@
       "lines": 66,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "62f926bf4bf6be9f55e9b5d7ebe1d57cc276842fcf0ab70785df19aca0a2f66c",
+      "after_lines": 66
     },
     {
       "path": "skills/explore/SKILL.md",
@@ -3644,7 +4452,9 @@
       "lines": 27,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "9b55364da6d5ff9909a64190701e6620bf51c93f485862838cfae8217b95a0f9",
+      "after_lines": 27
     },
     {
       "path": "skills/extract-learnings/SKILL.md",
@@ -3653,7 +4463,9 @@
       "lines": 28,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "7749a207436fbaa96af26f1a606d7d44552bbbd69eeedd0fb7ab1480bd8d2887",
+      "after_lines": 28
     },
     {
       "path": "skills/fast/SKILL.md",
@@ -3662,7 +4474,9 @@
       "lines": 35,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "f9b1c3b39185078d64b44613917ddfa6d5261401a94fd7947c2ca76f30846f04",
+      "after_lines": 35
     },
     {
       "path": "skills/forensics/SKILL.md",
@@ -3671,7 +4485,9 @@
       "lines": 61,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "3e41b0abac429bb9c629c861a2d31a49bb91a3f0069e4ee40baeb574d113dc8c",
+      "after_lines": 61
     },
     {
       "path": "skills/health/SKILL.md",
@@ -3680,7 +4496,9 @@
       "lines": 37,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "95356f21d35162e8870a497e573a1a3dc21dd749e838584f8f847bba8c52ef50",
+      "after_lines": 37
     },
     {
       "path": "skills/inbox/SKILL.md",
@@ -3689,7 +4507,9 @@
       "lines": 44,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "57de2a58d442ba3c12bd3b0c2835524f41e60c484a5960228d44d8ecbd455c95",
+      "after_lines": 44
     },
     {
       "path": "skills/manager/SKILL.md",
@@ -3698,7 +4518,9 @@
       "lines": 50,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "01e15df2f097f5b4f4b941c3c32941135890d0c4dbd0254ecdea7a60f4d37e80",
+      "after_lines": 50
     },
     {
       "path": "skills/map-codebase/SKILL.md",
@@ -3707,7 +4529,9 @@
       "lines": 87,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "7cd908dacf419af95de7fbec61607390a6bbdbbd8ae8170a88d56c649c0356f2",
+      "after_lines": 85
     },
     {
       "path": "skills/milestone-summary/SKILL.md",
@@ -3716,7 +4540,9 @@
       "lines": 55,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "0e7d4489ceff87df0bd14532c11919b70bfa61e1a446a49d61f555543f7b057a",
+      "after_lines": 55
     },
     {
       "path": "skills/new-milestone/SKILL.md",
@@ -3725,7 +4551,9 @@
       "lines": 51,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "e79c3385d69ab2f86312b150ee999a2b559cc82ea8ac18ef647fc1a3ff00a75e",
+      "after_lines": 51
     },
     {
       "path": "skills/new-project/SKILL.md",
@@ -3734,7 +4562,9 @@
       "lines": 49,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "040ad56cb93905246627ee0b4b33745a37f6d982cc543a7f8710c96a9ff18b2d",
+      "after_lines": 49
     },
     {
       "path": "skills/next/SKILL.md",
@@ -3743,7 +4573,9 @@
       "lines": 35,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "0732957e7714cdc173d1cf2ba58f889cc2a5869fa80059528b570764dfcfb220",
+      "after_lines": 35
     },
     {
       "path": "skills/onboard/SKILL.md",
@@ -3752,7 +4584,9 @@
       "lines": 50,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "c4d709baffc2c322f887620153d828311691a8f39433872c52fb316ecf5d72dc",
+      "after_lines": 50
     },
     {
       "path": "skills/pause-work/SKILL.md",
@@ -3761,7 +4595,9 @@
       "lines": 48,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "eda0bc8be0f3f671c1f7e191381db0ff7269286510e01a44ad38d17bf46de9f7",
+      "after_lines": 48
     },
     {
       "path": "skills/phase/SKILL.md",
@@ -3770,7 +4606,9 @@
       "lines": 61,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "84995a17e0a9e43e596df3e0931edcc85d1e9eed5f391f301ccfaa8d28201d8b",
+      "after_lines": 61
     },
     {
       "path": "skills/plan-phase/SKILL.md",
@@ -3779,7 +4617,9 @@
       "lines": 63,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "c15bbcd1cd532101f91835f73adfef56af84fcdac2f7b3703ea04f506b5cc7c2",
+      "after_lines": 60
     },
     {
       "path": "skills/progress/SKILL.md",
@@ -3788,7 +4628,9 @@
       "lines": 50,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "a1edb93cf4d372683d3d87674e77c06c0e66459d686a6d8ef8c09a73a1d41409",
+      "after_lines": 49
     },
     {
       "path": "skills/quick-batch/SKILL.md",
@@ -3797,7 +4639,9 @@
       "lines": 116,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "d83d8e6837ff3d55825d71bf5f3c75de49e2749fa86e4d0316a331c29cb7fde0",
+      "after_lines": 116
     },
     {
       "path": "skills/quick/SKILL.md",
@@ -3806,7 +4650,9 @@
       "lines": 185,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "67e24724b6a2750fd1c9ccc49eb2331c0ed385cab480f347681d65cc254ea226",
+      "after_lines": 185
     },
     {
       "path": "skills/resume-work/SKILL.md",
@@ -3815,7 +4661,9 @@
       "lines": 31,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "270b09b6bd05c81ce05c25b497323b4a17d31ae233a7e0e7aa40f612349fd1ff",
+      "after_lines": 31
     },
     {
       "path": "skills/review-backlog/SKILL.md",
@@ -3824,7 +4672,9 @@
       "lines": 65,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "20e86fd73f5b0289f799631d0100720fd7e89e9e800fd01e218c4d94f6fc243e",
+      "after_lines": 65
     },
     {
       "path": "skills/secure-phase/SKILL.md",
@@ -3833,7 +4683,9 @@
       "lines": 41,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "3ed29f4f1becd5fad613d6c557a37c08a0ea2c86bfaee19154ec8fbfc1ac4996",
+      "after_lines": 41
     },
     {
       "path": "skills/ship/SKILL.md",
@@ -3842,7 +4694,9 @@
       "lines": 29,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "3f10ea21ccd41cf89561afb0a71ee2f14ddbda10cc4d2576a5c995d7906ed73e",
+      "after_lines": 29
     },
     {
       "path": "skills/spec-phase/SKILL.md",
@@ -3851,7 +4705,9 @@
       "lines": 63,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "916a2dd7c5a81199e031af993f803d5c9aad8c4b3c06a10ce8bab88ee6cfc58e",
+      "after_lines": 63
     },
     {
       "path": "skills/thread/SKILL.md",
@@ -3860,7 +4716,9 @@
       "lines": 29,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "963fbc3f793f2e1e02ca1739c8386684222b2a9c946acaf4645a69c4494e0dc7",
+      "after_lines": 29
     },
     {
       "path": "skills/ui-phase/SKILL.md",
@@ -3869,7 +4727,9 @@
       "lines": 39,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "86ab5a9a7a5b30abdd02fe56f0f607be91a98d895e1573e4b84e0a59cf2682ee",
+      "after_lines": 39
     },
     {
       "path": "skills/ui-review/SKILL.md",
@@ -3878,7 +4738,9 @@
       "lines": 38,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "744e95b188f8e389dcc3af29288e0f8e65e6fe470d9e85cfcf2f559e46ff2cab",
+      "after_lines": 38
     },
     {
       "path": "skills/update/SKILL.md",
@@ -3887,7 +4749,9 @@
       "lines": 52,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "105cd691542bb5f425eba222ce2123b881d783837cacb68e115a98584c3788ac",
+      "after_lines": 42
     },
     {
       "path": "skills/validate-phase/SKILL.md",
@@ -3896,7 +4760,9 @@
       "lines": 41,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "retained",
+      "after_sha256": "2ade6fa51a8011fa17cda99a348badddc63583bb8e49ea755a75bda91ee881d7",
+      "after_lines": 41
     },
     {
       "path": "skills/verify-work/SKILL.md",
@@ -3905,7 +4771,11 @@
       "lines": 44,
       "reviewer": "A-entrypoints",
       "review": "full-content",
-      "disposition": "reviewed; implementation pending"
+      "disposition": "modified",
+      "after_sha256": "f60a05eb638d7a72029ec86749f80e134b89c5dadba495aa3e88d4504de8b0d7",
+      "after_lines": 44
     }
-  ]
+  ],
+  "implementation_revision": "a78722561ec10a43f0a8e09db919ec52908874a9",
+  "coverage_note": "All files read completely at revision; changed-source review and final check results are recorded in the PR body for its published head."
 }

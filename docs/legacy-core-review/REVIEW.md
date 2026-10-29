@@ -2,11 +2,11 @@
 
 Reviewed source: 7723b2d1ce2b0d698613639547c35e2b98688a70 (PR 129).
 
-Status: all source reads complete; retirement implementation and final verification pending.
+Status: full-source retirement review complete; implementation integrated. The PR body records independent verification and check results for the published head; the slice summaries record their own checks.
 
 Every one of the 434 tracked files under agents/, commands/, skills/ and engineer/ was read in full, including empty placeholders, fixtures, nested workflow steps and the 8,367-line capability registry. Command and skill copies were inspected independently. The machine-readable coverage ledger records each reviewed file and its original digest; a keep disposition concerns retirement scope, not certification of unrelated deferred migrations.
 
-## Findings to retire
+## Retirement findings implemented
 
 | Family | Evidence at reviewed revision | Retirement authority |
 |---|---|---|
@@ -45,3 +45,11 @@ Initial static checks at this source revision: scripts/links.py reported 407 bro
 - B-workflows: 108 files, 30272 lines.
 
 Total: 434 files, 99484 lines. See coverage.json for the exhaustive per-file ledger.
+
+## Integrated result
+
+All four owned slices and their bounded integration corrections are committed. Removed 22 source files (nine runtime modules, one agent, ten references and two templates) and six exclusive test files. Retained supported workflows have their retired callers removed; explicit discussion assumptions still routes to the existing method. Quick completion uses QUICK.md and a durable BATCH.json intent, with crash recovery. The direct prohibition adapter keeps global JSON output independent of file-versus-inline input.
+
+No adopting-project planning records changed. Shared-reference conflicts and the six Batch B files are preserved as documented. The five pre-existing verb-scanner findings belong to parent migration work: two README syntax/help examples, two milestone.release-tags references, and the old progress call. General Python-Markdown, semantic and installer migrations remain separate from this retirement change.
+
+The machine-readable ledger classifies each original file as modified, deleted or retained and records its resulting digest. Final checks and independent findings are reported in PR 171 for the actual published head, without pretending that this audit of retirement scope certifies the entire parent migration.
