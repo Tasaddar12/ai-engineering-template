@@ -1,6 +1,5 @@
-# Per-plan worktree decision and per-dispatch isolation record 
+# Per-plan worktree decision and per-dispatch isolation record
 ## Part 1 — Decide (run for each plan in the wave, up front, at `execute_waves` step 2.5)
-This gate has two parts that run at **different times**. **Part 1** (this part) decides, for every plan in the wave, whether it uses worktree isolation, and stores each plan's answer; it runs for the whole wave before any dispatch. **Part 2** (below) writes the plan-scoped isolation record and runs once per plan, immediately before that plan's `Agent()` dispatch in step 3. The output `USE_WORKTREES_FOR_PLAN` gates the dispatch branch (worktree mode vs sequential mode) for that plan only — other plans in the same wave can still take the worktree path.
 
 `SUBMODULE_PATHS` is computed once in the `initialize` step (parsed from `.gitmodules`).
 
@@ -20,7 +19,7 @@ plan_id=$(jq -r '.id' <<<"$plan_json")
 Then run the per-plan gate:
 
 ```bash
-USE_WORKTREES_FOR_PLAN="$USE_WORKTREES"
+SUBMODULE_PATHS=$(git config --file .gitmodules --get-regexp path 2>/dev/null | awk '{print $2}')
 
 # This gate asks "does the plan touch a submodule at all", and REMOVING a file
 # inside one is as much a touch as modifying it. Both declared channels feed the
@@ -34,12 +33,11 @@ USE_WORKTREES_FOR_PLAN="$USE_WORKTREES"
 # must never MISS a touch.
 PLAN_SCOPE_PATHS=$(printf '%s %s' "$PLAN_FILES" "$PLAN_DELETIONS" | tr -s ' ' | sed 's/^ //; s/ $//')
 
-if [ -n "$SUBMODULE_PATHS" ] && [ "$USE_WORKTREES_FOR_PLAN" != "false" ]; then
+if [ -n "$SUBMODULE_PATHS" ]; then
   if [ -z "$PLAN_SCOPE_PATHS" ]; then
     # Fallback: planned paths are unknown/unparseable — fall back to the safe
-    # behavior (disable worktree isolation for this plan) and log why.
-    echo "[worktree] Plan ${plan_id}: files_modified and files_deleted both missing/unparseable — disabling worktree isolation as a safety fallback (submodule project)"
-    USE_WORKTREES_FOR_PLAN=false
+    echo "[worktree] Plan ${plan_id}: files_modified and files_deleted both missing/unparseable — blocking dispatch because submodule scope cannot be established"
+    exit 1
   else
     # Compute intersection with glob-safe normalization. Both sides are
     # normalized (strip leading "./", strip trailing "/") and matched
@@ -106,22 +104,19 @@ if [ -n "$SUBMODULE_PATHS" ] && [ "$USE_WORKTREES_FOR_PLAN" != "false" ]; then
     done
     set +f
     if [ -n "$INTERSECT" ]; then
-      echo "[worktree] Plan ${plan_id}: planned paths intersect submodule paths (${INTERSECT# }) — disabling worktree isolation for this plan"
-      USE_WORKTREES_FOR_PLAN=false
+      echo "[worktree] Plan ${plan_id}: planned paths intersect submodule paths (${INTERSECT# }) — blocking dispatch; submodule changes require an explicit supported isolated plan"
+      exit 1
     fi
   fi
 fi
 ```
 
-After running this for the plan, the dispatch branches in `execute_waves` step 3 MUST gate on `USE_WORKTREES_FOR_PLAN` for the current plan, not on the project-level `USE_WORKTREES`. Track which plans in this wave actually used worktrees (append `plan_id` to a `WAVE_WORKTREE_PLANS` accumulator when `USE_WORKTREES_FOR_PLAN != false`) — the post-wave cleanup step (5.5) uses this to decide whether worktree-merge cleanup is needed at all.
-
-**Store the decision per plan.** `USE_WORKTREES_FOR_PLAN` is one shared value: the next plan's decision overwrites it. Keep each plan's answer as `plan_id → value` (for example `WAVE_PLAN_ISOLATION="03-01-api=false 03-02-docs=true"`) so step 3 can restore the dispatched plan's own value just before its dispatch (the value after `<plan_id>=`). `PLAN_FILES` and `PLAN_DELETIONS` above are shared the same way, and step 3 passes them to `worktree.record-agent` / `worktree.create`: re-run the extraction block above on the dispatched plan's JSON to restore them. This part does **not** write the isolation record.
+Keep `PLAN_FILES` and `PLAN_DELETIONS` per plan and re-extract them immediately before dispatch. A submodule intersection blocks this plan; every other ready plan remains isolated.
 
 ## Part 2 — Re-record the dispatch-isolation sentinel, scoped to THIS plan ( BLOCKER 1)
 
-Run this in `execute_waves` step 3, **immediately before dispatching THIS plan**, after restoring that plan's **stored decision** from Part 1 (`plan_id`:= this plan's `id`, `USE_WORKTREES_FOR_PLAN`:= the value stored for it, and `PLAN_FILES` / `PLAN_DELETIONS` re-extracted from this plan's JSON). Never run it at step 2.5 and never for a plan other than the one about to dispatch: the sentinel is a single slot, so recording every plan up front leaves only the wave's last plan in it, and every earlier plan is dispatched against a record naming a different plan (the isolation guard discards it and its registry fallback denies a sequential dispatch the plan's own decision allowed).
 
-The phase-level sentinel (written by the "Resolve ISOLATION" step, before any per-plan decision exists) authorizes/denies at the PHASE level. The per-plan decision can override that (submodule intersection forcing `USE_WORKTREES_FOR_PLAN=false` on an otherwise harness-worktree phase) — without a fresh, plan-scoped record at dispatch time, the isolation guard hooks would still be reading the STALE phase-level `harness-worktree` sentinel when this plan's dispatch omits the isolation kwarg (correctly, since it isn't worktree-isolated), producing a false DENY; or, symmetrically, a plan-level degrade elsewhere in the wave could leave a stale `none` sentinel that a LATER, genuinely harness-worktree plan's own dispatch could be misread against. Running it right before the dispatch keeps the sentinel always fresh and always keyed to the plan it authorizes:
+The phase-level sentinel (written by the "Resolve ISOLATION" step, before any per-plan decision exists) authorizes/denies at the PHASE level. The per-plan decision can override that (submodule intersection forcing `exit 1` on an otherwise harness-worktree phase) — without a fresh, plan-scoped record at dispatch time, the isolation guard hooks would still be reading the STALE phase-level `harness-worktree` sentinel when this plan's dispatch omits the isolation kwarg (correctly, since it isn't worktree-isolated), producing a false DENY; or, symmetrically, a plan-level degrade elsewhere in the wave could leave a stale `none` sentinel that a LATER, genuinely harness-worktree plan's own dispatch could be misread against. Running it right before the dispatch keeps the sentinel always fresh and always keyed to the plan it authorizes:
 
 ```bash
 _engineer_identity_ok() {
@@ -166,19 +161,7 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
-if [ "${USE_WORKTREES_FOR_PLAN:-}" = "false" ]; then
-  # Submodule intersection (or an inherited USE_WORKTREES=false) forces
-  # sequential dispatch for this plan specifically — force the resolver's
-  # single write path to record `none`, scoped to this plan, even though the
-  # phase/registry would otherwise resolve harness-worktree.
-  engineer_run query dispatch-isolation --raw --phase "${PHASE_NUMBER:-}" --plan "$plan_id" --force-isolation none >/dev/null 2>&1 || true
-elif [ -n "${USE_WORKTREES_FOR_PLAN:-}" ]; then
-  # No plan-level override — re-resolve normally, still scoped to this plan,
-  # so the sentinel's `plan` field always matches the plan about to dispatch.
-  engineer_run query dispatch-isolation --raw --phase "${PHASE_NUMBER:-}" --plan "$plan_id" >/dev/null 2>&1 || true
-fi
-# An EMPTY value (the plan state was lost with an earlier tool call's shell) writes
-# nothing, so a recorded phase-level degrade is never re-persisted as harness-worktree.
+engineer_run query dispatch-isolation --raw --phase "${PHASE_NUMBER:-}" --plan "$plan_id" || exit 1
 ```
 
 **`PLAN_FILES` is reused after dispatch:** pass it as `--files "$PLAN_FILES"` on the step-3 `worktree.record-agent` call (and on `worktree.create` in the orchestrator-worktree path) so the post-wave cleanup gauntlet can compare each plan branch's actual committed diff against the scope the plan declared, and report any path outside it. That check is advisory — it warns, it never blocks the merge — and omitting the flag simply skips it for that plan.

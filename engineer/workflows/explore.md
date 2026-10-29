@@ -99,7 +99,7 @@ Agent(
 **Omit `model=` entirely when `RESEARCHER_MODEL` is `inherit` or empty** — passing either
 value through as an argument 404s on runtimes without native tier aliases. Every opus-tier agent
 resolves to the literal `inherit`, so omission is the normal case, not an error path. See
-@~/.claude/engineer/references/model-profile-resolution.md.
+
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 

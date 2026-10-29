@@ -1,5 +1,7 @@
 **Step 4: Per-DAG-layer planning**
 
+Read `workflow.tdd_mode` directly and pass the native TDD planner flag and full TDD guidance to every initial and revision planner prompt when enabled.
+
 Planning proceeds one DAG layer at a time, driven by the CURRENT wave
 assignment in `$BATCH_MANIFEST_JSON` — not a pre-computed fixed list. A
 planner discovering a dependency on a sibling item (row 14/15/22/23)
@@ -65,12 +67,7 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
-   PLAN_PRE_HOOKS_JSON=$(engineer_run loop render-hooks plan:pre --raw)
    ```
-   In registry order, inject only active entries with `kind == "contribution"`
-   and `into == "planner"` into each planner prompt below, using
-   `fragment.inline` verbatim plus resolved `configValues`. Reuse this
-   snapshot for the whole layer.
 
 4. **Concurrency.** Planning is not worktree-isolated — compute with
    `mutating=false` (row 12's rule applies to any non-mutating wave, not just
@@ -134,7 +131,6 @@ fi
 
    ${AGENT_SKILLS_PLANNER}
 
-   {For each active entry in `PLAN_PRE_HOOKS_JSON` where `kind == \"contribution\"` and `into == \"planner\"` (in array order): inject the entry's `fragment.inline` verbatim here, plus its resolved `configValues` when the entry carries them. If none, omit this block.}
 
    </planning_context>
 

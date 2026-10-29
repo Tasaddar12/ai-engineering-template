@@ -1,9 +1,5 @@
 **Step 7: Deterministic merge**
 
-Skip entirely if `$ISOLATION == "none"` — nothing was worktree-isolated,
-there is nothing to merge (executors already committed to the primary
-checkout in Step 6).
-
 **Merge rounds.** Repeat until no wave has a mergeable prefix left (bounded
 by `$ITEM_COUNT` rounds):
 

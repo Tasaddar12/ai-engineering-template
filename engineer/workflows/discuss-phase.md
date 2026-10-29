@@ -1,10 +1,4 @@
-<!-- engineer:loop-host
-step: discuss
-points: discuss:pre, discuss:post
-agent-roles: orchestrator
-produces: CONTEXT.md
-consumes:
--->
+<!-- workflow: native orchestrator and declared agents -->
 <purpose>
 Extract implementation decisions that downstream agents need. Analyze the phase to identify gray areas, let the user choose what to discuss, then deep-dive each selected area until satisfied.
 
@@ -18,16 +12,13 @@ You are a thinking partner, not an interviewer. The user is the visionary — yo
 </required_reading>
 
 <progressive_disclosure>
-**Per-mode bodies, templates, and the advisor flow are lazy-loaded** to keep
-this file under the discuss-phase byte budget (32000 bytes; mirrors the agent size-budget convention). Read only the files needed for the current invocation:
+Read the applicable discussion mode and full templates for the current invocation:
 
 | When | Read |
 |---|---|
-| `--power` in $ARGUMENTS | `workflows/discuss-phase/modes/power.md` (then exit standard flow) |
+| `--auto` in $ARGUMENTS | `workflows/discuss-phase/modes/auto.md` overlay |
 | `--all` in $ARGUMENTS | `workflows/discuss-phase/modes/all.md` overlay |
-| `--auto` in $ARGUMENTS | `workflows/discuss-phase/modes/auto.md` + `workflows/discuss-phase/modes/chain.md` (auto-advance) |
 | `--text` in $ARGUMENTS or `workflow.text_mode: true` | `workflows/discuss-phase/modes/text.md` overlay |
-| ADVISOR_MODE = true (USER-PROFILE.md exists) | `workflows/discuss-phase/modes/advisor.md` |
 | in `write_context` step | `workflows/discuss-phase/templates/context.md` |
 | in `git_commit` step | `workflows/discuss-phase/templates/discussion-log.md` |
 | writing checkpoints | `workflows/discuss-phase/templates/checkpoint.json` |
@@ -143,7 +134,6 @@ prompting.
 
 <process>
 
-**Express path available:** If you already have a PRD or acceptance criteria document, use `/plan-phase {phase} --prd path/to/prd.md` to skip this discussion and go straight to planning.
 
 <step name="initialize" priority="first">
 Phase number from argument (required).
@@ -195,9 +185,7 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.phase-op ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} "${PHASE}"); [[ "$INIT" == @file:* ]] && INIT=$(cat "${INIT#@file:}")
-AGENT_SKILLS_ADVISOR=$(engineer_run query agent-skills advisor-researcher ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
+INIT=$(engineer_run query init.phase-op  "${PHASE}")
 ```
 
 Parse JSON for: `commit_docs`, `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `has_research`, `has_context`, `has_plans`, `has_verification`, `plan_count`, `roadmap_exists`, `planning_exists`, `has_spec`, `spec_path`, `response_language`.
@@ -207,28 +195,10 @@ Parse JSON for: `commit_docs`, `phase_found`, `phase_dir`, `phase_number`, `phas
 **If `phase_found` is false:**
 ```
 Phase [X] not found in roadmap.
-Use /progress ${ENGINEER_WS} to see available phases.
+Use /progress  to see available phases.
 ```
 Exit workflow.
 
-**Mode dispatch — Read mode files lazily based on flags in $ARGUMENTS:**
-
-```bash
-# Detect advisor mode (file-existence guard — no Read until needed)
-if [ -f "$HOME/.claude/engineer/USER-PROFILE.md" ]; then
-  ADVISOR_MODE=true
-else
-  ADVISOR_MODE=false
-fi
-```
-
-- If `--power` in $ARGUMENTS: `Read(workflows/discuss-phase/modes/power.md)` and execute it end-to-end. Do NOT continue with the steps below.
-- Otherwise, continue. Per-flag overlay reads happen at their relevant steps:
-  - `--all` → Read `workflows/discuss-phase/modes/all.md` before `present_gray_areas`.
-  - `--auto` → Read `workflows/discuss-phase/modes/auto.md` before `check_existing` (it overrides several steps).
-  - `--chain` → Read `workflows/discuss-phase/modes/chain.md` before `auto_advance`.
-  - `--text` (or `workflow.text_mode: true`) → Read `workflows/discuss-phase/modes/text.md` before any AskUserQuestion call.
-  - `ADVISOR_MODE = true` → Read `workflows/discuss-phase/modes/advisor.md` before `analyze_phase` (it changes the discussion flow and adds an `advisor_research` substep).
 
 **If `phase_found` is true:** Continue to `check_blocking_antipatterns`.
 </step>
@@ -365,12 +335,6 @@ Read `@~/.claude/engineer/references/scout-codebase.md` — it contains the phas
 3. Build internal `<codebase_context>` per the reference's output schema
 </step>
 
-<step name="dispatch_discuss_pre_hooks">
-```bash
-DISCUSS_PRE_HOOKS_JSON=$(engineer_run loop render-hooks discuss:pre --raw)
-```
-Apply each entry in `activeHooks` per @~/.claude/engineer/references/loop-hook-dispatch.md. Empty list → continue to `analyze_phase`.
-</step>
 
 <step name="analyze_phase">
 Analyze the phase to identify gray areas. Use both `prior_decisions` and `codebase_context` to ground the analysis.
@@ -392,7 +356,6 @@ Analyze the phase to identify gray areas. Use both `prior_decisions` and `codeba
 
 4. **Skip assessment** — If no meaningful gray areas exist (pure infrastructure, clear-cut implementation, all already decided), the phase may not need discussion.
 
-**Advisor mode hand-off:** If `ADVISOR_MODE` is true, follow `workflows/discuss-phase/modes/advisor.md` for the rest of analyze/discuss flow (it adds an `advisor_research` substep and replaces the standard `discuss_areas` with table-first selection). The detection block (USER-PROFILE.md existence + non-technical-owner signals + calibration tier resolution) lives in that file — read it once when ADVISOR_MODE is true and follow its rules.
 </step>
 
 <step name="present_gray_areas">
@@ -425,13 +388,11 @@ We'll clarify HOW to implement this. (New capabilities belong in other phases.)
 
 **Do NOT include a "skip" or "you decide" option.** User ran this command to discuss — give real choices.
 
-Continue to `discuss_areas` with selected areas (or to `advisor_research` per `modes/advisor.md` if `ADVISOR_MODE` is true).
 </step>
 
 <step name="discuss_areas">
 Use the native discussion method in `<discussion_analysis>` before each question.
 
-- **Advisor mode (ADVISOR_MODE = true):** follow `workflows/discuss-phase/modes/advisor.md` — research-backed comparison tables, table-first selection.
 - **--auto:** follow `workflows/discuss-phase/modes/auto.md` — Claude picks recommended option for every question; no AskUserQuestion. Single-pass cap enforced.
 
 Overlays (combine with the active mode):
@@ -480,12 +441,6 @@ The template documents variable substitutions and conditional sections. Substitu
 Write the file.
 </step>
 
-<step name="dispatch_discuss_post_hooks">
-```bash
-DISCUSS_POST_HOOKS_JSON=$(engineer_run loop render-hooks discuss:post --raw)
-```
-Apply each entry in `activeHooks` per @~/.claude/engineer/references/loop-hook-dispatch.md. Empty list → continue to `confirm_creation`.
-</step>
 
 <step name="confirm_creation">
 Present summary and next steps:
@@ -509,11 +464,10 @@ Created: .planning/phases/${PADDED_PHASE}-${SLUG}/${PADDED_PHASE}-CONTEXT.md
 
 `/clear` then:
 
-`/plan-phase ${PHASE} ${ENGINEER_WS}`
+`/plan-phase ${PHASE} `
 
 ---
 
-**Also available:** `--chain` for auto plan+execute after; `/plan-phase ${PHASE} --skip-research ${ENGINEER_WS}` to plan without research; `/ui-phase ${PHASE} ${ENGINEER_WS}` for UI design contracts; review/edit CONTEXT.md before continuing.
 ```
 </step>
 
@@ -554,13 +508,6 @@ engineer_run query commit "docs(state): record phase ${PHASE} context session" -
 ```
 </step>
 
-<step name="auto_advance">
-Auto-advance behavior is defined in `workflows/discuss-phase/modes/chain.md`.
-
-If `--auto`, `--chain`, or `workflow.auto_advance` is enabled, Read that file now and execute its `auto_advance` step (flag-syncing, banner, plan-phase dispatch, return-status branching).
-
-Otherwise, end here — `confirm_creation` already ran; do not route back to it.
-</step>
 
 </process>
 
@@ -582,7 +529,4 @@ Otherwise, end here — `confirm_creation` already ran; do not route back to it.
 - Checkpoint file written after each area completes (incremental save)
 - Interrupted sessions can be resumed from checkpoint
 - Checkpoint file cleaned up after successful CONTEXT.md write
-- `--chain` triggers interactive discuss followed by auto plan+execute (no auto-answering)
-- `--chain` and `--auto` both persist chain flag and auto-advance to plan-phase
-- Per-mode bodies, templates, and advisor flow are lazy-loaded — parent stays under the workflow size budget enforced by `tests/workflow-size-budget.test.cjs`
 </success_criteria>

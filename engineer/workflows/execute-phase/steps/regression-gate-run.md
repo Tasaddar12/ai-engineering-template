@@ -4,7 +4,7 @@ Apply response_language to all user-facing prose — narration between tool call
 
 Run the resolved prior-phase test command one-shot, bounded by a timeout, so a
 watch-mode runner (vitest defaults to watch in a TTY; jest `--watch`) cannot
-hang this gate forever. Uses the shared `normalize-test-command` helper
+hang this gate forever. Uses the configured verification checks
 — the same one the post-merge gate uses — so the two gate paths cannot drift.
 
 Reads the prior step's test-file list from the handoff file `regression-files`; a shell variable
@@ -62,41 +62,11 @@ if [ -s "$_ENGINEER_HANDOFF/regression-files" ]; then
   done < "$_ENGINEER_HANDOFF/regression-files"
 fi
 # engineer-handoff:end regression-files-read
-# Resolve test command: project config > Makefile > language sniff
-REG_TEST_CMD=$(engineer_run query config-get workflow.test_command --default "" --raw 2>/dev/null || true)
-if [ -z "$REG_TEST_CMD" ]; then
-  if [ -f "Makefile" ] && grep -q "^test:" Makefile; then
-    REG_TEST_CMD="make test"
-  elif [ -f "Justfile" ] || [ -f "justfile" ]; then
-    REG_TEST_CMD="just test"
-  elif [ -f "package.json" ]; then
-    REG_TEST_CMD=$(engineer_run query resolve-package-manager test --cwd . 2>/dev/null || echo "npm test")
-    [ -n "$REG_TEST_CMD" ] || REG_TEST_CMD="npm test"
-  elif [ -f "Cargo.toml" ]; then
-    REG_TEST_CMD="cargo test"
-  elif [ -f "go.mod" ]; then
-    REG_TEST_CMD="go test ./..."
-  elif [ -f "requirements.txt" ] || [ -f "pyproject.toml" ]; then
-    # engineer-handoff:begin regression-pytest-arm
-    if [ -n "$REGRESSION_FILES" ]; then
-      REG_TEST_CMD="python -m pytest -q --tb=short -- ${REGRESSION_FILES}"
-    else
-      echo "⚠ Regression gate: no prior-phase test files were collected — skipping the scoped pytest run instead of falling back to the full suite."
-      REG_TEST_CMD="true"
-    fi
-    # engineer-handoff:end regression-pytest-arm
-  else
-    REG_TEST_CMD="true"
-  fi
-fi
-# Normalize to a one-shot form (defeat vitest/jest watch mode) and bound
-# with a timeout so a watch-mode runner cannot hang the gate indefinitely.
-REG_TEST_CMD=$(engineer_run query normalize-test-command "$REG_TEST_CMD" --cwd . 2>/dev/null || echo "$REG_TEST_CMD")
-TEST_GATE_TIMEOUT=$(engineer_run query config-get workflow.test_gate_timeout --raw 2>/dev/null || echo "600")
-engineer_run query run-with-timeout "$TEST_GATE_TIMEOUT" -- bash -c "$REG_TEST_CMD" 2>&1
-REG_TEST_EXIT=$?
-if [ "$REG_TEST_EXIT" -eq 124 ]; then
-  echo "✗ REGRESSION GATE ABORTED — test runner did not exit within ${TEST_GATE_TIMEOUT}s, likely stuck in watch/dev mode (e.g. vitest without 'run'). Run tests one-shot (e.g. 'vitest run'), set workflow.test_command, or raise workflow.test_gate_timeout."
+# Run the configured checks; retain prior-phase test discovery as diagnostic context.
+REG_CHECKS=$(engineer_run query verification.run-checks) && REG_TEST_EXIT=0 || REG_TEST_EXIT=$?
+if [ "$REG_TEST_EXIT" -ne 0 ]; then
+  echo "REGRESSION GATE ABORTED: configured checks failed or could not run" >&2
+  exit "$REG_TEST_EXIT"
 fi
 ```
 

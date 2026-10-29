@@ -1,10 +1,4 @@
-<!-- engineer:loop-host
-step: plan
-points: plan:pre, plan:post
-agent-roles: researcher, planner, checker
-produces: PLAN.md
-consumes: CONTEXT.md
--->
+<!-- workflow: native orchestrator and declared agents -->
 <purpose>
 Create executable phase prompts (PLAN.md files) for a roadmap phase with integrated research and verification. Default flow: Research (if needed) -> Plan -> Verify -> Done. Orchestrates phase-researcher, planner, and plan-checker agents with a revision loop (max 3 iterations).
 </purpose>
@@ -31,8 +25,7 @@ Valid Engineer subagent types (use exact names — do not fall back to 'general-
 **Subagent spawning — top-level Claude Code:**
 The Agent tool IS available in a top-level Claude Code session. Always spawn
 phase-researcher, planner, and plan-checker as separate Agent() calls.
-Never absorb these roles inline. Role separation is required regardless of `--chain`
-or `--auto` — those options suppress interactive prompts only; they NEVER authorize
+Never absorb these roles inline. Role separation is required regardless of automatic routing — those options suppress interactive prompts only; they NEVER authorize
 collapsing plan roles into the orchestrator context.
 
 **Backgrounded Claude Code (via manager/autonomous):**
@@ -114,96 +107,46 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 GRAN_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--granularity[[:space:]]+([^[:space:]-][^[:space:]]*) ]]; then GRAN_PARAM="--granularity ${BASH_REMATCH[2]}"; fi
-PRD_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--prd[[:space:]]+([^[:space:]-][^[:space:]]*) ]]; then PRD_PARAM="--prd ${BASH_REMATCH[2]}"; fi
-INGEST_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--ingest[[:space:]]+([^[:space:]-][^[:space:]]*) ]]; then INGEST_PARAM="--ingest ${BASH_REMATCH[2]}"; fi
-RESEARCH_PHASE_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--research-phase[[:space:]]+([^[:space:]-][^[:space:]]*) ]]; then RESEARCH_PHASE_PARAM="--research-phase ${BASH_REMATCH[2]}"; fi
-REVIEWS_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--reviews([[:space:]]|$) ]]; then REVIEWS_PARAM="--reviews"; fi
 # Project the just-completed planning mode onto the execute-phase follow-up:
 # a --gaps run creates gap_closure plans, so the Next Up handoff must point at
 # execute-phase's matching --gaps-only scope rather than the whole-phase run.
-# Standard and --reviews runs leave GAPS_EXEC_FLAG empty → their Next Up is unchanged.
 GAPS_MODE=false
 if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--gaps([[:space:]]|$) ]]; then GAPS_MODE=true; fi
 GAPS_EXEC_FLAG=""
 if [ "$GAPS_MODE" = "true" ]; then GAPS_EXEC_FLAG="--gaps-only"; fi
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.plan-phase ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} "$PHASE" $GRAN_PARAM $PRD_PARAM $INGEST_PARAM $RESEARCH_PHASE_PARAM $REVIEWS_PARAM)
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_RESEARCHER=$(engineer_run query agent-skills phase-researcher ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-AGENT_SKILLS_PLANNER=$(engineer_run query agent-skills planner ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-AGENT_SKILLS_CHECKER=$(engineer_run query agent-skills plan-checker ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
+INIT=$(engineer_run query init.plan-phase  "$PHASE" $GRAN_PARAM )
+AGENT_SKILLS_RESEARCHER=$(engineer_run query agent-skills phase-researcher )
+AGENT_SKILLS_PLANNER=$(engineer_run query agent-skills planner )
+AGENT_SKILLS_CHECKER=$(engineer_run query agent-skills plan-checker )
 CONTEXT_WINDOW=$(engineer_run query config-get context_window --raw 2>/dev/null || echo "200000")
 ```
 
-When the tdd capability's `workflow.tdd_mode` is active (resolved via the plan:pre render-hooks), the planner agent is instructed to apply `type: tdd` to eligible tasks using heuristics from `engineer/references/tdd.md`. The TDD guidance is injected via the tdd capability's contribution hook at §5.6; no inline config-get is needed.
+When `workflow.tdd_mode` is true, instruct the planner to apply native TDD task heuristics from `engineer/references/tdd.md`.
 
 When `CONTEXT_WINDOW >= 500000`, the planner prompt includes the 3 most recent prior-phase CONTEXT.md/SUMMARY.md files plus any phases in the current phase's `Depends on:` field (explicit deps load regardless of recency).
 
 ** — `prior_verify_commands` is NOT part of that enrichment and is never gated on `CONTEXT_WINDOW`.** It is a handful of one-line `<automated>` commands harvested from the nearest prior phase that had any; the payload is tiny and its absence at 200k is exactly what made the planner re-invent a verify command and author an unrunnable path. Surface it at every context window.
 
-Parse JSON for: `researcher_model`, `planner_model`, `checker_model`, `research_enabled`, `plan_checker_enabled`, `nyquist_validation_enabled`, `commit_docs`, `text_mode`, `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `has_research`, `has_context`, `has_reviews`, `has_plans`, `plan_count`, `phase_status`, `planning_exists`, `roadmap_exists`, `phase_req_ids`, `response_language`, `granularity`, `prior_verify_commands` (array of `{phase, plan, task, command}`, possibly empty; emitted at every context window), `threat_id_duplicates` + `threat_id_duplicate_count` (cross-plan threat-ID collisions; consumed at step 5.55).
+Parse JSON for: `researcher_model`, `planner_model`, `checker_model`, `research_enabled`, `plan_checker_enabled`, `nyquist_validation_enabled`, `commit_docs`, `text_mode`, `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `has_research`, `has_context`, `has_plans`, `plan_count`, `phase_status`, `planning_exists`, `roadmap_exists`, `phase_req_ids`, `response_language`, `granularity`, `prior_verify_commands` (array of `{phase, plan, task, command}`, possibly empty; emitted at every context window), `threat_id_duplicates` + `threat_id_duplicate_count` (cross-plan threat-ID collisions; consumed at step 5.55).
 
 Omit the `model=` param from an `Agent()` call when its `researcher`/`planner`/`checker`_model is `"inherit"` or empty — passing `model=""` 404s on non-Claude runtimes; omitting inherits the orchestrator model (mirrors execute-phase).
 
 **If `response_language` is set:** All user-facing orchestrator output — narration between tool calls, status updates, progress notes, findings, questions, prompts, and explanations — MUST be in `{response_language}`; technical terms, code, paths, and subagent prompts stay in English. Pass `response_language: {value}` into every spawned subagent prompt.
 
-**File paths (for <required_reading> blocks):** `state_path`, `roadmap_path`, `requirements_path`, `context_path`, `research_path`, `verification_path`, `uat_path`, `reviews_path`. These are null if files don't exist.
+**File paths (for <required_reading> blocks):** `state_path`, `roadmap_path`, `requirements_path`, `context_path`, `research_path`, `verification_path`, `uat_path`. These are null if files don't exist.
 
 **If `planning_exists` is false:** Error — run `/new-project` first.
 
-## 1.5. Closed-Phase Gate 
+## 1.5. Closed-Phase Gate
 
-Read and execute `engineer/workflows/plan-phase/steps/closed-phase-gate.md` — it parses `phase_status` from the init JSON, sets `FORCE_REPLAN` from `$ARGUMENTS`, and hard-stops replanning a `Complete` phase: `--reviews` on a closed phase is never overridable (exit 1), and replanning otherwise requires `--force` (else exit 1, pointing at `${verification_path}`); under `--force` it continues but emits a WARNING banner. Only `Complete` is gated — `Executed` / `Needs Review` are legitimate replans.
+Read and execute `engineer/workflows/plan-phase/steps/closed-phase-gate.md` — it parses `phase_status` from the init JSON, sets `FORCE_REPLAN` from `$ARGUMENTS`, and hard-stops replanning a `Complete` phase: on a closed phase is never overridable (exit 1), and replanning otherwise requires `--force` (else exit 1, pointing at `${verification_path}`); under `--force` it continues but emits a WARNING banner. Only `Complete` is gated — `Executed` / `Needs Review` are legitimate replans.
 
 ## 2. Parse and Normalize Arguments
 
-Extract from $ARGUMENTS: phase number (integer or decimal like `2.1`), flags (`--research`, `--skip-research`, `--research-phase <N>`, `--gaps`, `--skip-verify`, `--skip-ui`, `--prd <filepath>`, `--ingest <path-or-glob>`, `--ingest-format <auto|nygard|madr|narrative>`, `--reviews`, `--text`, `--bounce`, `--skip-bounce`, `--no-reversibility-gates`, `--tdd`, `--granularity <coarse|standard|fine>`, `--force` (override closed-phase gate, see §1.5)).
+Extract from $ARGUMENTS: phase number (integer or decimal like `2.1`), flags (`--research`, `--skip-research`, `--gaps`, `--skip-verify`, `--skip-ui`, `--text`, `--no-reversibility-gates`, `--tdd`, `--granularity <coarse|standard|fine>`, `--force` (override closed-phase gate, see §1.5)).
 
-**`--research-phase <N>` — research-only mode.** When this flag is present, parse `<N>` as the phase number (overrides any positional phase argument), set `RESEARCH_ONLY=true`, and treat the rest of this workflow as a research-dispatch only — the planner spawn (step 8), plan-checker, verification, gaps, bounce, and post-planning-gaps blocks all skip on `RESEARCH_ONLY`. Use this for cross-phase research, doc review before committing to a planning approach, and correction-without-replanning loops. Replaces the deleted `/research-phase` command.
-
-In research-only mode, two modifiers control behavior when `RESEARCH.md` already exists:
-
-- **`--research`** — force-refresh re-research without prompting. Re-spawns the researcher unconditionally and overwrites the existing RESEARCH.md. (This is the existing `--research` flag's standard "force re-research" semantics, reused here.)
-- **`--view`** — view-only: print existing `RESEARCH.md` to stdout, do **not** spawn the researcher. Sets `VIEW_ONLY=true`. Cheapest mode for the correction-without-replanning loop. If `RESEARCH.md` does not exist, error with a hint to drop `--view`.
-
-```bash
-IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
-$ARGUMENTS
-ENGINEER_ARGS_END
-ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
-RESEARCH_ONLY=false
-VIEW_ONLY=false
-if [[ "$ENGINEER_ARGS" =~ --research-phase[[:space:]]+([0-9]+[A-Z]?(\.[0-9]+)*) ]]; then
-  RESEARCH_ONLY=true
-  PHASE="${BASH_REMATCH[1]}"
-fi
-if $RESEARCH_ONLY && [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--view([[:space:]]|$) ]]; then
-  VIEW_ONLY=true
-fi
-```
-
-**`--granularity <coarse|standard|fine>` — CLI override.** When present, this value is the resolved granularity passed to the planner — it wins over any per-phase `granularities.<type>` config, top-level `granularity` config, or project defaults. The init JSON always includes a `granularity` field reflecting the resolved value; read it from there. Invalid values (anything other than `coarse`, `standard`, `fine`) cause an error at the CLI boundary.
-
-Set `TEXT_MODE=true` if `--text` is present in $ARGUMENTS OR `text_mode` from init JSON is `true`. When `TEXT_MODE` is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for Claude Code remote sessions (`/rc` mode) where TUI menus don't work through the Claude App.
-
-```bash
-IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
-$ARGUMENTS
-ENGINEER_ARGS_END
-ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
-if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--tdd([[:space:]]|$) ]]; then
-  engineer_run query config-set workflow.tdd_mode true 2>/dev/null || true
-fi
-REVERSIBILITY_GATES=true
-if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--no-reversibility-gates([[:space:]]|$) ]]; then REVERSIBILITY_GATES=false; fi
-```
 
 **Baseline-discipline flags.** `REVERSIBILITY_GATES` defaults to `true`; it is not persisted per-phase or read from config.
-
-Extract express-path args from $ARGUMENTS: `PRD_FILE` (`--prd <filepath>`), `INGEST_PATH` (`--ingest <path-or-glob>`), and optional `INGEST_FORMAT` (`--ingest-format <auto|nygard|madr|narrative>`, default `auto`).
-
-`--prd` and `--ingest` are mutually exclusive. If both are present, error and exit:
-`Invalid arguments: cannot combine \`--prd\` with \`--ingest\`.`
 
 **If no phase number:** Auto-detect it — `query init.plan-phase` and `query roadmap.get-phase` require an explicit number, so this is an orchestrator step. Run `engineer_run query roadmap.analyze` and read `next_phase` (first phase with `disk_status` of `no_directory`, `empty`, `discussed`, or `researched`). If `next_phase` is `null`, read ROADMAP.md's `### Phase N:` headers and ask the user which phase to plan. Set `PHASE` to the result before step 1's `query init.plan-phase "$PHASE"` call.
 
@@ -216,9 +159,6 @@ Set `phase_dir="${expected_phase_dir}"` after creation.
 
 **Existing artifacts from init:** `has_research`, `has_plans`, `plan_count`.
 
-<!-- engineer:section id="reviews-prerequisite" when="flag:--reviews" -->
-If `section_manifest` is `null` or `"reviews-prerequisite"` is in its `included` list: read and execute `engineer/workflows/plan-phase/steps/reviews-prerequisite.md`. Otherwise skip — do not read the file.
-<!-- /section -->
 
 ## 3. Validate Phase
 
@@ -228,13 +168,6 @@ PHASE_INFO=$(engineer_run query roadmap.get-phase "${PHASE}")
 
 **If `found` is false:** Error with available phases. **If `found` is true:** Extract `phase_number`, `phase_name`, `goal` from JSON.
 
-<!-- engineer:section id="prd-express-gate" when="flag:--prd" -->
-If `section_manifest` is `null` or `"prd-express-gate"` is in its `included` list: read and execute `engineer/workflows/plan-phase/steps/prd-express-gate.md`. Otherwise skip — do not read the file.
-<!-- /section -->
-
-<!-- engineer:section id="adr-ingest-express-path" when="flag:--ingest" -->
-If `section_manifest` is `null` or `"adr-ingest-express-path"` is in its `included` list: read and execute `engineer/workflows/plan-phase/steps/adr-ingest-express-path.md`. Otherwise skip — do not read the file.
-<!-- /section -->
 
 ## 4. Load CONTEXT.md
 
@@ -280,62 +213,17 @@ If "Run discuss-phase first":
   does not work correctly in nested subcontexts. Instead, display the command
   and exit so the user runs it as a top-level command:
   ```
-  Run this command first, then re-run /plan-phase {X} ${ENGINEER_WS}:
+  Run this command first, then re-run /plan-phase {X} :
 
-  /discuss-phase {X} ${ENGINEER_WS}
+  /discuss-phase {X}
   ```
   **Exit the plan-phase workflow. Do not continue.**
 
-## 4.6. Context Drift Pre-Check (drift plan:pre gate)
-
-Capability-driven dispatch, same lazy-init pattern already used elsewhere in this file for
-`PLAN_PRE_HOOKS_JSON`:
-
-```bash
-if [ -z "${PLAN_PRE_HOOKS_JSON:-}" ]; then
-  PLAN_PRE_HOOKS_JSON=$(engineer_run loop render-hooks plan:pre --raw)
-fi
-```
-
-If `activeHooks` (from `PLAN_PRE_HOOKS_JSON`) has a `kind == "gate"`, `capId == "drift"`,
-`check.query == "verify.context-drift"` entry (`workflow.context_drift_precheck` on), run the
-check before either the research-reuse decision (§5.1) or the pattern-mapper reuse decision
-(§7.8) can fire — both would otherwise silently reuse a stale artifact with zero signal.
-Otherwise skip to §5.
-
-```bash
-DRIFT=$(engineer_run verify context-drift "${PHASE}" 2>/dev/null) || { echo "Warning: context-drift check could not look (exit $?)" >&2; DRIFT='{"skipped":true}'; }
-```
-
-If `skipped` is true, continue silently to §5 — nothing to compare (no CONTEXT.md yet, no
-upstream artifacts yet). A non-zero exit (`69` `UNAVAILABLE`,: the phase directory did not
-resolve or an artifact could not be read) is a check that could not look, not "nothing to compare":
-the warning above is its signal, and planning continues (the check is advisory).
-
-If `stale_artifacts` is a non-empty array, print `message` verbatim (it names each stale
-artifact and the command to regenerate it). Then:
-
-- If `DRIFT.block` is `false` (the default, `workflow.context_drift_action: warn`): continue to
-  §5 — this is advisory only, exactly like the codebase-drift pre-check at §5.65.
-- If `DRIFT.block` is `true` (opt-in `workflow.context_drift_action: block`): **exit the
-  plan-phase workflow** rather than continuing. Do not spawn the researcher, the planner, or the
-  pattern mapper against a premise the user has not yet reconciled. Point the user at re-running
-  `/plan-phase {X}` once the named artifacts are regenerated, or at disabling the check with
-  `engineer_run query config-set workflow.context_drift_action warn` if the flag was a false positive.
-
-If `stale_artifacts` is empty, continue silently to §5 — nothing to report.
 
 ## 5. Handle Research
 
-**Skip if:** `--gaps` flag or `--skip-research` flag or `--reviews` flag.
+**Skip if:** `--gaps` flag or `--skip-research` flag .
 
-<!-- engineer:section id="research-only-modifiers" when="flag:--research-phase" -->
-If `section_manifest` is `null` or `"research-only-modifiers"` is in its `included` list: read and execute `engineer/workflows/plan-phase/steps/research-only-modifiers.md`. Otherwise skip — do not read the file.
-<!-- /section -->
-
-### 5.1. Standard Research Decision
-
-**Skip if** `RESEARCH_ONLY=true` (the research-only mode in 5.0 already determined the path: spawn or exit). Without this guard, an LLM following the workflow could fall through into "use existing, skip to step 6" → planner spawn, violating the research-only contract. **CR finding: this gate makes the early-exit unreachable from any non-research-only branch.**
 
 **If `has_research` is true (from init) AND no `--research` flag:** Use existing, skip to step 6.
 
@@ -382,33 +270,12 @@ Display banner:
 
 ### Spawn phase-researcher
 
-```bash
-if engineer_run query teams-status --active >/dev/null 2>&1; then
-  echo "⚠️  CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS detected. Engineer's multi-agent orchestration is not validated under claude-code agent-teams and may stall (a subagent's completion can fail to route to the orchestrator). Recommend disabling agent-teams for Engineer workflows." >&2
-fi
-```
 
 ```bash
 PHASE_DESC=$(engineer_run query roadmap.get-phase "${PHASE}" --pick section)
-if [ -z "${PLAN_PRE_HOOKS_JSON:-}" ]; then
-  PLAN_PRE_HOOKS_JSON=$(engineer_run loop render-hooks plan:pre --raw)
-fi
 ```
 
-Find the active `research` step hook in `PLAN_PRE_HOOKS_JSON`. Use the hook's `fragment.inline` as the prompt template and substitute the phase fields below before spawning its declared `ref.agent`.
-
-```markdown
-{research_hook.fragment.inline}
-```
-
-```
-Agent(
-  prompt=filled_research_hook_fragment,
-  subagent_type=research_hook.ref.agent,
-  model="{researcher_model}",
-  description="Research Phase {phase}"
-)
-```
+Dispatch the native `phase-researcher` with the phase description, CONTEXT.md, PROJECT.md, REQUIREMENTS.md, applicable project instructions and skills. Resolve its model and effort inline. Its task is the complete evidence-based research method, writing `${PHASE_DIR}/${PADDED_PHASE}-RESEARCH.md` and returning findings or blockers. Wait for its terminal result before continuing.
 
 <!-- engineer:protected -->
 > **ORCHESTRATOR RULE — ALL RUNTIMES**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available. Never call `ScheduleWakeup` or any host wake/sleep-scheduling tool to literalize this wait — the Agent() call returns on its own; a partial-args wake call surfaces a red validation error.
@@ -418,9 +285,6 @@ Agent(
 - **`## RESEARCH COMPLETE`:** Display confirmation, continue to step 6
 - **`## RESEARCH BLOCKED`:** Display blocker, offer: 1) Provide context, 2) Skip research, 3) Abort
 
-<!-- engineer:section id="research-only-early-exit" when="flag:--research-phase" -->
-If `section_manifest` is `null` or `"research-only-early-exit"` is in its `included` list: read and execute `engineer/workflows/plan-phase/steps/research-only-early-exit.md`. Otherwise skip — do not read the file.
-<!-- /section -->
 
 ## 5.5. Create Validation Strategy
 
@@ -452,131 +316,14 @@ test -f "${PHASE_DIR}/${PADDED_PHASE}-VALIDATION.md" && echo "VALIDATION_CREATED
 
 **If not found:** Warn and continue — plans may fail Dimension 8.
 
-## 5.55. Security Threat Model Gate
+## 5.55. Direct planning gates
 
-> Capability-driven dispatch. Resolves active `plan:pre` hooks via the capability registry; the security hook's `when` condition is evaluated by the registry.
+Read `workflow.tdd_mode`, `workflow.security_enforcement`, `workflow.security_asvs_level`, `workflow.security_block_on` and `workflow.ui_safety_gate` directly with `config-get`. Pass the TDD flag and full `engineer/references/tdd.md` heuristics to the planner whenever TDD mode is true. When security enforcement is true, require the planner's full `<threat_model>` with the configured ASVS level and blocking severity.
 
-```bash
-PLAN_PRE_HOOKS_JSON=$(engineer_run loop render-hooks plan:pre --raw)
-```
+When the UI safety gate is enabled, run `engineer_run check ui-plan-gate "${PHASE}" --raw`. A failed command or unreadable result stops planning; it cannot establish absence of frontend work. When `block` is true, produce the phase UI-SPEC through `/ui-phase` before planning. Preserve an existing UI-SPEC as planner input.
 
-**Contribution dispatch:** inject every `kind == "contribution"` fragment from `PLAN_PRE_HOOKS_JSON` per @~/.claude/engineer/references/loop-hook-dispatch.md, in array order, into the role each entry's `into` names — planner-targeted ones land in the prompt block below, orchestrator-targeted ones in your working context. The security specialization below is one such contribution, not a replacement for the generic dispatch.
+**Threat-ID uniqueness (always applies):** if the init payload's `threat_id_duplicate_count` is non-zero, init reports `threat_id_duplicates` — each `T-{phase}-NN` ID claimed by more than one live PLAN file in this phase. Surface the list to the planner spawn prompt in step 8 — "these threat IDs are already claimed by earlier plans in this phase: {list}; number new registers continuing after the phase's highest in-use `T-{phase}-NN`". Regardless of the count, include the numbering rule in the planner spawn prompt whenever this phase already has PLAN files: threat IDs are unique within a phase, and new registers continue after the highest in-use `T-{phase}-NN` — the count only reports an EXISTING collision, it cannot prevent the first one. The reserved `T-{phase}-SC` row is never listed. execute-phase hard-stops on a non-empty list regardless of what happened here.
 
-Resolve active contribution hooks from `PLAN_PRE_HOOKS_JSON` where `kind == "contribution"` and `capId == "security"`.
-
-**Threat-ID uniqueness (applies whether or not the security hook is active):** if the init payload's `threat_id_duplicate_count` is non-zero, init reports `threat_id_duplicates` — each `T-{phase}-NN` ID claimed by more than one live PLAN file in this phase. Surface the list to the planner spawn prompt in step 8 — "these threat IDs are already claimed by earlier plans in this phase: {list}; number new registers continuing after the phase's highest in-use `T-{phase}-NN`". Regardless of the count, include the numbering rule in the planner spawn prompt whenever this phase already has PLAN files: threat IDs are unique within a phase, and new registers continue after the highest in-use `T-{phase}-NN` — the count only reports an EXISTING collision, it cannot prevent the first one. The reserved `T-{phase}-SC` row is never listed. execute-phase hard-stops on a non-empty list regardless of what happened here.
-
-**If no active security contribution hook exists:** Skip to step 5.6.
-
-If an active security contribution hook exists, read `SECURITY_ASVS` from the hook's `configValues.security_asvs_level` (default: `1`) and `SECURITY_BLOCK` from `configValues.security_block_on` (default: `"high"`). These values are resolved by the capability registry from user config using the same four-level precedence as hook activation — no inline `config-get` is needed.
-
-Display banner:
-
-```
-### Engineer ► SECURITY THREAT MODEL REQUIRED (ASVS L{SECURITY_ASVS})
-
-Each PLAN.md must include a <threat_model> block.
-Block on: {SECURITY_BLOCK} severity threats.
-Opt out: set security_enforcement: false in .planning/config.json
-```
-
-Continue to step 5.6. Security config is passed to the planner in step 8.
-
-## 5.6. Plan:Pre Capability Dispatch and UI Design Contract Gate
-
-> Capability-driven dispatch. Resolves active `plan:pre` hooks via the capability registry; each hook's `when` condition is evaluated by the registry — no inline config-get needed. This section handles skill-based planning preflights such as `ai-integration`, agent-backed hooks through `ref.agent`, and the UI gate whose deterministic check comes from `check.query`.
->
-> **Config semantics (cutover fix):** `workflow.ui_phase` gates UI-SPEC *generation* (step); `workflow.ui_safety_gate` gates the *planning block* (gate). Both-on = identical to OLD §5.6. Intended change: `{ui_phase:true, ui_safety_gate:false}` now auto-generates in pipelines but does NOT block manual planning (each key controls exactly what its description says).
-
-```bash
-PLAN_PRE_HOOKS_JSON=${PLAN_PRE_HOOKS_JSON:-$(engineer_run loop render-hooks plan:pre --raw)}
-HOOKS_JSON="$PLAN_PRE_HOOKS_JSON"
-```
-
-Read the `activeHooks` array directly from `PLAN_PRE_HOOKS_JSON` / `HOOKS_JSON` (in-context — do NOT invoke a shell pipeline).
-
-**Branch 1 — all plan:pre hooks inactive (`activeHooks` is empty or absent):** Skip to step 6.
-
-**Generic step hook dispatch contract:** For each active entry where `kind == "step"`:
-- If `ref.skill` is set, dispatch with `Skill(skill="${ref.skill}", args="${PHASE} --auto ${ENGINEER_WS}")` when pipeline mode allows auto-chaining. Use `ref.skill` directly — `ui-phase` → `ui-phase`.
-- If `ref.agent` is set, dispatch with `Agent(prompt=filled_hook_fragment, subagent_type=ref.agent, model="{researcher_model}")`. Use the hook's `fragment.inline` as the prompt body and fill phase fields before spawning.
-- The `research` hook is handled by §5.1's research decision. The `pattern-mapper` hook is handled by §7.8 after `RESEARCH_PATH` is known. Future plan:pre agent hooks use the same `ref.agent` fragment contract.
-
-Run the UI deterministic gate whenever **any** `plan:pre` UI hook is active — including the step-only case (`workflow.ui_safety_gate` off). (`check.query` = `"ui.plan-gate"`, dot-normalized to `ui-plan-gate` per `loop-hook-dispatch.md` § `gate`.)
-
-```bash
-GATE=$(engineer_run check ui-plan-gate "${PHASE}" --raw) && GATE_EXIT=0 || GATE_EXIT=$?
-```
-
-A non-zero `GATE_EXIT` is a command failure, including `69` (`UNAVAILABLE`: the gate could not read its evidence, so its `frontend: false` is not an answer): surface it and stop; never fall through to Branch 2. Otherwise read `frontend`, `hasUiSpec`, and `block` from `GATE`.
-
-**Branch 2 — no frontend indicators (`frontend` is `false`):** Skip silently to step 6.
-
-**Branch 3 — UI-SPEC already exists (`hasUiSpec` is `true`):**
-
-```bash
-UI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-UI-SPEC.md 2>/dev/null | head -1)
-UI_SPEC_PATH="${UI_SPEC_FILE}"
-```
-
-Display: `Using UI design contract: ${UI_SPEC_PATH}`. Continue to step 6.
-
-**Branch 4 — `--skip-ui` in `$ARGUMENTS`:** Skip silently to step 6.
-
-**Branches 5 & 6 — frontend detected, UI-SPEC missing, no `--skip-ui`.**
-
-Read the ephemeral auto-chain flag:
-
-```bash
-AUTO_CHAIN=$(engineer_run query check auto-mode --pick auto_chain_active 2>/dev/null)
-AUTO_CHAIN="${AUTO_CHAIN:-false}"
-```
-
-**Branch 5 — `AUTO_CHAIN` is `true` (pipeline / `--auto`):** Fire each active UI **step** hook — runs independently of whether a gate is active (covers `{ui_phase:true,ui_safety_gate:false}`). For each entry in `activeHooks` (in array order) where `kind == "step"` and `ref.skill` is set:
-
-```
-Skill(skill="${ref.skill}", args="${PHASE} --auto ${ENGINEER_WS}")
-```
-
-After all UI step hooks return, re-read:
-
-```bash
-UI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-UI-SPEC.md 2>/dev/null | head -1)
-UI_SPEC_PATH="${UI_SPEC_FILE}"
-```
-
-Continue to step 6.
-
-**Branch 6 — `AUTO_CHAIN` is `false` (manual): generic gate handling.** For each entry in `activeHooks` where `kind == "gate"` and `blocking` is `true`: if `block:true` (from `GATE`), output the block below and **EXIT the plan-phase workflow**. If no active blocking gate (e.g. `workflow.ui_safety_gate` is off), continue to step 6 — no block.
-
-Output this markdown directly (not as a code block):
-
-```
-## ⚠ UI-SPEC.md missing for Phase {N}
-▶ Recommended next step:
-`/ui-phase {N} ${ENGINEER_WS}` — generate UI design contract before planning
-
----
-Also available:
-- `/plan-phase {N} --skip-ui ${ENGINEER_WS}` — plan without UI-SPEC (not recommended for frontend phases)
-```
-
-**Exit the plan-phase workflow. Do not continue.**
-
-## 5.65. Codebase Map Freshness Pre-Check (drift plan:pre gate)
-
-If `activeHooks` (from `PLAN_PRE_HOOKS_JSON`, §5.6) has a `kind == "gate"`, `capId == "drift"`,
-`check.query == "verify.codebase-drift"` entry (`workflow.plan_drift_precheck` on), run the same check the
-execute gate uses; otherwise skip to step 6:
-
-```bash
-DRIFT=$(engineer_run verify codebase-drift 2>/dev/null) || { echo "Warning: codebase-drift check could not look (exit $?)" >&2; DRIFT='{"skipped":true}'; }
-```
-
-This gate is **non-blocking** and **never blocks, never spawns** the mapper at plan time. If `skipped` or
-`action_required` is false, continue silently to step 6. If `action_required` is true, print `message`
-verbatim (it ends with a `/map-codebase` pointer) and continue — planning proceeds whether or not the
-map is refreshed first. (`drift_action: auto-remap` stays at `execute:wave:post`.)
 
 ## 6. Check Existing Plans
 
@@ -584,7 +331,7 @@ map is refreshed first. (`drift_action: auto-remap` stays at `execute:wave:post`
 ls "${PHASE_DIR}"/*-PLAN.md 2>/dev/null || true
 ```
 
-**If exists AND no `--reviews` flag:** Offer: 1) Add more plans, 2) View existing, 3) Replan from scratch.
+**If exists AND no flag:** Offer: 1) Add more plans, 2) View existing, 3) Replan from scratch.
 
 ## 7. Use Context Paths from INIT
 
@@ -599,7 +346,6 @@ RESEARCH_PATH=$(_engineer_field "$INIT" research_path)
 VERIFICATION_PATH=$(_engineer_field "$INIT" verification_path)
 UAT_PATH=$(_engineer_field "$INIT" uat_path)
 CONTEXT_PATH=$(_engineer_field "$INIT" context_path)
-REVIEWS_PATH=$(_engineer_field "$INIT" reviews_path)
 PATTERNS_PATH=$(_engineer_field "$INIT" patterns_path)
 
 # Resolve the phase SPEC (carries the ## Edge Coverage section the planner lifts resolved
@@ -614,11 +360,6 @@ SPEC_FILE="${SPEC_PATH}"
 UI_SPEC_FILE=$(ls "${PHASE_DIR_FOR_SPEC}"/*-UI-SPEC.md 2>/dev/null | head -1)
 UI_SPEC_PATH="${UI_SPEC_FILE}"
 ```
-
-**If plans exist AND the `--reviews` flag is set:** Before replanning from `--reviews`, scan
-`REVIEWS_PATH` for open plan-revision conflicts inside the writer-owned delimiter pair. Go
-straight to replanning with those records included, and flip the matching line to `- [x]` once
-the chosen resolution is applied, using the SAME close gate as step 12 below.
 
 ## 7.5. Verify Nyquist Artifacts
 
@@ -636,16 +377,18 @@ VALIDATION_EXISTS=$(ls "${PHASE_DIR}"/*-VALIDATION.md 2>/dev/null | head -1)
 ```
 
 If missing and Nyquist is still enabled/applicable — ask user:
-1. Re-run: `/plan-phase {PHASE} --research ${ENGINEER_WS}`
+1. Re-run: `/plan-phase {PHASE} --research `
 2. Disable Nyquist with the exact command:
    `engineer_run query config-set workflow.nyquist_validation false`
 3. Continue anyway (plans fail Dimension 8)
 
 Proceed to Step 7.8 (or Step 8 if pattern mapper is disabled) only if user selects 2 or 3.
 
+
+
 ## 7.8. Spawn pattern-mapper Agent (Optional)
 
-Pattern mapper activation is owned by the `pattern-mapper` capability's `plan:pre` step hook. Read `PLAN_PRE_HOOKS_JSON` and skip if no active step hook has `capId == "pattern-mapper"` and `ref.agent == "pattern-mapper"`. Also skip if no CONTEXT.md and no RESEARCH.md exist for this phase (nothing to extract file lists from).
+Read `workflow.pattern_mapping` directly with `config-get`; skip when false. Also skip if neither CONTEXT.md nor RESEARCH.md exists.
 
 **If PATTERNS.md already exists** (`PATTERNS_PATH` is non-empty from step 7): Skip to step 8 (use existing).
 
@@ -656,20 +399,7 @@ Display banner:
 ◆ Spawning pattern mapper... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
 
-Use the active `pattern-mapper` hook's `fragment.inline` as the prompt template and substitute the phase fields below before spawning its declared `ref.agent`.
-
-```markdown
-{pattern_mapper_hook.fragment.inline}
-```
-
-Spawn with:
-```
-Agent(
-  prompt=filled_pattern_mapper_hook_fragment,
-  subagent_type=pattern_mapper_hook.ref.agent,
-  model="{researcher_model}",
-)
-```
+Dispatch the native `pattern-mapper` with the phase goal, CONTEXT.md and RESEARCH.md. Extract relevant analog files and code excerpts into `${PHASE_DIR}/${PADDED_PHASE}-PATTERNS.md`; resolve model and effort inline.
 
 <!-- engineer:protected -->
 > **ORCHESTRATOR RULE — ALL RUNTIMES**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available. Never call `ScheduleWakeup` or any host wake/sleep-scheduling tool to literalize this wait — the Agent() call returns on its own; a partial-args wake call surfaces a red validation error.
@@ -683,23 +413,6 @@ After pattern mapper completes, update the path variable:
 PATTERNS_PATH="${PHASE_DIR}/${PADDED_PHASE}-PATTERNS.md"
 ```
 
-## 7.9. Regenerate API-SURFACE.md (intel gate)
-
-> Capability-driven dispatch. Resolves active `plan:pre` step hooks via the capability registry; the intel hook's `when: intel.enabled` condition is evaluated by the registry — no inline config-get needed.
-
-Read the active intel step hook from `PLAN_PRE_HOOKS_JSON` where `kind == "step"` and `capId == "intel"`.
-
-**If no active intel step hook exists:** `API_SURFACE_PATH` stays empty; skip to step 8. The step-8 planner entry for API Surface is omitted when `API_SURFACE_PATH` is empty.
-
-**If an active intel step hook exists:**
-```bash
-engineer_run intel api-surface
-API_SURFACE_PATH="$(dirname "$STATE_PATH")/intel/API-SURFACE.md"
-echo "✓ API surface regenerated: ${API_SURFACE_PATH}"  # injected into step 8 as HINT
-```
-
-Continue to step 8.
-
 ## 7.95. Spec-less Probe Fallback (gate)
 
 When the SPEC did not supply `## Edge Coverage` / `## Prohibitions`, plan-phase runs the probe protocol
@@ -712,11 +425,11 @@ after `$SPEC_FILE` (Step 7), before the planner spawn (Step 8).
 disabled or no requirement IDs; §A deterministic edge probe → `$COVERAGE` when `EDGE_ABSENT`; §B
 prohibition recall in the planner). Pass `$COVERAGE` and `$SPECLESS_FALLBACK_DISABLED` into Step 8.
 
-## 7.99. Bounded Stall-Detection Helpers 
+## 7.99. Bounded Stall-Detection Helpers
 
 Read+execute `engineer/workflows/plan-phase/steps/stall-detection-helpers.md` (defines
 `engineer_stall_should_recover`/`engineer_stall_watch`, and how `{outputFile}` below is bound;
-independent of the teams-status guard above, AC2).
+using the retained planner wait policy).
 
 ## 8. Spawn planner Agent
 
@@ -732,7 +445,7 @@ Planner prompt:
 ```markdown
 <planning_context>
 **Phase:** {phase_number}
-**Mode:** {standard | gap_closure | reviews}
+**Mode:** {standard | gap_closure}
 
 <required_reading>
 - {state_path} (Project State)
@@ -743,10 +456,8 @@ Planner prompt:
 - {PATTERNS_PATH} (Pattern Map — analog files and code excerpts, if exists)
 - {verification_path} (Verification Gaps - if --gaps)
 - {uat_path} (UAT Gaps - if --gaps)
-- {reviews_path} (Cross-AI Review Feedback - if --reviews; actionable findings must be incorporated or explicitly deferred/rejected in PLAN.md)
 - {UI_SPEC_PATH} (UI Design Contract — visual/interaction specs, if exists)
 - {SPEC_PATH} (Phase SPEC — carries the ## Edge Coverage section to lift resolved edges from, if exists)
-- {API_SURFACE_PATH} (API Surface — HINT ONLY, when intel capability is active; see <intel_surface_hint> below)
 ${CONTEXT_WINDOW >= 500000 ? `
 **Cross-phase context (1M model enrichment):**
 - CONTEXT.md files from the 3 most recent completed phases (locked decisions — maintain consistency)
@@ -766,11 +477,6 @@ directory. Surfaced at every context window — not part of the 1M enrichment ab
 
 {For each entry in \`prior_verify_commands\`: \`- Phase {phase} · {task}: \\\`{command}\\\`\`}
 </proven_verify_commands>
-` : ''}
-${API_SURFACE_PATH ? `
-<intel_surface_hint>
-**API Surface (HINT — may be incomplete):** When \`intel.enabled\` is true, \`${API_SURFACE_PATH}\` lists symbols extracted from the codebase by regex/JS analysis. Prefer symbols listed there when referencing existing code. This surface is regex/JS-derived and MAY BE INCOMPLETE — a symbol's absence means *unknown*, not *nonexistent*. Never treat the surface as exhaustive. If you reference a symbol that is not in the surface and this phase creates it, list it under "Artifacts this phase produces".
-</intel_surface_hint>
 ` : ''}
 ${AGENT_SKILLS_PLANNER}
 
@@ -831,7 +537,6 @@ Rules + worked examples: @~/.claude/engineer/references/planner-failing-directio
 **Project instructions:** Read ./CLAUDE.md or ./.claude/CLAUDE.md if either exists — follow project-specific guidelines
 **Project skills:** Check .claude/skills/ or .agents/skills/ directory (if either exists) — read SKILL.md files, plans should account for project skill rules
 
-{For each active entry in `PLAN_PRE_HOOKS_JSON` where `kind == "contribution"` and `into == "planner"` (in array order): inject the entry's `fragment.inline` verbatim here. This delivers all planner-targeted contributions — including tdd's `<tdd_mode_active>` block (type:tdd heuristics), schema-gate's schema-push detection guidance (if active at plan:pre), and security's threat-model guidance. For the security contribution, also surface the resolved `configValues`: `security_asvs_level` (ASVS enforcement level) and `security_block_on` (severity threshold) so the planner uses the configured values when generating `<threat_model>` blocks. If no active planner contributions exist, omit this block entirely.}
 
 **REVERSIBILITY_GATES:** ${REVERSIBILITY_GATES} (false = rate but do not gate; see `planner-reversibility.md`.)
 **Granularity:** {granularity}
@@ -863,7 +568,6 @@ Output consumed by /execute-phase. Plans need:
 - If the SPEC has an `## Edge Coverage` section, lift every resolved (verification: explicit) edge's acceptance criterion into `must_haves.truths` as a plain string, and every resolved (verification: backstop) edge **as a structured flat-scalar marker** — an object item `{ statement: <the check>, verification: backstop }`, NOT a prose note (the verifier branches deterministically on the `verification: backstop` field; a parenthetical is unparseable — the  fragility). Use a flat scalar `verification:` continuation key, never a nested object. At verify time a `backstop` truth the verifier cannot confirm with explicit evidence abstains → `human_needed` (reason `insufficient_spec`), never a silent pass (see `engineer/references/honest-verifier.md`). `unresolved` edges are explicit assumptions — surface them in the plan, do not silently drop them. **Otherwise** (`EDGE_ABSENT`): apply the SAME lift to the fallback report `{COVERAGE}` (per §C of `engineer/references/specless-probe-fallback.md`); a SPEC-supplied section is never re-run.
 - If the SPEC has a `## Prohibitions` section, lift every resolved prohibition into the `must_haves.prohibitions:` sibling block (NOT `truths`) with `statement`+`status`+`verification`, via the single `projectProhibitions` serializer (Hyrum — no second serializer); unresolved -> flagged assumptions, don't drop; never put a must-NOT under `truths`. **Otherwise** (`PROHIB_ABSENT`), author the recalled prohibitions into the SAME block via the SAME `projectProhibitions` contract but **descriptor-less** (no `check_*`) so each disposes flagged-unverified; never auto-dismiss. Section-level precedence + no-silent-drop equality apply (§C).
 - If a `-UI-SPEC.md` exists (resolved above as `UI_SPEC_PATH`) with a `## UI Considerations` section, lift it by the **identical rule** as `## Edge Coverage` above — resolved (explicit) → `must_haves.truths` string, resolved (backstop) → flat scalar `{ statement, verification: backstop }`, `unresolved` → explicit planner assumption (no new verb). Read it from `UI_SPEC_PATH` (the SPEC glob excludes `-UI-SPEC.md`).
-- **"Artifacts this phase produces" section (MANDATORY)** — list every symbol this phase creates: decorators, classes, functions, CLI flags, struct/dataclass fields, new file paths. The plan-review-convergence source-grounding pass reads this section to exclude newly-created symbols from drift verification; omitting it causes new symbols to be flagged for acknowledgement.
 </downstream_consumer>
 <!-- engineer:protected:end -->
 
@@ -953,15 +657,15 @@ Agent(
 DISK_PLANS=$(engineer_run query find-phase "${PHASE_NUMBER}" | jq -r '.plan_count_all // 0')
 ```
 
-If `DISK_PLANS` is greater than 0 (a known Windows stdio hang pattern — the planner wrote plans to disk but the return never arrived), offer: 1) Accept plans (treat as `## PLANNING COMPLETE`), 2) Retry planner (return to step 8), 3) Stop. If it is 0 and no marker, treat as `## PLANNING INCONCLUSIVE`. Full banner text: `engineer/workflows/plan-phase/detail/elaboration.md` § 9a.
+If `DISK_PLANS` is greater than 0 (a known Windows stdio hang pattern — the planner wrote plans to disk but the return never arrived), offer: 1) Accept plans (treat as `## PLANNING COMPLETE`), 2) Retry planner (return to step 8), 3) Stop. If it is 0 and no marker, treat as `## PLANNING INCONCLUSIVE`.
 
 ## 9b. Handle Phase Split Recommendation
 
-When the planner returns `## PHASE SPLIT RECOMMENDED`, the phase's source items exceed the context budget for full-fidelity implementation. Extract the planner's proposed sub-phase groupings and present the user three options via AskUserQuestion: Split into sub-phases (use `/phase --insert`, then replan each), Proceed anyway (return to planner accepting degraded quality), or Prioritize (AskUserQuestion multiSelect to choose now vs. later, create CONTEXT.md per sub-phase). Full banner text: `engineer/workflows/plan-phase/detail/elaboration.md` § 9b.
+When the planner returns `## PHASE SPLIT RECOMMENDED`, the phase's source items exceed the context budget for full-fidelity implementation. Extract the planner's proposed sub-phase groupings and present the user three options via AskUserQuestion: Split into sub-phases (use `/phase --insert`, then replan each), Proceed anyway (return to planner accepting degraded quality), or Prioritize (AskUserQuestion multiSelect to choose now vs. later, create CONTEXT.md per sub-phase).
 
 ## 9c. Handle Source Audit Gaps
 
-When the planner returns `## ⚠ Source Audit: Unplanned Items Found`, items from REQUIREMENTS.md, RESEARCH.md, ROADMAP goal, or CONTEXT.md decisions have no corresponding plan. Present each gap to the user with three options: Add a plan (return to planner, step 8), Split phase (`/phase --insert`, then replan), or Defer (record in CONTEXT.md `## Deferred Ideas` with developer confirmation, proceed to step 10). Full banner text: `engineer/workflows/plan-phase/detail/elaboration.md` § 9c.
+When the planner returns `## ⚠ Source Audit: Unplanned Items Found`, items from REQUIREMENTS.md, RESEARCH.md, ROADMAP goal, or CONTEXT.md decisions have no corresponding plan. Present each gap to the user with three options: Add a plan (return to planner, step 8), Split phase (`/phase --insert`, then replan), or Defer (record in CONTEXT.md `## Deferred Ideas` with developer confirmation, proceed to step 10).
 
 ## 10. Spawn plan-checker Agent
 
@@ -996,7 +700,7 @@ Checker prompt:
 <verification_context>
 **Phase:** {phase_number}
 **Phase Goal:** {goal from ROADMAP}
-**Mode:** {standard | gap_closure | reviews}
+**Mode:** {standard | gap_closure}
 
 <required_reading>
 - {PHASE_DIR}/*-PLAN.md (Plans to verify)
@@ -1004,7 +708,6 @@ Checker prompt:
 - {requirements_path} (Requirements)
 - {context_path} (USER DECISIONS from /discuss-phase)
 - {research_path} (Technical Research — includes Validation Architecture)
-- {reviews_path} (Cross-AI Review Feedback - if --reviews; verify actionable findings are represented in PLAN.md)
 </required_reading>
 
 ${AGENT_SKILLS_CHECKER}
@@ -1076,7 +779,7 @@ Agent(
 - **`stalled`:** Automatically surface 11a's recovery choice (Accept verification / Retry checker / Stop) — no manual interrupt needed.
 - **Empty / truncated / no recognized marker:** → Filesystem fallback (step 11a).
 
-**Thinking partner for architectural tradeoffs (conditional):** If `features.thinking_partner` is enabled and the checker's issues contain architectural tradeoff keywords ("architecture", "approach", "strategy", "pattern", "vs", "alternative"), present a brief Option A/B analysis with a recommendation and ask "Apply this to the revision? [Yes] / [No, I'll decide]". If disabled, skip. Full prompt template: `engineer/workflows/plan-phase/detail/elaboration.md` § 11 thinking-partner.
+**Thinking partner for architectural tradeoffs (conditional):** If `features.thinking_partner` is enabled and the checker's issues contain architectural tradeoff keywords ("architecture", "approach", "strategy", "pattern", "vs", "alternative"), present a brief Option A/B analysis with a recommendation and ask "Apply this to the revision? [Yes] / [No, I'll decide]". If disabled, skip.
 
 ## 11a. Filesystem Fallback (Checker)
 
@@ -1086,7 +789,7 @@ Agent(
 DISK_PLANS=$(engineer_run query find-phase "${PHASE_NUMBER}" | jq -r '.plan_count_all // 0')
 ```
 
-If `DISK_PLANS` is greater than 0 (plans exist on disk; a known Windows stdio hang pattern), offer: 1) Accept verification (treat as `## VERIFICATION PASSED`, continue to step 13), 2) Retry checker (return to step 10), 3) Stop. If it is 0, something is seriously wrong — display error and stop. Full banner text: `engineer/workflows/plan-phase/detail/elaboration.md` § 11a.
+If `DISK_PLANS` is greater than 0 (plans exist on disk; a known Windows stdio hang pattern), offer: 1) Accept verification (treat as `## VERIFICATION PASSED`, continue to step 13), 2) Retry checker (return to step 10), 3) Stop. If it is 0, something is seriously wrong — display error and stop.
 
 ## 12. Revision Loop (Max 3 Iterations)
 
@@ -1169,73 +872,12 @@ Agent(
 **If the planner returns `## REVISION_CONFLICT`:** follow the shared Conflict Return protocol in
 `engineer/references/revision-loop.md`, with this workflow's bindings:
 
-```bash
-if ! CONVERGENCE_ENABLED=$(engineer_run query config-get workflow.plan_review_convergence --raw 2>/dev/null); then
-  echo "BLOCKED: cannot read workflow.plan_review_convergence." >&2
-  exit 1
-fi
-REVIEWS_FILE="${REVIEWS_PATH}"
-if [ "${CONVERGENCE_ENABLED}" = "true" ] && [ -n "${REVIEWS_FILE}" ] && [ ! -f "${REVIEWS_FILE}" ]; then
-  echo "BLOCKED: cannot persist plan-revision conflict -- REVIEWS_PATH not a regular file: ${REVIEWS_FILE}" >&2
-  exit 1
-fi
-```
 
 - Counter not spent: `iteration_count`.
-- Record channel: `$REVIEWS_FILE`'s `## Plan-Revision Conflicts` section. plan-phase wrote the
-  line, so plan-phase closes it.
+- Record channel: the phase CONTEXT conflict record, maintained by the coordinator; record the conflicting property, evidence, alternatives and actual resolution.
 - After re-spawning, return to this step, not the checker.
 - Escalates via the iteration cap on repeated `required_property`, and on the THIRD conflict
   return of this loop whatever property it names.
-- Sanitize-then-insert is real shell; fields reach `awk` via `ENVIRON`, never `-v` (decodes
-  literal `\n` as a real newline). Export the row's
-  `CONFLICT_DIMENSION/_PLAN/_PROPERTY/_CONSTRAINT/_ALTERNATIVES`, then run:
-
-```bash
-if [ "${CONVERGENCE_ENABLED}" = "true" ] && [ -n "${REVIEWS_FILE}" ]; then
-  san() { printf '%s' "$1" | tr '\r\n\t' '   ' | sed -E 's/^[[:space:]]*[#|`-]+[[:space:]]*//'; }
-  LINE="- [ ] REVISION_CONFLICT $(san "${CONFLICT_DIMENSION}")/$(san "${CONFLICT_PLAN}") — required_property: $(san "${CONFLICT_PROPERTY}") | conflicts with: $(san "${CONFLICT_CONSTRAINT}") | alternatives: $(san "${CONFLICT_ALTERNATIVES}")"
-  END='<!-- engineer:plan-revision-conflicts:end -->'
-  TMP=$(mktemp "${REVIEWS_FILE}.XXXXXX")
-  if ! LINE="$LINE" END="$END" awk '
-    { cur = $0; sub(/\r$/, "", cur) }
-    cur == ENVIRON["LINE"] { seen = 1 }
-    cur == ENVIRON["END"] && !ins { if (!seen) print ENVIRON["LINE"]; ins = 1 }
-    { print }
-    END { if (!ins) exit 2 }
-  ' "${REVIEWS_FILE}" > "${TMP}"; then
-    rm -f "${TMP}"
-    echo "BLOCKED: no end delimiter in '${REVIEWS_FILE}'." >&2
-    exit 1
-  fi
-  mv "${TMP}" "${REVIEWS_FILE}"
-fi
-```
-
-**Otherwise (revised plans, not `## REVISION_CONFLICT`):** if this re-spawn followed a
-resolved conflict, close its record — nothing persists across fences, so export `REVIEWS_FILE`,
-the same `CONFLICT_DIMENSION`/`CONFLICT_PLAN` used to open it, and `CONFLICT_RESOLUTION` (a
-one-line summary). Then run:
-
-```bash
-if [ "${CONVERGENCE_ENABLED}" = "true" ] && [ -n "${REVIEWS_FILE}" ]; then
-  san() { printf '%s' "$1" | tr '\r\n\t' '   ' | sed -E 's/^[[:space:]]*[#|`-]+[[:space:]]*//'; }
-  PREFIX="- [ ] REVISION_CONFLICT $(san "${CONFLICT_DIMENSION}")/$(san "${CONFLICT_PLAN}") — "
-  RES=$(printf '%s' "${CONFLICT_RESOLUTION}" | tr '\r\n\t' '   ')
-  TMP=$(mktemp "${REVIEWS_FILE}.XXXXXX")
-  if ! PREFIX="$PREFIX" RES="$RES" awk '
-    { cur = $0; sub(/\r$/, "", cur) }
-    !d && index(cur, ENVIRON["PREFIX"]) == 1 { print "- [x]" substr(cur, 6) " | resolved: " ENVIRON["RES"]; d = 1; next }
-    { print }
-    END { if (!d) exit 2 }
-  ' "${REVIEWS_FILE}" > "${TMP}"; then
-    rm -f "${TMP}"
-    echo "BLOCKED: no open conflict '${CONFLICT_DIMENSION}/${CONFLICT_PLAN}' in '${REVIEWS_FILE}'." >&2
-    exit 1
-  fi
-  mv "${TMP}" "${REVIEWS_FILE}"
-fi
-```
 
 Spawn checker again (step 10), then increment `iteration_count`.
 
@@ -1247,11 +889,6 @@ Display: `Max iterations reached. {N} issues remain:` + issue list
 
 Offer: 1) Force proceed, 2) Provide guidance and retry, 3) Abandon
 
-## 12.5. Plan Bounce (Optional External Refinement)
-
-**Skip if:** `--skip-bounce`, `--gaps`, or bounce not activated (`--bounce` flag or `workflow.plan_bounce` config; `--skip-bounce` always wins). Requires `workflow.plan_bounce_script` set to a valid script path — warn and skip if bounce is activated with no script configured.
-
-For each `*-PLAN.md`: back it up to `*-PLAN.pre-bounce.md`, invoke `${BOUNCE_SCRIPT}` with the plan file and `workflow.plan_bounce_passes` (default 2), validate the result's YAML frontmatter integrity, and restore from backup on either broken frontmatter or a non-zero script exit. After all plans are bounced, re-run the plan checker (step 10) on the modified plans, restoring any that fail. Commit surviving bounced plans if at least one survived (`refactor(${padded_phase}): bounce plans through external refinement`), display a `{survived}/{total}` summary, and remove all `*-PLAN.pre-bounce.md` backups. Exact banner text, messages, and commands: `engineer/workflows/plan-phase/detail/elaboration.md` § 12.5.
 
 ## 13. Requirements Coverage Gate
 
@@ -1382,23 +1019,10 @@ engineer_run query state.planned-phase --phase "${PHASE_NUMBER}" --name "${PHASE
 
 This updates STATUS to "Ready to execute", sets the correct plan count, and timestamps Last Activity.
 
-## 13c. Annotate ROADMAP with Wave Dependencies and Cross-cutting Constraints
-
-After plans are finalized, annotate the ROADMAP.md plan list for this phase with:
-- **Wave dependency notes** — a bold header before each wave group ("Wave 2 *(blocked on Wave 1 completion)*")
-- **Cross-cutting constraints** — a "Cross-cutting constraints:" subsection listing `must_haves.truths` entries that appear in 2 or more plans
-
-This step is derived entirely from existing PLAN frontmatter — no extra LLM pass is required.
-
-```bash
-engineer_run query roadmap.annotate-dependencies "${PHASE_NUMBER}"
-```
-
-This operation is idempotent: if wave headers or cross-cutting constraints already exist in the ROADMAP phase section, the command returns without modifying the file. Skip this step if `plan_count` is 0.
 
 ## 13d. Commit Plans if commit_docs is true
 
-If `commit_docs` is true (from the init JSON parsed in step 1), commit the generated plan artifacts (including any ROADMAP.md annotations from step 13c):
+If `commit_docs` is true (from the init JSON parsed in step 1), commit the generated plan artifacts (including the current planning records):
 
 ```bash
 engineer_run query commit "docs(${PADDED_PHASE}): create phase plan" --files "${PHASE_DIR}"/*-PLAN.md .planning/STATE.md .planning/ROADMAP.md
@@ -1406,69 +1030,13 @@ engineer_run query commit "docs(${PADDED_PHASE}): create phase plan" --files "${
 
 This commits all PLAN.md files for the phase plus the updated STATE.md and ROADMAP.md to version-control the planning artifacts. Skip this step if `commit_docs` is false.
 
-## 13e. Post-Planning Gap Analysis (plan:post capability gate dispatch)
-
-Proactive, non-blocking coverage report gated on `workflow.post_planning_gaps`
-(default `true`). Dispatched via the `plan:post` capability gate owned by the
-`gap-analysis` capability. Reads REQUIREMENTS.md and CONTEXT.md
-`<decisions>` and cross-references each REQ-ID / D-ID against `${PHASE_DIR}/*-PLAN.md`.
-
-```bash
-IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
-$ARGUMENTS
-ENGINEER_ARGS_END
-ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
-PLAN_POST_HOOKS_JSON=$(engineer_run loop render-hooks plan:post --raw)
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-PHASE_REQ_IDS=$(engineer_run query init.plan-phase ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} "$PHASE" --pick phase_req_ids 2>/dev/null)
-PHASE_REQ_IDS="${PHASE_REQ_IDS:-TBD}"
-```
-
-Read the `activeHooks` array from `PLAN_POST_HOOKS_JSON` in-context. If
-`activeHooks` is empty or absent, skip this step silently — do NOT key the skip
-on any one capability's gate being absent.
-
-**Step and contribution dispatch:** dispatch every `kind == "step"` hook and inject every `kind == "contribution"` fragment per @~/.claude/engineer/references/loop-hook-dispatch.md (skip each kind silently when none), before gate evaluation below.
-
-⚠ **Validate `check` before shell use** (third-party manifest input; wherever `${hook.check.query}` appears, write the dot-normalized query, each `.` as `-`, and validate and pass that same value) — `loop-hook-dispatch.md` § `gate`.
-
-**For each active entry where `kind == "gate"`** (process in array order). **Dispatch by check shape** (the registry validates exactly one of `query`/`predicate`/`agentVerdict`):
-
-```bash
-# named-query gate:
-GATE_RESULT=$(engineer_run check ${hook.check.query} "${PHASE_DIR}" "${PHASE_REQ_IDS}" --raw) && CHECK_EXIT=0 || CHECK_EXIT=$?
-```
-OR, for a generic `predicate` gate, inline the predicate as compact JSON (note the `--phase-dir`/`--phase-number`/`--phase-req-ids` flags feed `${PHASE_DIR}`/`${PHASE_NUMBER}`/`${PHASE_REQ_IDS}` interpolation):
-```bash
-GATE_RESULT=$(engineer_run check predicate --predicate '<hook.check.predicate as JSON>' --phase-dir "${PHASE_DIR}" --phase-number "${PHASE_NUMBER}" --phase-req-ids "${PHASE_REQ_IDS}" --raw) && CHECK_EXIT=0 || CHECK_EXIT=$?
-```
-(Read the hook's `check` object in-context to pick the branch; a gate with neither is a malformed registry entry — skip with a warning.)
-
-**Step 1 — did the CHECK COMMAND itself succeed?**
-If the check command failed (non-zero `CHECK_EXIT`, empty output, or unparseable JSON):
-- `onError == "halt"` → halt and surface command error.
-- `onError == "skip"` → log a warning and continue to the next hook.
-
-**Step 2 — read `GATE_RESULT.block` (boolean).** Only reached when command succeeded.
-
-- If `hook.blocking == true` and `GATE_RESULT.block == true`: halt. (gap-analysis is always `blocking: false` so this branch is informational only.)
-- If `hook.blocking == false` (advisory): if `GATE_RESULT.block == true` or non-empty `table`/`summary`, output the gap table and continue. Advisory gates never block phase completion.
-- If `hook.blocking == true` and `GATE_RESULT.block == false`: continue silently.
-
-## 14. Present Final Status
-
-Route to `<offer_next>` OR `auto_advance` depending on flags/config.
-
-## 15. Auto-Advance Check
-
-Read and execute `engineer/workflows/plan-phase/steps/auto-advance-check.md` — it parses `--auto` / `--chain` from `$ARGUMENTS`, syncs the ephemeral `workflow._auto_chain_active` flag with the invocation, and, when auto-advance applies, launches execute-phase through the Skill tool (flat, `--no-transition`) and handles its return. Otherwise route to `<offer_next>`.
 
 </process>
 
 <offer_next>
 Output this markdown directly (not as a code block):
 
-`${GAPS_EXEC_FLAG}` projects the just-completed planning mode onto the follow-up execute command: it expands to `--gaps-only` for a `--gaps` planning run (so the handoff points at execute-phase's gap-closure scope — only the newly created `gap_closure: true` plans — not the whole phase) and to empty for a standard or `--reviews` run (whole-phase scope, unchanged). Substitute it verbatim; when empty, collapse the extra space.
+`${GAPS_EXEC_FLAG}` projects the just-completed planning mode onto the follow-up execute command: it expands to `--gaps-only` for a `--gaps` planning run (so the handoff points at execute-phase's gap-closure scope — only the newly created `gap_closure: true` plans — not the whole phase) and to empty for a standard or run (whole-phase scope, unchanged). Substitute it verbatim; when empty, collapse the extra space.
 
 ### Engineer ► PHASE {X} PLANNED ✓
 
@@ -1490,7 +1058,7 @@ Verification: {Passed | Passed with override | Skipped}
 
 /clear then:
 
-/execute-phase {X} ${GAPS_EXEC_FLAG} ${ENGINEER_WS}
+/execute-phase {X} ${GAPS_EXEC_FLAG}
 
 ---
 
@@ -1498,7 +1066,6 @@ Verification: {Passed | Passed with override | Skipped}
 - cat .planning/phases/{phase-dir}/*-PLAN.md — review plans
 - /plan-phase {X} --research — re-research first
 - /review --phase {X} --all — peer review plans with external AIs
-- /plan-phase {X} --reviews — replan incorporating review feedback
 
 ---
 </offer_next>

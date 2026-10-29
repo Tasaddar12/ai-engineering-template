@@ -123,7 +123,6 @@ hint / amend the constraint itself. Every option resolves the conflict. Acceptin
 the blocker still open is NOT offered here — the blocking `required_property` still fails, and
 that choice belongs to the iteration-exhaustion escalation below, unchanged.
 
-A quick-batch item has no REVIEWS.md and no phase, so `workflow.plan_review_convergence` has
 nothing to arbitrate over here; the user is the only route. Re-spawn the planner with the chosen
 resolution, then re-evaluate its return from the top of this handler — do not fall through to the
 checker spawn below. A second conflict is still a conflict, not a revised plan.

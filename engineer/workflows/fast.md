@@ -115,23 +115,7 @@ Use conventional commit format: `fix:`, `feat:`, `docs:`, `chore:`, `refactor:` 
 </step>
 
 <step name="log_to_state">
-If `.planning/STATE.md` exists and has a "Quick Tasks Completed" table, append a row
-that matches the existing table's schema via the schema-backed `engineer_run
-quick-tasks-append` helper (`markdown-table.cjs`'s `appendQuickTaskRow`).
-If no table exists, skip silently. If the table's schema is
-unrecognized, the helper fails loud (non-zero exit) instead of silently guessing
-a column count.
-
-```bash
-# Detect whether STATE.md has a Quick Tasks Completed table
-if grep -q "Quick Tasks Completed" .planning/STATE.md 2>/dev/null; then
-  # Bring a legacy pre-registry table onto the canonical schema BEFORE
-  # appending — silent no-op when already canonical, so this runs harmlessly
-  # on every fast task and migrates exactly once, on the first.
-  engineer_run quick-tasks-migrate || true
-  engineer_run quick-tasks-append --task "$TASK" || echo "⚠ fast.md log_to_state: could not append Quick Tasks row (see message above); continuing."
-fi
-```
+Record the completed task through `engineer_run query quick-tasks-append --task "$TASK"`. The runtime owns quick-task records; inspect and report persistence errors rather than guessing a STATE.md table schema.
 </step>
 
 <step name="done">

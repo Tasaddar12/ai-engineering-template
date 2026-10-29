@@ -13,7 +13,8 @@ Instantly restore full project context so "Where were we?" has an immediate, com
 </purpose>
 
 <required_reading>
-@~/.claude/engineer/references/continuation-format.md
+Preserve the recorded phase, plan, blockers, completed commits and next action in every continuation. Read actual session records before choosing a route; never infer completion from position alone.
+
 </required_reading>
 
 <process>
@@ -27,9 +28,7 @@ $ARGUMENTS
 ENGINEER_ARGS_END
 ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 _ENGINEER_SHIM_NAME="engineer_run"; _ENGINEER_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; ENGINEER_TOOLS="${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}"; _engineer_at() { for _p; do if [ -f "$_p" ]; then ENGINEER_TOOLS="$_p"; return 0; fi; done; return 1; }; _engineer_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"engineer-runtime"'*'}') return 0;; *) return 1;; esac; }; _engineer_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _engineer_at "$_h/engineer/bin/${_ENGINEER_SHIM_NAME}" && return 0; done; return 1; }; if _engineer_at "${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.claude/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.codex/engineer/bin/${_ENGINEER_SHIM_NAME}"; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif _engineer_homes; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif unset -f engineer_run; _G="$(command -v engineer_run)"; [ -n "$_G" ] && _engineer_id_ok "$_G"; then ENGINEER_TOOLS="$_G"; engineer_run() { "$ENGINEER_TOOLS" "$@"; }; else echo "ERROR: engineer_run not found at $ENGINEER_TOOLS and no identity-proving engineer_run is on PATH. Run: python -I bin/install.py --source <local-source> --ref <pinned-ref> --target <project-root> --host claude --local" >&2; exit 1; fi; ENGINEER_IDENTITY_STATUS=unverified; _engineer_id_ok engineer_run && ENGINEER_IDENTITY_STATUS=ok; export ENGINEER_IDENTITY_STATUS; [ "$ENGINEER_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$ENGINEER_TOOLS\" did not prove it is engineer-runtime - it is either a different package or an engineer-runtime older than the runtime-identity verb." >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${ENGINEER_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${ENGINEER_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.resume ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
+INIT=$(engineer_run query init.resume )
 ```
 
 Parse JSON for: `state_exists`, `roadmap_exists`, `project_exists`, `planning_exists`, `requirements_exists`, `init_incomplete`, `has_interrupted_agent`, `interrupted_agent_id`, `commit_docs`.
@@ -236,11 +235,11 @@ What would you like to do?
 [Primary action based on state - e.g.:]
 1. Resume interrupted agent [if interrupted agent found]
    OR
-1. Execute phase (/execute-phase {phase} ${ENGINEER_WS})
+1. Execute phase (/execute-phase {phase} )
    OR
-1. Discuss Phase 3 context (/discuss-phase 3 ${ENGINEER_WS}) [if CONTEXT.md missing]
+1. Discuss Phase 3 context (/discuss-phase 3 ) [if CONTEXT.md missing]
    OR
-1. Plan Phase 3 (/plan-phase 3 ${ENGINEER_WS}) [if CONTEXT.md exists or discuss option declined]
+1. Plan Phase 3 (/plan-phase 3 ) [if CONTEXT.md exists or discuss option declined]
 
 [Secondary options:]
 2. Review current phase status
@@ -273,7 +272,7 @@ Resume-specific exception: do **not** emit `/clear then:` here. Resume is alread
 
   **{phase}-{plan}: [Plan Name]** — [objective from PLAN.md]
 
-  `/execute-phase {phase} ${ENGINEER_WS}`
+  `/execute-phase {phase} `
 
   ---
   ```
@@ -285,17 +284,17 @@ Resume-specific exception: do **not** emit `/clear then:` here. Resume is alread
 
   **Phase [N]: [Name]** — [Goal from ROADMAP.md]
 
-  `/plan-phase [phase-number] ${ENGINEER_WS}`
+  `/plan-phase [phase-number] `
 
   ---
 
   **Also available:**
-  - `/discuss-phase [N] ${ENGINEER_WS}` — gather context first
-  - `/plan-phase --research-phase [N] ${ENGINEER_WS}` — investigate unknowns
+  - `/discuss-phase [N] ` — gather context first
+  - `/plan-phase --research-phase [N] ` — investigate unknowns
 
   ---
   ```
-- **Advance to next phase** → ./transition.md (internal workflow, invoked inline — NOT a user command)
+- **Advance to next phase** → the completion path in `engineer/workflows/verify-work.md` (internal workflow)
 - **Check todos** → Read .planning/todos/pending/, present summary
 - **Review alignment** → Read PROJECT.md, compare to current state
 - **Something else** → Ask what they need

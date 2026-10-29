@@ -1,10 +1,4 @@
-<!-- engineer:loop-host
-step: ship
-points: ship:pre, ship:post
-agent-roles: orchestrator
-produces:
-consumes: UAT.md
--->
+<!-- workflow: native orchestrator and declared agents -->
 <purpose>
 Create a pull request from completed phase/milestone work, generate a rich PR body from planning artifacts, optionally run code review, and prepare for merge. Closes the plan → execute → verify → ship loop.
 </purpose>
@@ -15,7 +9,6 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 <available_agent_types>
 Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
-- mempalace-curator — Ship-time MemPalace curation (diary, KG mirror, cross-project tunnels, wing-scoped prune); dispatched at ship:post when the mempalace capability is enabled.
 </available_agent_types>
 
 <process>
@@ -71,10 +64,8 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --default "" 2>/dev/null || echo "")
-PHASE_ARG=$(echo "$ENGINEER_ARGS" | sed -E 's/--ws[[:space:]]+[A-Za-z0-9._-]+//g' | xargs)
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.phase-op ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} "${PHASE_ARG}")
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
+PHASE_ARG=$(echo "$ENGINEER_ARGS" | xargs)
+INIT=$(engineer_run query init.phase-op  "${PHASE_ARG}")
 ```
 
 **If `response_language` is set:** All user-facing output of this workflow — narration between tool calls, status updates, progress notes, findings, questions, prompts, and explanations — MUST be presented in `{response_language}`. Technical terms, code, file paths, and subagent prompts stay in English — only user-facing output is translated.
@@ -145,92 +136,6 @@ Verify the work is ready to ship:
    ```
    If `gh` not found or not authenticated: provide setup instructions and exit.
 
-6. **Capability ship gates and steps (generic dispatch).**
-
-   Resolve active `ship:pre` hooks from the capability registry — the registry evaluates each hook's `when` condition, so do **not** read `workflow.security_enforcement` or `workflow.windows_enforce` directly:
-
-   ```bash
-   SHIP_PRE_HOOKS_JSON=$(engineer_run loop render-hooks ship:pre --raw)
-   SECURITY_FILE=$(ls "${PHASE_DIR}"/*-SECURITY.md 2>/dev/null | head -1)
-   ```
-
-   Read the `activeHooks` array from `SHIP_PRE_HOOKS_JSON` in-context (do NOT pipe it through a shell parser).
-
-   **If `activeHooks` is empty or absent:** skip this check silently and continue to the next preflight step. A capability whose `when` is off contributes no entry, and one that failed to load fails OPEN with its own warning from the resolver — neither is a block.
-
-   **For each active entry where `kind == "gate"`** (process in array order), following `engineer/references/loop-hook-dispatch.md`. Every gate is visited exactly once by this loop — the named branches below are specializations *within* it, never a separate pass, so no gate is evaluated twice.
-
-   **Step 1 — evaluate the gate's `check`.** Dispatch by check shape; read the hook's `check` object in-context to pick the branch (the registry validates exactly one of `query`/`predicate`/`agentVerdict`). Two capability IDs carry a bespoke evaluation whose fail-closed semantics the declared predicate alone does not reproduce — take their branch, then rejoin at step 2:
-
-   - **`capId == "security"`** — enforce against `SECURITY_FILE`:
-     - **`SECURITY_FILE` is empty** → `block: true`, `SECURITY_SHIP_GATE_NO_REVIEW`:
-       ```
-       ⚠ Security enforcement is enabled but no SECURITY.md exists for this phase.
-       Run /secure-phase {phase} and resolve findings before shipping.
-       ```
-     - **`SECURITY_FILE` exists** → read its frontmatter `threats_open`. The gate passes **only** when `threats_open` is exactly `0`. For any other value — `threats_open` > 0, or a missing / non-numeric / unparsable field — **fail closed** with `block: true` and `SECURITY_SHIP_GATE_OPEN_THREATS` (the predicate is strict equality to `0`; never ship on an ambiguous value):
-       ```
-       ⚠ Security ship gate: SECURITY.md does not assert threats_open == 0 (found: {threats_open|unset}).
-       Resolve open threats (or re-run /secure-phase {phase}) before shipping.
-       ```
-
-   - **`capId == "broken-windows"`** — enforce against the ledger's typed status. The ledger lives at the **project root** (cross-phase, not phase-scoped):
-
-     ```bash
-     WINDOWS_STATUS_JSON=$(engineer_run windows status --raw 2>/dev/null || echo '')
-     WINDOWS_OPEN_COUNT=$(printf '%s' "$WINDOWS_STATUS_JSON" | jq -r '.ledger.open_count // "?"' 2>/dev/null || echo '?')
-     ```
-
-     - **`WINDOWS_OPEN_COUNT == "0"`** → `block: false`; the gate passes.
-     - **`WINDOWS_OPEN_COUNT` is a positive integer** → `block: true`, `WINDOWS_SHIP_GATE_OPEN`:
-       ```
-       ⚠ Broken-windows ship gate: WINDOWS.md has {WINDOWS_OPEN_COUNT} open window(s).
-       Resolve each entry before shipping, or explicitly waive with a recorded reason:
-         engineer_run windows fixed <id>      # defect resolved
-         engineer_run windows waive <id> "<reason>"   # justified deferral (reason required)
-       Then re-run /ship.
-       ```
-     - **`WINDOWS_OPEN_COUNT` is `"?"`, empty, or non-numeric** → **fail closed** with `block: true` and `WINDOWS_SHIP_GATE_READ_FAILED` (the gate is strict equality to `0`; never ship on an unreadable ledger):
-       ```
-       ⚠ Broken-windows ship gate: could not read open_count from .planning/WINDOWS.md.
-       Inspect the file or run `engineer_run windows status --raw` to diagnose. The ledger
-       may be malformed; fix it before shipping (an unparseable ledger is a broken window).
-       ```
-
-     The ledger is **optional and backward-compatible**: on a project where `engineer_run windows status` returns `open_count: 0` (no `.planning/WINDOWS.md` yet, or an empty ledger), the gate passes silently. It only blocks when at least one entry is `open`.
-
-   - **Every other `capId`** — run the gate's own declared check through the generic evaluator. This arm is what makes a third-party capability's declared gate enforceable at all; before it existed, a gate whose `capId` was not named above was resolved and then silently dropped.
-
-     ⚠ **Validate `check` before shell use** (third-party manifest input; wherever `${hook.check.query}` appears, write the dot-normalized query, each `.` as `-`, and validate and pass that same value) — `loop-hook-dispatch.md` § `gate`.
-
-     For a named-query gate (only a value that has passed validation is run):
-     ```bash
-     GATE_RESULT=$(engineer_run check ${hook.check.query} "${PHASE_DIR}" --raw) && CHECK_EXIT=0 || CHECK_EXIT=$?
-     ```
-
-     (The named-query argument convention — a single `"${PHASE_DIR}"` positional — mirrors `verify-work.md`'s `verify:pre` arm verbatim. No capability declares a `check.query` gate at `ship:pre` today; the arm exists so the documented check contract is complete rather than half-implemented.)
-
-     For a `predicate` gate, serialize `hook.check.predicate` to compact JSON and pass it as a **single argv element**:
-     ```bash
-     GATE_RESULT=$(engineer_run check predicate --predicate '<hook.check.predicate as JSON>' --phase-dir "${PHASE_DIR}" --phase-number "${PHASE_NUMBER}" --raw) && CHECK_EXIT=0 || CHECK_EXIT=$?
-     ```
-     A gate carrying neither — including an `agentVerdict` check, which has no runner at `ship:pre` — cannot be evaluated here. Record a warning naming the `capId` and treat it as a check-command failure routed per step 1a, **never** as a silent pass.
-
-   **Step 1a — did the CHECK COMMAND itself fail?** (non-zero `CHECK_EXIT`, empty output, or unparseable JSON). The two named branches above cannot reach this state — their failure modes are already folded into a fail-closed `block: true`.
-   - **`onError == "halt"`** → stop the ship. Do NOT push, do NOT create a PR. Surface: `⚠ Gate check command failed ({hook.capId}): command error. Resolve before shipping.`
-   - **`onError == "skip"`** → record a warning naming the `capId`, then continue to the next gate. Do NOT read `GATE_RESULT.block`.
-
-   **Step 2 — read the gate's `block` decision.** Only reached when the check produced a verdict.
-
-   - **`blocking == true` and `block == true`** → HALT the ship — do NOT push, do NOT create a PR — surfacing that gate's own message:
-     ```
-     ⚠ Ship blocked by capability gate ({hook.capId}): {message}
-     ```
-     This halt is **not** bypassed by `onError` — `onError` covers check-command failure (step 1a), never the gate's block decision.
-   - **`blocking == false`** (advisory) → never halts. If `block == true` or the result carries a non-empty message, print `⚠ {hook.capId} advisory: {message}`, then continue.
-   - **`blocking == true` and `block == false`** → continue silently.
-
-   **Step dispatch** (unless a blocking gate halted): `kind == "step"` per @~/.claude/engineer/references/loop-hook-dispatch.md; honor `consumes` (skip the hook if a consumed artifact is absent) and treat `onError: halt` as `skip` with a warning, since steps never block ship. ⚠ Validate `ref.command` and `ref.agent` (against `^[A-Za-z0-9][A-Za-z0-9._-]*$`) in-context before any shell use or dispatch; skip a hook that fails. Then continue to the `push_branch` step.
 </step>
 
 <step name="push_branch">
@@ -249,7 +154,7 @@ Report: "Pushed `{branch}` to origin ({commit_count} commits ahead of ${BASE_BRA
 </step>
 
 <step name="generate_pr_body">
-Auto-generate a rich PR body from planning artifacts:
+Use the canonical Git workflow and existing PR template. Fill its required sections from the planning artifacts and preserve the TDD audit evidence below.
 
 **1. Title:**
 ```
@@ -304,54 +209,6 @@ For each SUMMARY.md in the phase directory:
 {Decisions from STATE.md accumulated context relevant to this phase}
 ```
 
-**7. Configured project sections:**
-Read append-only project-specific PRD/PR body sections from config:
-
-```bash
-CUSTOM_PR_SECTIONS=$(engineer_run query config-get ship.pr_body_sections --default '[]' 2>/dev/null || echo '[]')
-```
-
-`ship.pr_body_sections` is an onboarding-time extension point for teams that need extra PRD-style sections such as `User Stories & Acceptance Criteria`, `Risks & Dependencies`, `Success Metrics`, `Release Criteria`, or `Stakeholder Review & Approval`.
-
-Use these sections for lean/agile PRD material that should travel with the PR without making the core `/ship` body configurable:
-
-- User stories and acceptance criteria that explain the functional increment from the user's point of view.
-- Definition of Done or release criteria that make the completion standard explicit.
-- Risks, dependencies, stakeholder review, and traceability notes needed by regulated or approval-heavy projects.
-
-Rules:
-
-- Treat configured sections as append-only. They are rendered after `Key Decisions` and cannot replace, remove, or reorder the required core sections: `Summary`, `Changes`, `Requirements Addressed`, `Verification`, and `Key Decisions`.
-- Each entry must have `heading` plus at least one of `source`, `template`, or `fallback`.
-- `enabled` defaults to `true`; when `enabled` is `false`, skip the section without warning. This lets onboarding seed optional sections that a project can enable later.
-- `source` is a fallback chain of planning artifact headings: `PLAN.md ## Risks || VERIFICATION.md ## Manual Checks`. Allowed artifacts are `ROADMAP.md`, `PLAN.md`, `SUMMARY.md`, `VERIFICATION.md`, `STATE.md`, `REQUIREMENTS.md`, and `CONTEXT.md`.
-- `template` is literal Markdown with a closed token namespace only: `{phase_number}`, `{phase_name}`, `{phase_dir}`, `{base_branch}`, `{padded_phase}`.
-- `fallback` is literal Markdown used when `source` finds no content and no `template` is present.
-- Omit sections whose final rendered body is empty after trimming.
-
-Example configured sections:
-
-```json
-[
-  {
-    "heading": "User Stories & Acceptance Criteria",
-    "enabled": true,
-    "source": "REQUIREMENTS.md ## User Stories || REQUIREMENTS.md ## Acceptance Criteria",
-    "fallback": "- Acceptance criteria are covered by the linked requirements and verification evidence."
-  },
-  {
-    "heading": "Risks & Dependencies",
-    "enabled": true,
-    "source": "PLAN.md ## Risks || PLAN.md ## Dependencies",
-    "fallback": "- No known high-risk rollout dependencies."
-  },
-  {
-    "heading": "Stakeholder Review & Approval",
-    "enabled": false,
-    "template": "- Product owner approval pending for {phase_name}."
-  }
-]
-```
 
 **8. TDD Audit section:**
 
@@ -390,11 +247,11 @@ Harden every table cell against injection, not just subjects: escape `|` as `\|`
 Aggregate: 2 skill, 1 fallback, 1 exempt — 0 missing.
 ```
 
-This `## TDD Audit` section is the final body section — it renders after the configured `pr_body_sections`, immediately before the aggregate trailer — so the frozen core sections and the append-only configured sections both keep their existing order.
+This `## TDD Audit` section follows the canonical PR sections and precedes the aggregate trailer.
 
 **9. Aggregate gate-status trailer (final line)** (only when step 8 was emitted — i.e., at least one real `gate-status` value exists):
 
-After every other section — including any configured `pr_body_sections` — emit the audit aggregate as a single Git trailer on the **final line** of the PR body, preceded by a blank line so it parses as a valid trailer:
+After every other section emit the audit aggregate as a single Git trailer on the **final line** of the PR body, preceded by a blank line so it parses as a valid trailer:
 
 ```
 gate-status: skill=2, fallback=1, exempt=1, missing=0
@@ -404,7 +261,7 @@ Use the exact key order `skill=`, `fallback=`, `exempt=`, `missing=` so downstre
 </step>
 
 <step name="create_pr">
-Create the PR using the generated body. Write the body to a temp file first so large generated PRD sections do not hit shell argument limits:
+Create the PR using the generated body. Write the body to a temp file first so the canonical PR body do not hit shell argument limits:
 
 ```bash
 # BSD/macOS mktemp only randomizes XXXXXX when it is the final path component, so make a
@@ -426,64 +283,6 @@ Report: "PR #{number} created: {url}"
 
 <step name="optional_review">
 
-**External code review command (automated sub-step):**
-
-Before prompting the user, check if an external review command is configured:
-
-```bash
-REVIEW_CMD=$(engineer_run query config-get workflow.code_review_command --raw 2>/dev/null || echo "")
-```
-
-If `REVIEW_CMD` is non-empty and not `"null"`, run the external review:
-
-1. **Generate diff and stats:**
-   ```bash
-   DIFF=$(git diff ${BASE_BRANCH}...HEAD)
-   DIFF_STATS=$(git diff --stat ${BASE_BRANCH}...HEAD)
-   ```
-
-2. **Load phase context from STATE.md:**
-   ```bash
-   STATE_STATUS=$(engineer_run query state.load 2>/dev/null | head -20)
-   ```
-
-3. **Build review prompt and pipe to command via stdin:**
-   Construct a review prompt containing the diff, diff stats, and phase context, then pipe it to the configured command:
-   ```bash
-   REVIEW_PROMPT="You are reviewing a pull request.\n\nDiff stats:\n${DIFF_STATS}\n\nPhase context:\n${STATE_STATUS}\n\nFull diff:\n${DIFF}\n\nRespond with JSON: { \"verdict\": \"APPROVED\" or \"REVISE\", \"confidence\": 0-100, \"summary\": \"...\", \"issues\": [{\"severity\": \"...\", \"file\": \"...\", \"line_range\": \"...\", \"description\": \"...\", \"suggestion\": \"...\"}] }"
-   # A per-run temp file (not a shared, unqualified path) so concurrent
-   # ship runs — same or different phase, same or different project — never
-   # clobber or read each other's stderr. Portable via ${TMPDIR:-/tmp}.
-   REVIEW_STDERR_FILE=$(mktemp "${TMPDIR:-/tmp}/engineer-review-stderr-XXXXXX")
-   REVIEW_OUTPUT=$(echo "${REVIEW_PROMPT}" | engineer_run query run-with-timeout 120 -- ${REVIEW_CMD} 2>"${REVIEW_STDERR_FILE}")
-   REVIEW_EXIT=$?
-   ```
-
-4. **Handle timeout (120s) and failure:**
-   If `REVIEW_EXIT` is non-zero or the command times out:
-   ```bash
-   if [ $REVIEW_EXIT -ne 0 ]; then
-     REVIEW_STDERR=$(cat "${REVIEW_STDERR_FILE}" 2>/dev/null)
-     echo "WARNING: External review command failed (exit ${REVIEW_EXIT}). stderr: ${REVIEW_STDERR}"
-     echo "Continuing with manual review flow..."
-   fi
-   rm -f "${REVIEW_STDERR_FILE}"
-   ```
-   On failure, warn with stderr output and fall through to the manual review flow below.
-
-5. **Parse JSON result:**
-   If the command succeeded, parse the JSON output and report the verdict:
-   ```bash
-   # Parse verdict and summary from REVIEW_OUTPUT JSON
-   VERDICT=$(echo "${REVIEW_OUTPUT}" | python -c 'import json,sys
-try: print(json.load(sys.stdin)["verdict"])
-except (ValueError,KeyError,TypeError): print("INVALID_JSON")')
-   ```
-   - If `verdict` is `"APPROVED"`: report approval with confidence and summary.
-   - If `verdict` is `"REVISE"`: report issues found, list each issue with severity, file, line_range, description, and suggestion.
-   - If JSON is invalid (`INVALID_JSON`): warn "External review returned invalid JSON" with stderr and continue.
-
-   Regardless of the external review result, fall through to the manual review options below.
 
 ---
 
@@ -566,51 +365,6 @@ fi
 ```
 </step>
 
-<step name="ship_post_capability_dispatch">
-
-> Capability-driven dispatch. Resolves active `ship:post` hooks via the capability registry; each hook's `when` is evaluated by the registry — no inline `config-get`. All `ship:post` hooks are post-ship and additive (`onError: skip`); a failure here never affects the already-created PR.
-
-```bash
-SHIP_POST_HOOKS_JSON=$(engineer_run loop render-hooks ship:post --raw)
-```
-
-Read the `activeHooks` array directly from `SHIP_POST_HOOKS_JSON` in-context (do NOT pipe it through a shell parser).
-
-**Branch 1 — no active `ship:post` step hooks (`activeHooks` has no entry with `kind == "step"`):** Skip silently to the report.
-
-**Generic step hook dispatch contract:** For each active entry where `kind == "step"`:
-- Honor `consumes`: if it lists `UAT.md`, resolve `ls "${PHASE_DIR}"/*-UAT.md 2>/dev/null | head -1` and pass it to the dispatch; if a consumed artifact is absent, skip that hook.
-- If `ref.agent` is set, first show the spawn banner, then dispatch the agent named by `ref.agent` (use the exact `ref.agent` value as the subagent type — e.g. `mempalace-curator` — never `general-purpose`):
-
-  ```
-  ◆ Spawning ship:post capability agent... (runs in a subagent — no output until it returns, ~1–2 min; expected, not a freeze)
-  ```
-
-  ** model resolution.** `init.phase-op` emits no model field, and `ref.agent` is only known at runtime, so resolve it per hook before dispatching.
-
-  **Input validation (defense-in-depth) — do this IN-CONTEXT, before any shell use.** `ref.agent` originates in a capability manifest, which may be third-party. Check the value you read from `activeHooks` against `^[A-Za-z0-9][A-Za-z0-9._-]*$` yourself, the same way you read `activeHooks` itself — **never** by pasting it into a shell command to be tested there. A value carrying a quote, `;`, `` ` ``, `$(`, or a newline would terminate the assignment and run as its own statement *before* any shell-side check could execute, so a shell-side check is no protection at all.
-
-  A value that fails the check is a malformed manifest: record a warning, **skip that hook entirely**, and move to the next `activeHooks` entry. Do not dispatch it and do not place it in a command line.
-
-  Only once the value has passed, resolve its model — substituting the validated value for `<agent>`:
-
-  ```bash
-  HOOK_AGENT_MODEL=$(engineer_run query resolve-model "<agent>" --raw 2>/dev/null || true)
-  ```
-
-  **Omit the `model=` parameter entirely when `HOOK_AGENT_MODEL` is `inherit` or empty** — a capability may name an agent absent from the model-profile table, which resolves to the empty string, and passing an empty model 404s on non-Claude runtimes. Omitting inherits the orchestrator's model.
-
-  With a resolved model (`{HOOK_AGENT_MODEL}` is the value the command above printed; `${…}` are bound shell variables):
-
-  `Agent(subagent_type=ref.agent, prompt="Ship-time capability hook for phase ${PHASE_NUMBER}. Phase dir: ${PHASE_DIR}. Consume: ${consumed_files}. Follow your agent instructions.", model="{HOOK_AGENT_MODEL}")`
-
-  When it resolved to `inherit` or empty, drop the parameter:
-
-  `Agent(subagent_type=ref.agent, prompt="Ship-time capability hook for phase ${PHASE_NUMBER}. Phase dir: ${PHASE_DIR}. Consume: ${consumed_files}. Follow your agent instructions.")`
-- If `ref.skill` is set, dispatch with `Skill(skill="${ref.skill}", args="${PHASE_NUMBER} --auto ${ENGINEER_WS}")` (use `ref.skill` directly).
-
-Each dispatch is best-effort: if it errors, record a warning and continue — never re-raise (`onError: skip`).
-</step>
 
 <step name="report">
 ```

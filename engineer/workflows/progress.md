@@ -61,9 +61,7 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 FORENSIC_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--forensic([[:space:]]|$) ]]; then FORENSIC_PARAM="--forensic"; fi
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.progress ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} $FORENSIC_PARAM)
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
+INIT=$(engineer_run query init.progress  $FORENSIC_PARAM)
 ```
 
 Extract from init JSON: `project_exists`, `roadmap_exists`, `state_exists`, `requirements_exists`, `planning_exists`, `milestones_exists`, `init_incomplete`, `phases`, `current_phase`, `next_phase`, `milestone_version`, `completed_count`, `phase_count`, `paused_at`, `state_path`, `roadmap_path`, `project_path`, `config_path`.
@@ -200,17 +198,6 @@ CONTEXT: [✓ if has_context | - if not]
 ## Pending Todos
 - [count] pending — /capture --list to review
 
-## Open Windows
-- [count] open in `.planning/WINDOWS.md` — /ship blocks while any remain
-(Only show this section if count > 0; suppressed when ledger is empty or absent)
-
-```bash
-WINDOWS_STATUS=$(engineer_run windows status --raw 2>/dev/null || echo '')
-WINDOWS_OPEN=$(printf '%s' "$WINDOWS_STATUS" | jq -r '.ledger.open_count // 0' 2>/dev/null || echo 0)
-WINDOWS_WAIVED=$(printf '%s' "$WINDOWS_STATUS" | jq -r '.ledger.waived_count // 0' 2>/dev/null || echo 0)
-```
-
-Render `Open Windows` only when `$WINDOWS_OPEN` is greater than `0` (or `$WINDOWS_WAIVED` is greater than `0`, so an auditable deferral history remains visible). Phrase: `{WINDOWS_OPEN} open, {WINDOWS_WAIVED} waived — resolves with /ship gate; inspect via engineer_run windows status`. The ledger is cross-phase; the count is the project total, not the current phase's.
 
 
 ## Active Debug Sessions
@@ -271,7 +258,7 @@ fi
 
 `/clear` then:
 
-`/execute-phase ${INCOMPLETE_PHASE} ${ENGINEER_WS}`
+`/execute-phase ${INCOMPLETE_PHASE} `
 
 (plans without summaries detected; use --no-resume to skip this check and route by current_phase instead; --force to skip all gates)
 
@@ -316,10 +303,7 @@ Scan ALL phases for outstanding verification debt using the CLI. Milestone scopi
 ```bash
 DEBT=$(engineer_run query audit-uat --raw 2>/dev/null)
 # A cross-population audit is exactly the payload that can exceed the CLI's
-# ~50KB stdout budget (io.cjs swaps in an `@file:<tmp>` pointer) — unwrap it
-# before jq, the same pattern Step 1's INIT fetch uses, or every counter
 # below silently reads 0.
-if [[ "$DEBT" == @file:* ]]; then DEBT=$(cat "${DEBT#@file:}"); fi
 ```
 
 Segment the debt by population before counting:
@@ -347,15 +331,15 @@ Archived debt stays VISIBLE — an item archived still-open is still open (the a
 | {phase} | {filename} | {unresolved_count} deferred items |
 | {phase} | {filename} | unparsed — test blocks with no readable `result:` line |
 
-Review: `/audit-uat ${ENGINEER_WS}` — full cross-phase audit
-Resume testing: `/verify-work {phase} ${ENGINEER_WS}` — retest specific phase
+Review: `/audit-uat ` — full cross-phase audit
+Resume testing: `/verify-work {phase} ` — retest specific phase
 ```
 
 The unparsed row comes from `results` entries with `parse_gap: true` (`summary.parse_gap_files` counts exactly those, archived or not). This is a WARNING, not a blocker — routing proceeds normally. The debt is visible so the user can make an informed choice.
 
 **Step 1.7: Check verification status for the current phase**
 
-A phase whose verification is anything but `passed` is NOT complete, even when every PLAN.md has a matching SUMMARY.md. The count-based status (`roadmap.analyze`) only sees plans/summaries, so without this check such a phase is reported complete and routing skips straight to the next phase. When the phase appears count-complete (`summaries = plans AND plans > 0`), consult the verification report (the same `verification.status` gate `ship` and `execute-phase` use, from ), on the phase directory the locator resolved (a workstream project does not keep its phases under `.planning/phases/`):
+A phase whose verification is anything but `passed` is NOT complete, even when every PLAN.md has a matching SUMMARY.md. The count-based status (`roadmap.analyze`) only sees plans/summaries, so without this check such a phase is reported complete and routing skips straight to the next phase. When the phase appears count-complete (`summaries = plans AND plans > 0`), consult the verification report (the same `verification.status` gate `ship` and `execute-phase` use, from ), on the phase directory the locator resolved:
 
 ```bash
 PHASE_DIR=$(engineer_run query find-phase "${CURRENT_PHASE}" --pick directory)
@@ -398,7 +382,7 @@ Read its `<objective>` section.
 
 `/clear` then:
 
-`/execute-phase {phase} ${ENGINEER_WS}`
+`/execute-phase {phase} `
 
 ---
 ```
@@ -428,7 +412,7 @@ PHASE_HAS_UI=$(echo "$PHASE_SECTION" | grep -qi "UI hint.*yes" && echo "true" ||
 
 `/clear` then:
 
-`/plan-phase {phase-number} ${ENGINEER_WS}`
+`/plan-phase {phase-number} `
 
 ---
 ```
@@ -467,13 +451,13 @@ PHASE_HAS_UI=$(echo "$PHASE_SECTION" | grep -qi "UI hint.*yes" && echo "true" ||
 
 `/clear` then:
 
-`/discuss-phase {phase} ${ENGINEER_WS}` — gather context and clarify approach
+`/discuss-phase {phase} ` — gather context and clarify approach
 
 ---
 
 **Also available:**
-- `/plan-phase {phase} ${ENGINEER_WS}` — skip discussion, plan directly
-- `/discuss-phase {phase} ${ENGINEER_WS}` — include assumptions check before planning
+- `/plan-phase {phase} ` — skip discussion, plan directly
+- `/discuss-phase {phase} ` — include assumptions check before planning
 
 ---
 ```
@@ -493,13 +477,13 @@ UAT.md exists with gaps (diagnosed issues). User needs to plan fixes.
 
 `/clear` then:
 
-`/plan-phase {phase} --gaps ${ENGINEER_WS}`
+`/plan-phase {phase} --gaps `
 
 ---
 
 **Also available:**
-- `/execute-phase {phase} ${ENGINEER_WS}` — execute phase plans
-- `/verify-work {phase} ${ENGINEER_WS}` — run more UAT testing
+- `/execute-phase {phase} ` — execute phase plans
+- `/verify-work {phase} ` — run more UAT testing
 
 ---
 ```
@@ -519,13 +503,13 @@ UAT.md exists with `status: partial` — testing session ended before all items 
 
 `/clear` then:
 
-`/verify-work {phase} ${ENGINEER_WS}` — resume testing from where you left off
+`/verify-work {phase} ` — resume testing from where you left off
 
 ---
 
 **Also available:**
-- `/audit-uat ${ENGINEER_WS}` — full cross-phase UAT audit
-- `/execute-phase {phase} ${ENGINEER_WS}` — execute phase plans
+- `/audit-uat ` — full cross-phase UAT audit
+- `/execute-phase {phase} ` — execute phase plans
 
 ---
 ```
@@ -565,7 +549,7 @@ VERIFICATION.md exists with `status: gaps_found` — verification identified gap
 
 `/clear` then:
 
-`${VERIFICATION_NEXT_COMMAND} ${ENGINEER_WS}` — plan the gap fixes (the owner's route: plan-phase --gaps)
+`${VERIFICATION_NEXT_COMMAND} ` — plan the gap fixes (the owner's route: plan-phase --gaps)
 
 ---
 ```
@@ -585,7 +569,7 @@ VERIFICATION.md exists with `status: human_needed` — automated checks passed b
 
 `/clear` then:
 
-`${VERIFICATION_NEXT_COMMAND} ${ENGINEER_WS}` — resume human verification (the owner's route: verify-work)
+`${VERIFICATION_NEXT_COMMAND} ` — resume human verification (the owner's route: verify-work)
 
 ---
 ```
@@ -660,13 +644,13 @@ NEXT_HAS_UI=$(echo "$NEXT_PHASE_SECTION" | grep -qi "UI hint.*yes" && echo "true
 
 `/clear` then:
 
-`/discuss-phase {Z+1} ${ENGINEER_WS}` — gather context and clarify approach
+`/discuss-phase {Z+1} ` — gather context and clarify approach
 
 ---
 
 **Also available:**
-- `/plan-phase {Z+1} ${ENGINEER_WS}` — skip discussion, plan directly
-- `/verify-work {Z} ${ENGINEER_WS}` — user acceptance test before continuing
+- `/plan-phase {Z+1} ` — skip discussion, plan directly
+- `/verify-work {Z} ` — user acceptance test before continuing
 
 ---
 ```
@@ -688,12 +672,12 @@ All {N} phases finished!
 
 `/clear` then:
 
-`/complete-milestone ${ENGINEER_WS}`
+`/complete-milestone `
 
 ---
 
 **Also available:**
-- `/verify-work ${ENGINEER_WS}` — user acceptance test before completing milestone
+- `/verify-work ` — user acceptance test before completing milestone
 
 ---
 ```
@@ -719,7 +703,7 @@ Ready to plan the next milestone.
 
 `/clear` then:
 
-`/new-milestone ${ENGINEER_WS}`
+`/new-milestone `
 
 ---
 ```
@@ -729,10 +713,10 @@ Ready to plan the next milestone.
 <step name="edge_cases">
 **Handle edge cases:**
 
-- Phase complete but next phase not planned → offer `/plan-phase [next] ${ENGINEER_WS}`
+- Phase complete but next phase not planned → offer `/plan-phase [next] `
 - All work complete → offer milestone completion
 - Blockers present → highlight before offering to continue
-- Handoff file exists → mention it, offer `/resume-work ${ENGINEER_WS}`
+- Handoff file exists → mention it, offer `/resume-work `
 </step>
 
 <!-- engineer:section id="forensic-audit" when="flag:--forensic" -->

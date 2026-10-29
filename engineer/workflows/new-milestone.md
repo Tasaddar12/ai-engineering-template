@@ -24,10 +24,7 @@ Valid Engineer subagent types (use exact names — do not fall back to 'general-
 Parse `$ARGUMENTS` before doing anything else:
 
 - `--reset-phase-numbers` flag → opt into restarting roadmap phase numbering at `1`. If absent, keep the current behavior of continuing phase numbering from the previous milestone.
-- `--ws <name>` flag → active workstream scope, parsed into `ENGINEER_WS`
-- remaining text, with `--ws <name>` stripped → use as milestone name if present, captured into `MILESTONE_ARG`
 
-Parse `ENGINEER_WS` and `MILESTONE_ARG` using the established idiom (see `verify-work.md`):
 
 ```bash
 IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
@@ -76,13 +73,7 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
-ENGINEER_WS=""
-echo "$ENGINEER_ARGS" | grep -qE -- '--ws[[:space:]]+[A-Za-z0-9._-]+' && ENGINEER_WS=$(echo "$ENGINEER_ARGS" | grep -oE -- '--ws[[:space:]]+[A-Za-z0-9._-]+')
-MILESTONE_ARG=$(echo "$ENGINEER_ARGS" | sed -E 's/--ws[[:space:]]+[A-Za-z0-9._-]+//g' | xargs)
-# Persist ENGINEER_WS to a file so later steps' bash fences (each a
-# separate shell) can forward it — the same cross-fence problem Step 5/6
-# already solve for OUTGOING_MILESTONE via .engineer-outgoing-milestone.
-printf '%s' "$ENGINEER_WS" > .planning/.engineer-ws-arg 2>/dev/null || true
+MILESTONE_ARG=$(echo "$ENGINEER_ARGS" | xargs)
 RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --default "" 2>/dev/null || echo "")
 # EARLY, section-manifest-only init.new-milestone call — needed here
 # (before Step 4) to gate the project-md-milestone-write section. This is
@@ -93,15 +84,9 @@ RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --defa
 # fields too early and corrupt the planner's phase-numbering context.
 # init.new-milestone is a pure read (no mutation), so calling it twice is
 # safe; only `section_manifest` is consumed from this early call.
-# $ENGINEER_WS forwarded (same fence as the parse above, no round-trip
-# needed here) so the section manifest — and the shared PROJECT.md write
-# guard it gates — reflects the EXPLICITLY requested workstream, not
-# whatever ambient ENGINEER_WORKSTREAM/session pointer happens to be active.
-INIT_EARLY=$(engineer_run query init.new-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-if [[ "$INIT_EARLY" == @file:* ]]; then INIT_EARLY=$(cat "${INIT_EARLY#@file:}"); fi
+INIT_EARLY=$(engineer_run query init.new-milestone )
 ```
 
-`ENGINEER_WS` must chain to every downstream routing suggestion in this workflow (Step 4's shared-file guard, and the `/discuss-phase`/`/plan-phase` routing hints below) per the routing-propagation contract in `engineer/references/workstream-flag.md` — never let it silently drop.
 
 **If `response_language` is set:** All user-facing output of this workflow — narration between tool calls, status updates, progress notes, findings, questions, prompts, and explanations (including the "What do you want to build next?" prompt and seed-selection questions below) — MUST be presented in `{response_language}`. Technical terms, code, file paths, and subagent prompts stay in English — only user-facing output is translated.
 
@@ -211,20 +196,18 @@ AskUserQuestion:
 
 ## 4. Update PROJECT.md
 
-PROJECT.md is shared across workstreams (`engineer/references/workstream-flag.md` marks it `# Shared` in the directory diagram). This step has two independently-scoped parts — only Part A is workstream-guarded.
 
-<!-- engineer:section id="project-md-milestone-write" when="state:flat-mode" -->
-If `section_manifest` (from `INIT_EARLY`) is `null` or `"project-md-milestone-write"` is in its `included` list: read and execute `engineer/workflows/new-milestone/steps/project-md-milestone-write.md`. Otherwise (a workstream is active) skip — do not read the file; Part B below still runs regardless of `ENGINEER_WS`.
-<!-- /section -->
+Read and execute `engineer/workflows/new-milestone/steps/project-md-milestone-write.md`.
 
-**Part B — Evolution structural repair (always runs, regardless of `ENGINEER_WS`).** `## Evolution` is a shared, idempotent structural section, not workstream state — a pre-Evolution project must be backfilled whether or not a workstream is active, so this part is NOT covered by Part A's skip. Ensure the `## Evolution` section exists in PROJECT.md. If missing (projects created before this feature), add it before the footer:
+Ensure the Evolution section exists; if absent, add the following narrative:
+
 
 ```markdown
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
-**After each phase transition** (via `/transition`):
+**After each phase transition** (through the canonical phase-completion owner):
 1. Requirements invalidated? → Move to Out of Scope with reason
 2. Requirements validated? → Move to Validated with phase reference
 3. New requirements emerged? → Add to Active
@@ -248,11 +231,10 @@ blockers, todos) is preserved across the switch — symmetric with
 `milestone.complete`.
 
 ```bash
-ENGINEER_WS_ARG=$(cat .planning/.engineer-ws-arg 2>/dev/null || true)
-OUTGOING_MILESTONE=$(engineer_run query state.get milestone --raw $ENGINEER_WS_ARG 2>/dev/null || true)
+OUTGOING_MILESTONE=$(engineer_run query state.get milestone --raw 2>/dev/null || true)
 printf '%s' "$OUTGOING_MILESTONE" > .planning/.engineer-outgoing-milestone 2>/dev/null || true
 echo "Outgoing milestone (phase history archives under THIS version in step 6): ${OUTGOING_MILESTONE:-<unknown>}"
-engineer_run query state.milestone-switch --milestone "v[X.Y]" --name "[Name]" $ENGINEER_WS_ARG
+engineer_run query state.milestone-switch --milestone "v[X.Y]" --name "[Name]"
 ```
 
 **Capture the outgoing version now.** The lines above read the *current* (previous) milestone
@@ -293,12 +275,11 @@ the captured value into the command, so untrusted STATE.md content cannot be re-
 shell:
 
 ```bash
-ENGINEER_WS_ARG=$(cat .planning/.engineer-ws-arg 2>/dev/null || true)
 OUTGOING_MILESTONE=$(cat .planning/.engineer-outgoing-milestone 2>/dev/null || true)
 if [ -n "$OUTGOING_MILESTONE" ]; then
-  engineer_run query phases.clear --confirm --archive-version "$OUTGOING_MILESTONE" $ENGINEER_WS_ARG
+  engineer_run query phases.clear --confirm --archive-version "$OUTGOING_MILESTONE"
 else
-  engineer_run query phases.clear --confirm $ENGINEER_WS_ARG
+  engineer_run query phases.clear --confirm
 fi
 rm -f .planning/.engineer-outgoing-milestone 2>/dev/null || true
 ```
@@ -313,9 +294,7 @@ Stage the phase archive move + source removal so they land in the same commit as
 
 ```bash
 COMMIT_DOCS=$(engineer_run query config-get commit_docs --raw 2>/dev/null || echo "true")
-ENGINEER_WS_ARG=$(cat .planning/.engineer-ws-arg 2>/dev/null || true)
-INIT_STAGE=$(engineer_run query init.new-milestone ${ENGINEER_WS_ARG:+--ws=${ENGINEER_WS_ARG##* }})
-if [[ "$INIT_STAGE" == @file:* ]]; then INIT_STAGE=$(cat "${INIT_STAGE#@file:}"); fi
+INIT_STAGE=$(engineer_run query init.new-milestone )
 _engineer_field() { value=$(printf '%s' "$1" | engineer_run query json.get --field "$2" --default '""' --raw) || return $?; [ "$value" = null ] && value=""; printf '%s' "$value"; }
 ARCHIVE_DIR=$(_engineer_field "$INIT_STAGE" archive_dir)
 PHASES_DIR=$(_engineer_field "$INIT_STAGE" phases_dir)
@@ -326,12 +305,9 @@ fi
 
 When `commit_docs` is false, the archive move and phase removals are deliberately left unstaged here — not a bug — since Step 6's commit is skipped too.
 
-Stage PROJECT.md in both modes. Step 4's Part A guard — not this commit — is what protects the shared `## Current Milestone` heading: when a workstream is active Part A never writes it, so the only change PROJECT.md can carry here is Part B's idempotent `## Evolution` backfill, which must be committed rather than stranded as a dangling edit. Do NOT reintroduce a `[ -n "$ENGINEER_WS" ]` branch around this commit: `ENGINEER_WS` is set in Step 1's shell and each step's bash block runs in its own shell (the same reason Step 5 round-trips `OUTGOING_MILESTONE` through a file), so such a guard reads an unset variable, always takes the flat-mode branch, and only appears to work. STATE.md, unlike PROJECT.md, IS workstream-scoped (Step 5's switch just wrote the workstream's own copy) — resolved below via `init.new-milestone` rather than a literal `.planning/STATE.md`, which would commit the wrong (or a stale, unrelated) file under an active workstream.
 
 ```bash
-ENGINEER_WS_ARG=$(cat .planning/.engineer-ws-arg 2>/dev/null || true)
-INIT_COMMIT=$(engineer_run query init.new-milestone ${ENGINEER_WS_ARG:+--ws=${ENGINEER_WS_ARG##* }})
-if [[ "$INIT_COMMIT" == @file:* ]]; then INIT_COMMIT=$(cat "${INIT_COMMIT#@file:}"); fi
+INIT_COMMIT=$(engineer_run query init.new-milestone )
 _engineer_field() { value=$(printf '%s' "$1" | engineer_run query json.get --field "$2" --default '""' --raw) || return $?; [ "$value" = null ] && value=""; printf '%s' "$value"; }
 STATE_PATH=$(_engineer_field "$INIT_COMMIT" state_path)
 PROJECT_PATH=$(_engineer_field "$INIT_COMMIT" project_path)
@@ -346,16 +322,13 @@ $ARGUMENTS
 ENGINEER_ARGS_END
 ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 RESET_PHASE_NUMBERS_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--reset-phase-numbers([[:space:]]|$) ]]; then RESET_PHASE_NUMBERS_PARAM="--reset-phase-numbers"; fi
-ENGINEER_WS_ARG=$(cat .planning/.engineer-ws-arg 2>/dev/null || true)
-INIT=$(engineer_run query init.new-milestone $RESET_PHASE_NUMBERS_PARAM ${ENGINEER_WS_ARG:+--ws=${ENGINEER_WS_ARG##* }})
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_RESEARCHER=$(engineer_run query agent-skills phase-researcher ${ENGINEER_WS_ARG:+--ws=${ENGINEER_WS_ARG##* }})
-AGENT_SKILLS_DOC_WRITER=$(engineer_run query agent-skills doc-writer ${ENGINEER_WS_ARG:+--ws=${ENGINEER_WS_ARG##* }})
-AGENT_SKILLS_PLANNER=$(engineer_run query agent-skills planner ${ENGINEER_WS_ARG:+--ws=${ENGINEER_WS_ARG##* }})
+INIT=$(engineer_run query init.new-milestone $RESET_PHASE_NUMBERS_PARAM )
+AGENT_SKILLS_RESEARCHER=$(engineer_run query agent-skills phase-researcher )
+AGENT_SKILLS_DOC_WRITER=$(engineer_run query agent-skills doc-writer )
+AGENT_SKILLS_PLANNER=$(engineer_run query agent-skills planner )
 ```
-<!--: .planning/.engineer-ws-arg is NOT cleaned up here — Steps 9 and 10
 below still need to re-read it (each is its own shell) to resolve
-REQUIREMENTS.md/ROADMAP.md/STATE.md correctly under a workstream. It is
+REQUIREMENTS.md/ROADMAP.md/STATE.md through the runtime-resolved paths. It is
 removed in Step 10, its true last consumer. -->
 
 Extract from init JSON: `researcher_model`, `doc_writer_model`, `planner_model`, `commit_docs`, `research_enabled`, `current_milestone`, `project_exists`, `roadmap_exists`, `latest_completed_milestone`, `phase_dir_count`, `phase_archive_path`, `agents_installed`, `missing_agents`, `project_path`, `roadmap_path`, `requirements_path`, `config_path`, `research_dir`, `milestones_path`, `phases_dir`, `archive_dir`.
@@ -374,9 +347,6 @@ Proceeding without research subagents — roadmap will be generated inline.
 ```
 Skip the parallel research spawn step and generate the roadmap inline.
 
-<!-- engineer:section id="reset-phase-safety" when="flag:--reset-phase-numbers" -->
-If `section_manifest` is `null` or `"reset-phase-safety"` is in its `included` list: read and execute `engineer/workflows/new-milestone/steps/reset-phase-safety.md`. Otherwise skip — do not read the file.
-<!-- /section -->
 
 ## 8. Research Decision
 
@@ -414,7 +384,7 @@ Spawn 4 parallel phase-researcher agents. Each uses this template with dimension
 **Common structure for all 4 researchers:**
 <!-- model-omit-on-inherit -->
 
-> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`researcher_model`, `doc_writer_model`, `planner_model`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
+> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`researcher_model`, `doc_writer_model`, `planner_model`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model.
 
 ```text
 Agent(prompt="
@@ -567,9 +537,7 @@ If "adjust": Return to scoping.
 
 **Commit requirements:**
 ```bash
-ENGINEER_WS_ARG=$(cat .planning/.engineer-ws-arg 2>/dev/null || true)
-INIT_REQ=$(engineer_run query init.new-milestone ${ENGINEER_WS_ARG:+--ws=${ENGINEER_WS_ARG##* }})
-if [[ "$INIT_REQ" == @file:* ]]; then INIT_REQ=$(cat "${INIT_REQ#@file:}"); fi
+INIT_REQ=$(engineer_run query init.new-milestone )
 _engineer_field() { value=$(printf '%s' "$1" | engineer_run query json.get --field "$2" --default '""' --raw) || return $?; [ "$value" = null ] && value=""; printf '%s' "$value"; }
 REQUIREMENTS_PATH=$(_engineer_field "$INIT_REQ" requirements_path)
 engineer_run query commit "docs: define milestone v[X.Y] requirements" --files "$REQUIREMENTS_PATH"
@@ -660,17 +628,12 @@ Success criteria:
 
 **Commit roadmap** (after approval):
 ```bash
-ENGINEER_WS_ARG=$(cat .planning/.engineer-ws-arg 2>/dev/null || true)
-INIT_ROADMAP=$(engineer_run query init.new-milestone ${ENGINEER_WS_ARG:+--ws=${ENGINEER_WS_ARG##* }})
-if [[ "$INIT_ROADMAP" == @file:* ]]; then INIT_ROADMAP=$(cat "${INIT_ROADMAP#@file:}"); fi
+INIT_ROADMAP=$(engineer_run query init.new-milestone )
 _engineer_field() { value=$(printf '%s' "$1" | engineer_run query json.get --field "$2" --default '""' --raw) || return $?; [ "$value" = null ] && value=""; printf '%s' "$value"; }
 ROADMAP_PATH=$(_engineer_field "$INIT_ROADMAP" roadmap_path)
 STATE_PATH=$(_engineer_field "$INIT_ROADMAP" state_path)
 REQUIREMENTS_PATH=$(_engineer_field "$INIT_ROADMAP" requirements_path)
 engineer_run query commit "docs: create milestone v[X.Y] roadmap ([N] phases)" --files "$ROADMAP_PATH" "$STATE_PATH" "$REQUIREMENTS_PATH"
-# True last consumer of the persisted --ws in this workflow — the
-# round-trip file is no longer needed after this commit.
-rm -f .planning/.engineer-ws-arg 2>/dev/null || true
 ```
 
 ## 10.5. Link Pending Todos to Roadmap Phases
@@ -745,15 +708,15 @@ Print a summary:
 
 `/clear` then:
 
-`/discuss-phase [N] ${ENGINEER_WS}` — gather context and clarify approach
+`/discuss-phase [N] ` — gather context and clarify approach
 
-Also: `/plan-phase [N] ${ENGINEER_WS}` — skip discussion, plan directly
+Also: `/plan-phase [N] ` — skip discussion, plan directly
 ```
 
 </process>
 
 <success_criteria>
-- [ ] PROJECT.md updated with Current Milestone section (skipped when a workstream is active — shared file, see Step 4)
+- [ ] PROJECT.md updated with Current Milestone section
 - [ ] STATE.md reset for new milestone
 - [ ] MILESTONE-CONTEXT.md consumed and deleted (if existed)
 - [ ] Research completed (if selected) — 4 parallel agents, milestone-aware
@@ -765,7 +728,7 @@ Also: `/plan-phase [N] ${ENGINEER_WS}` — skip discussion, plan directly
 - [ ] Phase numbering mode respected (continued or reset)
 - [ ] All commits made (if planning docs committed)
 - [ ] Pending todos scanned for phase matches; matched todos tagged with `resolves_phase: N`
-- [ ] User knows next step: `/discuss-phase [N] ${ENGINEER_WS}`
+- [ ] User knows next step: `/discuss-phase [N] `
 
 **Atomic commits:** Each phase commits its artifacts immediately.
 </success_criteria>

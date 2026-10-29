@@ -77,7 +77,6 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 INIT=$(engineer_run query audit-uat 2>/dev/null || echo "{}")
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
 Read existing UAT and verification files to extract findings:
@@ -143,7 +142,7 @@ EXECUTOR_MODEL=$(engineer_run query resolve-model executor --raw)
 
 <!-- model-omit-on-inherit -->
 
-> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`EXECUTOR_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
+> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`EXECUTOR_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model.
 
 **a. Spawn executor agent** (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze):
 ```
@@ -158,34 +157,8 @@ Agent(
 
 **b. Run tests:**
 ```bash
-AUDIT_TEST_CMD=$(engineer_run query config-get workflow.test_command --default "" --raw 2>/dev/null || true)
-if [ -z "$AUDIT_TEST_CMD" ]; then
-  if [ -f "Makefile" ] && grep -q "^test:" Makefile; then
-    AUDIT_TEST_CMD="make test"
-  elif [ -f "Justfile" ] || [ -f "justfile" ]; then
-    AUDIT_TEST_CMD="just test"
-  elif [ -f "package.json" ]; then
-    AUDIT_TEST_CMD=$(engineer_run query resolve-package-manager test --cwd . 2>/dev/null || echo "npm test")
-    [ -n "$AUDIT_TEST_CMD" ] || AUDIT_TEST_CMD="npm test"
-  elif [ -f "Cargo.toml" ]; then
-    AUDIT_TEST_CMD="cargo test"
-  elif [ -f "go.mod" ]; then
-    AUDIT_TEST_CMD="go test ./..."
-  elif [ -f "pyproject.toml" ] || [ -f "requirements.txt" ]; then
-    AUDIT_TEST_CMD="python -m pytest -x -q --tb=short"
-  else
-    AUDIT_TEST_CMD="true"
-  fi
-fi
-# Normalize to one-shot (defeat vitest/jest watch mode) + bound with a
-# timeout so a watch-mode runner cannot hang the audit gate indefinitely.
-AUDIT_TEST_CMD=$(engineer_run query normalize-test-command "$AUDIT_TEST_CMD" --cwd . 2>/dev/null || echo "$AUDIT_TEST_CMD")
-TEST_GATE_TIMEOUT=$(engineer_run query config-get workflow.test_gate_timeout --raw 2>/dev/null || echo "600")
-engineer_run query run-with-timeout "$TEST_GATE_TIMEOUT" -- bash -c "$AUDIT_TEST_CMD" 2>&1 | tail -20
-AUDIT_TEST_EXIT=${PIPESTATUS[0]}
-if [ "$AUDIT_TEST_EXIT" -eq 124 ]; then
-  echo "✗ Audit test gate timed out after ${TEST_GATE_TIMEOUT}s — likely stuck in watch/dev mode (e.g. vitest without 'run'). Run tests one-shot (e.g. 'vitest run') or raise workflow.test_gate_timeout."
-fi
+AUDIT_CHECKS=$(engineer_run query verification.run-checks) && AUDIT_TEST_EXIT=0 || AUDIT_TEST_EXIT=$?
+# Inspect configured-check receipts; absent checks are missing evidence, never an inferred pass.
 ```
 
 **c. If tests pass** — commit atomically:

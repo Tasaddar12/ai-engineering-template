@@ -63,11 +63,9 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --default "" 2>/dev/null || echo "")
-PHASE_ARG=$(echo "$ENGINEER_ARGS" | sed -E 's/--ws[[:space:]]+[A-Za-z0-9._-]+//g' | xargs)
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.phase-op ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} "${PHASE_ARG}")
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_AUDITOR=$(engineer_run query agent-skills security-auditor ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
+PHASE_ARG=$(echo "$ENGINEER_ARGS" | xargs)
+INIT=$(engineer_run query init.phase-op  "${PHASE_ARG}")
+AGENT_SKILLS_AUDITOR=$(engineer_run query agent-skills security-auditor )
 ```
 
 **If `response_language` is set:** All user-facing output of this workflow — narration between tool calls, status updates, progress notes, findings, questions, prompts, and explanations — MUST be presented in `{response_language}`. Technical terms, code, file paths, and subagent prompts stay in English — only user-facing output is translated.
@@ -76,18 +74,7 @@ Parse: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`.
 
 ```bash
 AUDITOR_MODEL=$(engineer_run query resolve-model security-auditor --raw)
-VERIFY_POST_HOOKS_JSON=$(engineer_run loop render-hooks verify:post --raw)
-SECURITY_ASVS=$(engineer_run query config-get workflow.security_asvs_level --raw 2>/dev/null || echo "1")
-SECURITY_BLOCK_ON=$(engineer_run query config-get workflow.security_block_on --raw 2>/dev/null || echo "high")
 ```
-
-Resolve active step hooks from `VERIFY_POST_HOOKS_JSON` where `kind == "step"` and `ref.skill == "secure-phase"`.
-
-If no active secure-phase step hook exists: exit with "Security enforcement disabled. Enable via /settings."
-
-Display banner: `Engineer > SECURE PHASE {N}: {name}`
-
-## 1. Detect Input State
 
 ```bash
 SECURITY_FILE=$(ls "${PHASE_DIR}"/*-SECURITY.md 2>/dev/null | head -1)
@@ -153,7 +140,7 @@ Print: `◆ Spawning security auditor... (runs in a subagent — no output until
 
 <!-- model-omit-on-inherit -->
 
-> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`AUDITOR_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
+> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`AUDITOR_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model.
 
 ```
 Agent(

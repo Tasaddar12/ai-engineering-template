@@ -63,11 +63,9 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --default "" 2>/dev/null || echo "")
-PHASE_ARG=$(echo "$ENGINEER_ARGS" | sed -E 's/--ws[[:space:]]+[A-Za-z0-9._-]+//g' | xargs)
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.phase-op ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} "${PHASE_ARG}")
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_AUDITOR=$(engineer_run query agent-skills nyquist-auditor ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
+PHASE_ARG=$(echo "$ENGINEER_ARGS" | xargs)
+INIT=$(engineer_run query init.phase-op  "${PHASE_ARG}")
+AGENT_SKILLS_AUDITOR=$(engineer_run query agent-skills nyquist-auditor )
 ```
 
 **If `response_language` is set:** All user-facing output of this workflow — narration between tool calls, status updates, progress notes, findings, questions, prompts, and explanations — MUST be presented in `{response_language}`. Technical terms, code, file paths, and subagent prompts stay in English — only user-facing output is translated.
@@ -76,12 +74,7 @@ Parse: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`.
 
 ```bash
 AUDITOR_MODEL=$(engineer_run query resolve-model nyquist-auditor --raw)
-VERIFY_POST_HOOKS_JSON=$(engineer_run loop render-hooks verify:post --raw)
 ```
-
-Resolve active step hooks from `VERIFY_POST_HOOKS_JSON` where `kind == "step"` and `ref.skill == "validate-phase"`.
-
-If no active validate-phase step hook exists: exit with "Nyquist validation is disabled. Enable via /settings."
 
 Display banner: `Engineer > VALIDATE PHASE {N}: {name}`
 
@@ -94,7 +87,7 @@ SUMMARY_FILES=$(ls "${PHASE_DIR}"/*-SUMMARY.md 2>/dev/null)
 
 - **State A** (`VALIDATION_FILE` non-empty): Audit existing
 - **State B** (`VALIDATION_FILE` empty, `SUMMARY_FILES` non-empty): Reconstruct from artifacts
-- **State C** (`SUMMARY_FILES` empty): Exit — "Phase {N} not executed. Run /execute-phase {N} ${ENGINEER_WS} first."
+- **State C** (`SUMMARY_FILES` empty): Exit — "Phase {N} not executed. Run /execute-phase {N}  first."
 
 ## 2. Discovery
 
@@ -148,7 +141,7 @@ Print: `◆ Spawning nyquist auditor... (runs in a subagent — no output until 
 
 <!-- model-omit-on-inherit -->
 
-> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`AUDITOR_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
+> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`AUDITOR_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model.
 
 ```
 Agent(
@@ -204,14 +197,14 @@ engineer_run query commit "docs(phase-${PHASE}): add/update validation strategy"
 ```
 Engineer > PHASE {N} IS NYQUIST-COMPLIANT
 All requirements have automated verification.
-▶ Next: /audit-milestone ${ENGINEER_WS}
+▶ Next: /audit-milestone
 ```
 
 **Partial:**
 ```
 Engineer > PHASE {N} VALIDATED (PARTIAL)
 {M} automated, {K} manual-only.
-▶ Retry: /validate-phase {N} ${ENGINEER_WS}
+▶ Retry: /validate-phase {N}
 ```
 
 Display `/clear` reminder.

@@ -1,15 +1,12 @@
 **Step 5.6: Pre-dispatch artifact commit (worktree mode only)**
 
-When `USE_WORKTREES !== "false"`, commit PLAN.md — plus CONTEXT.md and/or RESEARCH.md
+Before every isolated dispatch, commit PLAN.md — plus CONTEXT.md and/or RESEARCH.md
 when the discussion/research phases produced them — to the current branch **before**
 spawning the executor. This ensures the worktree inherits these artifacts at its branch
 HEAD so the executor can read them via a worktree-rooted path — avoiding the main-repo
 path priming that triggers CC path-resolution drift, and avoiding the locked
 decisions (CONTEXT.md) and research findings (RESEARCH.md) being stranded outside the
 worktree while only PLAN.md reaches it.
-
-Skip this step entirely if `USE_WORKTREES === "false"` (non-worktree mode: these artifacts
-are committed in Step 8 as usual).
 
 ```bash
 _engineer_identity_ok() {
@@ -56,7 +53,7 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
 fi
 QUICK_PLAN_PARENT=""
 QUICK_PLAN_COMMIT=""
-if [ "${USE_WORKTREES}" != "false" ]; then
+if true; then
   COMMIT_DOCS=$(engineer_run query config-get commit_docs --raw 2>/dev/null || echo "true")
   if [ "$COMMIT_DOCS" != "false" ]; then
     # pre-dispatch plan commit — PLAN.md is always in scope. CONTEXT.md/RESEARCH.md
@@ -76,16 +73,8 @@ if [ "${USE_WORKTREES}" != "false" ]; then
     if git diff --cached --quiet -- "${QUICK_PREDISPATCH_PATHS[@]}"; then
       echo "ℹ Pre-dispatch artifact commit skipped (no staged changes)"
     else
-      # Run hooks normally. If a project opts out via
-      # workflow.worktree_skip_hooks=true, honor that opt-in only.
-      SKIP_HOOKS=$(engineer_run query config-get workflow.worktree_skip_hooks --raw 2>/dev/null || echo "false")
-      if [ "$SKIP_HOOKS" = "true" ]; then
-        git commit --no-verify -m "docs(${quick_id}): pre-dispatch artifacts for ${DESCRIPTION}" -- "${QUICK_PREDISPATCH_PATHS[@]}" \
-          || { echo "ERROR: pre-dispatch artifact commit failed (--no-verify path). Aborting before executor dispatch." >&2; exit 1; }
-      else
-        git commit -m "docs(${quick_id}): pre-dispatch artifacts for ${DESCRIPTION}" -- "${QUICK_PREDISPATCH_PATHS[@]}" \
-          || { echo "ERROR: pre-dispatch artifact commit failed — likely a pre-commit hook failure. Fix the hook output above (or set workflow.worktree_skip_hooks=true to bypass) and re-run." >&2; exit 1; }
-      fi
+      git commit -m "docs(${quick_id}): pre-dispatch artifacts for ${DESCRIPTION}" -- "${QUICK_PREDISPATCH_PATHS[@]}" \
+        || { echo "ERROR: pre-dispatch artifact commit failed; fix the hook output before dispatch." >&2; exit 1; }
       QUICK_PLAN_COMMIT=$(git rev-parse HEAD)
     fi
   fi

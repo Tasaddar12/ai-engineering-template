@@ -1,4 +1,4 @@
-# Per-plan executor routing 
+# Per-plan executor routing
 
 Run for each plan, immediately before its `Agent()` dispatch in step 3. Sets
 `EXECUTOR_TYPE` so a plan can opt into a specialist executor instead of the
@@ -94,7 +94,7 @@ modes). The `orchestrator-worktree` isolation backend spawns executors via a
 separate process path that has no `subagent_type` and is not routed in this
 release.
 
-## Checkpoint gate rule 
+## Checkpoint gate rule
 
 Loaded with the routing resolution so the orchestrator reads it immediately
 before composing each dispatch prompt, in every isolation mode.

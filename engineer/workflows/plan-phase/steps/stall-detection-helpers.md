@@ -1,4 +1,4 @@
-# Bounded Stall-Detection Helpers 
+# Bounded Stall-Detection Helpers
 
 `planner.stall_detection_enabled` controls the wait policy for the five scoped
 planner/plan-checker spawns. It defaults to `true`. In that default-on mode each
@@ -78,11 +78,8 @@ this issue is about. `PLANNER_STALL_INTERVAL_MINUTES` is the knob for
 projects that want a tighter success-path latency at the cost of more
 config-get calls.
 
-This block is independent of, and never gated behind, the `query
-teams-status` / `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` guard used for the
-researcher spawn — the stall path applies on every runtime, teams-active or
-not (AC2). The toggle is resolved through the canonical `config-get` seam, so
-root/project/workstream selection stays with the Config Loader rather than a
+The stall-detection toggle is resolved through the canonical `config-get` seam, so
+root/project selection stays with the Config Loader rather than a
 workflow-local JSON parser. Only the exact boolean result `false` disables;
 missing, malformed, string, numeric, or otherwise unrecognized values fail safe
 to `true`.

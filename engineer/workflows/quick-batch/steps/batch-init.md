@@ -69,7 +69,6 @@ rm -f "$TASK_FILE"
 
 ```bash
 QB_CREATE_RC=$?
-if [[ "$QB_CREATE_JSON" == @file:* ]]; then QB_CREATE_JSON=$(cat "${QB_CREATE_JSON#@file:}"); fi
 ```
 
 **If `$QB_CREATE_RC` is non-zero:** the task list failed to parse (fewer than

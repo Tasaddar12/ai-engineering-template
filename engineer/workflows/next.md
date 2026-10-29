@@ -285,7 +285,7 @@ If the current phase directory exists but has neither CONTEXT.md nor RESEARCH.md
 
 **Route 3: Phase has context but no plans → plan**
 If the current phase has CONTEXT.md (or RESEARCH.md) but no PLAN.md files:
-→ Next action: `/plan-phase <current-phase>` (or `/plan-review-convergence <current-phase>` when `PLAN_STRATEGY=converge`)
+→ Next action: `/plan-phase <current-phase>`
 
 **Route 4: Phase has plans but incomplete summaries → execute**
 If plans exist but not all have matching summaries:
@@ -309,53 +309,6 @@ If STATE.md shows paused_at:
 </step>
 
 <step name="show_and_execute">
-Parse the arguments passed to this workflow to detect the plan strategy and build convergence pass-through args:
-
-```bash
-IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
-$ARGUMENTS
-ENGINEER_ARGS_END
-ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
-PLAN_STRATEGY="local"
-if echo "$ENGINEER_ARGS" | grep -qE '(^|[[:space:]])\-\-(converge|cross-ai)([[:space:]]|$)'; then
-  PLAN_STRATEGY="converge"
-fi
-
-CONVERGENCE_ARGS=""
-# Lane flags derived from the declared roster; --all and --text are convergence
-# controls, not reviewer lanes, so they stay literal.
-for REVIEW_FLAG in $(engineer_run review-lane flags) --all --text; do
-  if echo "$ENGINEER_ARGS" | grep -qE "(^|[[:space:]])${REVIEW_FLAG}([[:space:]]|$)"; then
-    CONVERGENCE_ARGS="${CONVERGENCE_ARGS} ${REVIEW_FLAG}"
-  fi
-done
-
-MAX_CYCLES_ARG=""
-if echo "$ENGINEER_ARGS" | grep -qE '\-\-max-cycles\s+[0-9]+'; then
-  MAX_CYCLES_ARG=$(echo "$ENGINEER_ARGS" | grep -oE '\-\-max-cycles\s+[0-9]+' | awk '{print $2}')
-  CONVERGENCE_ARGS="${CONVERGENCE_ARGS} --max-cycles ${MAX_CYCLES_ARG}"
-fi
-```
-
-If `PLAN_STRATEGY` is `converge`, fail fast unless the convergence feature gate is enabled:
-
-```bash
-if [ "$PLAN_STRATEGY" = "converge" ]; then
-  CONVERGENCE_ENABLED=$(engineer_run query config-get workflow.plan_review_convergence --raw 2>/dev/null || echo "false")
-  if [ "$CONVERGENCE_ENABLED" != "true" ]; then
-    printf '%s\n' \
-      '/progress --next --converge is disabled (workflow.plan_review_convergence=false).' \
-      '' \
-      'Enable plan convergence with:' \
-      '' \
-      '  engineer config-set workflow.plan_review_convergence true' \
-      '' \
-      'Then re-run with --converge.'
-    exit 1
-  fi
-fi
-```
-
 Display the determination:
 
 ```
@@ -371,9 +324,8 @@ Display the determination:
 Then immediately invoke the determined command via SlashCommand.
 Do not ask for confirmation — the whole point of `/progress --next` is zero-friction advancement.
 
-**Route 3 convergence override:** When the routing decision is Route 3 (plan) and `PLAN_STRATEGY=converge`, invoke `/plan-review-convergence <current-phase> ${CONVERGENCE_ARGS}` instead of `/plan-phase <current-phase>`.
 
-**If `--auto` was passed:** after the determined command completes, automatically re-invoke `/progress --next --auto` (forwarding `--converge`/`--cross-ai` and any reviewer flags if they were originally passed) to continue chaining to the next step. Repeat until one of:
+**If `--auto` was passed:** after the determined command completes, automatically re-invoke `/progress --next --auto` to continue chaining to the next step. Repeat until one of:
 - A milestone completes (`/complete-milestone` is reached)
 - A blocking decision is required (safety gate triggers, prior-phase completeness prompt, user input needed)
 - An error or paused state is detected
@@ -396,14 +348,9 @@ Resume with: `/progress --next --auto` once resolved.
 - [ ] `--no-resume`: Route 0 skipped, prior_phase_completeness defer prompt runs as before
 - [ ] `--force`: everything skipped (Gates, Route 0, prior_phase_completeness) → straight to `determine_next_action`
 - [ ] Scan uses `engineer_run` (canonical resolver form); errors are surfaced rather than suppressed
-- [ ] A `roadmap.analyze` result whose `scope` is not `complete` is treated as scan-failed (warn + fall through), never as a clean empty scan 
+- [ ] A `roadmap.analyze` result whose `scope` is not `complete` is treated as scan-failed (warn + fall through), never as a clean empty scan
 - [ ] Predicate is plans-without-summaries (`plans.length > summaries.length`) — consistent with `determine_next_action` Route 4
 - [ ] Next action correctly determined from routing rules
 - [ ] Command invoked immediately without user confirmation
 - [ ] Clear status shown before invoking
-- [ ] `--converge` routes Route 3 planning through `engineer-plan-review-convergence`
-- [ ] `--cross-ai` is accepted as an alias for `--converge`
-- [ ] `--converge` fails fast with enable instructions when `workflow.plan_review_convergence=false`
-- [ ] `--converge` forwards reviewer selector flags and `--max-cycles N`
-- [ ] Default planning remains `plan-phase` when convergence is not requested
 </success_criteria>

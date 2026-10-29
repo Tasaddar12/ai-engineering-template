@@ -239,7 +239,7 @@ Uses the narrow `milestone.archive-quick` command rather than `milestone.complet
 engineer_run query milestone.archive-quick "v{X.Y}"
 ```
 
-This moves every directory under `.planning/quick/` into `.planning/milestones/v{X.Y}-quick/`, (re)writes that directory's `README.md` index, and clears STATE.md's `### Quick Tasks Completed` table rows — identical move/index/reset behavior to the `--archive-quick` flag documented in `complete-milestone.md`'s `archive_milestone` step, without touching ROADMAP.md, REQUIREMENTS.md, MILESTONES.md, or milestone-completion guards. Extract `archived` from the result to confirm.
+This moves every directory under `.planning/quick/` into `.planning/milestones/v{X.Y}-quick/`, (re)writes that directory's `README.md` index, and updates the runtime quick-task records — identical move/index/reset behavior to the `--archive-quick` flag documented in `complete-milestone.md`'s `archive_milestone` step, without touching ROADMAP.md, REQUIREMENTS.md, MILESTONES.md, or milestone-completion guards. Extract `archived` from the result to confirm.
 
 </step>
 

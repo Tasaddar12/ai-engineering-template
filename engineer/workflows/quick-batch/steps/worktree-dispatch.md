@@ -1,67 +1,13 @@
 **Step 6: Worktree create + executor dispatch**
 
 This is the batch's MUTATING wave — worktree create/executor dispatch/merge
-are the operations `isolation == "none"` caps to concurrency 1 (row 6),
+require mandatory worktree isolation,
 unlike planning/research above.
 
-**Auto-degrade on stale fork base (row 38, mirrors `/quick`'s own 
-guard):**
-```bash
-_engineer_identity_ok() {
-  [ -f "$1" ] || return 1
-  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
-}
-_engineer_select() {
-  for _engineer_candidate do
-    if _engineer_identity_ok "$_engineer_candidate"; then
-      ENGINEER_RUN="$_engineer_candidate"
-      return 0
-    fi
-  done
-  return 1
-}
-if [ -n "${ENGINEER_RUN:-}" ]; then
-  _engineer_identity_ok "$ENGINEER_RUN" || {
-    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
-    exit 1
-  }
-else
-  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
-  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
-  _engineer_select \
-    "$_engineer_root/engineer/bin/engineer_run" \
-    "$_engineer_runtime_root/engineer/bin/engineer_run" \
-    "$_engineer_root/.claude/engineer/bin/engineer_run" \
-    "$_engineer_root/.codex/engineer/bin/engineer_run" \
-    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
-    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
-    "$_engineer_path_candidate" || {
-    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
-    exit 1
-  }
-fi
-export ENGINEER_RUN
-engineer_run() {
-  sh "$ENGINEER_RUN" "$@"
-}
-if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
-  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
-fi
-if [ "$ISOLATION" = "harness-worktree" ] && [ "${USE_WORKTREES:-true}" != "false" ]; then
-  _QB_SHOULD_DEGRADE=$(engineer_run query worktree.base-check --mode "$ISOLATION" --pick shouldDegrade 2>/dev/null || true)
-  if [ "$_QB_SHOULD_DEGRADE" = "true" ]; then
-    echo "⚠  Worktree fork base diverged — auto-degrading quick-batch to sequential mode." >&2
-    USE_WORKTREES=false
-    ISOLATION=none
-  fi
-fi
-engineer_run query dispatch-isolation --raw --force-isolation "$ISOLATION" >/dev/null 2>&1 || true
-```
+Resolve mandatory isolation before dispatch. Accept only the two supported worktree modes; unavailable isolation blocks execution. Capture the expected base for branch verification.
 
 **Effective concurrency for this MUTATING wave** (`mutating` forces
-`isolation == none` to 1 regardless of `--jobs`/capacity — row 6):
+declared capacity for the isolated native agents):
 ```bash
 QB_EXEC_CONC_JSON=$(engineer_run quick-batch effective-concurrency --jobs "$JOBS" --task-count "$ITEM_COUNT" --capacity "$CAPACITY" --isolation "$ISOLATION" --mutating --raw)
 EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | engineer_run query json.get --field concurrency --default 1 --raw 2>/dev/null || printf 1)
@@ -171,21 +117,10 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | engineer_run query json.ge
    file, initialized `{"worktrees":[]}` before the first round — same shape
    `/quick`'s own `QUICK_WORKTREE_MANIFEST` uses).
 
-   **`isolation == "orchestrator-worktree"`:** Engineer creates the worktree
-   (`engineer_run query worktree.create --manifest "$QUICK_BATCH_WORKTREE_MANIFEST" --agent-id ... --path ... --branch ... --base ... --files "$PLAN_FILES" --deletions "$PLAN_DELETIONS"`) then
-   process-spawns the executor via `dispatch-isolation --json --cwd-target
-   --prompt`, exactly as `engineer/workflows/execute-phase/steps/executor-isolation-dispatch.md`'s
-   "orchestrator-worktree" section
-   describes — reuse that mechanism verbatim, substituting this item's
-   `${quick_id}`/`${ITEM_DIR}`/`${quick_id}-PLAN.md` for its
-   `{plan_number}`/`{phase_dir}`/`{plan_file}` placeholders.
-
-   **`isolation == "none"`:** no worktree. Dispatch the executor inline on the
-   primary checkout (same prompt, minus the worktree-only framing), one item
-   at a time — `EXEC_CONCURRENCY` is already forced to 1 in this mode.
+   **`isolation == "orchestrator-worktree"`:** create the item checkout through `worktree.create`, then dispatch the same native executor with its returned root and an embedded root pin. Reuse `execute-phase/steps/executor-isolation-dispatch.md`'s native lifecycle and completion reconciliation. Preserve plan, context, constraints and summary requirements.
 
    **Durable worktree-recovery persistence (`harness-worktree`/
-   `orchestrator-worktree` only, skip for `none`):** immediately after
+   `orchestrator-worktree` only):** immediately after
    recording `{agent_id, worktree_path, branch, expected_base}` into the
    EPHEMERAL `$QUICK_BATCH_WORKTREE_MANIFEST` above, ALSO persist the same
    triple durably onto this item in `BATCH.json`:
