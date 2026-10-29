@@ -291,11 +291,14 @@ class StandaloneExecutable(FixtureCase):
     def test_launcher_handles_apostrophe_with_only_python_on_path(self):
         self.check_restricted_launcher("O'Connor project")
 
+    def test_launcher_handles_apostrophe_with_cygwin_ostype(self):
+        self.check_restricted_launcher("O'Connor project", extra_env={"OSTYPE": "cygwin"})
+
     @unittest.skipIf(os.name == "nt", "backslashes are separators in Windows filenames")
     def test_launcher_preserves_literal_posix_backslashes(self):
         self.check_restricted_launcher("has\\backslash space")
 
-    def check_restricted_launcher(self, directory_name):
+    def check_restricted_launcher(self, directory_name, extra_env=None):
         base = self.temp("engineer-restricted-path-") / directory_name
         wrappers = parity.python_wrapper_dir(self.temp("engineer-only-python-"), sys.executable)
         for runtime_layout in (Path("engineer") / "bin", Path(".codex") / "engineer" / "bin"):
@@ -311,7 +314,7 @@ class StandaloneExecutable(FixtureCase):
                 for script_path in dict.fromkeys((str(launcher), launcher.as_posix(), str(relative), relative.as_posix())):
                     with self.subTest(script_path=script_path):
                         result = subprocess.run([parity.sh_path(), script_path, "query", "restricted"],
-                                                env={**os.environ, "PATH": parity.posix(wrappers)},
+                                                env={**os.environ, "PATH": parity.posix(wrappers), **(extra_env or {})},
                                                 cwd=base, capture_output=True, text=True)
                         self.assertEqual(0, result.returncode, result.stderr)
                         self.assertIn("RESTRICTED_OK:query restricted", result.stdout)
