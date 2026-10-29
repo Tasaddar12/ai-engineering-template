@@ -183,12 +183,14 @@ def supervise(request_path):
                 owner_exited = True
             if cancelled:
                 reason = 'cancelled'
-                cancellation = path.parent/'cancel.json'
-                if cancellation.is_file() and not cancellation.is_symlink():
-                    packet = json.loads(cancellation.read_bytes())
-                    if packet.get('token') == request['token'] and packet.get('request_hash') == request['request_hash'] and packet.get('reason') in ('timeout','cancelled','output-limit','runner-error'):
-                        reason = packet['reason']
-            elif time.monotonic() >= request['deadline']:
+            # The durable request may precede this interpreter's signal setup.
+            # Poll it independently so a caller never needs to signal bootstrap.
+            cancellation = path.parent/'cancel.json'
+            if cancellation.is_file() and not cancellation.is_symlink():
+                packet = json.loads(cancellation.read_bytes())
+                if packet.get('token') == request['token'] and packet.get('request_hash') == request['request_hash'] and packet.get('reason') in ('timeout','cancelled','output-limit','runner-error'):
+                    reason = packet['reason']
+            if not reason and time.monotonic() >= request['deadline']:
                 reason = 'timeout'
             if reason:
                 break

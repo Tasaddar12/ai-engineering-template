@@ -348,7 +348,9 @@ class OwnedProcess:
         if not cancellation.exists():
             _new(cancellation,_encoded({'token':self.ownership['token'],'request_hash':self.ownership['request_hash'],
                                        'reason':reason if reason in ('timeout','cancelled','output-limit') else 'runner-error'}))
-        self.process.send_signal(__import__('signal').SIGTERM)
+        # The supervisor polls this authenticated, atomically published request.
+        # SIGTERM could otherwise kill it before its Python handlers are ready,
+        # losing the only authority that can reap descendants and attest stop.
         try:
             self.wait(timeout=40)
         except subprocess.TimeoutExpired as exc:
