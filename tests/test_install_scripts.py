@@ -44,7 +44,7 @@ class PythonInstallScripts(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.fixture = tempfile.TemporaryDirectory(prefix="engineer-source-")
-        cls.source = Path(cls.fixture.name)
+        cls.source = Path(cls.fixture.name).resolve()
         for name in ("agents", "commands", "engineer", "hooks", "scripts", "skills", "bin"):
             shutil.copytree(ROOT / name, cls.source / name,
                             ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
@@ -58,7 +58,8 @@ class PythonInstallScripts(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="engineer-cli-")
         self.addCleanup(self.temporary.cleanup)
-        self.base = Path(self.temporary.name)
+        # Match canonical installer paths for expectations and fault injection.
+        self.base = Path(self.temporary.name).resolve()
         self.target = self.base / "project caf\u00e9 with spaces"
 
     def cli(self, script="install", *args, installed=False, host="codex", source=None, pin=None):

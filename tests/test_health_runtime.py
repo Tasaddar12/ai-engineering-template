@@ -16,7 +16,8 @@ class HealthRuntime(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(prefix="native-health-")
         self.addCleanup(temporary.cleanup)
-        self.root = Path(temporary.name)
+        # CLI evidence paths are canonical, including Windows short TEMP aliases.
+        self.root = Path(temporary.name).resolve()
         subprocess.run(["git", "init", "--quiet", str(self.root)], check=True, capture_output=True)
 
     def write(self, path, text):
