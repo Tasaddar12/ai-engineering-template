@@ -14,13 +14,14 @@ A rule is a dict ``{"code", "severity", "description", "repairable", "check"}``;
 The ``snapshot`` is a dict with the upstream ``PlanningSnapshot`` field names
 (``projectSections``, ``config``, ``phaseDirs``, ``roadmapDeclaredPhases``, ...), each
 field a dict carrying ``value`` and (where upstream does) ``scope`` / ``exists`` /
-``reason``. The snapshot builder (``planning-snapshot.cts``) is not ported; callers
-supply the dict.
+``reason``. Pure evaluators accept caller dictionaries; the native CLI builds
+repository evidence with ``health_snapshot.build_snapshot`` and reports unavailable
+rules through ``health_diagnostic.repository_health``.
 
 Deviations:
-- ``PlanningSnapshot`` is a plain dict; there is no builder bound to the repo's
-  ``planning.py`` / ``records.py`` readers (the repo stores config as ``config.yaml``
-  and has no equivalent of the 30-field snapshot).
+- ``PlanningSnapshot`` is a plain dict. The native builder reads ``config.yaml``
+  and planning records without mutation; the adapter reports skipped upstream-only
+  rules and missing evidence separately from executed rule results.
 - Phase-id helpers (``phase-id.cts``, ``validate.cts``) are ported privately for the
   functions the rules call: extract/normalize/compare/match/sentinel/variants and the
   legacy plus ``bracket`` conventions. Custom phase naming
