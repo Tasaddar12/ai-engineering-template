@@ -23,7 +23,7 @@ ACTIVE_DOCS = (
     "engineer/templates/state.md",
 )
 LEGACY_CALL = re.compile(
-    r"(?im)^\s*(?:node\s+(?:-e|-p|[^\s]*\.cjs)|npm\s+[^\n]*build:lib)\b"
+    r"(?im)^\s*(?:node\s+(?:-e|-p|[^\s]+\.(?:cjs|mjs|js|cts))|npm\s+[^\n]*build:lib)\b"
 )
 FENCE = re.compile(r"```[^\n]*\n(.*?)^```\s*$", re.MULTILINE | re.DOTALL)
 MIRRORS = (
@@ -39,6 +39,75 @@ MIRRORS = (
 
 
 class PythonDocReferences(unittest.TestCase):
+    def test_current_template_js_helper_and_test_paths_are_not_live_documentation(self):
+        roots = (ROOT / "engineer/workflows", ROOT / "engineer/references",
+                 ROOT / "engineer/templates", ROOT / "docs")
+        documents = [ROOT / "README.md"]
+        for root in roots:
+            documents.extend(root.rglob("*.md"))
+        retired_live_paths = (
+            "quick-batch-dispatch.cts",
+            "src/uat-predicate.cts",
+            "tests/workflow-size-budget.test.cjs",
+            "tests/claude-orchestration.test.cjs",
+            "tests/code-review-pipeline-regression.test.cjs",
+            "tests/runtime-launcher-parity.test.cjs",
+            "tests/model-omit-when-inherit-guard.test.cjs",
+            "tests/responsive-separators.test.cjs",
+        )
+        for path in documents:
+            text = path.read_text(encoding="utf-8")
+            for retired in retired_live_paths:
+                with self.subTest(document=path.relative_to(ROOT), path=retired):
+                    self.assertNotIn(retired, text)
+
+    def test_current_python_test_links_in_workflow_reference_families_exist(self):
+        roots = (ROOT / "engineer/workflows", ROOT / "engineer/references",
+                 ROOT / "engineer/templates", ROOT / "docs")
+        documents = [ROOT / "README.md"]
+        for root in roots:
+            documents.extend(root.rglob("*.md"))
+        for path in documents:
+            text = path.read_text(encoding="utf-8")
+            for relative in re.findall(r"`(tests/test_[A-Za-z0-9_]+\.py)`", text):
+                with self.subTest(document=path.relative_to(ROOT), test=relative):
+                    self.assertTrue((ROOT / relative).is_file())
+
+    def test_current_runtime_references_use_python_files_or_registered_verbs(self):
+        quick_batch = (ROOT / "engineer/workflows/quick-batch.md").read_text(encoding="utf-8")
+        self.assertIn("engineer/bin/lib/quick_batch.py", quick_batch)
+        for verb in ("quick-batch.effective-concurrency", "quick-batch.merge-routing",
+                     "quick-batch.spawn-plan", "quick-batch.verification-routing"):
+            self.assertIn(verb, quick_batch)
+        self.assertNotIn("quick-batch-dispatch.cts", quick_batch)
+
+        templates = (ROOT / "engineer/templates/README.md").read_text(encoding="utf-8")
+        self.assertIn("`windows.json`", templates)
+        self.assertIn("engineer_run query windows.append", templates)
+        for legacy in ("STATE-ARCHIVE.md", "milestone.lock", "skill-manifest.json"):
+            line = next(line for line in templates.splitlines() if f"`{legacy}`" in line)
+            self.assertIn("no current Python writer", line)
+
+        uat = (ROOT / "engineer/templates/UAT.md").read_text(encoding="utf-8")
+        self.assertNotIn("src/uat-predicate.cts", uat)
+        self.assertIn("engineer/bin/lib/uat.py", uat)
+
+    def test_documented_python_test_paths_exist_and_installer_does_not_claim_to_create_venv(self):
+        documents = [ROOT / "README.md", ROOT / "docs/python-scripts.md"]
+        for folder in ("workflows", "references", "templates"):
+            documents.extend((ROOT / "engineer" / folder).rglob("*.md"))
+        for path in documents:
+            text = path.read_text(encoding="utf-8")
+            for relative in re.findall(r"`(tests/test_[A-Za-z0-9_]+\.py)`", text):
+                with self.subTest(document=path.relative_to(ROOT), test=relative):
+                    self.assertTrue((ROOT / relative).is_file())
+
+        install_guide = (ROOT / "docs/python-scripts.md").read_text(encoding="utf-8")
+        self.assertIn("it does not create a virtual environment", install_guide)
+        self.assertNotIn("creates the host-specific Python environment", install_guide)
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertNotIn("sets up the Python runtime in `.codex-venv` or `.claude-venv`", readme)
+
     def test_spec_section_runtime_distinguishes_heading_from_supplied_rows(self):
         module_path = ROOT / "engineer/bin/lib/spec_section.py"
         spec = importlib.util.spec_from_file_location("spec_section_under_test", module_path)

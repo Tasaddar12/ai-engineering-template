@@ -135,8 +135,10 @@ and migrations.
 ## Adopt the template
 
 Start with the [Python installer](docs/python-scripts.md) for a new directory or
-an existing project. It preserves existing files and sets up the Python runtime
-in `.codex-venv` or `.claude-venv`. Preview with `--dry-run`.
+an existing project. It preserves existing files and installs the Python
+runtime. The launcher uses an existing host-specific or project virtual
+environment when available, then falls back to system Python. Preview with
+`--dry-run`.
 
 Select `--host codex` or `--host claude` to install commands, workflows, agents and
 runtime under `.codex` or `.claude`, including rules and advisory hooks. Codex is

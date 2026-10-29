@@ -9,8 +9,10 @@ never touch `BATCH.json`, and never write STATE.md/ROADMAP.md themselves
 (single-writer invariant).
 
 Dispatch decisions (effective concurrency, deterministic merge order, spawn
-backpressure, failure/verification routing) are computed by the pure
-`quick-batch-dispatch.cts` module (via the `quick-batch` CLI verbs) — this
+backpressure, failure/verification routing) are computed by the Python
+`engineer/bin/lib/quick_batch.py` module through the registered
+`quick-batch.effective-concurrency`, `quick-batch.merge-routing`,
+`quick-batch.spawn-plan`, and `quick-batch.verification-routing` verbs — this
 workflow never re-derives that logic inline.
 </purpose>
 
