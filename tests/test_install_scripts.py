@@ -9,6 +9,7 @@ import importlib.util
 import json
 from pathlib import Path
 import shutil
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -20,9 +21,9 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def run(*argv, cwd=None):
+def run(*argv, cwd=None, input_text=None):
     return subprocess.run(list(map(str, argv)), cwd=cwd, capture_output=True,
-                          text=True, encoding="utf-8", timeout=120)
+                          text=True, encoding="utf-8", input=input_text, timeout=120)
 
 
 def git(root, *args):
@@ -191,14 +192,112 @@ class PythonInstallScripts(unittest.TestCase):
                 ns = self.target / ("." + host)
                 self.assertEqual(originals[".ai/RULES.md"], (ns / "RULES.md").read_bytes())
                 self.assertEqual(originals[".ai/assets/data.bin"], (ns / "assets/data.bin").read_bytes())
-                self.assertEqual(originals[".ai/runtime/custom.py"], (ns / "engineer/bin/custom.py").read_bytes())
-                self.assertIn(str(ns / "engineer/bin").replace("\\", "/").encode(), (ns / "rules/local.md").read_bytes())
+                self.assertEqual(originals[".ai/runtime/custom.py"], (ns / "legacy/runtime/custom.py").read_bytes())
+                self.assertIn(str(ns / "legacy/runtime").replace("\\", "/").encode(), (ns / "rules/local.md").read_bytes())
                 for name, data in originals.items():
                     self.assertEqual(data, (self.target / name).read_bytes())
                 journal = json.loads((Path(packet["backup"]) / "journal.json").read_bytes())
                 self.assertEqual(set(originals), {e["path"] for e in journal["legacy_backups"]})
                 # Installed migration is still runnable and previews the same originals.
                 self.preview("migrate", host, installed=True)
+
+    def test_non_utf8_legacy_text_is_reviewed_as_exact_bytes_and_rolls_back(self):
+        for host in ("claude", "codex"):
+            with self.subTest(host=host):
+                self.target = self.base / host
+                originals = {".ai/RULES.md": b"Customer rules: \x80\r\n",
+                             ".ai/notes.txt": b"Customer notes: \xff\r\n",
+                             ".ai/data.json": b'{"custom":"\x81"}\r\n'}
+                for name, content in originals.items():
+                    path = self.target / name
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_bytes(content)
+                path, plan = self.preview("migrate", host)
+                mapped = [e for e in plan["entries"] if e.get("legacy_path") in originals]
+                self.assertEqual(len(originals), len(mapped))
+                for entry in mapped:
+                    self.assertEqual("no-text-transform", entry["text_transform"])
+                    self.assertEqual("non-utf8-bytes", entry["text_transform_reason"])
+                selected = [arg for e in mapped for arg in ("--select", e["path"])]
+                applied = self.success(self.apply(path, "migrate", False, host, *selected))
+                journal = json.loads((Path(applied["backup"]) / "journal.json").read_bytes())
+                for entry in mapped:
+                    expected = originals[entry["legacy_path"]]
+                    self.assertEqual(expected, (self.target / entry["path"]).read_bytes())
+                    self.assertEqual(expected, (self.target / entry["legacy_path"]).read_bytes())
+                    saved = next(e for e in journal["legacy_backups"] if e["path"] == entry["legacy_path"])
+                    self.assertEqual(expected, (Path(applied["backup"]) / saved["backup"]).read_bytes())
+                self.success(self.cli("migrate", "--target", self.target, "--host", host,
+                                      "--rollback", applied["backup"], host=host))
+                for entry in mapped:
+                    self.assertFalse((self.target / entry["path"]).exists())
+                    self.assertEqual(originals[entry["legacy_path"]], (self.target / entry["legacy_path"]).read_bytes())
+
+    def test_full_legacy_tree_migrates_then_updates_with_isolated_runnable_runtime(self):
+        for host in ("claude", "codex"):
+            with self.subTest(host=host):
+                self.target = self.base / host
+                shutil.copytree(ROOT / ".ai", self.target / ".ai",
+                                ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+                originals = {p.relative_to(self.target).as_posix(): p.read_bytes()
+                             for p in (self.target / ".ai").rglob("*") if p.is_file()}
+                git(self.target, "init", "--quiet")
+                path, plan = self.preview("migrate", host)
+                legacy = [e for e in plan["entries"] if e.get("legacy_path")]
+                self.assertEqual(set(originals), {e["legacy_path"] for e in legacy})
+                runtime_entries = [e for e in legacy if e["legacy_path"].startswith(".ai/runtime/")]
+                self.assertTrue(runtime_entries)
+                self.assertTrue(all(e["path"].startswith("." + host + "/legacy/runtime/") for e in runtime_entries))
+                migrated = self.success(self.apply(path, "migrate", False, host, "--select-all"))
+                ns = self.target / ("." + host)
+                self.assertTrue(migrated["complete"])
+                manifest = json.loads((ns / "engineer-install/manifest.json").read_bytes())
+                self.assertTrue(manifest["migration"]["complete"])
+                journal = json.loads((Path(migrated["backup"]) / "journal.json").read_bytes())
+                for saved in journal["legacy_backups"]:
+                    self.assertEqual(originals[saved["path"]], (Path(migrated["backup"]) / saved["backup"]).read_bytes())
+                for name, content in originals.items():
+                    self.assertEqual(content, (self.target / name).read_bytes())
+                # Old runtime modules absent from the new engine stay isolated.
+                self.assertFalse((ns / "engineer/bin/lib/results.py").exists())
+                for runtime in (ns / "engineer/bin/engineer.py", ns / "legacy/runtime/phase.py"):
+                    # The old runtime retains its existing PyYAML dependency;
+                    # only the new engine promises isolated standard-library use.
+                    isolation = ["-I"] if runtime.name == "engineer.py" else []
+                    result = self.success(run(sys.executable, *isolation, runtime, "query", "phases.list", cwd=self.target))
+                    self.assertEqual([], result["phases"])
+                cleanup = run(sys.executable, ns / "legacy/hooks/cleanup.py", "--help", cwd=self.target)
+                self.assertEqual(0, cleanup.returncode, cleanup.stderr)
+                self.assertIn("cleanup-preview", cleanup.stdout)
+                for hook in (ns / "legacy/hooks/planning-integrity.py", ns / "hooks/worktree-path-guard.py"):
+                    event = json.dumps({"cwd": str(self.target), "tool_name": "Read", "tool_input": {}})
+                    hook_result = run(sys.executable, hook, cwd=self.target, input_text=event)
+                    self.assertEqual(0, hook_result.returncode, hook_result.stderr)
+                # Running retained source hooks may generate Python caches.
+                # Disposable bytecode must neither migrate nor invalidate the
+                # reviewed original source snapshot on a later pinned update.
+                retained = run(sys.executable, self.target / ".ai/hooks/cleanup.py", "--help", cwd=self.target)
+                self.assertEqual(0, retained.returncode, retained.stderr)
+                cache = self.target / ".ai/runtime/__pycache__/custom.cpython-313.pyc"
+                cache.parent.mkdir(parents=True, exist_ok=True)
+                cache.write_bytes(b"Disposable generated bytes")
+                extra_bytecode = self.target / ".ai/runtime/custom.pyo"
+                extra_bytecode.write_bytes(b"Disposable bytecode outside cache directory")
+                update_path, update = self.preview("update", host, installed=True)
+                self.assertFalse(update["findings"])
+                self.success(self.apply(update_path, "update", True, host))
+                updated_manifest = json.loads((ns / "engineer-install/manifest.json").read_bytes())
+                self.assertEqual(manifest["migration"], updated_manifest["migration"])
+                _, repeated_migration = self.preview("migrate", host, installed=True)
+                self.assertTrue(all(not e.get("legacy_path", "").endswith((".pyc", ".pyo"))
+                                    for e in repeated_migration["entries"]))
+                self.assertTrue(all(e["action"] in ("unchanged", "backup-only")
+                                    for e in repeated_migration["entries"] if e.get("legacy_path")))
+                # New edits to retained legacy files demand another reviewed migration.
+                rules = self.target / ".ai/RULES.md"
+                rules.write_bytes(rules.read_bytes() + b"\nUnreviewed legacy edit\n")
+                refusal = self.success(self.cli("update", *self.context(host), "--dry-run", installed=True, host=host))
+                self.assertIn("migration-required", [e["code"] for e in refusal["findings"]])
 
     def test_no_hooks_omits_registration_for_both_hosts(self):
         for host in ("claude", "codex"):
@@ -236,6 +335,34 @@ class PythonInstallScripts(unittest.TestCase):
         self.assertFalse((self.target / ".codex/engineer-install/manifest.json").exists())
         journal = next((self.target / ".codex/engineer-install/backups").glob("*/journal.json"))
         self.assertEqual("rolled-back", json.loads(journal.read_bytes())["status"])
+
+    def test_export_transform_preserves_non_shell_text_and_crlf(self):
+        spec = importlib.util.spec_from_file_location("install_export_transform", ROOT / "bin/export_transforms.py")
+        transforms = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(transforms)
+        prose = "# Method\r\n\r\n```json\r\nnode -e 'JSON.parse(x).coverage.applicable'\r\n```\r\n"
+        shell = '```bash\r\nnode "$UI_PROBE_JS" "$ELEMENTS_JSON"\r\n```\r\n'
+        unknown = "```sh\r\nnode -e 'require(\"fs\").unlinkSync(\"customer-file\")'\r\n```\r\n"
+        runtime = str(ROOT / "engineer/bin/engineer.py")
+        exported = transforms.transform(prose + shell + unknown, "engineer/workflows/ui-phase.md", runtime)
+        self.assertTrue(exported.startswith(prose))
+        self.assertTrue(exported.endswith(unknown))
+        self.assertIn('query spec.ui-probe --input "$ELEMENTS_JSON"', exported)
+        self.assertNotIn('node "$UI_PROBE_JS"', exported)
+        self.assertEqual(exported.count("\n"), exported.count("\r\n"))
+
+    def test_export_transform_json_reader_generated_command_executes(self):
+        spec = importlib.util.spec_from_file_location("install_export_json", ROOT / "bin/export_transforms.py")
+        transforms = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(transforms)
+        source = '''node -e "const v=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(v.coverage.applicable)"'''
+        exported = transforms.transform(source, "scripts/coverage.sh", str(ROOT / "engineer/bin/engineer.py"))
+        self.assertNotIn("node -e", exported)
+        arguments = shlex.split(exported)
+        arguments[0] = sys.executable
+        result = run(*arguments, input_text='{"coverage":{"applicable":7}}')
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual("7", result.stdout.strip())
 
 
 if __name__ == "__main__":
