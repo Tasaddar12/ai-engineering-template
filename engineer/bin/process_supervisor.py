@@ -68,6 +68,19 @@ def private_json(path,value):
             temporary.unlink()
 
 
+def cancellation_reason(path,request):
+    """An unreadable or invalid optional envelope cannot stop a live attempt."""
+    try:
+        if path.is_symlink() or not path.is_file():
+            return None
+        packet = json.loads(path.read_bytes())
+    except (OSError,UnicodeDecodeError,json.JSONDecodeError):
+        return None
+    if isinstance(packet,dict) and packet.get('token') == request['token'] and packet.get('request_hash') == request['request_hash'] and packet.get('reason') in ('timeout','cancelled','output-limit','runner-error'):
+        return packet['reason']
+    return None
+
+
 def supervise(request_path):
     if sys.platform != 'linux' or not Path('/proc/self/task').is_dir():
         raise RuntimeError('Linux /proc and child subreaper support are required')
@@ -185,11 +198,9 @@ def supervise(request_path):
                 reason = 'cancelled'
             # The durable request may precede this interpreter's signal setup.
             # Poll it independently so a caller never needs to signal bootstrap.
-            cancellation = path.parent/'cancel.json'
-            if cancellation.is_file() and not cancellation.is_symlink():
-                packet = json.loads(cancellation.read_bytes())
-                if packet.get('token') == request['token'] and packet.get('request_hash') == request['request_hash'] and packet.get('reason') in ('timeout','cancelled','output-limit','runner-error'):
-                    reason = packet['reason']
+            requested_reason = cancellation_reason(path.parent/'cancel.json',request)
+            if requested_reason:
+                reason = requested_reason
             if not reason and time.monotonic() >= request['deadline']:
                 reason = 'timeout'
             if reason:

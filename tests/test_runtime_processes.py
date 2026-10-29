@@ -224,6 +224,43 @@ runpy.run_path(script, run_name="__main__")
                 finally:
                     child.close()
 
+    @unittest.skipUnless(sys.platform == "linux", "Linux supervisor cancellation protocol")
+    def test_supervisor_ignores_invalid_cancellation_envelopes_until_timeout(self):
+        for name, content in (("malformed", b"{"), ("list", b"[]"), ("null", b"null"), ("encoding", b"\xff")):
+            with self.subTest(envelope=name), (self.root / (name + ".out")).open("wb") as output:
+                child = processes.start_owned([sys.executable, "-c", "import time; time.sleep(5)"], self.root,
+                    env=self.env, stdout=output, stderr=output, timeout=0.5)
+                try:
+                    processes._new(child.directory / "cancel.json", content)
+                    child.wait()
+                    proof = processes.terminal(child.ownership)
+                    self.assertEqual("timeout", proof["reason"], proof)
+                    self.assertGreaterEqual(time.monotonic(), child.deadline)
+                    self.assertEqual(124, proof["exit_code"])
+                    self.assertIsNone(proof["error"])
+                    self.assertTrue(proof["tree_stopped"])
+                finally:
+                    child.close()
+
+    @unittest.skipUnless(sys.platform == "linux", "Linux supervisor cancellation protocol")
+    def test_supervisor_accepts_valid_cancellation_after_invalid_envelope(self):
+        with (self.root / "replacement.out").open("wb") as output:
+            child = processes.start_owned([sys.executable, "-c", "import time; time.sleep(5)"], self.root,
+                env=self.env, stdout=output, stderr=output, timeout=10)
+            try:
+                cancellation = child.directory / "cancel.json"
+                processes._new(cancellation, b"{")
+                time.sleep(0.2)
+                self.assertIsNone(child.poll(), "Invalid envelope terminated the live attempt")
+                cancellation.unlink()
+                child.stop()
+                proof = processes.terminal(child.ownership)
+                self.assertEqual("cancelled", proof["reason"])
+                self.assertIsNone(proof["error"])
+                self.assertTrue(proof["tree_stopped"])
+            finally:
+                child.close()
+
 
 if __name__ == "__main__":
     unittest.main()
