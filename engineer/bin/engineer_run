@@ -2,6 +2,15 @@
 # Resolve symlinks before selecting source or installed Python environments.
 set -eu
 source_path=$0
+# Native Windows Python needs Windows paths from Git Bash. In particular,
+# MSYS argument conversion cannot reliably carry POSIX paths containing an
+# apostrophe. Keep Cygwin and other POSIX shells on their native pwd behavior.
+_engineer_pwd() {
+    case "${OSTYPE:-}" in
+        msys*) pwd -P -W ;;
+        *) pwd -P ;;
+    esac
+}
 # Git for Windows can pass native backslashes in $0. Keep literal backslashes
 # in POSIX filenames, and use only shell builtins before finding Python.
 case "${OSTYPE:-}" in
@@ -17,15 +26,15 @@ esac
 while [ -L "$source_path" ]; do
     case "$source_path" in */*) source_parent=${source_path%/*} ;; *) source_parent=. ;; esac
     source_parent=${source_parent:-/}
-    source_dir=$(CDPATH= cd -- "$source_parent" && pwd -P)
+    source_dir=$(CDPATH= cd -- "$source_parent" && _engineer_pwd)
     link=$(readlink "$source_path")
     case "$link" in /*) source_path=$link ;; *) source_path=$source_dir/$link ;; esac
 done
 case "$source_path" in */*) source_parent=${source_path%/*} ;; *) source_parent=. ;; esac
 source_parent=${source_parent:-/}
-runtime_dir=$(CDPATH= cd -- "$source_parent" && pwd -P)
-namespace_dir=$(CDPATH= cd -- "$runtime_dir/../.." && pwd -P)
-project_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd -P)
+runtime_dir=$(CDPATH= cd -- "$source_parent" && _engineer_pwd)
+namespace_dir=$(CDPATH= cd -- "$runtime_dir/../.." && _engineer_pwd)
+project_root=$(CDPATH= cd -- "$(git rev-parse --show-toplevel 2>/dev/null || _engineer_pwd)" && _engineer_pwd)
 for interpreter in "$namespace_dir-venv/bin/python" "$namespace_dir-venv/Scripts/python.exe" "$project_root/.venv/bin/python" "$project_root/.venv/Scripts/python.exe"; do
     if [ -x "$interpreter" ]; then
         exec "$interpreter" -I "$runtime_dir/engineer.py" "$@"
