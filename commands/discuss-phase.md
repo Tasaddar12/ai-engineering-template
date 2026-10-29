@@ -1,7 +1,7 @@
 ---
 name: discuss-phase
 description: Gather phase context through adaptive questioning before planning.
-argument-hint: "<phase> [--all] [--auto] [--text]"
+argument-hint: "<phase> [--all] [--auto] [--text] [--assumptions]"
 allowed-tools:
   - Read
   - Write
@@ -45,7 +45,11 @@ Context files are resolved in-workflow using `init phase-op` and roadmap/state t
 </context>
 
 <process>
-Read and execute `engineer/workflows/discuss-phase.md` end-to-end.
+If `--assumptions` is present in the `<arguments>` block, read and execute
+`engineer/workflows/list-phase-assumptions.md` end-to-end with the phase argument,
+then stop. This explicit mode surfaces assumptions conversationally before planning.
+
+Otherwise, read and execute `engineer/workflows/discuss-phase.md` end-to-end.
 
 **MANDATORY:** Read the workflow file BEFORE taking any action. The objective and success_criteria sections in this command file are summaries — the workflow file contains the complete step-by-step process with all required behaviors, config checks, and interaction patterns. Do not improvise from the summary.
 

@@ -38,3 +38,15 @@ Workflow, runtime, references/template retirement and their integration checks b
 ## Threat flags
 
 None identified in the inspected Markdown entrypoint retirement scope; no new executable, network, authentication or storage surface was introduced.
+
+## Retained assumptions-route correction
+
+Post-slice inspection confirmed `engineer/workflows/list-phase-assumptions.md`
+is a complete retained method advertising `/discuss-phase <phase> --assumptions`.
+Restored that explicit flag and its direct route in the command and exact skill
+copy. The removed configuration-selected assumptions overlay and chain/power
+routes remain retired. No runtime launcher or dependency was added.
+
+Validation: all 42 command/skill pairs remain byte-identical; the changed command
+preserves standalone structural-tag balance and code-fence parity; the explicit
+route resolves to the existing method; `git diff --check` passed.
