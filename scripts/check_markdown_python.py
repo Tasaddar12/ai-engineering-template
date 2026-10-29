@@ -1,9 +1,7 @@
-"""Reject executable Node examples and retired JS helpers in active Markdown.
+"""Reject retired JavaScript runtime helper calls in active Markdown.
 
-Scan the Git index, including hidden directories and case-insensitive Markdown
-suffixes. Leave the archived .ai tree, project .planning records, existing
-maintenance records and PLANNED-UPDATES.md untouched. Prose about Node, graph
-nodes, package-manager commands and JavaScript application source remain valid.
+Scan tracked Markdown outside archived workflow, planning and maintenance records.
+Generic Node commands for adopting projects and JavaScript examples remain valid.
 """
 from pathlib import Path
 import argparse
@@ -196,11 +194,11 @@ def executable_regions(text):
         yield start, "".join(body), "source" if source else False
 
 
-def findings(text):
+def findings(text, runtime_only=False):
     results = []
     for offset, region, inline in executable_regions(text):
         region = re.sub(r"[\\`]\r?\n", lambda m: " "*len(m[0]), region)
-        for position, token in node_commands(region, scan_substitutions=inline != "source"):
+        for position, token in (() if runtime_only else node_commands(region, scan_substitutions=inline != "source")):
             # An isolated inline runtime name is a prose identifier, like `git`.
             # Bare commands remain prohibited in fences and in inline pipelines.
             if inline is True and token == region.strip():
@@ -237,7 +235,7 @@ def main(root=ROOT):
     files = tracked_markdown(root)
     errors = []
     for file in files:
-        for line, reason, command in findings((root/file).read_text(encoding="utf-8-sig")):
+        for line, reason, command in findings((root/file).read_text(encoding="utf-8-sig"), runtime_only=True):
             errors.append(f"{file.as_posix()}:{line}: {reason}: {command}")
     print("\n".join(errors)) if errors else None
     print(f"Scanned {len(files)} tracked Markdown files; {len(errors)} findings.")

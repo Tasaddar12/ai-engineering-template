@@ -645,7 +645,7 @@ WAVE_PRE_HOOKS_JSON=$(engineer_run loop render-hooks execute:wave:pre --raw)
      # checkout), which pins a non-primary (per-phase lane) orchestrator off its branch.
      # Dispatch runs from the orchestrator's lane, so show-toplevel here is the correct root.
      ORCH_ROOT=$(git rev-parse --show-toplevel)
-     ORCH_ROOT="$ORCH_ROOT" MANIFEST="$WAVE_WORKTREE_MANIFEST" python -X utf8 -c 'import json,os,pathlib; pathlib.Path(os.environ["MANIFEST"]).write_text(json.dumps({"orchestrator_root":os.environ.get("ORCH_ROOT") or None,"worktrees":[]})+"\n",encoding="utf-8")'
+     ORCH_ROOT="$ORCH_ROOT" MANIFEST="$WAVE_WORKTREE_MANIFEST" python -c 'import json,os,pathlib; pathlib.Path(os.environ["MANIFEST"]).write_text(json.dumps({"orchestrator_root":os.environ.get("ORCH_ROOT") or None,"worktrees":[]})+"\n",encoding="utf-8")'
      export WAVE_WORKTREE_MANIFEST
    fi
    ```
@@ -860,7 +860,7 @@ rerun the same command. Do not fall back to broad worktree discovery.
 # list`'s first entry, which is always the main checkout and would pin a non-primary (per-phase
 # lane) orchestrator off its own branch, tripping the assertion below. Byte-identical
 # for a primary orchestrator (its root IS the first entry); the fallback covers pre- manifests.
-PRIMARY_WT=$(MANIFEST="$WAVE_WORKTREE_MANIFEST" python -X utf8 -c 'import json,os,pathlib
+PRIMARY_WT=$(MANIFEST="$WAVE_WORKTREE_MANIFEST" python -c 'import json,os,pathlib
 try: print(json.loads(pathlib.Path(os.environ["MANIFEST"]).read_text(encoding="utf-8")).get("orchestrator_root") or "",end="")
 except (OSError,ValueError,AttributeError): pass')
 [ -n "$PRIMARY_WT" ] || PRIMARY_WT=$(git worktree list --porcelain | awk '/^worktree /{print substr($0,10); exit}')
@@ -884,7 +884,7 @@ If the orchestrator deviated from the standard wave merge path (e.g., custom int
 # Cleanup-tail: pin orchestrator CWD to its OWN worktree before cleanup-tail.
 # Same fix as the templated path: resolve the dispatch-time orchestrator root from the manifest,
 # not `git worktree list`'s first entry (always the main checkout — wrong for a lane orchestrator).
-PRIMARY_WT=$(MANIFEST="$WAVE_WORKTREE_MANIFEST" python -X utf8 -c 'import json,os,pathlib
+PRIMARY_WT=$(MANIFEST="$WAVE_WORKTREE_MANIFEST" python -c 'import json,os,pathlib
 try: print(json.loads(pathlib.Path(os.environ["MANIFEST"]).read_text(encoding="utf-8")).get("orchestrator_root") or "",end="")
 except (OSError,ValueError,AttributeError): pass')
 [ -n "$PRIMARY_WT" ] || PRIMARY_WT=$(git worktree list --porcelain | awk '/^worktree /{print substr($0,10); exit}')
@@ -892,7 +892,7 @@ if [ -n "$PRIMARY_WT" ] && [ "$(pwd -P 2>/dev/null)" != "$(cd "$PRIMARY_WT" 2>/d
 # Cleanup-tail: remove residual agent worktrees after a cross-wave-dependency deviation.
 # Uses only the current wave manifest to avoid touching unrelated active agents.
 WT_PATHS_FILE=$(mktemp "${TMPDIR:-/tmp}/engineer-worktree-paths-XXXXXX")
-python -X utf8 -c 'import json,os,pathlib,sys
+python -c 'import json,os,pathlib,sys
 p=os.environ.get("WAVE_WORKTREE_MANIFEST")
 try:
  if not p: raise ValueError("WAVE_WORKTREE_MANIFEST is unset")

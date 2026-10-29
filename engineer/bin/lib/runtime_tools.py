@@ -21,7 +21,7 @@ def json_command(args, action):
         return [line for line in sys.stdin.read().splitlines() if line]
     if action == "depth-input":
         return {"flagDepth": args.get("flag-depth"), "configDepth": args.get("config-depth", "standard"),
-                "overrides": args.json("overrides", []), "files": sys.stdin.read().splitlines(), "repoRoot": str(root())}
+                "overrides": args.json("overrides", []), "files": [line for line in sys.stdin.read().splitlines() if line], "repoRoot": str(root())}
     data = payload(args)
     field = args.get("field", args.arg(0))
     if field:

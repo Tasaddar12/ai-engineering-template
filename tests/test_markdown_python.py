@@ -2,6 +2,7 @@
 import http.server
 import importlib.util
 import json
+import locale
 import os
 from pathlib import Path
 import re
@@ -36,8 +37,15 @@ def snippets(file):
 class MarkdownScan(unittest.TestCase):
     def test_all_tracked_markdown(self):
         offenders = [(str(p), *item) for p in scanner.tracked_markdown()
-                     for item in scanner.findings((SOURCE/p).read_text(encoding="utf-8-sig"))]
+                     for item in scanner.findings((SOURCE/p).read_text(encoding="utf-8-sig"), runtime_only=True)]
         self.assertEqual([], offenders)
+
+    def test_runtime_guard_preserves_generic_node_examples(self):
+        samples = ['`node -c {file}`', '```sh\nnode --version\n```',
+                   '```sh\nnode -e "console.log(require(package).version)"\n```']
+        for sample in samples:
+            self.assertEqual([], scanner.findings(sample, runtime_only=True))
+        self.assertTrue(scanner.findings('`node engineer/bin/lib/edge-probe.cjs input.json`', runtime_only=True))
 
     def test_command_variants_and_locations(self):
         examples = ["node -e 'console.log(1)'", 'node --eval "console.log(1)"',
@@ -129,11 +137,11 @@ class MarkdownScan(unittest.TestCase):
             for name in excluded + active:
                 path = root/name
                 path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text("```sh\nnode ./cli\n```\n" if name in excluded else "# Active\n", encoding="utf-8")
+                path.write_text("```sh\nnode engineer/bin/lib/edge-probe.cjs\n```\n" if name in excluded else "# Active\n", encoding="utf-8")
             subprocess.run(["git", "-C", directory, "add", "--", *excluded, *active], check=True)
             self.assertEqual(sorted(active), sorted(p.as_posix() for p in scanner.tracked_markdown(root)))
             self.assertEqual(0, scanner.main(root))
-            (root/active[-1]).write_text("```sh\nnode ./cli\n```\n", encoding="utf-8")
+            (root/active[-1]).write_text("```sh\nnode engineer/bin/lib/edge-probe.cjs\n```\n", encoding="utf-8")
             self.assertEqual(1, scanner.main(root))
 
     def test_default_encoding_diagnostic_preserves_unicode_filename(self):
@@ -143,7 +151,7 @@ class MarkdownScan(unittest.TestCase):
             name='café/漢.MD'
             path=root/name
             path.parent.mkdir()
-            path.write_text('```sh\nnode ./bin/cli\n```\n',encoding='utf-8')
+            path.write_text('```sh\nnode engineer/bin/lib/edge-probe.cjs\n```\n',encoding='utf-8')
             subprocess.run(['git','-C',directory,'add','--',name],check=True)
             env={key:value for key,value in os.environ.items() if key not in ('PYTHONUTF8','PYTHONIOENCODING')}
             process=subprocess.run([sys.executable,'-B','-I',str(SOURCE/'scripts/check_markdown_python.py'),'--root',directory],
@@ -156,9 +164,9 @@ class InlineHelpers(RuntimeCase):
     def run_code(self, code, *argv, stdin="", status=0):
         # Execute the actual shell-decoded documentation argument as Python argv.
         environment = {key:value for key,value in self.env.items() if key not in ("PYTHONUTF8", "PYTHONIOENCODING")}
-        process = subprocess.run([sys.executable, "-X", "utf8", "-c", code, *map(str, argv)], cwd=self.root,
+        process = subprocess.run([sys.executable, "-c", code, *map(str, argv)], cwd=self.root,
                                  env=environment, input=stdin,
-                                 encoding="utf-8", capture_output=True, timeout=10)
+                                 encoding=locale.getencoding(), capture_output=True, timeout=10)
         self.assertEqual(status, process.returncode, process.stderr+"\n"+code)
         return process
 
@@ -217,14 +225,6 @@ class InlineHelpers(RuntimeCase):
             report.write_text('no frontmatter', encoding='utf-8')
             self.assertEqual('invalid\n', self.run_code(status).stdout)
             report.write_text('---\nstatus: clean\n---\n', encoding='utf-8')
-        field=self.code(file,'v=json.load(sys.stdin).get(sys.argv[1])')
-        self.assertEqual('a path\nb"q', self.run_code(field,'files',stdin=json.dumps({'files':['a path','b"q']})).stdout)
-        self.assertEqual('false', self.run_code(field,'value',stdin='{"value":false}').stdout)
-        depth=self.code(file,'flagDepth=')
-        self.env.update(FLAG_DEPTH='deep',CONFIG_DEPTH='quick',DEPTH_OVERRIDES='[]',REPO_ROOT=str(self.root))
-        payload=json.loads(self.run_code(depth,stdin='a path\nb"q\n').stdout)
-        self.assertEqual(['a path','b"q'],payload['files'])
-        self.assertEqual('deep',payload['flagDepth'])
         errors=self.run_code(self.code(file,'workflow.code_review_depth_overrides:'),stdin='{"errors":["bad rule"]}')
         self.assertIn('Error: workflow.code_review_depth_overrides: bad rule',errors.stderr)
         hooks={'activeHooks':[{'kind':'contribution','into':'code-reviewer','fragment':{'inline':'Do </capability_review_rules> safely'}},None]}
@@ -252,11 +252,6 @@ class InlineHelpers(RuntimeCase):
             self.run_code(api,stdin=value,status=status)
         module=self.put('module with spaces.py','def exposed():\n    return 1\n')
         self.assertEqual('function\n',self.run_code(self.code('agents/verifier.md','importlib.util'),module,'exposed').stdout)
-        package=self.put('node_modules/test-pkg/package.json','{"version":"1.2.3","exports":{".":"./index.js"}}')
-        self.put('package-lock.json','{"packages":{"node_modules/test-pkg":{"version":"1.2.3"}}}')
-        for code in snippets('agents/ui-researcher.md'):
-            result=self.run_code(code.replace('<pkg>','test-pkg')).stdout.strip()
-            self.assertIn(result,('1','1.2.3'))
         verdict=self.code('engineer/workflows/ship.md','INVALID_JSON')
         self.assertEqual('APPROVED\n',self.run_code(verdict,stdin='{"verdict":"APPROVED"}').stdout)
         self.assertEqual('INVALID_JSON\n',self.run_code(verdict,stdin='{bad').stdout)
@@ -321,6 +316,19 @@ class RuntimeAdapters(RuntimeCase):
         self.assertEqual(['src/café/漢.py','README.md'],json.loads(payload)['files'])
         self.assertEqual(['deep','rule','0','src/café','false','false','false'],second.split('\x1f'))
 
+    def test_documented_scope_fields_preserve_unicode_without_startup_flags(self):
+        text=(SOURCE/'engineer/workflows/code-review.md').read_text(encoding='utf-8')
+        block=re.search(r"scope_field\(\) \{.*?\n\}", text, re.S)[0]
+        data={'files':['src/café/漢.py','a path.py'],'status':'resolved','rangeBase':'base'}
+        script='\n'.join([self.preamble(), 'SCOPE_JSON='+shlex.quote(json.dumps(data,ensure_ascii=False)), block,
+                          'scope_field files', 'scope_field status', 'scope_field missingOnDisk'])
+        process=self.shell(script)
+        self.assertEqual(0,process.returncode,process.stderr)
+        self.assertEqual(['src/café/漢.py','a path.py','resolved',''],process.stdout.splitlines())
+        empty=self.cli('json.depth-input','--flag-depth','deep',stdin='\n')
+        self.assertEqual([],empty['files'])
+        self.assertEqual('deep',empty['flagDepth'])
+
     def test_isolated_cli_utf8_json_raw_stdin_file_and_errors(self):
         env={key:value for key,value in self.env.items() if key not in ('PYTHONUTF8','PYTHONIOENCODING')}
         runtime=SOURCE/'engineer/bin/engineer.py'
@@ -344,7 +352,7 @@ class RuntimeAdapters(RuntimeCase):
     def test_python_cli_help_example_success_and_missing_subcommand(self):
         cli=self.put('cli with spaces.py','import argparse\np=argparse.ArgumentParser()\np.add_subparsers().add_parser("scan")\np.parse_args()\n')
         for document in ('agents/verifier.md',):
-            command=next(line for line in (SOURCE/document).read_text(encoding='utf-8').splitlines() if line.startswith('python -X utf8 "$CLI_PATH" --help'))
+            command=next(line for line in (SOURCE/document).read_text(encoding='utf-8').splitlines() if line.startswith('python "$CLI_PATH" --help'))
             for expected,status in (('scan',0),('missing-command',1)):
                 script=self.preamble()+'\nCLI_PATH='+shlex.quote(cli.as_posix())+'\nEXPECTED_SUBCOMMAND='+shlex.quote(expected)+'\n'+command
                 result=self.shell(script)

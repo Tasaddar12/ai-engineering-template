@@ -6,10 +6,8 @@ stdio deadlocks with MCP servers — see Claude Code issue ):
 1. **Force-kill:** Close the terminal (Ctrl+C may not work)
 2. **Clean up orphaned processes:**
    ```powershell
-   # Inspect the PID recorded when this task launched the stale MCP server.
-   Get-Process -Id <owned-process-id> -ErrorAction SilentlyContinue
-   # Stop only after confirming it belongs to this task.
-   Stop-Process -Id <owned-process-id> -Force
+   # Kill orphaned node processes from stale MCP servers
+   Get-Process node -ErrorAction SilentlyContinue | Where-Object {$_.StartTime -lt (Get-Date).AddHours(-1)} | Stop-Process -Force
    ```
 3. **Clean up stale task directories:**
    ```powershell

@@ -898,8 +898,8 @@ class FixerTypeScriptCheck(unittest.TestCase):
         self.assertRegex(FIXER, r'"files": \[\]|files: \[\]')
 
     def test_other_tier_2_rows_are_unchanged(self):
-        self.assertIn("engineer_run query resolve-package-manager lint --raw", FIXER)
-        self.assertIn("| Python | `python -X utf8 -c \"import ast; ast.parse(open('{file}').read())\"` |", FIXER)
+        self.assertIn("| JavaScript | `node -c {file}` (syntax check) |", FIXER)
+        self.assertIn("| Python | `python -c \"import ast; ast.parse(open('{file}').read())\"` |", FIXER)
         self.assertIn("| Other | Skip to Tier 1 only |", FIXER)
 
     def test_procedure_says_how_to_find_the_config_filter_the_output_and_avoid_build_artifacts(self):

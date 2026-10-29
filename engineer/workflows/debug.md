@@ -173,7 +173,7 @@ If $ARGUMENTS provided OR user describes new issue:
 **Check `$ARGUMENTS` for pre-supplied values first.** A user pasting details, or a
 command wrapping `/debug`, may pass some or all of the five fields inline as
 semicolon-separated `label: value` pairs, e.g. `expected: mean() returns 5; actual: returns
-NaN; error: none; timeline: since last commit; repro: python run.py`. Recognized labels per
+NaN; error: none; timeline: since last commit; repro: node run.js`. Recognized labels per
 field (case-insensitive): expected / expected behavior; actual / actual behavior; error /
 errors / error messages; timeline / when / started; repro / reproduction / steps to
 reproduce.

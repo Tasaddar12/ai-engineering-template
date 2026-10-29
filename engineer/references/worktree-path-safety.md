@@ -283,7 +283,7 @@ _LAUNCH='((/[^[:space:]]*/)?((env|setsid|nohup)'"$_ENVOPTL"'|timeout('"$_LOPT"'[
 # package managers; `-C`/`--directory` to make and git. $_LAUNCH leads it for $_EXEC's reason — a
 # recognised tool behind `env` is still that tool.
 _DIR='(('"$_LAUNCH"')(npm|npx|pnpm|yarn)[[:space:]]+([^&;|]*[[:space:]]+)?(--prefix|--cwd|--dir|-C)|('"$_LAUNCH"')(make|git)[[:space:]]+([^&;|]*[[:space:]]+)?(-C|--directory)|('"$_LAUNCH"')(/[^[:space:]]*/)?env'"$_ENVOPT"'[[:space:]]+(--chdir|-C))[[:space:]=]+'
-# Command-string interpreters. `eval "cd <main> && x"`, `sh -c "…"`, `bash -c '…'`, JavaScript eval bury
+# Command-string interpreters. `eval "cd <main> && x"`, `sh -c "…"`, `bash -c '…'`, `node -e '…'` bury
 # the real command inside ONE opaque quoted token, and that defeats BOTH scans below at once: the
 # relocating verb never sits at a boundary scan 1 recognizes, and scan 2's tokenizer swallows the whole
 # quoted span, which after unquoting does not begin with `/`. These are ordinary portability idioms, not
@@ -415,7 +415,7 @@ says what follows from it.
 **The largest one first, because it is the one a reader will otherwise assume away:**
 
 - **A RELATIVE path argument to a command that is not a recognized relocating verb.**
-  `python3 -m pytest ../main/tests`, `python ../main/test.py`, `make -f ../main/Makefile`, a redirect from
+  `python3 -m pytest ../main/tests`, `node ../main/test.js`, `make -f ../main/Makefile`, a redirect from
   `../main/file` — all pass. The catch-all scan evaluates only words that begin with `/`, so it never
   resolves a relative one, and the verb scan does not fire because none of these relocates. This is the
   widest gap in the guard and it is not new. Closing it means resolving every relative word in the
@@ -481,7 +481,7 @@ The rest, in descending order of how likely a planner is to reach them:
 - **`_DIR`'s tool-to-flag run is still a catch-all**, so a pass-through argument that happens to spell
   a directory flag can over-halt: `npm run package -- --prefix=../main/` halts although the flag goes
   to the script, not to npm. Pre-existing, and again in the loud direction.
-- **A non-shell payload whose path is computed.** `python3 -c` / JavaScript eval payloads are scanned _as
+- **A non-shell payload whose path is computed.** `python3 -c` / `node -e` payloads are scanned _as
   shell text_, which catches a path written as a literal word (`os.chdir('/main')`) and not one the
   program assembles (`os.path.join(root, '..')`).
 - **Wrapping nested more than four deep.** `_walk` bounds its own recursion.

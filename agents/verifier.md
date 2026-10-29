@@ -439,16 +439,20 @@ Anti-pattern scanning (Step 7) checks for code smells. Behavioral spot-checks go
 
 ```bash
 # API endpoint returns non-empty data
-curl -s http://localhost:$PORT/api/$ENDPOINT 2>/dev/null | python -X utf8 -c 'import json,sys; d=json.load(sys.stdin); sys.exit(0 if isinstance(d,(list,dict,str)) and len(d)>0 else 1)'
+curl -s http://localhost:$PORT/api/$ENDPOINT 2>/dev/null | python -c 'import json,sys; d=json.load(sys.stdin); sys.exit(0 if isinstance(d,(list,dict,str)) and len(d)>0 else 1)'
 
-# Python CLI example: set CLI_PATH to a Python script; help exposes the expected subcommand
-python -X utf8 "$CLI_PATH" --help 2>&1 | grep -q "$EXPECTED_SUBCOMMAND"
+# CLI command produces expected output
+node $CLI_PATH --help 2>&1 | grep -q "$EXPECTED_SUBCOMMAND"
+# For a Python CLI:
+python "$CLI_PATH" --help 2>&1 | grep -q "$EXPECTED_SUBCOMMAND"
 
 # Build produces output files
 ls $BUILD_OUTPUT_DIR/*.{js,css} 2>/dev/null | wc -l
 
-# Python module example: set MODULE_PATH to a Python module file and FUNCTION_NAME to its callable
-python -X utf8 -c 'import importlib.util,sys; spec=importlib.util.spec_from_file_location("subject",sys.argv[1]); m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); print("function" if callable(getattr(m,sys.argv[2],None)) else "undefined")' "$MODULE_PATH" "$FUNCTION_NAME" 2>/dev/null | grep -q "function"
+# Module exports expected functions
+node -e "const m = require('$MODULE_PATH'); console.log(typeof m.$FUNCTION_NAME)" 2>/dev/null | grep -q "function"
+# For a Python module:
+python -c 'import importlib.util,sys; spec=importlib.util.spec_from_file_location("subject",sys.argv[1]); m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); print("function" if callable(getattr(m,sys.argv[2],None)) else "undefined")' "$MODULE_PATH" "$FUNCTION_NAME" 2>/dev/null | grep -q "function"
 
 # A test EXISTS (existence proof — enumerate, do NOT run the suite)
 cargo test -- --list 2>/dev/null | grep -q "$PHASE_TEST_PATTERN"   # pytest --collect-only -q · npx vitest list · go test -list '.*'

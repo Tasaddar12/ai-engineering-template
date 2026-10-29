@@ -28,9 +28,9 @@ calibration_source: "Adapted from thinking-partner verification corpus"
 
 **Output:**
 
-> **Method:** Ran `grep -n "scope" engineer/bin/validate_commit.py` to locate scope validation logic.
+> **Method:** Ran `grep -n "scope" engineer/bin/validate-commit.js` to locate scope validation logic.
 > **Evidence:** Lines 34-41 show regex `/^(feat|fix|refactor|test|docs|chore|wip)\(/` which requires opening paren after type. However, no test for MISSING closing paren exists -- the regex accepts `feat(: description` (missing scope content and closing paren).
-> **Ran:** `echo "feat(: test" | python -X utf8 engineer/bin/validate_commit.py` -- exit code 0 (accepted).
+> **Ran:** `echo "feat(: test" | node engineer/bin/validate-commit.js` -- exit code 0 (accepted).
 > **Status: FAILED** -- Commit messages with empty scope `feat(: desc)` are accepted. The truth "rejects commits missing scope parentheses" does not hold for empty-scope edge case.
 
 **Why this is good:** The verifier did not trust the code's intent -- it ran an actual test with an edge case input and reported the specific failure. Evidence includes the regex, the test command, the exit code, and why the truth does not hold.

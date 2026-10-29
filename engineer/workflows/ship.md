@@ -475,7 +475,7 @@ If `REVIEW_CMD` is non-empty and not `"null"`, run the external review:
    If the command succeeded, parse the JSON output and report the verdict:
    ```bash
    # Parse verdict and summary from REVIEW_OUTPUT JSON
-   VERDICT=$(echo "${REVIEW_OUTPUT}" | python -X utf8 -c 'import json,sys
+   VERDICT=$(echo "${REVIEW_OUTPUT}" | python -c 'import json,sys
 try: print(json.load(sys.stdin)["verdict"])
 except (ValueError,KeyError,TypeError): print("INVALID_JSON")')
    ```
