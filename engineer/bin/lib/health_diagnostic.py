@@ -199,6 +199,39 @@ def _native_health_report(diagnostics, repairs, evaluated, skipped, gaps):
             "evidence_gaps": gaps}
 
 
+def merge_health_evidence(report, gaps):
+    """Carry bootstrap evidence into CLI findings, deduplicated by path/kind.
+
+    Bootstrap scans more planning artifacts than the rule snapshot consumes.
+    An unreadable artifact must remain visible even when no rule reads its body.
+    """
+    combined = report["evidence_gaps"] + list(gaps)
+    report["evidence_gaps"] = list({(gap.get("path"), gap.get("kind")): gap for gap in combined}.values())
+    diagnosed = {d.get("path") for d in report["diagnostics"] if d["code"] == "unreadable-evidence"}
+    for gap in report["evidence_gaps"]:
+        if gap.get("kind") == "git" or gap.get("path") in diagnosed:
+            continue
+        # Snapshot findings predate the explicit path field; match their safe prefix too.
+        if any(d["code"] == "unreadable-evidence" and d["message"].startswith(gap["path"] + ":")
+               for d in report["diagnostics"]):
+            continue
+        item = {"code": "unreadable-evidence", "severity": "error", "path": gap["path"],
+                "message": f"{gap['path']}: planning evidence is unreadable", "repairable": False,
+                "fix": "Inspect the local record before continuing", "remedy": advise_remedy("Inspect the local record")}
+        report["diagnostics"].append(item)
+        report["errors"].append(item)
+        diagnosed.add(gap["path"])
+    report["counts"]["errors"] = len(report["errors"])
+    if report["errors"]:
+        report["status"] = "broken"
+    if report["evidence_gaps"]:
+        report["coverage"]["complete"] = False
+        for item in report["diagnostics"]:
+            item["repairable"] = False
+        report["repairable_count"] = 0
+    return report
+
+
 # --- Repair handlers ------------------------------------------------------------------
 
 

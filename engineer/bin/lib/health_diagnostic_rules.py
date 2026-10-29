@@ -51,6 +51,15 @@ import os
 import re
 import sys
 from types import MappingProxyType
+from . import phase_id as _native_phase_id
+from .core import Failure as _NativeFailure
+
+
+def _native_token(value):
+    try:
+        return _native_phase_id.normalize(str(value).lower())
+    except _NativeFailure:
+        return str(value)
 
 # --- Types leaf (health-diagnostic-types.cts) ------------------------------------
 
@@ -313,6 +322,8 @@ def _derive_phase_token_segments(dir_name):
 
 
 def extract_phase_token(dir_name, convention=None):
+    if convention == "native":
+        return _native_token(dir_name)
     if convention == "bracket":
         bracket_dir = _BRACKET_DIR_TOKEN_RE.match(dir_name)
         if bracket_dir:
@@ -359,6 +370,8 @@ def phase_directory_context(config, roadmap="", known_ids=None):
 
 def phase_lookup_query(query, context):
     """Custom naming (literal ids) is not ported; every query is normalized."""
+    if context and context.get("nativePhaseIds"):
+        return _native_token(query)
     return normalize_phase_name(query)
 
 
@@ -368,6 +381,8 @@ def _unpad(digits):
 
 def match_phase_dirs(dirs, query, convention=None, bracket_context=None, context=None):
     """``matchPhaseDirs`` for the numeric and bracket conventions."""
+    if convention == "native":
+        return {"matches": [d for d in dirs if _native_token(d) == _native_token(query)], "usedBareFallback": False}
     normalized = query if convention == "bracket" else normalize_phase_name(query)
     candidates = dirs
     if convention == "bracket" and bracket_context and not bracket_qualified_key(normalized, convention):
@@ -405,6 +420,8 @@ def phase_key_from_dir(dir_name, convention=None, context=None):
 
 
 def is_phase_dir_name(dir_name, convention=None):
+    if convention == "native":
+        return bool(re.fullmatch(_native_phase_id.PATTERN + r"-[a-z0-9-]+", dir_name, re.I))
     if not isinstance(dir_name, str):
         raise TypeError(f"isPhaseDirName: directory name must be a string, received {type(dir_name).__name__}")
     if convention == "bracket" and _BRACKET_PHASE_DIR_RE.match(dir_name):
@@ -881,6 +898,8 @@ def _check_c001(snapshot):
         return []
     numbers = []
     for name in snapshot["allPhaseDirNames"]["value"]:
+        if snapshot.get("phaseIdConvention") == "native" and not re.fullmatch(r"\d+", extract_phase_token(name, "native")):
+            continue
         if "." in name or is_sentinel_phase_dir(name):
             continue
         number = _parse_int(name)
@@ -1027,7 +1046,8 @@ def _current_phase_id_from_label(label):
 
 
 def _check_w011(snapshot):
-    phase_id = _current_phase_id_from_label(snapshot["currentPhaseLabel"]["value"])
+    phase_id = (next(iter(snapshot["statePhaseTokens"]["value"]), None) if snapshot.get("phaseIdConvention") == "native"
+                else _current_phase_id_from_label(snapshot["currentPhaseLabel"]["value"]))
     if phase_id is None:
         return []
     if snapshot["roadmapPhaseCheckboxes"]["value"].get(phase_id) is not True:
@@ -1115,7 +1135,9 @@ def _check_w005(snapshot):
 def _check_w023(snapshot):
     groups = {}
     for name in snapshot["phaseDirs"]["value"]:
-        groups.setdefault(normalize_phase_name(extract_phase_token(name)), []).append(name)
+        key = (_native_token(name) if snapshot.get("phaseIdConvention") == "native"
+               else normalize_phase_name(extract_phase_token(name)))
+        groups.setdefault(key, []).append(name)
     phase_by_dir = {p["dir"]: p for p in snapshot["phases"]["value"]}
     context = snapshot.get("directoryContext")
 
@@ -1189,7 +1211,7 @@ RULE_GROUPS["phase-structure"] = [
 
 def _dirs_for_phase(dirs, phase_id, convention, context):
     canonical = match_phase_dirs(dirs, phase_lookup_query(phase_id, context), convention, None, context)["matches"]
-    if canonical:
+    if canonical or convention == "native":
         return canonical
     variants = phase_variants(phase_id)
     matched = []

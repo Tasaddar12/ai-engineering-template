@@ -10,7 +10,7 @@ import re
 import subprocess
 import time
 
-from . import config
+from . import config, phase_id
 from .core import Failure
 from .text import split_frontmatter, yaml_load
 from .health_diagnostic_rules import extract_phase_token, phase_directory_context
@@ -34,7 +34,7 @@ class Reader:
         try:
             return self.safe(path).read_text(encoding="utf-8-sig")
         except (OSError, UnicodeError) as exc:
-            self.gaps.append({"path": str(path), "reason": str(exc)})
+            self.gaps.append({"path": str(path), "reason": f"Planning record is unreadable ({type(exc).__name__})"})
             return None
 
     def entries(self, path):
@@ -50,6 +50,14 @@ class Reader:
 def _label(text, name):
     match = re.search(r"(?mi)^(?:\*\*)?" + name + r"(?::\*\*|\*\*:|:)\s*(.*)$", text or "")
     return match.group(1).strip() if match else None
+
+
+def _phase_token(value, reader, path):
+    try:
+        return phase_id.normalize(value.lower())
+    except Failure:
+        reader.gaps.append({"path": str(path), "reason": "Invalid native phase identifier"})
+        return value.lower()
 
 
 def _git(cwd, *args):
@@ -110,14 +118,14 @@ def build_snapshot(cwd):
         version = re.match(r"^##\s+(v\d+(?:\.\d+)+)\b", line)
         if version:
             milestone = version.group(1)
-        phase = re.match(r"^#{2,4}\s+Phase\s+(\d+[A-Z]?(?:\.\d+)*)\s*:", line)
+        phase = re.match(r"^#{2,4}\s+Phase\s+(" + phase_id.PATTERN + r")\s*:", line, re.I)
         if phase:
-            declared.append({"phaseId": phase.group(1), "milestone": milestone})
-        check = re.match(r"^- \[([ xX])\]\s+(?:\*\*)?Phase\s+(\d+[A-Z]?(?:\.\d+)*)\s*:", line)
+            declared.append({"phaseId": _phase_token(phase.group(1), reader, base / "ROADMAP.md"), "milestone": milestone})
+        check = re.match(r"^- \[([ xX])\]\s+(?:\*\*)?Phase\s+(" + phase_id.PATTERN + r")\s*:", line, re.I)
         if check:
-            checkboxes[check.group(2)] = check.group(1).lower() == "x"
+            checkboxes[_phase_token(check.group(2), reader, base / "ROADMAP.md")] = check.group(1).lower() == "x"
             if check.group(2).isdigit():
-                checkboxes[str(int(check.group(2)))] = checkboxes[check.group(2)]
+                checkboxes[str(int(check.group(2)))] = check.group(1).lower() == "x"
     active_version = re.search(r"v\d+(?:\.\d+)+", _label(state, "Milestone") or "")
     active_milestone = active_version.group(0) if active_version else milestone
     phases, research, numbering, orphans, missing_wave = [], [], [], [], []
@@ -126,7 +134,11 @@ def build_snapshot(cwd):
         files = [p for p in reader.entries(directory) if p.is_file()]
         plans = [p for p in files if p.name.endswith("-PLAN.md")]
         summaries = [p for p in files if p.name.endswith("-SUMMARY.md")]
-        matched = [p for p in summaries if p.with_name(p.name.replace("-SUMMARY.md", "-PLAN.md")) in plans]
+        plan_contents = {p: reader.text(p) for p in plans}
+        readable_summaries = [p for p in summaries if reader.text(p) is not None]
+        matching_names = [p for p in summaries if p.with_name(p.name.replace("-SUMMARY.md", "-PLAN.md")) in plans]
+        matched = [p for p in readable_summaries
+                   if plan_contents.get(p.with_name(p.name.replace("-SUMMARY.md", "-PLAN.md"))) is not None]
         phase = {"dir": directory.name, "planCount": len(plans), "summaryCount": len(matched),
                  "complete": bool(plans) and len(matched) == len(plans), "verificationStatus": None}
         for report in (p for p in files if p.name.endswith("-VERIFICATION.md")):
@@ -146,7 +158,7 @@ def build_snapshot(cwd):
         phases.append(phase)
         nums = []
         for plan in plans:
-            content = reader.text(plan)
+            content = plan_contents[plan]
             if content is None:
                 continue
             try:
@@ -160,7 +172,7 @@ def build_snapshot(cwd):
             if num:
                 nums.append(int(num.group(1)))
         numbering.append({"phaseDir": directory.name, "planNums": sorted(nums)})
-        orphans.extend({"phaseDir": directory.name, "orphanSummary": p.name} for p in summaries if p not in matched)
+        orphans.extend({"phaseDir": directory.name, "orphanSummary": p.name} for p in summaries if p not in matching_names)
         research_text = "\n".join(reader.text(p) or "" for p in files if p.name.endswith("-RESEARCH.md"))
         research.append({"dir": directory.name, "hasValidationArchitecture": "Validation Architecture" in research_text,
                          "hasValidationMd": any(p.name.endswith("-VALIDATION.md") for p in files)})
@@ -170,21 +182,23 @@ def build_snapshot(cwd):
     archived_tokens = []
     for archive in archives:
         if archive.is_dir():
-            archived_tokens.extend(extract_phase_token(p.name) for p in reader.entries(archive) if p.is_dir())
+            archived_tokens.extend(extract_phase_token(p.name, "native") for p in reader.entries(archive) if p.is_dir())
     worktrees, tracked = _git_evidence(reader.root)
     if worktrees["scope"] != "complete" or tracked["scope"] != "complete":
         reader.gaps.append({"path": str(reader.root), "kind": "git",
                             "reason": worktrees.get("reason") or "Git tracking/ignore evidence unavailable"})
     label = _label(state, r"(?:Current phase|Phase)")
+    state_token = re.match(r"(" + phase_id.PATTERN + r")(?=\s|$|\))", label or "", re.I)
+    state_tokens = [_phase_token(state_token.group(1), reader, base / "STATE.md")] if state_token else []
     config_field = field(parsed, exists=raw_config is not None, path=str(base / "config.yaml"))
     snapshot = {
-        "cwd": str(reader.root), "workstream": None, "phaseIdConvention": (parsed or {}).get("phase_id_convention"),
+        "cwd": str(reader.root), "workstream": None, "phaseIdConvention": (parsed or {}).get("phase_id_convention") or "native",
         "projectSections": field(re.findall(r"(?m)^##\s+(.+?)\s*$", project) if project is not None else None,
                                  exists=project is not None),
         "milestone": field({"version": active_milestone}, "complete" if roadmap is not None else "unreadable"),
         "currentPhaseLabel": field(label, "complete" if state is not None else "unreadable"),
         "stateStatus": field(_label(state, "Status")),
-        "statePhaseTokens": field(re.findall(r"\d+[A-Z]?(?:\.\d+)*", (label or "").split(" of ")[0])),
+        "statePhaseTokens": field(state_tokens),
         "config": config_field, "phaseDirs": field([p.name for p in dirs]),
         "allPhaseDirNames": field([p.name for p in dirs]), "phases": field(phases),
         "archivedPhaseTokens": field(archived_tokens),
@@ -201,6 +215,7 @@ def build_snapshot(cwd):
         "perPhaseWaveMissingPlans": field(missing_wave),
         "directoryContext": phase_directory_context(parsed or {}, roadmap or "", [p["phaseId"] for p in declared]),
     }
+    snapshot["directoryContext"]["nativePhaseIds"] = True
     return {"snapshot": snapshot, "gaps": reader.gaps, "configError": config_error,
             "requirementsReadable": requirements is not None,
             "unonboarded": bool(project and "Unfilled adoption skeleton" in project),

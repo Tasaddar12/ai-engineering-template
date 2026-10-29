@@ -32,11 +32,66 @@ class HealthRuntime(unittest.TestCase):
         self.write("config.yaml", "model_profile: balanced\nworkflow:\n  nyquist_validation: true\n")
 
     def health(self, *flags):
-        result = subprocess.run([sys.executable, "-I", str(CLI), "query", "validate.health", *flags],
+        return self.runtime("validate.health", *flags)
+
+    def runtime(self, *args):
+        result = subprocess.run([sys.executable, "-I", str(CLI), "query", *args],
                                 cwd=self.root, env={**os.environ, "ENGINEER_ROOT": str(self.root)},
                                 capture_output=True, text=True, encoding="utf-8", timeout=30)
         self.assertEqual(0, result.returncode, result.stderr + result.stdout)
         return json.loads(result.stdout)
+
+    def test_real_phase_add_letter_and_dotted_native_identifiers(self):
+        self.runtime("project.init", "--name", "Widget", "--description", "A widget", "--core-value", "Useful")
+        for identifier in ("1a", "1.1a", "1a.2b", "1.2.3", "2"):
+            self.runtime("phase.add", "Named " + identifier, "--number", identifier)
+        phases = self.runtime("phases.list")["phases"]
+        self.assertEqual({"01a", "01.1a", "01a.2b", "01.2.3", "02"}, {p["number"] for p in phases})
+        for identifier in ("01a", "01.1a", "01a.2b", "01.2.3", "02"):
+            with self.subTest(identifier=identifier):
+                self.runtime("state.patch", json.dumps({"phase": identifier + " of 5"}))
+                packet = self.health()
+                self.assertFalse({"W002", "W005", "W006", "W007", "W023", "C001"} & self.codes(packet), packet)
+                self.assertEqual([], packet["evidence_gaps"])
+        self.write("STATE.md", "Phase: 01A.2B of 5\nStatus: Planning\n")
+        roadmap = self.root / ".planning/ROADMAP.md"
+        roadmap.write_text(roadmap.read_text(encoding="utf-8").replace("01a.2b:", "01A.2B:"), encoding="utf-8")
+        self.assertFalse({"W002", "W005", "W006", "W007", "W023"} & self.codes(self.health()))
+
+    def test_unreadable_matching_summary_is_not_completion_evidence(self):
+        self.initialized()
+        self.write("phases/01-start/01-01-PLAN.md", "---\nwave: 1\n---\n# Plan\n")
+        summary = self.write("phases/01-start/01-01-SUMMARY.md", "# Summary\n")
+        summary.write_bytes(b"\xff\xfe")
+        before = self.contents()
+        packet = self.health()
+        self.assertEqual("broken", packet["status"])
+        self.assertIn("I001", self.codes(packet))
+        self.assertNotIn("C003", self.codes(packet))
+        gaps = [g for g in packet["evidence_gaps"] if g["path"] == str(summary)]
+        self.assertEqual(1, len(gaps))
+        errors = [d for d in packet["errors"] if d["code"] == "unreadable-evidence" and str(summary) in d["message"]]
+        self.assertEqual(1, len(errors))
+        self.assertEqual(before, self.contents())
+        result = subprocess.run([sys.executable, "-I", str(CLI), "query", "validate.health", "--repair"],
+                                cwd=self.root, env={**os.environ, "ENGINEER_ROOT": str(self.root)},
+                                capture_output=True, text=True, encoding="utf-8", timeout=30)
+        self.assertNotEqual(0, result.returncode)
+        failure = json.loads(result.stderr)
+        self.assertEqual("health-repair-evidence-unavailable", failure["error"])
+        self.assertTrue(any(g["path"] == str(summary) for g in failure["evidence_gaps"]))
+        self.assertEqual(before, self.contents())
+
+    def test_bootstrap_only_gap_reaches_default_health_report(self):
+        self.initialized()
+        artifact = self.write("notes.md", "# Notes\n")
+        artifact.write_bytes(b"\xff\xfe")
+        before = self.contents()
+        packet = self.health()
+        self.assertEqual("broken", packet["status"])
+        self.assertEqual(1, sum(g["path"] == str(artifact) for g in packet["evidence_gaps"]))
+        self.assertTrue(any(d["code"] == "unreadable-evidence" and d.get("path") == str(artifact) for d in packet["errors"]))
+        self.assertEqual(before, self.contents())
 
     def contents(self):
         return {p.relative_to(self.root).as_posix(): p.read_bytes() for p in self.root.rglob("*")
