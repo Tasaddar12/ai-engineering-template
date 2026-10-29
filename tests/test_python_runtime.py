@@ -118,6 +118,75 @@ class PythonRuntimeEntrypoints(unittest.TestCase):
 
 
 class PythonDurableFlows(RuntimeCase):
+    def test_summary_file_adapter_strips_narrative_and_rejects_prose(self):
+        self.put("SUMMARY.md", """---
+key-files:
+  created:
+    - app/foo.tsx — narrative
+    - app/foo.tsx (122 lines — 17 assertions)
+    - Chose RSC rendering
+    - Dockerfile
+    - docker/Containerfile
+    - package.json
+    - .gitignore
+    - path: lib/helper.py
+  modified:
+    - lib/helper.py — refined
+---
+# Summary
+""")
+        result = self.cli("review.summary-files", "SUMMARY.md", "--raw", raw=True).splitlines()
+        self.assertEqual(["app/foo.tsx", "Dockerfile", "docker/Containerfile", "package.json", ".gitignore", "lib/helper.py"], result)
+        self.put("SUMMARY.md", "---\nkey-files:\n  created:\n    - ../outside.py — narrative\n---\n")
+        self.cli("review.summary-files", "SUMMARY.md", status=1, raw=True)
+
+    def test_public_init_verbs_accept_letter_and_multidot_phase_ids(self):
+        self.init_records()
+        for identifier in ("1a", "1.2.3", "2"):
+            self.cli("phase.add", "Named " + identifier, "--number", identifier)
+        for verb in ("init.progress", "init.complete-milestone", "init.resume"):
+            result = self.cli(verb)
+            self.assertEqual(3, result["phase_count"])
+            self.assertEqual("01a", result["current_phase"]["number"])
+            self.assertEqual("02", result["next_phase"]["number"])
+        self.assertEqual("02", self.cli("init.plan-phase", "2")["phase_number"])
+        for identifier in ("01a", "01.2.3"):
+            self.cli("state.patch", json.dumps({"phase": identifier + " of 3"}))
+            result = self.cli("init.plan-phase")
+            self.assertTrue(result["phase_found"])
+            self.assertEqual(identifier, result["phase_number"])
+
+    def test_nested_subrepository_alias_drives_release_tags_without_rewriting_config(self):
+        entries = self.release_fixture()
+        config_path = self.put(".planning/config.yaml", "# preserve authored alias\nplanning:\n  sub_repos: [backend, frontend] # selected repositories\ngit:\n  create_tag: true\n")
+        original = config_path.read_bytes()
+        self.assertEqual(["backend", "frontend"], self.cli("config-get", "sub_repos"))
+        self.assertEqual(["backend", "frontend"], self.cli("config-get", "planning.sub_repos"))
+        self.put("tags.json", json.dumps(entries))
+        preview = self.cli("milestone.release-tags", "--map", "tags.json", "--dry-run")
+        self.assertEqual(["would_tag"] * 2, [entry["status"] for entry in preview["results"]])
+        self.assertEqual(2, self.cli("milestone.release-tags", "--map", "tags.json")["created"])
+        self.assertEqual(original, config_path.read_bytes())
+        self.cli("config-set", "planning.sub_repos", "--value", '["backend"]')
+        self.assertEqual(["backend"], self.cli("config-get", "sub_repos"))
+        content = config_path.read_text(encoding="utf-8")
+        self.assertIn("planning:", content)
+        self.assertIn("# preserve authored alias", content)
+        self.assertNotIn("\nsub_repos:", content)
+
+    def test_nested_subrepository_alias_rejects_conflicts_and_unknown_keys(self):
+        for source in (
+            "planning:\n  sub_repos: [backend]\nsub_repos: [frontend]\n",
+            "planning:\n  sub_repos: [backend]\n  invented_option: true\n",
+            "planning:\n  sub_repos: invalid\n",
+        ):
+            with self.subTest(source=source):
+                path = self.put(".planning/config.yaml", source)
+                self.cli("config-get", "sub_repos", status=2, raw=True)
+                self.assertEqual(source, path.read_text(encoding="utf-8"))
+        self.put(".planning/config.yaml", "planning:\n  sub_repos: [backend]\nsub_repos: [backend]\n")
+        self.assertEqual(["backend"], self.cli("config-get", "sub_repos"))
+
     def test_phase_letter_and_multidot_ids_add_find_sort_insert_and_manager(self):
         self.init_records()
         for identifier in ("2", "1a", "1.2", "1.1.1", "1"):

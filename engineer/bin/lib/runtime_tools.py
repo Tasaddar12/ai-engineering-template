@@ -234,11 +234,15 @@ def review_adapter(args, action):
         if not isinstance(values, dict):
             raise Failure("review-files-schema", "key-files must be a mapping")
         paths = []
+        from .code_review_pipeline_regression import parse_key_files
         for item in [*values.get("created", []), *values.get("modified", [])]:
             name = item.get("path") if isinstance(item, dict) else item
             if not isinstance(name, str) or "\n" in name:
                 raise Failure("review-files-schema", "Expected scalar file paths")
-            paths.append(str(safe_path(name).relative_to(root())).replace("\\", "/"))
+            # Reuse the established SUMMARY scalar grammar: annotations are
+            # descriptive text, and prose without a filename is not file scope.
+            for filename in parse_key_files("  created:\n    - " + name):
+                paths.append(str(safe_path(filename).relative_to(root())).replace("\\", "/"))
         return "\n".join(dict.fromkeys(paths))
     data = payload(args)
     if action == "contributions":

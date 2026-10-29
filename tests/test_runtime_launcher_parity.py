@@ -285,6 +285,18 @@ class ModuleUnits(FixtureCase):
 
 @needs_shell
 class StandaloneExecutable(FixtureCase):
+    def test_launcher_needs_no_dirname_with_only_python_on_path(self):
+        base = self.temp("engineer-restricted-path-") / "has space"
+        bin_dir = base / "engineer" / "bin"
+        bin_dir.mkdir(parents=True)
+        launcher = bin_dir / parity.LAUNCHER
+        launcher.write_bytes((SOURCE / "engineer/bin" / parity.LAUNCHER).read_bytes())
+        (bin_dir / "engineer.py").write_text("import sys\nprint('RESTRICTED_OK:' + ' '.join(sys.argv[1:]))\n", encoding="utf-8")
+        wrappers = parity.python_wrapper_dir(self.temp("engineer-only-python-"), sys.executable)
+        result = parity.run_launcher_executable(launcher, ["query", "restricted"], {**os.environ, "PATH": parity.posix(wrappers)})
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("RESTRICTED_OK:query restricted", result.stdout)
+
     """Upstream (#381): the shipped launcher delegates beside itself; the preamble persists its bin dir."""
 
     def test_i_launcher_executable_delegates_to_engineer_py_beside_it(self):

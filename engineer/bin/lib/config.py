@@ -49,6 +49,13 @@ def normalize(data):
     if not isinstance(data,dict):
         raise Failure("invalid-config","Configuration must be a mapping",2)
     result = deepcopy(data)
+    planning = result.get("planning")
+    if isinstance(planning, dict) and "sub_repos" in planning:
+        if "sub_repos" in result and result["sub_repos"] != planning["sub_repos"]:
+            raise Failure("conflicting-config-alias", "planning.sub_repos and sub_repos disagree", 2)
+        result["sub_repos"] = planning.pop("sub_repos")
+        if not planning:
+            result.pop("planning")
     groups = [(result.get("agents"),ROLE_ALIASES), (result.get("worktree"),{"root":"directory"}),
               (result.get("verification"),{"checks":"commands"}), (result.get("workflow"),{"pattern_mapper":"pattern_mapping"})]
     for mapping,aliases in groups:
@@ -67,6 +74,8 @@ def normalize(data):
 
 
 def canonical_key(key):
+    if key == "planning.sub_repos":
+        return "sub_repos"
     if key == "workflow.pattern_mapper":
         return "workflow.pattern_mapping"
     if key == "worktree.root":
@@ -323,6 +332,8 @@ def set_value(args):
         assign(candidate, key, value)
         validate(candidate)
         stored_key = key
+        if key == "sub_repos" and "sub_repos" not in parsed and isinstance(parsed.get("planning"), dict) and "sub_repos" in parsed["planning"]:
+            stored_key = "planning.sub_repos"
         if key == "workflow.pattern_mapping" and isinstance(parsed.get("workflow"),dict) and "pattern_mapper" in parsed["workflow"] and "pattern_mapping" not in parsed["workflow"]:
             stored_key = "workflow.pattern_mapper"
         if key == "worktree.directory" and isinstance(parsed.get("worktree"),dict) and "root" in parsed["worktree"] and "directory" not in parsed["worktree"]:
