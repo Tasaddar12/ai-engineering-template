@@ -67,7 +67,8 @@ fi
    ```bash
    QB_OWNED_WORKTREES=$(engineer_run query worktree.manifest read --manifest "$QUICK_BATCH_WORKTREE_MANIFEST") || exit $?
    MERGEABLE_IDS_JSON=$(node -e 'process.stdout.write(JSON.stringify(process.argv.slice(1)))' "${mergeable[@]}") || exit $?
-   MERGE_MANIFEST_PATH=$(mktemp "${TMPDIR:-/tmp}/engineer-batch-merge-XXXXXX.json") || exit $?
+   MERGE_MANIFEST_PATH=$(mktemp "${TMPDIR:-/tmp}/engineer-batch-merge-XXXXXX") || exit $?
+   mv "$MERGE_MANIFEST_PATH" "${MERGE_MANIFEST_PATH}.json" && MERGE_MANIFEST_PATH="${MERGE_MANIFEST_PATH}.json" || exit 1
    QB_OWNED_WORKTREES="$QB_OWNED_WORKTREES" MERGEABLE_IDS_JSON="$MERGEABLE_IDS_JSON" node <<'NODE' > "$MERGE_MANIFEST_PATH"
 const data = JSON.parse(process.env.QB_OWNED_WORKTREES);
 const ids = JSON.parse(process.env.MERGEABLE_IDS_JSON);

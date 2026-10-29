@@ -431,7 +431,8 @@ QUICK_PLAN_JSON=$(engineer_run query frontmatter.get "$QUICK_PLAN_PATH") || exit
 QUICK_FILES_JSON=$(printf '%s' "$QUICK_PLAN_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const v=JSON.parse(s).files_modified;if(!Array.isArray(v)||v.some(x=>typeof x!=="string"))process.exit(1);process.stdout.write(JSON.stringify(v))})') || exit $?
 QUICK_DELETIONS_JSON=$(printf '%s' "$QUICK_PLAN_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const v=JSON.parse(s).files_deleted||[];if(!Array.isArray(v)||v.some(x=>typeof x!=="string"))process.exit(1);process.stdout.write(JSON.stringify(v))})') || exit $?
 QUICK_ALLOWED_BASES=$(EXPECTED_BASE="$EXPECTED_BASE" QUICK_PLAN_PARENT="${QUICK_PLAN_PARENT:-}" node -e 'process.stdout.write(JSON.stringify([...new Set([process.env.EXPECTED_BASE,process.env.QUICK_PLAN_PARENT].filter(Boolean))]))') || exit $?
-QUICK_WORKTREE_MANIFEST=$(mktemp "${TMPDIR:-/tmp}/engineer-quick-worktree-XXXXXX.json") || exit $?
+QUICK_WORKTREE_MANIFEST=$(mktemp "${TMPDIR:-/tmp}/engineer-quick-worktree-XXXXXX") || exit $?
+mv "$QUICK_WORKTREE_MANIFEST" "${QUICK_WORKTREE_MANIFEST}.json" && QUICK_WORKTREE_MANIFEST="${QUICK_WORKTREE_MANIFEST}.json" || exit 1
 engineer_run query worktree.manifest init --manifest "$QUICK_WORKTREE_MANIFEST" --root "$ORCH_ROOT" || exit $?
 case "$ISOLATION" in
   orchestrator-worktree)

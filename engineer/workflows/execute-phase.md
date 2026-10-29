@@ -659,6 +659,8 @@ Read and execute `engineer/workflows/execute-phase/steps/per-plan-worktree-gate.
    )
    ```
 
+   The selected `plan_json` is the exact current `phase-plan-index` entry. Its `id` is the full PLAN filename stem (for example `01-02`), not the bare frontmatter plan number; use that same identity for checkout ownership, committed SUMMARY and terminal receipt.
+
    For the harness path, bind the common receipt inputs from this plan's captured scope and actual host checkout metadata before running the terminal receipt procedure:
 
    ```bash
@@ -669,7 +671,8 @@ Read and execute `engineer/workflows/execute-phase/steps/per-plan-worktree-gate.
    PLAN_FILES_JSON=$(printf '%s' "$plan_json" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const v=JSON.parse(s).files_modified;if(!Array.isArray(v))process.exit(1);process.stdout.write(JSON.stringify(v))})') || exit $?
    PLAN_DELETIONS_JSON=$(printf '%s' "$plan_json" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const v=JSON.parse(s).files_deleted||[];if(!Array.isArray(v))process.exit(1);process.stdout.write(JSON.stringify(v))})') || exit $?
    PHASE_DIR_REL=$(git -C "$phase_dir" rev-parse --show-prefix) || exit $?
-   SUMMARY_PATH="${PHASE_DIR_REL%/}/${plan_padded}-SUMMARY.md"
+   plan_id=$(engineer_run query json.get --payload "$plan_json" --field id --raw) || exit $?
+   SUMMARY_PATH="${PHASE_DIR_REL%/}/${plan_id}-SUMMARY.md"
    ```
 
    Capture the actual native host agent id from dispatch, and obtain its terminal event through the host wait/status tool. For both isolation modes, run the **Native terminal receipt** procedure in `execute-phase/steps/executor-isolation-dispatch.md` before integration. Use the host-reported checkout path for harness workers and the runtime-returned path for precreated workers; validate branch/head with Git. Reuse this plan's captured base, allowed bases, exact files/deletions, SUMMARY path and `WAVE_WORKTREE_MANIFEST`. Never prefer executor-asserted metadata over the host result. A receipt/record failure preserves the checkout and blocks its merge; no broad worktree discovery or invented stop assertion.

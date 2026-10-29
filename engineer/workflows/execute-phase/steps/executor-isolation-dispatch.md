@@ -126,6 +126,8 @@ in `execute-phase.md` step 3 (on Claude Code it is literally `isolation="worktre
 
 ## orchestrator-worktree — runtime checkout, native agent
 
+The selected `plan_json` is the exact current `phase-plan-index` entry. Its `id` is the full PLAN filename stem (for example `01-02`), not the bare frontmatter plan number; use that same identity for checkout ownership, committed SUMMARY and terminal receipt.
+
 The coordinator creates each checkout before dispatch and parses the runtime's actual returned fields. Keep the plan's exact `PLAN_FILES`/`PLAN_DELETIONS` and committed `SUMMARY_PATH` in coordinator state; these same values must be used when recording the terminal receipt.
 
 ```bash
@@ -134,7 +136,8 @@ EXPECTED_BASE=$(git rev-parse HEAD) || exit $?
 PHASE_DIR_REL=$(git -C "$phase_dir" rev-parse --show-prefix) || exit $?
 PHASE_DIR_REL="${PHASE_DIR_REL%/}"
 [ "$(git -C "$phase_dir" rev-parse --show-toplevel)" = "$ORCH_ROOT" ] || exit 42
-SUMMARY_PATH="${PHASE_DIR_REL}/${plan_padded}-SUMMARY.md"
+plan_id=$(engineer_run query json.get --payload "$plan_json" --field id --raw) || exit $?
+SUMMARY_PATH="${PHASE_DIR_REL%/}/${plan_id}-SUMMARY.md"
 CREATED_WORKTREE=$(engineer_run query worktree.create "$plan_id" --phase "$PHASE_NUMBER" --manifest "$WAVE_WORKTREE_MANIFEST" --root "$ORCH_ROOT" --base "$EXPECTED_BASE" --files "$PLAN_FILES" --deletions "$PLAN_DELETIONS" --summary-path "$SUMMARY_PATH") || exit $?
 WORKTREE_PATH=$(engineer_run query json.get --payload "$CREATED_WORKTREE" --field worktree_path --raw) || exit $?
 WORKTREE_BRANCH=$(engineer_run query json.get --payload "$CREATED_WORKTREE" --field branch --raw) || exit $?
@@ -165,7 +168,8 @@ case "$HOST_TERMINAL_STATUS" in complete|completed|stopped) ;; *) echo "BLOCKED:
 WORKER_BRANCH=$(git -C "$WORKTREE_PATH" branch --show-current) || exit $?
 [ "$WORKER_BRANCH" = "$WORKTREE_BRANCH" ] || { echo "FATAL: worker branch drift" >&2; exit 42; }
 WORKER_HEAD=$(git -C "$WORKTREE_PATH" rev-parse HEAD) || exit $?
-NATIVE_TERMINAL_RECEIPT=$(mktemp "${TMPDIR:-/tmp}/engineer-native-terminal-XXXXXX.json") || exit $?
+NATIVE_TERMINAL_RECEIPT=$(mktemp "${TMPDIR:-/tmp}/engineer-native-terminal-XXXXXX") || exit $?
+mv "$NATIVE_TERMINAL_RECEIPT" "${NATIVE_TERMINAL_RECEIPT}.json" && NATIVE_TERMINAL_RECEIPT="${NATIVE_TERMINAL_RECEIPT}.json" || exit 1
 HOST_TERMINAL_EVENT_PATH="$HOST_TERMINAL_EVENT_PATH" HOST_AGENT_ID="$HOST_AGENT_ID" HOST_KIND="$HOST_KIND" HOST_TERMINAL_STATUS="$HOST_TERMINAL_STATUS" WORKTREE_PATH="$WORKTREE_PATH" WORKER_BRANCH="$WORKER_BRANCH" WORKER_HEAD="$WORKER_HEAD" SUMMARY_PATH="$SUMMARY_PATH" node <<'NODE' > "$NATIVE_TERMINAL_RECEIPT"
 const fs = require('fs');
 const e = process.env;
