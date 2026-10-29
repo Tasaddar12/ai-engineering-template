@@ -19,11 +19,11 @@ skip, never a hard-fail). Sets `SPECLESS_FALLBACK`, `EDGE_ABSENT`, `PROHIB_ABSEN
 SPECLESS_CFG=$(engineer_run query config-get workflow.specless_probe_fallback 2>/dev/null || echo "true")
 SPECLESS_FALLBACK=true; [[ "$SPECLESS_CFG" == "false" ]] && SPECLESS_FALLBACK=false
 
-# Per-section absence: spec.section returns `present` when a heading has actual rows.
-EDGE_PRESENT=$(engineer_run query spec.section "$SPEC_FILE" edges --pick present --raw 2>/dev/null) || exit 1
-PROHIB_PRESENT=$(engineer_run query spec.section "$SPEC_FILE" prohibitions --pick present --raw 2>/dev/null) || exit 1
-EDGE_ABSENT=1; [ "$EDGE_PRESENT" = "true" ] && EDGE_ABSENT=0
-PROHIB_ABSENT=1; [ "$PROHIB_PRESENT" = "true" ] && PROHIB_ABSENT=0
+# Per-section supply: `present` records a heading; `supplied` is true only when the section has at least one data row. Empty headings and header/separator-only tables must still run the fallback.
+EDGE_SUPPLIED=$(engineer_run query spec.section "$SPEC_FILE" edges --pick supplied --raw 2>/dev/null) || exit 1
+PROHIB_SUPPLIED=$(engineer_run query spec.section "$SPEC_FILE" prohibitions --pick supplied --raw 2>/dev/null) || exit 1
+EDGE_ABSENT=1; [ "$EDGE_SUPPLIED" = "true" ] && EDGE_ABSENT=0
+PROHIB_ABSENT=1; [ "$PROHIB_SUPPLIED" = "true" ] && PROHIB_ABSENT=0
 
 # Disabled path - record the skip VISIBLY, never silently (RAIL-05 / PROH-4); the note rides into the
 # planner prompt (Step 8) so the plan records that no probe predicates were generated.

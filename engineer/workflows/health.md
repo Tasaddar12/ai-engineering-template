@@ -230,7 +230,7 @@ Report final status.
 | W007 | warning | Phase on disk but not in ROADMAP | No |
 | W008 | warning | config.json: workflow.nyquist_validation absent (defaults to enabled but agents may skip) | Yes |
 | W009 | warning | Phase has Validation Architecture in RESEARCH.md but no VALIDATION.md | No |
-| W010 | warning | Engineer agent installation missing or incomplete | No |
+| W010 | warning | GSD agent installation missing or incomplete | No |
 | W011 | warning | STATE.md current-phase status disagrees with ROADMAP.md checkbox | No |
 | W012 | warning | config.json invalid branching_strategy value | No |
 | W013 | warning | config.json context_window not a positive integer | No |
@@ -239,7 +239,7 @@ Report final status.
 | W016 | warning | config.json: workflow.ai_integration_phase absent (defaults to enabled but agents may skip AI-integration-phase planning) | Yes |
 | W017 | warning | Orphan git worktree (path no longer exists on disk) | No |
 | W018 | warning | MILESTONES.md missing entry for archived milestone snapshot | Yes (`--backfill`) |
-| W019 | warning | Unrecognized .planning/ root file — not a canonical Engineer artifact | No |
+| W019 | warning | Unrecognized .planning/ root file — not a canonical GSD artifact | No |
 | W020 | warning | Worktree health scan degraded — git worktree list timed out, failed, or a finding could not be verified | No |
 | W021 | warning | Phase's integer prefix implies a different milestone than its ROADMAP section (phase_id_convention: milestone-prefixed) | No |
 | W022 | warning | config.json models entry malformed (unknown phase type, invalid tier, or non-object value) | No |
@@ -247,13 +247,13 @@ Report final status.
 | W024 | warning | STATE.md was written many commits ago — treat its contents as approximate | No |
 | W026 | warning | STATE says milestone complete but ROADMAP lists an unstarted phase for that milestone | No |
 | W027 | warning | Stale git worktree (not modified in a long time) | No |
-| W028 | warning | A Engineer-owned install scope shadows another on this machine | No |
+| W028 | warning | A GSD-owned install scope shadows another on this machine | No |
 | W029 | warning | .planning/ matches a gitignore rule but is still tracked by git (gitignore has no effect on already-tracked files) | No |
 | W030 | warning | Phase verification report status is outside the closed set | Yes (known legacy statuses only) |
 | I001 | info | Plan without SUMMARY (may be in progress) | No |
 | I010 | info | Resolved CWD reported alongside the E010 home-directory guard | No |
 
-Note: this table is **generated** — do not hand-edit it. From the repository root, run `python -I engineer/bin/helper.py gen-health-docs --write` to regenerate its tagged regions from `engineer/bin/lib/health_diagnostic.py`'s `RULES` table plus the pre-check codes. Run `python -I engineer/bin/helper.py lint-health-diagnostic-rule-table` to check that diagnostic codes are unique and covered by tests. Add new diagnostics to the Python rule table and its tests before regenerating the table. `W025` (`workflow.use_worktrees`/`dispatch.isolation`) is a workflow-layer diagnostic emitted directly by this file's own health-check step, so it stays documented there rather than in this generated table.
+Note: this table is **generated** — do not hand-edit it. It is produced by `python -I engineer/bin/helper.py gen-health-docs --write` from `engineer/bin/lib/health_diagnostic.py`'s `RULES` table (31 rules as of #3309, each carrying a static `description`/`repairable` on its `Rule` entry — see `engineer/bin/lib/health_diagnostic_rules.py`) plus the 3 pre-checks that stay outside the rule table by design (`E001`, `E010`, `I010` — safety rails in the health validator, never `.planning/` findings). `python -I engineer/bin/helper.py lint-health-diagnostic-rule-table` enforces the 1:1 code invariant this table depends on (no duplicate codes; severity is always a `Rule` property, never set per emit call) — before assigning a new code, add a `Rule` entry under `engineer/bin/lib/health_diagnostic_rules.py` (its `code` is the next free number the lint guard has not yet seen) and run `python -I engineer/bin/helper.py gen-health-docs --write` to regenerate this table; `python -I engineer/bin/helper.py gen-health-docs --check` fails if it drifts. `W025` (the `workflow.use_worktrees`/`dispatch.isolation` check, #2486) is a workflow-layer diagnostic emitted directly by this file's own `run_health_check` step, not by `cmdValidateHealth` — it stays documented in that step, not in this generated table.
 
 </error_codes>
 

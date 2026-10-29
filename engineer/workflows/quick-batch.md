@@ -78,7 +78,7 @@ RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --defa
 
 **If `response_language` is set:** all user-facing questions/prompts/explanations MUST be presented in `{response_language}`. Technical terms, code, file paths, and subagent prompts stay in English.
 
-Validate the command's `<arguments>` block through the CLI's own grammar — never re-derive it inline (single source of truth: `parseQuickBatchArgs`, `src/quick-batch-dispatch.cts`). The block is raw, attacker-influenced task text — feed it on STDIN through a QUOTED heredoc (`--stdin`), never as a shell argument, so the shell never parses, expands or word-splits it; `quick-batch parse-args` does the whitespace split itself, in Node, after the shell is done. Paste the block's exact contents between the markers:
+Validate the command's `<arguments>` block through the CLI's own grammar — never re-derive it inline (single source of truth: `quick-batch parse-args`, implemented in `engineer/bin/lib/quick_batch.py`). The block is raw, attacker-influenced task text — feed it on STDIN through a QUOTED heredoc (`--stdin`), never as a shell argument, so the shell never parses, expands or word-splits it; `quick-batch parse-args` performs the whitespace split in the Python runtime after the shell is done. Paste the block's exact contents between the markers:
 
 ```bash
 QB_PARSE_FILE=$(mktemp)

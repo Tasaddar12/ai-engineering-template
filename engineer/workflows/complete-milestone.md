@@ -294,7 +294,9 @@ ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
 INIT_EARLY=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_EARLY" == @file:* ]]; then INIT_EARLY=$(cat "${INIT_EARLY#@file:}"); fi
-node -e "const m=JSON.parse(process.argv[1]).section_manifest; console.log('PROJECT_MD_REVIEW=' + (m==null||m.included.includes('project-md-evolution-review') ? 'run' : 'skip'))" "$INIT_EARLY"
+PROJECT_MD_REVIEW=$(printf '%s' "$INIT_EARLY" | engineer_run query json.has-section --section project-md-evolution-review --raw)
+if [ "$PROJECT_MD_REVIEW" = "true" ]; then PROJECT_MD_REVIEW=run; else PROJECT_MD_REVIEW=skip; fi
+echo "PROJECT_MD_REVIEW=$PROJECT_MD_REVIEW"
 ```
 
 <!-- engineer:section id="project-md-evolution-review" when="state:flat-mode" -->
@@ -379,7 +381,7 @@ ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
 INIT_REORG=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
-_engineer_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
+_engineer_field() { engineer_run query json.get --payload "$1" --field "$2" --raw; }
 ROADMAP_PATH=$(_engineer_field "$INIT_REORG" roadmap_path)
 # Extract lines under ## Backlog through end of file (or next ## section)
 BACKLOG_SECTION=$(awk '/^## Backlog/{found=1} found{print}' "$ROADMAP_PATH")
@@ -401,7 +403,7 @@ ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
 INIT_REORG=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
-_engineer_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
+_engineer_field() { engineer_run query json.get --payload "$1" --field "$2" --raw; }
 ROADMAP_PATH=$(_engineer_field "$INIT_REORG" roadmap_path)
 printf '%s\n' "$ROADMAP_PATH" > .planning/.engineer-allow-shrink
 echo "Write target: $ROADMAP_PATH"
@@ -444,14 +446,14 @@ ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
 INIT_REORG=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
-_engineer_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
+_engineer_field() { engineer_run query json.get --payload "$1" --field "$2" --raw; }
 STATE_PATH=$(_engineer_field "$INIT_REORG" state_path)
 ROADMAP_PATH=$(_engineer_field "$INIT_REORG" roadmap_path)
 ARCHIVE_DIR=$(_engineer_field "$INIT_REORG" archive_dir)
 MILESTONES_PATH=$(_engineer_field "$INIT_REORG" milestones_path)
 PROJECT_PATH=$(_engineer_field "$INIT_REORG" project_path)
 # PROJECT.md is shared across workstreams. Stage it only when init's own section manifest says this run edited it (the evolution review is included in flat mode only) — the same source the review step is gated on, so the two cannot disagree.
-_engineer_has_section() { node -e "const m=JSON.parse(process.argv[1]).section_manifest; process.exit(m==null||m.included.includes(process.argv[2])?0:1)" "$1" "$2"; }
+_engineer_has_section() { [ "$(printf '%s' "$1" | engineer_run query json.has-section --section "$2" --raw)" = "true" ]; }
 _engineer_has_section "$INIT_REORG" project-md-evolution-review || PROJECT_PATH=""
 engineer_run query commit "chore: archive v[X.Y] milestone files" --files "${ARCHIVE_DIR}/v[X.Y]-ROADMAP.md" "${ARCHIVE_DIR}/v[X.Y]-REQUIREMENTS.md" "${ARCHIVE_DIR}/v[X.Y]-MILESTONE-AUDIT.md" "$MILESTONES_PATH" ${PROJECT_PATH:+"$PROJECT_PATH"} "$STATE_PATH" "$ROADMAP_PATH"
 ```
@@ -470,7 +472,7 @@ ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
 INIT_REORG=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
-_engineer_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
+_engineer_field() { engineer_run query json.get --payload "$1" --field "$2" --raw; }
 REQUIREMENTS_PATH=$(_engineer_field "$INIT_REORG" requirements_path)
 git rm "$REQUIREMENTS_PATH"
 ```

@@ -77,7 +77,7 @@ fi
    research):
    ```bash
    QB_PLAN_CONC_JSON=$(engineer_run quick-batch effective-concurrency --jobs "$JOBS" --task-count "${#LAYER_ITEMS[@]}" --capacity "$CAPACITY" --isolation "$ISOLATION" --raw)
-   PLAN_CONCURRENCY=$(printf '%s' "$QB_PLAN_CONC_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(String(j.concurrency))}catch{process.stdout.write("1")}})')
+   PLAN_CONCURRENCY=$(printf '%s' "$QB_PLAN_CONC_JSON" | engineer_run query json.get --field concurrency --default 1 --raw)
    ```
 
 5. **Dispatch one `Agent()` per message, `run_in_background: true`, up to

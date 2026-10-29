@@ -34,7 +34,7 @@ and REVIEW.md has a single writer, `code-reviewer`, which this step is not.
 # the gate that promises never to block, and it takes the whole phase's review reporting with
 # it. Pad the integer part only and carry the sub-number verbatim, so 3.1 -> 03.1, 23.1.2 ->
 # 23.1.2 and 3 -> 03. The segment count is deliberately NOT bounded here: the canonical
-# grammar in src/phase-id.cts (`PHASE_NUMBER_TOKEN_SOURCE`, ) is unbounded in segments,
+# grammar in `engineer_run query find-phase` (`PHASE_NUMBER_TOKEN_SOURCE`, ) is unbounded in segments,
 # and widened the one dispatcher that validates to match it on that axis, so a guard
 # narrower than that dispatcher means no ledger for a phase id the dispatcher already accepted.
 # On failure NO path is built and the fence refuses by name: advisory means advisory, and it
@@ -74,7 +74,7 @@ case "$_pn" in
                               # callers' ^[0-9]+[A-Z]?(\.[0-9]+)*$ -- rather than merely wider than
                               # the retired `*.*.*` arity bound, which masked `1..2` by accident.
 esac
-# THE LETTER AXIS. The canonical grammar (src/phase-id.cts) is digits, an OPTIONAL single uppercase
+# THE LETTER AXIS. The canonical grammar (`engineer_run query find-phase`) is digits, an OPTIONAL single uppercase
 # letter, then dotted digit segments -- `12A`, `3A`, `23A.1.2`. widened the six
 # shell/markdown mirrors to it after this branch was cut, and its lint ratchet then flagged this
 # step as the one letterless mirror left. The character class above admits the letter; these
@@ -283,14 +283,14 @@ recorded, its stated reason included. It is a sibling artifact because `--auto` 
 REVIEW.md every iteration and `code-reviewer` is its single writer. Advisory like the rest of
 the step — never blocks:
 
-## Design notes for the embedded record-builder
+## Design notes for the disposition adapter
 
-These notes document the `node -e` script in the fence below. They live here rather than
-as comments inside that script because the script is passed to `node -e` as a single
-command-line argument, and Windows caps a command line at 32,767 characters
-(`CreateProcess`); with the commentary inline the argument reached 33,353 characters and
-the step failed to launch on Windows with `ENAMETOOLONG`. Each note names the line it
-precedes, so the pairing survives the move.
+The runtime implementation is `engineer/bin/lib/review_ledger.py`, invoked through
+`engineer_run query review.reconcile`. The notes below preserve the rationale for the
+ledger guarantees: parsing only structural findings, validating existing destinations,
+preserving history, avoiding timestamp-only rewrites, and detecting input drift. They
+originated with an embedded JavaScript prototype; the installed Python adapter now owns
+those behaviors.
 
 **Before `(function main() {`**
 
@@ -524,20 +524,15 @@ reaches adjacent pipes and both backslash parities, against an independent parit
 
 **Before `fs.writeFileSync(process.env.DISPOSITION_FILE, render(new Date().toISOString()));`**
 
-READ-MODIFY-WRITE, NO LOCK. The ledger is rendered whole from a read taken above, and nothing
-serializes two writers: this step has two dispatchers (execute-phase's gate and
-code-review-fix's record_disposition) plus a human the legend invites to hand-edit, so a
-lost update is a real window, not a theoretical one. Same shape as (WINDOWS.md
-append under parallel executors), which closed with a cross-process lock in
-src/broken-windows.cts. NOT taken here: this is a shell-embedded script with no build
-dependency on the compiled tree, and adopting the lock module is its own change. Residual,
-stated in docs/features/code-review-pipeline.md; not reproduced as a lost update.
+The Python adapter holds the runtime planning lock across its read/validate/write transaction
+(`engineer/bin/lib/review_ledger.py` and `engineer/bin/lib/core.py`). This serializes the gate,
+fix workflow, and any concurrent runtime writer so their ledger updates cannot overwrite one another.
 
 ```bash
 # Each fenced block runs in a FRESH shell, so block 1's PADDED/REVIEW_FILE/DISPOSITION_FILE are NOT
 # live here — re-derive them from the two inputs this step consumes (`PHASE_DIR`, `PHASE_NUMBER`).
 # Inheriting them is not merely stale, it is EMPTY, and the failure is silent rather than loud:
-# the embedded script throws on reading the empty review path, the trailing `|| echo` swallows it
+# the runtime adapter rejects an empty review path, the trailing `|| echo` swallows it
 # as a non-blocking skip, and no ledger is written at all. The shim preamble below is re-emitted
 # for the same reason, and these three belong beside it.
 # PADDED must survive a DOTTED phase number, of ANY segment count. This step is dispatched from
@@ -552,7 +547,7 @@ stated in docs/features/code-review-pipeline.md; not reproduced as a lost update
 # the gate that promises never to block, and it takes the whole phase's review reporting with
 # it. Pad the integer part only and carry the sub-number verbatim, so 3.1 -> 03.1, 23.1.2 ->
 # 23.1.2 and 3 -> 03. The segment count is deliberately NOT bounded here: the canonical
-# grammar in src/phase-id.cts (`PHASE_NUMBER_TOKEN_SOURCE`, ) is unbounded in segments,
+# grammar in `engineer_run query find-phase` (`PHASE_NUMBER_TOKEN_SOURCE`, ) is unbounded in segments,
 # and widened the one dispatcher that validates to match it on that axis, so a guard
 # narrower than that dispatcher means no ledger for a phase id the dispatcher already accepted.
 # On failure NO path is built and the fence refuses by name: advisory means advisory, and it
@@ -592,7 +587,7 @@ case "$_pn" in
                               # callers' ^[0-9]+[A-Z]?(\.[0-9]+)*$ -- rather than merely wider than
                               # the retired `*.*.*` arity bound, which masked `1..2` by accident.
 esac
-# THE LETTER AXIS. The canonical grammar (src/phase-id.cts) is digits, an OPTIONAL single uppercase
+# THE LETTER AXIS. The canonical grammar (`engineer_run query find-phase`) is digits, an OPTIONAL single uppercase
 # letter, then dotted digit segments -- `12A`, `3A`, `23A.1.2`. widened the six
 # shell/markdown mirrors to it after this branch was cut, and its lint ratchet then flagged this
 # step as the one letterless mirror left. The character class above admits the letter; these
@@ -834,222 +829,14 @@ fi
 # Built before the command for READABILITY, not as a fix. ShellCheck's SC2097/SC2098 here is a FALSE
 # POSITIVE: prefix assignments take effect left to right (driven, bash and dash).
 FIX_REPORT_FILE="${_pd}/${PADDED}-REVIEW-FIX.md"
-REVIEW_FILE="${REVIEW_FILE}" DISPOSITION_FILE="${DISPOSITION_FILE}" PADDED="${PADDED}" \
-REVIEW_TOTAL="${REVIEW_TOTAL}" \
-FIX_REPORT_FILE="${FIX_REPORT_FILE}" node -e "
-  (function main() {
-  const fs = require('fs'), path = require('path');
-  const norm = (s) => s.replace(/\r\n/g, '\n');
-  if (fs.existsSync(process.env.DISPOSITION_FILE) && !fs.lstatSync(process.env.DISPOSITION_FILE).isFile()) {
-    console.log('Code review disposition skipped: ' + process.env.DISPOSITION_FILE + ' exists and is not a regular file; refusing to read or write through it.');
-    return;
-  }
-  // Captures the id AND the title: the title is what tells a stale fix report apart from a
-  // current one, because finding ids are reused across re-reviews.
-  const ID_RE = /^###\s+((?:CR|BL|WR|IN)-\d+)\s*:\s*(.*)\$/;
-  // BL- is Critical-tier-equivalent to CR- (code-reviewer.md 'Label equivalence').
-  const sectionSev = new Map();
-  // PREFIX severity -- the LAST resort, an inference from the id alone. Used only when neither
-  // the current review's section nor a severity this ledger already RECORDED is available; the
-  // precedence and the reason for it are stated at sev(), defined below once identity is known.
-  const prefixSev = (id) => ({ CR: 'critical', BL: 'critical', WR: 'warning' }[id.split('-')[0]] || 'info');
-  const headings = (text) => {
-    // Fenced blocks are skipped: review and fix bodies quote example findings, and a heading
-    // inside a fence is an illustration, not a finding.
-    const out = [];
-    let fence = null;
-    for (const l of norm(text).split('\n')) {
-      const f = l.match(/^ {0,3}(\`{3,}|~{3,})/);   // >3 spaces is an indented block, not a fence
-      if (f) {
-        const ch = f[1][0], len = f[1].length;
-        if (!fence) { fence = { ch: ch, len: len }; out.push({ fence: true }); continue; }
-        // A CLOSER carries nothing but whitespace after the marker; an info string makes it
-        // an opener's shape, never a close.
-        if (ch === fence.ch && len >= fence.len && /^\s*\$/.test(l.slice(l.indexOf(f[1]) + f[1].length))) {
-          fence = null; out.push({ fence: true }); continue;
-        }
-        out.push({ skip: true, line: l }); continue;   // a foreign marker inside a fence is content
-      }
-      if (fence) { out.push({ skip: true, line: l }); continue; }
-      const m = l.match(ID_RE);
-      out.push(m ? { id: m[1], title: m[2].trim(), line: l } : { line: l });
-    }
-    return out;
-  };
-  const order = [], title = new Map();
-  // An ABSENT review still has a ledger to reconcile: the step's own guard proceeds when
-  // one exists, and throwing here would send that run to the trailing non-blocking fallback
-  // with the
-  // ledger untouched -- the freeze the reconciliation path exists to prevent.
-  const reviewText = fs.existsSync(process.env.REVIEW_FILE) ? fs.readFileSync(process.env.REVIEW_FILE, 'utf-8') : '';
-  const SECTION_SEV = [[/^##\s+Critical Issues\s*\$/, 'critical'], [/^##\s+Warnings\s*\$/, 'warning'], [/^##\s+Info\s*\$/, 'info']];
-  let curSection = null;
-  for (const h of headings(reviewText)) {
-    if (h.fence || h.skip) continue;
-    if (h.line !== undefined && /^##\s+/.test(h.line)) {
-      const hit = SECTION_SEV.find(([re]) => re.test(h.line));
-      curSection = hit ? hit[1] : null;   // an unrecognized ## section falls back to the prefix
-    }
-    if (h.id && order.indexOf(h.id) === -1) {
-      order.push(h.id); title.set(h.id, h.title);
-      if (curSection) sectionSev.set(h.id, curSection);
-    }
-  }
-  // THE FIX REPORTS THIS RUN MAY RECONCILE AGAINST. --auto overwrites REVIEW-FIX.md each iteration
-  // and the re-review drops what was fixed, so an iteration-1 fix is in NEITHER final artifact.
-  // Read the backups too, newest first.
-  const FIX_FINAL = process.env.FIX_REPORT_FILE;
-  const fixStem = path.basename(FIX_FINAL).slice(0, -3);        // '<NN>-REVIEW-FIX'
-  const iterMarker = fixStem + '.iter';
-  // String ops, not a built RegExp: every backslash is one more thing bash rewrites first.
-  // ONE expression, no 'return': ShellCheck lints this fence as shell and would mark the rest
-  // unreachable (SC2317) against a ratchet baseline.
-  const iterDigits = (n) => (n.indexOf(iterMarker) === 0 && n.slice(-3) === '.md') ? n.slice(iterMarker.length, -3) : '';
-  const iterOf = (n) => /^[0-9]+\$/.test(iterDigits(n)) ? Number(iterDigits(n)) : null;
-  const fixReports = [];
-  if (fs.existsSync(FIX_FINAL)) fixReports.push(FIX_FINAL);
-  let iterFiles = [];
-  // Guarded: the phase directory is not guaranteed readable, and this step never aborts.
-  try { iterFiles = fs.readdirSync(path.dirname(FIX_FINAL)).map((n) => [iterOf(n), n]).filter((e) => e[0] !== null); } catch (e) { iterFiles = []; }
-  iterFiles.sort((a, b) => b[0] - a[0]);
-  for (const e of iterFiles) fixReports.push(path.join(path.dirname(FIX_FINAL), e[1]));
-  const declaredTotal = /^[0-9]+\$/.test(process.env.REVIEW_TOTAL || '') ? Number(process.env.REVIEW_TOTAL) : null;
-  // Against order.length -- the CURRENT review's findings -- never rows.length, which also counts
-  // rows carried from earlier reviews and would understate the shortfall or invent one.
-  const unparsed = declaredTotal !== null && declaredTotal > order.length ? declaredTotal - order.length : 0;
-  const unparsedNote = unparsed ? ' (' + unparsed + ' finding(s) recorded NOWHERE: the review reports ' + declaredTotal + ', but only ' + order.length + ' matched the expected heading shape \`### <CR|BL|WR|IN>-NN: <title>\`)' : '';
-  if (order.length === 0 && !unparsed && !fs.existsSync(process.env.DISPOSITION_FILE) && fixReports.length === 0) return;
-  const prior = new Map();
-  // TITLES, IN THE FRONTMATTER. Ids are reused across re-reviews (--auto renumbers), so an id alone
-  // does not identify a finding: driven, a prior 'CR-01 fixed' rendered a brand-new CR-01 'fixed'.
-  // Not a fifth table column -- the Source cell is already the hand-edited, pipe-escaping one.
-  const priorTitle = new Map();
-  const SEV_VOCAB = ['critical', 'warning', 'info'];
-  const priorSev = new Map();
-  // Ids whose decision could not be carried: the id now names a DIFFERENT finding. REPORTED, not
-  // re-homed -- rows key on the id, and two under one id is an ambiguity. The note does NOT claim the
-  // old row is in git: committing is gated on commit_docs. See docs/features/code-review-pipeline.md.
-  const reused = [];
-  var _fmId = null, _fmSec = null;
-  // Set when the ledger declares JSON scalars; without it they are bare. Load-bearing: a legacy title
-  // that merely LOOKED like JSON was parsed, lost its quotes, and flipped to open.
-  var _fmJson = false;
-  if (fs.existsSync(process.env.DISPOSITION_FILE)) {
-    for (const l of norm(fs.readFileSync(process.env.DISPOSITION_FILE, 'utf-8')).split('\n')) {
-      const m = l.match(/^\|\s*((?:CR|BL|WR|IN)-\d+)\s*\|\s*([^|]*?)\s*\|\s*(open|fixed|skipped|deferred)\s*\|\s*(.*?)\s*\|?\s*\$/);
-      if (m) {
-        prior.set(m[1], { d: m[3], src: m[4].replace(/\s*\(not in the current review\)\s*\$/, '') });
-        // The table wins over the frontmatter (set unconditionally here, only-if-absent below),
-        // whichever order the two appear in the file.
-        if (SEV_VOCAB.indexOf(m[2]) !== -1) priorSev.set(m[1], m[2]);
-      }
-      // Frontmatter is walked in the same pass, as a SECTIONED list rather than by one line shape.
-      if (/^titles: json\s*\$/.test(l)) { _fmJson = true; continue; }
-      var msec = l.match(/^(findings):\s*\$/);
-      if (msec) { _fmSec = msec[1]; _fmId = null; continue; }
-      var mi = l.match(/^  - id: ((?:CR|BL|WR|IN)-\d+)\s*\$/);
-      if (mi && _fmSec) { _fmId = mi[1]; continue; }
-      // The frontmatter's own copy of the severity -- the fallback when the table cell is unusable.
-      var msv = l.match(/^    severity: (critical|warning|info)\s*\$/);
-      if (msv && _fmId && _fmSec === 'findings') { if (!priorSev.has(_fmId)) priorSev.set(_fmId, msv[1]); continue; }
-      var mkv = l.match(/^    title: (.*)\$/);
-      if (mkv && _fmId && _fmSec === 'findings') {
-        var _v = mkv[1];
-        if (_fmJson) { try { _v = JSON.parse(_v); } catch (e) { /* keep the raw scalar */ } }
-        priorTitle.set(_fmId, _v);
-        continue;
-      }
-    }
-  }
-  const sameTitle = (a, b) => String(a === undefined ? '' : a).replace(/\s+/g, ' ').trim()
-                           === String(b === undefined ? '' : b).replace(/\s+/g, ' ').trim();
-  // Section headings are matched WHOLE: a prefix match would let '## Fixed Issues Verification'
-  // classify every finding under it as fixed.
-  const applied = new Map(), staleFix = [];
-  for (const fixPath of fixReports) {
-    let sect = null;
-    for (const h of headings(fs.readFileSync(fixPath, 'utf-8'))) {
-      if (h.fence || h.skip) continue;
-      if (/^##\s+Fixed Issues\s*\$/.test(h.line)) { sect = 'fixed'; continue; }
-      if (/^##\s+Skipped Issues\s*\$/.test(h.line)) { sect = 'skipped'; continue; }
-      if (/^##\s+/.test(h.line)) { sect = null; continue; }
-      if (h.id && sect && !applied.has(h.id)) {
-        // THREE ARMS. An id the review does not report has no title to disagree with -- not the
-        // stale-report case, but what a finding looks like once acted on; the old form dropped it
-        // silently. Reuse stays closed below. The record carries the originating report and title.
-        var _acted = { d: sect, src: path.basename(fixPath), t: h.title };
-        if (!title.has(h.id)) applied.set(h.id, _acted);
-        else if (sameTitle(title.get(h.id), h.title)) applied.set(h.id, _acted);
-        else if (staleFix.indexOf(h.id) === -1) staleFix.push(h.id);
-      }
-    }
-  }
-  // Precedence: an applied outcome is evidence of an action on code and wins; a recorded
-  // non-'open' decision wins over the default. 'open' never overwrites a decision.
-  // Inherited only while the id names the SAME finding. An ABSENT prior title inherits: a
-  // pre-titles ledger has none, and refusing would reset every decision in it.
-  const sameFinding = (id) => !priorTitle.has(id) || !title.has(id) || sameTitle(priorTitle.get(id), title.get(id));
-  const sev = (id) => sectionSev.get(id) || (priorSev.has(id) && sameFinding(id) ? priorSev.get(id) : prefixSev(id));
-  const row = (id) => {
-    if (applied.has(id)) { const a = applied.get(id); return { id, sev: sev(id), d: a.d, src: a.src, t: title.has(id) ? title.get(id) : a.t }; }
-    const was = prior.get(id);
-    if (was && was.d !== 'open' && sameFinding(id)) return { id, sev: sev(id), d: was.d, src: was.src || 'recorded', t: title.get(id) };
-    // Reused id: the NEW finding is untriaged and renders 'open'; the prior decision loses its row,
-    // and that is REPORTED.
-    if (was && was.d !== 'open' && reused.indexOf(id + '=' + was.d) === -1) reused.push(id + '=' + was.d);
-    return { id, sev: sev(id), d: 'open', src: '-', t: title.get(id) };
-  };
-  const rows = order.map(row);
-  const carriedIds = [];
-  for (const id of prior.keys()) if (order.indexOf(id) === -1 && carriedIds.indexOf(id) === -1) carriedIds.push(id);
-  for (const id of applied.keys()) if (order.indexOf(id) === -1 && carriedIds.indexOf(id) === -1) carriedIds.push(id);
-  for (const id of carriedIds) {
-    const act = applied.get(id), was = prior.get(id);
-    const d = act ? act.d : (was ? was.d : 'open');
-    const src = act ? act.src : (was && was.src) || (d === 'open' ? '-' : 'recorded');
-    // Title precedence: the report that DECIDED it, then the prior ledger. A carried row is absent
-    // from the review, so one of those two is the only record of it.
-    // typeof, not ||: an empty title is FALSY, and the truthy fallback discarded it -- reading back
-    // as a pre-format ledger and reopening the leak.
-    const kt = act && typeof act.t === 'string' ? act.t : priorTitle.get(id);
-    rows.push({ id, sev: sev(id), d: d, src: src, t: kt, carried: true });
-  }
-  const open = rows.filter((r) => r.d === 'open').length;
-  const reusedNote = reused.length ? ' (' + reused.length + ' recorded decision(s) DROPPED -- the id now names a different finding, so the decision no longer has a row: ' + reused.join(', ') + ')' : '';
-  const staleNote = staleFix.length ? ' (' + staleFix.length + ' fix-report entr' + (staleFix.length === 1 ? 'y titles its' : 'ies title their') + ' finding differently from the review, so ' + (staleFix.length === 1 ? 'it was' : 'they were') + ' not reconciled -- a stale report, or a re-titled one: ' + staleFix.join(', ') + ')' : '';
-  if (rows.length === 0 && !unparsed && !fs.existsSync(process.env.DISPOSITION_FILE)) return;
-  const escapePipes = (t) => t.replace(/\\\\.|\|/g, (m) => (m === '|' ? '\\\\|' : m));
-  const body = ['# Phase ' + process.env.PADDED + ': Code Review Disposition', '', '| Finding | Severity | Disposition | Source |', '|---------|----------|-------------|--------|']
-    .concat(rows.map((r) => { const src = escapePipes(r.src || '-'); const mark = r.carried && !/\(not in the current review\)\s*\$/.test(src) ? ' (not in the current review)' : ''; return '| ' + r.id + ' | ' + r.sev + ' | ' + r.d + ' | ' + src + mark + ' |'; }))
-    .concat(['', 'Dispositions: \`open\` (recorded, not yet triaged), \`fixed\`, \`skipped\`, \`deferred\`.', 'Set \`deferred\` by hand and put the reason in the Source cell; both are preserved. A \`|\` in the reason is kept as prose and escaped on the next run.', 'Re-running the gate keeps every row it can. A row the current review no longer reports is kept and its Source cell flagged, so a finding does not leave this record silently. ONE exception: when a finding id is REUSED by a different finding, the earlier decision cannot keep a row — the id is taken — and it is dropped. A RECORDED decision (anything but \`open\`) is named on the console when that happens; a row still at \`open\` is replaced silently, because \`open\` records no decision to lose.', '']).join('\n');
-  // One line: the value feeds a line-oriented record a regex re-reads.
-  const oneLine = (t) => String(t === undefined || t === null ? '' : t).replace(/[\r\n]+/g, ' ').trim();
-  // JSON.stringify: YAML 1.2 is a JSON superset, so a colon, quote or leading '#' survives. The
-  // bare form emitted 'title: Parser: loses data', which a real YAML reader rejects (driven).
-  const yv = (t) => JSON.stringify(oneLine(t));
-  const head = ['---', 'phase: ' + process.env.PADDED, 'review: ' + path.basename(process.env.REVIEW_FILE), 'titles: json', 'findings:']
-    .concat(rows.map((r) => '  - id: ' + r.id + '\n    severity: ' + r.sev + '\n    disposition: ' + r.d
-                          // Emitted whenever KNOWN, empty included ('### CR-01:'). Known-empty vs NOT
-                          // KNOWN is the distinction; conflating them was a leak. Unknown stays absent.
-                          + (typeof r.t === 'string' ? '\n    title: ' + yv(r.t) : '')))
-    .concat(['open: ' + open, 'total: ' + rows.length])
-    // Emitted only when there IS a shortfall, so an ordinary ledger gains no noise key and the
-    // unchanged-run check below is unaffected on every review that parses cleanly.
-    .concat(unparsed ? ['unparsed: ' + unparsed] : []).join('\n');
-  // Rewrite only on a real change. The timestamp is the one field that always differs, so
-  // stamping unconditionally would dirty the tree and produce a docs commit on every phase
-  // re-run with nothing to report.
-  const render = (stamp) => head + '\nrecorded: ' + stamp + '\n---\n\n' + body;
-  const stripTs = (t) => t.replace(/^recorded:.*\$/m, 'recorded:');
-  const prev = fs.existsSync(process.env.DISPOSITION_FILE) ? norm(fs.readFileSync(process.env.DISPOSITION_FILE, 'utf-8')) : '';
-  if (prev && stripTs(prev) === stripTs(render(''))) {
-    console.log('Code review disposition unchanged: ' + open + ' of ' + rows.length + ' finding(s) open' + staleNote + unparsedNote + reusedNote);
-    return;
-  }
-  fs.writeFileSync(process.env.DISPOSITION_FILE, render(new Date().toISOString()));
-  console.log('Code review disposition recorded: ' + open + ' of ' + rows.length + ' finding(s) open' + staleNote + unparsedNote + reusedNote + ' — ' + process.env.DISPOSITION_FILE);
-  })();
-" || echo "Code review disposition record skipped (non-blocking)."
+# The installed adapter owns the ledger parser, validation, evidence reconciliation, and atomic write.
+# It is advisory: preserve the workflow's non-blocking review behavior on any adapter failure.
+engineer_run query review.reconcile \
+  --phase "$PHASE_NUMBER" \
+  --review-file "$REVIEW_FILE" \
+  --disposition-file "$DISPOSITION_FILE" \
+  --fix-report-file "$FIX_REPORT_FILE" \
+  || echo "Code review disposition record skipped (non-blocking)."
 
 COMMIT_DOCS=$(engineer_run query config-get commit_docs --raw 2>/dev/null || echo "true")
 # `-f` FOLLOWS a symlink, so this could hand the commit helper a link the script above just

@@ -99,7 +99,7 @@ that error as its `failureReason` and skip the routing call below for it — nev
 as a verdict, and never drop the item silently.
 
 **Route via `quick-batch verification-routing`** (wraps
-`routeVerificationOutcome`, `src/quick-batch-dispatch.cts` — the single
+`quick-batch verification-routing`, implemented in `engineer/bin/lib/quick_batch.py` — the single
 source of truth for this routing, never re-derived inline):
 ```bash
 QB_VERIFY_ROUTE_JSON=$(engineer_run quick-batch verification-routing --status "$STATUS" --raw)

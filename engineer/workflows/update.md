@@ -185,10 +185,10 @@ Before running the installer, detect and back up any user-added files inside
 Engineer-managed directories. These are files that exist on disk but are NOT listed
 in the installed `engineer-install/manifest.json` — files the user added themselves. The updater preserves these unmanaged paths; this additional backup protects the explicitly previewed custom files.
 
-**Do not use bash path-stripping (`${filepath#$RUNTIME_DIR/}`) or `node -e require()`
-inline** — those patterns fail when `$RUNTIME_DIR` is unset and the stripped
-relative path may not match manifest key format, which causes CUSTOM_COUNT=0
-even when custom files exist. Use `engineer_run query detect-custom-files`
+**Do not derive install manifest keys with inline shell parsing** — that fails when
+`$RUNTIME_DIR` is unset and the stripped relative path may not match the manifest
+key format, which causes CUSTOM_COUNT=0 even when custom files exist. Use
+`engineer_run query detect-custom-files`
 or the bundled `engineer_run detect-custom-files` path — both resolve paths
 with the installed Python path and ownership checks.
 
