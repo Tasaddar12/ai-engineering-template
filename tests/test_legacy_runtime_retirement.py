@@ -45,6 +45,27 @@ class LegacyRuntimeRetirement(RuntimeCase):
         self.assertEqual([], result["payload"]["evidence"])
         self.cli("check.prohibition-enforcement", "--payload", "not json", status=2, raw=True)
 
+    def test_prohibition_input_selection_is_independent_of_json_output(self):
+        request = {"prohibition": {"statement": "Must not leak credentials"}, "check": None, "mode": "manual"}
+        payload = json.dumps(request)
+        source = self.put("prohibition-request.json", payload)
+        expected = self.cli("check.prohibition-enforcement", "--payload", payload)
+        for input_args in (("--payload", payload), (str(source),), ("--input", str(source))):
+            for output_args in ((), ("--json",)):
+                with self.subTest(input=input_args[0], json_output=bool(output_args)):
+                    actual = self.cli("check.prohibition-enforcement", *input_args, *output_args)
+                    self.assertEqual(expected, actual)
+        self.assertEqual("manual", expected["payload"]["mode"])
+        self.assertTrue(expected["payload"]["flagged"])
+        self.assertEqual("unverified", expected["payload"]["status"])
+
+    def test_prohibition_malformed_file_fails_with_or_without_json_output(self):
+        source = self.put("malformed-prohibition.json", "not json")
+        for input_args in ((str(source),), ("--input", str(source))):
+            for output_args in ((), ("--json",)):
+                with self.subTest(input=input_args[0], json_output=bool(output_args)):
+                    self.cli("check.prohibition-enforcement", *input_args, *output_args, status=2, raw=True)
+
     def test_native_review_records_actual_scope_and_enforces_revision(self):
         self.init_records()
         revision = self.git("rev-parse", "HEAD")
