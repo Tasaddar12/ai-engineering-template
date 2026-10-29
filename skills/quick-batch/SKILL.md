@@ -63,7 +63,7 @@ Context files are resolved inside the workflow (`init quick-batch`,
 
 **Parse the `<arguments>` block FIRST, before any dispatch.** Route argument validation
 through the CLI's own `quick-batch parse-args` verb — it wraps
-`parseQuickBatchArgs` (`src/quick-batch-dispatch.cts`), the single source of
+`quick-batch parse-args` (`engineer/bin/lib/quick_batch.py`), the single source of
 truth for this grammar, so the command layer and the workflow layer can never
 silently diverge on what counts as a valid invocation. The `<arguments>` block is raw,
 attacker-influenced task text — feed it to the parser on STDIN through a

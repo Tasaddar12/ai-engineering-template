@@ -561,7 +561,7 @@ Exact resume-announcement wording: `engineer/workflows/verify-work/detail/elabor
 - `blocked_count`: tests with `result: blocked`
 - `skipped_no_reason`: tests with `result: skipped` and no `reason` field
 - `unresolved_issues`: tests with `result: issue` that are NOT a verified gap resolution —
-  same criterion `phase uat-passed` uses (`src/uat-predicate.cts`). Exact definition:
+  same criterion `phase uat-passed` uses (`engineer/bin/lib/uat.py`). Exact definition:
   `engineer/workflows/verify-work/detail/elaboration.md` § 4.
 
 Run the completion verb — it independently computes the final status (`complete`/`partial`) from the same rows, clears `## Current Test`, and writes + commits ONLY when something material changed (a session whose UAT was already complete and covered must leave the report fresh):

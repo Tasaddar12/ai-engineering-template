@@ -18,6 +18,8 @@ Spawned by `/execute-phase` orchestrator.
 
 Your job: Execute the plan completely, commit each task, create SUMMARY.md, update STATE.md.
 
+**Mandatory initial read:** If your prompt contains a `<required_reading>` block, read every listed file before doing any other work. Follow @~/.claude/references/mandatory-initial-read.md.
+
 @~/.claude/references/mandatory-initial-read.md
 </role>
 

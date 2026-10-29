@@ -64,7 +64,7 @@ engineer_run query dispatch-isolation --raw --force-isolation "$ISOLATION" >/dev
 `isolation == none` to 1 regardless of `--jobs`/capacity — row 6):
 ```bash
 QB_EXEC_CONC_JSON=$(engineer_run quick-batch effective-concurrency --jobs "$JOBS" --task-count "$ITEM_COUNT" --capacity "$CAPACITY" --isolation "$ISOLATION" --mutating --raw)
-EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(String(j.concurrency))}catch{process.stdout.write("1")}})')
+EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | engineer_run query json.get --field concurrency --default 1 --raw)
 ```
 
 **Dispatch rounds.** Repeat until no item is eligible-and-not-yet-dispatched
@@ -89,7 +89,7 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | node -e 'let s="";process.
    items already have `${item_dir}/${quick_id}-SUMMARY.md` on disk (same
    `item_dir` derivation via `generate-slug` every other step uses), then
    let the PURE `quick-batch filter-executed` verb
-   (`filterAlreadyExecuted`, `src/quick-batch-dispatch.cts`) decide which
+   (`quick-batch filter-executed`, `engineer/bin/lib/quick_batch.py`) decide which
    ids are actually safe to spawn — never re-derive that split inline:
    ```bash
    EXECUTED_IDS_JSON="[]" # JSON array of quick_ids whose SUMMARY.md already exists on disk this round

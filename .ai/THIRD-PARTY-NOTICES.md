@@ -59,10 +59,10 @@ a preference: `workflow.use_worktrees: false` disables it, and several
 conditions (a diverged fork base, a submodule in scope, an unresolvable
 capability) degrade to sequential execution. This project requires isolation, so
 that setting does not exist here, `none` is not a mode, and those conditions
-either raise or warn instead of degrading. The enforcement upstream places in
-`hooks/gsd-agent-isolation-guard.js` is served here by
-[hooks/worktree-guard.sh](hooks/worktree-guard.sh), which is an independent
-implementation reading the dispatch payload rather than a persisted sentinel.
+either raise or warn instead of degrading. The upstream JavaScript guard is adapted here as the Python
+[worktree-path-guard.py](../hooks/worktree-path-guard.py), which consumes Claude/Codex
+JSON events. The legacy [worktree-guard.sh](hooks/worktree-guard.sh) remains as a
+separate shell guard for its existing integration and tests.
 
 ## Bundled method provenance
 

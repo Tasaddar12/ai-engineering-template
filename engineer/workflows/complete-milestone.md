@@ -294,7 +294,9 @@ ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
 INIT_EARLY=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_EARLY" == @file:* ]]; then INIT_EARLY=$(cat "${INIT_EARLY#@file:}"); fi
-node -e "const m=JSON.parse(process.argv[1]).section_manifest; console.log('PROJECT_MD_REVIEW=' + (m==null||m.included.includes('project-md-evolution-review') ? 'run' : 'skip'))" "$INIT_EARLY"
+PROJECT_MD_REVIEW=$(printf '%s' "$INIT_EARLY" | engineer_run query json.has-section --section project-md-evolution-review --raw)
+if [ "$PROJECT_MD_REVIEW" = "true" ]; then PROJECT_MD_REVIEW=run; else PROJECT_MD_REVIEW=skip; fi
+echo "PROJECT_MD_REVIEW=$PROJECT_MD_REVIEW"
 ```
 
 <!-- engineer:section id="project-md-evolution-review" when="state:flat-mode" -->
@@ -313,7 +315,7 @@ AskUserQuestion: "Archive completed quick tasks into this milestone too?" with o
 
 If "Yes": set `ARCHIVE_QUICK_FLAG="--archive-quick"`. If "Skip" (or `.planning/quick/` is empty): set `ARCHIVE_QUICK_FLAG=""`.
 
-**Per-repository release mapping (opt-in).** Set `PER_REPO_TAGGING=true` only when `INIT_EARLY` has `repo_tagging` equal to `per_repo` AND a non-empty `sub_repos`; otherwise it is `false` and this paragraph changes nothing. Shell state does not persist between commands, so later steps recompute it from their own `init.complete-milestone` JSON (`INIT_REORG`). When `true`, read and execute `engineer/workflows/complete-milestone/steps/release-map.md` Part 1 now (collect, validate, one consolidated confirmation, create the tags, record the outcome in `release-map.json`), and append `--release-map "${TMPDIR:-/tmp}/engineer-release-map-v[X.Y]/release-map.json"` to EVERY `milestone complete` call below (including the `--no-archive-phases` form); when `false`, append nothing. A Engineer milestone version may differ from every repository's release version.
+**Per-repository release mapping (opt-in).** Set `PER_REPO_TAGGING=true` only when `INIT_EARLY` has `repo_tagging` equal to `per_repo` AND a non-empty `sub_repos`; otherwise it is `false` and this paragraph changes nothing. Shell state does not persist between commands, so later steps recompute it from their own `init.complete-milestone` JSON (`INIT_REORG`). When `true`, prepare a JSON release map and pass its path to the registered runtime verb as described in [multi-repository milestone tagging](../references/git-integration.md#milestone-tagging-across-sub-repos). Run `milestone.release-tags --map FILE --dry-run`, review all entries and obtain one consolidated confirmation, then run `milestone.release-tags --map FILE` to create annotated local tags. Pass `--release-map FILE` to EVERY `milestone complete` call below (including the `--no-archive-phases` form) to archive the parsed JSON value; when `false`, append nothing. A Engineer milestone version may differ from every repository's release version.
 
 **Delegate archival to `engineer_run query milestone.complete`:**
 
@@ -351,7 +353,7 @@ If the user explicitly wants to keep phase directories in place as raw execution
 engineer_run query milestone complete v[X.Y] --no-archive-phases --confirm
 ```
 
-(When `PER_REPO_TAGGING` is `true`, this form takes the same `--release-map` argument.)
+(When `PER_REPO_TAGGING` is `true`, this form takes the same `--release-map FILE` argument.)
 
 Verify after a default (archived) completion: `✅ Phase directories archived to .planning/milestones/v[X.Y]-phases/`
 
@@ -379,7 +381,7 @@ ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
 INIT_REORG=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
-_engineer_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
+_engineer_field() { engineer_run query json.get --payload "$1" --field "$2" --raw; }
 ROADMAP_PATH=$(_engineer_field "$INIT_REORG" roadmap_path)
 # Extract lines under ## Backlog through end of file (or next ## section)
 BACKLOG_SECTION=$(awk '/^## Backlog/{found=1} found{print}' "$ROADMAP_PATH")
@@ -401,7 +403,7 @@ ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
 INIT_REORG=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
-_engineer_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
+_engineer_field() { engineer_run query json.get --payload "$1" --field "$2" --raw; }
 ROADMAP_PATH=$(_engineer_field "$INIT_REORG" roadmap_path)
 printf '%s\n' "$ROADMAP_PATH" > .planning/.engineer-allow-shrink
 echo "Write target: $ROADMAP_PATH"
@@ -444,14 +446,14 @@ ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
 INIT_REORG=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
-_engineer_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
+_engineer_field() { engineer_run query json.get --payload "$1" --field "$2" --raw; }
 STATE_PATH=$(_engineer_field "$INIT_REORG" state_path)
 ROADMAP_PATH=$(_engineer_field "$INIT_REORG" roadmap_path)
 ARCHIVE_DIR=$(_engineer_field "$INIT_REORG" archive_dir)
 MILESTONES_PATH=$(_engineer_field "$INIT_REORG" milestones_path)
 PROJECT_PATH=$(_engineer_field "$INIT_REORG" project_path)
 # PROJECT.md is shared across workstreams. Stage it only when init's own section manifest says this run edited it (the evolution review is included in flat mode only) — the same source the review step is gated on, so the two cannot disagree.
-_engineer_has_section() { node -e "const m=JSON.parse(process.argv[1]).section_manifest; process.exit(m==null||m.included.includes(process.argv[2])?0:1)" "$1" "$2"; }
+_engineer_has_section() { [ "$(printf '%s' "$1" | engineer_run query json.has-section --section "$2" --raw)" = "true" ]; }
 _engineer_has_section "$INIT_REORG" project-md-evolution-review || PROJECT_PATH=""
 engineer_run query commit "chore: archive v[X.Y] milestone files" --files "${ARCHIVE_DIR}/v[X.Y]-ROADMAP.md" "${ARCHIVE_DIR}/v[X.Y]-REQUIREMENTS.md" "${ARCHIVE_DIR}/v[X.Y]-MILESTONE-AUDIT.md" "$MILESTONES_PATH" ${PROJECT_PATH:+"$PROJECT_PATH"} "$STATE_PATH" "$ROADMAP_PATH"
 ```
@@ -470,7 +472,7 @@ ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
 INIT_REORG=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
-_engineer_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
+_engineer_field() { engineer_run query json.get --payload "$1" --field "$2" --raw; }
 REQUIREMENTS_PATH=$(_engineer_field "$INIT_REORG" requirements_path)
 git rm "$REQUIREMENTS_PATH"
 ```
@@ -574,12 +576,12 @@ Exact bash for each of the four options (squash, history-preserving merge, delet
 </step>
 
 <!-- engineer:section id="git-tag" when="state:git-create-tag" -->
-If `PER_REPO_TAGGING` is `true`, skip this section: the per-repository tags were created in `archive_milestone`, and no `v[X.Y]` tag is created in the current directory. Otherwise, if `section_manifest` is `null` or `"git-tag"` is in its `included` list: read and execute `engineer/workflows/complete-milestone/steps/git-tag.md`. Otherwise skip — do not read the file; proceed to `git_commit_milestone`.
+If `PER_REPO_TAGGING` is `true`, skip this section: per-repository tags were created in `archive_milestone`, and no `v[X.Y]` tag is created in the current directory. Otherwise, when `git.create_tag` is true, create the milestone tag in the current repository only after confirming the exact tag and target commit with the user. When `git.create_tag` is false, skip tag creation. Do not push here.
 <!-- /section -->
 
 <step name="push_release_tags">
 
-Recompute `PER_REPO_TAGGING` and `git_create_tag` from the latest `init.complete-milestone` JSON (`INIT_REORG`). If `PER_REPO_TAGGING` is `true` and `git_create_tag` is not `false`: read and execute `engineer/workflows/complete-milestone/steps/release-map.md` Part 2 (a separate push confirmation per repository naming the repository and its remote; nothing is pushed by default). Otherwise skip this step.
+Recompute `PER_REPO_TAGGING` from the latest `init.complete-milestone` JSON (`INIT_REORG`). Runtime tag creation never pushes. If any local release tags were created, ask separately before pushing; name each repository and its configured remote, and push only the confirmed tags. Otherwise skip this step.
 
 </step>
 
@@ -592,8 +594,6 @@ git commit -m "chore: remove REQUIREMENTS.md for v[X.Y] milestone"
 ```
 
 Confirm: "Committed: chore: remove REQUIREMENTS.md for v[X.Y] milestone"
-
-When `PER_REPO_TAGGING` was `true`, remove the scratch directory: `rm -rf "${TMPDIR:-/tmp}/engineer-release-map-v[X.Y]"` (the archived copy lives in `.planning/milestones/`).
 
 </step>
 

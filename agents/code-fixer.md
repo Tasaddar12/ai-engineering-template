@@ -113,7 +113,7 @@ Run syntax/parse check appropriate to file type:
 | JavaScript | `node -c {file}` (syntax check) |
 | TypeScript | Project-aware check only, output filtered to `{file}`: the project's own typecheck (`npm run typecheck` / `tsc -b`) if it exists, else `npx tsc --noEmit -p <nearest tsconfig*.json>` whose `--listFilesOnly` output lists `{file}`; no config includes `{file}` → Tier 1 only. Never pass `{file}` to `tsc` positionally. |
 | Python | `python -c "import ast; ast.parse(open('{file}').read())"` |
-| JSON | `node -e "JSON.parse(require('fs').readFileSync('{file}','utf-8'))"` |
+| JSON | `python -m json.tool {file} > /dev/null` |
 | Other | Skip to Tier 1 only |
 
 **Scoping syntax checks:**
@@ -233,20 +233,11 @@ The cleanup tail (commit fixes -> remove worktree -> drop recovery sentinel) MUS
 ```bash
 # Honor workflow.use_worktrees — the documented opt-out. When false,
 # edit/commit in the main checkout (wt=".", no temp branch, no sentinel, no
-# cleanup tail). Read the flag the same way the four sibling writer workflows
-# do. NOTE: this read parses .planning/config.json directly via `node` rather
-# than the engineer_run CLI, because setup_worktree runs BEFORE the canonical
-# launcher preamble is sourced — invoking the CLI here would be undefined at
-# runtime and violates the runtime-launcher-parity preamble-ordering rule.
-# Once the preamble is sourced (later steps), the CLI is available.
-USE_WORKTREES=$(node -e '
-  try {
-    const fs = require("fs");
-    const p = (process.env.ENGINEER_PROJECT_DIR || process.cwd()) + "/.planning/config.json";
-    const cfg = JSON.parse(fs.readFileSync(p, "utf8"));
-    process.stdout.write(String((cfg.workflow && cfg.workflow.use_worktrees) ?? true));
-  } catch { process.stdout.write("true"); }
-')
+# cleanup tail). Read the flag before the canonical launcher preamble is sourced,
+# so use Python's standard JSON parser rather than an unavailable engineer_run call.
+USE_WORKTREES=$(python -c 'import json,os,pathlib; p=pathlib.Path(os.environ.get("ENGINEER_PROJECT_DIR",os.getcwd()))/".planning/config.json";
+try: print(str(json.loads(p.read_text(encoding="utf-8")).get("workflow",{}).get("use_worktrees",True)).lower())
+except (OSError,ValueError,TypeError): print("true")')
 
 # Derive worktree path from padded_phase (parsed from config in next step,
 # but the shell snippet below is illustrative — adapt once config is parsed).
@@ -260,7 +251,7 @@ test -n "$branch" || { echo "Detached HEAD is not supported for review-fix"; exi
 # contract any caller can spawn — validate at the SINK too, so a future caller
 # that forgets cannot turn ${padded_phase} into a path-traversal or branch-name
 # injection. Reject anything that is not the canonical phase-number grammar
-# (src/phase-id.cts): digits, an optional single uppercase letter, then dotted
+# (engineer/bin/lib/phase_id.py): digits, an optional single uppercase letter, then dotted
 # numeric segments (e.g. '02', '36.14', '12A'); reject '../', spaces, shell metachars.
 if ! [[ "$padded_phase" =~ ^[0-9]+[A-Z]?(\.[0-9]+)*$ ]]; then
   echo "Invalid padded_phase for review-fix: '$padded_phase' (expected e.g. '02', '36.14', '23.1.2', or '12A')"; exit 1
@@ -279,16 +270,15 @@ if [ -f "$sentinel" ]; then
   # `git branch -D`, the orphan branch survives and clutters `git branch`
   # output forever. Emit both fields newline-separated so we can read them
   # independently.
-  prior_recovery=$(node -e '
-    const fs = require("fs");
-    try {
-      const parsed = JSON.parse(fs.readFileSync(process.argv[1], "utf-8"));
-      process.stdout.write((parsed.worktree_path || "") + "\n" + (parsed.reviewfix_branch || ""));
-    } catch (err) {
-      process.stderr.write(`Warning: malformed recovery sentinel ${process.argv[1]}: ${err.message}\n`);
-      process.stdout.write("\n");
-    }
-  ' "$sentinel")
+  prior_recovery=$(python -c 'import json,sys
+p=sys.argv[1]
+try:
+ d=json.loads(open(p,encoding="utf-8").read())
+ print(d.get("worktree_path") or "")
+ print(d.get("reviewfix_branch") or "")
+except (OSError,ValueError,TypeError) as e:
+ print(f"Warning: malformed recovery sentinel {p}: {e}",file=sys.stderr)
+ print("\n")' "$sentinel")
   prior_wt="$(printf '%s' "$prior_recovery" | sed -n '1p')"
   prior_branch="$(printf '%s' "$prior_recovery" | sed -n '2p')"
   if [ -n "$prior_wt" ] && git worktree list --porcelain | grep -q "^worktree $prior_wt$"; then
@@ -345,17 +335,10 @@ else
   # Write the recovery sentinel ONLY AFTER `git worktree add` succeeds.
   # Writing it before would leave a sentinel pointing at a worktree that does
   # not exist if `git worktree add` itself failed.
-  node -e '
-    const fs = require("fs");
-    const [sentinelPath, worktree_path, branch, reviewfix_branch, padded_phase] = process.argv.slice(1);
-    fs.writeFileSync(sentinelPath, JSON.stringify({
-      worktree_path,
-      branch,
-      reviewfix_branch,
-      padded_phase,
-      started_at: new Date().toISOString()
-    }, null, 2));
-  ' "$sentinel" "$wt" "$branch" "$reviewfix_branch" "$padded_phase"
+  python -c 'import datetime,json,sys
+p,worktree_path,branch,reviewfix_branch,padded_phase=sys.argv[1:]
+data={"worktree_path":worktree_path,"branch":branch,"reviewfix_branch":reviewfix_branch,"padded_phase":padded_phase,"started_at":datetime.datetime.now(datetime.timezone.utc).isoformat()}
+with open(p,"w",encoding="utf-8") as f: json.dump(data,f,indent=2); f.write("\n")' "$sentinel" "$wt" "$branch" "$reviewfix_branch" "$padded_phase"
 
   cd "$wt"
 fi

@@ -83,8 +83,8 @@ space note).
 
 ```bash
 BATCH_ID="$batchId"
-BATCH_MANIFEST_JSON=$(printf '%s' "$QB_CREATE_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(JSON.stringify(j.manifest))}catch{process.stdout.write("")}})')
-ITEM_COUNT=$(printf '%s' "$BATCH_MANIFEST_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(String(j.items.length))}catch{process.stdout.write("0")}})')
+BATCH_MANIFEST_JSON=$(printf '%s' "$QB_CREATE_JSON" | engineer_run query json.get --field manifest)
+ITEM_COUNT=$(printf '%s' "$BATCH_MANIFEST_JSON" | engineer_run query json.length --field items --raw)
 ```
 
 Report to user:
