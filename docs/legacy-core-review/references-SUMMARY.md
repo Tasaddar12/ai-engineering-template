@@ -34,6 +34,10 @@ to validate after joining all worker branches.
 - Updated `debugger-fix-acceptance.md` to describe the active session record
   directly, without a link to the deleted DEBUG template or the retired session
   manager.
+- Removed the retired review-file conflict slot and convergence-loop routing
+  from `revision-loop.md`. Revision conflicts remain bounded, are returned to
+  the user with their evidence and alternatives, and resume only after the
+  existing decision owner records the resolution.
 - Updated the template registry to remove the retired Windows ledger, AI-SPEC,
   DEBUG, and milestone-archive entries/links (R-TP-44, R-TP-53). The separate
   `milestone.md` entry template remains listed.
@@ -43,6 +47,7 @@ to validate after joining all worker branches.
 | Row | Result |
 |---|---|
 | R-RF-02 | Kept the planner review-ledger method; removed its obsolete workflow and capability-registry dependencies. |
+| C-28; V-136–139 | Removed review-file conflict persistence and convergence-loop dependencies while preserving ordinary revision and conflict handling. |
 | R-RF-14–17 | Removed legacy context control and estimation procedures; retained practical context selection and outcome sizing. |
 | R-RF-23 | Replaced MemPalace with local search plus full semantic comparison. |
 | R-RF-38 | Removed the retired external-review ordering block. |
@@ -61,10 +66,8 @@ to validate after joining all worker branches.
   from this template repository.
 - Searches of retained references/templates found no imports to the twelve
   deleted files and no remaining MemPalace, `WINDOWS.md`, context-guard,
-  estimator/calibration, external-review, or `ENGINEER_WS` surfaces. The retained
-  Batch B `revision-loop.md` remains unchanged by explicit scope and still mentions
-  `/plan-review-convergence`; that retained-reference reconciliation is outside
-  this slice.
+  estimator/calibration, external-review, `ENGINEER_WS`, or
+  `/plan-review-convergence` surfaces.
 - No runtime tests were run: this slice changes references and templates only.
   Full caller, static-link, and runtime validation remains an integration check
   after the other assigned slices are joined.
