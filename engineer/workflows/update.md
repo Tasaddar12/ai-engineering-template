@@ -250,6 +250,14 @@ printf '%s\n' "$UPDATE_RESULT"
 UPDATE_BACKUP=$(engineer_run query json.get --payload "$UPDATE_RESULT" --field backup --raw) || exit $?
 ```
 
+By default, this applies every non-conflicting entry and preserves customized
+conflicts; the result reports `complete: false` when required entries remain
+preserved. To apply only chosen paths, pass one or more `--select
+TARGET_RELATIVE_PATH` arguments. `--select-all` includes every reviewed path,
+including conflicts, and is valid only when each selected conflict has a reviewed
+`backup-and-replace` resolution. The plan SHA must match the exact reviewed JSON
+bytes in every mode.
+
 The updater rechecks the source pin, exporter digest, target hashes, manifest and exact reviewed bytes. Any drift stops mutation. It journals original bytes and file modes before writes and rolls back a failed transaction. Preserve its error and backup path if recovery is needed; do not retry an uncertain transaction blindly.
 
 Do not clear unrelated cache files, install a package, wipe managed directories or run a second installer. Successful installation does not establish runtime correctness; execution checks remain not executed.

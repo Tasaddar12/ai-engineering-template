@@ -10,10 +10,10 @@ This doc describes what IS, not what should be. Casing inconsistencies are docum
 
 | Agent | Role | Completion Markers | Consumed by | Kind |
 |-------|------|--------------------|--------------|------|
-| planner | Plan creation | `## PLANNING COMPLETE`, `## PHASE SPLIT RECOMMENDED`, `## ⚠ Source Audit`, `## CHECKPOINT REACHED`, `## PLANNING INCONCLUSIVE`, `## REVISION_CONFLICT` | `engineer/workflows/plan-phase.md`, `engineer/workflows/plan-review-convergence.md`, `engineer/workflows/quick.md`, `engineer/workflows/quick/steps/plan-checker-loop.md`, `engineer/workflows/verify-work.md` | sentinel-match |
-| executor | Plan execution | `## PLAN COMPLETE`, `## CHECKPOINT REACHED` | `engineer/workflows/plan-phase.md`, `agents/debug-session-manager.md`, `agents/debugger.md` | sentinel-match |
+| planner | Phase and milestone roadmap planning | `## PLANNING COMPLETE`, `## PHASE SPLIT RECOMMENDED`, `## ⚠ Source Audit`, `## CHECKPOINT REACHED`, `## PLANNING INCONCLUSIVE`, `## REVISION_CONFLICT`, `## ROADMAP PROPOSED`, `## ROADMAP BLOCKED` | `engineer/workflows/plan-phase.md`, `engineer/workflows/quick.md`, `engineer/workflows/quick/steps/plan-checker-loop.md`, `engineer/workflows/verify-work.md`, `engineer/workflows/new-milestone.md`, `engineer/workflows/new-project.md` | sentinel-match |
+| executor | Plan execution | `## PLAN COMPLETE` (unconsumed: display marker; the orchestrator checks SUMMARY.md and commit evidence), `## CHECKPOINT REACHED` | `engineer/workflows/plan-phase.md`, `agents/debug-session-manager.md`, `agents/debugger.md` | sentinel-match |
 | phase-researcher | Phase-scoped research | `## RESEARCH COMPLETE`, `## RESEARCH BLOCKED` | `engineer/workflows/plan-phase.md`, `engineer/workflows/quick/steps/research-phase.md` | sentinel-match |
-| plan-checker | Plan validation | `## VERIFICATION PASSED`, `## ISSUES FOUND` | `engineer/workflows/plan-phase.md`, `engineer/workflows/plan-phase/steps/stall-detection-helpers.md`, `engineer/workflows/quick/steps/plan-checker-loop.md`, `engineer/workflows/import.md`, `engineer/workflows/ui-phase.md`, `engineer/workflows/verify-work.md`, `agents/ui-checker.md` | sentinel-match |
+| plan-checker | Plan validation | `## VERIFICATION PASSED`, `## ISSUES FOUND` | `engineer/workflows/plan-phase.md`, `engineer/workflows/plan-phase/steps/stall-detection-helpers.md`, `engineer/workflows/quick/steps/plan-checker-loop.md`, `engineer/workflows/ui-phase.md`, `engineer/workflows/verify-work.md`, `agents/ui-checker.md` | sentinel-match |
 | debugger | Debug investigation | `## DEBUG COMPLETE`, `## ROOT CAUSE FOUND`, `## CHECKPOINT REACHED`, `## INVESTIGATION INCONCLUSIVE`, `## TDD CHECKPOINT`, `## FIX REJECTED BY GUARDRAIL` | `agents/debug-session-manager.md`, `engineer/workflows/diagnose-issues.md`, `engineer/workflows/plan-phase.md`, `agents/executor.md` | sentinel-match |
 | debug-session-manager | Debug checkpoint loop | `## DEBUG SESSION COMPLETE`, `## CONTINUE_REQUIRED` | `engineer/workflows/debug.md` | sentinel-match |
 | ui-auditor | UI review | `## UI REVIEW COMPLETE` | `engineer/workflows/ui-review.md` | sentinel-match |
@@ -28,8 +28,8 @@ This doc describes what IS, not what should be. Casing inconsistencies are docum
 | code-fixer | Applies code-review fixes | No marker (fix commits + REVIEW.md updates) | `engineer/workflows/code-review-fix.md` reads REVIEW.md resolution state + git log | artifact+query |
 | code-reviewer | Source-code review | No marker (writes REVIEW.md) | `engineer/workflows/code-review.md` reads REVIEW.md | artifact+query |
 | doc-verifier | Doc validation | No marker (writes JSON to `.planning/tmp/`) | `{project_root}/.planning/tmp/verify-{doc_key}.json` artifact (the orchestrator-assigned `result_path`, keyed by the doc's full relative path), read by `engineer/workflows/docs-update.md` | artifact+query |
-| doc-writer | Doc generation | No marker (writes docs directly) | generated doc files, consumed by `engineer/workflows/docs-update.md` and `engineer/workflows/docs-update/steps/dispatch-monorepo-packages.md` | artifact+query |
-| pattern-mapper | Codebase pattern mapping | `## PATTERN MAPPING COMPLETE` | `engineer/workflows/plan-phase.md` (also spawned by `engineer/workflows/settings.md`) | sentinel-match |
+| doc-writer | Research synthesis and documentation generation | `## SYNTHESIS COMPLETE` | generated doc files consumed by `engineer/workflows/docs-update.md`, `engineer/workflows/docs-update/steps/dispatch-monorepo-packages.md`, `engineer/workflows/new-milestone.md`, and `engineer/workflows/new-project.md` | sentinel-match |
+| pattern-mapper | Codebase pattern mapping | `## PATTERN MAPPING COMPLETE` | `engineer/workflows/plan-phase.md` | sentinel-match |
 
 
 ## Marker Rules
@@ -80,4 +80,4 @@ Workflows match these markers to detect agent completion:
 - `## PHASE COMPLETE` (all plans in phase done)
 - `## Self-Check: FAILED` (summary self-check)
 
-> **NOTE:** `## PLAN COMPLETE` is the executor's completion marker but execute-phase.md does not regex-match it. Instead, it detects executor completion via spot-checks (SUMMARY.md existence, git commit state). This is intentional behavior, not a mismatch.
+> **NOTE:** `## PLAN COMPLETE` is emitted for display and is not used as a completion gate. The orchestrator validates SUMMARY.md and commit evidence; this marker is explicitly unconsumed.

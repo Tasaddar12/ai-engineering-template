@@ -11,6 +11,9 @@ Active workflow and agent instructions still contained executable Node JSON read
 - Redirected live implementation references to the current Python modules/runtime verbs, refreshed the top-level Python hook attribution while retaining the legacy shell guard note, and repaired the generated state template markers.
 - Corrected spec-less fallback to select `supplied`, so missing sections, empty headings and header-only tables still run the fallback. Added runtime fixture coverage for missing, empty, header-only and populated sections, plus a full workflow-tree Node invocation regression.
 - Kept the quick-batch command and skill mirror byte-identical.
+- Repaired the agent contract registry consumers and exact role return markers for planner/doc-writer; added executor's mandatory initial-read gate for the invocation's `<required_reading>` payload.
+- Added [the current Python installer, updater and migration guide](../../docs/python-scripts.md) from the confirmed CLI contracts; README now points adopters to it. Added the multi-repository tag how-to and replaced complete-milestone's nonexistent release-map/git-tag step files with the registered `milestone.release-tags` flow. Documented update selection and conflict handling in the updater procedure.
+- Ran both generated-document writers and checks for the health workflow and state template markers.
 
 ## Verification
 
@@ -19,11 +22,14 @@ Active workflow and agent instructions still contained executable Node JSON read
 - `python -I engineer/bin/helper.py gen-state-md-docs --check` — passed (1 target up to date).
 - `python -I engineer/bin/helper.py lint-response-language-coverage` — passed (106 workflows).
 - `python -I engineer/bin/helper.py lint-health-diagnostic-rule-table` — passed.
+- `python -I engineer/bin/helper.py check-contract-drift --root .` — one remaining finding: the intentionally blank `agents/AGENT.md` scaffold has no role contract; runtime filtering is pending.
+- `python -I bin/{install,update,migrate}.py --help` — all three CLIs start and print help. The reviewed `--select-all` contract is documented from the installer owner's finalized interface, but is not present in this isolated source checkout yet; verify after installer integration.
 - `git diff --check` — passed.
 
-`python -I engineer/bin/helper.py check-contract-drift --root .` still reports 12 pre-existing violations across five kinds (missing AGENT contract row, stale consumer paths, marker case mismatch, missing required-read gate, and unmatched new-project/new-milestone tokens); none were introduced by these changes.
+The parent ran `tests/test_code_review_pipeline_regression.py` at the integrated base and found 4 failures plus 17 errors (184 cases): its structural assertions still extract removed Node snippets. Parent owns that test migration and asked this worker not to edit the test file. This remains an integration validation gap; no claim is made that this suite passes.
 
 ## Remaining work
 
-- Replace the nonexistent release-map and git-tag step references in complete-milestone with the confirmed `milestone.release-tags` interface after the runtime owner's implementation is integrated.
-- Add the finalized legacy migration CLI selection and backup behavior to the owned install/update documentation after the installer owner's final help text.
+- Runtime owner to filter the explicit empty `agents/AGENT.md` scaffold from contract drift.
+- Installer owner's `--select-all` implementation and help verification remain integration-dependent on the next merged source revision.
+- Parent-owned test migration for `tests/test_code_review_pipeline_regression.py` remains pending.

@@ -315,7 +315,7 @@ AskUserQuestion: "Archive completed quick tasks into this milestone too?" with o
 
 If "Yes": set `ARCHIVE_QUICK_FLAG="--archive-quick"`. If "Skip" (or `.planning/quick/` is empty): set `ARCHIVE_QUICK_FLAG=""`.
 
-**Per-repository release mapping (opt-in).** Set `PER_REPO_TAGGING=true` only when `INIT_EARLY` has `repo_tagging` equal to `per_repo` AND a non-empty `sub_repos`; otherwise it is `false` and this paragraph changes nothing. Shell state does not persist between commands, so later steps recompute it from their own `init.complete-milestone` JSON (`INIT_REORG`). When `true`, read and execute `engineer/workflows/complete-milestone/steps/release-map.md` Part 1 now (collect, validate, one consolidated confirmation, create the tags, record the outcome in `release-map.json`), and append `--release-map "${TMPDIR:-/tmp}/engineer-release-map-v[X.Y]/release-map.json"` to EVERY `milestone complete` call below (including the `--no-archive-phases` form); when `false`, append nothing. A Engineer milestone version may differ from every repository's release version.
+**Per-repository release mapping (opt-in).** Set `PER_REPO_TAGGING=true` only when `INIT_EARLY` has `repo_tagging` equal to `per_repo` AND a non-empty `sub_repos`; otherwise it is `false` and this paragraph changes nothing. Shell state does not persist between commands, so later steps recompute it from their own `init.complete-milestone` JSON (`INIT_REORG`). When `true`, prepare a JSON release map and pass its path to the registered runtime verb as described in [multi-repository milestone tagging](../references/git-integration.md#milestone-tagging-across-sub-repos). Run `milestone.release-tags --map FILE --dry-run`, review all entries and obtain one consolidated confirmation, then run `milestone.release-tags --map FILE` to create annotated local tags. Pass `--release-map FILE` to EVERY `milestone complete` call below (including the `--no-archive-phases` form) to archive the parsed JSON value; when `false`, append nothing. A Engineer milestone version may differ from every repository's release version.
 
 **Delegate archival to `engineer_run query milestone.complete`:**
 
@@ -353,7 +353,7 @@ If the user explicitly wants to keep phase directories in place as raw execution
 engineer_run query milestone complete v[X.Y] --no-archive-phases --confirm
 ```
 
-(When `PER_REPO_TAGGING` is `true`, this form takes the same `--release-map` argument.)
+(When `PER_REPO_TAGGING` is `true`, this form takes the same `--release-map FILE` argument.)
 
 Verify after a default (archived) completion: `✅ Phase directories archived to .planning/milestones/v[X.Y]-phases/`
 
@@ -576,12 +576,12 @@ Exact bash for each of the four options (squash, history-preserving merge, delet
 </step>
 
 <!-- engineer:section id="git-tag" when="state:git-create-tag" -->
-If `PER_REPO_TAGGING` is `true`, skip this section: the per-repository tags were created in `archive_milestone`, and no `v[X.Y]` tag is created in the current directory. Otherwise, if `section_manifest` is `null` or `"git-tag"` is in its `included` list: read and execute `engineer/workflows/complete-milestone/steps/git-tag.md`. Otherwise skip — do not read the file; proceed to `git_commit_milestone`.
+If `PER_REPO_TAGGING` is `true`, skip this section: per-repository tags were created in `archive_milestone`, and no `v[X.Y]` tag is created in the current directory. Otherwise, when `git.create_tag` is true, create the milestone tag in the current repository only after confirming the exact tag and target commit with the user. When `git.create_tag` is false, skip tag creation. Do not push here.
 <!-- /section -->
 
 <step name="push_release_tags">
 
-Recompute `PER_REPO_TAGGING` and `git_create_tag` from the latest `init.complete-milestone` JSON (`INIT_REORG`). If `PER_REPO_TAGGING` is `true` and `git_create_tag` is not `false`: read and execute `engineer/workflows/complete-milestone/steps/release-map.md` Part 2 (a separate push confirmation per repository naming the repository and its remote; nothing is pushed by default). Otherwise skip this step.
+Recompute `PER_REPO_TAGGING` from the latest `init.complete-milestone` JSON (`INIT_REORG`). Runtime tag creation never pushes. If any local release tags were created, ask separately before pushing; name each repository and its configured remote, and push only the confirmed tags. Otherwise skip this step.
 
 </step>
 
@@ -594,8 +594,6 @@ git commit -m "chore: remove REQUIREMENTS.md for v[X.Y] milestone"
 ```
 
 Confirm: "Committed: chore: remove REQUIREMENTS.md for v[X.Y] milestone"
-
-When `PER_REPO_TAGGING` was `true`, remove the scratch directory: `rm -rf "${TMPDIR:-/tmp}/engineer-release-map-v[X.Y]"` (the archived copy lives in `.planning/milestones/`).
 
 </step>
 
