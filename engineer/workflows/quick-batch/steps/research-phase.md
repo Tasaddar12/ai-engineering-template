@@ -1,5 +1,3 @@
-@~/.claude/engineer/references/run-resolver.md
-
 **Step 3: Research phase (only when `$RESEARCH_MODE`)**
 
 Skip this step entirely if NOT `$RESEARCH_MODE`.
@@ -50,7 +48,7 @@ engineer_run() {
   sh "$ENGINEER_RUN" "$@"
 }
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | LC_ALL=C sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 QB_RESEARCH_CONC_JSON=$(engineer_run quick-batch effective-concurrency --jobs "$JOBS" --task-count "$ITEM_COUNT" --capacity "$CAPACITY" --isolation "$ISOLATION" --raw)

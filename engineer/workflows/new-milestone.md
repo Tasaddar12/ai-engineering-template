@@ -1,5 +1,3 @@
-@~/.claude/engineer/references/run-resolver.md
-
 <purpose>
 
 Start a new milestone cycle for an existing project. Loads project context, gathers milestone goals (from MILESTONE-CONTEXT.md or conversation), updates PROJECT.md and STATE.md, optionally runs parallel research, defines scoped requirements with REQ-IDs, spawns the planner to create phased execution plan, and commits all artifacts. Brownfield equivalent of new-project.
@@ -75,7 +73,7 @@ engineer_run() {
   sh "$ENGINEER_RUN" "$@"
 }
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | LC_ALL=C sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 ENGINEER_WS=""

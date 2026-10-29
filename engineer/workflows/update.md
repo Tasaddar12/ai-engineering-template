@@ -1,5 +1,3 @@
-@~/.claude/engineer/references/run-resolver.md
-
 <purpose>
 Inspect a user-selected pinned source revision, display its complete changes and file transaction, preserve custom files, and apply only the reviewed update with backups and rollback.
 </purpose>
@@ -54,7 +52,7 @@ engineer_run() {
   sh "$ENGINEER_RUN" "$@"
 }
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | LC_ALL=C sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 UC_ARGS=()

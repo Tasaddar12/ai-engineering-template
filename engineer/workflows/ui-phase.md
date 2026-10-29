@@ -1,5 +1,3 @@
-@~/.claude/engineer/references/run-resolver.md
-
 <purpose>
 Generate a UI design contract (UI-SPEC.md) for frontend phases. Orchestrates ui-researcher and ui-checker with a revision loop. Inserts between discuss-phase and plan-phase in the lifecycle.
 
@@ -64,7 +62,7 @@ engineer_run() {
   sh "$ENGINEER_RUN" "$@"
 }
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | LC_ALL=C sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)

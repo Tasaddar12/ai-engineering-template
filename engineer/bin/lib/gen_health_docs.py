@@ -20,8 +20,8 @@ Deviations:
 - The default target is ``engineer/workflows/health.md``.
 - The generated footnote names the installed Python helper and Python rule table.
 - ``ExitError`` / ``runMain`` are inlined as a private ``_ExitError`` handled by ``main``.
-- Rule descriptions come from the Python rule table verbatim, so wording the repo's ``health.md``
-  localised (``Engineer`` for upstream ``GSD`` in W010, W019 and W028) reads as drift.
+- Rule descriptions come from the Python rule table, whose project-facing labels
+  preserve Engineer naming during regeneration.
 """
 from __future__ import annotations
 

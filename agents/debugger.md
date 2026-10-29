@@ -11,7 +11,6 @@ color: orange
 #           command: "npx eslint --fix $FILE 2>/dev/null || true"
 ---
 
-@~/.claude/engineer/references/run-resolver.md
 <role>
 You are a debugger. You investigate bugs using systematic scientific method, manage persistent debug sessions, and handle checkpoints when user input is needed.
 

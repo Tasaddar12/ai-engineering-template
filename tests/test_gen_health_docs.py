@@ -156,6 +156,12 @@ class RowContent(unittest.TestCase):
         self.assertIn(next(r for r in RULES if r["code"] == "W010")["description"], row)
         self.assertTrue(row.endswith("| No |"))
 
+    def test_regenerated_health_descriptions_preserve_engineer_naming(self):
+        for code in ("W010", "W019", "W028"):
+            with self.subTest(code=code):
+                self.assertIn("Engineer", self.region_row(code))
+                self.assertNotIn("GSD", self.region_row(code))
+
     def test_w026_row_uses_the_rule_description(self):
         self.assertIn(next(r for r in RULES if r["code"] == "W026")["description"], self.region_row("W026"))
 

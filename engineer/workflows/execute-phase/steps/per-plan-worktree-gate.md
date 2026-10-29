@@ -1,5 +1,3 @@
-@~/.claude/engineer/references/run-resolver.md
-
 # Per-plan worktree decision and per-dispatch isolation record 
 ## Part 1 — Decide (run for each plan in the wave, up front, at `execute_waves` step 2.5)
 This gate has two parts that run at **different times**. **Part 1** (this part) decides, for every plan in the wave, whether it uses worktree isolation, and stores each plan's answer; it runs for the whole wave before any dispatch. **Part 2** (below) writes the plan-scoped isolation record and runs once per plan, immediately before that plan's `Agent()` dispatch in step 3. The output `USE_WORKTREES_FOR_PLAN` gates the dispatch branch (worktree mode vs sequential mode) for that plan only — other plans in the same wave can still take the worktree path.
@@ -165,7 +163,7 @@ engineer_run() {
   sh "$ENGINEER_RUN" "$@"
 }
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | LC_ALL=C sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 if [ "${USE_WORKTREES_FOR_PLAN:-}" = "false" ]; then

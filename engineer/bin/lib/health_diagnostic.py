@@ -117,7 +117,7 @@ def repository_health(cwd, repair=False, backfill=False):
     packet = build_snapshot(cwd)
     snapshot = packet["snapshot"]
     skipped = {"W016": "workflow.ai_integration_phase is not a native config.yaml field",
-               "W010": "Upstream GSD agent installation is not the native agent installation contract",
+               "W010": "Upstream agent installation is not the native agent installation contract",
                "W024": "Upstream rule has no freshness evidence probe",
                "W028": "No install-shadow renderer is registered by the native runtime"}
     if snapshot["planningTracked"]["scope"] != "complete":

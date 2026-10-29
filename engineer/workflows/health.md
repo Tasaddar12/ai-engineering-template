@@ -3,7 +3,6 @@ Validate `.planning/` directory integrity and report actionable issues. Checks f
 </purpose>
 
 <required_reading>
-@~/.claude/engineer/references/run-resolver.md
 Read all files referenced by the invoking prompt's execution_context before starting.
 </required_reading>
 
@@ -231,7 +230,7 @@ Report final status.
 | W007 | warning | Phase on disk but not in ROADMAP | No |
 | W008 | warning | config.json: workflow.nyquist_validation absent (defaults to enabled but agents may skip) | Yes |
 | W009 | warning | Phase has Validation Architecture in RESEARCH.md but no VALIDATION.md | No |
-| W010 | warning | GSD agent installation missing or incomplete | No |
+| W010 | warning | Engineer agent installation missing or incomplete | No |
 | W011 | warning | STATE.md current-phase status disagrees with ROADMAP.md checkbox | No |
 | W012 | warning | config.json invalid branching_strategy value | No |
 | W013 | warning | config.json context_window not a positive integer | No |
@@ -240,7 +239,7 @@ Report final status.
 | W016 | warning | config.json: workflow.ai_integration_phase absent (defaults to enabled but agents may skip AI-integration-phase planning) | Yes |
 | W017 | warning | Orphan git worktree (path no longer exists on disk) | No |
 | W018 | warning | MILESTONES.md missing entry for archived milestone snapshot | Yes (`--backfill`) |
-| W019 | warning | Unrecognized .planning/ root file — not a canonical GSD artifact | No |
+| W019 | warning | Unrecognized .planning/ root file — not a canonical Engineer artifact | No |
 | W020 | warning | Worktree health scan degraded — git worktree list timed out, failed, or a finding could not be verified | No |
 | W021 | warning | Phase's integer prefix implies a different milestone than its ROADMAP section (phase_id_convention: milestone-prefixed) | No |
 | W022 | warning | config.json models entry malformed (unknown phase type, invalid tier, or non-object value) | No |
@@ -248,7 +247,7 @@ Report final status.
 | W024 | warning | STATE.md was written many commits ago — treat its contents as approximate | No |
 | W026 | warning | STATE says milestone complete but ROADMAP lists an unstarted phase for that milestone | No |
 | W027 | warning | Stale git worktree (not modified in a long time) | No |
-| W028 | warning | A GSD-owned install scope shadows another on this machine | No |
+| W028 | warning | A Engineer-owned install scope shadows another on this machine | No |
 | W029 | warning | .planning/ matches a gitignore rule but is still tracked by git (gitignore has no effect on already-tracked files) | No |
 | W030 | warning | Phase verification report status is outside the closed set | Yes (known legacy statuses only) |
 | I001 | info | Plan without SUMMARY (may be in progress) | No |

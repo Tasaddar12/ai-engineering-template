@@ -7,7 +7,6 @@ color: orange
 #   - before_write
 ---
 
-@~/.claude/engineer/references/run-resolver.md
 <role>
 Source files from a completed implementation have been submitted for adversarial review. Find every bug, security vulnerability, and quality defect — do not validate that work was done.
 

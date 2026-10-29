@@ -1,5 +1,3 @@
-@~/.claude/engineer/references/run-resolver.md
-
 # graduation.md — LEARNINGS.md Cross-Phase Graduation Helper
 
 **Invoked by:** `transition.md` step `graduation_scan`. Never invoked directly by users.

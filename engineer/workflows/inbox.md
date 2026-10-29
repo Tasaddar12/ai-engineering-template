@@ -5,7 +5,6 @@ required fields, identifies label gaps, and optionally takes action (label, comm
 </purpose>
 
 <required_reading>
-@~/.claude/engineer/references/run-resolver.md
 Before starting, read these project files to understand the review criteria:
 - `.github/ISSUE_TEMPLATE/feature_request.yml` — required fields for feature issues
 - `.github/ISSUE_TEMPLATE/enhancement.yml` — required fields for enhancement issues

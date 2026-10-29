@@ -35,7 +35,8 @@ Deviations:
   (``planning-scope.cts``) are inlined as private/public helpers here.
 - ``VALID_PROFILES`` / ``VALID_PHASE_TYPES`` / ``VALID_TIERS`` are the literal values of
   upstream ``model-catalog.json``; ``PACKAGE_NAME`` is the upstream package identity.
-  Rule messages keep upstream wording (``GSD``, ``gsd-*``, ``/gsd-...``) verbatim.
+  Legacy rule messages retain upstream wording; public rule descriptions use
+  the project's Engineer name.
 - W028 (install surface shadowing) needs ``install-shadow-report`` / ``runtime-slash``,
   which are not ported: its ``check`` returns ``[]`` until a renderer is registered with
   ``set_install_shadow_renderer(fn)`` where ``fn(cwd) -> (runtime, lines)``.
@@ -798,7 +799,7 @@ def _check_agent_install(snapshot):
 
 
 RULE_GROUPS["agent-install"] = [
-    _rule("W010", _W, "GSD agent installation missing or incomplete", False, _check_agent_install),
+    _rule("W010", _W, "Engineer agent installation missing or incomplete", False, _check_agent_install),
 ]
 
 
@@ -828,7 +829,7 @@ def _check_w019(snapshot):
 
 RULE_GROUPS["milestone-archive-hygiene"] = [
     _rule("W018", _W, "MILESTONES.md missing entry for archived milestone snapshot", True, _check_w018),
-    _rule("W019", _W, "Unrecognized .planning/ root file — not a canonical GSD artifact", False, _check_w019),
+    _rule("W019", _W, "Unrecognized .planning/ root file — not a canonical Engineer artifact", False, _check_w019),
 ]
 
 
@@ -966,7 +967,7 @@ def _check_install_surface_shadowing(snapshot):
 
 
 RULE_GROUPS["install-surface-shadowing"] = [
-    _rule("W028", _W, "A GSD-owned install scope shadows another on this machine", False, _check_install_surface_shadowing),
+    _rule("W028", _W, "A Engineer-owned install scope shadows another on this machine", False, _check_install_surface_shadowing),
 ]
 
 
