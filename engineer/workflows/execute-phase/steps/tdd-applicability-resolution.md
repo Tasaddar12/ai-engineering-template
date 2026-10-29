@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 # TDD-applicability resolution 
 
 Run for each plan, immediately after executor routing and before composing

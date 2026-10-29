@@ -5,6 +5,7 @@ List captured seeds for browsing and audit, with an optional status filter. Read
 </purpose>
 
 <required_reading>
+@~/.claude/engineer/references/run-resolver.md
 Read all files referenced by the invoking prompt's execution_context before starting.
 </required_reading>
 

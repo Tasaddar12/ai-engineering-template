@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 <purpose>
 Retroactive 6-pillar visual audit of implemented frontend code. Standalone command that works on any project — Engineer-managed or not. Produces scored UI-REVIEW.md with actionable findings.
 </purpose>

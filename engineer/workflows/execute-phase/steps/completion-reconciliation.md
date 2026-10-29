@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 # Completion reconciliation (split A of )
 
 Read and follow this fragment from `execute-phase.md` step 4 whenever an executor's

@@ -465,9 +465,9 @@ class GateCountsMirror(unittest.TestCase):
 
     def test_docs_parity_non_blocking_and_unchanged_run(self):
         self.assertIn("Code review disposition record skipped (non-blocking).", DISPOSITION)
-        self.assertIn("Code review disposition unchanged: ", DISPOSITION)
-        self.assertIn("const stripTs = (t) => t.replace(/^recorded:.*\\$/m, 'recorded:');", DISPOSITION)
-        self.assertTrue("/^##\\s+Fixed Issues\\s*\\$/" in DISPOSITION and "/^##\\s+Skipped Issues\\s*\\$/" in DISPOSITION)
+        self.assertIn("engineer_run query review.reconcile", DISPOSITION)
+        self.assertIn('|| echo "Code review disposition record skipped (non-blocking)."', DISPOSITION)
+        self.assertNotIn("Code review disposition unchanged:", DISPOSITION)
 
     def test_docs_parity_gate_reaches_the_extracted_step(self):
         parent = crp.read_text(crp.SHARED_VERIFY_STEP_PATH)
@@ -749,10 +749,8 @@ class DottedPhaseNumbers(unittest.TestCase):
 
 
 class LocalePinCensus(unittest.TestCase):
-    @unittest.expectedFailure
     def test_every_locale_sensitive_tool_in_the_step_is_pinned_to_lc_all_c(self):
-        # Violation: code-review-disposition.md:831 inlines the launcher preamble, whose CLAUDE_ENV_FILE escape runs an
-        # unpinned `sed`; upstream's launcher carried no sed, so its census found none.
+        # The inline launcher preamble pins its locale-sensitive path escaping to the C locale.
         offenders = []
         for number, line in enumerate(DISPOSITION.replace("\r\n", "\n").split("\n"), 1):
             if re.match(r"^\s*#", line):
@@ -1382,14 +1380,13 @@ class DispositionLedgerViaVerb(TempCase):
         review = review_doc("### CR-01: a", "### WR-01: b", "### IN-01: c", "### CR-01: a")
         self.assertEqual(["CR-01", "WR-01", "IN-01"], [row["id"] for row in self.fixture().run(review)["rows"]])
 
-    @unittest.expectedFailure
-    def test_a_duplicate_id_under_a_different_title_does_not_produce_a_second_row(self):
-        # Divergence: review.reconcile fails closed (`ambiguous-review-finding`, exit 1) when a review reuses an id for a
-        # conflicting finding; upstream's ledger silently keeps the first heading.
+    def test_conflicting_duplicate_id_fails_closed_without_writing_a_ledger(self):
         review = review_doc("### CR-01: a", "### WR-01: b", "### IN-01: c", "### CR-01: a duplicate id, which must not produce a second row")
-        out = self.fixture().run(review)
-        self.assertEqual(0, out["returncode"], out["stderr"])
-        self.assertEqual(["CR-01", "WR-01", "IN-01"], [row["id"] for row in out["rows"]])
+        fixture = self.fixture()
+        out = fixture.run(review)
+        self.assertNotEqual(0, out["returncode"])
+        self.assertIn("ambiguous-review-finding", out["stderr"])
+        self.assertFalse(fixture.ledger_path.exists(), "ambiguous IDs must not create a partial ledger")
 
     def test_a_recorded_decision_survives_a_rerun_and_keeps_its_reason(self):
         prior = "| CR-01 | critical | deferred | ships next phase |\n| WR-01 | warning | open | - |\n"
@@ -1458,25 +1455,22 @@ class DispositionLedgerViaVerb(TempCase):
         self.assertEqual(("skipped", "01-REVIEW-FIX.md"), (rows["WR-02"]["disposition"], rows["WR-02"]["source"]))
         self.assertEqual("open", rows["CR-01"]["disposition"])
 
-    @unittest.expectedFailure
-    def test_a_fixed_outcome_is_reconciled_from_the_fix_report(self):
-        # Divergence: review.reconcile records `fixed` only with a commit receipt for the repair (diagnostic
-        # `fixed-report-missing-commit`); a bare `## Fixed Issues` heading leaves the finding open. Upstream's
-        # ledger applies the heading directly.
+    def test_a_fixed_heading_without_a_commit_receipt_leaves_the_finding_open(self):
         fix = "## Fixed Issues\n\n### WR-01: missing null check"
-        rows = self.by_id(self.fixture().run(REVIEW_WITH_FINDINGS, fix=fix))
-        self.assertEqual(("fixed", "01-REVIEW-FIX.md"), (rows["WR-01"]["disposition"], rows["WR-01"]["source"]))
+        out = self.fixture().run(REVIEW_WITH_FINDINGS, fix=fix)
+        rows = self.by_id(out)
+        self.assertEqual("open", rows["WR-01"]["disposition"])
+        self.assertEqual(4, out["result"]["open"])
+        self.assertIn("fixed-report-missing-commit", [item["kind"] for item in out["result"]["diagnostics"]])
 
-    @unittest.expectedFailure
-    def test_an_applied_fix_outcome_wins_over_an_earlier_deferral(self):
-        # Divergence: same commit-receipt requirement as above.
+    def test_a_fixed_heading_without_receipt_preserves_an_earlier_deferral(self):
         out = self.fixture().run(REVIEW_WITH_FINDINGS, prior="| CR-01 | critical | deferred | later |",
                                  fix="## Fixed Issues\n\n### CR-01: SQL injection in auth")
-        self.assertEqual("fixed", out["rows"][0]["disposition"])
+        self.assertEqual("deferred", out["rows"][0]["disposition"])
+        self.assertEqual(3, out["result"]["open"])
+        self.assertIn("fixed-report-missing-commit", [item["kind"] for item in out["result"]["diagnostics"]])
 
-    @unittest.expectedFailure
-    def test_the_gate_writes_all_open_and_the_fix_path_resolves_it(self):
-        # Divergence: `fixed` needs a commit receipt (see above); the `skipped` half of the sequence does resolve.
+    def test_the_gate_requires_a_commit_receipt_before_a_fixed_outcome_resolves(self):
         fixture = self.fixture()
         review = "\n".join(["---", "phase: 01", "status: issues_found", "findings:", "  critical: 1", "  warning: 1", "  info: 0",
                             "  total: 2", "---", "", "## Critical Issues", "", "### CR-01: the critical one", "", "## Warnings", "",
@@ -1486,8 +1480,9 @@ class DispositionLedgerViaVerb(TempCase):
         gate = fixture.run(review, review_total=2)
         self.assertEqual(["open", "open"], [row["disposition"] for row in gate["rows"]])
         after = fixture.run(review, fix=fix, review_total=2)
-        self.assertEqual([("CR-01", "fixed"), ("WR-01", "skipped")], [(row["id"], row["disposition"]) for row in after["rows"]])
-        self.assertEqual(0, after["result"]["open"])
+        self.assertEqual([("CR-01", "open"), ("WR-01", "skipped")], [(row["id"], row["disposition"]) for row in after["rows"]])
+        self.assertEqual(1, after["result"]["open"])
+        self.assertIn("fixed-report-missing-commit", [item["kind"] for item in after["result"]["diagnostics"]])
 
     def test_a_section_heading_that_merely_starts_with_fixed_issues_does_not_classify_findings(self):
         fix = "# Fix report\n\n## Fixed Issues Verification\n\n### IN-01: named while verifying"

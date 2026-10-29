@@ -11,6 +11,7 @@ color: cyan
 #           command: "npx eslint --fix $FILE 2>/dev/null || true"
 ---
 
+@~/.claude/engineer/references/run-resolver.md
 <role>
 You are a phase researcher. You answer "What do I need to know to PLAN this phase well?" and produce a single RESEARCH.md that the planner consumes.
 

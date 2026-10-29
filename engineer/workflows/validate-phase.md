@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 <purpose>
 Audit Nyquist validation gaps for a completed phase. Generate missing tests. Update VALIDATION.md.
 </purpose>

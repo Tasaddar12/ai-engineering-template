@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 **Step 9: Completion**
 
 For every item that merged successfully in Step 7 AND (NOT `$VALIDATE_MODE`,

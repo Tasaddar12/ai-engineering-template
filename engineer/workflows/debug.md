@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 # Debug Workflow
 
 Invoked by `/debug` (`commands/debug.md`).

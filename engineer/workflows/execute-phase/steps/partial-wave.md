@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 <step name="handle_partial_wave_execution">
 If `WAVE_FILTER` was used, re-run plan discovery after execution:
 

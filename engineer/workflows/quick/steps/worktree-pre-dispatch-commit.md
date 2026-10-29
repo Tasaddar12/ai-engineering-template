@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 **Step 5.6: Pre-dispatch artifact commit (worktree mode only)**
 
 When `USE_WORKTREES !== "false"`, commit PLAN.md — plus CONTEXT.md and/or RESEARCH.md

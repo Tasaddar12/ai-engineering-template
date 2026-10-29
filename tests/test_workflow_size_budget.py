@@ -154,9 +154,6 @@ class DiscussPhaseDisclosure(unittest.TestCase):
     def test_under_byte_budget(self):
         self.assertEqual([], wsb.discuss_phase_budget_violations(WORKFLOWS/"discuss-phase.md"))
 
-    # discuss-phase.md dispatches to modes/power.md, modes/chain.md and modes/advisor.md,
-    # but those mode files are absent from engineer/workflows/discuss-phase/modes/.
-    @unittest.expectedFailure
     def test_mode_files_exist_for_every_documented_mode(self):
         documented = ("power", "all", "auto", "chain", "text", "advisor")
         self.assertEqual([], wsb.missing_files(DISCUSS/"modes", [m+".md" for m in documented]))
@@ -192,12 +189,15 @@ class DiscussPhaseDisclosure(unittest.TestCase):
     def test_all_mode_documents_auto_selecting_gray_areas(self):
         self.assertEqual([], wsb.mode_content_violations("all", (DISCUSS/"modes/all.md").read_text(encoding="utf-8")))
 
-    # discuss-phase.md dispatches to modes/chain.md, which does not exist.
-    @unittest.expectedFailure
     def test_chain_mode_documents_auto_advance_to_plan_phase(self):
         path = DISCUSS/"modes/chain.md"
         self.assertTrue(path.exists(), "modes/chain.md is missing")
-        self.assertEqual([], wsb.chain_mode_violations(path.read_text(encoding="utf-8")))
+        content = path.read_text(encoding="utf-8")
+        self.assertEqual([], wsb.chain_mode_violations(content))
+        self.assertIn("engineer_run query config-set workflow._auto_chain_active false", content)
+        self.assertIn("/plan-phase ${PHASE} ${ENGINEER_WS}", content)
+        self.assertIn("without `--auto` or `--chain`", content)
+        self.assertIn("Do not dispatch `execute-phase` from discuss-phase chain mode", content)
 
     def test_text_mode_documents_replacing_ask_user_question(self):
         self.assertEqual([], wsb.text_mode_violations((DISCUSS/"modes/text.md").read_text(encoding="utf-8")))

@@ -7,6 +7,7 @@ color: green
 #   - before_write
 ---
 
+@~/.claude/engineer/references/run-resolver.md
 <role>
 You are a code fixer. You apply fixes to issues found by the code-reviewer agent.
 

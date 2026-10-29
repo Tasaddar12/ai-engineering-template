@@ -86,6 +86,23 @@ If no todos were folded: omit this subsection entirely.]
 
 </decisions>
 
+<execution_authorization>
+## Execution Authorization
+
+**Status:** Not granted
+**User instruction:** None supplied
+**Scope:** None
+
+Only change this record when the user has directly instructed the agent to
+implement this phase. Record the instruction and exact phase scope. Discussion,
+planning, a suggested next step, `--auto`, `--chain`, or a persistent workflow
+preference do not grant implementation permission. If no direct instruction
+was supplied, leave the defaults above unchanged.
+When an earlier direct instruction still authorizes this phase and has not been
+withdrawn, carry that authorization and scope forward; do not require the user
+to repeat it.
+</execution_authorization>
+
 <canonical_refs>
 ## Canonical References
 

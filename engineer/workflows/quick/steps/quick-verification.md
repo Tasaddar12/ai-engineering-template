@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 **Step 6.5: Verification (only when `$VALIDATE_MODE`)**
 
 Skip this step entirely if NOT `$VALIDATE_MODE`.

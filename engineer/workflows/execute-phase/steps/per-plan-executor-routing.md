@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 # Per-plan executor routing 
 
 Run for each plan, immediately before its `Agent()` dispatch in step 3. Sets

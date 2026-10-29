@@ -6,6 +6,7 @@ offers mid-conversation research when useful, then routes crystallized outputs t
 </purpose>
 
 <required_reading>
+@~/.claude/engineer/references/run-resolver.md
 Read all files referenced by the invoking prompt's execution_context before starting.
 
 @~/.claude/engineer/references/questioning.md

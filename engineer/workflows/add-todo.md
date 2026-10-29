@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 <purpose>
 Capture an idea, task, or issue that surfaces during an Engineer session as a structured todo for later work. Enables "thought → capture → continue" flow without losing context.
 </purpose>

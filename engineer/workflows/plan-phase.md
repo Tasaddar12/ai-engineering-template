@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 <!-- engineer:loop-host
 step: plan
 points: plan:pre, plan:post
@@ -1461,7 +1463,7 @@ Route to `<offer_next>` OR `auto_advance` depending on flags/config.
 
 ## 15. Auto-Advance Check
 
-Read and execute `engineer/workflows/plan-phase/steps/auto-advance-check.md` — it parses `--auto` / `--chain` from `$ARGUMENTS`, syncs the ephemeral `workflow._auto_chain_active` flag with the invocation, and, when auto-advance applies, launches execute-phase through the Skill tool (flat, `--no-transition`) and handles its return. Otherwise route to `<offer_next>`.
+Read and execute `engineer/workflows/plan-phase/steps/auto-advance-check.md`. It checks `--auto` / `--chain` and the ephemeral chain flag, then reads this phase's CONTEXT execution authorization before any execute-phase dispatch. Auto flags and persistent preferences never grant implementation permission. Without direct, phase-scoped user authorization, clear the ephemeral flag, report that planning is complete, and route to `<offer_next>`; otherwise follow the gate's authorized handoff procedure.
 
 </process>
 

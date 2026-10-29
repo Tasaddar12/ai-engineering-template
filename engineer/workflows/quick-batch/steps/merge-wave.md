@@ -1,3 +1,5 @@
+@~/.claude/engineer/references/run-resolver.md
+
 **Step 7: Deterministic merge**
 
 Skip entirely if `$ISOLATION == "none"` — nothing was worktree-isolated,
