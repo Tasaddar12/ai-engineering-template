@@ -26,7 +26,7 @@ Output: Milestone archived (roadmap + requirements), PROJECT.md evolved, git tag
 **Load these files NOW (before proceeding):**
 
 - @~/.claude/engineer/workflows/complete-milestone.md (main workflow)
-- @~/.claude/engineer/templates/milestone.md (milestone entry template)
+- @~/.claude/engineer/templates/milestone-archive.md (archive template)
   </execution_context>
 
 <context>
@@ -96,8 +96,7 @@ Output: Milestone archived (roadmap + requirements), PROJECT.md evolved, git tag
 
    - Create `.planning/milestones/v{{version}}-ROADMAP.md`
    - Extract full phase details from ROADMAP.md
-   - Add the completed milestone entry to MILESTONES.md using milestone.md
-   - Preserve full roadmap archive details as directed by the workflow
+   - Fill milestone-archive.md template
    - Update ROADMAP.md to one-line summary with link
 
 5. **Archive requirements:**
