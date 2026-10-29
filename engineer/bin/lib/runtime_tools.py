@@ -179,6 +179,21 @@ def review_adapter(args, action):
         data = input_json(None if args.has("stdin") else args.get("input", args.arg(0)))
         if not isinstance(data, dict) or not any(key in data for key in ("dead_code", "duplication")):
             raise Failure("fallow-schema-unrecognized", "Expected a native Fallow report with dead_code or duplication", 2)
+        for section, collections in (("dead_code", ("unused_exports", "unused_files", "circular_dependencies")),
+                                     ("duplication", ("clone_groups",))):
+            content = data.get(section)
+            if content is None:
+                continue
+            if not isinstance(content, dict):
+                raise Failure("fallow-schema-unrecognized", section + " must be an object", 2)
+            for key in collections:
+                collection = content.get(key)
+                if collection is not None and (not isinstance(collection, list) or any(not isinstance(item, dict) for item in collection)):
+                    raise Failure("fallow-schema-unrecognized", section + "." + key + " must be an array of objects", 2)
+                for item in collection or []:
+                    for nested in ("files", "instances"):
+                        if nested in item and (not isinstance(item[nested], list) or any(not isinstance(value, str if nested == "files" else dict) for value in item[nested])):
+                            raise Failure("fallow-schema-unrecognized", key + "." + nested + " has an invalid shape", 2)
         normalized = normalize_fallow_report(data)
         if args.has("output"):
             output = Path(str(args.get("output"))).expanduser()

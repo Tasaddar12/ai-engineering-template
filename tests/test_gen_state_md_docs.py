@@ -419,11 +419,7 @@ class Splicing(unittest.TestCase):
 
 
 class RealTree(unittest.TestCase):
-    @unittest.expectedFailure
     def test_real_template_check_passes(self):
-        # KNOWN DRIFT: engineer/templates/state.md carries `engineer_state_version` in its
-        # frontmatter region; the upstream-faithful generator renders `gsd_state_version`,
-        # so `--check` reports region 'frontmatter' stale on the real file.
         code, _, err = run_gen(["--check"], ROOT)
         self.assertEqual(0, code, err)
 

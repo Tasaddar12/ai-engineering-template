@@ -642,6 +642,16 @@ class FixtureCase(unittest.TestCase):
 
 
 class EndToEnd(FixtureCase):
+    def test_explicit_agent_catalog_scaffold_is_not_a_role_but_empty_roles_are_checked(self):
+        self.write_fixture(FIXTURE_REGISTRY, {**CLEAN_AGENTS, "AGENT.md": ""}, CLEAN_EXTRA)
+        code, report, err = self.check_json()
+        self.assertEqual(0, code, err)
+        self.assertEqual([], report["violations"])
+        (self.dir / "agents/unregistered.md").write_text("", encoding="utf-8")
+        code, report, _ = self.check_json()
+        self.assertEqual(1, code)
+        self.assertTrue(any(item.get("agent") == "unregistered" for item in report["violations"]))
+
     def test_clean_fixture_exits_zero(self):
         self.write_fixture(FIXTURE_REGISTRY, CLEAN_AGENTS, CLEAN_EXTRA)
         code, report, err = self.check_json()
@@ -1011,18 +1021,8 @@ class CommandLine(FixtureCase):
 
 
 class RealRepository(unittest.TestCase):
-    @unittest.expectedFailure
     def test_real_tree_passes(self):
-        """The real repository drifts from its registry; this stays expected-failing until the content is repaired.
-
-        Violations at the pinned base: agent_without_contract (agents/AGENT.md has no registry row);
-        unknown_consumer (planner -> engineer/workflows/plan-review-convergence.md, plan-checker ->
-        engineer/workflows/import.md, pattern-mapper -> engineer/workflows/settings.md name files that do
-        not exist); case_only_match (executor `PLAN COMPLETE`); read_tag_gate_missing (executor, whose
-        `@~/.claude/references/...` pointers omit `engineer/`, so the mandatory-initial-read gate is never
-        followed); unmatched_consumer_token (`SYNTHESIS COMPLETE`, `ROADMAP BLOCKED`, `ROADMAP PROPOSED`
-        in new-milestone.md and new-project.md are not declared by any registry row).
-        """
+        """The shipped registry, role producers and workflow consumers agree."""
         out, err = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
             code = drift.main(["--root", str(ROOT)])

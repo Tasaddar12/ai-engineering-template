@@ -100,14 +100,11 @@ def artifacts(args, plans=False):
 
 
 def next_decimal(args):
-    from . import records
+    from . import records, phase_id
     base = records.number(args.need())
-    if "." in base:
-        raise Failure("integer-phase-required", base, 2)
     used = [records.number(item["number"]) for item in records.roadmap_phases()]
     used += [path.name.split("-")[0] for path in records.phases()]
-    decimals = [int(value.split(".")[1]) for value in used if value.startswith(base+".")]
-    return base+"."+str(max(decimals, default=0)+1)
+    return phase_id.next_child(base, used)
 
 
 def milestone_scope(args):
@@ -118,15 +115,15 @@ def milestone_scope(args):
 
 
 def annotate_dependencies(args):
-    from . import records
+    from . import records, phase_id
     phase = records.roadmap_phase(args.need())
     index = records.plan_index(Args([phase["number"]]))
     external = sorted({records.number(str(dep).split("-", 1)[0]) for plan in index["plans"] for dep in plan.get("depends_on", [])
                        if records.number(str(dep).split("-", 1)[0]) != phase["number"]})
     if not external:
         return {"updated": False, "phase": phase["number"], "dependencies": [], "reason": "no-cross-phase-plan-dependencies"}
-    existing = {records.number(value) for value in re.findall(r"\d+(?:\.\d+)?", phase["depends_on"])}
-    dependencies = sorted(existing | set(external), key=lambda value: tuple(map(int, value.split("."))))
+    existing = set(records._dependency_ids(phase["depends_on"]))
+    dependencies = sorted(existing | set(external), key=phase_id.sort_key)
     return {**records.phase_change(Args([phase["number"], "--depends-on", ", ".join("Phase "+value for value in dependencies)]), "edit"), "dependencies": dependencies}
 
 

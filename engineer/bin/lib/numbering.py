@@ -7,6 +7,7 @@ import uuid
 from .core import Failure, now, read, write, write_json
 from .planning import safe
 from .text import join_frontmatter, split_frontmatter
+from . import phase_id
 
 
 def shift_identifier(value, removed):
@@ -21,9 +22,9 @@ def shift_identifier(value, removed):
 
 
 def references(content, removed):
-    content = re.sub(r"(?i)\bPhase\s+(\d+(?:\.\d+)?)", lambda match: "Phase "+str(shift_identifier(match[1], removed)), content)
-    content = re.sub(r"(?m)^(\d+(?:\.\d+)?-\d+)", lambda match: str(shift_identifier(match[1], removed)), content)
-    content = re.sub(r"(?m)^(- \[[ x]\]\s*)(\d+(?:\.\d+)?-\d+)", lambda match: match[1]+str(shift_identifier(match[2], removed)), content)
+    content = re.sub(r"(?i)\bPhase\s+(" + phase_id.PATTERN + r")", lambda match: "Phase "+str(shift_identifier(match[1], removed)), content)
+    content = re.sub(r"(?m)^(" + phase_id.PATTERN + r"-\d+)", lambda match: str(shift_identifier(match[1], removed)), content)
+    content = re.sub(r"(?m)^(- \[[ x]\]\s*)(" + phase_id.PATTERN + r"-\d+)", lambda match: match[1]+str(shift_identifier(match[2], removed)), content)
     content = re.sub(r"(?m)^(\|\s*)(\d+)([.\s])", lambda match: match[1]+str(shift_identifier(match[2], removed))+match[3], content)
     return content
 
@@ -32,10 +33,10 @@ def records(root, removed):
     if isinstance(removed, bool) or not isinstance(removed, int) or removed < 1:
         raise Failure("invalid-removed-phase", str(removed), 2)
     directory = safe(root/".planning/phases")
-    entries = sorted([safe(path) for path in directory.iterdir() if path.is_dir() and re.fullmatch(r"\d+(?:\.\d+)?-.+", path.name)],
-                     key=lambda path: tuple(map(int, path.name.split("-")[0].split(".")))) if directory.exists() else []
+    entries = sorted([safe(path) for path in directory.iterdir() if path.is_dir() and re.fullmatch(phase_id.PATTERN + r"-.+", path.name)],
+                     key=lambda path: phase_id.sort_key(path.name)) if directory.exists() else []
     moves, files = [], []
-    active = {str(path) for path in entries if int(path.name.split("-")[0].split(".")[0]) > removed}
+    active = {str(path) for path in entries if phase_id.major(path.name) > removed}
     for path in entries:
         old = path.name.split("-")[0]
         new = shift_identifier(old, removed)

@@ -118,6 +118,17 @@ class RuntimeProcessExecution(RuntimeCase):
         self.assertNotEqual(0, duplicate.returncode)
         self.assertIn("dispatch-already-started", duplicate.stderr)
 
+    def test_wrong_config_suffix_cannot_pass_fake_host_launch_guard(self):
+        worker = self.root / "worker"
+        self.git("worktree", "add", "-b", "fixture-worker", str(worker))
+        self.put(".planning/config.json", json.dumps({"execution": {"hosts": {"codex": {"command": str(self.binary)}}}}))
+        packet = self.cli("dispatch-isolation", "--host", "codex", "--cwd-target", worker, "--prompt", "No host may launch")
+        if packet["exec"] is not None:
+            request = json.loads(Path(packet["exec"]["request"]).read_text(encoding="utf-8"))
+            self.assertNotEqual(self.binary.resolve(), Path(request["command"]).resolve())
+        # Deliberately no execution: a missing/wrong config cannot satisfy the
+        # explicit fake-executable assertion used before the positive launch.
+
     def test_owned_timeout_and_explicit_stop_confirm_descendant_termination(self):
         for mode in ("timeout", "cancelled"):
             with self.subTest(mode=mode), (self.root / (mode + ".out")).open("wb") as output:
@@ -132,6 +143,25 @@ class RuntimeProcessExecution(RuntimeCase):
                     self.assertTrue(proof["tree_stopped"])
                 finally:
                     child.close()
+
+    def test_stop_reaps_live_grandchild_before_terminal_receipt(self):
+        heartbeat = self.root / "grandchild-heartbeat"
+        grandchild = "import pathlib,time; p=pathlib.Path(" + repr(str(heartbeat)) + "); " + "\nwhile True:\n p.write_text(str(time.time_ns())); time.sleep(0.03)\n"
+        parent = "import subprocess,sys,time; subprocess.Popen([sys.executable,'-c'," + repr(grandchild) + "]); time.sleep(60)"
+        with (self.root / "descendant.out").open("wb") as output:
+            child = processes.start_owned([sys.executable, "-c", parent], self.root, env=self.env, stdout=output, stderr=output, timeout=10)
+            try:
+                deadline = time.monotonic() + 5
+                while not heartbeat.exists() and time.monotonic() < deadline:
+                    time.sleep(0.03)
+                self.assertTrue(heartbeat.exists(), "Grandchild did not become active")
+                child.stop()
+                self.assertTrue(processes.terminal(child.ownership)["tree_stopped"])
+                snapshot = heartbeat.read_bytes()
+                time.sleep(0.15)
+                self.assertEqual(snapshot, heartbeat.read_bytes(), "Grandchild continued after terminal proof")
+            finally:
+                child.close()
 
 
 if __name__ == "__main__":

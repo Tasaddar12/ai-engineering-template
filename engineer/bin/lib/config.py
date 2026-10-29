@@ -11,7 +11,7 @@ from .text import scalar, yaml_load, yaml_dump
 DEFAULTS = {
     "mode": "interactive", "commit_docs": True, "response_language": None,
     "context_window": 200000, "model_profile": "balanced", "granularity": "standard", "parallelization": True,
-    "project_code": "", "runtime": "claude" if Path(__file__).resolve().parents[3].name == ".claude" else "codex",
+    "project_code": "", "sub_repos": [], "runtime": "claude" if Path(__file__).resolve().parents[3].name == ".claude" else "codex",
     "workflow": {
         "text_mode": False, "auto_advance": False, "discuss_mode": "discuss", "ui_safety_gate": True,
         "isolation": "auto", "agent_hint_routing": True,
@@ -33,7 +33,7 @@ DEFAULTS = {
     "codebase": {"max_age_commits": 20, "staleness": {}}, "agents": {},
     "verification": {"commands": [], "reuse": True, "max_parallel": 4},
     "review": {"models": {"claude": "inherit", "codex": "inherit"}, "timeout_seconds": 600},
-    "git": {"base_branch": "main", "protected_branches": ["main", "master"]},
+    "git": {"base_branch": "main", "protected_branches": ["main", "master"], "create_tag": True, "repo_tagging": "global"},
     "manager": {"flags": {"discuss": "", "plan": "", "execute": "", "verify": "", "ship": ""}},
     "execution": {"timeout_seconds": 3600, "hosts": {
         "claude": {"command": "claude", "args": ["--print"], "harness": False},
@@ -335,7 +335,19 @@ def set_value(args):
                 stored_key = ".".join(parts)
         if key == "verification.commands" and isinstance(parsed.get("verification"),dict) and "checks" in parsed["verification"] and "commands" not in parsed["verification"]:
             stored_key = "verification.checks"
-        updated = patch_yaml(content, stored_key, value)
+        # JSON mappings are valid YAML input but cannot be patched as block-style
+        # lines. They contain no YAML comments to preserve; emit the stored keys.
+        json_mapping = None
+        if content.lstrip().startswith("{"):
+            try:
+                json_mapping = json.loads(content)
+            except ValueError:
+                pass
+        if isinstance(json_mapping, dict):
+            assign(json_mapping, stored_key, value)
+            updated = yaml_dump(json_mapping) + "\n"
+        else:
+            updated = patch_yaml(content, stored_key, value)
         validate(yaml_load(updated))
         write(path, updated)
     return {"updated": True, "key": key, "value": value}

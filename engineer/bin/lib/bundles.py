@@ -84,7 +84,9 @@ def init(args, kind):
     packet["in_nested_subdir"] = bool(packet["has_git"] and Path(git.stdout.strip()).resolve() != root().resolve())
     packet["branch_name"] = run(["git", "branch", "--show-current"], root(), check=False).stdout.strip() or None
     packet["revision"] = run(["git", "rev-parse", "HEAD"], root(), check=False).stdout.strip() or None
-    packet["sub_repos"] = []
+    packet["repo_tagging"] = config.lookup(settings, "git.repo_tagging", "global")
+    packet["git_create_tag"] = config.lookup(settings, "git.create_tag", True)
+    packet["sub_repos"] = config.lookup(settings, "planning.sub_repos", settings.get("sub_repos", []))
     if (root()/".gitmodules").is_file():
         result = run(["git", "config", "--file", ".gitmodules", "--get-regexp", r"^submodule\..*\.path$"], root(), check=False)
         packet["sub_repos"] = [line.split(None, 1)[1] for line in result.stdout.splitlines() if len(line.split(None, 1)) == 2]
