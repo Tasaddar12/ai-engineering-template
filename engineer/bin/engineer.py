@@ -59,7 +59,8 @@ def registry():
         "verification.run-checks": verification.run_checks, "verification.check-status": verification.check_status,
         "phase.uat-passed": uat.passed, "audit-uat": uat.outstanding, "audit-open": uat.audit_open,
         "uat.classify-coverage": uat.classify, "uat.render-checkpoint": uat.checkpoint, "uat.complete-session": uat.complete,
-        "spec.edge-probe": probes.edge, "spec.section": probes.section, "summary-extract": misc.summary_extract,
+        "spec.edge-probe": probes.edge, "spec.section": probes.section,
+        "spec.section-status": probes.section_status, "summary-extract": misc.summary_extract,
         "package-legitimacy": packages.check, "run-with-timeout": misc.timeout,
         "generate-claude-md": misc.instruction_file, "planning.validate": lambda a: misc.integrity(a, False),
         "planning.integrity": lambda a: misc.integrity(a, True),
@@ -184,7 +185,7 @@ def registry():
         verbs["phase."+action+"-inputs"] = lambda a, action=action: research.inputs(a, "discuss" if action == "discussion" else action)
     for action in ("prohibitions", "ui", "project", "coverage"):
         verbs["spec."+action] = lambda a, action=action: specs.command(a, action)
-    verbs["spec.ui-probe"] = lambda a: specs.command(a, "ui")
+    verbs["spec.ui-probe"] = probes.ui
     verbs["spec.prohibition-probe"] = lambda a: specs.command(a, "prohibitions")
     for action in ("status", "append", "fixed", "waive"):
         verbs["windows."+action] = lambda a, action=action: quality.command(a, action)

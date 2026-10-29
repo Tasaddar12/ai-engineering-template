@@ -19,10 +19,10 @@ skip, never a hard-fail). Sets `SPECLESS_FALLBACK`, `EDGE_ABSENT`, `PROHIB_ABSEN
 SPECLESS_CFG=$(engineer_run query config-get workflow.specless_probe_fallback 2>/dev/null || echo "true")
 SPECLESS_FALLBACK=true; [[ "$SPECLESS_CFG" == "false" ]] && SPECLESS_FALLBACK=false
 
-# The Python spec.section verb owns heading and row detection.
+# The Python spec.section-status verb owns canonical heading and table-row detection.
 # supplied => header present AND >=1 row; missing $SPEC_FILE => supplied:false => fallback fires.
-EDGE_ABSENT=1;   engineer_run query spec.section "$SPEC_FILE" edges --pick supplied --raw 2>/dev/null | grep -qx true && EDGE_ABSENT=0
-PROHIB_ABSENT=1; engineer_run query spec.section "$SPEC_FILE" prohibitions --pick supplied --raw 2>/dev/null | grep -qx true && PROHIB_ABSENT=0
+EDGE_ABSENT=1;   engineer_run query spec.section-status "$SPEC_FILE" edges --pick supplied --raw 2>/dev/null | grep -qx true && EDGE_ABSENT=0
+PROHIB_ABSENT=1; engineer_run query spec.section-status "$SPEC_FILE" prohibitions --pick supplied --raw 2>/dev/null | grep -qx true && PROHIB_ABSENT=0
 
 # Disabled path - record the skip VISIBLY, never silently (RAIL-05 / PROH-4); the note rides into the
 # planner prompt (Step 8) so the plan records that no probe predicates were generated.

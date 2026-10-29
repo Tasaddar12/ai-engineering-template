@@ -47,3 +47,27 @@ def section(args):
         elif in_table and any(cell and not re.fullmatch(r"TBD|TODO|none|n/a|—|-", cell, re.I) for cell in cells):
             items.append(" | ".join(cells))
     return {"supplied": bool(items), "items": items}
+
+
+def section_status(args):
+    """Expose the canonical strict section-presence check for workflow gates."""
+    from .spec_section import VALID_KEYS, spec_section_status
+    path, key = safe_path(args.need()), args.need(1)
+    if key not in VALID_KEYS:
+        raise Failure("unknown-spec-section", key, 2)
+    return spec_section_status(path, key)
+
+
+def ui(args):
+    """Run the canonical UI consideration probe behind the runtime CLI."""
+    from . import ui_consideration_probe
+    source = args.arg(0, args.get("input"))
+    resolutions_source = args.get("resolutions", args.arg(1))
+    try:
+        elements = input_json(None if args.has("stdin") else source)
+        resolutions = input_json(resolutions_source) if resolutions_source is not None else []
+        if not isinstance(elements, list) or not isinstance(resolutions, list):
+            raise ValueError("elements and resolutions must be arrays")
+        return ui_consideration_probe.analyze_coverage(elements, resolutions)
+    except (ValueError, TypeError, OSError) as exc:
+        raise Failure("invalid-ui-probe-input", str(exc), 2) from exc
