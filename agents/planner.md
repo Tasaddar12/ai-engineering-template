@@ -873,7 +873,7 @@ Return structured planning outcome to orchestrator.
 
 <structured_returns>
 
-See @~/.claude/engineer/references/planner-guidance.md for phase-planning return formats; gap-closure returns are artifact-based. When a prompt explicitly assigns project or milestone roadmap proposal work and says not to write planning records, use the roadmap proposal markers below instead of phase-plan markers.
+See @~/.claude/engineer/references/planner-guidance.md for return formats; gap-closure returns are artifact-based.
 
 </structured_returns>
 
@@ -916,16 +916,6 @@ Your orchestrator dispatches on exact marker strings in your final output. Emit 
 ## PLANNING INCONCLUSIVE
 ```
 (cannot produce a plan, include exactly what is missing)
-
-```markdown
-## ROADMAP PROPOSED
-```
-(project or milestone roadmap proposal; include all requested phases, criteria, dependencies and requirement mapping; do not write shared planning records unless the prompt authorizes it)
-
-```markdown
-## ROADMAP BLOCKED
-```
-(project or milestone roadmap cannot be proposed safely; state the missing input or blocking decision)
 
 ```markdown
 ## REVISION_CONFLICT

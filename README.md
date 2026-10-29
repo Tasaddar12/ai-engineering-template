@@ -126,18 +126,16 @@ setup. Follow the delivery rules and report the onboarding next step; do not
 implement product work.
 ```
 
-See the [install guide](docs/python-scripts.md) for prerequisites and bootstrap
+See the [install guide](.ai/commands/install.md) for prerequisites and bootstrap
 steps. Re-running the installer does not overwrite conflicting workflow files:
 updates require reconciliation. Use `--migrate-existing` only for the legacy
 separate `.ai` layout described in that guide.
 
 ## Adopt the template
 
-Start with the [download-and-run installer](docs/python-scripts.md) for a new
-directory or an existing project. It preserves existing files and installs the
-Python runtime. The launcher uses an existing host-specific or project virtual
-environment when available, then falls back to system Python. Preview with
-`--dry-run`.
+Start with the [download-and-run installer](.ai/commands/install.md) for a new
+directory or an existing project. It preserves existing files and sets up the
+Python runtime in `.codex-venv` or `.claude-venv`. Preview with `--dry-run`.
 
 Select `--host codex` or `--host claude` to install commands, workflows, agents and
 runtime under `.codex` or `.claude`, including rules and advisory hooks. Codex is

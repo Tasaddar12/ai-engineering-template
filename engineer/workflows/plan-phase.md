@@ -110,7 +110,7 @@ engineer_run() {
   sh "$ENGINEER_RUN" "$@"
 }
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | LC_ALL=C sed 's/[\\`"$]/\\&/g')
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 GRAN_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--granularity[[:space:]]+([^[:space:]-][^[:space:]]*) ]]; then GRAN_PARAM="--granularity ${BASH_REMATCH[2]}"; fi
@@ -591,7 +591,7 @@ ls "${PHASE_DIR}"/*-PLAN.md 2>/dev/null || true
 Extract from INIT JSON:
 
 ```bash
-_engineer_field() { engineer_run query json.get --payload "$1" --field "$2" --raw; }
+_engineer_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
 STATE_PATH=$(_engineer_field "$INIT" state_path)
 ROADMAP_PATH=$(_engineer_field "$INIT" roadmap_path)
 REQUIREMENTS_PATH=$(_engineer_field "$INIT" requirements_path)
@@ -1461,7 +1461,7 @@ Route to `<offer_next>` OR `auto_advance` depending on flags/config.
 
 ## 15. Auto-Advance Check
 
-Read and execute `engineer/workflows/plan-phase/steps/auto-advance-check.md`. It checks `--auto` / `--chain` and the ephemeral chain flag, then reads this phase's CONTEXT execution authorization before any execute-phase dispatch. Auto flags and persistent preferences never grant implementation permission. Without direct, phase-scoped user authorization, clear the ephemeral flag, report that planning is complete, and route to `<offer_next>`; otherwise follow the gate's authorized handoff procedure.
+Read and execute `engineer/workflows/plan-phase/steps/auto-advance-check.md` — it parses `--auto` / `--chain` from `$ARGUMENTS`, syncs the ephemeral `workflow._auto_chain_active` flag with the invocation, and, when auto-advance applies, launches execute-phase through the Skill tool (flat, `--no-transition`) and handles its return. Otherwise route to `<offer_next>`.
 
 </process>
 

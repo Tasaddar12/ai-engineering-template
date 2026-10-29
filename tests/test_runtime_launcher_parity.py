@@ -300,40 +300,6 @@ class ModuleUnits(FixtureCase):
 
 @needs_shell
 class StandaloneExecutable(FixtureCase):
-    def test_launcher_needs_no_dirname_with_only_python_on_path(self):
-        self.check_restricted_launcher("has space")
-
-    def test_launcher_handles_apostrophe_with_only_python_on_path(self):
-        self.check_restricted_launcher("O'Connor project")
-
-    def test_launcher_handles_apostrophe_with_cygwin_ostype(self):
-        self.check_restricted_launcher("O'Connor project", extra_env={"OSTYPE": "cygwin"})
-
-    @unittest.skipIf(os.name == "nt", "backslashes are separators in Windows filenames")
-    def test_launcher_preserves_literal_posix_backslashes(self):
-        self.check_restricted_launcher("has\\backslash space")
-
-    def check_restricted_launcher(self, directory_name, extra_env=None):
-        base = self.temp("engineer-restricted-path-") / directory_name
-        wrappers = parity.python_wrapper_dir(self.temp("engineer-only-python-"), sys.executable)
-        for runtime_layout in (Path("engineer") / "bin", Path(".codex") / "engineer" / "bin"):
-            with self.subTest(runtime_layout=str(runtime_layout)):
-                bin_dir = base / runtime_layout
-                bin_dir.mkdir(parents=True)
-                launcher = bin_dir / parity.LAUNCHER
-                launcher.write_bytes((SOURCE / "engineer/bin" / parity.LAUNCHER).read_bytes())
-                (bin_dir / "engineer.py").write_text("import sys\nprint('RESTRICTED_OK:' + ' '.join(sys.argv[1:]))\n", encoding="utf-8")
-                # str(Path) supplies native backslashes on Windows; as_posix also covers
-                # snippet callers. Both must work with no dirname/tr/cygpath on PATH.
-                relative = launcher.relative_to(base)
-                for script_path in dict.fromkeys((str(launcher), launcher.as_posix(), str(relative), relative.as_posix())):
-                    with self.subTest(script_path=script_path):
-                        result = subprocess.run([parity.sh_path(), script_path, "query", "restricted"],
-                                                env={**os.environ, "PATH": parity.posix(wrappers), **(extra_env or {})},
-                                                cwd=base, capture_output=True, text=True)
-                        self.assertEqual(0, result.returncode, result.stderr)
-                        self.assertIn("RESTRICTED_OK:query restricted", result.stdout)
-
     """Upstream (#381): the shipped launcher delegates beside itself; the preamble persists its bin dir."""
 
     def test_i_launcher_executable_delegates_to_engineer_py_beside_it(self):

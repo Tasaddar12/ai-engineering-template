@@ -64,7 +64,7 @@ either value verbatim fails the spawn on every runtime without native tier alias
 ** — substitute a field your workflow actually bound.** `model="{…}"` must name a key
 your own `init.*` payload emits, a shell variable you assigned, or a field on your declared
 parse line. A placeholder that resolves to nothing does not fail loudly — the orchestrator
-silently invents a value. `tests/test_model_omit_when_inherit_guard.py` enforces both rules.
+silently invents a value. `tests/model-omit-when-inherit-guard.test.cjs` enforces both rules.
 
 ## Profile semantics
 

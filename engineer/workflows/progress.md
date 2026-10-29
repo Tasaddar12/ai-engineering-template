@@ -57,7 +57,7 @@ engineer_run() {
   sh "$ENGINEER_RUN" "$@"
 }
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | LC_ALL=C sed 's/[\\`"$]/\\&/g')
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 FORENSIC_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--forensic([[:space:]]|$) ]]; then FORENSIC_PARAM="--forensic"; fi
@@ -164,7 +164,7 @@ Use this instead of manually reading/parsing ROADMAP.md.
 > blocks are a secondary config aid that may be significantly stale — do NOT use the
 > CLAUDE.md project description as a source for any progress report field.
 
-**Generate progress bar from `engineer_run query init.progress`, then present rich status report:**
+**Generate progress bar from `engineer_run query progress` / `progress.json`, then present rich status report:**
 
 ```bash
 # Get formatted progress bar
@@ -247,7 +247,7 @@ else
   for PHASE_NUM in $(echo "$ROADMAP" | jq -r '.phases[] | (.number // .phase_number)'); do
     PHASE_DATA=$(echo "$ROADMAP" | jq --arg n "$PHASE_NUM" '.phases[] | select((.number // .phase_number) == ($n | tonumber))')
     # $PHASE_DATA is a `.phases[]` entry from `roadmap.analyze`, which
-    # emits `plan_count`/`summary_count` SCALARS (engineer/bin/lib/records.py) — it has
+    # emits `plan_count`/`summary_count` SCALARS (src/roadmap.cts) — it has
     # never emitted `.plans`/`.summaries` ARRAYS. Reading those absent keys
     # (even with a `// []` fallback) always produced 0, permanently disabling
     # this resume-incomplete-phase check. Read the scalars the producer
@@ -316,7 +316,7 @@ Scan ALL phases for outstanding verification debt using the CLI. Milestone scopi
 ```bash
 DEBT=$(engineer_run query audit-uat --raw 2>/dev/null)
 # A cross-population audit is exactly the payload that can exceed the CLI's
-# ~50KB stdout budget (engineer/bin/lib/io_output.py writes an `@file:<tmp>` pointer) — unwrap it
+# ~50KB stdout budget (io.cjs swaps in an `@file:<tmp>` pointer) — unwrap it
 # before jq, the same pattern Step 1's INIT fetch uses, or every counter
 # below silently reads 0.
 if [[ "$DEBT" == @file:* ]]; then DEBT=$(cat "${DEBT#@file:}"); fi

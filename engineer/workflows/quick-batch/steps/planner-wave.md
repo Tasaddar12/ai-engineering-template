@@ -62,7 +62,7 @@ engineer_run() {
   sh "$ENGINEER_RUN" "$@"
 }
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | LC_ALL=C sed 's/[\\`"$]/\\&/g')
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
    PLAN_PRE_HOOKS_JSON=$(engineer_run loop render-hooks plan:pre --raw)
@@ -77,7 +77,7 @@ fi
    research):
    ```bash
    QB_PLAN_CONC_JSON=$(engineer_run quick-batch effective-concurrency --jobs "$JOBS" --task-count "${#LAYER_ITEMS[@]}" --capacity "$CAPACITY" --isolation "$ISOLATION" --raw)
-   PLAN_CONCURRENCY=$(printf '%s' "$QB_PLAN_CONC_JSON" | engineer_run query json.get --field concurrency --default 1 --raw)
+   PLAN_CONCURRENCY=$(printf '%s' "$QB_PLAN_CONC_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(String(j.concurrency))}catch{process.stdout.write("1")}})')
    ```
 
 5. **Dispatch one `Agent()` per message, `run_in_background: true`, up to

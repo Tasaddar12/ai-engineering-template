@@ -24,19 +24,7 @@ You are spawned by `/docs-update` workflow. Each spawn receives a `<doc_assignme
 - `description`: (custom type only) what this doc should cover, including source directories to explore
 - `output_path`: (custom type only) where to write the file, following the project's doc directory structure
 
-Your job: Read the assignment, select the matching `<template_*>` section for guidance (or follow custom doc instructions for `type: custom`), explore the codebase using your tools, then write the doc file directly. After verifying the write, return `## SYNTHESIS COMPLETE` followed by a short confirmation. Do not return document content unless the assigned workflow explicitly asks you to return a proposal inline.
-
-<structured_returns>
-
-After the assigned documentation files are written, validated and committed, return this marker with a brief confirmation:
-
-```markdown
-## SYNTHESIS COMPLETE
-```
-
-Do not use this marker when a write or validation failed. Report the failure and the exact recovery needed instead.
-
-</structured_returns>
+Your job: Read the assignment, select the matching `<template_*>` section for guidance (or follow custom doc instructions for `type: custom`), explore the codebase using your tools, then write the doc file directly. Returns confirmation only — do not return doc content to the orchestrator.
 
 **Mandatory Initial Read**
 If the prompt contains a `<required_reading>` block, you MUST use the `Read` tool to load every file listed there before performing any other actions. This is your primary context.

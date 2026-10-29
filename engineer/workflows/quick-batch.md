@@ -9,10 +9,8 @@ never touch `BATCH.json`, and never write STATE.md/ROADMAP.md themselves
 (single-writer invariant).
 
 Dispatch decisions (effective concurrency, deterministic merge order, spawn
-backpressure, failure/verification routing) are computed by the Python
-`engineer/bin/lib/quick_batch.py` module through the registered
-`quick-batch.effective-concurrency`, `quick-batch.merge-routing`,
-`quick-batch.spawn-plan`, and `quick-batch.verification-routing` verbs — this
+backpressure, failure/verification routing) are computed by the pure
+`quick-batch-dispatch.cts` module (via the `quick-batch` CLI verbs) — this
 workflow never re-derives that logic inline.
 </purpose>
 
@@ -72,7 +70,7 @@ engineer_run() {
   sh "$ENGINEER_RUN" "$@"
 }
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | LC_ALL=C sed 's/[\\`"$]/\\&/g')
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --default "" 2>/dev/null || echo "")
@@ -80,7 +78,7 @@ RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --defa
 
 **If `response_language` is set:** all user-facing questions/prompts/explanations MUST be presented in `{response_language}`. Technical terms, code, file paths, and subagent prompts stay in English.
 
-Validate the command's `<arguments>` block through the CLI's own grammar — never re-derive it inline (single source of truth: `quick-batch parse-args`, implemented in `engineer/bin/lib/quick_batch.py`). The block is raw, attacker-influenced task text — feed it on STDIN through a QUOTED heredoc (`--stdin`), never as a shell argument, so the shell never parses, expands or word-splits it; `quick-batch parse-args` performs the whitespace split in the Python runtime after the shell is done. Paste the block's exact contents between the markers:
+Validate the command's `<arguments>` block through the CLI's own grammar — never re-derive it inline (single source of truth: `parseQuickBatchArgs`, `src/quick-batch-dispatch.cts`). The block is raw, attacker-influenced task text — feed it on STDIN through a QUOTED heredoc (`--stdin`), never as a shell argument, so the shell never parses, expands or word-splits it; `quick-batch parse-args` does the whitespace split itself, in Node, after the shell is done. Paste the block's exact contents between the markers:
 
 ```bash
 QB_PARSE_FILE=$(mktemp)

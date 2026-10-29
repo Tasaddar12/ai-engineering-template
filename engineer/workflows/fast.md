@@ -96,7 +96,7 @@ engineer_run() {
   sh "$ENGINEER_RUN" "$@"
 }
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | LC_ALL=C sed 's/[\\`"$]/\\&/g')
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 # fast writes no planning artifacts (its own guardrails forbid PLAN.md/SUMMARY.md); .planning/
@@ -117,8 +117,7 @@ Use conventional commit format: `fix:`, `feat:`, `docs:`, `chore:`, `refactor:` 
 <step name="log_to_state">
 If `.planning/STATE.md` exists and has a "Quick Tasks Completed" table, append a row
 that matches the existing table's schema via the schema-backed `engineer_run
-quick-tasks-append` command. Its Python implementation is in
-`engineer/bin/lib/markdown_table.py`.
+quick-tasks-append` helper (`markdown-table.cjs`'s `appendQuickTaskRow`).
 If no table exists, skip silently. If the table's schema is
 unrecognized, the helper fails loud (non-zero exit) instead of silently guessing
 a column count.

@@ -23,12 +23,11 @@ These files live directly at `.planning/` — not inside phase subdirectories.
 | `config.json` | `config.json` | `/new-project`, `/health --repair` | Project-specific Engineer configuration |
 | `CLAUDE.md` | *(inline)* | `/profile` | Auto-assembled Claude Code context file |
 | `RETROSPECTIVE.md` | *(inline)* | `/complete-milestone` | Living milestone retrospective updated at each milestone close |
-| `windows.json` | *(none)* | `engineer_run query windows.append` | Current Python broken-windows ledger; inspect and disposition with `windows.status`, `windows.fixed`, and `windows.waive` |
-| `WINDOWS.md` | *(none)* | Legacy Markdown ledger; no current Python writer | Retained for explicit legacy-ledger reconciliation |
-| `STATE-ARCHIVE.md` | *(none)* | Legacy `state.cts` `cmdStatePrune`; no current Python writer | Pruned historical STATE.md entries |
-| `milestone.lock` | *(none)* | Legacy `src/milestone-lock.cts`; no current Python writer | Persistent milestone (phase + session) claim, unlike the transient `STATE.md.lock`/`WAITING.json` |
-| `state.json` | *(none)* | `engineer_run query state-snapshot` returns a JSON snapshot; no persistent file writer | Machine-readable state view for a caller to consume |
-| `skill-manifest.json` | *(none)* | Legacy `init.cts` `cmdSkillManifest --write`; no current Python writer | Former project-scoped skill manifest; `engineer_run query agent-skills ROLE` reports role skills but does not write this file |
+| `WINDOWS.md` | *(none)* | broken-windows ledger (`src/broken-windows.cts`) | Tracked known-broken items pending resolution |
+| `STATE-ARCHIVE.md` | *(none)* | `state.cts`'s `cmdStatePrune` | Pruned historical STATE.md entries |
+| `milestone.lock` | *(none)* | `src/milestone-lock.cts` | Persistent milestone (phase + session) claim, unlike the transient `STATE.md.lock`/`WAITING.json`  |
+| `state.json` | *(none)* | `src/state-contract.cts` | Machine-readable state contract published at step boundaries |
+| `skill-manifest.json` | *(none)* | `init.cts`'s `cmdSkillManifest --write` | Project-scoped skill manifest |
 | `PATTERNS.md` | *(inline)* | `/extract-learnings` (graduation, `workflows/graduation.md`, `patterns` target) | Graduated cross-phase patterns -- distinct from the per-phase `NN-PATTERNS.md` below |
 
 ### Version-stamped artifacts (pattern: `vX.Y-*.md`)
@@ -79,6 +78,6 @@ Files archived by `/complete-milestone`. These are never checked by W019.
 
 When a new workflow produces a `.planning/` root file:
 
-1. Add the file name to `CANONICAL_EXACT` in `engineer/bin/lib/artifacts.py`
+1. Add the file name to `CANONICAL_EXACT` in `engineer/bin/lib/artifacts.cjs`
 2. Add a row to the **`.planning/` Root Artifacts** table above
 3. Add the template to `engineer/templates/` if one exists

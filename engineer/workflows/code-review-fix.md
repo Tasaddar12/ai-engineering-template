@@ -62,7 +62,7 @@ engineer_run() {
   sh "$ENGINEER_RUN" "$@"
 }
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | LC_ALL=C sed 's/[\\`"$]/\\&/g')
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 PHASE_ARG="${1}"
@@ -81,10 +81,10 @@ Parse from init JSON: `phase_found`, `phase_dir`, `phase_number`, `phase_name`, 
 
 **Input sanitization (defense-in-depth):**
 ```bash
-# Validate PADDED_PHASE matches the canonical phase-number grammar (validated by `engineer_run query find-phase`): digits,
-# an optional letter suffix on each dotted segment (lowercase is canonical; legacy uppercase major suffixes remain readable).
-if ! [[ "$PADDED_PHASE" =~ ^[0-9]+([a-z]|[A-Z])?(\.[0-9]+[a-z]?)*$ ]]; then
-  echo "Error: Invalid phase number format: '${PADDED_PHASE}'. Expected digits with optional letter suffixes on dotted segments (e.g., 02, 03.1, 01a, 01.1a, 12A)."
+# Validate PADDED_PHASE matches the canonical phase-number grammar (src/phase-id.cts): digits,
+# an optional single uppercase letter, then dotted segments (e.g., "02", "03.1", "23.1.2", "12A")
+if ! [[ "$PADDED_PHASE" =~ ^[0-9]+[A-Z]?(\.[0-9]+)*$ ]]; then
+  echo "Error: Invalid phase number format: '${PADDED_PHASE}'. Expected digits with an optional letter suffix (e.g., 02, 03.1, 23.1.2, 12A)."
   # Exit workflow
 fi
 ```
@@ -164,7 +164,16 @@ Parse REVIEW.md frontmatter to check status and extract context for --auto loop:
 
 ```bash
 # Parse status field
-REVIEW_STATUS=$(engineer_run query review.field --report "${REVIEW_PATH}" --field status --default unknown --raw 2>/dev/null || true)
+REVIEW_STATUS=$(REVIEW_PATH="${REVIEW_PATH}" node -e "
+  const fs = require('fs');
+  const content = fs.readFileSync(process.env.REVIEW_PATH, 'utf-8');
+  const match = content.replace(/\r\n/g, '\n').match(/^---\n([\s\S]*?)\n---/);
+  if (match && /status:\s*(\S+)/.test(match[1])) {
+    console.log(match[1].match(/status:\s*(\S+)/)[1]);
+  } else {
+    console.log('unknown');
+  }
+" 2>/dev/null)
 ```
 
 If status is "clean" or "skipped":
@@ -181,7 +190,16 @@ Warning: Could not parse REVIEW.md status. Proceeding with fix attempt.
 Extract review depth for --auto re-review:
 
 ```bash
-REVIEW_DEPTH=$(engineer_run query review.field --report "${REVIEW_PATH}" --field depth --default standard --raw 2>/dev/null || true)
+REVIEW_DEPTH=$(REVIEW_PATH="${REVIEW_PATH}" node -e "
+  const fs = require('fs');
+  const content = fs.readFileSync(process.env.REVIEW_PATH, 'utf-8');
+  const match = content.replace(/\r\n/g, '\n').match(/^---\n([\s\S]*?)\n---/);
+  if (match && /depth:\s*(\S+)/.test(match[1])) {
+    console.log(match[1].match(/depth:\s*(\S+)/)[1]);
+  } else {
+    console.log('standard');
+  }
+" 2>/dev/null)
 ```
 
 Extract original review file list for --auto re-review scope persistence:
@@ -191,7 +209,27 @@ Extract original review file list for --auto re-review scope persistence:
 REVIEW_FILES_ARRAY=()
 while IFS= read -r line; do
   [ -n "$line" ] && REVIEW_FILES_ARRAY+=("$line")
-done < <(engineer_run query review.field --report "${REVIEW_PATH}" --field files_reviewed_list --default "" --raw)
+done < <(REVIEW_PATH="${REVIEW_PATH}" node -e "
+  const fs = require('fs');
+  const content = fs.readFileSync(process.env.REVIEW_PATH, 'utf-8');
+  const match = content.replace(/\r\n/g, '\n').match(/^---\n([\s\S]*?)\n---/);
+  if (match) {
+    const fm = match[1];
+    // Try YAML array format: files_reviewed_list: [file1, file2]
+    const bracketMatch = fm.match(/files_reviewed_list:\s*\[([^\]]+)\]/);
+    if (bracketMatch) {
+      bracketMatch[1].split(',').map(f => f.trim()).filter(Boolean).forEach(f => console.log(f));
+    } else {
+      // Try YAML list format: files_reviewed_list:\n - file1\n - file2
+      let inList = false;
+      for (const line of fm.split('\n')) {
+        if (/files_reviewed_list:/.test(line)) { inList = true; continue; }
+        if (inList && /^\s+-\s+(.+)/.test(line)) { console.log(line.match(/^\s+-\s+(.+)/)[1].trim()); }
+        else if (inList && /^\S/.test(line)) { break; }
+      }
+    }
+  }
+" 2>/dev/null)
 ```
 
 If REVIEW.md contains a `files_reviewed_list` frontmatter field, use that as the re-review scope. If not present, fall back to re-reviewing the full phase (same behavior as initial code-review).
@@ -315,7 +353,16 @@ ${AGENT_SKILLS_REVIEWER}")
     # ORCHESTRATOR RULE — CODEX RUNTIME: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result before proceeding.
     
     # Check new REVIEW.md status
-    NEW_STATUS=$(engineer_run query review.field --report "${REVIEW_PATH}" --field status --default unknown --raw 2>/dev/null || true)
+    NEW_STATUS=$(REVIEW_PATH="${REVIEW_PATH}" node -e "
+      const fs = require('fs');
+      const content = fs.readFileSync(process.env.REVIEW_PATH, 'utf-8');
+      const match = content.replace(/\r\n/g, '\n').match(/^---\n([\s\S]*?)\n---/);
+      if (match && /status:\s*(\S+)/.test(match[1])) {
+        console.log(match[1].match(/status:\s*(\S+)/)[1]);
+      } else {
+        console.log('unknown');
+      }
+    " 2>/dev/null)
     
     if [ "$NEW_STATUS" = "clean" ]; then
       # Convergence: the re-review came back clean. This leaves REVIEW.md at `status: clean`, which
@@ -360,7 +407,14 @@ ${AGENT_SKILLS_FIXER}")
   # where the cap and convergence coincide. Convergence is re-derived from the review the loop left
   # behind, the same signal cleanup_iteration_backups reads, so the two cannot disagree.
   if [ $ITERATION -ge $MAX_ITERATIONS ]; then
-    LOOP_END_STATUS=$(engineer_run query review.field --report "${REVIEW_PATH}" --field status --default unknown --raw 2>/dev/null || true)
+    LOOP_END_STATUS=$(REVIEW_PATH="${REVIEW_PATH}" node -e "
+      const fs = require('fs');
+      try {
+        const content = fs.readFileSync(process.env.REVIEW_PATH, 'utf-8');
+        const match = content.replace(/\r\n/g, '\n').match(/^---\n([\s\S]*?)\n---/);
+        console.log(match && /status:\s*(\S+)/.test(match[1]) ? match[1].match(/status:\s*(\S+)/)[1] : 'unknown');
+      } catch (e) { console.log('unknown'); }
+    " 2>/dev/null)
     if [ "$LOOP_END_STATUS" = "clean" ]; then
       # SILENT on convergence, deliberately. The loop's own break already printed "All issues
       # resolved after iteration N" on its way out, and reaching the cap does not make that less
@@ -394,7 +448,12 @@ After ALL iterations complete (or single pass in non-auto mode), validate and co
 if [ -f "${FIX_REPORT_PATH}" ]; then
   # Validate REVIEW-FIX.md has valid YAML frontmatter with status field
   # Export FIX_REPORT_PATH (the var the body reads), not REVIEW_PATH.
-  HAS_STATUS=$(engineer_run query review.field --report "${FIX_REPORT_PATH}" --field status --default unknown --raw 2>/dev/null || true)
+  HAS_STATUS=$(FIX_REPORT_PATH="${FIX_REPORT_PATH}" node -e "
+    const fs = require('fs');
+    const content = fs.readFileSync(process.env.FIX_REPORT_PATH, 'utf-8');
+    const match = content.replace(/\r\n/g, '\n').match(/^---\n([\s\S]*?)\n---/);
+    if (match && /status:/.test(match[1])) { console.log('valid'); } else { console.log('invalid'); }
+  " 2>/dev/null)
   
   if [ "$HAS_STATUS" = "valid" ]; then
     echo "REVIEW-FIX.md created at ${FIX_REPORT_PATH}"
@@ -475,7 +534,14 @@ and the backups are kept.
 
 ```bash
 if [ "$AUTO_MODE" = "true" ]; then
-  FINAL_STATUS=$(engineer_run query review.field --report "${REVIEW_PATH}" --field status --default unknown --raw 2>/dev/null || true)
+  FINAL_STATUS=$(REVIEW_PATH="${REVIEW_PATH}" node -e "
+    const fs = require('fs');
+    try {
+      const content = fs.readFileSync(process.env.REVIEW_PATH, 'utf-8');
+      const match = content.replace(/\r\n/g, '\n').match(/^---\n([\s\S]*?)\n---/);
+      console.log(match && /status:\s*(\S+)/.test(match[1]) ? match[1].match(/status:\s*(\S+)/)[1] : 'unknown');
+    } catch (e) { console.log('unknown'); }
+  " 2>/dev/null)
   # Anything but a proven-clean final review RETAINS the backups. An unreadable or unparseable
   # review is not evidence of convergence, and retaining costs a few scratch files where deleting
   # costs the post-mortem trail the retention rule exists for.
@@ -517,7 +583,12 @@ Extract frontmatter fields:
 ```bash
 # Extract only the YAML frontmatter block (between first two --- lines)
 # Export FIX_REPORT_PATH (the var the body reads), not REVIEW_PATH.
-FIX_FRONTMATTER=$(engineer_run query review.frontmatter --report "${FIX_REPORT_PATH}" 2>/dev/null || true)
+FIX_FRONTMATTER=$(FIX_REPORT_PATH="${FIX_REPORT_PATH}" node -e "
+  const fs = require('fs');
+  const content = fs.readFileSync(process.env.FIX_REPORT_PATH, 'utf-8');
+  const match = content.replace(/\r\n/g, '\n').match(/^---\n([\s\S]*?)\n---/);
+  if (match) process.stdout.write(match[1]);
+" 2>/dev/null)
 
 # Parse fields from frontmatter only (not full file)
 FIX_STATUS=$(echo "$FIX_FRONTMATTER" | grep "^status:" | cut -d: -f2 | xargs)

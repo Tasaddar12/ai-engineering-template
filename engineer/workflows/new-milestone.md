@@ -73,7 +73,7 @@ engineer_run() {
   sh "$ENGINEER_RUN" "$@"
 }
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | LC_ALL=C sed 's/[\\`"$]/\\&/g')
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 ENGINEER_WS=""
@@ -316,7 +316,7 @@ COMMIT_DOCS=$(engineer_run query config-get commit_docs --raw 2>/dev/null || ech
 ENGINEER_WS_ARG=$(cat .planning/.engineer-ws-arg 2>/dev/null || true)
 INIT_STAGE=$(engineer_run query init.new-milestone ${ENGINEER_WS_ARG:+--ws=${ENGINEER_WS_ARG##* }})
 if [[ "$INIT_STAGE" == @file:* ]]; then INIT_STAGE=$(cat "${INIT_STAGE#@file:}"); fi
-_engineer_field() { engineer_run query json.get --payload "$1" --field "$2" --raw; }
+_engineer_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
 ARCHIVE_DIR=$(_engineer_field "$INIT_STAGE" archive_dir)
 PHASES_DIR=$(_engineer_field "$INIT_STAGE" phases_dir)
 if [ "$COMMIT_DOCS" != "false" ]; then
@@ -332,7 +332,7 @@ Stage PROJECT.md in both modes. Step 4's Part A guard — not this commit — is
 ENGINEER_WS_ARG=$(cat .planning/.engineer-ws-arg 2>/dev/null || true)
 INIT_COMMIT=$(engineer_run query init.new-milestone ${ENGINEER_WS_ARG:+--ws=${ENGINEER_WS_ARG##* }})
 if [[ "$INIT_COMMIT" == @file:* ]]; then INIT_COMMIT=$(cat "${INIT_COMMIT#@file:}"); fi
-_engineer_field() { engineer_run query json.get --payload "$1" --field "$2" --raw; }
+_engineer_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
 STATE_PATH=$(_engineer_field "$INIT_COMMIT" state_path)
 PROJECT_PATH=$(_engineer_field "$INIT_COMMIT" project_path)
 engineer_run query commit "docs: start milestone v[X.Y] [Name]" --files "$PROJECT_PATH" "$STATE_PATH"
@@ -570,7 +570,7 @@ If "adjust": Return to scoping.
 ENGINEER_WS_ARG=$(cat .planning/.engineer-ws-arg 2>/dev/null || true)
 INIT_REQ=$(engineer_run query init.new-milestone ${ENGINEER_WS_ARG:+--ws=${ENGINEER_WS_ARG##* }})
 if [[ "$INIT_REQ" == @file:* ]]; then INIT_REQ=$(cat "${INIT_REQ#@file:}"); fi
-_engineer_field() { engineer_run query json.get --payload "$1" --field "$2" --raw; }
+_engineer_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
 REQUIREMENTS_PATH=$(_engineer_field "$INIT_REQ" requirements_path)
 engineer_run query commit "docs: define milestone v[X.Y] requirements" --files "$REQUIREMENTS_PATH"
 ```
@@ -663,7 +663,7 @@ Success criteria:
 ENGINEER_WS_ARG=$(cat .planning/.engineer-ws-arg 2>/dev/null || true)
 INIT_ROADMAP=$(engineer_run query init.new-milestone ${ENGINEER_WS_ARG:+--ws=${ENGINEER_WS_ARG##* }})
 if [[ "$INIT_ROADMAP" == @file:* ]]; then INIT_ROADMAP=$(cat "${INIT_ROADMAP#@file:}"); fi
-_engineer_field() { engineer_run query json.get --payload "$1" --field "$2" --raw; }
+_engineer_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
 ROADMAP_PATH=$(_engineer_field "$INIT_ROADMAP" roadmap_path)
 STATE_PATH=$(_engineer_field "$INIT_ROADMAP" state_path)
 REQUIREMENTS_PATH=$(_engineer_field "$INIT_ROADMAP" requirements_path)

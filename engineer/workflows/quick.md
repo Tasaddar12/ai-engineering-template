@@ -82,7 +82,7 @@ engineer_run() {
   sh "$ENGINEER_RUN" "$@"
 }
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | LC_ALL=C sed 's/[\\`"$]/\\&/g')
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --default "" 2>/dev/null || echo "")
@@ -449,8 +449,9 @@ fi
 # Re-resolve (and, as a side effect, re-persist) now that the base-check
 # auto-degrade above may have changed $ISOLATION since the Step 2 gate's
 # `dispatch-isolation` call. That first call recorded the NATURALLY
-# resolved mode into the run-scoped sentinel the Python isolation hook reads
-# (hooks/worktree-path-guard.py). The degrade above is decided HERE, in
+# resolved mode into the run-scoped sentinel the isolation guard hooks read
+# (hooks/engineer-agent-isolation-guard.js via
+# hooks/lib/isolation-sentinel.js). The degrade above is decided HERE, in
 # shell — the resolver cannot see it — so without this the sentinel still
 # asserts `harness-worktree` while the dispatch below correctly omits the
 # harness flag, and the guard denies the dispatch with exit 2. `--force-isolation`
@@ -644,10 +645,10 @@ If no active code-review step hook exists, skip with message "Code review skippe
 QUICK_SCOPE_RC=0
 QUICK_SCOPE_JSON=$(engineer_run check evaluation-scope --quick "${quick_id}" --include-files --raw 2>/dev/null) || QUICK_SCOPE_RC=$?
 if [ "$QUICK_SCOPE_RC" -ne 0 ] && [ "$QUICK_SCOPE_RC" -ne 69 ]; then QUICK_SCOPE_JSON=""; fi
-CHANGED_FILES=$(printf '%s' "$QUICK_SCOPE_JSON" | engineer_run query json.get --field files | engineer_run query json.lines --separator ' ' --raw 2>/dev/null || true)
+CHANGED_FILES=$(printf '%s' "$QUICK_SCOPE_JSON" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{process.stdout.write(JSON.parse(s).files.join(' '))}catch{}})")
 if [ -z "$CHANGED_FILES" ]; then
   # Say WHY the scope is empty (no commits for this task, only excluded paths, or git could not be read).
-  QUICK_SCOPE_WHY=$(printf '%s' "$QUICK_SCOPE_JSON" | engineer_run query json.status-reason --raw 2>/dev/null || echo 'unresolvable: no resolver output')
+  QUICK_SCOPE_WHY=$(printf '%s' "$QUICK_SCOPE_JSON" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{const v=JSON.parse(s);process.stdout.write(v.status+(v.reason?': '+v.reason:''))}catch{process.stdout.write('unresolvable: no resolver output')}})")
   echo "Quick-task review scope is empty (${QUICK_SCOPE_WHY})."
 fi
 ```

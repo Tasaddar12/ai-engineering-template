@@ -49,7 +49,7 @@ engineer_run() {
   sh "$ENGINEER_RUN" "$@"
 }
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | LC_ALL=C sed 's/[\\`"$]/\\&/g')
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 QB_CREATE_JSON=$(engineer_run quick-batch create --file "$TASK_FILE" --base-revision "$(git rev-parse HEAD)" --raw)
@@ -83,8 +83,8 @@ space note).
 
 ```bash
 BATCH_ID="$batchId"
-BATCH_MANIFEST_JSON=$(printf '%s' "$QB_CREATE_JSON" | engineer_run query json.get --field manifest)
-ITEM_COUNT=$(printf '%s' "$BATCH_MANIFEST_JSON" | engineer_run query json.length --field items --raw)
+BATCH_MANIFEST_JSON=$(printf '%s' "$QB_CREATE_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(JSON.stringify(j.manifest))}catch{process.stdout.write("")}})')
+ITEM_COUNT=$(printf '%s' "$BATCH_MANIFEST_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(String(j.items.length))}catch{process.stdout.write("0")}})')
 ```
 
 Report to user:

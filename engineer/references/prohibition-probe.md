@@ -30,7 +30,7 @@ exists, after which the verifier reliably enforces it.
 The technique is adversarial elicitation, not deterministic computation. Unlike the edge
 taxonomy (a closed eight categories a classifier can apply), the recall stage is inherently
 model-driven: it asks an open question and reads prose. There is **no compiled
-Python `prohibition_probe.py` engine** — the recall stage is an LLM prose pass, and only the
+`prohibition-probe.cjs` engine** — the recall stage is an LLM prose pass, and only the
 schema/projection layer is real code. Building a deterministic
 recall adapter would be the scope-creep the maintainer flags.
 
@@ -327,5 +327,5 @@ while `fairness` and `transparency` are `judgment`-tier. The byVerification roll
 `{ test: 1, judgment: 2 }` is the count-preserved breakdown of the three `resolved`-status
 items. Each worked-example block above is kept byte-for-byte (parsed-JSON) identical to its
 fixture under `engineer/references/prohibition-probe-fixtures/` by
-`tests/test_prohibition_probe_docs_fixtures.py`, so the doc and the reference data cannot
+`tests/prohibition-probe.docs-fixtures.test.cjs`, so the doc and the reference data cannot
 silently drift.

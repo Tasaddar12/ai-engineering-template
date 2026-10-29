@@ -86,7 +86,7 @@ engineer_run() {
   sh "$ENGINEER_RUN" "$@"
 }
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | LC_ALL=C sed 's/[\\`"$]/\\&/g')
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 VERIFY_ERROR=""  # reset per item — a prior item's refusal must not leak into this one
@@ -99,7 +99,7 @@ that error as its `failureReason` and skip the routing call below for it — nev
 as a verdict, and never drop the item silently.
 
 **Route via `quick-batch verification-routing`** (wraps
-`quick-batch verification-routing`, implemented in `engineer/bin/lib/quick_batch.py` — the single
+`routeVerificationOutcome`, `src/quick-batch-dispatch.cts` — the single
 source of truth for this routing, never re-derived inline):
 ```bash
 QB_VERIFY_ROUTE_JSON=$(engineer_run quick-batch verification-routing --status "$STATUS" --raw)

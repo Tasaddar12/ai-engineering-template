@@ -1,9 +1,8 @@
 # Bracket phase-ID convention
 
 The bracket convention is opt-in through `phase_id_convention: "bracket"`.
-Its compact grammar card below is a maintained example of the runtime phase convention. The
-`find-phase` query validates phase identifiers against the installed runtime; keep this card
-consistent with that behavior.
+Its compact grammar card below is generated from `src/phase-id-card.cts`; edit
+that module, not this block.
 
 <!-- PHASE-ID-CARD:START -->
 ```text

@@ -146,7 +146,7 @@ Two guards ride with it:
 
   **Why the tier and not the model id.** `--pick tier` reports the tier Engineer resolved, which is
   computed *above* the `resolve_model_ids: "omit"` gate in `resolveModelInternal`
-  (`engineer/bin/lib/models.py`). The model id is not usable as a tier signal: it is blank on every
+  (`src/model-resolver.cts`). The model id is not usable as a tier signal: it is blank on every
   runtime the installer configures with `omit`, and where a runtime tier map exists it is a
   substituted name — codex's budget tier is `gpt-5.6-luna`, which no `haiku` match would catch.
   A floor keyed on the model id therefore reads either nothing or the wrong thing on non-Claude

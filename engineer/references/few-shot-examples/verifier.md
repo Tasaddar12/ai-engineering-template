@@ -7,10 +7,6 @@ calibration_source: "Adapted from thinking-partner verification corpus"
 
 # Verifier Few-Shot Examples
 
-Examples 2–5 preserve historical calibration scenarios and their repository
-paths as evidence illustrations; they do not describe current Engineer runtime
-interfaces.
-
 ## Positive Examples
 
 ### Example 1: Thorough multi-level artifact verification with real gap discovery

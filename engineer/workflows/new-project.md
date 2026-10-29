@@ -72,7 +72,7 @@ engineer_run() {
   sh "$ENGINEER_RUN" "$@"
 }
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | LC_ALL=C sed 's/[\\`"$]/\\&/g')
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 AUTO_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--auto([[:space:]]|$) ]]; then AUTO_PARAM="--auto"; fi
@@ -125,7 +125,7 @@ if [ -n "$CODEX_HOME" ]; then RUNTIME="codex"
 else RUNTIME="claude"; fi
 ```
 
-Set the instruction file variable via the Python runtime's shared instruction-file policy (`engineer_run query project-instruction-file`, backed by `models.instruction` in `engineer/bin/lib/models.py`):
+Set the instruction file variable via the shared runtime-name policy adapter (`engineer_run query project-instruction-file`, backed by `getProjectInstructionFile` in `runtime-name-policy.cjs` — the single source of truth shared with `profile-output.cjs`):
 ```bash
 INSTRUCTION_FILE=$(engineer_run query project-instruction-file --runtime "$RUNTIME")
 ```

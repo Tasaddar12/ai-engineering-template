@@ -67,7 +67,7 @@ engineer_run() {
   sh "$ENGINEER_RUN" "$@"
 }
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | LC_ALL=C sed 's/[\\`"$]/\\&/g')
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --default "" 2>/dev/null || echo "")
@@ -475,7 +475,12 @@ If `REVIEW_CMD` is non-empty and not `"null"`, run the external review:
    If the command succeeded, parse the JSON output and report the verdict:
    ```bash
    # Parse verdict and summary from REVIEW_OUTPUT JSON
-   VERDICT=$(printf '%s' "${REVIEW_OUTPUT}" | engineer_run query json.get --field verdict --default INVALID_JSON --raw 2>/dev/null || echo INVALID_JSON)
+   VERDICT=$(echo "${REVIEW_OUTPUT}" | node -e "
+     let d=''; process.stdin.on('data',c=>d+=c); process.stdin.on('end',()=>{
+       try { const r=JSON.parse(d); console.log(r.verdict); }
+       catch(e) { console.log('INVALID_JSON'); }
+     });
+   ")
    ```
    - If `verdict` is `"APPROVED"`: report approval with confidence and summary.
    - If `verdict` is `"REVISE"`: report issues found, list each issue with severity, file, line_range, description, and suggestion.

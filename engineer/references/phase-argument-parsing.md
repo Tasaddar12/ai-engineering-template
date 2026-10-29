@@ -25,18 +25,22 @@ Returns JSON with:
 - `plans`: Array of PLAN.md files
 - `summaries`: Array of SUMMARY.md files
 
-## Normalization
+## Manual Normalization (Legacy)
 
-Use the runtime result rather than reimplementing phase parsing in shell. `find-phase`
-returns `phase_number` in its normalized form and reports whether the phase exists:
+Zero-pad the leading integer to 2 digits. Preserve a letter suffix and any dotted
+segments — the canonical grammar in `src/phase-id.cts` (`normalizePhaseName`):
+`8 → 08`, `2.1 → 02.1`, `3A → 03A`, `23.1.2 → 23.1.2`.
 
 ```bash
-PHASE_INFO=$(engineer_run query find-phase "$PHASE")
-PHASE_NUMBER=$(printf '%s' "$PHASE_INFO" | engineer_run query json.get --field phase_number --raw)
+# Normalize phase number
+# One branch for the whole canonical token — digits, optional [A-Z],
+# dotted segments. Pad through $((10#…)) so an already-padded `08` is not read
+# as octal by printf; anything non-canonical passes through untouched.
+if [[ "$PHASE" =~ ^([0-9]+)([A-Z]?)((\.[0-9]+)*)$ ]]; then
+  PHASE_INT=${BASH_REMATCH[1]}
+  PHASE=$(printf "%02d" "$((10#$PHASE_INT))")${BASH_REMATCH[2]}${BASH_REMATCH[3]}
+fi
 ```
-
-For example, an integer phase `8` is reported as `08`; a phase `2.1` is reported as
-`02.1`. If lookup fails, stop and report the CLI error rather than guessing a spelling.
 
 ## Validation
 

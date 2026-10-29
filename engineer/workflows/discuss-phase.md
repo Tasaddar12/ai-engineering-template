@@ -192,7 +192,7 @@ engineer_run() {
   sh "$ENGINEER_RUN" "$@"
 }
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | LC_ALL=C sed 's/[\\`"$]/\\&/g')
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
@@ -471,8 +471,6 @@ Read(workflows/discuss-phase/templates/context.md)
 
 The template documents variable substitutions and conditional sections. Substitute live values for `[X]`, `[Name]`, `[date]`, `${padded_phase}`, `{N}`. Include `<spec_lock>` only when `spec_loaded = true`. Include "Folded Todos" / "Reviewed Todos" subsections only when the `cross_reference_todos` step folded or reviewed todos.
 
-In `<execution_authorization>`, retain the default `Not granted` unless the user directly instructed implementation of this exact phase. If they did, record the user's instruction and precise phase scope. Carry forward an earlier applicable instruction that has not been withdrawn; do not require the user to repeat it. Do not infer authorization from discussion, a plan, an automatic continuation, or an auto-advance preference.
-
 **SPEC.md integration** — If `spec_loaded = true`:
 - Add the `<spec_lock>` section immediately after `<domain>`.
 - Add the SPEC.md file to `<canonical_refs>` with note "Locked requirements — MUST read before planning".
@@ -515,7 +513,7 @@ Created: .planning/phases/${PADDED_PHASE}-${SLUG}/${PADDED_PHASE}-CONTEXT.md
 
 ---
 
-**Also available:** `--chain` for interactive discussion followed by automatic planning; `/plan-phase ${PHASE} --skip-research ${ENGINEER_WS}` to plan without research; `/ui-phase ${PHASE} ${ENGINEER_WS}` for UI design contracts; review/edit CONTEXT.md before continuing.
+**Also available:** `--chain` for auto plan+execute after; `/plan-phase ${PHASE} --skip-research ${ENGINEER_WS}` to plan without research; `/ui-phase ${PHASE} ${ENGINEER_WS}` for UI design contracts; review/edit CONTEXT.md before continuing.
 ```
 </step>
 
@@ -559,7 +557,7 @@ engineer_run query commit "docs(state): record phase ${PHASE} context session" -
 <step name="auto_advance">
 Auto-advance behavior is defined in `workflows/discuss-phase/modes/chain.md`.
 
-If `--auto`, `--chain`, or `workflow.auto_advance` is enabled, Read that file now and execute its `auto_advance` step (clear the ephemeral execute-chain flag, show the planning banner, dispatch plan-phase without `--auto`/`--chain`, and report the planning return status).
+If `--auto`, `--chain`, or `workflow.auto_advance` is enabled, Read that file now and execute its `auto_advance` step (flag-syncing, banner, plan-phase dispatch, return-status branching).
 
 Otherwise, end here — `confirm_creation` already ran; do not route back to it.
 </step>
@@ -584,7 +582,7 @@ Otherwise, end here — `confirm_creation` already ran; do not route back to it.
 - Checkpoint file written after each area completes (incremental save)
 - Interrupted sessions can be resumed from checkpoint
 - Checkpoint file cleaned up after successful CONTEXT.md write
-- `--chain` triggers interactive discussion followed by auto-advance to plan-phase (no auto-answering and no automatic execution)
-- `--chain` and `--auto` auto-advance to plan-phase without setting the execute-chain flag
-- Per-mode bodies, templates, and advisor flow are lazy-loaded — parent stays under the workflow size budget enforced by `tests/test_workflow_size_budget.py`
+- `--chain` triggers interactive discuss followed by auto plan+execute (no auto-answering)
+- `--chain` and `--auto` both persist chain flag and auto-advance to plan-phase
+- Per-mode bodies, templates, and advisor flow are lazy-loaded — parent stays under the workflow size budget enforced by `tests/workflow-size-budget.test.cjs`
 </success_criteria>

@@ -62,7 +62,7 @@ engineer_run() {
   sh "$ENGINEER_RUN" "$@"
 }
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | LC_ALL=C sed 's/[\\`"$]/\\&/g')
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
@@ -377,34 +377,94 @@ any language (the recorded recall gap, not a translation failure);
 author an explicit `elements` array on that element instead of relying on the prose classifier.
 
 
-**Runtime coverage compute — Python `spec.ui-probe` runtime verb:**
+**Runtime coverage compute — resolve and invoke ui-consideration-probe.cjs:**
 
 ```bash
-# Populate one object per UI element/surface from the researcher-authored UI-SPEC prose.
-# Include explicit `elements` kinds where the prose classifier's cues are incomplete.
-ELEMENTS_JSON=$(mktemp "${TMPDIR:-/tmp}/ui-probe-elements-XXXXXX.json") || exit 1
+# Resolve the compiled ui-consideration-probe.cjs against the Engineer install dir via RUNTIME_DIR
+# — NOT the consuming project's git root — falling back to git toplevel / $HOME/.claude.
+# Mirrors spec-phase.md Step 5.5's edge-probe resolution idiom verbatim (same candidate paths).
+_ENGINEER_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+UI_PROBE_JS=$(for _c in \
+  "$_ENGINEER_RT/engineer/bin/lib/ui-consideration-probe.cjs" \
+  "$_ENGINEER_RT/bin/lib/ui-consideration-probe.cjs" \
+  "$_ENGINEER_RT/.claude/bin/lib/ui-consideration-probe.cjs" \
+  "$HOME/.claude/engineer/bin/lib/ui-consideration-probe.cjs" \
+  "$HOME/.claude/bin/lib/ui-consideration-probe.cjs"; do
+  [ -f "$_c" ] && { echo "$_c"; break; }
+done)
+
+# Graceful degradation — never a silent skip. Build ONLY when $_ENGINEER_RT is a verified Engineer source
+# checkout (has tsconfig.build.json + src/ui-consideration-probe.cts), pinned with --prefix so we
+# never trigger the CONSUMING project's own build during a ui-phase. Real installs ship the
+# compiled .cjs via prepublishOnly, so this path only matters in an Engineer dev checkout.
+if [ -z "$UI_PROBE_JS" ]; then
+  if [ -f "$_ENGINEER_RT/tsconfig.build.json" ] && [ -f "$_ENGINEER_RT/src/ui-consideration-probe.cts" ]; then
+    npm --prefix "$_ENGINEER_RT" run build:lib 2>/dev/null || true
+    UI_PROBE_JS=$(for _c in \
+      "$_ENGINEER_RT/engineer/bin/lib/ui-consideration-probe.cjs" \
+      "$_ENGINEER_RT/bin/lib/ui-consideration-probe.cjs" \
+      "$_ENGINEER_RT/.claude/bin/lib/ui-consideration-probe.cjs" \
+      "$HOME/.claude/engineer/bin/lib/ui-consideration-probe.cjs" \
+      "$HOME/.claude/bin/lib/ui-consideration-probe.cjs"; do
+      [ -f "$_c" ] && { echo "$_c"; break; }
+    done)
+  fi
+  if [ -z "$UI_PROBE_JS" ]; then
+    echo "ERROR: ui-consideration-probe.cjs not found — reinstall Engineer or run \`npm run build:lib\` in your Engineer checkout." >&2
+    exit 1
+  fi
+fi
+
+# Element extraction (MANUAL BY DESIGN — not an oversight): the agent reads the researcher-authored
+# UI-SPEC prose (the described surfaces — the Design System / Copywriting rows and any element the
+# researcher named) and writes ONE object per UI element/surface: {"id","text","text_en"?} where
+# text is the prose describing it. This mirrors spec-phase Step 5.5's edge-probe REQS_JSON step
+# VERBATIM — a
+# hand-populated heredoc guarded by the fail-loud <replace:> check below — the established, shipped
+# pattern for feeding a probe from a prose spec. It is NOT mechanized on purpose: a UI-SPEC has no
+# single machine-parseable "elements" column — surfaces are distributed across design-token tables
+# (Design System / Typography / Color), the Copywriting section, and prose the researcher names, so a
+# regex/table parse would fail-OPEN (miss a prose-named surface, or feed a design-token row as a bogus
+# element). The agent-authored heredoc + fail-loud guard is the conservative choice, identical to the
+# requirement-side edge-probe path (RR-04). If a future UI-SPEC gains a canonical element table,
+# revisit to parse it. Populate the heredoc from the UI-SPEC; the guard below fails loud on a
+# forgotten substitution (never a no-op). When `response_language` is set, ALSO add `text_en` — a
+# faithful ENGLISH translation of `text` (see the Non-English projects note above); the element
+# cues are English-only, so original-language `text` alone classifies to zero kinds. `text` itself
+# stays the UI-SPEC's own wording and is never translated.
+ELEMENTS_JSON=$(mktemp "${TMPDIR:-/tmp}/ui-probe-elements-XXXXXX") && mv "$ELEMENTS_JSON" "${ELEMENTS_JSON}.json" && ELEMENTS_JSON="${ELEMENTS_JSON}.json" || exit 1
 cat > "$ELEMENTS_JSON" <<'JSON'
 [
   { "id": "E1", "text": "<replace: element/surface description from the UI-SPEC prose>" }
 ]
 JSON
-if ! python -c 'import json,sys; d=json.load(open(sys.argv[1], encoding="utf-8")); assert isinstance(d,list) and d and all(isinstance(e,dict) and isinstance(e.get("text"),str) and e["text"].strip() and "<replace:" not in e["text"] for e in d)' "$ELEMENTS_JSON"; then
+if ! node -e 'const a=require(process.argv[1]);if(!Array.isArray(a)||a.length===0)process.exit(1);if(a.some(e=>typeof e.text!=="string"||!e.text.trim()||e.text.includes("<replace:")))process.exit(1)' "$ELEMENTS_JSON" 2>/dev/null; then
   rm -f "$ELEMENTS_JSON"
-  echo "ERROR: UI probe elements are empty, invalid, or still contain a placeholder." >&2
+  echo "ERROR: ui-probe elements JSON is empty/invalid or still holds the <replace: …> placeholder — populate \$ELEMENTS_JSON from the UI-SPEC's described surfaces before this step runs." >&2
   exit 1
 fi
-# This runtime verb validates element shapes and returns the deterministic proposal report.
-if ! COVERAGE=$(engineer_run query spec.ui-probe --input "$ELEMENTS_JSON"); then
+# Invoke the compiled engine and CAPTURE its report. FATAL-INVOKE GUARD: use `if ! COVERAGE=$(…)`,
+# NEVER a bare `COVERAGE=$(node …)` — a bare capture swallows the engine's exit 2 (invalid shape /
+# bad input) and falls through to prose re-derivation: fail-OPEN at the exact boundary the engine
+# validation protects.
+if ! COVERAGE=$(node "$UI_PROBE_JS" "$ELEMENTS_JSON"); then
   rm -f "$ELEMENTS_JSON"
-  echo "ERROR: spec.ui-probe rejected the elements; fix the input and re-run." >&2
+  echo "ERROR: ui-consideration-probe engine failed (invalid shapes or bad input) — fix the element(s) and re-run; never proceed with empty coverage." >&2
   exit 1
 fi
 rm -f "$ELEMENTS_JSON"
-APPLICABLE=$(printf '%s' "$COVERAGE" | python -c 'import json,sys; print(json.load(sys.stdin.buffer)["coverage"]["applicable"])') || exit 1
-UNCLASSIFIED=$(printf '%s' "$COVERAGE" | python -c 'import json,sys; print(json.load(sys.stdin.buffer)["coverage"]["unclassified"])') || exit 1
-printf '%s\n' "$COVERAGE"
+# Malformed-report guard: exit 0 but garbage. The report must parse as { items[], coverage{} }.
+if ! printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let r;try{r=JSON.parse(s)}catch{process.exit(1)}if(!r||!Array.isArray(r.items)||typeof r.coverage!=="object"||r.coverage===null)process.exit(1)})'; then
+  echo "ERROR: ui-consideration-probe produced an unparseable or malformed coverage report — refusing to proceed with the resolution loop." >&2
+  exit 1
+fi
+# Zero-applicable guard: a report where NO category applied across ANY element is far more likely a
+# classification miss (or malformed elements) than a genuinely state-free UI. Surface it loudly.
+APPLICABLE=$(printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let n=0;try{n=JSON.parse(s).coverage.applicable}catch{n=0}process.stdout.write(String(n))})')
+UNCLASSIFIED=$(printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let n=0;try{n=JSON.parse(s).coverage.unclassified}catch{n=0}process.stdout.write(String(n))})')
+# All-unclassified reads as a non-zero applicable — widen the guard to fire there too.
 if [ "$APPLICABLE" = "0" ] || [ "$UNCLASSIFIED" = "$APPLICABLE" ]; then
-  echo "WARNING: UI probe found no classified state consideration; confirm this is genuinely state-free before writing an empty section." >&2
+  echo "WARNING: ui-consideration-probe proposed ZERO applicable categories across all elements — likely a classification miss or malformed elements, not a genuinely state-free UI. Do NOT silently write an empty UI Considerations section." >&2
 fi
 ```
 
@@ -413,7 +473,7 @@ applicable state considerations — is this genuinely a state-free surface, or s
 element descriptions?"). Only write an empty section after explicit confirmation.
 
 **Propose-then-confirm (the partial-cue mitigation — load-bearing).** For each element, the engine
-reports the DETECTED element kinds (the Python implementation in `engineer/bin/lib/ui_consideration_probe.py`). The prose classifier
+reports the DETECTED element kinds (`classifyElement` over the built `.cjs`). The prose classifier
 is heuristic and LOSSY: a surface that is genuinely both a form and a list, but whose prose trips
 only the form cue, under-covers — and because SOMETHING classified, no `unclassified` signal fires.
 So SURFACE the detected kinds to the user (AskUserQuestion) and ask whether any real element kind

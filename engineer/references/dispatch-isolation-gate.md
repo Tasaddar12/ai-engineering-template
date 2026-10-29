@@ -74,7 +74,8 @@ literal.
 ```bash
 HARNESS_FLAG=""
 if [ "$ISOLATION" = "harness-worktree" ]; then
-  HARNESS_FLAG=$(engineer_run query dispatch-isolation --pick harnessFlag --raw 2>/dev/null)
+  HARNESS_FLAG=$(engineer_run query dispatch-isolation --json 2>/dev/null \
+    | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);process.stdout.write(j&&j.harnessFlag?j.harnessFlag:"")}catch{process.stdout.write("")}})')
   [ -n "$HARNESS_FLAG" ] || { echo "FATAL: runtime declares dispatch.isolation=harness-worktree but no harnessIsolationFlag — refusing to dispatch an agent that would believe it is isolated." >&2; exit 1; }
 fi
 ```
@@ -106,7 +107,8 @@ dispatch.** This is not optional bookkeeping — it is what keeps the dispatch l
 `query dispatch-isolation` writes the mode it resolved into a run-scoped sentinel
 (`.engineer/dispatch-isolation-sentinel.json`) as an unconditional side effect, and the shipped
 `PreToolUse` isolation guards read that sentinel at the instant of the dispatch call
-(`hooks/worktree-path-guard.py`, which reads the runtime's sentinel). Every degrade in this file is decided **in shell**,
+(`hooks/engineer-agent-isolation-guard.js`, shared reader
+`hooks/lib/isolation-sentinel.js`). Every degrade in this file is decided **in shell**,
 where the resolver cannot see it. Degrade without re-recording and the sentinel still asserts
 `harness-worktree` while the dispatch correctly omits the harness flag — the guard reads that
 as a dropped isolation flag and **denies the dispatch with exit 2**. The task does not run
