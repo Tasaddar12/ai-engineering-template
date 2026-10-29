@@ -649,15 +649,16 @@ def pad_integer_part(phase):
     return re.sub(r"^[0-9]+", lambda m: m.group(0).rjust(2, "0"), phase)
 
 
-CALLER_RE = re.compile(r"^[0-9]+[A-Z]?(\.[0-9]+)*$")
-SHAPE_PROBES = ["../../etc/passwd", "abc", "", "-1", "3.", ".1", "+1", "3 1", "1..2", "1.2.", "23a", "A23", "2A3", "23AB", "23.1A"]
+CALLER_RE = re.compile(r"^[0-9]+([a-z]|[A-Z])?(\.[0-9]+[a-z]?)*$")
+SHAPE_PROBES = ["../../etc/passwd", "abc", "", "-1", "3.", ".1", "+1", "3 1", "1..2", "1.2.", "A23", "2A3", "23AB", "23.1A", "23.1B", "01.a", "01.1ab"]
 AGREEMENT_PROBES = ["1", "03", "03.1", "23.1.2", "1.2.3.4", "12345678", "1.12345678", "1.1234567.1", "12345678.12345678",
-                    "1.1.1.1.1.1.1.1.1.1", "12A", "3A", "23A.1.2", "12345678A", "23a", "A23", "2A3", "23AB", "23.1A", "1..2",
+                    "1.1.1.1.1.1.1.1.1.1", "12A", "3A", "23A.1.2", "12345678A", "01a", "01.1a", "1.1a.2b", "23a", "1..2",
                     "1.2.", ".1", "3.", "abc", "-1", "+1", "3 1", "../../etc/passwd"]
 OVER_BOUND = ["123456789", "1.999999999", "123456789A"]
 COMPONENT_BOUND = {"1.12345678.1": False, "1.123456789.1": True, "1.1234567.1": False, "12345678.12345678": False}
 N_SEGMENT = ["23.1.2", "1.2.3.4"]
-LETTER_VARIANTS = [("12A", "12A"), ("3A", "03A"), ("23A.1.2", "23A.1.2"), ("12345678A", "12345678A")]
+LETTER_VARIANTS = [("12A", "12A"), ("3A", "03A"), ("23A.1.2", "23A.1.2"), ("12345678A", "12345678A"),
+                   ("01a", "01a"), ("01.1a", "01.1a"), ("1.1a.2b", "01.1a.2b")]
 
 
 @needs_fast_bash
@@ -742,6 +743,35 @@ class DottedPhaseNumbers(unittest.TestCase):
         for phase, expected in COMPONENT_BOUND.items():
             with self.subTest(phase):
                 self.assertEqual(expected, self.refused(phase))
+
+
+    @needs_bash
+    def test_workflow_and_fixer_sanitizers_accept_native_ids_and_reject_bad_shapes(self):
+        cases = {"01a": False, "01.1a": False, "1.1a.2b": False, "12A": False,
+                 "01.1A": True, "01..1": True, "../../etc/passwd": True}
+        for filename in (WORKFLOW_LF, crp.read_normalized(crp.FIX_WORKFLOW_PATH)):
+            fence = crp.fence_containing(filename, "Validate PADDED_PHASE matches the canonical phase-number grammar")
+            for phase, rejected in cases.items():
+                with self.subTest(file=filename[:30], phase=phase):
+                    result = crp.run_bash(fence + '\nprintf "VALIDATOR_FINISHED\n"',
+                                          env={**os.environ, "PADDED_PHASE": phase})
+                    self.assertEqual(0, result.returncode, result.stderr)
+                    self.assertEqual(rejected, "Invalid phase number format" in result.stdout, result.stdout)
+                    self.assertIn("VALIDATOR_FINISHED", result.stdout)
+
+    @needs_bash
+    def test_both_disposition_fences_accept_native_suffixes_and_refuse_malformed_ids(self):
+        accepted = {"01a": "01a", "01.1a": "01.1a", "1.1a.2b": "01.1a.2b", "12A": "12A", "1.2.3": "01.2.3"}
+        rejected = ["01.1A", "01..1", "../../etc/passwd"]
+        with tempfile.TemporaryDirectory(prefix="engineer-phase-gates-") as directory:
+            for phase, expected in accepted.items():
+                for cell in crp.run_derivations(STEP_DERIVATIONS, [phase], directory)[0]:
+                    with self.subTest(phase=phase, cell=cell):
+                        self.assertEqual(expected, cell)
+            for phase in rejected:
+                for cell in crp.run_derivations(STEP_DERIVATIONS, [phase], directory)[0]:
+                    with self.subTest(phase=phase, cell=cell):
+                        self.assertIn("skipped (unusable phase number", cell)
 
     def test_integer_phase_is_still_zero_padded(self):
         self.assertEqual(0, self.integer["exitCode"])
