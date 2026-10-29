@@ -1,12 +1,73 @@
 """Human acceptance session parsing and milestone audit."""
 import re
+from datetime import datetime
 from . import records, verification
 from .core import Failure, now, planning_lock, read, safe_path, write
-from .text import join_frontmatter, split_frontmatter
+from .text import join_frontmatter, split_frontmatter, yaml_load
+
+
+ACCEPTED = ("passed", "pass", "skipped", "not-testable", "resolved")
+
+
+def _resolution_error(gap, directory):
+    """Validate reconciliation evidence without following paths supplied by a gap."""
+    identifier, name, date = (gap.get(key) for key in ("gap_id", "resolved_by", "resolved_at"))
+    if not isinstance(identifier, str) or not identifier.strip():
+        return "Resolution requires a gap_id"
+    if not isinstance(name, str) or not re.fullmatch(r"[^/\\:\x00-\x1f]+-PLAN\.md", name):
+        return "resolved_by must be a plan basename"
+    if not isinstance(date, str):
+        return "Resolution requires an ISO resolved_at date"
+    try:
+        datetime.fromisoformat(date.replace("Z", "+00:00"))
+    except ValueError:
+        return "Resolution requires an ISO resolved_at date"
+    plan, summary = directory/name, directory/(name[:-len("PLAN.md")]+"SUMMARY.md")
+    for path in (plan, summary):
+        if path.is_symlink() or not path.is_file() or path.resolve().parent != directory.resolve():
+            return "Resolution requires regular plan and matching summary files in the same phase"
+    try:
+        metadata, _ = split_frontmatter(read(plan))
+    except (Failure, OSError, ValueError):
+        return "Resolving plan metadata is invalid"
+    identifiers = metadata.get("gap_ids")
+    if not isinstance(identifiers, list) or identifier not in identifiers:
+        return "Resolving plan gap_ids does not name this gap"
+    return None
+
+
+def _gaps(body, path):
+    section = re.search(r"(?ms)^## Gaps\s*\n(.*?)(?=^## |\Z)", body)
+    if not section:
+        return []
+    source = re.sub(r"<!--.*?-->", "", section[1], flags=re.S).strip()
+    if not source:
+        return []
+    try:
+        gaps = yaml_load(source)
+        if not isinstance(gaps, list) or not all(isinstance(gap, dict) for gap in gaps):
+            raise ValueError("Gaps must be a YAML sequence of mappings")
+    except (Failure, ValueError):
+        return [{"id": "gaps", "status": "invalid", "reason": "Malformed structured UAT gaps", "file": str(path)}]
+    result = []
+    for index, gap in enumerate(gaps, 1):
+        item = {**gap, "id": "gap-"+str(index), "status": "failed", "file": str(path),
+                "phase": path.parent.name.split("-")[0]}
+        if gap.get("status") == "resolved":
+            error = _resolution_error(gap, path.parent)
+            if error:
+                item["reason"] = error
+            else:
+                item["status"] = "resolved"
+        result.append(item)
+    return result
 
 
 def items(path):
     metadata, body = split_frontmatter(read(path))
+    gaps = _gaps(body, path)
+    # Test headings and checkboxes belong to the test body, never the gap payload.
+    body = re.split(r"(?m)^## Gaps\s*$", body, maxsplit=1)[0]
     result = []
     matches = list(re.finditer(r"(?m)^###\s+(\d+)[.)]?\s*(.*)$", body))
     for index, match in enumerate(matches):
@@ -18,14 +79,21 @@ def items(path):
     for index, match in enumerate(re.finditer(r"(?m)^- \[([ xX])\]\s*(.+)$", body), 1):
         result.append({"id": "check-"+str(index), "name": match[2], "status": "passed" if match[1].lower() == "x" else "pending",
                        "body": match[2], "file": str(path), "phase": path.parent.name.split("-")[0]})
-    return result
+    for item in result:
+        linked = [gap for gap in gaps if str(gap.get("test")) == item["id"]]
+        if item["status"] in ("issue", "failed") and linked and all(gap["status"] == "resolved" for gap in linked):
+            item["status"] = "resolved"
+        # A bare 'resolved' test result has no authority without gap provenance.
+        elif item["status"] == "resolved":
+            item["status"] = "pending"
+    return result + gaps
 
 
 def outstanding(args=None):
     result = []
     for directory in records.phases():
         for path in directory.glob("*-UAT.md"):
-            result.extend(item for item in items(path) if item["status"] not in ("passed", "pass", "skipped", "not-testable"))
+            result.extend(item for item in items(path) if item["status"] not in ACCEPTED)
         for path in directory.glob("*-VERIFICATION.md"):
             metadata, body = split_frontmatter(read(path))
             if metadata.get("status") == "human_needed":
@@ -41,7 +109,7 @@ def outstanding(args=None):
 def passed(args):
     directory = records.phase_dir(args.arg(0, args.get("phase")))
     paths = list(directory.glob("*-UAT.md"))
-    blockers = [item for path in paths for item in items(path) if item["status"] not in ("passed", "pass", "skipped", "not-testable")]
+    blockers = [item for path in paths for item in items(path) if item["status"] not in ACCEPTED]
     if not paths:
         blockers.append({"status": "missing", "reason": "UAT file missing"})
     if args.has("require-verification"):

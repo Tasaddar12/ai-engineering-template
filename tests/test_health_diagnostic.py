@@ -542,9 +542,20 @@ class MilestoneArchiveHygiene(unittest.TestCase):
 
     def test_canonical_planning_file_predicate(self):
         self.assertTrue(rules_mod.is_canonical_planning_file("MILESTONES.md"))
+        self.assertTrue(rules_mod.is_canonical_planning_file("windows.json"))
+        self.assertTrue(rules_mod.is_canonical_planning_file("WINDOWS.md"))
         self.assertTrue(rules_mod.is_canonical_planning_file("V3.2.1-notes.MD"))
         self.assertFalse(rules_mod.is_canonical_planning_file("state.md"))
         self.assertFalse(rules_mod.is_canonical_planning_file("v3-notes.md"))
+
+    def test_windows_ledgers_match_artifact_registry(self):
+        try:
+            from .test_artifacts import CANONICAL_EXACT
+        except ImportError:
+            from test_artifacts import CANONICAL_EXACT
+        self.assertEqual(CANONICAL_EXACT, rules_mod.CANONICAL_EXACT)
+        self.assertEqual([], run_rule("milestone-archive-hygiene", "W019",
+                                     make_snapshot(planningRootFiles=field(["windows.json", "WINDOWS.md"]))))
 
     def test_repairable_flags(self):
         rules = group("milestone-archive-hygiene")

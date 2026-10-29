@@ -11,7 +11,7 @@ from .text import scalar, yaml_load, yaml_dump
 DEFAULTS = {
     "mode": "interactive", "commit_docs": True, "response_language": None,
     "context_window": 200000, "model_profile": "balanced", "granularity": "standard", "parallelization": True,
-    "project_code": "", "runtime": "claude" if Path(__file__).resolve().parents[3].name == ".claude" else "codex",
+    "project_code": "", "sub_repos": [], "runtime": "claude" if Path(__file__).resolve().parents[3].name == ".claude" else "codex",
     "workflow": {
         "text_mode": False, "auto_advance": False, "discuss_mode": "discuss", "ui_safety_gate": True,
         "isolation": "auto", "agent_hint_routing": True,
@@ -33,7 +33,7 @@ DEFAULTS = {
     "codebase": {"max_age_commits": 20, "staleness": {}}, "agents": {},
     "verification": {"commands": [], "reuse": True, "max_parallel": 4},
     "review": {"models": {"claude": "inherit", "codex": "inherit"}, "timeout_seconds": 600},
-    "git": {"base_branch": "main", "protected_branches": ["main", "master"]},
+    "git": {"base_branch": "main", "protected_branches": ["main", "master"], "create_tag": True, "repo_tagging": "global"},
     "manager": {"flags": {"discuss": "", "plan": "", "execute": "", "verify": "", "ship": ""}},
     "execution": {"timeout_seconds": 3600, "hosts": {
         "claude": {"command": "claude", "args": ["--print"], "harness": False},
@@ -49,6 +49,13 @@ def normalize(data):
     if not isinstance(data,dict):
         raise Failure("invalid-config","Configuration must be a mapping",2)
     result = deepcopy(data)
+    planning = result.get("planning")
+    if isinstance(planning, dict) and "sub_repos" in planning:
+        if "sub_repos" in result and result["sub_repos"] != planning["sub_repos"]:
+            raise Failure("conflicting-config-alias", "planning.sub_repos and sub_repos disagree", 2)
+        result["sub_repos"] = planning.pop("sub_repos")
+        if not planning:
+            result.pop("planning")
     groups = [(result.get("agents"),ROLE_ALIASES), (result.get("worktree"),{"root":"directory"}),
               (result.get("verification"),{"checks":"commands"}), (result.get("workflow"),{"pattern_mapper":"pattern_mapping"})]
     for mapping,aliases in groups:
@@ -67,6 +74,8 @@ def normalize(data):
 
 
 def canonical_key(key):
+    if key == "planning.sub_repos":
+        return "sub_repos"
     if key == "workflow.pattern_mapper":
         return "workflow.pattern_mapping"
     if key == "worktree.root":
@@ -323,6 +332,8 @@ def set_value(args):
         assign(candidate, key, value)
         validate(candidate)
         stored_key = key
+        if key == "sub_repos" and "sub_repos" not in parsed and isinstance(parsed.get("planning"), dict) and "sub_repos" in parsed["planning"]:
+            stored_key = "planning.sub_repos"
         if key == "workflow.pattern_mapping" and isinstance(parsed.get("workflow"),dict) and "pattern_mapper" in parsed["workflow"] and "pattern_mapping" not in parsed["workflow"]:
             stored_key = "workflow.pattern_mapper"
         if key == "worktree.directory" and isinstance(parsed.get("worktree"),dict) and "root" in parsed["worktree"] and "directory" not in parsed["worktree"]:
@@ -335,7 +346,19 @@ def set_value(args):
                 stored_key = ".".join(parts)
         if key == "verification.commands" and isinstance(parsed.get("verification"),dict) and "checks" in parsed["verification"] and "commands" not in parsed["verification"]:
             stored_key = "verification.checks"
-        updated = patch_yaml(content, stored_key, value)
+        # JSON mappings are valid YAML input but cannot be patched as block-style
+        # lines. They contain no YAML comments to preserve; emit the stored keys.
+        json_mapping = None
+        if content.lstrip().startswith("{"):
+            try:
+                json_mapping = json.loads(content)
+            except ValueError:
+                pass
+        if isinstance(json_mapping, dict):
+            assign(json_mapping, stored_key, value)
+            updated = yaml_dump(json_mapping) + "\n"
+        else:
+            updated = patch_yaml(content, stored_key, value)
         validate(yaml_load(updated))
         write(path, updated)
     return {"updated": True, "key": key, "value": value}

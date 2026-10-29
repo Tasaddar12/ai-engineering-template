@@ -46,7 +46,7 @@ class RuntimeCase(unittest.TestCase):
 
     def cli(self, *args, status=0, raw=False, stdin=None):
         process = subprocess.run([sys.executable, "-I", str(RUNTIME), "query", *map(str, args)],
-                                 cwd=self.root, env=self.env, input=stdin, text=True, capture_output=True)
+                                 cwd=self.root, env=self.env, input=stdin, text=True, encoding="utf-8", capture_output=True)
         self.assertEqual(status, process.returncode, process.stderr or process.stdout)
         return process.stdout.strip() if raw else json.loads(process.stdout)
 

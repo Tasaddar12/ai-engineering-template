@@ -1,6 +1,6 @@
 """Capture planning-record integrity around every runtime invocation."""
 from . import frontmatter, records
-from .core import Failure, digest, read
+from .core import Failure, digest, read, root
 from .text import split_frontmatter
 
 MUTATIONS = {
@@ -19,7 +19,9 @@ MUTATIONS = {
 }
 
 
-def mutates(verb):
+def mutates(verb, args=None):
+    if verb == "validate.health":
+        return args is not None and args.has("repair")
     if verb.startswith("windows."):
         return verb != "windows.status"
     if verb.startswith("security."):
@@ -45,7 +47,9 @@ def mutates(verb):
     return verb in ("quick.create", "quick.update", "todo.add", "todo.complete", "milestone.create", "milestone.complete")
 
 
-def capture():
+def capture(health=False):
+    if health:
+        return _health_capture()
     base = records.planning()
     files = [path for path in base.rglob("*") if path.is_file() and path.suffix in (".md", ".yaml")]
     findings = []
@@ -62,8 +66,55 @@ def capture():
     return {"digest": digest(files), "files": len(files), "findings": set(findings)}
 
 
-def finish(verb, before, after):
-    if not mutates(verb) and before["digest"] != after["digest"]:
+def _health_capture():
+    """Fingerprint readable bytes while sanitizing unavailable health evidence.
+
+    This opt-in path never relaxes capture for other verbs. Incomplete captures
+    cannot authorize health repairs, even when some files can be fingerprinted.
+    """
+    from pathlib import Path
+    if root() == Path.home().resolve():
+        # The adapter emits E010/I010; bootstrap must not inspect this target first.
+        return {"digest": "home-safety-guard", "files": 0, "findings": set(),
+                "evidence_gaps": [], "readable": True}
+    base = root()/".planning"
+    files, findings, gaps = [], set(), []
+    try:
+        if not base.resolve().is_relative_to(root()):
+            raise OSError("Planning directory leaves repository")
+        for path in base.rglob("*"):
+            if not path.resolve().is_relative_to(root()):
+                gaps.append({"path": str(path), "reason": "Linked planning path leaves repository"})
+                continue
+            if not path.is_file() or path.suffix not in (".md", ".yaml"):
+                continue
+            try:
+                # Validate byte readability even for records without frontmatter schemas.
+                path.read_bytes()
+                files.append(path)
+                content = read(path)
+            except (OSError, UnicodeError):
+                gaps.append({"path": str(path), "reason": "Planning record is unreadable"})
+                continue
+            schema = next((name for name in frontmatter.SCHEMAS if path.name.endswith("-"+name.upper()+".md")), None)
+            if schema:
+                try:
+                    metadata, _ = split_frontmatter(content)
+                    errors = frontmatter.errors(metadata, schema)
+                except Failure:
+                    errors = ["Invalid planning frontmatter"]
+                findings.update((str(path), error) for error in errors)
+        fingerprint = digest(files)
+    except OSError:
+        # Do not substitute a digest that could accidentally authorize mutation.
+        gaps.append({"path": str(base), "reason": "Planning byte fingerprint unavailable"})
+        fingerprint = None
+    return {"digest": fingerprint, "files": len(files), "findings": findings, "evidence_gaps": gaps,
+            "readable": not gaps}
+
+
+def finish(verb, before, after, args=None):
+    if not mutates(verb, args) and before["digest"] != after["digest"]:
         raise Failure("unexpected-planning-write", f"Read-only verb changed planning records: {verb}")
     introduced = after["findings"]-before["findings"]
     if introduced:

@@ -6,7 +6,7 @@ import re
 import shutil
 from .core import Failure, now, planning_lock, read, root, safe_path, slug, write
 from .text import join_frontmatter, split_frontmatter
-from . import config
+from . import config, phase_id
 
 
 def planning():
@@ -15,18 +15,15 @@ def planning():
 
 
 def number(value):
-    text = str(value).split("-", 1)[0]
-    if not re.fullmatch(r"\d+(?:\.\d+)?", text) or int(text.split(".")[0]) < 1:
-        raise Failure("invalid-phase-number", str(value), 2)
-    return ".".join(str(int(part)).zfill(2) if index == 0 else str(int(part)) for index, part in enumerate(text.split(".")))
+    return phase_id.normalize(value)
 
 
 def phases():
     directory = planning()/"phases"
     from .planning import safe
     safe(directory)
-    entries = [safe(path) for path in directory.iterdir() if path.is_dir() and re.fullmatch(r"\d+(?:\.\d+)?-.+", path.name)] if directory.exists() else []
-    return sorted(entries, key=lambda path: tuple(map(int, path.name.split("-")[0].split("."))))
+    entries = [safe(path) for path in directory.iterdir() if path.is_dir() and re.fullmatch(phase_id.PATTERN + r"-.+", path.name)] if directory.exists() else []
+    return sorted(entries, key=lambda path: phase_id.sort_key(path.name))
 
 
 def phase_dir(value):
@@ -59,7 +56,7 @@ def find(value):
 
 def roadmap_phases():
     text = read(planning()/"ROADMAP.md")
-    matches = list(re.finditer(r"(?m)^#{2,4}\s+Phase\s+(\d+(?:\.\d+)?)\s*:\s*(.+)$", text))
+    matches = list(re.finditer(r"(?m)^#{2,4}\s+Phase\s+(" + phase_id.PATTERN + r")\s*:\s*(.+)$", text))
     active = milestone_name()
     active_version = re.search(r"v\d+(?:\.\d+)+", active or "")
     milestone_headers = list(re.finditer(r"(?m)^##\s+(v\d+(?:\.\d+)+)(?:\s|:|$)[^\n]*", text))
@@ -182,14 +179,15 @@ def phase_change(args, action):
             if action == "add":
                 archived = []
                 for payload in (planning()/"archive/operations").glob("*/payload"):
-                    archived.extend(int(path.name.split("-")[0].split(".")[0]) for path in payload.iterdir() if path.is_dir() and re.fullmatch(r"\d+(?:\.\d+)?-.+", path.name))
-                current = max([int(phase["number"].split(".")[0]) for phase in existing]+archived, default=0)+1
-                identifier, description = str(current).zfill(2), args.need()
+                    archived.extend(phase_id.major(path.name) for path in payload.iterdir() if path.is_dir() and re.fullmatch(phase_id.PATTERN + r"-.+", path.name))
+                current = max([phase_id.major(phase["number"]) for phase in existing]+archived, default=0)+1
+                identifier, description = number(args.get("number", str(current))), args.need()
+                if identifier in {item["number"] for item in existing}:
+                    raise Failure("phase-exists", identifier)
             else:
                 after, description = number(args.need()), args.need(1)
                 roadmap_phase(after)
-                siblings = [int(p["number"].split(".")[1]) for p in existing if p["number"].startswith(after+".")]
-                identifier = after+"."+str(max(siblings, default=0)+1)
+                identifier = phase_id.next_child(after, [p["number"] for p in existing])
             if not isinstance(description, str) or not description.strip() or "\n" in description or "\r" in description:
                 raise Failure("invalid-phase-name", "Phase name must be one nonempty line", 2)
             _validate_dependencies(args.get("depends-on", "Nothing"), identifier, existing)
@@ -209,7 +207,7 @@ def phase_change(args, action):
                 text = text[:progress.start()].rstrip()+"\n\n"+block+text[progress.start():] if progress else text.rstrip()+"\n\n"+block
             write(path, text)
             sync_roadmap()
-            return {"added": True, "phase": identifier, "phase_number": str(int(identifier.split('.')[0])) + ('.'+identifier.split('.')[1] if '.' in identifier else ''),
+            return {"added": True, "phase": identifier, "phase_number": identifier.lstrip("0"),
                     "padded": identifier, "slug": slug(description), "directory": str(directory)}
         phase = roadmap_phase(args.need())
         before, block, after = text[:phase["start"]], text[phase["start"]:phase["end"]], text[phase["end"]:]
@@ -228,11 +226,11 @@ def phase_change(args, action):
             archive_result = archive_module.capture(Args(["Removed phase "+phase["number"], "--scope", "phase", "--phase", phase["number"], "--confirm"]))
             archive = Path(archive_result["path"])
             content = before+after
-            label = r"0*"+str(int(phase["number"].split(".")[0]))+(r"\."+phase["number"].split(".")[1] if "." in phase["number"] else "")
+            label = r"0*" + re.escape(phase["number"].lstrip("0"))
             content = re.sub(r"(?m)^- \[[ x]\]\s*\*\*Phase\s+"+label+r":.*\n?", "", content)
             content = re.sub(r"(?m)^\|\s*"+label+r"\.\s*[^\n]+\n?", "", content)
             renamed = []
-            if "." not in phase["number"]:
+            if re.fullmatch(r"\d+", phase["number"]):
                 from . import numbering
                 removed = int(phase["number"])
                 try:
@@ -684,10 +682,10 @@ def _missing_text(action):
 def _dependency_ids(value):
     if str(value).strip().lower() in ("", "nothing", "none", "—", "-") or str(value).strip().lower().startswith("nothing ("):
         return []
-    remainder = re.sub(r"(?i)\b(?:phase|and)\b|\d+(?:\.\d+)?|[,;\s]+", "", str(value))
+    remainder = re.sub(r"(?i:\b(?:phase|and)\b)|" + phase_id.PATTERN + r"|[,;\s]+", "", str(value))
     if remainder:
         raise Failure("invalid-phase-dependency", str(value), 2)
-    return list(dict.fromkeys(number(item) for item in re.findall(r"(?<![\w.])\d+(?:\.\d+)?", str(value))))
+    return list(dict.fromkeys(number(item) for item in re.findall(r"(?<![\w.])" + phase_id.PATTERN, str(value))))
 
 
 def _validate_dependencies(value, identifier, phases):

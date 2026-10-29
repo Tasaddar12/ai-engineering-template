@@ -133,10 +133,8 @@ class CheckWriteRoundTrip(TempHealthMd):
         self.assertIn("up to date", done.stdout)
         self.assertEqual(1, run("--bogus").returncode)
 
-    @unittest.expectedFailure
+    @unittest.expectedFailure  # Pre-existing document drift; Markdown is outside the authorized change scope.
     def test_shipped_health_md_already_passes_check(self):
-        # KNOWN DRIFT: engineer/workflows/health.md localises W010/W019/W028 descriptions
-        # ("Engineer" for upstream "GSD") and rewords the generated footnote paragraph.
         code, _, err = run_gen(["--check"])
         self.assertEqual(0, code, err)
 
@@ -158,6 +156,12 @@ class RowContent(unittest.TestCase):
         row = self.region_row("W010")
         self.assertIn(next(r for r in RULES if r["code"] == "W010")["description"], row)
         self.assertTrue(row.endswith("| No |"))
+
+    def test_regenerated_health_descriptions_preserve_engineer_naming(self):
+        for code in ("W010", "W019", "W028"):
+            with self.subTest(code=code):
+                self.assertIn("Engineer", self.region_row(code))
+                self.assertNotIn("GSD", self.region_row(code))
 
     def test_w026_row_uses_the_rule_description(self):
         self.assertIn(next(r for r in RULES if r["code"] == "W026")["description"], self.region_row("W026"))

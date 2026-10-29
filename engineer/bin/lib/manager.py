@@ -2,7 +2,7 @@
 from copy import deepcopy
 import json
 import re
-from . import config, records, verification
+from . import config, records, verification, phase_id
 from .core import Args, Failure, load_json, read, root
 
 
@@ -12,7 +12,7 @@ def _dependencies(value):
     elif str(value).strip().lower() in ("", "none", "nothing", "n/a", "—", "-"):
         values = []
     else:
-        values = re.findall(r"(?<![\w.])\d+(?:\.\d+)?(?![\w.])", str(value))
+        values = re.findall(r"(?<![\w.])" + phase_id.PATTERN + r"(?![\w.])", str(value))
     return list(dict.fromkeys(records.number(str(item)) for item in values))
 
 
@@ -102,7 +102,7 @@ def dashboard(args):
                                 "requires_input": action == "discuss-phase",
                                 "requires_execution_authorization": action == "execute-phase"})
     order = {"execute-phase": 0, "verify-work": 1, "plan-phase": 2, "discuss-phase": 3}
-    recommendations.sort(key=lambda item: (order[item["action"]], tuple(map(int, item["phase"].split(".")))))
+    recommendations.sort(key=lambda item: (order[item["action"]], phase_id.sort_key(item["phase"])))
     milestone = records.milestone_name() or ""
     version = re.search(r"\bv\d+(?:\.\d+)*", milestone)
     return {"root": str(root()), "milestone_version": version[0] if version else "",

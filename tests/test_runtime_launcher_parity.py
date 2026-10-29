@@ -3,6 +3,7 @@ import importlib
 import importlib.util
 import os
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -31,6 +32,12 @@ needs_shell = unittest.skipUnless(parity.shell_available(), "bash and sh are req
 
 def hard_error_position(snippet: str) -> int:
     return snippet.index("exit 1", snippet.index(parity.HARD_ERROR))
+
+
+def workflow_bootstraps():
+    """Fragments may use their caller's runtime; inspect declared local bootstraps."""
+    return [path for path in parity.collect_markdown(parity.WORKFLOWS_DIR)
+            if parity.PREAMBLE_MARKER in parity.shell_text(parity.read_text(path))]
 
 
 class FixtureCase(unittest.TestCase):
@@ -65,13 +72,21 @@ class StructuralParity(unittest.TestCase):
         self.assertGreaterEqual(len(extracted), 5, extracted)
         self.assertEqual([], parity.uncovered_default_vars(SNIPPET, covered))
 
-    @unittest.expectedFailure
-    def test_b_workflows_hold_exactly_one_canonical_preamble_before_first_use(self):
-        # Violation: 20 workflow files (add-backlog.md, audit-milestone.md, debug.md, ...) still carry the
-        # legacy one-line `_ENGINEER_SHIM_NAME=` launcher instead of the canonical snippet.
-        files = parity.collect_markdown(parity.WORKFLOWS_DIR)
+    def test_b_explicit_workflow_bootstraps_match_the_canonical_snippet(self):
+        files = workflow_bootstraps()
         self.assertGreater(len(files), 0)
-        self.assertEqual([], parity.preamble_violations(files, parity.WORKFLOWS_DIR, PREAMBLE))
+        for path in files:
+            for block in parity.extract_shell_blocks(parity.read_text(path)):
+                text = "\n".join(block["lines"])
+                if parity.PREAMBLE_MARKER in text:
+                    with self.subTest(path=path.relative_to(parity.WORKFLOWS_DIR)):
+                        self.assertEqual(1, text.count("\n".join(PREAMBLE)))
+
+    def test_workflow_resolver_imports_stay_at_existing_entry_points(self):
+        files = parity.collect_markdown(parity.WORKFLOWS_DIR)
+        imports = {path.relative_to(parity.WORKFLOWS_DIR).as_posix() for path in files
+                   if parity.RESOLVER_MARKER in parity.read_text(path)}
+        self.assertEqual({"execute-phase.md", "onboard.md"}, imports)
 
     def test_b2_resolver_reference_matches_the_snippet(self):
         reference = parity.read_text(parity.RESOLVER_REFERENCE)
@@ -106,14 +121,14 @@ class StructuralParity(unittest.TestCase):
         self.assertIn(probe, SNIPPET)
         self.assertLess(SNIPPET.index(probe), hard_error_position(SNIPPET))
         self.assertIn("${CLAUDE_CONFIG_DIR:-$HOME/.claude}", SNIPPET)
-        files = parity.collect_markdown(parity.WORKFLOWS_DIR)
+        files = workflow_bootstraps()
         self.assertEqual([], parity.files_missing_probe(files, parity.WORKFLOWS_DIR, probe))
 
     def test_h_codex_arm_is_present_and_propagated(self):
         probe = ".codex/engineer/bin/"
         self.assertIn(probe, SNIPPET)
         self.assertLess(SNIPPET.index(probe), hard_error_position(SNIPPET))
-        files = parity.collect_markdown(parity.WORKFLOWS_DIR)
+        files = workflow_bootstraps()
         self.assertEqual([], parity.files_missing_probe(files, parity.WORKFLOWS_DIR, probe))
 
     def test_f0_snippet_braces_are_balanced(self):
@@ -335,14 +350,10 @@ class StandaloneExecutable(FixtureCase):
 
 
 class AgentParity(unittest.TestCase):
-    @unittest.expectedFailure
-    def test_b_agents_hold_exactly_one_canonical_preamble_before_first_use(self):
-        # Violation: agents/code-fixer.md, code-reviewer.md, debug-session-manager.md, debugger.md,
-        # phase-researcher.md and ui-researcher.md use engineer_run without the canonical preamble
-        # (code-fixer.md carries the legacy one-line `_ENGINEER_SHIM_NAME=` launcher; the rest carry none).
+    def test_agent_resolver_imports_stay_at_existing_entry_points(self):
         files = parity.collect_markdown(parity.AGENTS_DIR)
-        self.assertGreater(len(files), 0)
-        self.assertEqual([], parity.preamble_violations(files, parity.AGENTS_DIR, PREAMBLE))
+        imports = {path.name for path in files if parity.RESOLVER_MARKER in parity.read_text(path)}
+        self.assertEqual({"executor.md", "plan-checker.md", "planner.md", "verifier.md"}, imports)
 
 
 class ClaudeHomeFallback(FixtureCase):
@@ -451,7 +462,7 @@ class NonClaudeRuntimeHomes(FixtureCase):
         self.assertLess(SNIPPET.index("_engineer_select \\"), hard_error_position(SNIPPET))
 
     def test_e_every_inline_workflow_carries_the_codex_probe(self):
-        files = parity.collect_markdown(parity.WORKFLOWS_DIR)
+        files = workflow_bootstraps()
         self.assertGreater(len(files), 0)
         self.assertEqual([], parity.files_missing_probe(files, parity.WORKFLOWS_DIR, "$HOME/.codex}"))
 

@@ -178,11 +178,18 @@ def adapt(content, host, ns, source_name, findings):
         text = module.transform(text, source_name, str(ns / 'engineer/bin/engineer.py'))
     # Dynamic JavaScript and .cjs helpers have no safe general mechanical translation.
     # Keep their complete methods and report exact locations, never fabricate an equivalent.
+    fence_marker = None
     shell = False
     for index, line in enumerate(text.splitlines(), 1):
-        fence = re.match(r'^\s*```(\w*)', line)
+        fence = re.match(r'^\s*(`{3,}|~{3,})(.*)$', line)
         if fence:
-            shell = not shell if not fence.group(1) else fence.group(1) in ('bash', 'sh', 'shell', 'zsh')
+            marker, info = fence.groups()
+            if fence_marker is None:
+                fence_marker = marker
+                shell = info.strip() in ('bash', 'sh', 'shell', 'zsh')
+            elif marker[0] == fence_marker[0] and len(marker) >= len(fence_marker) and not info.strip():
+                fence_marker = None
+                shell = False
             continue
         if shell and not line.lstrip().startswith('#') and re.search(r'(?:\bnode\s+(?:-[ep]|["\'])|\.cjs\b)', line):
             # Application-specific examples may legitimately inspect a Node application.
@@ -198,6 +205,10 @@ def exports(source, pin, target, host, scope, no_hooks=False):
     payload, origins, findings, shared, portable_names = {}, {}, [], set(), {}
     def add(name, data, mode=0o644, origin=None):
         name = relative(name)
+        # Windows chmod represents only the read-only attribute. Compare the
+        # mode that the filesystem can actually retain, so refreshes are stable.
+        if os.name == 'nt':
+            mode = 0o666 if mode & stat.S_IWUSR else 0o444
         folded = name.casefold()
         if folded in portable_names and portable_names[folded] != name:
             raise Refusal('export-case-collision', name, other=portable_names[folded])
@@ -293,6 +304,31 @@ def inventory(root, mode='installed'):
     return result
 
 
+def legacy_cache(name):
+    path = PurePosixPath(name)
+    return '__pycache__' in path.parts or path.suffix in ('.pyc', '.pyo')
+
+
+def legacy_inventory(root, host):
+    """Capture retained legacy sources independently of the active runtime."""
+    result = {}
+    for name in ('.ai', namespace(host) + '/runtime'):
+        directory = root / name
+        if directory.is_symlink():
+            raise Refusal('migration-symlink', str(directory))
+        if not directory.exists():
+            continue
+        for path in sorted(directory.rglob('*')):
+            if path.is_symlink():
+                raise Refusal('migration-symlink', str(path))
+            if path.is_file():
+                relative_name = path.relative_to(root).as_posix()
+                if legacy_cache(relative_name):
+                    continue
+                result[relative_name] = current(root, relative_name)
+    return result
+
+
 def plan_update(source, ref, target, host, scope='local', no_hooks=False, kind='update'):
     target = target_root(target)
     ns = namespace(host)
@@ -310,8 +346,9 @@ def plan_update(source, ref, target, host, scope='local', no_hooks=False, kind='
                         'content': encoded(data), 'source_path': export['origins'][name],
                         'action': 'unchanged' if before['sha256'] == after and before['mode'] == mode else 'conflict' if conflict else 'write',
                         'resolution': 'preserve' if conflict else 'apply'})
-    legacy = (target / '.ai').exists() or (target / ns / 'runtime').exists()
-    if kind != 'migrate' and legacy:
+    legacy = legacy_inventory(target, host)
+    reviewed_legacy = old.get('migration', {})
+    if kind != 'migrate' and legacy and (not reviewed_legacy.get('complete') or reviewed_legacy.get('sources') != legacy):
         export['findings'].append({'code': 'migration-required', 'path': str(target), 'message': 'Preview migration before altering a legacy installation'})
     result = {'schema': 1, 'kind': kind, 'source': export['source'], 'revision': export['revision'],
               'target': str(target), 'host': host, 'scope': scope, 'no_hooks': no_hooks,
@@ -331,10 +368,15 @@ def migration_plan(source, ref, target, host, scope='local', no_hooks=False):
     root = Path(plan['target'])
     ns = namespace(host)
     destinations = {e['path'] for e in plan['entries']}
-    mapping = [('.ai/runtime', ns + '/engineer/bin'), (ns + '/runtime', ns + '/engineer/bin'),
+    # Keep the complete older runtime and its sibling hooks together. Mixing
+    # its lib package into the active engine can silently select incompatible
+    # modules; moving hooks alone also breaks their sibling-runtime imports.
+    mapping = [('.ai/runtime', ns + '/legacy/runtime'), (ns + '/runtime', ns + '/legacy/runtime'),
                ('.ai/templates', ns + '/engineer/templates'), ('.ai/workflows', ns + '/engineer/workflows'),
                ('.ai/references', ns + '/engineer/references'), ('.ai/agents', ns + '/agents'),
-               ('.ai/commands', ns + '/commands'), ('.ai/hooks', ns + '/hooks'), ('.ai/skills', ns + '/skills')]
+               ('.ai/commands', ns + '/commands'), ('.ai/hooks', ns + '/legacy/hooks'), ('.ai/skills', ns + '/skills'),
+               ('.ai', ns)]
+    legacy_seen = set()
     for old_root, new_root in mapping:
         directory = root / old_root
         if directory.is_symlink():
@@ -347,22 +389,41 @@ def migration_plan(source, ref, target, host, scope='local', no_hooks=False):
             if not path.is_file():
                 continue
             old_name = path.relative_to(root).as_posix()
+            if legacy_cache(old_name):
+                continue
+            # Specific relocations win over the catch-all for custom .ai assets.
+            if old_name in legacy_seen:
+                continue
+            legacy_seen.add(old_name)
             name = new_root + '/' + path.relative_to(directory).as_posix()
             data = path.read_bytes()
+            disposition = 'no-text-transform'
+            disposition_reason = 'non-text-suffix'
             # Preserve exact original bytes in backup; only textual path references change in destination.
             if path.suffix in ('.md', '.sh', '.py', '.yaml', '.toml', '.json', '.txt'):
-                text = data.decode('utf-8')
-                for old_prefix, new_prefix in sorted(mapping, key=lambda pair: -len(pair[0])):
-                    text = text.replace(old_prefix + '/', str(root / new_prefix).replace('\\', '/') + '/')
-                text = text.replace('phase_run', 'engineer_run')
-                data = text.encode('utf-8')
+                try:
+                    text = data.decode('utf-8')
+                except UnicodeDecodeError:
+                    # A text-like extension does not establish an encoding.
+                    # The reviewed mapping explicitly exposes this exact copy.
+                    disposition_reason = 'non-utf8-bytes'
+                else:
+                    for old_prefix, new_prefix in sorted(mapping, key=lambda pair: -len(pair[0])):
+                        text = text.replace(old_prefix + '/', str(root / new_prefix).replace('\\', '/') + '/')
+                    text = text.replace('phase_run', 'engineer_run')
+                    data = text.encode('utf-8')
+                    disposition = 'utf8-reference-relocation'
+                    disposition_reason = 'utf8-text'
             before = current(root, name)
-            backup_only = name in destinations or PurePosixPath(name).name == 'RULES.md'
+            backup_only = name in destinations
+            mode = stat.S_IMODE(path.stat().st_mode)
+            identical = before == {'sha256': sha(data), 'mode': mode}
             plan['entries'].append({'path': name, 'legacy_path': old_name, 'legacy_before': current(root, old_name),
                                     'before': before, 'sha256': sha(data), 'content': encoded(data),
-                                    'mode': stat.S_IMODE(path.stat().st_mode), 'source_path': old_name,
-                                    'action': 'backup-only' if backup_only else 'conflict' if before['sha256'] else 'write',
-                                    'resolution': 'backup' if backup_only else 'preserve' if before['sha256'] else 'apply'})
+                                    'mode': mode, 'source_path': old_name,
+                                    'text_transform': disposition, 'text_transform_reason': disposition_reason,
+                                    'action': 'backup-only' if backup_only else 'unchanged' if identical else 'conflict' if before['sha256'] else 'write',
+                                    'resolution': 'backup' if backup_only else 'apply' if identical else 'preserve' if before['sha256'] else 'apply'})
             destinations.add(name)
     plan.pop('snapshot_token', None)
     plan['snapshot_token'] = sha(canonical(plan))
@@ -446,7 +507,7 @@ def apply(plan, selected=None):
         raise Refusal('plan-drift', 'Entry set changed')
     for entry in plan['entries']:
         actual = expected.get((entry['path'], entry.get('legacy_path', '')))
-        if not actual or any(entry.get(k) != actual.get(k) for k in ('sha256', 'mode', 'content', 'before', 'legacy_before', 'action')):
+        if not actual or any(entry.get(k) != actual.get(k) for k in ('sha256', 'mode', 'content', 'before', 'legacy_before', 'action', 'text_transform', 'text_transform_reason')):
             raise Refusal('plan-drift', entry['path'])
     if fresh['manifest_before'] != plan['manifest_before']:
         raise Refusal('manifest-drift', 'Installed ownership manifest changed')
@@ -468,7 +529,7 @@ def apply(plan, selected=None):
         if current(root, manifest_name) != plan['manifest_before']:
             raise Refusal('manifest-drift', manifest_name)
         for journal_path in state.glob('backups/*/journal.json'):
-            if json.loads(journal_path.read_text())['status'] not in ('committed', 'rolled-back'):
+            if json.loads(journal_path.read_text(encoding='utf-8'))['status'] not in ('committed', 'rolled-back'):
                 raise Refusal('transaction-recovery-required', str(journal_path.parent))
         transaction = state / 'backups' / uuid.uuid4().hex
         safe(root, str((transaction / 'journal.json').relative_to(root)).replace('\\', '/'))
@@ -476,7 +537,7 @@ def apply(plan, selected=None):
         json_write(transaction / 'reviewed-plan.json', plan)
         journal = {'schema': 1, 'target': str(root), 'status': 'preparing', 'changes': [], 'legacy_backups': []}
         manifest_path = safe(root, manifest_name)
-        manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {'files': {}}
+        manifest = json.loads(manifest_path.read_text(encoding='utf-8')) if manifest_path.exists() else {'files': {}}
         manifest.update(schema=1, source=plan['source'], revision=plan['revision'], host=host,
                         scope=plan['scope'], exporter=plan['exporter'])
         writes = {}
@@ -494,6 +555,14 @@ def apply(plan, selected=None):
             writes[entry['path']] = (content, entry['mode'])
             manifest['files'][entry['path']] = {'sha256': entry['sha256'], 'mode': entry['mode'], 'source_path': entry['source_path']}
         manifest['complete'] = not any(e['action'] not in ('unchanged', 'backup-only') and e['path'] not in writes for e in plan['entries'])
+        if plan['kind'] == 'migrate':
+            legacy_entries = [e for e in plan['entries'] if e.get('legacy_path')]
+            manifest['migration'] = {
+                'complete': all(e['path'] in requested and (e['action'] == 'backup-only' or e['path'] in writes)
+                                for e in legacy_entries),
+                'sources': {e['legacy_path']: e['legacy_before'] for e in legacy_entries},
+                'runtime_layout': 'isolated-legacy-runtime-and-hooks',
+            }
         writes[manifest_name] = (json.dumps(manifest, indent=2, ensure_ascii=False).encode() + b'\n', 0o644)
         for index, (name, (content, mode)) in enumerate(writes.items()):
             before = current(root, name)
@@ -534,12 +603,19 @@ def parser(description):
     result.add_argument('--plan', help='Write complete preview JSON to this explicit file')
     result.add_argument('--apply', metavar='PLAN', help='Apply a previously reviewed plan')
     result.add_argument('--reviewed-plan-sha256', help='SHA-256 of the exact reviewed plan file bytes')
-    result.add_argument('--select', action='append', help='Exact target-relative path; repeat for selected paths')
+    selection = result.add_mutually_exclusive_group()
+    selection.add_argument('--select', action='append', help='Exact target-relative path; repeat for selected paths')
+    selection.add_argument('--select-all', action='store_true', help='Explicitly select every path in the exact reviewed plan')
     result.add_argument('--rollback', help='Exact prior transaction backup directory')
     return result
 
 
 def cli(kind, argv=None):
+    # Plans are a UTF-8 interchange format even on Windows consoles whose
+    # default code page cannot represent the target's path or source prose.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, 'reconfigure'):
+            stream.reconfigure(encoding='utf-8')
     args_parser = parser('Pinned Engineer ' + kind + ': full exports, guarded backups and no destructive cleanup')
     if kind == 'install':
         args_parser.add_argument('--update', action='store_true')
@@ -552,7 +628,9 @@ def cli(kind, argv=None):
             raw = Path(args.apply).read_bytes()
             if not args.reviewed_plan_sha256 or sha(raw) != args.reviewed_plan_sha256:
                 raise Refusal('review-token-mismatch', 'Supply the SHA-256 of the exact reviewed plan file bytes')
-            result = apply(json.loads(raw), args.select)
+            reviewed = json.loads(raw)
+            selected = [e['path'] for e in reviewed['entries']] if args.select_all else args.select
+            result = apply(reviewed, selected)
         elif args.rollback:
             if not args.target or not args.host:
                 raise Refusal('rollback-target-required', 'Specify --target and --host')
@@ -562,7 +640,7 @@ def cli(kind, argv=None):
             if transaction.parent != allowed or not transaction.is_dir() or transaction.is_symlink():
                 raise Refusal('rollback-path-refused', str(transaction))
             with install_lock(target, args.host):
-                journal = json.loads((transaction / 'journal.json').read_text())
+                journal = json.loads((transaction / 'journal.json').read_text(encoding='utf-8'))
                 if journal.get('target') != str(target):
                     raise Refusal('rollback-target-mismatch', str(transaction))
                 result = rollback(target, transaction)

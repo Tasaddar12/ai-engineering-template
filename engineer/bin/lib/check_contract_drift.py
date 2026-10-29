@@ -666,7 +666,7 @@ def collect_violations(root):
     # .compact.md variants render their canonical agent's SAME contract and need no row of their own.
     agent_files = sorted(
         name for name in (os.listdir(agents_dir) if os.path.exists(agents_dir) else [])
-        if name.endswith(".md") and not name.endswith(".compact.md")
+        if name.endswith(".md") and name != "AGENT.md" and not name.endswith(".compact.md")
     )
     for file in agent_files:
         agent = file[:-3]

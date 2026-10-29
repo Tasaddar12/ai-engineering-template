@@ -174,6 +174,35 @@ def normalize_test_command(args):
 
 
 def review_adapter(args, action):
+    if action == "normalize-fallow":
+        from .fallow_runner import normalize_fallow_report
+        data = input_json(None if args.has("stdin") else args.get("input", args.arg(0)))
+        if not isinstance(data, dict) or not any(key in data for key in ("dead_code", "duplication")):
+            raise Failure("fallow-schema-unrecognized", "Expected a native Fallow report with dead_code or duplication", 2)
+        for section, collections in (("dead_code", ("unused_exports", "unused_files", "circular_dependencies")),
+                                     ("duplication", ("clone_groups",))):
+            content = data.get(section)
+            if content is None:
+                continue
+            if not isinstance(content, dict):
+                raise Failure("fallow-schema-unrecognized", section + " must be an object", 2)
+            for key in collections:
+                collection = content.get(key)
+                if collection is not None and (not isinstance(collection, list) or any(not isinstance(item, dict) for item in collection)):
+                    raise Failure("fallow-schema-unrecognized", section + "." + key + " must be an array of objects", 2)
+                for item in collection or []:
+                    for nested in ("files", "instances"):
+                        if nested in item and (not isinstance(item[nested], list) or any(not isinstance(value, str if nested == "files" else dict) for value in item[nested])):
+                            raise Failure("fallow-schema-unrecognized", key + "." + nested + " has an invalid shape", 2)
+        normalized = normalize_fallow_report(data)
+        if args.has("output"):
+            output = Path(str(args.get("output"))).expanduser()
+            if output.is_symlink():
+                raise Failure("structural-output-linked", str(output))
+            if output.exists() and input_json(output) != normalized:
+                raise Failure("structural-output-exists", "Refusing to overwrite a different explicit structural report")
+            write_json(output, normalized)
+        return normalized
     if action == "normalize-structural":
         data = input_json(args.get("input"))
         if not isinstance(data, dict) or not isinstance(data.get("findings"), list) or not isinstance(data.get("summary"), (str, dict)):
@@ -205,11 +234,15 @@ def review_adapter(args, action):
         if not isinstance(values, dict):
             raise Failure("review-files-schema", "key-files must be a mapping")
         paths = []
+        from .code_review_pipeline_regression import parse_key_files
         for item in [*values.get("created", []), *values.get("modified", [])]:
             name = item.get("path") if isinstance(item, dict) else item
             if not isinstance(name, str) or "\n" in name:
                 raise Failure("review-files-schema", "Expected scalar file paths")
-            paths.append(str(safe_path(name).relative_to(root())).replace("\\", "/"))
+            # Reuse the established SUMMARY scalar grammar: annotations are
+            # descriptive text, and prose without a filename is not file scope.
+            for filename in parse_key_files("  created:\n    - " + name):
+                paths.append(str(safe_path(filename).relative_to(root())).replace("\\", "/"))
         return "\n".join(dict.fromkeys(paths))
     data = payload(args)
     if action == "contributions":

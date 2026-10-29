@@ -17,8 +17,8 @@ Deviations:
   ``acceptedShapes``, ``mergeStrategy``) so JSON projections match upstream.
 - ``state-transition.cts`` / ``state.cts`` projections (``FIELD_CLASSIFICATION``
   and friends) are not part of this module upstream and are not ported here.
-- The key ``gsd_state_version`` is kept verbatim from upstream. The repo
-  template and ``onboarding.py`` write ``engineer_state_version``.
+- The version key follows this template's ``workflow_state_version`` contract.
+  Readers preserve older authored keys without forcing a persisted migration.
 """
 from __future__ import annotations
 
@@ -44,7 +44,7 @@ def _row(type, cardinality, source, preservation, emitted, **extra):
 def _build():
     return {
         # Schema
-        "gsd_state_version": _row("string", "one", "free", "derive", "always"),
+        "workflow_state_version": _row("string", "one", "free", "derive", "always"),
         # Milestone (external - from ROADMAP.md)
         "milestone": _row("string", "optional", "external", "preserve-if-placeholder", "when-present"),
         "milestone_name": _row("string", "optional", "external", "preserve-if-placeholder", "when-present"),
