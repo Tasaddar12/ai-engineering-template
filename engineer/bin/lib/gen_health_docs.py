@@ -54,7 +54,6 @@ REMEDY_ACTION_METADATA = {
     "resetConfig": {"effect": "Delete + recreate config.json", "risk": "Loses custom settings"},
     "regenerateState": {"effect": "Create STATE.md from ROADMAP structure when it is missing", "risk": "Loses session history"},
     "addNyquistKey": {"effect": "Add workflow.nyquist_validation: true to config.json", "risk": "None — matches existing default"},
-    "addAiIntegrationPhaseKey": {"effect": "Add workflow.ai_integration_phase: true to config.json", "risk": "None — matches existing default"},
     "backfillMilestones": {
         "effect": "Synthesize missing MILESTONES.md entries from `.planning/milestones/vX.Y-ROADMAP.md` snapshots",
         "risk": "None — additive only; triggered by `--backfill` flag"},
@@ -63,7 +62,7 @@ REMEDY_ACTION_METADATA = {
         "risk": "None — only the `status` line changes; unknown statuses are never touched"},
 }
 
-REMEDY_ACTION_ORDER = ("createConfig", "resetConfig", "regenerateState", "addNyquistKey", "addAiIntegrationPhaseKey",
+REMEDY_ACTION_ORDER = ("createConfig", "resetConfig", "regenerateState", "addNyquistKey",
                        "backfillMilestones", "repairVerificationStatus")
 
 REPAIRABLE_DISPLAY_OVERRIDE = {

@@ -71,3 +71,16 @@ def ui(args):
         return ui_consideration_probe.analyze_coverage(elements, resolutions)
     except (ValueError, TypeError, OSError) as exc:
         raise Failure("invalid-ui-probe-input", str(exc), 2) from exc
+
+
+def prohibition_gate(args):
+    """Direct route to the retained fail-first prohibition enforcement gate."""
+    from .prohibition_probe import evaluate_prohibition_enforcement_gate
+    if args.has("payload") or args.has("json"):
+        values = ["--json", str(args.get("payload", args.arg(0, "")))]
+    else:
+        values = [str(safe_path(args.get("input", args.arg(0, ""))))]
+    result = evaluate_prohibition_enforcement_gate(args=values)
+    if "failure" in result:
+        raise Failure(result["failure"]["code"], result["failure"]["message"], 2)
+    return result

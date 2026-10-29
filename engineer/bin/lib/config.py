@@ -2,7 +2,6 @@
 from copy import deepcopy
 import json
 import math
-from pathlib import Path
 import re
 import shlex
 from .core import Failure, planning_lock, read, root, write
@@ -11,20 +10,20 @@ from .text import scalar, yaml_load, yaml_dump
 DEFAULTS = {
     "mode": "interactive", "commit_docs": True, "response_language": None,
     "context_window": 200000, "model_profile": "balanced", "granularity": "standard", "parallelization": True,
-    "project_code": "", "runtime": "claude" if Path(__file__).resolve().parents[3].name == ".claude" else "codex",
+    "project_code": "",
     "workflow": {
         "text_mode": False, "auto_advance": False, "discuss_mode": "discuss", "ui_safety_gate": True,
         "isolation": "auto", "agent_hint_routing": True,
         "code_review": True, "code_review_depth": "standard", "code_review_depth_overrides": [],
         "context_coverage_gate": True, "human_verify_mode": "end-of-phase", "live_dom_uat": False,
-        "plan_chunked": False, "security_asvs_level": 1,
+        "security_asvs_level": 1,
         "security_block_on": "high", "security_enforcement": True,
         "specless_probe_fallback": True, "ui_interaction_capture": False,
         "ui_phase": "auto", "nyquist_validation": True, "tdd_mode": False,
         "research": True, "plan_check": True, "verifier": True, "research_before_questions": False,
-        "task_cap": 5, "code_review_point": "execute:post", "build_command": "", "test_command": "", "test_gate_timeout": 600,
-        "pattern_mapping": True, "broken_windows": True,
-        "drift_threshold": 3, "drift_action": "warn", "context_drift_action": "warn",
+        "task_cap": 5,
+        "pattern_mapping": True,
+        "drift_threshold": 3, "drift_action": "warn",
     },
     "executor": {"stall_detect_interval_minutes": 5, "stall_threshold_minutes": 10},
     "planner": {"stall_detection_enabled": True, "stall_detect_interval_minutes": 5, "stall_threshold_minutes": 10},
@@ -32,7 +31,6 @@ DEFAULTS = {
     "handoff": {"enabled": True, "context_percent": 60, "context_tokens": 250000},
     "codebase": {"max_age_commits": 20, "staleness": {}}, "agents": {},
     "verification": {"commands": [], "reuse": True, "max_parallel": 4},
-    "review": {"models": {"claude": "inherit", "codex": "inherit"}, "timeout_seconds": 600},
     "git": {"base_branch": "main", "protected_branches": ["main", "master"]},
     "manager": {"flags": {"discuss": "", "plan": "", "execute": "", "verify": "", "ship": ""}},
     "execution": {"timeout_seconds": 3600, "hosts": {
@@ -186,9 +184,9 @@ def validate(data):
             elif not isinstance(item, type(expected)):
                 raise Failure("invalid-config-type", name, 2)
     walk(data, DEFAULTS)
-    enums = {"mode": {"interactive", "auto", "yolo"}, "runtime": {"claude", "codex"},
+    enums = {"mode": {"interactive", "auto", "yolo"},
              "workflow.isolation": {"auto", "harness-worktree", "orchestrator-worktree"}, "workflow.code_review_depth": {"quick", "standard", "deep"},
-             "workflow.drift_action": {"warn","auto-remap"}, "workflow.context_drift_action":{"warn","block"},
+             "workflow.drift_action": {"warn","auto-remap"},
              "workflow.security_block_on": {"none", "low", "medium", "high", "critical"},
              "workflow.discuss_mode": {"discuss", "auto", "text"}, "workflow.human_verify_mode": {"end-of-phase", "per-task", "manual", "none"}}
     for key, allowed in enums.items():

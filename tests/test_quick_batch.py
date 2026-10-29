@@ -1,9 +1,11 @@
 import json
+import subprocess
+import sys
 from pathlib import Path
 try:
-    from .test_engineer_runtime import RuntimeCase
+    from .test_engineer_runtime import RuntimeCase, RUNTIME
 except ImportError:
-    from test_engineer_runtime import RuntimeCase
+    from test_engineer_runtime import RuntimeCase, RUNTIME
 
 
 class QuickBatchChecks(RuntimeCase):
@@ -84,3 +86,41 @@ class QuickBatchChecks(RuntimeCase):
         self.assertEqual(["First fix"], result["tasks"])
         self.assertTrue(result["validate"])
         self.cli("quick-batch.parse-args", "--stdin", stdin="--unknown", status=2, raw=True)
+
+
+    def test_completion_replays_a_durable_intent_without_a_state_table(self):
+        self.init_records()
+        state = self.root / ".planning/STATE.md"
+        state_before = state.read_bytes()
+        tasks = self.put("tasks.json", '["Recover completion", "Second fix"]')
+        batch = self.cli("quick-batch.create", "--file", tasks, "--id", "recover-completion")
+        item = batch["items"][0]
+        revision = self.integrate_item(item, 1)
+        self.cli("quick-batch.update", "recover-completion", "--updates", json.dumps([
+            {"quickId": item["quickId"], "status": "merged", "mergeCommit": revision}]))
+        # Inject a crash after QUICK.md is written, using the real runtime and disk journal.
+        crash = self.put("crash.py", "import sys\nfrom pathlib import Path\n"
+            "sys.path.insert(0, str(Path(sys.argv[1]).parent))\n"
+            "from lib import records\noriginal = records.quick\n"
+            "def interrupted(args, action):\n"
+            "    result = original(args, action)\n"
+            "    if action == 'update': raise RuntimeError('completion interrupted')\n"
+            "    return result\n"
+            "records.quick = interrupted\nimport engineer\n"
+            "raise SystemExit(engineer.main(sys.argv[2:]))\n")
+        interrupted = subprocess.run([sys.executable, str(crash), str(RUNTIME), "query", "quick-batch.complete",
+                                      "recover-completion", "--quick-id", item["quickId"]],
+                                     cwd=self.root, env=self.env, capture_output=True, text=True)
+        self.assertNotEqual(0, interrupted.returncode)
+        self.assertIn("completion interrupted", interrupted.stderr)
+        pending = self.cli("quick-batch.get", "recover-completion")
+        self.assertEqual(revision, pending["items"][0]["completionTransaction"]["commit"])
+        self.cli("quick-batch.update", "recover-completion", "--updates", json.dumps([
+            {"quickId": item["quickId"], "status": "cancelled", "failureReason": "changed intent"}]),
+            status=1, raw=True)
+        resumed = self.cli("quick-batch.resume", "recover-completion")
+        self.assertEqual([item["quickId"]], resumed["done"])
+        self.assertNotIn("completionTransaction", resumed["items"][0])
+        self.assertEqual("complete", self.cli("quick.get", item["quickId"])["status"])
+        self.assertEqual(state_before, state.read_bytes())
+        self.assertEqual([], self.cli("quick-batch.resume", "recover-completion")["transitions"])

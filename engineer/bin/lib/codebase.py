@@ -4,7 +4,6 @@ import re
 from pathlib import Path
 from . import config, records
 from .core import Failure, digest, load_json, now, planning_lock, read, root, run, write, write_json
-from .text import split_frontmatter
 
 
 def git(*values, check=True):
@@ -183,66 +182,11 @@ def drift(args):
         return unavailable('drift-unavailable', str(exc))
 
 
-def context_drift(args):
-    try:
-        directory = records.phase_dir(args.need())
-        context = directory/(directory.name.split('-')[0]+'-CONTEXT.md')
-        if not context.is_file():
-            matches = list(directory.glob('*CONTEXT.md'))
-            context = matches[0] if len(matches) == 1 else context
-        if not context.is_file():
-            return {'skipped': True, 'reason': 'no-phase-context', 'stale_artifacts': [], 'block': False}
-        from .planning import safe
-        context = safe(context)
-        metadata, _ = split_frontmatter(read(context))
-        declared = args.all('paths') or metadata.get('source_paths', metadata.get('files', []))
-        if isinstance(declared, str):
-            declared = [declared]
-        if not isinstance(declared, list) or any(not isinstance(p,str) for p in declared):
-            raise Failure('invalid-context-paths', 'Declare a source_paths array', 69)
-        declared = [safe(root()/p).relative_to(root()).as_posix() for p in declared]
-        packet = {'context_hash': digest([context],root()), 'source_hash': inputs(declared)['digest'] if declared else None,
-                  'source_paths': declared, 'revision': git('rev-parse','HEAD').stdout.strip()}
-        baseline_path = safe(directory/'.context-freshness.json')
-        if args.has('record') or args.has('stamp'):
-            with planning_lock():
-                packet['artifacts'] = {p.name:digest([safe(p)],root()) for p in directory.glob('*.md') if p != context}
-                write_json(baseline_path, packet)
-            return {'recorded': True, **packet}
-        baseline = load_json(baseline_path)
-        if not baseline:
-            return {'skipped': True, 'reason': 'no-context-source-baseline', 'stale_artifacts': [], 'block': False,
-                    'source_paths': declared, 'semantic_assessment': False}
-        changed(baseline['revision'])
-        if not declared and baseline.get('source_paths'):
-            packet['source_paths'] = baseline['source_paths']
-            packet['source_hash'] = inputs(baseline['source_paths'])['digest']
-        premise_changed = any(packet.get(k) != baseline.get(k) for k in ('context_hash','source_hash','source_paths'))
-        stale = []
-        for name, original_hash in baseline.get('artifacts',{}).items():
-            if Path(name).name != name or not name.endswith('.md'):
-                raise Failure('invalid-context-artifact', str(name), 69)
-            path = safe(directory/name)
-            if premise_changed and path.is_file() and digest([path],root()) == original_hash:
-                stale.append(name)
-        action = config.lookup(config.load(), 'workflow.context_drift_action','warn')
-        if action not in ('warn','block'):
-            raise Failure('invalid-context-drift-action', str(action), 69)
-        return {'skipped': False, 'stale_artifacts': stale, 'block': bool(stale) and action == 'block',
-                'context_changed': packet['context_hash'] != baseline['context_hash'], 'source_changed': packet['source_hash'] != baseline.get('source_hash'),
-                'source_paths': packet['source_paths'], 'semantic_assessment': False,
-                'message': ('Context/source inputs changed; unchanged artifacts need regeneration: '+', '.join(stale)+'. Run /plan-phase '+str(args.need())+'.') if stale else ''}
-    except (Failure, OSError, ValueError, TypeError, KeyError) as exc:
-        return unavailable('context-drift-unavailable', str(exc))
-
-
 def command(args, action):
     if action in ('record','stamp'):
         return stamp(args)
     if action in ('drift','codebase-drift'):
         return drift(args)
-    if action in ('context-drift','context_drift'):
-        return context_drift(args)
     if action != 'status':
         raise Failure('unknown-codebase-action', action, 2)
     try:

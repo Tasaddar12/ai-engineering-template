@@ -60,7 +60,6 @@ REMEDY_ACTION = MappingProxyType({
     "RESET_CONFIG": "resetConfig",
     "REGENERATE_STATE": "regenerateState",
     "ADD_NYQUIST_KEY": "addNyquistKey",
-    "ADD_AI_INTEGRATION_PHASE_KEY": "addAiIntegrationPhaseKey",
     "BACKFILL_MILESTONES": "backfillMilestones",
     "REPAIR_VERIFICATION_STATUS": "repairVerificationStatus",
     "ADVISE": "advise",
@@ -518,7 +517,7 @@ def normalize_state_status(status, paused_at=None):
 
 CANONICAL_EXACT = frozenset([
     "PROJECT.md", "ROADMAP.md", "STATE.md", "REQUIREMENTS.md", "MILESTONES.md", "BACKLOG.md", "LEARNINGS.md",
-    "THREADS.md", "config.json", "CLAUDE.md", "RETROSPECTIVE.md", "WINDOWS.md", "STATE-ARCHIVE.md",
+    "THREADS.md", "config.json", "CLAUDE.md", "RETROSPECTIVE.md", "STATE-ARCHIVE.md",
     "milestone.lock", "state.json", "skill-manifest.json", "PATTERNS.md",
 ])
 CANONICAL_PATTERNS = (
@@ -611,7 +610,7 @@ RULE_GROUPS["root-existence"] = [
 ]
 
 
-# --- config-validation: W003, E005, W004, W008, W016, W012, W013, W014, W015, W022, W029 -----
+# --- config-validation: W003, E005, W004, W008, W012, W013, W014, W015, W022, W029 -----
 
 def _check_w003(snapshot):
     if snapshot["config"]["exists"]:
@@ -650,13 +649,6 @@ def _check_w008(snapshot):
     return []
 
 
-def _check_w016(snapshot):
-    workflow = _workflow_of(snapshot)
-    if _truthy(workflow) and _get(workflow, "ai_integration_phase") is _UNDEF:
-        return [_diag("W016", _W,
-                      "config.json: workflow.ai_integration_phase absent (defaults to enabled — run /gsd-ai-integration-phase before planning AI system phases)",
-                      _remedy("ADD_AI_INTEGRATION_PHASE_KEY", _NONE))]
-    return []
 
 
 def _check_w012(snapshot):
@@ -744,7 +736,6 @@ RULE_GROUPS["config-validation"] = [
     _rule("E005", _E, "config.json parse error", False, _check_e005),
     _rule("W004", _W, "config.json invalid field value", False, _check_w004),
     _rule("W008", _W, "config.json: workflow.nyquist_validation absent (defaults to enabled but agents may skip)", True, _check_w008),
-    _rule("W016", _W, "config.json: workflow.ai_integration_phase absent (defaults to enabled but agents may skip AI-integration-phase planning)", True, _check_w016),
     _rule("W012", _W, "config.json invalid branching_strategy value", False, _check_w012),
     _rule("W013", _W, "config.json context_window not a positive integer", False, _check_w013),
     _rule("W014", _W, "config.json phase_branch_template missing {phase} placeholder", False, _check_w014),

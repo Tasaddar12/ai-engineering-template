@@ -55,12 +55,12 @@ class TempProject(unittest.TestCase):
 
 
 class Enums(unittest.TestCase):
-    def test_remedy_action_locks_eight_members(self):
+    def test_remedy_action_locks_seven_members(self):
         self.assertEqual(sorted(REMEDY_ACTION), [
-            "ADD_AI_INTEGRATION_PHASE_KEY", "ADD_NYQUIST_KEY", "ADVISE", "BACKFILL_MILESTONES", "CREATE_CONFIG",
+            "ADD_NYQUIST_KEY", "ADVISE", "BACKFILL_MILESTONES", "CREATE_CONFIG",
             "REGENERATE_STATE", "REPAIR_VERIFICATION_STATUS", "RESET_CONFIG"])
         self.assertEqual(sorted(REMEDY_ACTION.values()), [
-            "addAiIntegrationPhaseKey", "addNyquistKey", "advise", "backfillMilestones", "createConfig",
+            "addNyquistKey", "advise", "backfillMilestones", "createConfig",
             "regenerateState", "repairVerificationStatus", "resetConfig"])
 
     def test_remedy_risk_and_severity(self):
@@ -95,10 +95,9 @@ class ApplyRepairsGating(TempProject):
         self.write_valid_config()
         diagnostics = [fake_diagnostic("W003", REMEDY_ACTION["CREATE_CONFIG"], REMEDY_RISK["NONE"]),
                        fake_diagnostic("W008", REMEDY_ACTION["ADD_NYQUIST_KEY"], REMEDY_RISK["NONE"]),
-                       fake_diagnostic("W016", REMEDY_ACTION["ADD_AI_INTEGRATION_PHASE_KEY"], REMEDY_RISK["NONE"]),
                        fake_diagnostic("W018", REMEDY_ACTION["BACKFILL_MILESTONES"], REMEDY_RISK["NONE"])]
         result = hd.apply_repairs(self.cwd, diagnostics, True, False)
-        self.assertEqual(["W003", "W008", "W016", "W018"], sorted(result["applied"]))
+        self.assertEqual(["W003", "W008", "W018"], sorted(result["applied"]))
         self.assertEqual([], result["refused"])
 
     def test_advise_is_never_applied_nor_refused(self):
@@ -159,12 +158,11 @@ class RepairHandlers(TempProject):
 
     def test_add_keys_patch_config_and_never_overwrite(self):
         self.write("config.json", json.dumps({"model_profile": "balanced", "workflow": {"nyquist_validation": False}}))
-        diagnostics = [fake_diagnostic("W008", REMEDY_ACTION["ADD_NYQUIST_KEY"], REMEDY_RISK["NONE"]),
-                       fake_diagnostic("W016", REMEDY_ACTION["ADD_AI_INTEGRATION_PHASE_KEY"], REMEDY_RISK["NONE"])]
+        diagnostics = [fake_diagnostic("W008", REMEDY_ACTION["ADD_NYQUIST_KEY"], REMEDY_RISK["NONE"]) ]
         result = hd.apply_repairs(self.cwd, diagnostics, True, False)
-        self.assertEqual(["W008", "W016"], result["applied"])
+        self.assertEqual(["W008"], result["applied"])
         config = json.loads(self.read("config.json"))
-        self.assertEqual({"nyquist_validation": False, "ai_integration_phase": True}, config["workflow"])
+        self.assertEqual({"nyquist_validation": False}, config["workflow"])
 
     def test_add_key_creates_workflow_object_when_missing(self):
         self.write("config.json", json.dumps({"model_profile": "balanced"}))
@@ -393,9 +391,9 @@ def with_config(value, exists=True):
 class ConfigValidation(unittest.TestCase):
     def test_table_shape(self):
         rules = group("config-validation")
-        self.assertEqual(["W003", "E005", "W004", "W008", "W016", "W012", "W013", "W014", "W015", "W022", "W029"], list(rules))
+        self.assertEqual(["W003", "E005", "W004", "W008", "W012", "W013", "W014", "W015", "W022", "W029"], list(rules))
         self.assertEqual("error", rules["E005"]["severity"])
-        self.assertEqual({"W003", "W008", "W016"}, {c for c, r in rules.items() if r["repairable"]})
+        self.assertEqual({"W003", "W008"}, {c for c, r in rules.items() if r["repairable"]})
 
     def test_w003(self):
         self.assertEqual([], run_rule("config-validation", "W003", with_config({})))
@@ -417,16 +415,14 @@ class ConfigValidation(unittest.TestCase):
         self.assertEqual([], run_rule("config-validation", "W004", with_config({})))
         self.assertEqual([], run_rule("config-validation", "W004", with_config(None)))
 
-    def test_w008_and_w016(self):
-        for code, key, action in (("W008", "nyquist_validation", "addNyquistKey"), ("W016", "ai_integration_phase", "addAiIntegrationPhaseKey")):
+    def test_w008(self):
+        for code, key, action in (("W008", "nyquist_validation", "addNyquistKey"),):
             found = run_rule("config-validation", code, with_config({"workflow": {}}))
             self.assertEqual(action, found[0]["remedy"]["action"])
             self.assertEqual([], run_rule("config-validation", code, with_config({"workflow": {key: False}})))
             self.assertEqual([], run_rule("config-validation", code, with_config({"workflow": {key: None}})))
             self.assertEqual([], run_rule("config-validation", code, with_config({})))
             self.assertEqual([], run_rule("config-validation", code, with_config(None)))
-        found = run_rule("config-validation", "W016", with_config({"workflow": {}}))
-        self.assertIn("run /gsd-ai-integration-phase before planning AI system phases", found[0]["message"])
 
     def test_w012(self):
         found = run_rule("config-validation", "W012", with_config({"branching_strategy": "trunk"}))
@@ -964,12 +960,12 @@ class RoadmapDiskConsistency(unittest.TestCase):
 
 
 class RuleTable(unittest.TestCase):
-    EXPECTED = ["E002", "E003", "E004", "W001", "W024", "W002", "W011", "W021", "W026", "W003", "E005", "W004", "W008", "W016",
+    EXPECTED = ["E002", "E003", "E004", "W001", "W024", "W002", "W011", "W021", "W026", "W003", "E005", "W004", "W008",
                 "W012", "W013", "W014", "W015", "W022", "W029", "W005", "W023", "I001", "W009", "W030", "W010", "W006", "W007",
                 "W020", "W017", "W027", "W018", "W019", "W028"]
 
-    def test_rules_is_the_full_34_rule_table_in_upstream_order(self):
-        self.assertEqual(34, len(hd.RULES))
+    def test_rules_is_the_full_33_rule_table_in_upstream_order(self):
+        self.assertEqual(33, len(hd.RULES))
         self.assertEqual(self.EXPECTED, [r["code"] for r in hd.RULES])
         self.assertEqual(len(set(self.EXPECTED)), len(self.EXPECTED))
 
@@ -987,7 +983,7 @@ class RuleTable(unittest.TestCase):
             self.assertEqual(prefixes[rule["code"][0]], rule["severity"], rule["code"])
 
     def test_repairable_codes(self):
-        self.assertEqual(["W003", "W008", "W016", "W030", "W018"], [r["code"] for r in hd.RULES if r["repairable"]])
+        self.assertEqual(["W003", "W008", "W030", "W018"], [r["code"] for r in hd.RULES if r["repairable"]])
 
     def test_consistency_rules_reuse_the_same_rule_objects(self):
         self.assertEqual(["W006", "W007", "W030", "C001", "C002", "C003", "C004"], [r["code"] for r in hd.CONSISTENCY_RULES])

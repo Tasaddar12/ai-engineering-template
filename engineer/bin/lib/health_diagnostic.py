@@ -312,8 +312,8 @@ def run_repair_action(cwd, action, paths, args=None):
         _write_text(state_path, content)
         return {"success": True, "path": "STATE.md", "extraDetails": extra}
 
-    if action in (REMEDY_ACTION["ADD_NYQUIST_KEY"], REMEDY_ACTION["ADD_AI_INTEGRATION_PHASE_KEY"]):
-        key = "nyquist_validation" if action == REMEDY_ACTION["ADD_NYQUIST_KEY"] else "ai_integration_phase"
+    if action == REMEDY_ACTION["ADD_NYQUIST_KEY"]:
+        key = "nyquist_validation"
         parsed = json.loads(_read_text(config_path))
         if not parsed.get("workflow"):
             parsed["workflow"] = {}

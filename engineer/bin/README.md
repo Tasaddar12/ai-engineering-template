@@ -231,6 +231,7 @@ passed as one shell argument. `--raw`, `--json`, and `--pick FIELD` are global.
 | `check.verify-command-paths`, `check.verify-failure-directions` | `N [--dir DIR]` or `--plan PATH` | `valid, findings[]`; findings exit 1 |
 | `check.decision-coverage-plan`, `check.decision-coverage-verify` | `N [--dir DIR]` | `passed, decisions[], uncovered[], files[]`; uncovered IDs exit 1 |
 | `check.ui-plan-gate` | `N` | `blocked, required, reason`; required unapproved UI spec exits 1 |
+| `check.prohibition-enforcement` | `--payload JSON` or `REQUEST.json` | direct fail-first enforcement disposition; missing or invalid input exits 2 |
 | `check.tdd-red-evidence` | `RECORD.json` | verdict/evidence; raw verdict string; unreadable exits 69, rejected evidence exits 1 |
 | `task.is-behavior-adding` | `TASK_JSON` | `is_behavior_adding, reason` |
 | `user-story.validate` | `STORY` | `valid, errors[], slots` |
@@ -265,7 +266,7 @@ passed as one shell argument. `--raw`, `--json`, and `--pick FIELD` are global.
 | `quick-batch.create` | `--file FILE [--base-revision SHA --id ID]` | batch path/id/items and one quick record per item |
 | `quick-batch.update` | `ID --updates JSON_ARRAY` | batch with updates merged by quickId |
 | `quick-batch.resume` | `ID [--current-base-revision SHA]` | eligible/in_flight/done/base_drift |
-| `quick-batch.complete` | `ID --quick-id QUICK_ID [--commit SHA --description TEXT --date YYYY-MM-DD --directory DIR]` | completes one item after verifying its integrated commit, PLAN scope and SUMMARY task commits, appends its STATE row, and completes the batch when every item is terminal |
+| `quick-batch.complete` | `ID --quick-id QUICK_ID [--commit SHA --description TEXT --date YYYY-MM-DD --directory DIR]` | completes one item after verifying its integrated commit, PLAN scope and SUMMARY task commits, updates its authoritative QUICK.md record through a durable batch completion transaction, and completes the batch when every item is terminal |
 | `quick-batch.effective-concurrency` | `[--jobs N --task-count N --capacity N --mutating --isolation MODE]` | concurrency/effective_concurrency |
 | `quick-batch.filter-executed` | `--eligible JSON_ARRAY --executed JSON_ARRAY` | spawnEligible/alreadyExecuted |
 | `quick-batch.merge-eligible` | `--wave-order JSON_ARRAY --ready JSON_ARRAY` | mergeable prefix |
@@ -376,3 +377,13 @@ use `phase.locate N` first, then invoke initialization from its returned worktre
 `init.quick-batch` adds quick_root/quick_dir/open_batches/capacity/isolation.
 `init.todos` adds todos/count. `init.progress` and `init.complete-milestone` add
 roadmap phases/counts/percent, progress_percent, and all_phases_verified.
+
+The retired dynamic `check`, `check.predicate`, capability `loop.*`, external
+`review.run`/`review.collect` and `review-lane`, PID `worktree.worker-*`,
+`research-store.*`, estimator, broken-windows, intel and learning-copy routes are
+not registered. Unknown `check.*` names are rejected. Native review uses
+`review.dispatch`, `review.record` and `review.status`.
+
+`check.prohibition-enforcement --payload JSON` (or a positional request file)
+runs the direct prohibition gate. Missing enforcement proof stays flagged and
+unverified; a caller assertion never replaces an actual fail-first check.

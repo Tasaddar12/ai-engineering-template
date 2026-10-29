@@ -10,18 +10,16 @@ MUTATIONS = {
     "planning.archive", "planning.archive-recover", "cleanup.preview", "cleanup.apply", "codebase.record",
     "phase.issue-declare", "phase.issue-preview", "phase.issue-publish", "phase.issue-update", "phase.reconcile-todos",
     "todo.issue-preview", "todo.issue-publish", "todo.issue-update", "handoff.write", "handoff.consume",
-    "quick-batch.create", "quick-batch.update", "quick-batch.complete",
+    "quick-batch.create", "quick-batch.update", "quick-batch.complete", "quick-batch.resume",
     "commit-to-subrepo", "project.init", "project.create", "project.update", "onboard", "new-project",
-    "archive.capture", "archive.recover", "roadmap.annotate-dependencies", "quick-tasks-append", "quick-tasks-migrate",
-    "estimate-calibrate", "phases.clear", "milestone.archive-quick", "review.record", "review.dispatch", "review.reconcile",
-    "review.normalize-structural", "learnings.copy", "learnings.extract", "custom-files.backup", "restore-custom-files",
-    "stamp-codebase-map", "dispatch-isolation", "verify.context-drift", "review.run",
+    "archive.capture", "archive.recover",
+    "phases.clear", "milestone.archive-quick", "review.record", "review.dispatch", "review.reconcile",
+    "review.normalize-structural",
+    "stamp-codebase-map", "dispatch-isolation",
 }
 
 
 def mutates(verb):
-    if verb.startswith("windows."):
-        return verb != "windows.status"
     if verb.startswith("security."):
         return verb.split(".", 1)[1] in ("resolve", "threat-review", "threat-preview", "threat-publish")
     if verb.startswith(("pipeline.", "manager.")):

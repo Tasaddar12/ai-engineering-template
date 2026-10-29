@@ -49,7 +49,6 @@ MODEL_REFERENCE = SOURCE/"engineer/references/model-profile-resolution.md"
 OMIT_RULE_MARKER = "<!-- model-omit-on-inherit -->"
 MODEL_PLACEHOLDER_RE = re.compile(r'model="\{([A-Za-z0-9_]+)\}"')
 MODEL_SITE_RE = re.compile(r'model="\{')
-SHIP_GATE_RE = re.compile(r"`(\^\[A-Za-z0-9\]\[[^`]*\]\*\$)`")
 
 
 def read_workflow_combined(workflow_path):
@@ -270,21 +269,4 @@ def reference_violations(content, label="model-profile-resolution.md"):
                         "that field." % label)
     if not re.search("omit", content, re.I):
         findings.append("%s: must state the omit-on-inherit/empty rule." % label)
-    return findings
-
-
-def ship_gate_shape(content):
-    """Compiled capability-agent validation pattern published by ship.md, or None."""
-    match = SHIP_GATE_RE.search(content)
-    return re.compile(match.group(1)) if match else None
-
-
-def ship_hook_violations(content):
-    findings = []
-    if not SHIP_GATE_RE.search(content):
-        findings.append("ship.md must publish the shape `ref.agent` has to match before it is used.")
-    if not re.search(r"IN-CONTEXT, before any shell use", content, re.I):
-        findings.append("ship.md must require the ref.agent check to run IN-CONTEXT before any shell use.")
-    if re.search(r'HOOK_AGENT="', content):
-        findings.append("ship.md must not assign the raw ref.agent value into a shell variable.")
     return findings

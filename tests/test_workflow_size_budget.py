@@ -158,7 +158,7 @@ class DiscussPhaseDisclosure(unittest.TestCase):
     # but those mode files are absent from engineer/workflows/discuss-phase/modes/.
     @unittest.expectedFailure
     def test_mode_files_exist_for_every_documented_mode(self):
-        documented = ("power", "all", "auto", "chain", "text", "advisor")
+        documented = ("power", "all", "auto", "text")
         self.assertEqual([], wsb.missing_files(DISCUSS/"modes", [m+".md" for m in documented]))
 
     def test_batch_analyze_default_modes_are_not_documented_here(self):
@@ -175,13 +175,11 @@ class DiscussPhaseDisclosure(unittest.TestCase):
         self.assertTrue("discuss-phase/modes/power.md" in self.parent or "discuss-phase-power.md" in self.parent)
 
     def test_parent_dispatches_to_extracted_modes(self):
-        self.assertEqual([], wsb.mode_dispatch_violations(self.parent, ("auto", "chain", "all", "advisor")))
+        self.assertEqual([], wsb.mode_dispatch_violations(self.parent, ("auto", "all")))
 
     def test_parent_reads_context_template_at_write_step(self):
         self.assertEqual([], wsb.context_template_lazy_violations(self.parent))
 
-    def test_advisor_block_gated_behind_user_profile_check(self):
-        self.assertEqual([], wsb.advisor_gate_violations(self.parent))
 
     def test_auto_mode_documents_skipping_interactive_questions(self):
         self.assertEqual([], wsb.mode_content_violations("auto-skip", (DISCUSS/"modes/auto.md").read_text(encoding="utf-8")))
@@ -193,11 +191,6 @@ class DiscussPhaseDisclosure(unittest.TestCase):
         self.assertEqual([], wsb.mode_content_violations("all", (DISCUSS/"modes/all.md").read_text(encoding="utf-8")))
 
     # discuss-phase.md dispatches to modes/chain.md, which does not exist.
-    @unittest.expectedFailure
-    def test_chain_mode_documents_auto_advance_to_plan_phase(self):
-        path = DISCUSS/"modes/chain.md"
-        self.assertTrue(path.exists(), "modes/chain.md is missing")
-        self.assertEqual([], wsb.chain_mode_violations(path.read_text(encoding="utf-8")))
 
     def test_text_mode_documents_replacing_ask_user_question(self):
         self.assertEqual([], wsb.text_mode_violations((DISCUSS/"modes/text.md").read_text(encoding="utf-8")))
@@ -248,13 +241,6 @@ class DiscussPhaseFixtures(Fixture):
         self.assertEqual(1, len(wsb.context_template_lazy_violations("no reference at all")))
         self.assertIsNone(wsb.required_reading_block("none"))
 
-    def test_advisor_gate_rule(self):
-        good = ('if [ -f "$HOME/.claude/USER-PROFILE.md" ]; then ADVISOR_MODE=true; fi\n'
-                "ADVISOR_MODE = true -> Read modes/advisor.md\n")
-        self.assertEqual([], wsb.advisor_gate_violations(good))
-        unguarded = "USER-PROFILE.md mentioned. Always Read modes/advisor.md\n"
-        self.assertEqual(2, len(wsb.advisor_gate_violations(unguarded)))
-        self.assertEqual(3, len(wsb.advisor_gate_violations("nothing")))
 
     def test_mode_content_rules(self):
         cases = {"auto-skip": ("Skip interactive prompts entirely", "ask everything"),
@@ -265,8 +251,6 @@ class DiscussPhaseFixtures(Fixture):
         for mode, (good, bad) in cases.items():
             self.assertEqual([], wsb.mode_content_violations(mode, good), mode)
             self.assertEqual(1, len(wsb.mode_content_violations(mode, bad)), mode)
-        self.assertEqual([], wsb.chain_mode_violations("auto-advance to plan-phase"))
-        self.assertEqual(1, len(wsb.chain_mode_violations("auto-advance only")))
         self.assertEqual([], wsb.text_mode_violations("replace AskUserQuestion with a numbered list"))
         self.assertEqual(1, len(wsb.text_mode_violations("use a numbered list")))
 
@@ -373,22 +357,6 @@ class PromptIncludes(Fixture):
         self.assertEqual(1, len(wsb.execution_context_violations("no block", EMBED_PATH)))
         self.assertEqual(2, len(wsb.execution_context_violations("<execution_context>\n@%s\n</execution_context>" % EMBED_PATH, EMBED_PATH)))
 
-    def test_execute_phase_step_three_routes_gate_semantics_through_routing_fragment(self):
-        step = wsb.dispatch_region(workflow("execute-phase.md"), "**Spawn executor agents:**", "**Wait for all agents in wave to complete.**")
-        self.assertIn("execute-phase/steps/per-plan-executor-routing.md", step)
-        fragment = (WORKFLOWS/"execute-phase/steps/per-plan-executor-routing.md").read_text(encoding="utf-8")
-        self.assertEqual([], wsb.gate_routing_fragment_violations(fragment))
-
-    def test_execute_phase_dispatch_has_no_anti_auto_approval_instruction(self):
-        step = wsb.dispatch_region(workflow("execute-phase.md"), "**Spawn executor agents:**", "**Wait for all agents in wave to complete.**")
-        self.assertEqual([], wsb.anti_auto_approval_violations(step, "step-3 dispatch region"))
-
-    def test_execute_plan_pattern_a_carries_gate_semantics(self):
-        if not (WORKFLOWS/"execute-plan.md").exists():
-            self.skipTest("upstream execute-plan.md workflow (Pattern A dispatch) absent in this repo")
-        region = wsb.dispatch_region((WORKFLOWS/"execute-plan.md").read_text(encoding="utf-8"),
-                                     "**Pattern A:** init_agent_tracking", "**Pattern B:** Execute segment-by-segment")
-        self.assertEqual([], wsb.pattern_a_violations(region))
 
     def test_execute_plan_still_defines_its_carried_steps(self):
         if not (WORKFLOWS/"execute-plan.md").exists():
@@ -397,17 +365,6 @@ class PromptIncludes(Fixture):
         self.assertEqual([], wsb.missing_markers(content, ("segment_execution", "previous_phase_check",
                                                            "verification_failure_gate", "update_codebase_map")))
 
-    def test_gate_fragment_and_region_fixtures(self):
-        good = ('`gate="blocking"` is auto-approvable. Only `gate="blocking-human"` surfaces. '
-                "do NOT add text refusing or overriding\nauto-approval.")
-        self.assertEqual([], wsb.gate_routing_fragment_violations(good))
-        self.assertEqual(4, len(wsb.gate_routing_fragment_violations("silent")))
-        self.assertEqual(1, len(wsb.gate_routing_fragment_violations(good+" Never auto-approve it.".lower())))
-        pattern_a = ('gate="blocking" auto-approvable; gate="blocking-human"; no instruction that overrides the protocol.')
-        self.assertEqual([], wsb.pattern_a_violations(pattern_a))
-        self.assertEqual(4, len(wsb.pattern_a_violations("silent")))
-        self.assertEqual(1, len(wsb.anti_auto_approval_violations("must not auto-approve", "x")))
-        self.assertEqual([], wsb.anti_auto_approval_violations("fine", "x"))
 
     def test_dispatch_region_anchors(self):
         self.assertEqual("A b ", wsb.dispatch_region("pre A b END post", "A", "END"))

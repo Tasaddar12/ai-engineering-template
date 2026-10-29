@@ -12,7 +12,7 @@ import subprocess
 import uuid
 
 from . import config, records
-from .core import Failure, load_json, now, read, root, run, slug, write_json
+from .core import Failure, load_json, now, root, run, slug, write_json
 from .locking import acquire
 from .text import split_frontmatter
 
@@ -328,79 +328,6 @@ def unresolved(entry):
     return entry.get('worker', {}).get('status') != 'complete' or liveness(entry)['pidAlive'] is not False
 
 
-def worker_command(args, action):
-    with lifecycle_lock():
-        data = registry()
-        if action == 'worker-status':
-            prefix = no_links(args.get('root', root()))
-            entries = [{**entry, **liveness(entry)} for entry in data['entries'] if entry.get('kind') == 'worker'
-                       and (not entry.get('removed') or entry.get('worker', {}).get('status') != 'complete')
-                       and Path(entry['path']).is_relative_to(prefix)]
-            return {'entries': entries, 'count': len(entries), 'running': sum(e['pidAlive'] is True for e in entries),
-                    'needsReconciliation': any(e['needsReconciliation'] for e in entries)}
-        target = no_links(args.get('path'))
-        if action == 'worker-complete':
-            matches = [e for e in data['entries'] if normalized(e['path']) == normalized(target) and e.get('worker')]
-            if not matches:
-                raise Failure('worker-record-missing', str(target))
-            entry = matches[-1]
-        else:
-            entry = owned(target, data)
-        if entry.get('kind') != 'worker':
-            raise Failure('not-worker-worktree', entry['path'])
-        if not entry.get('removed'):
-            identity(entry['path'], entry['branch'])
-        if action == 'worker-record':
-            if entry.get('worker'):
-                raise Failure('worker-already-recorded', 'Reconcile the recorded attempt before redispatch', worker=entry)
-            plan = str(args.get('plan', entry.get('plan', entry['agent_id'])))
-            competing = [e for e in data['entries'] if e['id'] != entry['id'] and e.get('kind') == 'worker'
-                         and not e.get('removed') and e.get('plan') == plan
-                         and e.get('orchestrator_root') == entry['orchestrator_root'] and unresolved(e)]
-            if competing:
-                raise Failure('plan-worker-already-owned', 'Reconcile the existing plan worker before launching another', entries=competing)
-            try:
-                pid = int(args.get('pid'))
-            except (TypeError, ValueError) as exc:
-                raise Failure('worker-pid-invalid', 'Supply the actual launched host PID') from exc
-            alive, birth = process_state(pid)
-            if alive is None or alive and not birth:
-                raise Failure('worker-process-unobservable', 'Cannot establish this worker process creation identity')
-            summary = args.get('summary-path')
-            if not summary:
-                raise Failure('worker-summary-path-required', entry['path'])
-            summary_path = Path(summary)
-            if summary_path.is_absolute():
-                # Retained coordinator paths name its checkout; translate only exact repository-relative paths.
-                owner = Path(entry['orchestrator_root'])
-                if summary_path.is_relative_to(Path(entry['path'])):
-                    summary = summary_path.relative_to(Path(entry['path'])).as_posix()
-                elif summary_path.is_relative_to(owner):
-                    summary = summary_path.relative_to(owner).as_posix()
-                else:
-                    raise Failure('summary-outside-worktree', str(summary_path))
-            summary = scope_path(summary)
-            log = no_links(args.get('log-file', entry['path'] + '.worker.log'))
-            private_logs = common() / 'engineer/worker-logs' / entry['id']
-            if log != Path(entry['path'] + '.worker.log') and not log.is_relative_to(private_logs):
-                raise Failure('worker-log-path-invalid', 'Logs must survive outside the worker checkout within its owner root')
-            entry['plan'] = plan
-            entry['summary_path'] = summary
-            entry['worker'] = {'pid': pid, 'process_identity': birth, 'status': 'running', 'startedAt': now(),
-                               'plan': entry['plan'], 'summary_path': summary, 'log_file': str(log), 'already_exited': not alive}
-        elif action == 'worker-complete':
-            assert_stopped(entry)
-            try:
-                exit_code = int(args.get('exit-code'))
-            except (TypeError, ValueError) as exc:
-                raise Failure('worker-exit-code-required', 'Supply actual transport outcome') from exc
-            entry['worker'].update(status='complete', exit_code=exit_code, note=str(args.get('note', '')), completedAt=now())
-        else:
-            raise Failure('worker-action-invalid', action)
-        save_registry(data)
-        return {**entry, **liveness(entry)}
-
-
 def _canonical_entry(entry):
     path = entry.get('worktree_path', entry.get('worktree', entry.get('path')))
     branch = entry.get('branch', entry.get('expected_branch'))
@@ -702,8 +629,6 @@ def base_check(args):
 
 
 def command(args, action):
-    if action in ('worker-record', 'worker-status', 'worker-complete'):
-        return worker_command(args, action)
     if action == 'manifest':
         return manifest_command(args)
     if action == 'base-check':

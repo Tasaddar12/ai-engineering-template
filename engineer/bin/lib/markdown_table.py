@@ -10,7 +10,6 @@ Shapes (dicts keep upstream's field names):
 - ``Result``: ``{"ok": True, "value": ...}`` or ``{"ok": False, "reason": str}``
 - ``MarkdownTable``: ``{"columns": [str], "rows": [{column: cell}]}``
 - ``CanonicalTableVariant``: ``{"label": str, "columns": [str]}``
-- ``QuickTaskFields``: ``{"description", "date", "commit", "status"?, "directory"?, "quickId"?}``
 
 Deviations:
 - Upstream re-exports the ``Result`` type from ``write-set``; Python has no type export, so
@@ -27,13 +26,12 @@ from __future__ import annotations
 
 import re
 
-from .markdown_sectionizer import _WS, _WS_CHARS, collect_section, collect_sections, replace_section
+from .markdown_sectionizer import _WS, _WS_CHARS
 
 __all__ = [
-    "TABLE_SCHEMAS", "QUICK_TASKS_SECTION_ABSENT", "match_table_schema", "split_table_row",
+    "TABLE_SCHEMAS", "match_table_schema", "split_table_row",
     "is_delimiter_row", "parse_markdown_table", "update_table_cell", "delete_table_row",
     "insert_table_row", "find_table_by_schema", "find_table_with_columns", "escape_cell",
-    "append_quick_task_row", "migrate_quick_tasks_table", "reset_quick_task_rows",
 ]
 
 
@@ -65,10 +63,6 @@ TABLE_SCHEMAS = {
     ],
     "RequirementsTraceability": [
         {"label": "default", "columns": ["Requirement", "Phase", "Status"]},
-    ],
-    "QuickTasks": [
-        {"label": "no-status", "columns": ["#", "Description", "Date", "Commit", "Directory"]},
-        {"label": "with-status", "columns": ["#", "Description", "Date", "Commit", "Status", "Directory"]},
     ],
     "Security": [
         {"label": "trust-boundaries", "columns": ["Boundary", "Description", "Data Crossing"]},
@@ -406,200 +400,3 @@ def find_table_with_columns(text, required):
             if parsed["ok"]:
                 return parsed["value"]
     return None
-
-
-# ─── Quick Tasks ──────────────────────────────────────────────────────────────
-
-QUICK_TASKS_SECTION_ABSENT = "no Quick Tasks Completed section"
-
-_QUICK_TASKS_HEADING = re.compile(r"^quick tasks completed\b", re.IGNORECASE | re.ASCII)
-
-
-def _is_quick_tasks_heading(heading):
-    return _QUICK_TASKS_HEADING.search(_trim(heading["text"])) is not None
-
-
-def _select_quick_tasks_section(state_content):
-    """First heading-matching section whose body is a recognized Quick Tasks table, else the first match, else ``None``."""
-    candidates = collect_sections(state_content, _is_quick_tasks_heading)
-    if not candidates:
-        return None
-
-    def bounded_of(cand):
-        offset = cand["heading"]["offset"]
-        return collect_section(state_content, lambda h: h["offset"] == offset)
-
-    first_bounded = bounded_of(candidates[0])
-    for cand in candidates:
-        bounded = bounded_of(cand)
-        if not bounded:
-            continue
-        parsed = parse_markdown_table(bounded["body"])
-        if parsed["ok"]:
-            matched = match_table_schema(parsed["value"]["columns"])
-            if matched and matched["id"] == "QuickTasks":
-                return bounded
-    return first_bounded
-
-
-def _eol_of(body):
-    return "\r\n" if "\r\n" in body else "\n"
-
-
-def append_quick_task_row(state_content, fields):
-    """Append one row to STATE.md's "Quick Tasks Completed" table (schema-driven, fail-loud).
-
-    Returns a Result whose value is ``{"content", "row", "variant"}``. Fails when the section is absent
-    (``QUICK_TASKS_SECTION_ABSENT``), its body is not a table, or the header is not a Quick Tasks variant.
-    """
-    section = _select_quick_tasks_section(state_content)
-    if not section:
-        return _fail(QUICK_TASKS_SECTION_ABSENT)
-    parsed = parse_markdown_table(section["body"])
-    if not parsed["ok"]:
-        return _fail(f"quick-tasks table: {parsed['reason']}")
-    matched = match_table_schema(parsed["value"]["columns"])
-    if not matched or matched["id"] != "QuickTasks":
-        return _fail("unrecognized Quick Tasks schema (columns: " + " | ".join(parsed["value"]["columns"]) + ")")
-    variant = next((v for v in TABLE_SCHEMAS["QuickTasks"] if v["label"] == matched["label"]), None)
-    columns = variant["columns"] if variant else parsed["value"]["columns"]
-
-    row_number = len(parsed["value"]["rows"]) + 1
-
-    def pick(key, default):
-        value = fields.get(key)
-        return default if value is None else value
-
-    def cell_for(col):
-        if col == "#":
-            return escape_cell(pick("quickId", str(row_number)))
-        if col == "Description":
-            return escape_cell(fields["description"])
-        if col == "Date":
-            return escape_cell(fields["date"])
-        if col == "Commit":
-            return escape_cell(fields["commit"])
-        if col == "Status":
-            return escape_cell(pick("status", "—"))
-        if col == "Directory":
-            return escape_cell(pick("directory", "—"))
-        return "—"
-
-    row = "| " + " | ".join(cell_for(c) for c in columns) + " |"
-    eol = _eol_of(section["body"])
-    lines = _LINE_SPLIT.split(section["body"])
-    last_table_line_idx = -1
-    for i, line in enumerate(lines):
-        if _trim(line).startswith("|"):
-            last_table_line_idx = i
-    new_lines = lines[:last_table_line_idx + 1] + [row] + lines[last_table_line_idx + 1:]
-    content = replace_section(state_content, section, eol.join(new_lines))
-    return _ok({"content": content, "row": row, "variant": matched["label"]})
-
-
-_QUICK_TASKS_COLUMN_ALIASES = {
-    "#": "#", "id": "#",
-    "date": "Date", "when": "Date",
-    "commit": "Commit", "sha": "Commit",
-    "status": "Status",
-    "directory": "Directory", "artifacts": "Directory", "path": "Directory", "dir": "Directory",
-    "description": "Description", "task": "Description", "summary": "Description",
-    "slug": "Description", "scope": "Description", "title": "Description",
-}
-
-
-def migrate_quick_tasks_table(state_content):
-    """Migrate a legacy Quick Tasks table onto the canonical ``with-status`` schema.
-
-    Returns a Result whose value is ``{"content", "migrated"}`` plus ``"from"`` and ``"rows"`` when a rewrite
-    happened. Absent section or already-canonical table is a silent no-op (``migrated`` false).
-    """
-    section = _select_quick_tasks_section(state_content)
-    if not section:
-        return _ok({"content": state_content, "migrated": False})
-    parsed = parse_markdown_table(section["body"])
-    if not parsed["ok"]:
-        return _fail(f"quick-tasks table: {parsed['reason']}")
-    matched = match_table_schema(parsed["value"]["columns"])
-    if matched and matched["id"] == "QuickTasks":
-        return _ok({"content": state_content, "migrated": False})
-
-    canonical = next(v for v in TABLE_SCHEMAS["QuickTasks"] if v["label"] == "with-status")["columns"]
-    source_columns = parsed["value"]["columns"]
-    targets = [_QUICK_TASKS_COLUMN_ALIASES.get(_trim(c).lower()) for c in source_columns]
-
-    rows = []
-    for row_idx, row in enumerate(parsed["value"]["rows"]):
-        bucket = {"#": "", "Description": "", "Date": "", "Commit": "", "Status": "", "Directory": ""}
-        description_parts = []
-        for i, col in enumerate(source_columns):
-            raw = _trim(row.get(col) or "")
-            target = targets[i]
-            if target == "Description":
-                if raw:
-                    description_parts.append(raw)
-            elif target:
-                if raw and bucket[target]:
-                    description_parts.append(f"{_trim(col)}: {raw}")
-                elif raw:
-                    bucket[target] = raw
-            elif raw:
-                description_parts.append(f"{_trim(col)}: {raw}")
-        bucket["#"] = bucket["#"] or str(row_idx + 1)
-        bucket["Description"] = " · ".join(description_parts)
-        bucket["Date"] = bucket["Date"] or "—"
-        bucket["Commit"] = bucket["Commit"] or "—"
-        bucket["Status"] = bucket["Status"] or "—"
-        bucket["Directory"] = bucket["Directory"] or "—"
-        rows.append("| " + " | ".join(escape_cell(bucket[c]) for c in canonical) + " |")
-
-    eol = _eol_of(section["body"])
-    lines = _LINE_SPLIT.split(section["body"])
-    first_table_line_idx = next((i for i, l in enumerate(lines) if _trim(l).startswith("|")), -1)
-    last_table_line_idx = first_table_line_idx
-    while last_table_line_idx + 1 < len(lines) and _trim(lines[last_table_line_idx + 1]).startswith("|"):
-        last_table_line_idx += 1
-    header = "| " + " | ".join(canonical) + " |"
-    delimiter = "| " + " | ".join("-" * max(3, len(c) + 2) for c in canonical) + " |"
-    new_body = eol.join(lines[:first_table_line_idx] + [header, delimiter] + rows + lines[last_table_line_idx + 1:])
-    return _ok({
-        "content": replace_section(state_content, section, new_body),
-        "migrated": True,
-        "from": source_columns,
-        "rows": len(rows),
-    })
-
-
-def reset_quick_task_rows(state_content):
-    """Clear every DATA row of the Quick Tasks table (header and delimiter byte-identical); returns a Result.
-
-    Value is ``{"content", "cleared", "variant"}``. Refuses (no modification) on an unrecognized schema.
-    """
-    if not isinstance(state_content, str) or _trim(state_content) == "":
-        return _fail("empty or non-string input")
-    section = _select_quick_tasks_section(state_content)
-    if not section:
-        return _fail(QUICK_TASKS_SECTION_ABSENT)
-    parsed = parse_markdown_table(section["body"])
-    if not parsed["ok"]:
-        return _fail(f"quick-tasks table: {parsed['reason']}")
-    matched = match_table_schema(parsed["value"]["columns"])
-    if not matched or matched["id"] != "QuickTasks":
-        return _fail("unrecognized Quick Tasks schema (columns: " + " | ".join(parsed["value"]["columns"]) + ")")
-
-    cleared = len(parsed["value"]["rows"])
-    eol = _eol_of(section["body"])
-    lines = _LINE_SPLIT.split(section["body"])
-    header_idx = -1
-    for i, line in enumerate(lines):
-        if _trim(line).startswith("|"):
-            header_idx = i
-            break
-    last_table_line_idx = header_idx + 1
-    for i in range(header_idx + 2, len(lines)):
-        if not _trim(lines[i]).startswith("|"):
-            break
-        last_table_line_idx = i
-    new_lines = lines[:header_idx + 2] + lines[last_table_line_idx + 1:]
-    content = replace_section(state_content, section, eol.join(new_lines))
-    return _ok({"content": content, "cleared": cleared, "variant": matched["label"]})

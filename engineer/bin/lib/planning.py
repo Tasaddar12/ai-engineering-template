@@ -1,13 +1,10 @@
 """Planning record boundaries, read-only views and explicit lifecycle helpers."""
 from __future__ import annotations
-import hashlib
-import json
 from pathlib import Path
 import re
 import stat
-import statistics
-from .core import Args, Failure, now, planning_lock, read, root, run, write
-from .text import split_frontmatter, join_frontmatter
+from .core import Args, Failure, now, read, root
+from .text import split_frontmatter
 
 
 def safe(path):
@@ -115,129 +112,6 @@ def milestone_scope(args):
     phases = records.roadmap_phases()
     return {"milestone": records.milestone_name(), "phases": [{key: item[key] for key in ("number", "name", "goal", "depends_on", "requirements")} for item in phases],
             "phase_count": len(phases), "requirements": sorted({req for item in phases for req in item["requirements"]})}
-
-
-def annotate_dependencies(args):
-    from . import records
-    phase = records.roadmap_phase(args.need())
-    index = records.plan_index(Args([phase["number"]]))
-    external = sorted({records.number(str(dep).split("-", 1)[0]) for plan in index["plans"] for dep in plan.get("depends_on", [])
-                       if records.number(str(dep).split("-", 1)[0]) != phase["number"]})
-    if not external:
-        return {"updated": False, "phase": phase["number"], "dependencies": [], "reason": "no-cross-phase-plan-dependencies"}
-    existing = {records.number(value) for value in re.findall(r"\d+(?:\.\d+)?", phase["depends_on"])}
-    dependencies = sorted(existing | set(external), key=lambda value: tuple(map(int, value.split("."))))
-    return {**records.phase_change(Args([phase["number"], "--depends-on", ", ".join("Phase "+value for value in dependencies)]), "edit"), "dependencies": dependencies}
-
-
-def quick_append(args):
-    from . import records
-    task = args.get("task", args.arg(0))
-    if not isinstance(task, str) or not task.strip():
-        raise Failure("missing-task", "quick-tasks-append requires --task", 2)
-    identifier = args.get("quick-id")
-    task_slug = args.get("slug")
-    if identifier is not None and not re.fullmatch(r"\d+", str(identifier)):
-        raise Failure("invalid-quick-id", str(identifier), 2)
-    if task_slug is not None and not re.fullmatch(r"[A-Za-z0-9._-]+", str(task_slug)):
-        raise Failure("invalid-quick-slug", str(task_slug), 2)
-    revision = run(["git", "rev-parse", "--short", "HEAD"], root(), check=False).stdout.strip() or "uncommitted"
-    path = safe(records.planning()/"STATE.md")
-    with planning_lock():
-        content = read(path)
-        found = section(content, "### Quick Tasks Completed")
-        block = content[found[1]:found[2]] if found else ""
-        rows = [line for line in block.splitlines() if line.startswith("|")]
-        headers = [part.strip() for part in re.split(r"(?<!\\)\|", rows[0])[1:-1]] if rows else ["#", "Description", "Date", "Commit", "Directory"]
-        if args.has("status") and "Status" not in headers:
-            headers.append("Status")
-            rows = [line.rstrip()+(" Status |" if index == 0 else " --- |" if index == 1 else " — |") for index, line in enumerate(rows)]
-        if not rows:
-            rows = ["| "+" | ".join(headers)+" |", "| "+" | ".join("---" for _ in headers)+" |"]
-        directory = "./quick/"+str(identifier)+"-"+str(task_slug)+"/" if identifier and task_slug else None
-        if directory and any(directory in row for row in rows[2:]):
-            return {"added": False, "duplicate": True, "quick_id": identifier}
-        number = identifier or str(len(rows)-1)
-        values = {"#": number, "Description": task, "Task": task, "Date": now()[:10], "Commit": revision,
-                  "Directory": "["+str(identifier)+"-"+str(task_slug)+"]("+directory+")" if directory else "—",
-                  "Status": args.get("status", "complete")}
-        unknown = set(headers)-set(values)
-        if unknown:
-            raise Failure("unsupported-quick-table-columns", ", ".join(sorted(unknown)), 2)
-        row = "| "+" | ".join(cell(values[key]) for key in headers)+" |"
-        rows.append(row)
-        narrative = "\n".join(line for line in block.splitlines() if not line.startswith("|"))
-        write(path, replace_section(content, "### Quick Tasks Completed", narrative+"\n\n"+"\n".join(rows)))
-    return {"added": True, "row": row, "quick_id": identifier, "date": now()[:10], "commit": revision}
-
-
-def quick_migrate(args):
-    from . import records
-    path = safe(records.planning()/"STATE.md")
-    created, skipped = [], []
-    with planning_lock():
-        found = section(read(path), "### Quick Tasks Completed")
-        if not found:
-            return {"migrated": [], "count": 0, "reason": "no-legacy-quick-table"}
-        block = read(path)[found[1]:found[2]]
-        rows = [line for line in block.splitlines() if line.startswith("|")]
-        if len(rows) < 3:
-            return {"migrated": [], "count": 0}
-        headers = [value.strip() for value in re.split(r"(?<!\\)\|", rows[0])[1:-1]]
-        decoded = []
-        for line in rows[2:]:
-            columns = [value.strip().replace("\\|", "|") for value in re.split(r"(?<!\\)\|", line)[1:-1]]
-            if len(columns) != len(headers):
-                raise Failure("invalid-quick-row", line, 2)
-            decoded.append((line, dict(zip(headers, columns))))
-        for line, record in decoded:
-            source_id = hashlib.sha256(line.encode()).hexdigest()
-            existing = []
-            for item in (records.planning()/"quick").glob("*/QUICK.md"):
-                metadata, _ = split_frontmatter(read(safe(item)))
-                if metadata.get("migration_source") == source_id:
-                    existing.append(item)
-            if existing:
-                skipped.append(str(existing[0]))
-                continue
-            item = records.quick_create(record.get("Description", record.get("Task", "Migrated quick task")),
-                                        {"migration_source": source_id, "source": ".planning/STATE.md", "legacy_row": line,
-                                         "status": record.get("Status", "complete"), "commit": record.get("Commit", "")})
-            file = Path(item["path"])
-            created.append(str(file))
-    return {"migrated": created, "skipped": skipped, "count": len(created), "source_preserved": True}
-
-
-def calibration(args):
-    samples = []
-    for item in history(args)["summaries"]:
-        estimate, actual = item.get("estimate", {}), item.get("actuals", {})
-        if not isinstance(estimate, dict) or not isinstance(actual, dict):
-            continue
-        predicted = estimate.get("tokens") or estimate.get("raw_tokens")
-        observed = actual.get("tokens")
-        if isinstance(predicted, (int, float)) and not isinstance(predicted, bool) and predicted > 0 and isinstance(observed, (int, float)) and not isinstance(observed, bool) and observed >= 0:
-            samples.append({"path": item["path"], "predicted": predicted, "actual": observed, "ratio": observed/predicted})
-    return {"sample_count": len(samples), "samples": samples, "calibrated": len(samples) >= 3,
-            "factor": statistics.median(item["ratio"] for item in samples) if samples else None,
-            "confidence": "high" if len(samples) >= 10 else "medium" if len(samples) >= 3 else "low", "read_only": True}
-
-
-def estimate_check(args):
-    from . import config
-    try:
-        tokens = float(args.get("tokens", args.arg(0)))
-    except (ValueError, TypeError) as exc:
-        raise Failure("invalid-token-estimate", "Supply nonnegative --tokens", 2) from exc
-    if tokens < 0 or tokens == float("inf") or tokens != tokens:
-        raise Failure("invalid-token-estimate", str(tokens), 2)
-    data = calibration(args)
-    factor = data["factor"] if args.has("calibrated") and data["calibrated"] else 1
-    budget = config.load()["context_window"] * .6
-    projected = tokens*factor
-    return {"tokens": tokens, "projected_tokens": projected, "budget": budget, "within_budget": projected <= budget,
-            "calibrated": bool(args.has("calibrated") and data["calibrated"]), "sample_count": data["sample_count"],
-            "advisory": True, "recommendation": "within-budget" if projected <= budget else "split-independent-outcomes"}
 
 
 def smart_entry(args):
