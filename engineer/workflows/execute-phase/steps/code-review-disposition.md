@@ -6,8 +6,8 @@ Read and executed by the `code_review_gate` step of `execute-phase/steps/verify-
 returns. It consumes `PHASE_DIR` and `PHASE_NUMBER` and derives everything else.
 
 It lives here rather than inline in the parent because `execute-phase.md` sits against two size
-ceilings — the XL hard cap in `tests/workflow-size-budget.test.cjs` and the frozen ADR-857
-pre-phase-6 ceiling in `tests/claude-orchestration.test.cjs` — and both are red lines to be kept
+ceilings — the XL hard cap in `tests/test_workflow_size_budget.py` and the frozen ADR-857
+pre-phase-6 ceiling in `tests/test_claude_orchestration.py` — and both are red lines to be kept
 under, not budgets to spend.
 
 **What it is for.** The counts the gate prints say how many findings there were, not what happened
@@ -208,7 +208,7 @@ REVIEW_TOTAL=$(echo "$REVIEW_FINDINGS_FM" | LC_ALL=C grep -E -m1 "^[[:space:]]*t
 # Unpinned, `status: clean<U+2003>` trimmed to `clean` under one locale and stayed unusable under
 # another -- the same silent suppression as the `clean:junk` truncation, reachable only on some
 # machines. Pinned to C the class is exactly {space, tab, NL, VT, FF, CR}, which is what the mirror
-# in tests/code-review-pipeline-regression.test.cjs spells out literally, so the two agree by
+# in tests/test_code_review_pipeline_regression.py spells out literally, so the two agree by
 # construction rather than by coincidence of locale.
 # The breakdown is reportable only when ALL FOUR counts are numbers. Deciding on REVIEW_TOTAL
 # alone would still emit `6 findings —  critical` for a review carrying a total and nothing else.

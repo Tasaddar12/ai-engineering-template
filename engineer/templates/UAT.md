@@ -125,12 +125,14 @@ blocked: [N]
   step finds an executed gap-closure plan (a `*-PLAN.md` naming this entry's
   `gap_id` with a matching `*-SUMMARY.md`), it updates the entry IN PLACE —
   `status: failed` → `status: resolved` — and adds `resolved_by` (the
-  resolving plan's basename) and `resolved_at` (the date). A resolved entry
-  is no longer surfaced as an open gap, and its matching `### N.` test's
-  `result: issue` no longer blocks `phase uat-passed` — but only when
-  `resolved_by` names a plan that actually exists in the phase directory with
-  a matching SUMMARY; a hand-written `status: resolved` with no valid
-  `resolved_by` still blocks (src/uat-predicate.cts's `isTestGapResolved`).
+  resolving plan's basename) and `resolved_at` (the date). Only the
+  `verify-work` reconciliation step may record this transition, after finding an
+  executed gap-closure plan whose `gap_ids` names this entry and a matching
+  summary. Do not author `resolved` or its provenance by hand. The Python
+  implementation in `engineer/bin/lib/uat.py` backs `phase.uat-passed`, which
+  checks UAT item statuses and, when requested, verification status; it does not
+  inspect `resolved_by` or confirm the plan and summary. Follow `verify-work`'s
+  reconciliation rule before continuing.
   A later regression against the same test gets a fresh `gap_id`, never a
   reopened resolved one.
 

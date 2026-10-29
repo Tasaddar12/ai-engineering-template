@@ -201,6 +201,6 @@ Table rules use ASCII `-`, never box-drawing characters.
 - Random emoji (`🚀`, `✨`, `💫`)
 - Missing Next Up block after completions
 
-Enforced by `tests/responsive-separators.test.cjs`.
+Enforced by `tests/test_responsive_separators.py`.
 
 </ui_patterns>

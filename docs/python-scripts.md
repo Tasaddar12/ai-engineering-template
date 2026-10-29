@@ -13,10 +13,12 @@ From a source checkout, install into a new or existing target and select the hos
 python -I bin/install.py --target ./my-project --host codex
 ```
 
-Use `--host claude` for Claude Code. The installer creates the host-specific
-Python environment and installs the selected workflow files. `--dry-run` previews
-the operation. Existing conflicting files are reported for reconciliation;
-installation does not overwrite them silently.
+Use `--host claude` for Claude Code. The installer installs the selected workflow
+files and runtime; it does not create a virtual environment. The runtime launcher
+uses an existing host-specific environment (such as `.codex-venv` or
+`.claude-venv`) or project `.venv` when available, then falls back to system
+Python. `--dry-run` previews the operation. Existing conflicting files are
+reported for reconciliation; installation does not overwrite them silently.
 
 ## Update
 

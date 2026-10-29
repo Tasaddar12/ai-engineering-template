@@ -584,5 +584,5 @@ Otherwise, end here — `confirm_creation` already ran; do not route back to it.
 - Checkpoint file cleaned up after successful CONTEXT.md write
 - `--chain` triggers interactive discuss followed by auto plan+execute (no auto-answering)
 - `--chain` and `--auto` both persist chain flag and auto-advance to plan-phase
-- Per-mode bodies, templates, and advisor flow are lazy-loaded — parent stays under the workflow size budget enforced by `tests/workflow-size-budget.test.cjs`
+- Per-mode bodies, templates, and advisor flow are lazy-loaded — parent stays under the workflow size budget enforced by `tests/test_workflow_size_budget.py`
 </success_criteria>

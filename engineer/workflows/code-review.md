@@ -441,7 +441,7 @@ The guard and the extraction it protects must run as one shell control-flow deci
 ```bash
 if [ "$DEPTH_OK" = "true" ]; then
   # Keep empty matched-rule fields when splitting; review.depth rejects control characters in paths.
-  DEPTH_FIELDS=$(printf '%s' "$DEPTH_JSON" | python -c 'import json,sys; d=json.load(sys.stdin.buffer); r=d.get("matchedRule") or {}; values=[d.get("resolvedDepth",d.get("depth","standard")),d.get("source",""),"" if r.get("index") is None else str(r["index"]),r.get("path", ""),str(bool(d.get("invalidFlagDepth",False))).lower(),str(bool(d.get("invalidConfigDepth",False))).lower(),str(bool(d.get("downgraded",False))).lower()]; sys.stdout.write("\x1f".join(values))')
+  DEPTH_FIELDS=$(printf '%s' "$DEPTH_JSON" | python -c 'import json,sys; d=json.load(sys.stdin.buffer); r=d.get("matchedRule") or {}; values=[d.get("depth","standard"),d.get("source",""),"" if r.get("index") is None else str(r["index"]),r.get("path", ""),str(bool(d.get("invalidFlagDepth",False))).lower(),str(bool(d.get("invalidConfigDepth",False))).lower(),str(bool(d.get("downgraded",False))).lower()]; sys.stdout.write("\x1f".join(values))')
   IFS=$'\x1f' read -r -d '' REVIEW_DEPTH DEPTH_SOURCE DEPTH_MATCHED_RULE_INDEX DEPTH_MATCHED_RULE_PATH \
     DEPTH_INVALID_FLAG DEPTH_INVALID_CONFIG DEPTH_DOWNGRADED <<< "$DEPTH_FIELDS" || true
   DEPTH_DOWNGRADED="${DEPTH_DOWNGRADED%$'\n'}"
@@ -752,7 +752,7 @@ fi
 
 if [ -f "${REVIEW_PATH}" ]; then
   # Validate the required status field with the Python frontmatter adapter.
-  HAS_STATUS=$(engineer_run query frontmatter.get "$REVIEW_PATH" --field status --raw 2>/dev/null && echo valid || echo invalid)
+  HAS_STATUS=$(engineer_run query frontmatter.get "$REVIEW_PATH" --field status --raw >/dev/null 2>&1 && echo valid || echo invalid)
     if [ "$HAS_STATUS" = "valid" ]; then
     echo "REVIEW.md created at ${REVIEW_PATH}"
     
@@ -785,7 +785,7 @@ Extract frontmatter between `---` delimiters first to avoid matching values in t
 # Read report fields through the Python frontmatter adapter; do not grep the Markdown body.
 STATUS=$(engineer_run query frontmatter.get "$REVIEW_PATH" --field status --raw 2>/dev/null || echo "unknown")
 FILES_REVIEWED=$(engineer_run query frontmatter.get "$REVIEW_PATH" --field files_reviewed --raw 2>/dev/null || echo "0")
-CRITICAL=$(engineer_run query frontmatter.get "$REVIEW_PATH" --field findings.critical --raw 2>/dev/null || echo "0")
+CRITICAL=$(engineer_run query frontmatter.get "$REVIEW_PATH" --field findings.critical --raw 2>/dev/null || engineer_run query frontmatter.get "$REVIEW_PATH" --field findings.blocker --raw 2>/dev/null || echo "0")
 WARNING=$(engineer_run query frontmatter.get "$REVIEW_PATH" --field findings.warning --raw 2>/dev/null || echo "0")
 INFO=$(engineer_run query frontmatter.get "$REVIEW_PATH" --field findings.info --raw 2>/dev/null || echo "0")
 TOTAL=$(engineer_run query frontmatter.get "$REVIEW_PATH" --field findings.total --raw 2>/dev/null || echo "0")

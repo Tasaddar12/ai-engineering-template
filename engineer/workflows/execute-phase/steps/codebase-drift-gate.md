@@ -15,7 +15,7 @@ _ENGINEER_SHIM_NAME="engineer_run"; _ENGINEER_RUNTIME_ROOT="${RUNTIME_DIR:-$(git
 # detection forever. The canonical launcher preamble is defined once here — the
 # always-run drift check, the file's first launcher block — and the conditional auto-remap
 # block below reuses the launcher function from this shared shell scope (the single-preamble
-# pattern established by discuss-phase, enforced by tests/runtime-launcher-parity.test.cjs).
+# pattern established by discuss-phase, enforced by tests/test_runtime_launcher_parity.py).
 # Non-blocking is preserved: an internal drift-command failure still falls through to the
 # skip JSON below. Exit 69 (UNAVAILABLE, ) is the verb saying "could not look": its payload is
 # already on stdout and is kept as the verdict; the fallback is applied only when the verb printed
