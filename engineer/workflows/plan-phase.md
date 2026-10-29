@@ -591,7 +591,7 @@ ls "${PHASE_DIR}"/*-PLAN.md 2>/dev/null || true
 Extract from INIT JSON:
 
 ```bash
-_engineer_field() { python -c 'import json,sys; v=json.loads(sys.argv[1]).get(sys.argv[2]); print("" if v is None else str(v).lower() if isinstance(v,bool) else v,end="")' "$1" "$2"; }
+_engineer_field() { value=$(printf '%s' "$1" | engineer_run query json.get --field "$2" --default '""' --raw) || return $?; [ "$value" = null ] && value=""; printf '%s' "$value"; }
 STATE_PATH=$(_engineer_field "$INIT" state_path)
 ROADMAP_PATH=$(_engineer_field "$INIT" roadmap_path)
 REQUIREMENTS_PATH=$(_engineer_field "$INIT" requirements_path)

@@ -860,9 +860,8 @@ rerun the same command. Do not fall back to broad worktree discovery.
 # list`'s first entry, which is always the main checkout and would pin a non-primary (per-phase
 # lane) orchestrator off its own branch, tripping the assertion below. Byte-identical
 # for a primary orchestrator (its root IS the first entry); the fallback covers pre- manifests.
-PRIMARY_WT=$(MANIFEST="$WAVE_WORKTREE_MANIFEST" python -c 'import json,os,pathlib
-try: print(json.loads(pathlib.Path(os.environ["MANIFEST"]).read_text(encoding="utf-8")).get("orchestrator_root") or "",end="")
-except (OSError,ValueError,AttributeError): pass')
+PRIMARY_WT=$(engineer_run query json.get --input "$WAVE_WORKTREE_MANIFEST" --field orchestrator_root --default '""' --raw 2>/dev/null || true)
+case "$PRIMARY_WT" in null|false|0|'[]'|'{}') PRIMARY_WT="" ;; esac
 [ -n "$PRIMARY_WT" ] || PRIMARY_WT=$(git worktree list --porcelain | awk '/^worktree /{print substr($0,10); exit}')
 if [ -z "$PRIMARY_WT" ]; then
   echo "FATAL: could not resolve orchestrator worktree before cleanup" >&2
@@ -884,15 +883,15 @@ If the orchestrator deviated from the standard wave merge path (e.g., custom int
 # Cleanup-tail: pin orchestrator CWD to its OWN worktree before cleanup-tail.
 # Same fix as the templated path: resolve the dispatch-time orchestrator root from the manifest,
 # not `git worktree list`'s first entry (always the main checkout — wrong for a lane orchestrator).
-PRIMARY_WT=$(MANIFEST="$WAVE_WORKTREE_MANIFEST" python -c 'import json,os,pathlib
-try: print(json.loads(pathlib.Path(os.environ["MANIFEST"]).read_text(encoding="utf-8")).get("orchestrator_root") or "",end="")
-except (OSError,ValueError,AttributeError): pass')
+PRIMARY_WT=$(engineer_run query json.get --input "$WAVE_WORKTREE_MANIFEST" --field orchestrator_root --default '""' --raw 2>/dev/null || true)
+case "$PRIMARY_WT" in null|false|0|'[]'|'{}') PRIMARY_WT="" ;; esac
 [ -n "$PRIMARY_WT" ] || PRIMARY_WT=$(git worktree list --porcelain | awk '/^worktree /{print substr($0,10); exit}')
 if [ -n "$PRIMARY_WT" ] && [ "$(pwd -P 2>/dev/null)" != "$(cd "$PRIMARY_WT" 2>/dev/null && pwd -P)" ]; then echo "⚠ Orchestrator CWD drifted to $(pwd) — pinning to $PRIMARY_WT before cleanup-tail "; cd "$PRIMARY_WT" || { echo "FATAL: cannot cd to primary worktree $PRIMARY_WT" >&2; exit 1; }; fi
 # Cleanup-tail: remove residual agent worktrees after a cross-wave-dependency deviation.
 # Uses only the current wave manifest to avoid touching unrelated active agents.
 WT_PATHS_FILE=$(mktemp "${TMPDIR:-/tmp}/engineer-worktree-paths-XXXXXX")
 python -c 'import json,os,pathlib,sys
+sys.stdout.reconfigure(encoding="utf-8")
 p=os.environ.get("WAVE_WORKTREE_MANIFEST")
 try:
  if not p: raise ValueError("WAVE_WORKTREE_MANIFEST is unset")

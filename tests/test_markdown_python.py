@@ -17,6 +17,9 @@ try:
 except ImportError:
     from test_engineer_runtime import RuntimeCase, SOURCE
 
+sys.path.insert(0, str(SOURCE/"engineer"/"bin"))
+from lib.posix_shell import find_posix_shell
+
 spec = importlib.util.spec_from_file_location("markdown_python", SOURCE/"scripts/check_markdown_python.py")
 scanner = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(scanner)
@@ -159,12 +162,12 @@ class MarkdownScan(unittest.TestCase):
 
 
 class InlineHelpers(RuntimeCase):
-    def run_code(self, code, *argv, stdin="", status=0):
+    def run_code(self, code, *argv, stdin="", status=0, encoding=None):
         # Execute the actual shell-decoded documentation argument as Python argv.
         environment = {key:value for key,value in self.env.items() if key not in ("PYTHONUTF8", "PYTHONIOENCODING")}
         process = subprocess.run([sys.executable, "-c", code, *map(str, argv)], cwd=self.root,
                                  env=environment, input=stdin,
-                                 encoding=locale.getencoding(), capture_output=True, timeout=10)
+                                 encoding=encoding or locale.getencoding(), capture_output=True, timeout=10)
         self.assertEqual(status, process.returncode, process.stderr+"\n"+code)
         return process
 
@@ -172,6 +175,97 @@ class InlineHelpers(RuntimeCase):
         matches = [code for code in snippets(file) if contains in code]
         self.assertEqual(1, len(set(matches)), contains)
         return matches[0]
+
+    def bash(self, script):
+        executable = find_posix_shell()
+        self.assertIsNotNone(executable, "Git Bash is required for shell-decoded fixtures")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)/"fixture.sh"
+            path.write_text(script, encoding="utf-8")
+            environment = {**self.env, "ENGINEER_PYTHON": Path(sys.executable).as_posix(),
+                           "ENGINEER_RUNTIME": (SOURCE/"engineer/bin/engineer.py").as_posix(),
+                           "PYTHONIOENCODING": "cp1252"}
+            return subprocess.run([executable, path.as_posix()], cwd=self.root, env=environment,
+                                  capture_output=True, timeout=15)
+
+    def test_runtime_field_reader_is_utf8_and_preserves_null_false_and_missing(self):
+        file = "engineer/workflows/new-milestone.md"
+        line = next(line for line in (SOURCE/file).read_text(encoding="utf-8").splitlines()
+                    if line.startswith("_engineer_field()"))
+        path_json = json.dumps({"path": f"C:/work/{chr(0x6f22)}/STATE.md"}, ensure_ascii=False)
+        script = "\n".join([
+            "set -e",
+            "engineer_run() { \"$ENGINEER_PYTHON\" -I \"$ENGINEER_RUNTIME\" \"$@\"; }",
+            line,
+            f"printf '%s\\n' \"$(_engineer_field '{path_json}' path)\"",
+            f"printf '%s\\n' \"$(_engineer_field '{json.dumps({'path': None})}' path)\"",
+            f"printf '%s\\n' \"$(_engineer_field '{json.dumps({'path': False})}' path)\"",
+            "printf '%s\\n' \"$(_engineer_field '{}' path)\"",
+            "set +e",
+            "_engineer_field '{bad' path >/dev/null; printf '%s\\n' \"$?\"",
+        ])
+        result = self.bash(script)
+        self.assertEqual(0, result.returncode, result.stderr.decode("utf-8"))
+        self.assertEqual(f"C:/work/{chr(0x6f22)}/STATE.md\n\nfalse\n\n2\n", result.stdout.decode("utf-8"))
+
+    def test_runtime_lane_reader_is_utf8_and_falls_back_for_null_or_bad_manifest(self):
+        source = (SOURCE/"engineer/workflows/execute-phase.md").read_text(encoding="utf-8")
+        primary = next(line for line in source.splitlines() if line.startswith("PRIMARY_WT=$(engineer_run query json.get"))
+        normalize = next(line for line in source.splitlines() if line.startswith("case \"$PRIMARY_WT\" in"))
+        fallback = next(line for line in source.splitlines() if line.startswith("[ -n \"$PRIMARY_WT\" ] || PRIMARY_WT=$(git worktree list"))
+        manifest = self.root/"manifest.json"
+        self.env["WAVE_WORKTREE_MANIFEST"] = str(manifest)
+        script = "\n".join([
+            "engineer_run() { \"$ENGINEER_PYTHON\" -I \"$ENGINEER_RUNTIME\" \"$@\"; }",
+            "git() { printf 'worktree C:/first-main\\n'; }",
+            primary,
+            normalize,
+            fallback,
+            "printf '%s' \"$PRIMARY_WT\"",
+        ])
+        for data, expected in (
+            ({"orchestrator_root": f"C:/work/{chr(0x6f22)}/lane"}, f"C:/work/{chr(0x6f22)}/lane"),
+            ({"orchestrator_root": None}, "C:/first-main"),
+        ):
+            manifest.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            result = self.bash(script)
+            self.assertEqual(0, result.returncode, result.stderr.decode("utf-8"))
+            self.assertEqual(expected, result.stdout.decode("utf-8"))
+        manifest.write_text("{bad", encoding="utf-8")
+        result = self.bash(script)
+        self.assertEqual(0, result.returncode, result.stderr.decode("utf-8"))
+        self.assertEqual("C:/first-main", result.stdout.decode("utf-8"))
+
+    def test_standalone_readers_emit_utf8_for_non_cp1252_paths(self):
+        sentinel = self.root/"recovery.json"
+        sentinel.write_text(json.dumps({"worktree_path": f"C:/work/{chr(0x6f22)}/orphan", "reviewfix_branch": "repair/01"}),
+                            encoding="utf-8")
+        recovery = self.code("agents/code-fixer.md", "malformed recovery sentinel")
+        script = "prior_recovery=$(\"$ENGINEER_PYTHON\" -c "+shlex.quote(recovery)+" \"$1\")\nprintf '%s' \"$prior_recovery\"\n"
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)/"fixture.sh"
+            path.write_text(script, encoding="utf-8")
+            result = subprocess.run([find_posix_shell(), path.as_posix(), sentinel.as_posix()], cwd=self.root,
+                                    env={**self.env, "ENGINEER_PYTHON": Path(sys.executable).as_posix(),
+                                         "PYTHONIOENCODING": "cp1252"}, capture_output=True, timeout=15)
+        self.assertEqual(0, result.returncode, result.stderr.decode("utf-8"))
+        self.assertEqual(f"C:/work/{chr(0x6f22)}/orphan\nrepair/01", result.stdout.decode("utf-8").replace("\r\n", "\n"))
+
+        manifest = self.root/"cleanup.json"
+        manifest.write_text(json.dumps({"worktrees": [{"worktree_path": f"C:/work/{chr(0x6f22)}/agent"}, {}]},
+                                       ensure_ascii=False), encoding="utf-8")
+        cleanup = self.code("engineer/workflows/execute-phase.md", "WAVE_WORKTREE_MANIFEST is unset")
+        script = "\"$ENGINEER_PYTHON\" -c "+shlex.quote(cleanup)+" > \"$1\"\n"
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)/"fixture.sh"
+            output = Path(directory)/"paths.txt"
+            path.write_text(script, encoding="utf-8")
+            result = subprocess.run([find_posix_shell(), path.as_posix(), output.as_posix()], cwd=self.root,
+                                    env={**self.env, "ENGINEER_PYTHON": Path(sys.executable).as_posix(),
+                                         "WAVE_WORKTREE_MANIFEST": manifest.as_posix(),
+                                         "PYTHONIOENCODING": "cp1252"}, capture_output=True, timeout=15)
+            self.assertEqual(0, result.returncode, result.stderr.decode("utf-8"))
+            self.assertEqual(f"C:/work/{chr(0x6f22)}/agent\n", output.read_bytes().decode("utf-8").replace("\r\n", "\n"))
 
     def test_config_and_recovery_sentinels(self):
         file = "agents/code-fixer.md"
@@ -189,7 +283,7 @@ class InlineHelpers(RuntimeCase):
         self.assertEqual('C:/work tree/quoted "é"', data['worktree_path'])
         self.assertTrue(data['started_at'])
         reader = self.code(file, 'malformed recovery sentinel')
-        self.assertEqual(data['worktree_path']+'\nreviewfix/01', self.run_code(reader, sentinel).stdout)
+        self.assertEqual(data['worktree_path']+'\nreviewfix/01', self.run_code(reader, sentinel, encoding="utf-8").stdout)
         sentinel.write_text('{bad', encoding="utf-8")
         failed = self.run_code(reader, sentinel)
         self.assertEqual('\n', failed.stdout)
@@ -202,14 +296,14 @@ class InlineHelpers(RuntimeCase):
         self.run_code(self.code(file, 'write_text'), stdin='')
         data = json.loads(path.read_text(encoding='utf-8'))
         self.assertEqual([], data['worktrees'])
-        self.assertEqual(self.env['ORCH_ROOT'], self.run_code(self.code(file, 'get("orchestrator_root")')).stdout)
+        self.assertEqual(self.env['ORCH_ROOT'], self.cli('json.get', '--field', 'orchestrator_root', '--raw',
+                                                         stdin=path.read_text(encoding='utf-8'), raw=True))
         data['worktrees'] = [{'worktree_path':'C:/space tree'}, {}]
         path.write_text(json.dumps(data), encoding='utf-8')
         cleanup = self.code(file, 'WAVE_WORKTREE_MANIFEST is unset')
         self.assertEqual('C:/space tree\n', self.run_code(cleanup).stdout)
         path.write_text('{bad', encoding='utf-8')
         self.assertIn('ERROR: cannot read worktree manifest', self.run_code(cleanup, status=1).stderr)
-        self.assertEqual('', self.run_code(self.code(file, 'get("orchestrator_root")')).stdout)
         del self.env['WAVE_WORKTREE_MANIFEST']
         self.assertIn('(unset)', self.run_code(cleanup, status=1).stderr)
 
@@ -235,9 +329,6 @@ class InlineHelpers(RuntimeCase):
         status=self.code(file,'PROJECT_MD_REVIEW=')
         self.assertEqual('PROJECT_MD_REVIEW=run\n',self.run_code(status,'{}').stdout)
         self.assertEqual('PROJECT_MD_REVIEW=skip\n',self.run_code(status,'{"section_manifest":{"included":[]}}').stdout)
-        field=self.code(file,'get(sys.argv[2])')
-        self.assertEqual('false',self.run_code(field,'{"flag":false}','flag').stdout)
-        self.assertEqual('',self.run_code(field,'{}','missing').stdout)
         gate=self.code(file,'sys.exit(0 if m')
         self.run_code(gate,'{}','any')
         self.run_code(gate,'{"section_manifest":{"included":[]}}','any',status=1)

@@ -276,6 +276,7 @@ if [ -f "$sentinel" ]; then
   # output forever. Emit both fields newline-separated so we can read them
   # independently.
   prior_recovery=$(python -c 'import json,pathlib,sys
+for stream in (sys.stdout,sys.stderr): stream.reconfigure(encoding="utf-8")
 try:
  d=json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")); print(str(d.get("worktree_path") or "")+"\n"+str(d.get("reviewfix_branch") or ""),end="")
 except (OSError,ValueError,AttributeError) as e:
