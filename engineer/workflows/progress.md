@@ -249,7 +249,7 @@ else
   for PHASE_NUM in $(echo "$ROADMAP" | jq -r '.phases[] | (.number // .phase_number)'); do
     PHASE_DATA=$(echo "$ROADMAP" | jq --arg n "$PHASE_NUM" '.phases[] | select((.number // .phase_number) == ($n | tonumber))')
     # $PHASE_DATA is a `.phases[]` entry from `roadmap.analyze`, which
-    # emits `plan_count`/`summary_count` SCALARS (`engineer/bin/lib/records.py`) — it has
+    # emits `plan_count`/`summary_count` SCALARS (engineer/bin/lib/records.py) — it has
     # never emitted `.plans`/`.summaries` ARRAYS. Reading those absent keys
     # (even with a `// []` fallback) always produced 0, permanently disabling
     # this resume-incomplete-phase check. Read the scalars the producer
@@ -318,7 +318,7 @@ Scan ALL phases for outstanding verification debt using the CLI. Milestone scopi
 ```bash
 DEBT=$(engineer_run query audit-uat --raw 2>/dev/null)
 # A cross-population audit is exactly the payload that can exceed the CLI's
-# ~50KB stdout budget (`engineer/bin/lib/io_output.py` writes an `@file:<tmp>` pointer) — unwrap it
+# ~50KB stdout budget (engineer/bin/lib/io_output.py writes an `@file:<tmp>` pointer) — unwrap it
 # before jq, the same pattern Step 1's INIT fetch uses, or every counter
 # below silently reads 0.
 if [[ "$DEBT" == @file:* ]]; then DEBT=$(cat "${DEBT#@file:}"); fi

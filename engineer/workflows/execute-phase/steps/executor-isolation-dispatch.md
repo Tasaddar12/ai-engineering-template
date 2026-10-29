@@ -66,7 +66,7 @@ fi
 # ISOLATION at all, so the recording cannot be skipped the way a separate
 # "and now also run this to record it" prose instruction could be. `--phase`
 # threads the phase identifier into that same atomic write (mode + harnessFlag
-# + phase together — see `hooks/worktree-path-guard.py` for the installed hook
+# + phase together — see hooks/worktree-path-guard.py for the installed hook
 # consume it).
 # Keep the resolver's own failure DISTINGUISHABLE from a genuine `none`, exactly
 # as references/dispatch-isolation-gate.md does — this site declares that gate
@@ -118,7 +118,7 @@ fi
 # base-check degrade is decided here, not inside engineer.py) through the
 # SAME single write path (`--force-isolation none` also clears the stored
 # harnessFlag, since none applies to sequential dispatch). The isolation
-# guard hook (`hooks/worktree-path-guard.py`)
+# guard hook (hooks/worktree-path-guard.py)
 # read this sentinel instead of
 # re-deriving a host CAPABILITY from the registry — the registry's
 # harness-worktree entry means "this host CAN isolate", not "this dispatch

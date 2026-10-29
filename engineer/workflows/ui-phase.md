@@ -415,7 +415,7 @@ applicable state considerations — is this genuinely a state-free surface, or s
 element descriptions?"). Only write an empty section after explicit confirmation.
 
 **Propose-then-confirm (the partial-cue mitigation — load-bearing).** For each element, the engine
-reports the DETECTED element kinds (`the Python implementation in `engineer/bin/lib/ui_consideration_probe.py`). The prose classifier
+reports the DETECTED element kinds (the Python implementation in `engineer/bin/lib/ui_consideration_probe.py`). The prose classifier
 is heuristic and LOSSY: a surface that is genuinely both a form and a list, but whose prose trips
 only the form cue, under-covers — and because SOMETHING classified, no `unclassified` signal fires.
 So SURFACE the detected kinds to the user (AskUserQuestion) and ask whether any real element kind
