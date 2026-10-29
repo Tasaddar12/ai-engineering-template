@@ -74,7 +74,7 @@ Quick tasks ask clarifying questions by default, then research as needed to esta
 | Goal | End state you can check |
 |---|---|
 | One workflow tree | `.ai/` is gone. `agents/`, `commands/`, `engineer/`, `hooks/`, `bin/`, `skills/` hold everything. `.planning/` holds only project records. |
-| No Node | `python scripts/check_markdown_python.py` scans every tracked Markdown file and reports no executable Node commands or retired helper invocations. |
+| No Node | `grep -rnE "engineer_run\|\.cjs\|npx \|node (-e\|-p\|-c\|\")" agents commands engineer hooks bin skills` returns nothing. The kept upstream files contain about 97 inline `node -e` JSON helpers and two `.cjs` probe scripts; rows V-150 to V-152 replace them with `--pick` or Python. |
 | One runtime command | Every workflow calls `engineer_run query <verb>`. `engineer_run` is a bash shim that runs `engineer/bin/engineer.py` with Python 3. |
 | No dangling upstream plumbing | `grep -rn "engineer_run\|engineer\|/" agents commands engineer` returns nothing. |
 | Our behavior preserved | The unattended execute → verify → ship chain, mandatory worktree isolation, phase authority, receipts, frozen-revision verification, issue/PR automation and exact-approval cleanup all work as on `main`. `python -m unittest discover -s tests` passes. |
@@ -285,7 +285,7 @@ python -m unittest discover -s tests
 ### Phase 7: Missing runtime verbs and Node removal (rows V with action NEW or REPLACE)
 
 - Implement each NEW verb in the module its row names, with a unit test.
-- Replace every inline JavaScript eval/print/syntax helper (V-150) and the `.cjs` probe scripts (V-151, V-152). Use the bundled `*-probe-fixtures/` as test oracles.
+- Replace every inline `node -e/-p/-c` helper (V-150) and the `.cjs` probe scripts (V-151, V-152). Use the bundled `*-probe-fixtures/` as test oracles.
 - Delete the call sites of DROP verbs as their rows say.
 
 ```check
@@ -3070,7 +3070,7 @@ Done when:
 | R-RF-81 | REPLACE | engineer/references/gate-prompts.md:5 | .ai/references/gate-prompts.md:5 | Inline the checkpoint format, because ui-brand.md is not kept. |
 | R-RF-82 | REPLACE | engineer/references/few-shot-examples/plan-checker.md:39, 43 | .ai/references/methods/few-shot-examples/plan-checker.md:39, 43 | Reframe the same-file example as a producer/consumer dependency finding (shared ownership already serializes dispatch). |
 | R-RF-83 | KEEP-UPSTREAM | engineer/references/{edge-probe,prohibition-probe,ui-consideration-probe}.md, edge-probe-fixtures/, prohibition-probe-fixtures/ | (none) | Keep the feature probes and fixtures, applying only the path convention. |
-| R-RF-84 | REPLACE | engineer/references/specless-probe-fallback.md:20-36 | (none) | Replace the retired JavaScript section helper and `npm run build:lib` helper with an `engineer_run` or Python equivalent (no Node). |
+| R-RF-84 | REPLACE | engineer/references/specless-probe-fallback.md:20-36 | (none) | Replace the `node spec-section.cjs` and `npm run build:lib` helper with an `engineer_run` or Python equivalent (no Node). |
 | R-RF-85 | REMOVE | engineer/references/git-integration.md:1-309 | .ai/references/git-workflow.md:1-316 | Delete after R-RF-91 lands, first confirming that per-task commit formats (60-120) are covered and that `sub_repos` (259-309) is intentionally unsupported. |
 | R-RF-86 | REMOVE | engineer/references/agent-contracts.md:1-97 | .ai/references/worker-handoff.md:1-190 | Delete after R-RF-92 lands, first moving any still-used marker regexes (83-97) into the engineer workflows that grep them. |
 | R-RF-87 | REMOVE | engineer/references/revision-loop.md:1-204 | .ai/references/bounded-correction-dispatch.md:1-50 | Delete after R-RF-93 lands, because the max-3 escalation conflicts with local "no fixed review-count exemption" (gates.md:28). |
@@ -3167,7 +3167,7 @@ Done when:
 
 Done when:
 - `test -f engineer/templates/config.yaml && test ! -e engineer/templates/config.json` passes.
-- `python -X utf8 -c "import yaml,sys; d=yaml.safe_load(open('engineer/templates/config.yaml')); assert {'commit_docs','context_window','workflow','worktree','handoff','codebase','agents','verification'} <= d.keys()"` exits 0.
+- `python -c "import yaml,sys; d=yaml.safe_load(open('engineer/templates/config.yaml')); assert {'commit_docs','context_window','workflow','worktree','handoff','codebase','agents','verification'} <= d.keys()"` exits 0.
 - `grep -n "phase_run\|\.ai/runtime" engineer/templates/config.yaml` returns nothing.
 - `grep -rn "config\.json" engineer/references/{checkpoints,context-budget,nyquist-compliance,universal-anti-patterns,planner-load-graph-context}.md engineer/templates/README.md` returns nothing.
 
@@ -3243,7 +3243,7 @@ Pattern searched: `\.ai/|\.ai\b|phase_run|PHASE_RUNTIME|\.codex/runtime|\.claude
 | R-RT-37 | `.ai/runtime/TEMPLATE-CONTRACT.md` | 20, 43, 119, 142, 153, 317, 409, 423-425, 443 (11) | `.ai/templates/*`, `.ai/agents/`, `phase_run`, `.ai/install-assets/codex-agents/` | EDIT | Repoint to `engineer/templates/`, `agents/`, `engineer_run`, `bin/install-assets/codex-agents/`. |
 | R-RT-38 | `.ai/workflows/_runtime.snippet.sh` | 2, 4, 8-14, 16-17, 24-27 (15) | `PHASE_RUNTIME`, `.ai\|.claude\|.codex/runtime/phase.py`, `phase_run`, `ai-phase-runtime` | PORT | Covered by R-RT-07. |
 | R-RT-39 | `.ai/bin/phase_run` | 2, 4, 9, 25, 31 (5) | name, `runtime/phase.py`, `.ai-venv` | PORT | Covered by R-RT-02. |
-| R-RT-40 | 63 kept files carrying the upstream launcher one-liner, including the snippet file itself (e.g. `agents/code-fixer.md:536`, `engineer/workflows/ship.md:31`, `engineer/workflows/quick.md:42`) | 1 per file (63) | the retired JavaScript launcher one-liner | REPLACE | Replace each one-liner byte-for-byte with the R-RT-07 snippet; then `sed -i 's/\bengineer_run\b/engineer_run/g'` on the kept files. |
+| R-RT-40 | 63 kept files carrying the upstream launcher one-liner, including the snippet file itself (e.g. `agents/code-fixer.md:536`, `engineer/workflows/ship.md:31`, `engineer/workflows/quick.md:42`) | 1 per file (63) | `_ENGINEER_SHIM_NAME="engineer.py"` ... `node "$ENGINEER_TOOLS"` | REPLACE | Replace each one-liner byte-for-byte with the R-RT-07 snippet; then `sed -i 's/\bengineer_run\b/engineer_run/g'` on the kept files. |
 | R-RT-41 | 16 kept files with other `engineer_run` mentions (34 lines; e.g. `engineer/workflows/update.md` 10 from line 22, `agents/verifier.md` 3 from 85, `commands/quick.md` 3 from 80, `executor-isolation-dispatch.md` 3 from 53) | 34 | prose/paths naming `engineer.py` | EDIT | Rename to `engineer_run`/`engineer/bin/engineer.py` or delete the sentence. |
 | R-RT-42 | `.ai/hooks/worktree-guard.sh` | 134, 211, 219, 253 (4) | `.ai/RULES.md#...`, `phase_run query session.open`, `.ai/references/worktree-path-safety.md` | PORT | In the Python port use `engineer_run query session.open`, `engineer/references/worktree-path-safety.md`, and the RULES path chosen by the docs section. |
 | R-RT-43 | `.ai/hooks/context-handoff.sh` | 419 (1) | `phase_run query handoff.write` in the advisory text | EDIT | `engineer_run query handoff.write`. |
@@ -3423,10 +3423,10 @@ Cross-cutting call-shape and non-verb Node rows (same ID series):
 | V-147 | `config-get ... --default <v>` | 19 lines in 15 files: `engineer/workflows/audit-fix.md:124`, `engineer/workflows/cleanup.md:19` | `config-get` | NEW option | Implement in `verb_config_get` (engineer.py; was phase.py 148-151): return `--default` when the key is absent; without it exit 1 (`key-not-found`). Today it prints an empty line and exits 0, which defeats every `\|\| echo "<default>"` fallback. |
 | V-148 | workstreams `--ws` / `ENGINEER_WS` | 69 `--ws` call lines in 25 files, 175 `ENGINEER_WS` lines in 26 files: `engineer/workflows/add-phase.md:39`, `engineer/workflows/add-phase.md:40` | - | DROP | Delete the `ENGINEER_WS=...` parse lines and every `${ENGINEER_WS:+--ws=...}` / `$ENGINEER_WS_ARG` argument (workstreams dropped; no local workstream model). |
 | V-149 | `@file:` overflow unwrap | 55 lines in 34 files: `agents/executor.md:55`, `agents/debugger.md:963` | - | DROP | Delete the `[[ "$X" == @file:* ]] && X=$(cat ...)` lines; engineer.py always writes JSON to stdout. |
-| V-150 | inline JavaScript eval/print/syntax JSON helpers | 97 lines in 26 files: `engineer/workflows/code-review.md:40` (21 in file), `agents/code-fixer.md:112` (8) | `--pick` / python | REPLACE | Replace each with `--pick` on the producing `engineer_run` call; where the input is not engineer output, use `python3 -c` (via the interpreter the launcher found) - never `node`. |
-| V-151 | the retired edge-probe invocation (edge-probe.cjs) | 10 lines: `engineer/workflows/spec-phase.md:228`, `engineer/references/specless-probe-fallback.md:70` | `spec.edge-probe` | NEW | Implement in `engineer/bin/lib/probes.py`: read the requirements JSON array, emit `{items[{requirement_id,category,status,verification,resolution,reason,probe}], coverage{applicable,unclassified,...}}`; exit 2 on bad shape; oracle = `engineer/references/edge-probe-fixtures/01..06`. |
-| V-152 | the retired section-probe invocation (spec-section.cjs) | 6 lines: `engineer/references/specless-probe-fallback.md:30`, `engineer/references/specless-probe-fallback.md:36` | `spec.section` | NEW | Implement in `engineer/bin/lib/probes.py`: `spec.section <SPEC.md> edges\|prohibitions` -> `{supplied: bool, items[]}`. |
-| V-153 | the retired changeset invocation | 5 + 2 lines: `engineer/workflows/update.md:230`, `engineer/workflows/_runtime-launcher.snippet.sh:1` | `bin/update.py` | DROP | Rewrite `engineer/workflows/update.md` around `python bin/update.py` (preview, apply); delete the changelog CLI preview. |
+| V-150 | inline `node -e/-p/-c` JSON helpers | 97 lines in 26 files: `engineer/workflows/code-review.md:40` (21 in file), `agents/code-fixer.md:112` (8) | `--pick` / python | REPLACE | Replace each with `--pick` on the producing `engineer_run` call; where the input is not engineer output, use `python3 -c` (via the interpreter the launcher found) - never `node`. |
+| V-151 | `node "$EDGE_PROBE_JS"` (edge-probe.cjs) | 10 lines: `engineer/workflows/spec-phase.md:228`, `engineer/references/specless-probe-fallback.md:70` | `spec.edge-probe` | NEW | Implement in `engineer/bin/lib/probes.py`: read the requirements JSON array, emit `{items[{requirement_id,category,status,verification,resolution,reason,probe}], coverage{applicable,unclassified,...}}`; exit 2 on bad shape; oracle = `engineer/references/edge-probe-fixtures/01..06`. |
+| V-152 | `node "$SPEC_SECTION_JS"` (spec-section.cjs) | 6 lines: `engineer/references/specless-probe-fallback.md:30`, `engineer/references/specless-probe-fallback.md:36` | `spec.section` | NEW | Implement in `engineer/bin/lib/probes.py`: `spec.section <SPEC.md> edges\|prohibitions` -> `{supplied: bool, items[]}`. |
+| V-153 | `node "$ENGINEER_CHANGESET_CLI"` | 5 + 2 lines: `engineer/workflows/update.md:230`, `engineer/workflows/_runtime-launcher.snippet.sh:1` | `bin/update.py` | DROP | Rewrite `engineer/workflows/update.md` around `python bin/update.py` (preview, apply); delete the changelog CLI preview. |
 | V-154 | agent names passed to the runtime (`executor`, `code-reviewer`, ...) | in `agent-skills` (32) and `resolve-model` (10) calls: `engineer/workflows/execute-phase.md:99`, `engineer/workflows/audit-fix.md:104` | `models.agents_dir()` | MAP | Resolve names against `<ns>/agents/*.md`; rename `executor` -> `executor` (only `agents/executor.md` exists); use whatever final names the agents section fixes. |
 
 Totals: 154 rows (V-01..V-154). Actions: MAP 62, NEW 55, DROP 36, REPLACE 1.
@@ -3486,7 +3486,7 @@ Local defaults live in `engineer/bin/lib/config.py` `DEFAULTS` (was `.ai/runtime
 | C-43 | noise tokens from the grep (`COMMAND`, `calls.`, `is`, `needed.`) | - | - | - | Ignore: prose around `config-get`, not keys. |
 
 Done when:
-- `python -X utf8 -c "import sys; sys.path.insert(0,'engineer/bin'); from lib.config import DEFAULTS as D; w=D['workflow']; assert all(k in w for k in ('code_review','code_review_depth','tdd_mode','ui_phase','security_asvs_level','security_block_on','security_enforcement','nyquist_validation','plan_chunked','specless_probe_fallback','human_verify_mode','live_dom_uat','ui_interaction_capture','context_coverage_gate','agent_hint_routing'))"` exits 0
+- `python -c "import sys; sys.path.insert(0,'engineer/bin'); from lib.config import DEFAULTS as D; w=D['workflow']; assert all(k in w for k in ('code_review','code_review_depth','tdd_mode','ui_phase','security_asvs_level','security_block_on','security_enforcement','nyquist_validation','plan_chunked','specless_probe_fallback','human_verify_mode','live_dom_uat','ui_interaction_capture','context_coverage_gate','agent_hint_routing'))"` exits 0
 - `engineer_run query config-get workflow.nonexistent --raw; test $? -eq 1`
 - `test "$(engineer_run query config-get workflow.nonexistent --default x --raw)" = x`
 - `grep -rn 'use_worktrees\|worktree_skip_hooks\|plan_review_convergence\|global_learnings\|_auto_chain_active\|code_review_point\|pr_body_sections\|test_gate_timeout\|build_command' agents commands engineer` returns nothing

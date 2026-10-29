@@ -381,20 +381,20 @@ author an explicit `elements` array on that element instead of relying on the pr
 
 ```bash
 # The Python runtime owns probe loading; no build step is needed.
-# Element extraction (MANUAL BY DESIGN â€” not an oversight): the agent reads the researcher-authored
-# UI-SPEC prose (the described surfaces â€” the Design System / Copywriting rows and any element the
+# Element extraction (MANUAL BY DESIGN — not an oversight): the agent reads the researcher-authored
+# UI-SPEC prose (the described surfaces — the Design System / Copywriting rows and any element the
 # researcher named) and writes ONE object per UI element/surface: {"id","text","text_en"?} where
 # text is the prose describing it. This mirrors spec-phase Step 5.5's edge-probe REQS_JSON step
-# VERBATIM â€” a
-# hand-populated heredoc guarded by the fail-loud <replace:> check below â€” the established, shipped
+# VERBATIM — a
+# hand-populated heredoc guarded by the fail-loud <replace:> check below — the established, shipped
 # pattern for feeding a probe from a prose spec. It is NOT mechanized on purpose: a UI-SPEC has no
-# single machine-parseable "elements" column â€” surfaces are distributed across design-token tables
+# single machine-parseable "elements" column — surfaces are distributed across design-token tables
 # (Design System / Typography / Color), the Copywriting section, and prose the researcher names, so a
 # regex/table parse would fail-OPEN (miss a prose-named surface, or feed a design-token row as a bogus
 # element). The agent-authored heredoc + fail-loud guard is the conservative choice, identical to the
 # requirement-side edge-probe path (RR-04). If a future UI-SPEC gains a canonical element table,
 # revisit to parse it. Populate the heredoc from the UI-SPEC; the guard below fails loud on a
-# forgotten substitution (never a no-op). When `response_language` is set, ALSO add `text_en` â€” a
+# forgotten substitution (never a no-op). When `response_language` is set, ALSO add `text_en` — a
 # faithful ENGLISH translation of `text` (see the Non-English projects note above); the element
 # cues are English-only, so original-language `text` alone classifies to zero kinds. `text` itself
 # stays the UI-SPEC's own wording and is never translated.
@@ -410,7 +410,7 @@ if ! engineer_run query json.validate --schema elements --input "$ELEMENTS_JSON"
   exit 1
 fi
 # Invoke the compiled engine and CAPTURE its report. FATAL-INVOKE GUARD: use `if ! COVERAGE=$(…)`,
-# NEVER a bare an unchecked coverage command substitution — a bare capture swallows the engine's exit 2 (invalid shape /
+# NEVER an unchecked coverage command substitution — a bare capture swallows the engine's exit 2 (invalid shape /
 # bad input) and falls through to prose re-derivation: fail-OPEN at the exact boundary the engine
 # validation protects.
 if ! COVERAGE=$(engineer_run query spec.ui-probe "$ELEMENTS_JSON"); then

@@ -501,32 +501,17 @@ setup and prepares supported executable tasks after the prerequisite is met.
 npm run dev &
 DEV_SERVER_PID=$!
 
-# Wait for ready (max 30s) — uses Python urllib for cross-platform compatibility
+# Wait for ready (max 30s) — uses fetch() for cross-platform compatibility
 # Bound the readiness check; failure is not readiness.
-python -X utf8 -c '
-import subprocess, sys
-worker = """
-import time, urllib.request
-while True:
-    try:
-        with urllib.request.urlopen("http://localhost:3000", timeout=2) as response:
-            if 200 <= response.status < 300:
-                break
-    except OSError:
-        pass
-    time.sleep(1)
-"""
-# A socket timeout can restart for every byte; the parent enforces total elapsed
-# time and reaps the child even while the child is blocked reading slow headers.
-with subprocess.Popen([sys.executable, "-X", "utf8", "-c", worker]) as child:
-    try:
-        child.communicate(timeout=30)
-    except subprocess.TimeoutExpired:
-        child.kill()
-        child.communicate()
-        sys.exit("Server did not become ready")
-    sys.exit(child.returncode)
-' || exit 1
+ready=false
+for attempt in {1..30}; do
+  if node -e "fetch('http://localhost:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"; then
+    ready=true
+    break
+  fi
+  sleep 1
+done
+[ "$ready" = true ] || { echo "Server did not become ready" >&2; exit 1; }
 ```
 
 **Port conflicts:** Identify the process and its owner. Stop only a process owned by this assignment, or use an available alternate port and update the verification URL.

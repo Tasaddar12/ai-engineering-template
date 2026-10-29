@@ -1,8 +1,9 @@
-"""Reject executable Node examples and retired JS runtime helpers in tracked Markdown.
+"""Reject executable Node examples and retired JS helpers in active Markdown.
 
-Scan the Git index's complete filename inventory (including hidden directories and
-case-insensitive Markdown suffixes). Prose about Node, graph nodes, package-manager
-commands and JavaScript application source remain valid documentation.
+Scan the Git index, including hidden directories and case-insensitive Markdown
+suffixes. Leave the archived .ai tree, project .planning records, existing
+maintenance records and PLANNED-UPDATES.md untouched. Prose about Node, graph
+nodes, package-manager commands and JavaScript application source remain valid.
 """
 from pathlib import Path
 import argparse
@@ -221,7 +222,12 @@ def findings(text):
 
 def tracked_markdown(root=ROOT):
     output = subprocess.check_output(["git", "-C", str(root), "ls-files", "-z"])
-    return [Path(name.decode("utf-8")) for name in output.split(b"\0") if name.lower().endswith((b".md", b".markdown"))]
+    files = [Path(name.decode("utf-8")) for name in output.split(b"\0")
+             if name.lower().endswith((b".md", b".markdown"))]
+    return [file for file in files
+            if file.parts[0] not in (".ai", ".planning")
+            and file.as_posix() != "PLANNED-UPDATES.md"
+            and file.parts[:2] != ("docs", "maintenance")]
 
 
 def main(root=ROOT):

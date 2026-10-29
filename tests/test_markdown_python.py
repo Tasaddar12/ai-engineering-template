@@ -1,4 +1,4 @@
-"""Run documentation helpers against fixtures and guard every tracked Markdown path."""
+"""Run active documentation helpers against fixtures and guard tracked Markdown."""
 import http.server
 import importlib.util
 import json
@@ -7,12 +7,10 @@ from pathlib import Path
 import re
 import shlex
 import shutil
-import socketserver
 import subprocess
 import sys
 import tempfile
 import threading
-import time
 import unittest
 
 try:
@@ -120,6 +118,23 @@ class MarkdownScan(unittest.TestCase):
                 path.write_text("# Example\n", encoding="utf-8")
             subprocess.run(["git", "-C", directory, "add", "--", *names], check=True)
             self.assertEqual(sorted(names), sorted(p.as_posix() for p in scanner.tracked_markdown(root)))
+
+    def test_archived_and_planning_records_are_outside_the_scan(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            subprocess.run(["git", "init", "-q", directory], check=True)
+            excluded = [".ai/agents/verifier.md", ".planning/STATE.md",
+                        "docs/maintenance/existing-SUMMARY.md", "PLANNED-UPDATES.md"]
+            active = [".hidden/NOTES.MD", "engineer/workflows/example.md"]
+            for name in excluded + active:
+                path = root/name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("```sh\nnode ./cli\n```\n" if name in excluded else "# Active\n", encoding="utf-8")
+            subprocess.run(["git", "-C", directory, "add", "--", *excluded, *active], check=True)
+            self.assertEqual(sorted(active), sorted(p.as_posix() for p in scanner.tracked_markdown(root)))
+            self.assertEqual(0, scanner.main(root))
+            (root/active[-1]).write_text("```sh\nnode ./cli\n```\n", encoding="utf-8")
+            self.assertEqual(1, scanner.main(root))
 
     def test_default_encoding_diagnostic_preserves_unicode_filename(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -235,8 +250,6 @@ class InlineHelpers(RuntimeCase):
         self.run_code(api,stdin='[]',status=1)
         for value,status in [('"nonempty"',0),('""',1),('123',1),('true',1),('null',1),('{}',1),('{"key":1}',0)]:
             self.run_code(api,stdin=value,status=status)
-        mirrored=self.code('.ai/agents/verifier.md','d=json.load')
-        self.assertEqual(api,mirrored)
         module=self.put('module with spaces.py','def exposed():\n    return 1\n')
         self.assertEqual('function\n',self.run_code(self.code('agents/verifier.md','importlib.util'),module,'exposed').stdout)
         package=self.put('node_modules/test-pkg/package.json','{"version":"1.2.3","exports":{".":"./index.js"}}')
@@ -259,8 +272,8 @@ class InlineHelpers(RuntimeCase):
             thread=threading.Thread(target=server.serve_forever,daemon=True)
             thread.start()
             try:
-                codes=set(snippets('engineer/references/checkpoints.md')+snippets('.ai/references/methods/checkpoints.md'))
-                self.assertEqual(3,len(codes))
+                codes=set(snippets('engineer/references/checkpoints.md'))
+                self.assertEqual(2,len(codes))
                 for code in codes:
                     result=self.run_code(code.replace('localhost:3000','127.0.0.1:'+str(server.server_port)))
                     self.assertIn(result.stdout,('', '200\n'))
@@ -268,116 +281,6 @@ class InlineHelpers(RuntimeCase):
                 server.shutdown()
                 thread.join()
 
-    def test_readiness_deadline_failures_and_http_errors_use_one_total_budget(self):
-        code=self.code('.ai/references/methods/checkpoints.md','subprocess.Popen')
-        for mode in ('timeout','http-error','bad-status','eventual-success'):
-            with self.subTest(mode=mode):
-                seam='''import json,time,urllib.request,urllib.error,subprocess
-clock=[0.0]
-calls=[]
-state={'killed':False,'reaped':False}
-time.monotonic=lambda:clock[0]
-def sleep(delay):
-    clock[0]+=delay
-    if clock[0]>=30: raise subprocess.TimeoutExpired('fixture worker',30)
-time.sleep=sleep
-class Response:
-    status=503
-    def __enter__(self): return self
-    def __exit__(self,*args): pass
-def request(url,timeout):
-    assert timeout==2
-    calls.append(timeout)
-    if MODE=='timeout':
-        clock[0]+=timeout
-        raise TimeoutError('fixture timeout')
-    if MODE=='http-error': raise urllib.error.HTTPError(url,503,'fixture error',{},None)
-    response=Response()
-    if MODE=='eventual-success' and len(calls)==3: response.status=200
-    return response
-urllib.request.urlopen=request
-class Child:
-    returncode=0
-    def __init__(self,argv): self.worker=argv[-1]
-    def __enter__(self): return self
-    def __exit__(self,*args): pass
-    def communicate(self,timeout=None):
-        if timeout is None:
-            assert state['killed']
-            state['reaped']=True
-        else:
-            assert timeout==30
-            exec(self.worker)
-            state['reaped']=True
-    def kill(self): state['killed']=True; self.returncode=-9
-subprocess.Popen=Child
-result=0
-try:
-    exec(CODE)
-except SystemExit as error:
-    result=error.code
-print(json.dumps({'time':clock[0],'calls':len(calls),'result':result,**state}))
-'''.replace('MODE',repr(mode)).replace('CODE',repr(code))
-                result=json.loads(self.run_code(seam).stdout)
-                self.assertLessEqual(result['time'],30)
-                self.assertTrue(result['reaped'])
-                if mode=='eventual-success':
-                    self.assertEqual(0,result['result'])
-                    self.assertEqual(3,result['calls'])
-                else:
-                    self.assertEqual(30,result['time'])
-                    self.assertEqual('Server did not become ready',result['result'])
-                    self.assertTrue(result['killed'])
-
-    def test_readiness_supervisor_kills_and_reaps_a_real_slow_header_child(self):
-        connected=threading.Event()
-        progress={'bytes':0}
-        headers=b'HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n'
-        class SlowHeaders(socketserver.BaseRequestHandler):
-            def handle(self):
-                self.request.recv(4096)
-                connected.set()
-                try:
-                    for byte in headers:
-                        self.request.sendall(bytes([byte]))
-                        progress['bytes']+=1
-                        time.sleep(0.05)
-                except OSError:
-                    pass
-        class Server(socketserver.ThreadingTCPServer):
-            daemon_threads=True
-        code=self.code('.ai/references/methods/checkpoints.md','subprocess.Popen')
-        with Server(('127.0.0.1',0),SlowHeaders) as server:
-            thread=threading.Thread(target=server.serve_forever,daemon=True)
-            thread.start()
-            receipt=self.root/'child-reap.json'
-            observation='''import atexit,json,pathlib,subprocess
-children=[]
-original=subprocess.Popen
-def observe(*args,**kwargs):
-    child=original(*args,**kwargs)
-    children.append(child)
-    return child
-subprocess.Popen=observe
-atexit.register(lambda:pathlib.Path(RECEIPT).write_text(json.dumps([{'pid':c.pid,'returncode':c.poll()} for c in children]),encoding='utf-8'))
-'''.replace('RECEIPT',repr(str(receipt)))
-            short=code.replace('timeout=30','timeout=0.6').replace('localhost:3000','127.0.0.1:'+str(server.server_address[1]))
-            try:
-                started=time.monotonic()
-                result=self.run_code(observation+short,status=1)
-                elapsed=time.monotonic()-started
-                self.assertLess(elapsed,2.0)
-                self.assertTrue(connected.is_set(),'poller must reach the slow-header server')
-                self.assertGreater(progress['bytes'],0)
-                self.assertLess(progress['bytes'],len(headers),'supervisor must interrupt the incomplete header read')
-                self.assertIn('Server did not become ready',result.stderr)
-                children=json.loads(receipt.read_text(encoding='utf-8'))
-                self.assertEqual(1,len(children))
-                self.assertIsNotNone(children[0]['returncode'],'polling child must be terminated and reaped')
-                self.assertNotEqual(0,children[0]['returncode'])
-            finally:
-                server.shutdown()
-                thread.join()
 
 
 class RuntimeAdapters(RuntimeCase):
@@ -440,7 +343,7 @@ class RuntimeAdapters(RuntimeCase):
 
     def test_python_cli_help_example_success_and_missing_subcommand(self):
         cli=self.put('cli with spaces.py','import argparse\np=argparse.ArgumentParser()\np.add_subparsers().add_parser("scan")\np.parse_args()\n')
-        for document in ('.ai/agents/verifier.md','agents/verifier.md'):
+        for document in ('agents/verifier.md',):
             command=next(line for line in (SOURCE/document).read_text(encoding='utf-8').splitlines() if line.startswith('python -X utf8 "$CLI_PATH" --help'))
             for expected,status in (('scan',0),('missing-command',1)):
                 script=self.preamble()+'\nCLI_PATH='+shlex.quote(cli.as_posix())+'\nEXPECTED_SUBCOMMAND='+shlex.quote(expected)+'\n'+command

@@ -294,7 +294,7 @@ fi
 # re-derives the taxonomy from prose unaided. Floor, never ceiling: the classifier has a measured
 # recall gap, so the model still ADDS any category the engine missed.
 # The engine FAILS CLOSED (exit 2) on an invalid authored shape or bad input — so the capture
-# MUST be exit-checked. A bare an unchecked coverage command substitution swallows that exit code, leaves $COVERAGE
+# MUST be exit-checked. An unchecked coverage command substitution swallows that exit code, leaves $COVERAGE
 # empty, and lets the workflow fall through to prose re-derivation: fail-OPEN at the boundary
 # the engine validation exists to protect. Make the run fatal, then validate the captured
 # report is well-formed JSON before the resolution loop consumes it.

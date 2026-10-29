@@ -68,7 +68,7 @@ if ! engineer_run query json.validate --schema requirements --input "$REQS_JSON"
   echo "ERROR: edge-probe requirements JSON is empty/invalid or still holds the <replace: …> placeholder — populate \$REQS_JSON from {phase_req_ids} before running." >&2
   exit 1
 fi
-# Invoke + CAPTURE, exit-checked (engine FAILS CLOSED exit 2 on bad shape; a bare an unchecked coverage command substitution
+# Invoke + CAPTURE, exit-checked (engine FAILS CLOSED exit 2 on bad shape; an unchecked coverage command substitution
 # would swallow it and fall through to prose re-derivation = fail-OPEN).
 if ! COVERAGE=$(engineer_run query spec.edge-probe "$REQS_JSON"); then
   rm -f "$REQS_JSON"
