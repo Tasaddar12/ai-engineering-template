@@ -69,27 +69,33 @@ _pn="${PHASE_NUMBER:-}"
 _ok=1
 [ -n "$_pd" ] || _ok=0
 case "$_pn" in
-  ''|*[!0-9.A-Z]*) _ok=0 ;;   # empty, or any character outside [0-9.A-Z] -- this is the traversal fence
+  ''|*[!0-9.A-Za-z]*) _ok=0 ;;   # empty, or any character outside the phase alphabet -- this is the traversal fence
   .*|*.)           _ok=0 ;;   # leading or trailing dot
   *..*)            _ok=0 ;;   # EMPTY SEGMENT. The three arms plus the letter-axis block below
-                              # accept exactly digits[LETTER](.digits)* -- byte-congruent with the
-                              # callers' ^[0-9]+[A-Z]?(\.[0-9]+)*$ -- rather than merely wider than
+                              # accept exactly digits[letter](.digits[lowercase-letter]?)* with a legacy uppercase major suffix --
+                              # byte-congruent with the callers' ^[0-9]+([a-z]|[A-Z])?(\.[0-9]+[a-z]?)*$ -- rather than merely wider than
                               # the retired `*.*.*` arity bound, which masked `1..2` by accident.
 esac
-# THE LETTER AXIS. The canonical grammar (`engineer_run query find-phase`) is digits, an OPTIONAL single uppercase
-# letter, then dotted digit segments -- `12A`, `3A`, `23A.1.2`. widened the six
-# shell/markdown mirrors to it after this branch was cut, and its lint ratchet then flagged this
-# step as the one letterless mirror left. The character class above admits the letter; these
-# arms pin WHERE it may sit -- only as the last character of the integer part, at most once --
-# so `23a`, `A23`, `2A3`, `23AB` and `23.1A` are all refused.
+# THE LETTER AXIS. Canonical lowercase suffixes are allowed at the end of each dotted segment
+# (`01a`, `01.1a`, `01.1a.2b`). Preserve the legacy uppercase suffix on the integer part (`12A`)
+# while rejecting uppercase suffixes later in the dotted path and letters in any other position.
+# The character class above admits letters; these checks pin their position and count.
 if [ "$_ok" = "1" ]; then
   _int="${_pn%%.*}"
   case "$_pn" in *.*) _sub=".${_pn#*.}" ;; *) _sub="" ;; esac
   _let="${_int##*[0-9]}"                              # what trails the last digit: '' or the letter
   _dig="${_int%"$_let"}"
   case "$_dig" in ''|*[!0-9]*) _ok=0 ;; esac          # the integer part must be digits first
-  case "$_let" in ''|[A-Z]) ;; *) _ok=0 ;; esac        # at most ONE letter, uppercase
-  case "$_sub" in *[!0-9.]*) _ok=0 ;; esac            # no letter in any later segment
+  case "$_let" in ''|[A-Za-z]) ;; *) _ok=0 ;; esac  # at most ONE major suffix; lowercase canonical, uppercase legacy
+  # Validate later components individually: digits with an optional lowercase suffix.
+  _check_sub="${_sub#.}"
+  while [ -n "$_check_sub" ]; do
+    case "$_check_sub" in *.*) _component="${_check_sub%%.*}"; _check_sub="${_check_sub#*.}" ;; *) _component="$_check_sub"; _check_sub="" ;; esac
+    case "$_component" in ''|*[!0-9a-z]*) _ok=0 ;; esac
+    case "$_component" in *[a-z][a-z]*) _ok=0 ;; esac
+    case "$_component" in *[a-z]) _component_digits="${_component%[a-z]}" ;; *) _component_digits="$_component" ;; esac
+    case "$_component_digits" in ''|*[!0-9]*) _ok=0 ;; esac
+  done
 fi
 # LENGTH-BOUND EACH COMPONENT SEPARATELY -- and the REASON changed at round 14, so read this rather
 # than inherit it. It used to be integer overflow: the pad ran `$((10#$_int))`, bash integers wrap at
@@ -122,7 +128,9 @@ if [ "$_ok" = "1" ]; then
     esac
     # The bound is on the DIGITS: a letter suffix is one character the digit bound has no
     # stake in, so `12345678A` is within it exactly as `12345678` is.
-    case "${_seg%[A-Z]}" in ?????????*) _ok=0 ;; esac
+    _seg_digits="${_seg%[A-Z]}"
+    _seg_digits="${_seg_digits%[a-z]}"
+    case "$_seg_digits" in ?????????*) _ok=0 ;; esac
   done
 fi
 if [ "$_ok" = "1" ]; then
@@ -582,27 +590,33 @@ _pn="${PHASE_NUMBER:-}"
 _ok=1
 [ -n "$_pd" ] || _ok=0
 case "$_pn" in
-  ''|*[!0-9.A-Z]*) _ok=0 ;;   # empty, or any character outside [0-9.A-Z] -- this is the traversal fence
+  ''|*[!0-9.A-Za-z]*) _ok=0 ;;   # empty, or any character outside the phase alphabet -- this is the traversal fence
   .*|*.)           _ok=0 ;;   # leading or trailing dot
   *..*)            _ok=0 ;;   # EMPTY SEGMENT. The three arms plus the letter-axis block below
-                              # accept exactly digits[LETTER](.digits)* -- byte-congruent with the
-                              # callers' ^[0-9]+[A-Z]?(\.[0-9]+)*$ -- rather than merely wider than
+                              # accept exactly digits[letter](.digits[lowercase-letter]?)* with a legacy uppercase major suffix --
+                              # byte-congruent with the callers' ^[0-9]+([a-z]|[A-Z])?(\.[0-9]+[a-z]?)*$ -- rather than merely wider than
                               # the retired `*.*.*` arity bound, which masked `1..2` by accident.
 esac
-# THE LETTER AXIS. The canonical grammar (`engineer_run query find-phase`) is digits, an OPTIONAL single uppercase
-# letter, then dotted digit segments -- `12A`, `3A`, `23A.1.2`. widened the six
-# shell/markdown mirrors to it after this branch was cut, and its lint ratchet then flagged this
-# step as the one letterless mirror left. The character class above admits the letter; these
-# arms pin WHERE it may sit -- only as the last character of the integer part, at most once --
-# so `23a`, `A23`, `2A3`, `23AB` and `23.1A` are all refused.
+# THE LETTER AXIS. Canonical lowercase suffixes are allowed at the end of each dotted segment
+# (`01a`, `01.1a`, `01.1a.2b`). Preserve the legacy uppercase suffix on the integer part (`12A`)
+# while rejecting uppercase suffixes later in the dotted path and letters in any other position.
+# The character class above admits letters; these checks pin their position and count.
 if [ "$_ok" = "1" ]; then
   _int="${_pn%%.*}"
   case "$_pn" in *.*) _sub=".${_pn#*.}" ;; *) _sub="" ;; esac
   _let="${_int##*[0-9]}"                              # what trails the last digit: '' or the letter
   _dig="${_int%"$_let"}"
   case "$_dig" in ''|*[!0-9]*) _ok=0 ;; esac          # the integer part must be digits first
-  case "$_let" in ''|[A-Z]) ;; *) _ok=0 ;; esac        # at most ONE letter, uppercase
-  case "$_sub" in *[!0-9.]*) _ok=0 ;; esac            # no letter in any later segment
+  case "$_let" in ''|[A-Za-z]) ;; *) _ok=0 ;; esac  # at most ONE major suffix; lowercase canonical, uppercase legacy
+  # Validate later components individually: digits with an optional lowercase suffix.
+  _check_sub="${_sub#.}"
+  while [ -n "$_check_sub" ]; do
+    case "$_check_sub" in *.*) _component="${_check_sub%%.*}"; _check_sub="${_check_sub#*.}" ;; *) _component="$_check_sub"; _check_sub="" ;; esac
+    case "$_component" in ''|*[!0-9a-z]*) _ok=0 ;; esac
+    case "$_component" in *[a-z][a-z]*) _ok=0 ;; esac
+    case "$_component" in *[a-z]) _component_digits="${_component%[a-z]}" ;; *) _component_digits="$_component" ;; esac
+    case "$_component_digits" in ''|*[!0-9]*) _ok=0 ;; esac
+  done
 fi
 # LENGTH-BOUND EACH COMPONENT SEPARATELY -- and the REASON changed at round 14, so read this rather
 # than inherit it. It used to be integer overflow: the pad ran `$((10#$_int))`, bash integers wrap at
@@ -635,7 +649,9 @@ if [ "$_ok" = "1" ]; then
     esac
     # The bound is on the DIGITS: a letter suffix is one character the digit bound has no
     # stake in, so `12345678A` is within it exactly as `12345678` is.
-    case "${_seg%[A-Z]}" in ?????????*) _ok=0 ;; esac
+    _seg_digits="${_seg%[A-Z]}"
+    _seg_digits="${_seg_digits%[a-z]}"
+    case "$_seg_digits" in ?????????*) _ok=0 ;; esac
   done
 fi
 if [ "$_ok" = "1" ]; then

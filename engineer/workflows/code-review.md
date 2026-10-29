@@ -96,9 +96,9 @@ Parse from init JSON: `phase_found`, `phase_dir`, `phase_number`, `phase_name`, 
 **Input sanitization (defense-in-depth):**
 ```bash
 # Validate PADDED_PHASE matches the canonical phase-number grammar (engineer/bin/lib/records.py): digits,
-# an optional single uppercase letter, then dotted segments (e.g., "02", "03.1", "23.1.2", "12A")
-if ! [[ "$PADDED_PHASE" =~ ^[0-9]+[A-Z]?(\.[0-9]+)*$ ]]; then
-  echo "Error: Invalid phase number format: '${PADDED_PHASE}'. Expected digits with an optional letter suffix (e.g., 02, 03.1, 23.1.2, 12A)."
+# an optional letter suffix on each dotted segment (lowercase is canonical; legacy uppercase major suffixes remain readable).
+if ! [[ "$PADDED_PHASE" =~ ^[0-9]+([a-z]|[A-Z])?(\.[0-9]+[a-z]?)*$ ]]; then
+  echo "Error: Invalid phase number format: '${PADDED_PHASE}'. Expected digits with optional letter suffixes on dotted segments (e.g., 02, 03.1, 01a, 01.1a, 12A)."
   # Exit workflow
 fi
 ```
