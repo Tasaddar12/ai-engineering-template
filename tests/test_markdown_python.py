@@ -17,8 +17,11 @@ try:
 except ImportError:
     from test_engineer_runtime import RuntimeCase, SOURCE
 
-sys.path.insert(0, str(SOURCE/"engineer"/"bin"))
-from lib.posix_shell import find_posix_shell
+posix_shell_spec = importlib.util.spec_from_file_location(
+    "_engineer_posix_shell_test_helper", SOURCE/"engineer/bin/lib/posix_shell.py")
+posix_shell = importlib.util.module_from_spec(posix_shell_spec)
+posix_shell_spec.loader.exec_module(posix_shell)
+find_posix_shell = posix_shell.find_posix_shell
 
 spec = importlib.util.spec_from_file_location("markdown_python", SOURCE/"scripts/check_markdown_python.py")
 scanner = importlib.util.module_from_spec(spec)
