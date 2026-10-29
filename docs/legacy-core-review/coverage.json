@@ -548,8 +548,8 @@
       "reviewer": "A-entrypoints",
       "review": "full-content",
       "disposition": "modified",
-      "after_sha256": "c15bbcd1cd532101f91835f73adfef56af84fcdac2f7b3703ea04f506b5cc7c2",
-      "after_lines": 60
+      "after_sha256": "446e19538a43a58cc100ef38de50665b2ad0e82acd35d86597b3baaf4224a2e1",
+      "after_lines": 52
     },
     {
       "path": "commands/progress.md",
@@ -823,7 +823,7 @@
       "reviewer": "E-support",
       "review": "full-content",
       "disposition": "modified",
-      "after_sha256": "2393a61f23538e33713459c10495820cd0f3d2e390fceb4cc7b7616b41164322",
+      "after_sha256": "8315bbc815bbf4b334d3ed47e1d237c5b6f0e811079688a2deab5d86874aa763",
       "after_lines": 791
     },
     {
@@ -1186,8 +1186,8 @@
       "reviewer": "E-support",
       "review": "full-content",
       "disposition": "modified",
-      "after_sha256": "659dbf1fc259003b2e046469df279a6e1de6012e32da458a84e37a39305e0d72",
-      "after_lines": 272
+      "after_sha256": "767c134eb036a5906b4204e7e77a4097608a6900845d3ce49cf14f921c076073",
+      "after_lines": 270
     },
     {
       "path": "engineer/bin/lib/models.py",
@@ -1681,8 +1681,8 @@
       "reviewer": "E-support",
       "review": "full-content",
       "disposition": "modified",
-      "after_sha256": "372ff7a899a1404378aa35e2c768d53413c8ce782fdb0d7806024c18b9ec1070",
-      "after_lines": 349
+      "after_sha256": "ff4a5b725e229728f513f2e7c2d9395a539d7d8ccde78183510666b5a868be1e",
+      "after_lines": 330
     },
     {
       "path": "engineer/bin/lib/worktrees.py",
@@ -1692,8 +1692,8 @@
       "reviewer": "D-runtime",
       "review": "full-content",
       "disposition": "modified",
-      "after_sha256": "dc936f9977f52cd66ba46418c7d3dca2595d4cad2ee59c084e7e4bcd69be42ce",
-      "after_lines": 659
+      "after_sha256": "ddbc9cfe924aef64e9117313c34ab025b111d6954e43a1ffe80ea1229758c22e",
+      "after_lines": 713
     },
     {
       "path": "engineer/bin/lib/write_set.py",
@@ -3309,7 +3309,7 @@
       "reviewer": "B-workflows",
       "review": "full-content",
       "disposition": "modified",
-      "after_sha256": "3c0107e54d7505653303f2f27b0c533645dc7dc36e67cc1674cca2fef24aef95",
+      "after_sha256": "7c5d5f31245b3b7af727d296228cd720a4da80dfd52ebda6b05f8195cd3d6ebc",
       "after_lines": 295
     },
     {
@@ -3441,8 +3441,8 @@
       "reviewer": "B-workflows",
       "review": "full-content",
       "disposition": "modified",
-      "after_sha256": "ee8bd49bf69adcaa23ba6c1aa313cca4edcb4dec778dd0eac688b42f1b4c9309",
-      "after_lines": 1204
+      "after_sha256": "b489235a5383861a31e54a1d4fb9d056420827eb63cbbebac0a2b34126c15152",
+      "after_lines": 1217
     },
     {
       "path": "engineer/workflows/execute-phase/steps/code-review-disposition.md",
@@ -3485,8 +3485,8 @@
       "reviewer": "B-workflows",
       "review": "full-content",
       "disposition": "modified",
-      "after_sha256": "ed15bc456a4e7e8e2e806396342a67f3ccd235000a12132835eadcdd4669b5b7",
-      "after_lines": 131
+      "after_sha256": "560b0c733c07f32feeafeffca9720f70cdf4925b681f2aaded7b076a5e058ad3",
+      "after_lines": 180
     },
     {
       "path": "engineer/workflows/execute-phase/steps/executor-progress-policy.md",
@@ -3639,8 +3639,8 @@
       "reviewer": "B-workflows",
       "review": "full-content",
       "disposition": "modified",
-      "after_sha256": "6980b322b957d5b13d4cf2973a380dd7b6f2e555b4707fb0bb921315c9c842cc",
-      "after_lines": 184
+      "after_sha256": "b36cb871194f380dacbfb39f9d2581dff53b6bce7ec04cf9fd87f4a6d2dc02a1",
+      "after_lines": 191
     },
     {
       "path": "engineer/workflows/execute-phase/steps/worktree-base-check.md",
@@ -3782,8 +3782,8 @@
       "reviewer": "B-workflows",
       "review": "full-content",
       "disposition": "modified",
-      "after_sha256": "b66cf8eb60554c6c012e0a7975bfb2195a5ce4930e8d6bbf13ef1572ee1c9777",
-      "after_lines": 442
+      "after_sha256": "9f491041e586ba05ecaf2180903c0009dbcaad429d4f49067ca07e81784fb8c7",
+      "after_lines": 367
     },
     {
       "path": "engineer/workflows/map-codebase.md",
@@ -3903,8 +3903,8 @@
       "reviewer": "B-workflows",
       "review": "full-content",
       "disposition": "modified",
-      "after_sha256": "762a9303cece9ac15186a474987cccb3247ad5f0c269b6571ea962040965fd63",
-      "after_lines": 1093
+      "after_sha256": "415f11d77e962cab1fc683f7b9ddde4258d55c0cdf549e0e872849e9314dd295",
+      "after_lines": 1108
     },
     {
       "path": "engineer/workflows/plan-phase/steps/closed-phase-gate.md",
@@ -4013,8 +4013,8 @@
       "reviewer": "B-workflows",
       "review": "full-content",
       "disposition": "modified",
-      "after_sha256": "1ac1590695b1a1fca259a8845b9f9678bfb7ba3b75173b03183d3140804eca63",
-      "after_lines": 137
+      "after_sha256": "5db8e153d2de58d8b914cec5a1187b08f756ebb1a11bdfbc78d93192889c3788",
+      "after_lines": 120
     },
     {
       "path": "engineer/workflows/quick-batch/steps/plan-checker-loop.md",
@@ -4079,8 +4079,8 @@
       "reviewer": "B-workflows",
       "review": "full-content",
       "disposition": "modified",
-      "after_sha256": "f8056e38a6127c20c47256dc364deaf78612816a86b5e834f10646c93b98c8a1",
-      "after_lines": 145
+      "after_sha256": "51a0638fbcc2176181d164f1d98e73905025220838d98d4a2ce9aefc9c7f8b65",
+      "after_lines": 198
     },
     {
       "path": "engineer/workflows/quick.md",
@@ -4090,8 +4090,8 @@
       "reviewer": "B-workflows",
       "review": "full-content",
       "disposition": "modified",
-      "after_sha256": "3dc6e09dfec93e5c99f06cf10d4c053f2ff50c1998a026fd2f0c8fb5b12210c4",
-      "after_lines": 740
+      "after_sha256": "2ddf2ef69f4bb1dce7d30c1b120de927bd53f3bf9078e6725bcbdaa46b4eaf42",
+      "after_lines": 785
     },
     {
       "path": "engineer/workflows/quick/steps/discussion-phase.md",
@@ -4618,8 +4618,8 @@
       "reviewer": "A-entrypoints",
       "review": "full-content",
       "disposition": "modified",
-      "after_sha256": "c15bbcd1cd532101f91835f73adfef56af84fcdac2f7b3703ea04f506b5cc7c2",
-      "after_lines": 60
+      "after_sha256": "446e19538a43a58cc100ef38de50665b2ad0e82acd35d86597b3baaf4224a2e1",
+      "after_lines": 52
     },
     {
       "path": "skills/progress/SKILL.md",
@@ -4776,6 +4776,7 @@
       "after_lines": 44
     }
   ],
-  "implementation_revision": "a78722561ec10a43f0a8e09db919ec52908874a9",
-  "coverage_note": "All files read completely at revision; changed-source review and final check results are recorded in the PR body for its published head."
+  "implementation_revision": "a48ea610b76ba87b0752bbb3fd862e7a3e5098b0",
+  "coverage_note": "All files read completely at revision; changed-source review and final check results are recorded in the PR body for its published head.",
+  "digest_format": "SHA-256 of the reviewed Windows worktree bytes; Git checkout CRLF conversion can change raw bytes without changing content."
 }
