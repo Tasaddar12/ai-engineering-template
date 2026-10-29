@@ -5,6 +5,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -230,19 +231,28 @@ class HealthRuntime(unittest.TestCase):
         self.assertEqual(before, self.contents())
 
     def test_health_and_backfill_mutation_classification_stays_narrow(self):
-        sys.path.insert(0, str(ROOT / "engineer/bin"))
-        from lib.core import Args
-        from lib.planning_integrity import finish, mutates
-        self.assertFalse(mutates("validate.health"))
-        self.assertFalse(mutates("validate.health", Args(["--backfill"])))
-        self.assertTrue(mutates("validate.health", Args(["--repair"])))
-        before = {"digest": "before", "findings": set()}
-        after = {"digest": "after", "findings": set()}
-        from lib.core import Failure
-        for flags in ([], ["--backfill"]):
-            with self.assertRaises(Failure) as raised:
-                finish("validate.health", before, after, Args(flags))
-            self.assertEqual("unexpected-planning-write", raised.exception.code)
+        # Legacy tests also import a package named lib. Match the native CLI's
+        # process isolation instead of depending on discovery/import order.
+        script = textwrap.dedent('''
+            import sys
+            import unittest
+            sys.path.insert(0, sys.argv[1])
+            from lib.core import Args, Failure
+            from lib.planning_integrity import finish, mutates
+            checks = unittest.TestCase()
+            checks.assertFalse(mutates("validate.health"))
+            checks.assertFalse(mutates("validate.health", Args(["--backfill"])))
+            checks.assertTrue(mutates("validate.health", Args(["--repair"])))
+            before = {"digest": "before", "findings": set()}
+            after = {"digest": "after", "findings": set()}
+            for flags in ([], ["--backfill"]):
+                with checks.assertRaises(Failure) as raised:
+                    finish("validate.health", before, after, Args(flags))
+                checks.assertEqual("unexpected-planning-write", raised.exception.code)
+        ''')
+        result = subprocess.run([sys.executable, "-I", "-c", script, str(ROOT / "engineer/bin")],
+                                cwd=self.root, capture_output=True, text=True, encoding="utf-8", timeout=30)
+        self.assertEqual(0, result.returncode, result.stderr + result.stdout)
 
     def test_native_validation_error_does_not_echo_configuration_values(self):
         self.initialized()

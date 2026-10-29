@@ -60,7 +60,7 @@ conditions (a diverged fork base, a submodule in scope, an unresolvable
 capability) degrade to sequential execution. This project requires isolation, so
 that setting does not exist here, `none` is not a mode, and those conditions
 either raise or warn instead of degrading. The upstream JavaScript guard is adapted here as the Python
-[worktree-path-guard.py](../hooks/worktree-path-guard.py), which consumes Claude/Codex
+[worktree-path-guard.py](https://github.com/Tasaddar12/ai-engineering-template/blob/7723b2d1ce2b0d698613639547c35e2b98688a70/hooks/worktree-path-guard.py), which consumes Claude/Codex
 JSON events. The legacy [worktree-guard.sh](hooks/worktree-guard.sh) remains as a
 separate shell guard for its existing integration and tests.
 
