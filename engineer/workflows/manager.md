@@ -220,10 +220,7 @@ Go to exit step.
 
 ### Compound Action (background + inline)
 
-When the user selects a compound option, behavior depends on whether the runtime supports background dispatch of nesting-capable orchestrators — the Plan Phase N / Execute Phase N handlers below resolve it via `engineer_run query dispatch-should-flatten`:
-
-- **If `FLATTEN` is `false` (the host can background a nesting-capable orchestrator — e.g. codex):** **Spawn all background agents first** (plan/execute) — dispatch them in parallel using the Plan Phase N / Execute Phase N handlers below — then run verification actions, then run the inline discuss; the background agents continue while you verify/discuss.
-- **Otherwise (`FLATTEN` is `true` — run inline):** run the chosen plan/execute step(s) **inline** via their handlers below (in order), then run verification actions, then run the inline discuss. There is no overlap.
+For a compound option, run the chosen plan/execute workflows inline in order, then verification actions, then the interactive discussion. Keep the full planning and execution pipelines in the coordinator so they can dispatch their native workers. `dispatch-should-flatten` is the retained runtime compatibility API and currently returns true. Worker roles remain in their assigned contexts.
 
 Inline verification:
 
@@ -252,45 +249,9 @@ After discuss completes, loop back to dashboard step.
 
 ### Plan Phase N
 
-Planning runs autonomously. **First resolve whether background dispatch is safe.** Background dispatch is only safe on a runtime where a backgrounded agent can still nest the pipeline's subagents (plan-checker / worktree executors / verifier). This is determined from the documentation-sourced dispatch capability in the registry; Claude Code's backgrounded agents have no `Agent`/`Task` tool, and every other runtime either prohibits nested subagents or disables them by default. So run **inline** everywhere except where `dispatch-should-flatten` returns `false`.
+Run the complete planning workflow inline through its existing Skill boundary. Keep its worker isolation and quality gates.
 
-```bash
-FLATTEN=$(engineer_run query dispatch-should-flatten --raw 2>/dev/null || echo "true")
-```
-
-**If `FLATTEN` is `false`:** Spawn a background agent that delegates to the Skill pipeline with any configured flags:
-
-```
-Agent(
-  description="Plan phase {N}: {phase_name}",
-  run_in_background=true,
-  prompt="You are running the Engineer plan-phase workflow for phase {N} of the project.
-
-Working directory: {cwd}
-Phase: {N} — {phase_name}
-Goal: {goal}
-Manager flags: {manager_flags.plan}
-
-Run the plan-phase Skill with any configured manager flags:
-Skill(skill=\"plan-phase\", args=\"{N} --auto {manager_flags.plan}\")
-
-This delegates to the full plan-phase pipeline including local patches, research, plan-checker, and all quality gates.
-
-Important: You are running in the background. Do NOT use AskUserQuestion — make autonomous decisions based on project context. If you hit a blocker, write it to STATE.md as a blocker and stop. Do NOT silently work around permission or file access errors — let them fail so the manager can surface them with resolution hints. Do NOT use --no-verify on git commits."
-)
-```
-
-> **ORCHESTRATOR RULE — BACKGROUND DISPATCH**: After calling Agent() above with `run_in_background=true`, do NOT do any planning work for this phase independently. Return to the dashboard immediately and wait for the background agent to report back. Only resume planning-related work when the subagent result is available. Never call `ScheduleWakeup` or any host wake/sleep-scheduling tool while waiting — a partial-args wake call surfaces a red validation error; the dashboard loop is the wait.
-
-Display:
-
-```
-◆ Spawning planner for Phase {N}: {phase_name}... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
-```
-
-Loop back to dashboard step.
-
-**Otherwise (`FLATTEN` is `true` — run inline):** Run plan inline so the plan-checker and quality gates actually run — do NOT wrap it in `Agent(run_in_background=true, …)`:
+Run plan inline so the plan-checker and quality gates actually run — do NOT wrap it in `Agent(run_in_background=true, …)`:
 
 ```
 Skill(skill="plan-phase", args="{N} --auto {manager_flags.plan}")
@@ -306,45 +267,9 @@ Then loop back to dashboard step.
 
 ### Execute Phase N
 
-Execution runs autonomously. **First resolve whether background dispatch is safe.** Background dispatch is only safe on a runtime where a backgrounded agent can still nest the pipeline's subagents (plan-checker / worktree executors / verifier). This is determined from the documentation-sourced dispatch capability in the registry; Claude Code's backgrounded agents have no `Agent`/`Task` tool, and every other runtime either prohibits nested subagents or disables them by default. So run **inline** everywhere except where `dispatch-should-flatten` returns `false`.
+Run the complete execution workflow inline through its existing Skill boundary. Keep its worker isolation and quality gates.
 
-```bash
-FLATTEN=$(engineer_run query dispatch-should-flatten --raw 2>/dev/null || echo "true")
-```
-
-**If `FLATTEN` is `false`:** Spawn a background agent that delegates to the Skill pipeline with any configured flags:
-
-```
-Agent(
-  description="Execute phase {N}: {phase_name}",
-  run_in_background=true,
-  prompt="You are running the Engineer execute-phase workflow for phase {N} of the project.
-
-Working directory: {cwd}
-Phase: {N} — {phase_name}
-Goal: {goal}
-Manager flags: {manager_flags.execute}
-
-Run the execute-phase Skill with any configured manager flags:
-Skill(skill=\"execute-phase\", args=\"{N} {manager_flags.execute}\")
-
-This delegates to the full execute-phase pipeline including local patches, branching, wave-based execution, verification, and all quality gates.
-
-Important: You are running in the background. Do NOT use AskUserQuestion — make autonomous decisions. Do NOT use --no-verify on git commits — let pre-commit hooks run normally. If you hit a permission error, file lock, or any access issue, do NOT work around it — let it fail and write the error to STATE.md as a blocker so the manager can surface it with resolution guidance."
-)
-```
-
-> **ORCHESTRATOR RULE — BACKGROUND DISPATCH**: After calling Agent() above with `run_in_background=true`, do NOT do any execution work for this phase independently. Return to the dashboard immediately and wait for the background agent to report back. Only resume execution-related work when the subagent result is available. Never call `ScheduleWakeup` or any host wake/sleep-scheduling tool while waiting — a partial-args wake call surfaces a red validation error; the dashboard loop is the wait.
-
-Display:
-
-```
-◆ Spawning executor for Phase {N}: {phase_name}... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
-```
-
-Loop back to dashboard step.
-
-**Otherwise (`FLATTEN` is `true` — run inline):** Run execute inline so worktree isolation and the verifier actually run — do NOT wrap it in `Agent(run_in_background=true, …)`:
+Run execute inline so worktree isolation and the verifier actually run — do NOT wrap it in `Agent(run_in_background=true, …)`:
 
 ```
 Skill(skill="execute-phase", args="{N} {manager_flags.execute}")

@@ -10,8 +10,8 @@ by `$ITEM_COUNT` rounds):
    array order (this IS the order `computeWaves`/`partitionByFileOverlap`
    assigned — never re-sort it).
 
-2. Build `$READY_JSON` — the subset of that wave's items whose
-   `SUMMARY.md` already exists (an executor may still be mid-flight for a
+2. Build `$READY_JSON` — the subset of that wave's items whose native host terminal receipt has been accepted by worktree.record-agent and whose
+   `SUMMARY.md` is committed (an executor may still be mid-flight for a
    sibling in the same wave; row 33 — merges happen strictly in wave order,
    an out-of-order finisher waits):
    ```bash
@@ -62,44 +62,27 @@ fi
    Parse `mergeable` — the PREFIX of `$WAVE_ORDER_JSON` currently mergeable.
    If empty, skip this wave this round (its first item hasn't finished yet).
 
-3. **Build the cleanup-wave manifest for `mergeable`, IN THAT ORDER** — fresh
-   from each item's own PLAN.md, never from `BATCH.json`'s `planned_files`
-   alone (Open Question 2's accepted resolution). `$mergeable` is a bash
-   ARRAY (parsed from the JSON `mergeable` array) — never a plain
-   space-joined string, which re-splits unpredictably between bash and zsh
-   :
-   ```bash
-   for quick_id in "${mergeable[@]}"; do
-     PLAN_CONTENT=$(cat "${ITEM_DIR}/${quick_id}-PLAN.md")
-     ENTRY_JSON=$(engineer_run quick-batch cleanup-entry \
-       --agent-id "agent-${quick_id}" \
-       --worktree-path "$WT_PATH" \
-       --branch "$WT_BRANCH" \
-       --expected-base "$EXPECTED_BASE" \
-       --allowed-bases '["'"$EXPECTED_BASE"'"]' \
-       --plan-content "$PLAN_CONTENT" --raw)
-     # append $ENTRY_JSON to the merge manifest's "entries" array, in order
-   done
-   ```
-   (`$WT_PATH`/`$WT_BRANCH`/`$EXPECTED_BASE` per item come from the recorded
-   `$QUICK_BATCH_WORKTREE_MANIFEST` entry Step 6 wrote for that `agent_id`
-   THIS process, when present.
+3. **Project the owned receipt-bearing manifest for this deterministic prefix.** Read the same runtime manifest Step 6 recorded, including each item's actual host id and accepted terminal receipt. Preserve the captured exact scope and deletion authority; a later PLAN edit cannot widen that ownership. Select only `mergeable`, in its existing order:
 
-   **Durable fallback:** for an item Step 6 did NOT dispatch this
-   process — the crash-window guard correctly skipped it because
-   `SUMMARY.md` already existed from a PRIOR, now-dead coordinator process —
-   `$QUICK_BATCH_WORKTREE_MANIFEST` has no entry for it at all (it is a
-   fresh per-process `mktemp` file). Read `$WT_PATH`/`$WT_BRANCH`/
-   `$EXPECTED_BASE` from that item's OWN durable
-   `dispatched_worktree`/`dispatched_branch`/`dispatched_base` fields in
-   `$BATCH_MANIFEST_JSON` instead — persisted by Step 6's own durable-
-   persistence step at the time it actually created the worktree, in
-   whichever process that was. If ALL THREE are still `null` (the item was
-   never durably recorded — should not happen once Step 6 always persists
-   on dispatch, but fail closed rather than guess): route this entry via
-   `merge-routing --kind merge_failed --detail "missing durable worktree
-   record"` the same as any other blocked entry below, and do NOT attempt
-   the cleanup-wave call for it.)
+   ```bash
+   QB_OWNED_WORKTREES=$(engineer_run query worktree.manifest read --manifest "$QUICK_BATCH_WORKTREE_MANIFEST") || exit $?
+   MERGEABLE_IDS_JSON=$(node -e 'process.stdout.write(JSON.stringify(process.argv.slice(1)))' "${mergeable[@]}") || exit $?
+   MERGE_MANIFEST_PATH=$(mktemp "${TMPDIR:-/tmp}/engineer-batch-merge-XXXXXX.json") || exit $?
+   QB_OWNED_WORKTREES="$QB_OWNED_WORKTREES" MERGEABLE_IDS_JSON="$MERGEABLE_IDS_JSON" node <<'NODE' > "$MERGE_MANIFEST_PATH"
+const data = JSON.parse(process.env.QB_OWNED_WORKTREES);
+const ids = JSON.parse(process.env.MERGEABLE_IDS_JSON);
+if (!data.orchestrator_root || !Array.isArray(data.worktrees) || !Array.isArray(ids)) process.exit(1);
+const selected = ids.map(id => {
+  const matches = data.worktrees.filter(entry => entry.plan === `quick-${id}`);
+  if (matches.length !== 1 || matches[0].worker?.source !== 'native-host' || !matches[0].worker?.terminal_receipt_sha256 || matches[0].worker?.status !== 'complete') throw Error(`Missing unique terminal host receipt for ${id}`);
+  return matches[0];
+});
+process.stdout.write(JSON.stringify({schema:1,orchestrator_root:data.orchestrator_root,worktrees:selected})+'\n');
+NODE
+   [ "$?" -eq 0 ] || exit 1
+   ```
+
+   **Durable recovery:** the per-batch manifest path returned by `worktree.manifest init --phase "quick-batch-${BATCH_ID}"` is stable across coordinator restarts. Read its actual ownership and terminal receipts. BATCH.json's recorded checkout/branch/base fields locate an item for reconciliation; they cannot establish host termination or replace a missing ownership entry. If the manifest or receipt is missing, preserve that checkout and route `merge-routing --kind merge_failed --detail "missing owned terminal receipt"`; do not guess an agent id or dispatch it again while liveness is unknown.
 
 4. **Merge, one at a time, via the SAME bounded primitive every other worktree
    consumer uses** (never hand-roll `git merge`):

@@ -90,7 +90,14 @@ advisory throughout: it never blocks.
 
 **Error handling:** Report unavailable review and preserve the missing evidence for the coordinator.
 
-Run `engineer_run check tdd-review-checkpoint "${PHASE_NUMBER}" --raw` directly and inspect its evidence. A check that cannot run cannot establish the gate.
+Run the registered direct TDD gate and retain its result for the escalation below. A failed command or unreadable result cannot establish the gate:
+
+```bash
+GATE_RESULT=$(engineer_run query tdd.review-checkpoint "${PHASE_NUMBER}" --raw) || { echo "TDD review checkpoint unavailable; preserve the diagnostic and stop." >&2; exit 1; }
+GATE_BLOCK=$(engineer_run query json.get --payload "$GATE_RESULT" --field block --raw) || exit $?
+```
+
+Use the parsed `$GATE_BLOCK` as `GATE_RESULT.block` below.
 
 **TDD review escalation.** See `engineer/references/tdd.md`: when `TDD_MODE=true` AND `GATE_RESULT.block == true` (one or more TDD plans miss a RED or GREEN gate commit, or have no GREEN commit that follows a RED commit — `reason: green_before_red`), the end-of-phase TDD review escalates from advisory to **blocking under TDD** — refuse to mark the phase complete and present:
 

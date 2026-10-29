@@ -659,7 +659,20 @@ Read and execute `engineer/workflows/execute-phase/steps/per-plan-worktree-gate.
    )
    ```
 
-   After each `Agent()` returns, parse executor-returned worktree metadata (`<worktree_metadata>`) before harness metadata, then record the `{agent_id, worktree_path, branch, expected_base}` entry with `engineer_run query worktree.record-agent --manifest "$WAVE_WORKTREE_MANIFEST" --agent-id … --path … --branch … --base … --files "$PLAN_FILES" --deletions "$PLAN_DELETIONS"`. The verb validates every field at write time using the `cleanup-wave` reader's own rules (write-strict `--agent-id`), failing loudly with a recovery hint rather than appending an under-populated entry the reader would later drop silently. On a non-zero exit or any missing field: stop and ask for recovery instead of scanning worktrees.
+   For the harness path, bind the common receipt inputs from this plan's captured scope and actual host checkout metadata before running the terminal receipt procedure:
+
+   ```bash
+   : "${HOST_WORKTREE_PATH:?Read the checkout path from native host metadata}"
+   WORKTREE_PATH="$HOST_WORKTREE_PATH"
+   WORKTREE_BRANCH=$(git -C "$WORKTREE_PATH" branch --show-current) || exit $?
+   ALLOWED_BASES_JSON=$(EXPECTED_BASE="$EXPECTED_BASE" node -e 'process.stdout.write(JSON.stringify([process.env.EXPECTED_BASE]))') || exit $?
+   PLAN_FILES_JSON=$(printf '%s' "$plan_json" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const v=JSON.parse(s).files_modified;if(!Array.isArray(v))process.exit(1);process.stdout.write(JSON.stringify(v))})') || exit $?
+   PLAN_DELETIONS_JSON=$(printf '%s' "$plan_json" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const v=JSON.parse(s).files_deleted||[];if(!Array.isArray(v))process.exit(1);process.stdout.write(JSON.stringify(v))})') || exit $?
+   PHASE_DIR_REL=$(git -C "$phase_dir" rev-parse --show-prefix) || exit $?
+   SUMMARY_PATH="${PHASE_DIR_REL%/}/${plan_padded}-SUMMARY.md"
+   ```
+
+   Capture the actual native host agent id from dispatch, and obtain its terminal event through the host wait/status tool. For both isolation modes, run the **Native terminal receipt** procedure in `execute-phase/steps/executor-isolation-dispatch.md` before integration. Use the host-reported checkout path for harness workers and the runtime-returned path for precreated workers; validate branch/head with Git. Reuse this plan's captured base, allowed bases, exact files/deletions, SUMMARY path and `WAVE_WORKTREE_MANIFEST`. Never prefer executor-asserted metadata over the host result. A receipt/record failure preserves the checkout and blocks its merge; no broad worktree discovery or invented stop assertion.
 
    > **Worktree recovery policy:** See `execute-phase/steps/worktree-recovery-policy.md` — FAIL-CLOSED rule for base/HEAD-namespace mismatches AND isolated-run fail-safe recovery.
 

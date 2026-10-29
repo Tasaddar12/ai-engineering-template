@@ -100,6 +100,8 @@ $ARGUMENTS
 ENGINEER_ARGS_END
 ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 AGENT_SKILLS_DEBUGGER=$(engineer_run query agent-skills debugger )
+DEBUGGER_MODEL=$(engineer_run query resolve-model debugger --raw) || exit $?
+DEBUGGER_EFFORT=$(engineer_run query resolve-effort debugger --raw) || exit $?
 EXPECTED_BASE=$(git rev-parse HEAD)
 ```
 
@@ -136,10 +138,7 @@ Print: `◆ Spawning diagnostics agent... (each runs in a subagent — no output
 
 Before spawning, materialize the guard into WORKTREE_GUARD: read `engineer/references/worktree-branch-check.md`, substitute `{EXPECTED_BASE}` with `$EXPECTED_BASE`, and use the resulting `<worktree_branch_check>` block (the runnable guard) as WORKTREE_GUARD below.
 
-**Only when `ISOLATION = "harness-worktree"`.** When `ISOLATION = "none"` the agent runs on
-the main working tree, where the guard's HEAD assertion cannot hold — set `WORKTREE_GUARD` to
-the empty string instead, or every diagnostic agent halts on a base mismatch it was never
-meant to check.
+Under harness isolation, embed the captured base guard. Under orchestrator isolation, the coordinator creates and binds an owned checkout before dispatch and embeds its actual root pin. Unavailable isolation stops dispatch; never clear the guard to run on the primary checkout.
 
 **Substitute `{harnessFlag}` in the `Agent()` call below** with `$HARNESS_FLAG` followed by a
 comma when `ISOLATION = "harness-worktree"`, and with the empty string otherwise — the same
@@ -148,13 +147,14 @@ placeholder, not a shell variable.
 
 <!-- model-omit-on-inherit -->
 
-> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`DEBUGGER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model.
+> **Model omission.** Omit the `effort` parameter entirely when `DEBUGGER_EFFORT` is `"inherit"` or empty. Omit the `model` parameter entirely when the value it would carry (`DEBUGGER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model.
 
 ```
 Agent(
   prompt=filled_debug_prompt + "\n\n" + WORKTREE_GUARD + "\n\n<required_reading>\n- {phase_dir}/{phase_num}-UAT.md\n- {state_path}\n</required_reading>\n${AGENT_SKILLS_DEBUGGER}",
   subagent_type="debugger",
-  model="{DEBUGGER_MODEL}",
+  model="{DEBUGGER_MODEL}",  # omit this parameter on inherit or empty
+  effort="{DEBUGGER_EFFORT}",  # omit this parameter on inherit or empty
   {harnessFlag}
   description="Debug: {truth_short}"
 )
@@ -162,7 +162,7 @@ Agent(
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above to spawn debug agent(s), stop working on this task immediately. Do not read more files, edit code, or run tests related to these gaps while the subagent(s) are active. Wait for all subagents to return before proceeding. This prevents duplicate work, conflicting edits, and wasted context.
 
-**All agents spawn in a single message (parallel execution) ONLY when `ISOLATION = "harness-worktree"`.** When `ISOLATION = "none"`, spawn one agent per message and wait for each to return — see the fan-out rule above.
+Dispatch only into the established isolated checkouts; serialize checkout creation and respect the native host lifecycle while collecting all diagnosis results.
 
 Template placeholders:
 - `{truth}`: The expected behavior that failed

@@ -13,6 +13,14 @@ QB_EXEC_CONC_JSON=$(engineer_run quick-batch effective-concurrency --jobs "$JOBS
 EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | engineer_run query json.get --field concurrency --default 1 --raw 2>/dev/null || printf 1)
 ```
 
+Initialize the owned manifest before dispatch; keep the returned path across every item and receipt:
+
+```bash
+ORCH_ROOT=$(git rev-parse --show-toplevel) || exit $?
+QB_WORKTREE_STATE=$(engineer_run query worktree.manifest init --phase "quick-batch-${BATCH_ID}" --root "$ORCH_ROOT") || exit $?
+QUICK_BATCH_WORKTREE_MANIFEST=$(engineer_run query json.get --payload "$QB_WORKTREE_STATE" --field manifest --raw) || exit $?
+```
+
 **Dispatch rounds.** Repeat until no item is eligible-and-not-yet-dispatched
 (bounded by `$ITEM_COUNT` rounds):
 
@@ -73,9 +81,48 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | engineer_run query json.ge
    ```bash
    SLUG=$(engineer_run query generate-slug "$description" --raw)
    ITEM_DIR="${quick_dir}/${quick_id}-${SLUG}"
+   ORCH_ROOT=$(git rev-parse --show-toplevel) || exit $?
+   EXPECTED_BASE=$(git rev-parse HEAD) || exit $?
+   ALLOWED_BASES_JSON=$(EXPECTED_BASE="$EXPECTED_BASE" node -e 'process.stdout.write(JSON.stringify([process.env.EXPECTED_BASE]))') || exit $?
+   ITEM_DIR_REL=$(git -C "$ITEM_DIR" rev-parse --show-prefix) || exit $?
+   ITEM_DIR_REL="${ITEM_DIR_REL%/}"
+   [ "$(git -C "$ITEM_DIR" rev-parse --show-toplevel)" = "$ORCH_ROOT" ] || exit 42
+   SUMMARY_PATH="${ITEM_DIR_REL}/${quick_id}-SUMMARY.md"
+   plan_id="quick-${quick_id}"
+   PLAN_JSON=$(engineer_run query frontmatter.get "${ITEM_DIR}/${quick_id}-PLAN.md") || exit $?
+   PLAN_FILES_JSON=$(printf '%s' "$PLAN_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const v=JSON.parse(s).files_modified;if(!Array.isArray(v))process.exit(1);process.stdout.write(JSON.stringify(v))})') || exit $?
+   PLAN_DELETIONS_JSON=$(printf '%s' "$PLAN_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const v=JSON.parse(s).files_deleted||[];if(!Array.isArray(v))process.exit(1);process.stdout.write(JSON.stringify(v))})') || exit $?
+   WAVE_WORKTREE_MANIFEST="$QUICK_BATCH_WORKTREE_MANIFEST"
+   engineer_run query worktree.manifest init --manifest "$WAVE_WORKTREE_MANIFEST" --root "$ORCH_ROOT" || exit $?
+   if [ "$ISOLATION" = "orchestrator-worktree" ]; then
+     ITEM_WORKTREE=$(engineer_run query worktree.create "$plan_id" --phase "quick-batch-${BATCH_ID}" --manifest "$WAVE_WORKTREE_MANIFEST" --root "$ORCH_ROOT" --base "$EXPECTED_BASE" --files-json "$PLAN_FILES_JSON" --deletions-json "$PLAN_DELETIONS_JSON" --summary-path "$SUMMARY_PATH") || exit $?
+     WORKTREE_PATH=$(engineer_run query json.get --payload "$ITEM_WORKTREE" --field worktree_path --raw) || exit $?
+     WORKTREE_BRANCH=$(engineer_run query json.get --payload "$ITEM_WORKTREE" --field branch --raw) || exit $?
+     EXPECTED_BASE=$(engineer_run query json.get --payload "$ITEM_WORKTREE" --field expected_base --raw) || exit $?
+     ALLOWED_BASES_JSON=$(engineer_run query json.get --payload "$ITEM_WORKTREE" --field allowed_bases) || exit $?
+     [ "$(git -C "$WORKTREE_PATH" rev-parse HEAD)" = "$EXPECTED_BASE" ] || exit 42
+     [ "$(git -C "$WORKTREE_PATH" branch --show-current)" = "$WORKTREE_BRANCH" ] || exit 42
+   fi
    ```
 
-   **`isolation == "harness-worktree"`:** one `Agent()` per message,
+   For orchestrator isolation, generate the actual root guard before composing this item prompt:
+
+   ```bash
+   BATCH_ROOT_GUARD=""
+   if [ "$ISOLATION" = "orchestrator-worktree" ]; then
+     BATCH_ROOT_GUARD=$(WORKTREE_PATH="$WORKTREE_PATH" node <<'NODE'
+const q = value => "'" + value.replaceAll("'", "'\\''") + "'";
+process.stdout.write(`PINNED_ROOT=${q(process.env.WORKTREE_PATH)}
+ACTUAL_ROOT=$(git rev-parse --show-toplevel) || exit 42
+PINNED_TL=$(git -C "$PINNED_ROOT" rev-parse --show-toplevel) || exit 42
+[ "$ACTUAL_ROOT" = "$PINNED_TL" ] || { echo "FATAL: batch executor root differs from assigned checkout" >&2; exit 42; }
+`);
+NODE
+     ) || exit $?
+   fi
+   ```
+
+   **Native executor prompt (both modes):** omit the empty project_root_pin block for harness isolation and embed its existing literal branch/base guard before dispatch. For harness isolation use one `Agent()` per message,
    `run_in_background: true`. Same prompt shape as `/quick`'s own
    executor dispatch (Step 6 of `quick.md`) — required_reading, agent skills,
    `<submodule_commit_guard>` using this project's `$SUBMODULE_PATHS`
@@ -85,8 +132,13 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | engineer_run query json.ge
      prompt="
    Execute quick-batch item ${quick_id}.
 
+   <project_root_pin>
+   ${BATCH_ROOT_GUARD}
+   </project_root_pin>
+   Under orchestrator isolation run the supplied literal guard before the first read/write and every commit. Checkout creation, host dispatch and receipt recording belong to the coordinator.
+
    <required_reading>
-   - ${ITEM_DIR}/${quick_id}-PLAN.md (Plan)
+   - ${ITEM_DIR_REL}/${quick_id}-PLAN.md (Plan)
    - ${STATE_PATH} (Project state — READ ONLY, do not write it)
    - ./CLAUDE.md or ./.claude/CLAUDE.md (if exists)
    </required_reading>
@@ -99,11 +151,11 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | engineer_run query json.ge
 
    <constraints>
    - Execute all tasks in the plan; commit each task atomically
-   - Create summary at: ${ITEM_DIR}/${quick_id}-SUMMARY.md with `status: complete` in frontmatter
+   - Create summary at: ${ITEM_DIR_REL}/${quick_id}-SUMMARY.md with `status: complete` in frontmatter
    - NEVER invoke /quick or any other Engineer command — you are a leaf, not a coordinator
    - NEVER write .planning/quick-batches/${BATCH_ID}/BATCH.json
    - Do NOT update STATE.md or ROADMAP.md — the orchestrator owns those writes after every item in this dispatch round completes
-   - Do NOT commit docs artifacts (SUMMARY.md, STATE.md, PLAN.md) — the orchestrator commits them at completion
+   - Commit this assigned SUMMARY.md with status complete before returning. Completion requires source and SUMMARY committed in this attempt. Do NOT modify shared STATE.md, ROADMAP.md, REQUIREMENTS.md or config; the coordinator owns those records.
    </constraints>
    ",
      subagent_type="executor",
@@ -112,12 +164,13 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | engineer_run query json.ge
      description="Execute ${quick_id}: ${description}"
    )
    ```
-   Record `{agent_id, worktree_path, branch, expected_base, allowed_bases}`
-   from the executor's return into `$QUICK_BATCH_WORKTREE_MANIFEST` (a JSON
-   file, initialized `{"worktrees":[]}` before the first round — same shape
-   `/quick`'s own `QUICK_WORKTREE_MANIFEST` uses).
+   Under orchestrator isolation, setup above already created the checkout. Bind the native executor's working-directory/workspace input to the returned `WORKTREE_PATH` and embed the complete runnable root pin before composing its prompt, following `execute-phase/steps/sequential-root-pin.md`. Do not delegate checkout creation or another dispatch to the child. If binding is unavailable, preserve the checkout and block this item.
 
-   **`isolation == "orchestrator-worktree"`:** create the item checkout through `worktree.create`, then dispatch the same native executor with its returned root and an embedded root pin. Reuse `execute-phase/steps/executor-isolation-dispatch.md`'s native lifecycle and completion reconciliation. Preserve plan, context, constraints and summary requirements.
+   For **both** modes, capture the actual host agent id from dispatch and keep each item's plan id, path, branch, captured base/allowed bases, exact files/deletions, SUMMARY path and manifest in coordinator state keyed to that host id. Do not take termination from the executor's text. Obtain the native host's terminal event through its wait/status tool, preserve that original JSON outside the checkout and bind the host-observed status/id/kind for the shared **Native terminal receipt** procedure in `execute-phase/steps/executor-isolation-dispatch.md`. For harness mode get the actual checkout path from host metadata and branch from Git; allowed bases remain the pre-dispatch capture. For orchestrator mode reuse the exact create result. Restore the specific item's inputs before recording; another item's shell variables are not its identity.
+
+   Run `engineer_run query worktree.record-agent "$plan_id" --manifest "$QUICK_BATCH_WORKTREE_MANIFEST" --agent-id "$HOST_AGENT_ID" --path "$WORKTREE_PATH" --branch "$WORKTREE_BRANCH" --base "$EXPECTED_BASE" --allowed-bases "$ALLOWED_BASES_JSON" --files-json "$PLAN_FILES_JSON" --deletions-json "$PLAN_DELETIONS_JSON" --summary-path "$SUMMARY_PATH" --terminal-receipt "$NATIVE_TERMINAL_RECEIPT"` using the receipt generated from that actual host event. This records/attaches the validated terminal receipt in the same ownership manifest before any merge. Missing stop proof or a rejected receipt preserves the item and blocks its merge; do not substitute `--completed` or a retired worker-process verb.
+
+   The runtime-owned manifest now contains the actual `agent_id`, `worktree_path`, `branch`, `expected_base`, `allowed_bases` and terminal receipt. Read it through `worktree.manifest read`; do not hand-write a competing ownerless `{"worktrees":[]}` file. For the existing durable BATCH update below set `worktree_path=WORKTREE_PATH` and `branch=WORKTREE_BRANCH`; retain this item's actual expected base.
 
    **Durable worktree-recovery persistence (`harness-worktree`/
    `orchestrator-worktree` only):** immediately after
@@ -136,8 +189,8 @@ EXEC_CONCURRENCY=$(printf '%s' "$QB_EXEC_CONC_JSON" | engineer_run query json.ge
 
    > **ORCHESTRATOR RULE — CODEX RUNTIME**: after each `Agent()` call above, wait for it to return before starting the next worktree create.
 
-4. **After every item dispatched this round returns:** verify
-   `${ITEM_DIR}/${quick_id}-SUMMARY.md` exists. If missing, the item stays
+4. **After every item has a recorded native terminal receipt:** verify
+   `${SUMMARY_PATH}` is committed in that worker's actual branch and the ownership scope passes. Mere file presence is insufficient. If missing, the item stays
    `pending`/its worktree preserved for diagnosis rather than guessing
    completion — do not proceed to merge for it this round.
 

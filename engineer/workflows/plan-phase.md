@@ -148,6 +148,21 @@ Extract from $ARGUMENTS: phase number (integer or decimal like `2.1`), flags (`-
 
 **Baseline-discipline flags.** `REVERSIBILITY_GATES` defaults to `true`; it is not persisted per-phase or read from config.
 
+Initialize the retained flags before any context-gate prompt, planning gate or planner spawn. The explicit TDD flag updates the same direct setting used by every TDD consumer in this invocation; do not restore retired planning detours.
+
+```bash
+REVERSIBILITY_GATES=true
+if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--no-reversibility-gates([[:space:]]|$) ]]; then REVERSIBILITY_GATES=false; fi
+TEXT_MODE=$(engineer_run query json.get --payload "$INIT" --field text_mode --raw) || exit $?
+if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--text([[:space:]]|$) ]]; then TEXT_MODE=true; fi
+if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--tdd([[:space:]]|$) ]]; then
+  engineer_run query config-set workflow.tdd_mode true || exit $?
+fi
+TDD_MODE=$(engineer_run query config-get workflow.tdd_mode --raw) || exit $?
+```
+
+Keep these resolved values in the coordinator's invocation state between fenced calls; use the same `TDD_MODE`, `TEXT_MODE` and `REVERSIBILITY_GATES` in initial and revision planner prompts.
+
 **If no phase number:** Auto-detect it — `query init.plan-phase` and `query roadmap.get-phase` require an explicit number, so this is an orchestrator step. Run `engineer_run query roadmap.analyze` and read `next_phase` (first phase with `disk_status` of `no_directory`, `empty`, `discussed`, or `researched`). If `next_phase` is `null`, read ROADMAP.md's `### Phase N:` headers and ask the user which phase to plan. Set `PHASE` to the result before step 1's `query init.plan-phase "$PHASE"` call.
 
 **If `phase_found` is false:** Validate phase exists in ROADMAP.md. If valid, create the directory using `expected_phase_dir` from init (includes `project_code` prefix when set):
