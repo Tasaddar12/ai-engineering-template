@@ -687,6 +687,7 @@ Plans that assume a tool is available without checking lead to silent failures a
 command -v $TOOL 2>/dev/null && $TOOL --version 2>/dev/null | head -1
 
 # Runtimes — check version meets minimum
+# Python example: inspect the interpreter used for this research fixture
 python --version 2>/dev/null
 python3 --version 2>/dev/null
 ruby --version 2>/dev/null

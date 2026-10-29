@@ -26,7 +26,7 @@ spec.loader.exec_module(scanner)
 def snippets(file):
     text = (SOURCE/file).read_text(encoding="utf-8")
     result = []
-    for match in re.finditer(r"\bpython(?:3)? -c\s+(['\"])", text):
+    for match in re.finditer(r"\bpython(?:3)?(?: -X utf8)? -c\s+(['\"])", text):
         lexer = shlex.shlex(text[match.end()-1:], posix=True, punctuation_chars="();|&<>`")
         lexer.whitespace_split = True
         result.append(next(lexer))
@@ -46,6 +46,9 @@ class MarkdownScan(unittest.TestCase):
                     '/usr/bin/node -e "1"', '"/opt/node bin/node" -e "1"',
                     r'"C:\Program Files\nodejs\node.exe" -e "1"',
                     'nodejs -e "1"', 'env FOO=bar node -e "1"', 'command node -e "1"',
+                    'node ./bin/cli', 'node < script.js', "printf 'console.log(1)' | node",
+                    'node', '/usr/bin/node ./extensionless', 'bash -c "node < script.js"',
+                    'printf "%s" "$(node ./cli)"',
                     'x=$(node -p "1")', 'node \\\n -e "1"',
                     'python engineer/bin/lib/edge-probe.cjs']
         for command in examples:
@@ -56,11 +59,16 @@ class MarkdownScan(unittest.TestCase):
                 self.assertEqual(4, hits[0][0])
         self.assertTrue(scanner.findings('Use `node -e "1"`.'))
         self.assertTrue(scanner.findings('    /usr/bin/node -e "1"\n'))
+        self.assertTrue(scanner.findings('Run `node`.'))
 
     def test_prose_graph_and_application_source_are_not_commands(self):
         for text in ["A graph node branches into two nodes.", "Use Node.js for this app.",
                      '`npm run dev` and `npx eslint src/app.js`',
                      '```js\nconst node = document.createElement("div");\nnode.append(child);\n```',
+                     'Prose identifiers `node` and `Node` describe a runtime.',
+                     '```\nDifferences:\n- Node version: Same\n- Timezone: Different\n```',
+                     '```js\nconst command = "node ./cli";\nconst node = graph.root;\n```',
+                     '```sh\nprintf "node ./cli"\ngrep "node -e" file.md\n```',
                      '```sh\necho "node"\n# node -e is an old example\n```']:
             self.assertEqual([], scanner.findings(text), text)
 
@@ -76,12 +84,28 @@ class MarkdownScan(unittest.TestCase):
             subprocess.run(["git", "-C", directory, "add", "--", *names], check=True)
             self.assertEqual(sorted(names), sorted(p.as_posix() for p in scanner.tracked_markdown(root)))
 
+    def test_default_encoding_diagnostic_preserves_unicode_filename(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            subprocess.run(['git','init','-q',directory],check=True)
+            name='café/漢.MD'
+            path=root/name
+            path.parent.mkdir()
+            path.write_text('```sh\nnode ./bin/cli\n```\n',encoding='utf-8')
+            subprocess.run(['git','-C',directory,'add','--',name],check=True)
+            env={key:value for key,value in os.environ.items() if key not in ('PYTHONUTF8','PYTHONIOENCODING')}
+            process=subprocess.run([sys.executable,'-B','-I',str(SOURCE/'scripts/check_markdown_python.py'),'--root',directory],
+                                   env=env,capture_output=True)
+            self.assertEqual(1,process.returncode,process.stderr.decode('utf-8'))
+            self.assertIn(name+':2:',process.stdout.decode('utf-8'))
+
 
 class InlineHelpers(RuntimeCase):
     def run_code(self, code, *argv, stdin="", status=0):
         # Execute the actual shell-decoded documentation argument as Python argv.
-        process = subprocess.run([sys.executable, "-c", code, *map(str, argv)], cwd=self.root,
-                                 env={**self.env, "PYTHONUTF8": "1"}, input=stdin,
+        environment = {key:value for key,value in self.env.items() if key not in ("PYTHONUTF8", "PYTHONIOENCODING")}
+        process = subprocess.run([sys.executable, "-X", "utf8", "-c", code, *map(str, argv)], cwd=self.root,
+                                 env=environment, input=stdin,
                                  encoding="utf-8", capture_output=True, timeout=10)
         self.assertEqual(status, process.returncode, process.stderr+"\n"+code)
         return process
@@ -203,31 +227,130 @@ class InlineHelpers(RuntimeCase):
                 server.shutdown()
                 thread.join()
 
+    def test_readiness_deadline_failures_and_http_errors_use_one_total_budget(self):
+        code=self.code('.ai/references/methods/checkpoints.md','time.monotonic')
+        for mode in ('timeout','http-error','bad-status','eventual-success'):
+            with self.subTest(mode=mode):
+                seam='''import json,time,urllib.request,urllib.error
+clock=[0.0]
+calls=[]
+time.monotonic=lambda:clock[0]
+def sleep(delay):
+    assert delay <= 30-clock[0]+1e-9
+    clock[0]+=delay
+time.sleep=sleep
+class Response:
+    status=503
+    def __enter__(self): return self
+    def __exit__(self,*args): pass
+def request(url,timeout):
+    assert 0 < timeout <= min(2,30-clock[0])+1e-9
+    calls.append(timeout)
+    if MODE=='timeout':
+        clock[0]+=timeout
+        raise TimeoutError('fixture timeout')
+    if MODE=='http-error': raise urllib.error.HTTPError(url,503,'fixture error',{},None)
+    response=Response()
+    if MODE=='eventual-success' and len(calls)==3: response.status=200
+    return response
+urllib.request.urlopen=request
+result=0
+try:
+    exec(CODE)
+except SystemExit as error:
+    result=error.code
+print(json.dumps({'time':clock[0],'calls':len(calls),'result':result}))
+'''.replace('MODE',repr(mode)).replace('CODE',repr(code))
+                result=json.loads(self.run_code(seam).stdout)
+                self.assertLessEqual(result['time'],30)
+                if mode=='eventual-success':
+                    self.assertEqual(0,result['result'])
+                    self.assertEqual(3,result['calls'])
+                else:
+                    self.assertEqual(30,result['time'])
+                    self.assertEqual('Server did not become ready',result['result'])
+
 
 class RuntimeAdapters(RuntimeCase):
-    def test_documented_shell_flag_and_depth_roundtrip(self):
-        shell = Path('C:/Program Files/Git/bin/bash.exe') if os.name == 'nt' else Path(shutil.which('bash') or '')
+    def shell(self, script):
+        shell=Path('C:/Program Files/Git/bin/bash.exe') if os.name=='nt' else Path(shutil.which('bash') or '')
         if not shell.is_file():
             self.skipTest('Bash unavailable for actual workflow shell fixture')
+        # Feed UTF-8 script bytes through a file, avoiding Windows ANSI command-line conversion.
+        script_path=self.put('documented-fixture.sh',script)
+        env={key:value for key,value in self.env.items() if key not in ('PYTHONUTF8','PYTHONIOENCODING')}
+        return subprocess.run([str(shell),str(script_path)],cwd=self.root,env=env,encoding='utf-8',capture_output=True,timeout=30)
+
+    def preamble(self):
+        return '\n'.join(['set -euo pipefail',
+            'python() { '+shlex.quote(Path(sys.executable).as_posix())+' "$@"; }',
+            'engineer_run() { python -B -I '+shlex.quote((SOURCE/'engineer/bin/engineer.py').as_posix())+' "$@"; }'])
+
+    def test_documented_shell_flag_and_depth_roundtrip(self):
         text=(SOURCE/'engineer/workflows/code-review.md').read_text(encoding='utf-8')
         flags=next(line for line in text.splitlines() if line.startswith('FLAGS_JSON=$('))
         depth=next(line for line in text.splitlines() if line.startswith('DEPTH_PAYLOAD=$('))
         script='\n'.join([
-            'python() { '+shlex.quote(Path(sys.executable).as_posix())+' "$@"; }',
-            'engineer_run() { python -I '+shlex.quote((SOURCE/'engineer/bin/engineer.py').as_posix())+' "$@"; }',
-            'set -- 01 --auto --gemini "--files=src/a path.py"', flags,
-            'printf "%s\\n--depth--\\n" "$FLAGS_JSON"',
-            'REVIEW_FILES=("src/a path.py" "README.md")',
-            'DEPTH_OVERRIDE=deep; CONFIG_DEPTH=quick; DEPTH_OVERRIDES=\'[]\'',
+            self.preamble(),
+            'set -- 01 --auto --gemini "--files=src/café/漢.py"', flags,
+            'printf "%s\\n--payload--\\n" "$FLAGS_JSON"',
+            'REVIEW_FILES=("src/café/漢.py" "README.md")',
+            'DEPTH_OVERRIDE=""; CONFIG_DEPTH=quick; DEPTH_OVERRIDES='+shlex.quote(json.dumps([{'paths':['src/café'],'depth':'deep'}])),
             'REPO_ROOT='+shlex.quote(self.root.as_posix()), depth,
+            'printf "%s\\n--depth--\\n" "$DEPTH_PAYLOAD"',
             'printf "%s" "$DEPTH_PAYLOAD" | engineer_run query review.resolve-depth | engineer_run query json.depth-fields --raw',
         ])
-        process=subprocess.run([str(shell),'-c',script],cwd=self.root,env=self.env,text=True,capture_output=True,timeout=30)
+        process=self.shell(script)
         self.assertEqual(0,process.returncode,process.stderr)
-        first,second=process.stdout.strip().split('\n--depth--\n')
+        first,rest=process.stdout.strip().split('\n--payload--\n')
+        payload,second=rest.split('\n--depth--\n')
         self.assertTrue(json.loads(first)['fix'])
-        self.assertEqual('src/a path.py',json.loads(first)['files'])
-        self.assertEqual(['deep','flag','','','false','false','false'],second.split('\x1f'))
+        self.assertEqual('src/café/漢.py',json.loads(first)['files'])
+        self.assertEqual(['src/café/漢.py','README.md'],json.loads(payload)['files'])
+        self.assertEqual(['deep','rule','0','src/café','false','false','false'],second.split('\x1f'))
+
+    def test_isolated_cli_utf8_json_raw_stdin_file_and_errors(self):
+        env={key:value for key,value in self.env.items() if key not in ('PYTHONUTF8','PYTHONIOENCODING')}
+        runtime=SOURCE/'engineer/bin/engineer.py'
+        def launch(*argv,stdin=b''):
+            return subprocess.run([sys.executable,'-B','-I',str(runtime),*argv],cwd=self.root,env=env,input=stdin,capture_output=True)
+        result=launch('query','review.parse-flags','--','01','--files=src/café/漢.py')
+        self.assertEqual(0,result.returncode,result.stderr.decode('utf-8'))
+        self.assertEqual('src/café/漢.py',json.loads(result.stdout.decode('utf-8'))['files'])
+        result=launch('query','json.get','--field','path','--raw',stdin='{"path":"src/café/漢.py"}'.encode('utf-8'))
+        self.assertEqual(0,result.returncode,result.stderr.decode('utf-8'))
+        self.assertEqual(['src/café/漢.py'],result.stdout.decode('utf-8').splitlines())
+        source=self.put('café 漢.json','{"path":"src/café/漢.py"}')
+        result=launch('query','json.get','--input',str(source),'--field','path','--raw')
+        self.assertEqual(0,result.returncode,result.stderr.decode('utf-8'))
+        self.assertEqual(['src/café/漢.py'],result.stdout.decode('utf-8').splitlines())
+        missing=self.root/'不存在.json'
+        result=launch('query','json.get','--input',str(missing))
+        self.assertEqual(2,result.returncode)
+        self.assertIn('不存在.json',result.stderr.decode('utf-8'))
+
+    def test_python_cli_help_example_success_and_missing_subcommand(self):
+        cli=self.put('cli with spaces.py','import argparse\np=argparse.ArgumentParser()\np.add_subparsers().add_parser("scan")\np.parse_args()\n')
+        for document in ('.ai/agents/verifier.md','agents/verifier.md'):
+            command=next(line for line in (SOURCE/document).read_text(encoding='utf-8').splitlines() if line.startswith('python -X utf8 "$CLI_PATH" --help'))
+            for expected,status in (('scan',0),('missing-command',1)):
+                script=self.preamble()+'\nCLI_PATH='+shlex.quote(cli.as_posix())+'\nEXPECTED_SUBCOMMAND='+shlex.quote(expected)+'\n'+command
+                result=self.shell(script)
+                self.assertEqual(status,result.returncode,result.stderr)
+
+    def test_quick_scope_fallback_survives_set_e_and_pipefail(self):
+        text=(SOURCE/'engineer/workflows/quick.md').read_text(encoding='utf-8')
+        changed=next(line for line in text.splitlines() if line.startswith('CHANGED_FILES=$('))
+        why=next(line.strip() for line in text.splitlines() if line.strip().startswith('QUICK_SCOPE_WHY=$('))
+        for data,files,reason in [('', '', 'unresolvable: no resolver output'),
+                                  ('{bad', '', 'unresolvable: no resolver output'),
+                                  ('{"files":[],"status":"unresolvable","reason":"missing"}', '', 'unresolvable: missing'),
+                                  ('{"files":["src/café/漢.py"],"status":"resolved"}', 'src/café/漢.py', 'resolved')]:
+            script='\n'.join([self.preamble(),'QUICK_SCOPE_JSON='+shlex.quote(data),changed,why,
+                              'printf "%s\\0%s" "$CHANGED_FILES" "$QUICK_SCOPE_WHY"'])
+            result=self.shell(script)
+            self.assertEqual(0,result.returncode,result.stderr)
+            self.assertEqual([files,reason],result.stdout.split('\0'))
 
     def test_json_helper_contracts(self):
         data={'files':['a path','b.py'],'commits':[{'sha':'1234567890abcdef','subject':'A title'}],

@@ -61,6 +61,48 @@ The launcher and pipeline suites used a PowerShell process-local PATH prefix:
 run failed one standalone-launcher fixture because its inherited Git Bash PATH
 lacked `dirname`; the unchanged launcher passed after supplying that directory.
 
+## Independent-review corrections
+
+The first independent batch found two required corrections in the initial
+maintenance slice. Windows' legacy pipe encoding could corrupt non-Latin paths
+before review-depth matching, and the scanner missed executable tokens with an
+extensionless argument or stdin-only input. The correction slice:
+
+- Makes every migrated inline Python boundary request `-X utf8`; the isolated
+  CLI explicitly configures stdin/stdout/stderr as UTF-8. The shared test harness
+  now decodes this protocol explicitly, preserving all oracle assertions.
+- Tests the actual Bash payload and isolated CLI without UTF-8 environment
+  overrides. `src/café/漢.py` stays unchanged and selects the deep `src/café`
+  override over the quick default. JSON, raw output, stdin, file input and error
+  diagnostics retain Unicode. Scanner diagnostics also retain `café/漢.MD`.
+- Parses shell command positions rather than assuming script extensions or
+  command flags. Extensionless, redirected-stdin, bare pipeline and quoted
+  command-substitution forms are rejected; prose identifiers, browser JavaScript,
+  graph-node prose and quoted grep/printf data remain valid.
+- Replaces the 30-attempt readiness loop with one monotonic 30-second budget,
+  bounding each request and sleep by its remaining time. Deterministic timeout,
+  HTTP-error, non-2xx and eventual-success fixtures check the aggregate budget;
+  the actual local-HTTP success fixture remains in place.
+- Restores quick-review empty/malformed JSON fallback behavior under
+  `set -euo pipefail`; labels the Python CLI/module and version-probe examples;
+  marks hypothetical verifier results as illustrations; and points the No Node
+  check in PLANNED-UPDATES.md at the comprehensive scanner.
+
+Correction checks (same command forms as above, after the corrections):
+
+| Test module / check | Result |
+|---|---|
+| `test_markdown_python.py` | 19 tests passed, including all review reproductions and default-environment Unicode boundaries. |
+| `test_engineer_runtime.py` | 9 tests passed. |
+| `test_code_review_pipeline_regression.py` | 172 tests passed with 39 existing skips and 5 expected failures. |
+| `test_runtime_launcher_parity.py` | 59 tests passed with 5 existing skips and 2 expected failures; Git usr/bin PATH prefix as above. |
+| `test_spec_probes.py` | 2 tests passed; UTF-8 oracle comparison preserved. |
+| `test_code_review_flags.py` / `test_code_review_depth.py` | 16 / 55 tests passed. |
+| Comprehensive scanner | 561 tracked Markdown files, zero findings. |
+| `git diff --check` | No whitespace errors. |
+
+The correction slice starts from `60446c1a8a969a1fbc2e5ddd79b5b890b0ea1893`.
+
 ## Remaining and limits
 
 No required migration gap remains in the scanned Markdown inventory. Independent

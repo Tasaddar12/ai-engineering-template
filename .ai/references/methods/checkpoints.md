@@ -503,15 +503,24 @@ DEV_SERVER_PID=$!
 
 # Wait for ready (max 30s) — uses Python urllib for cross-platform compatibility
 # Bound the readiness check; failure is not readiness.
-ready=false
-for attempt in {1..30}; do
-  if python -c 'import urllib.request; r=urllib.request.urlopen("http://localhost:3000",timeout=2); assert 200 <= r.status < 300'; then
-    ready=true
-    break
-  fi
-  sleep 1
-done
-[ "$ready" = true ] || { echo "Server did not become ready" >&2; exit 1; }
+python -X utf8 -c '
+import sys, time, urllib.request
+end = time.monotonic() + 30
+while True:
+    remaining = end - time.monotonic()
+    if remaining <= 0:
+        sys.exit("Server did not become ready")
+    try:
+        with urllib.request.urlopen("http://localhost:3000", timeout=min(2, remaining)) as response:
+            if 200 <= response.status < 300:
+                break
+    except OSError:
+        pass
+    remaining = end - time.monotonic()
+    if remaining <= 0:
+        sys.exit("Server did not become ready")
+    time.sleep(min(1, remaining))
+' || exit 1
 ```
 
 **Port conflicts:** Identify the process and its owner. Stop only a process owned by this assignment, or use an available alternate port and update the verification URL.

@@ -112,8 +112,8 @@ Run syntax/parse check appropriate to file type:
 |----------|--------------|
 | JavaScript | Resolve the project lint script with `engineer_run query resolve-package-manager lint --raw`, then run that command; if unavailable, use Tier 1. |
 | TypeScript | Project-aware check only, output filtered to `{file}`: the project's own typecheck (`npm run typecheck` / `tsc -b`) if it exists, else `npx tsc --noEmit -p <nearest tsconfig*.json>` whose `--listFilesOnly` output lists `{file}`; no config includes `{file}` → Tier 1 only. Never pass `{file}` to `tsc` positionally. |
-| Python | `python -c "import ast; ast.parse(open('{file}').read())"` |
-| JSON | `python -m json.tool "{file}" >/dev/null` |
+| Python | `python -X utf8 -c "import ast; ast.parse(open('{file}').read())"` |
+| JSON | `python -X utf8 -m json.tool "{file}" >/dev/null` |
 | Other | Skip to Tier 1 only |
 
 **Scoping syntax checks:**
@@ -239,7 +239,7 @@ The cleanup tail (commit fixes -> remove worktree -> drop recovery sentinel) MUS
 # launcher preamble is sourced — invoking the CLI here would be undefined at
 # runtime and violates the runtime-launcher-parity preamble-ordering rule.
 # Once the preamble is sourced (later steps), the CLI is available.
-USE_WORKTREES=$(python -c 'import json,os,pathlib
+USE_WORKTREES=$(python -X utf8 -c 'import json,os,pathlib
 try:
  c=json.loads((pathlib.Path(os.environ.get("ENGINEER_PROJECT_DIR") or os.getcwd())/".planning/config.json").read_text(encoding="utf-8")); v=c.get("workflow", {}).get("use_worktrees", True); print(str(True if v is None else v).lower(), end="")
 except (OSError,ValueError,TypeError,AttributeError): print("true", end="")')
@@ -275,7 +275,7 @@ if [ -f "$sentinel" ]; then
   # `git branch -D`, the orphan branch survives and clutters `git branch`
   # output forever. Emit both fields newline-separated so we can read them
   # independently.
-  prior_recovery=$(python -c 'import json,pathlib,sys
+  prior_recovery=$(python -X utf8 -c 'import json,pathlib,sys
 try:
  d=json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")); print(str(d.get("worktree_path") or "")+"\n"+str(d.get("reviewfix_branch") or ""),end="")
 except (OSError,ValueError,AttributeError) as e:
@@ -336,7 +336,7 @@ else
   # Write the recovery sentinel ONLY AFTER `git worktree add` succeeds.
   # Writing it before would leave a sentinel pointing at a worktree that does
   # not exist if `git worktree add` itself failed.
-  python -c 'import datetime,json,pathlib,sys; keys=["worktree_path","branch","reviewfix_branch","padded_phase"]; data=dict(zip(keys,sys.argv[2:])); data["started_at"]=datetime.datetime.now(datetime.timezone.utc).isoformat(); pathlib.Path(sys.argv[1]).write_text(json.dumps(data,indent=2),encoding="utf-8")' "$sentinel" "$wt" "$branch" "$reviewfix_branch" "$padded_phase"
+  python -X utf8 -c 'import datetime,json,pathlib,sys; keys=["worktree_path","branch","reviewfix_branch","padded_phase"]; data=dict(zip(keys,sys.argv[2:])); data["started_at"]=datetime.datetime.now(datetime.timezone.utc).isoformat(); pathlib.Path(sys.argv[1]).write_text(json.dumps(data,indent=2),encoding="utf-8")' "$sentinel" "$wt" "$branch" "$reviewfix_branch" "$padded_phase"
 
   cd "$wt"
 fi

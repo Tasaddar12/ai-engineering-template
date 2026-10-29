@@ -24,6 +24,11 @@ overflow files. Failures print a diagnostic JSON object on stderr and return a
 nonzero exit status. Config keys absent from both project overrides and defaults
 fail with `key-not-found`; `--default VALUE` supplies an explicit fallback.
 
+Stdin, stdout and stderr use UTF-8, including isolated `python -I` invocation on
+Windows. Callers capturing runtime output must decode UTF-8 explicitly. Inline
+Python workflow examples use `python -X utf8` so shell pipes preserve Unicode
+paths before they reach the runtime as well.
+
 ```sh
 engineer_run query config-get workflow.tdd_mode --raw
 engineer_run query config-get workflow.optional --default false --raw

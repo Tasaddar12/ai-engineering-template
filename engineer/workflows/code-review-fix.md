@@ -394,7 +394,7 @@ After ALL iterations complete (or single pass in non-auto mode), validate and co
 if [ -f "${FIX_REPORT_PATH}" ]; then
   # Validate REVIEW-FIX.md has valid YAML frontmatter with status field
   # Export FIX_REPORT_PATH (the var the body reads), not REVIEW_PATH.
-  HAS_STATUS=$(FIX_REPORT_PATH="${FIX_REPORT_PATH}" python -c 'import os,re,pathlib; text=pathlib.Path(os.environ["FIX_REPORT_PATH"]).read_text(encoding="utf-8"); m=re.match(r"\A---\s*\n(.*?)\n---", text, re.S); print("valid" if m and re.search(r"(?m)^status:",m[1]) else "invalid")' 2>/dev/null)
+  HAS_STATUS=$(FIX_REPORT_PATH="${FIX_REPORT_PATH}" python -X utf8 -c 'import os,re,pathlib; text=pathlib.Path(os.environ["FIX_REPORT_PATH"]).read_text(encoding="utf-8"); m=re.match(r"\A---\s*\n(.*?)\n---", text, re.S); print("valid" if m and re.search(r"(?m)^status:",m[1]) else "invalid")' 2>/dev/null)
   
   if [ "$HAS_STATUS" = "valid" ]; then
     echo "REVIEW-FIX.md created at ${FIX_REPORT_PATH}"

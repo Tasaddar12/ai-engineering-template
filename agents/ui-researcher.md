@@ -158,8 +158,8 @@ Try in order, stopping at the first that answers:
 
 ```bash
 npx shadcn info 2>/dev/null                                                # shadcn projects
-python -c 'import json,pathlib; print(len(json.loads(pathlib.Path("node_modules/<pkg>/package.json").read_text(encoding="utf-8")).get("exports") or {}))'  # exports map
-python -c 'import json,pathlib; print(json.loads(pathlib.Path("node_modules/<pkg>/package.json").read_text(encoding="utf-8"))["version"])'                            # RESOLVED version
+python -X utf8 -c 'import json,pathlib; print(len(json.loads(pathlib.Path("node_modules/<pkg>/package.json").read_text(encoding="utf-8")).get("exports") or {}))'  # exports map
+python -X utf8 -c 'import json,pathlib; print(json.loads(pathlib.Path("node_modules/<pkg>/package.json").read_text(encoding="utf-8"))["version"])'                            # RESOLVED version
 ```
 
 A first-party CLI with a JSON mode, or an MCP tool the design system ships, beats all three. What
@@ -186,7 +186,7 @@ so treat empty output, a non-zero exit, or the literal `undefined` as that step 
 instead — still not the caret range:
 
 ```bash
-python -c 'import json,pathlib; print(json.loads(pathlib.Path("package-lock.json").read_text(encoding="utf-8"))["packages"]["node_modules/<pkg>"]["version"])'
+python -X utf8 -c 'import json,pathlib; print(json.loads(pathlib.Path("package-lock.json").read_text(encoding="utf-8"))["packages"]["node_modules/<pkg>"]["version"])'
 ```
 
 For `pnpm-lock.yaml` or `yarn.lock`, read the resolved version for `<pkg>` from that file. If the

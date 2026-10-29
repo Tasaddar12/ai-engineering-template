@@ -74,7 +74,7 @@ Quick tasks ask clarifying questions by default, then research as needed to esta
 | Goal | End state you can check |
 |---|---|
 | One workflow tree | `.ai/` is gone. `agents/`, `commands/`, `engineer/`, `hooks/`, `bin/`, `skills/` hold everything. `.planning/` holds only project records. |
-| No Node | `grep -rnE "engineer_run\|\.cjs\|npx \|node (-e\|-p\|-c\|\")" agents commands engineer hooks bin skills` returns nothing. The kept upstream files contain about 97 inline JavaScript JSON helpers and two `.cjs` probe scripts; rows V-150 to V-152 replace them with `--pick` or Python. |
+| No Node | `python scripts/check_markdown_python.py` scans every tracked Markdown file and reports no executable Node commands or retired helper invocations. |
 | One runtime command | Every workflow calls `engineer_run query <verb>`. `engineer_run` is a bash shim that runs `engineer/bin/engineer.py` with Python 3. |
 | No dangling upstream plumbing | `grep -rn "engineer_run\|engineer\|/" agents commands engineer` returns nothing. |
 | Our behavior preserved | The unattended execute → verify → ship chain, mandatory worktree isolation, phase authority, receipts, frozen-revision verification, issue/PR automation and exact-approval cleanup all work as on `main`. `python -m unittest discover -s tests` passes. |
@@ -3167,7 +3167,7 @@ Done when:
 
 Done when:
 - `test -f engineer/templates/config.yaml && test ! -e engineer/templates/config.json` passes.
-- `python -c "import yaml,sys; d=yaml.safe_load(open('engineer/templates/config.yaml')); assert {'commit_docs','context_window','workflow','worktree','handoff','codebase','agents','verification'} <= d.keys()"` exits 0.
+- `python -X utf8 -c "import yaml,sys; d=yaml.safe_load(open('engineer/templates/config.yaml')); assert {'commit_docs','context_window','workflow','worktree','handoff','codebase','agents','verification'} <= d.keys()"` exits 0.
 - `grep -n "phase_run\|\.ai/runtime" engineer/templates/config.yaml` returns nothing.
 - `grep -rn "config\.json" engineer/references/{checkpoints,context-budget,nyquist-compliance,universal-anti-patterns,planner-load-graph-context}.md engineer/templates/README.md` returns nothing.
 
@@ -3486,7 +3486,7 @@ Local defaults live in `engineer/bin/lib/config.py` `DEFAULTS` (was `.ai/runtime
 | C-43 | noise tokens from the grep (`COMMAND`, `calls.`, `is`, `needed.`) | - | - | - | Ignore: prose around `config-get`, not keys. |
 
 Done when:
-- `python -c "import sys; sys.path.insert(0,'engineer/bin'); from lib.config import DEFAULTS as D; w=D['workflow']; assert all(k in w for k in ('code_review','code_review_depth','tdd_mode','ui_phase','security_asvs_level','security_block_on','security_enforcement','nyquist_validation','plan_chunked','specless_probe_fallback','human_verify_mode','live_dom_uat','ui_interaction_capture','context_coverage_gate','agent_hint_routing'))"` exits 0
+- `python -X utf8 -c "import sys; sys.path.insert(0,'engineer/bin'); from lib.config import DEFAULTS as D; w=D['workflow']; assert all(k in w for k in ('code_review','code_review_depth','tdd_mode','ui_phase','security_asvs_level','security_block_on','security_enforcement','nyquist_validation','plan_chunked','specless_probe_fallback','human_verify_mode','live_dom_uat','ui_interaction_capture','context_coverage_gate','agent_hint_routing'))"` exits 0
 - `engineer_run query config-get workflow.nonexistent --raw; test $? -eq 1`
 - `test "$(engineer_run query config-get workflow.nonexistent --default x --raw)" = x`
 - `grep -rn 'use_worktrees\|worktree_skip_hooks\|plan_review_convergence\|global_learnings\|_auto_chain_active\|code_review_point\|pr_body_sections\|test_gate_timeout\|build_command' agents commands engineer` returns nothing

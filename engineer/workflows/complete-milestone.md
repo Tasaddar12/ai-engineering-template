@@ -294,7 +294,7 @@ ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
 INIT_EARLY=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_EARLY" == @file:* ]]; then INIT_EARLY=$(cat "${INIT_EARLY#@file:}"); fi
-python -c 'import json,sys; m=json.loads(sys.argv[1]).get("section_manifest"); print("PROJECT_MD_REVIEW="+("run" if m is None or "project-md-evolution-review" in m["included"] else "skip"))' "$INIT_EARLY"
+python -X utf8 -c 'import json,sys; m=json.loads(sys.argv[1]).get("section_manifest"); print("PROJECT_MD_REVIEW="+("run" if m is None or "project-md-evolution-review" in m["included"] else "skip"))' "$INIT_EARLY"
 ```
 
 <!-- engineer:section id="project-md-evolution-review" when="state:flat-mode" -->
@@ -379,7 +379,7 @@ ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
 INIT_REORG=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
-_engineer_field() { python -c 'import json,sys; v=json.loads(sys.argv[1]).get(sys.argv[2]); print("" if v is None else str(v).lower() if isinstance(v,bool) else v,end="")' "$1" "$2"; }
+_engineer_field() { python -X utf8 -c 'import json,sys; v=json.loads(sys.argv[1]).get(sys.argv[2]); print("" if v is None else str(v).lower() if isinstance(v,bool) else v,end="")' "$1" "$2"; }
 ROADMAP_PATH=$(_engineer_field "$INIT_REORG" roadmap_path)
 # Extract lines under ## Backlog through end of file (or next ## section)
 BACKLOG_SECTION=$(awk '/^## Backlog/{found=1} found{print}' "$ROADMAP_PATH")
@@ -401,7 +401,7 @@ ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
 INIT_REORG=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
-_engineer_field() { python -c 'import json,sys; v=json.loads(sys.argv[1]).get(sys.argv[2]); print("" if v is None else str(v).lower() if isinstance(v,bool) else v,end="")' "$1" "$2"; }
+_engineer_field() { python -X utf8 -c 'import json,sys; v=json.loads(sys.argv[1]).get(sys.argv[2]); print("" if v is None else str(v).lower() if isinstance(v,bool) else v,end="")' "$1" "$2"; }
 ROADMAP_PATH=$(_engineer_field "$INIT_REORG" roadmap_path)
 printf '%s\n' "$ROADMAP_PATH" > .planning/.engineer-allow-shrink
 echo "Write target: $ROADMAP_PATH"
@@ -444,14 +444,14 @@ ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
 INIT_REORG=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
-_engineer_field() { python -c 'import json,sys; v=json.loads(sys.argv[1]).get(sys.argv[2]); print("" if v is None else str(v).lower() if isinstance(v,bool) else v,end="")' "$1" "$2"; }
+_engineer_field() { python -X utf8 -c 'import json,sys; v=json.loads(sys.argv[1]).get(sys.argv[2]); print("" if v is None else str(v).lower() if isinstance(v,bool) else v,end="")' "$1" "$2"; }
 STATE_PATH=$(_engineer_field "$INIT_REORG" state_path)
 ROADMAP_PATH=$(_engineer_field "$INIT_REORG" roadmap_path)
 ARCHIVE_DIR=$(_engineer_field "$INIT_REORG" archive_dir)
 MILESTONES_PATH=$(_engineer_field "$INIT_REORG" milestones_path)
 PROJECT_PATH=$(_engineer_field "$INIT_REORG" project_path)
 # PROJECT.md is shared across workstreams. Stage it only when init's own section manifest says this run edited it (the evolution review is included in flat mode only) — the same source the review step is gated on, so the two cannot disagree.
-_engineer_has_section() { python -c 'import json,sys; m=json.loads(sys.argv[1]).get("section_manifest"); sys.exit(0 if m is None or sys.argv[2] in m["included"] else 1)' "$1" "$2"; }
+_engineer_has_section() { python -X utf8 -c 'import json,sys; m=json.loads(sys.argv[1]).get("section_manifest"); sys.exit(0 if m is None or sys.argv[2] in m["included"] else 1)' "$1" "$2"; }
 _engineer_has_section "$INIT_REORG" project-md-evolution-review || PROJECT_PATH=""
 engineer_run query commit "chore: archive v[X.Y] milestone files" --files "${ARCHIVE_DIR}/v[X.Y]-ROADMAP.md" "${ARCHIVE_DIR}/v[X.Y]-REQUIREMENTS.md" "${ARCHIVE_DIR}/v[X.Y]-MILESTONE-AUDIT.md" "$MILESTONES_PATH" ${PROJECT_PATH:+"$PROJECT_PATH"} "$STATE_PATH" "$ROADMAP_PATH"
 ```
@@ -470,7 +470,7 @@ ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
 INIT_REORG=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
 if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
-_engineer_field() { python -c 'import json,sys; v=json.loads(sys.argv[1]).get(sys.argv[2]); print("" if v is None else str(v).lower() if isinstance(v,bool) else v,end="")' "$1" "$2"; }
+_engineer_field() { python -X utf8 -c 'import json,sys; v=json.loads(sys.argv[1]).get(sys.argv[2]); print("" if v is None else str(v).lower() if isinstance(v,bool) else v,end="")' "$1" "$2"; }
 REQUIREMENTS_PATH=$(_engineer_field "$INIT_REORG" requirements_path)
 git rm "$REQUIREMENTS_PATH"
 ```

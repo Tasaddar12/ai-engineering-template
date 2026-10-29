@@ -6,6 +6,12 @@ import os
 import sys
 from pathlib import Path
 
+# Pipes are UTF-8 protocol boundaries even under Windows legacy code pages and
+# isolated (-I) Python, which deliberately ignores PYTHONUTF8/PYTHONIOENCODING.
+for _stream in (sys.stdin, sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8")
+
 # An explicit source path also supports Python's isolated (-I) invocation.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib import bundles, config, decisions, frontmatter, gitops, misc, models, packages

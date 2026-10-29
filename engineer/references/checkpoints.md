@@ -494,7 +494,7 @@ npm run dev &
 DEV_SERVER_PID=$!
 
 # Wait for ready (max 30s) — uses Python urllib for cross-platform compatibility
-engineer_run query run-with-timeout --timeout 30 -- python -c '
+engineer_run query run-with-timeout --timeout 30 -- python -X utf8 -c '
 import time, urllib.request
 while True:
     try:
@@ -539,7 +539,7 @@ while True:
 
 **Never present a checkpoint with broken verification environment.** If the local server isn't responding, don't ask user to "visit localhost:3000".
 
-> **Cross-platform note:** Use `python -c 'import urllib.request; r=urllib.request.urlopen("http://localhost:3000",timeout=2); print(r.status)'` instead of `curl` for health checks. `curl` is broken on Windows MSYS/Git Bash due to SSL/path mangling issues.
+> **Cross-platform note:** Use `python -X utf8 -c 'import urllib.request; r=urllib.request.urlopen("http://localhost:3000",timeout=2); print(r.status)'` instead of `curl` for health checks. `curl` is broken on Windows MSYS/Git Bash due to SSL/path mangling issues.
 
 ```xml
 <!-- WRONG: Checkpoint with broken environment -->

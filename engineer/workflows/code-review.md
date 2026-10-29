@@ -276,7 +276,7 @@ SCOPE_JSON=$(engineer_run check evaluation-scope --phase "${PADDED_PHASE}" ${LAS
 if [ "$SCOPE_RC" -ne 0 ] && [ "$SCOPE_RC" -ne 69 ]; then SCOPE_JSON=""; fi
 # One field of the resolver's JSON; arrays print one element per line, an absent field prints nothing.
 scope_field() {
-  printf '%s' "$SCOPE_JSON" | python -c 'import json,sys; v=json.load(sys.stdin).get(sys.argv[1]); print("\n".join(map(str,v)) if isinstance(v,list) else "" if v is None else str(v).lower() if isinstance(v,bool) else v,end="")' "$1" 2>/dev/null
+  printf '%s' "$SCOPE_JSON" | python -X utf8 -c 'import json,sys; v=json.load(sys.stdin).get(sys.argv[1]); print("\n".join(map(str,v)) if isinstance(v,list) else "" if v is None else str(v).lower() if isinstance(v,bool) else v,end="")' "$1" 2>/dev/null
 }
 SCOPE_STATUS=$(scope_field status); [ -n "$SCOPE_STATUS" ] || SCOPE_STATUS="unresolvable"
 SCOPE_REASON=$(scope_field reason)
@@ -440,7 +440,7 @@ REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 
 # Files travel on stdin, never argv — a 50+-file scope with long paths approaches the
 # Windows execFileSync 32,767-char argv ceiling; stdin has no such bound.
-DEPTH_PAYLOAD=$(printf '%s\n' "${REVIEW_FILES[@]}" | FLAG_DEPTH="$DEPTH_OVERRIDE" CONFIG_DEPTH="$CONFIG_DEPTH" DEPTH_OVERRIDES="$DEPTH_OVERRIDES" REPO_ROOT="$REPO_ROOT" python -c 'import json,os,sys; print(json.dumps(dict(flagDepth=os.environ.get("FLAG_DEPTH", ""), configDepth=os.environ.get("CONFIG_DEPTH", ""), overrides=json.loads(os.environ.get("DEPTH_OVERRIDES") or "[]"), files=[x for x in sys.stdin.read().splitlines() if x], repoRoot=os.environ.get("REPO_ROOT", ""))))')
+DEPTH_PAYLOAD=$(printf '%s\n' "${REVIEW_FILES[@]}" | FLAG_DEPTH="$DEPTH_OVERRIDE" CONFIG_DEPTH="$CONFIG_DEPTH" DEPTH_OVERRIDES="$DEPTH_OVERRIDES" REPO_ROOT="$REPO_ROOT" python -X utf8 -c 'import json,os,sys; print(json.dumps(dict(flagDepth=os.environ.get("FLAG_DEPTH", ""), configDepth=os.environ.get("CONFIG_DEPTH", ""), overrides=json.loads(os.environ.get("DEPTH_OVERRIDES") or "[]"), files=[x for x in sys.stdin.read().splitlines() if x], repoRoot=os.environ.get("REPO_ROOT", ""))))')
 
 # Python helpers are resolved by engineer_run.
 DEPTH_JSON=$(echo "$DEPTH_PAYLOAD" | engineer_run query review.resolve-depth --stdin)
@@ -496,7 +496,7 @@ else
   # depth, since silently reviewing a misconfigured sensitive-path policy at
   # `standard` is the exact hole this feature closes — then hard-stop before
   # REVIEW_DEPTH can be read by any later step.
-  echo "$DEPTH_JSON" | python -c 'import json,sys; data=json.load(sys.stdin); [print("Error: workflow.code_review_depth_overrides: "+str(e), file=sys.stderr) for e in data.get("errors", [])]'
+  echo "$DEPTH_JSON" | python -X utf8 -c 'import json,sys; data=json.load(sys.stdin); [print("Error: workflow.code_review_depth_overrides: "+str(e), file=sys.stderr) for e in data.get("errors", [])]'
   echo "Error: Fix workflow.code_review_depth_overrides and retry."
   echo "Error: Depth resolution failed (DEPTH_OK=\"${DEPTH_OK}\"). Halting before agent spawn."
   exit 1
@@ -714,7 +714,7 @@ case "$REVIEWER_POINT" in execute:post|execute:wave:post) ;; *) REVIEWER_POINT="
 REVIEWER_HOOKS_JSON=$(engineer_run loop render-hooks "${REVIEWER_POINT}" --raw 2>/dev/null) || REVIEWER_HOOKS_JSON=""
 if [[ "$REVIEWER_HOOKS_JSON" == @file:* ]]; then REVIEWER_HOOKS_JSON=$(cat "${REVIEWER_HOOKS_JSON#@file:}" 2>/dev/null || true); fi
 # A literal closing tag inside a fragment is escaped so third-party text cannot end the block early.
-REVIEWER_CONTRIBUTIONS=$(printf '%s' "$REVIEWER_HOOKS_JSON" | python -c 'import json,sys; h=[x["fragment"]["inline"].replace("</capability_review_rules>","<\\/capability_review_rules>") for x in json.load(sys.stdin).get("activeHooks",[]) if x and x.get("kind")=="contribution" and x.get("into")=="code-reviewer" and isinstance(x.get("fragment",{}).get("inline"),str) and x["fragment"]["inline"]]; print("<capability_review_rules>\n"+"\n\n".join(h)+"\n</capability_review_rules>" if h else "",end="")' 2>/dev/null || true)
+REVIEWER_CONTRIBUTIONS=$(printf '%s' "$REVIEWER_HOOKS_JSON" | python -X utf8 -c 'import json,sys; h=[x["fragment"]["inline"].replace("</capability_review_rules>","<\\/capability_review_rules>") for x in json.load(sys.stdin).get("activeHooks",[]) if x and x.get("kind")=="contribution" and x.get("into")=="code-reviewer" and isinstance(x.get("fragment",{}).get("inline"),str) and x["fragment"]["inline"]]; print("<capability_review_rules>\n"+"\n\n".join(h)+"\n</capability_review_rules>" if h else "",end="")' 2>/dev/null || true)
 ```
 
 Spawn the code-reviewer agent:
@@ -778,7 +778,7 @@ fi
 
 if [ -f "${REVIEW_PATH}" ]; then
   # Validate REVIEW.md has valid YAML frontmatter with status field
-  HAS_STATUS=$(REVIEW_PATH="${REVIEW_PATH}" python -c 'import os,re,pathlib; text=pathlib.Path(os.environ["REVIEW_PATH"]).read_text(encoding="utf-8"); m=re.match(r"\A---\s*\n(.*?)\n---", text, re.S); print("valid" if m and re.search(r"(?m)^status:",m[1]) else "invalid")' 2>/dev/null)
+  HAS_STATUS=$(REVIEW_PATH="${REVIEW_PATH}" python -X utf8 -c 'import os,re,pathlib; text=pathlib.Path(os.environ["REVIEW_PATH"]).read_text(encoding="utf-8"); m=re.match(r"\A---\s*\n(.*?)\n---", text, re.S); print("valid" if m and re.search(r"(?m)^status:",m[1]) else "invalid")' 2>/dev/null)
   
   if [ "$HAS_STATUS" = "valid" ]; then
     echo "REVIEW.md created at ${REVIEW_PATH}"
