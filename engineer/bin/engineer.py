@@ -265,7 +265,11 @@ def main(argv=None):
             raise Failure("unknown-verb", f"Unknown runtime verb: {name}", 2)
         else:
             result = VERBS[name](args)
-        warnings = planning_integrity.finish(name, before, planning_integrity.capture(health=health), args)
+        after = planning_integrity.capture(health=health)
+        warnings = planning_integrity.finish(name, before, after, args)
+        if health:
+            from lib.health_diagnostic import merge_health_evidence
+            result = merge_health_evidence(result, before.get("evidence_gaps", []) + after.get("evidence_gaps", []))
         if warnings:
             print(json.dumps({"warning": "planning-integrity", "findings": warnings}, ensure_ascii=False), file=sys.stderr)
         status = 0
