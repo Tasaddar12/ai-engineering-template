@@ -1,7 +1,7 @@
 """Concrete, read-only initialization packets for every retained workflow family."""
 from pathlib import Path
 import re
-from . import config, models, records
+from . import config, models, records, phase_id
 from .core import Args, Failure, load_json, now, read, root, run, slug
 from .planning import safe
 from .text import split_frontmatter
@@ -45,7 +45,7 @@ def _progress(packet):
         except Failure as error:
             states.append({"phase": phase["number"], "status": "unverified", "reason": error.code})
     current = next((item for item in progress["phases"] if not item["complete"]), None)
-    following = next((item for item in progress["phases"] if current and tuple(map(int, item["number"].split("."))) > tuple(map(int, current["number"].split(".")))), None)
+    following = next((item for item in progress["phases"] if current and phase_id.sort_key(item["number"]) > phase_id.sort_key(current["number"])), None)
     packet.update(progress)
     packet.update({"progress_percent": progress["percent"], "completed_count": progress["completed_phases"],
                    "current_phase": current, "next_phase": following, "phase_verification": states,
@@ -164,7 +164,7 @@ def init(args, kind):
     value = args.arg(0, args.get("phase"))
     if value is None:
         state_phase = packet["state"].get("phase", "")
-        match = re.match(r"\d+(?:\.\d+)?", str(state_phase))
+        match = re.match(phase_id.PATTERN + r"(?=$|[\s-])", str(state_phase))
         value = match[0] if match else None
     try:
         info = records.find(value)
@@ -201,7 +201,7 @@ def init(args, kind):
     packet["prior_verify_commands"] = []
     from .plans import tasks
     for prior in reversed(records.phases()):
-        if tuple(map(int, prior.name.split("-")[0].split("."))) >= tuple(map(int, info["number"].split("."))):
+        if phase_id.sort_key(prior.name) >= phase_id.sort_key(info["number"]):
             continue
         commands = []
         for plan_file in sorted(prior.glob("*-PLAN.md")):

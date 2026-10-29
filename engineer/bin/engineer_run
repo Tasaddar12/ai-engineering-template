@@ -3,11 +3,15 @@
 set -eu
 source_path=$0
 while [ -L "$source_path" ]; do
-    source_dir=$(CDPATH= cd -- "$(dirname -- "$source_path")" && pwd -P)
+    case "$source_path" in */*) source_parent=${source_path%/*} ;; *) source_parent=. ;; esac
+    source_parent=${source_parent:-/}
+    source_dir=$(CDPATH= cd -- "$source_parent" && pwd -P)
     link=$(readlink "$source_path")
     case "$link" in /*) source_path=$link ;; *) source_path=$source_dir/$link ;; esac
 done
-runtime_dir=$(CDPATH= cd -- "$(dirname -- "$source_path")" && pwd -P)
+case "$source_path" in */*) source_parent=${source_path%/*} ;; *) source_parent=. ;; esac
+source_parent=${source_parent:-/}
+runtime_dir=$(CDPATH= cd -- "$source_parent" && pwd -P)
 namespace_dir=$(CDPATH= cd -- "$runtime_dir/../.." && pwd -P)
 project_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd -P)
 for interpreter in "$namespace_dir-venv/bin/python" "$namespace_dir-venv/Scripts/python.exe" "$project_root/.venv/bin/python" "$project_root/.venv/Scripts/python.exe"; do

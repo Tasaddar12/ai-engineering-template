@@ -73,11 +73,16 @@ class PythonScripts(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             subprocess.run(["git", "init", str(root)], capture_output=True, check=True)
-            baseline = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "1eb6c97"], text=True).strip()
-            subprocess.run(["git", "-C", str(root), "fetch", "--no-tags", "--depth", "1", str(ROOT), baseline], capture_output=True, check=True)
             (root / "commands").mkdir()
             (root / "commands/sample.md").write_text("# Sample\n", encoding="utf-8")
-            argv = [sys.executable, "-I", str(ROOT / "scripts/inventory.py"), "--root", str(root)]
+            for args in (("config", "user.name", "Inventory Test"), ("config", "user.email", "inventory@example.invalid"),
+                         ("add", "commands/sample.md"), ("commit", "-m", "local immutable baseline")):
+                subprocess.run(["git", "-C", str(root), *args], capture_output=True, check=True)
+            baseline = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()
+            # Supply the immutable baseline explicitly to the real CLI main;
+            # fixture evidence must not depend on the checkout's history depth.
+            entry = "import sys; sys.path.insert(0,sys.argv[1]); import inventory; inventory.UPSTREAM_COPY=sys.argv.pop(2); sys.argv.pop(1); sys.exit(inventory.main())"
+            argv = [sys.executable, "-I", "-c", entry, str(ROOT / "scripts"), baseline, "--root", str(root)]
             preview = subprocess.run(argv, capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(0, preview.returncode, preview.stderr)
             self.assertFalse((root / "docs/INVENTORY.md").exists())
@@ -105,9 +110,24 @@ class PythonScripts(unittest.TestCase):
             self.assertEqual(0, subprocess.run(argv, capture_output=True).returncode)
 
     def test_anchor_reads_immutable_baseline_and_check_previews_without_execution(self):
-        anchored = subprocess.run([sys.executable, "-I", str(ROOT / "scripts/anchor.py"), "R-AG-001"], capture_output=True, text=True)
-        self.assertEqual(0, anchored.returncode, anchored.stderr)
-        self.assertIn("baseline 9443672", anchored.stdout)
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "commands").mkdir()
+            source = root / "commands/sample.md"
+            source.write_text("original first\noriginal second\n", encoding="utf-8")
+            subprocess.run(["git", "init", str(root)], capture_output=True, check=True)
+            for args in (("config", "user.name", "Anchor Test"), ("config", "user.email", "anchor@example.invalid"),
+                         ("add", "commands/sample.md"), ("commit", "-m", "local immutable anchor")):
+                subprocess.run(["git", "-C", str(root), *args], capture_output=True, check=True)
+            baseline = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()
+            source.write_text("changed working copy\n", encoding="utf-8")
+            (root / "PLANNED-UPDATES.md").write_text("## 11. Agents\n| R-AG-001 | commands/sample.md:1-2 |\n", encoding="utf-8")
+            entry = "import sys; sys.path.insert(0,sys.argv[1]); import anchor; anchor.BASELINE=sys.argv.pop(2); sys.argv.pop(1); sys.exit(anchor.main())"
+            anchored = subprocess.run([sys.executable, "-I", "-c", entry, str(ROOT / "scripts"), baseline, "R-AG-001", "--root", str(root)], capture_output=True, text=True)
+            self.assertEqual(0, anchored.returncode, anchored.stderr)
+            self.assertIn("baseline " + baseline, anchored.stdout)
+            self.assertIn("original second", anchored.stdout)
+            self.assertNotIn("changed working copy", anchored.stdout)
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             (root / "PLANNED-UPDATES.md").write_text("### Phase 1: Fixture\n```check\necho fixture-check\n```\n", encoding="utf-8")
