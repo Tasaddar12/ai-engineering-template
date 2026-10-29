@@ -74,7 +74,7 @@ def cancellation_reason(path,request):
         if path.is_symlink() or not path.is_file():
             return None
         packet = json.loads(path.read_bytes())
-    except (OSError,UnicodeDecodeError,json.JSONDecodeError):
+    except (OSError,ValueError,RecursionError):
         return None
     if isinstance(packet,dict) and packet.get('token') == request['token'] and packet.get('request_hash') == request['request_hash'] and packet.get('reason') in ('timeout','cancelled','output-limit','runner-error'):
         return packet['reason']

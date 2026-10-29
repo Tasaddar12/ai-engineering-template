@@ -226,7 +226,9 @@ runpy.run_path(script, run_name="__main__")
 
     @unittest.skipUnless(sys.platform == "linux", "Linux supervisor cancellation protocol")
     def test_supervisor_ignores_invalid_cancellation_envelopes_until_timeout(self):
-        for name, content in (("malformed", b"{"), ("list", b"[]"), ("null", b"null"), ("encoding", b"\xff")):
+        envelopes = (("malformed", b"{"), ("list", b"[]"), ("null", b"null"), ("encoding", b"\xff"),
+            ("integer-limit", b"9" * 5000), ("recursion-limit", b"[" * 10000 + b"0" + b"]" * 10000))
+        for name, content in envelopes:
             with self.subTest(envelope=name), (self.root / (name + ".out")).open("wb") as output:
                 child = processes.start_owned([sys.executable, "-c", "import time; time.sleep(5)"], self.root,
                     env=self.env, stdout=output, stderr=output, timeout=0.5)
@@ -244,22 +246,24 @@ runpy.run_path(script, run_name="__main__")
 
     @unittest.skipUnless(sys.platform == "linux", "Linux supervisor cancellation protocol")
     def test_supervisor_accepts_valid_cancellation_after_invalid_envelope(self):
-        with (self.root / "replacement.out").open("wb") as output:
-            child = processes.start_owned([sys.executable, "-c", "import time; time.sleep(5)"], self.root,
-                env=self.env, stdout=output, stderr=output, timeout=10)
-            try:
-                cancellation = child.directory / "cancel.json"
-                processes._new(cancellation, b"{")
-                time.sleep(0.2)
-                self.assertIsNone(child.poll(), "Invalid envelope terminated the live attempt")
-                cancellation.unlink()
-                child.stop()
-                proof = processes.terminal(child.ownership)
-                self.assertEqual("cancelled", proof["reason"])
-                self.assertIsNone(proof["error"])
-                self.assertTrue(proof["tree_stopped"])
-            finally:
-                child.close()
+        envelopes = (b"{", b"9" * 5000, b"[" * 10000 + b"0" + b"]" * 10000)
+        for index, content in enumerate(envelopes):
+            with self.subTest(envelope=index), (self.root / (str(index) + "-replacement.out")).open("wb") as output:
+                child = processes.start_owned([sys.executable, "-c", "import time; time.sleep(5)"], self.root,
+                    env=self.env, stdout=output, stderr=output, timeout=10)
+                try:
+                    cancellation = child.directory / "cancel.json"
+                    processes._new(cancellation, content)
+                    time.sleep(0.2)
+                    self.assertIsNone(child.poll(), "Invalid envelope terminated the live attempt")
+                    cancellation.unlink()
+                    child.stop()
+                    proof = processes.terminal(child.ownership)
+                    self.assertEqual("cancelled", proof["reason"])
+                    self.assertIsNone(proof["error"])
+                    self.assertTrue(proof["tree_stopped"])
+                finally:
+                    child.close()
 
 
 if __name__ == "__main__":
