@@ -882,10 +882,10 @@ the next wave builds on a broken foundation.
    <step name="checkpoint_handling">
    Plans with `autonomous: false` require user interaction.
    **Auto-mode checkpoint handling:**
-   Read auto-advance config (chain flag OR user preference — same boolean as `check.auto-mode`):
+   Read the direct auto-advance preference:
 
 ```bash
-AUTO_MODE=$(engineer_run query check auto-mode --pick active 2>/dev/null)
+AUTO_MODE=$(engineer_run query config-get workflow.auto_advance --default false --raw)
 ```
 
 When executor returns a checkpoint AND `AUTO_MODE` is `true`:

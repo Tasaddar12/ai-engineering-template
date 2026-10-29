@@ -626,26 +626,27 @@ If `section_manifest` is `null` or `"quick-verification"` is in its `included` l
 
 ---
 
-**Step 7: Update STATE.md**
+**Step 7: Update the existing quick-task record**
 
-Update STATE.md with quick task completion record.
-
-**7a. Persist the quick-task record:**
-
-Use the runtime writer after the executor's committed output has been integrated. Pass the task id, slug, description and actual verification status, preserving its escaping and runtime-derived date/commit. Do not create, parse or migrate a legacy STATE.md table.
+After the executor's committed output has been integrated, update the same `${quick_id}` created during initialization. The runtime owns quick records and state synchronization. Preserve the actual verification outcome; a blocked or unverified task cannot become passed through a display label.
 
 ```bash
-engineer_run query quick-tasks-append --quick-id "${quick_id}" --slug "${slug}" --task "${DESCRIPTION}" --status "${VERIFICATION_STATUS}"
+QUICK_COMMIT=$(git rev-parse HEAD) || exit $?
+if [ "$VALIDATE_MODE" = "true" ]; then
+  QUICK_VERIFICATION=$(engineer_run query verification.status "$QUICK_DIR" --pick status) || exit $?
+  case "$QUICK_VERIFICATION" in
+    passed) QUICK_RECORD_STATUS=passed ;;
+    gaps_found|human_needed|missing|stale|unparseable|phase_dir_not_found) QUICK_RECORD_STATUS=blocked ;;
+    *) echo "ERROR: unsupported verification status: $QUICK_VERIFICATION" >&2; exit 1 ;;
+  esac
+else
+  QUICK_RECORD_STATUS=complete
+  QUICK_VERIFICATION=not_run
+fi
+engineer_run query quick.update "$quick_id" --status "$QUICK_RECORD_STATUS" --verification "$QUICK_VERIFICATION" --commit "$QUICK_COMMIT" || exit $?
 ```
 
-**7d. Update "Last activity" line:**
-
-Use `date` from init:
-```
-Last activity: ${date} - Completed quick task ${quick_id}: ${DESCRIPTION}
-```
-
-Use the Edit tool for 7a/7b/7d (section creation and the Last activity line). 7c above writes through `engineer_run quick-tasks-append`, not the Edit tool.
+When validation ran, the fresh canonical status above corresponds to the earlier `$VERIFICATION_STATUS` display labels: Verified → passed; Needs Review or Gaps → blocked; Unverified → blocked. Keep those display labels for the completion report while storing the actual canonical verification value in the record.
 
 ---
 

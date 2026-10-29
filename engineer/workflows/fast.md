@@ -115,7 +115,15 @@ Use conventional commit format: `fix:`, `feat:`, `docs:`, `chore:`, `refactor:` 
 </step>
 
 <step name="log_to_state">
-Record the completed task through `engineer_run query quick-tasks-append --task "$TASK"`. The runtime owns quick-task records; inspect and report persistence errors rather than guessing a STATE.md table schema.
+After the task's change has been verified and committed, create its canonical quick record and complete that returned identity. Inspect and report persistence errors; do not report an unfinished task as complete.
+
+```bash
+FAST_RECORD=$(engineer_run query quick.create "$TASK") || exit $?
+FAST_QUICK_ID=$(engineer_run query json.get --payload "$FAST_RECORD" --field quick_id --raw) || exit $?
+[ -n "$FAST_QUICK_ID" ] || { echo "ERROR: quick.create returned no task id" >&2; exit 1; }
+FAST_COMMIT=$(git rev-parse HEAD) || exit $?
+engineer_run query quick.update "$FAST_QUICK_ID" --status complete --commit "$FAST_COMMIT" || exit $?
+```
 </step>
 
 <step name="done">

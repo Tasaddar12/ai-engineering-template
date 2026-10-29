@@ -240,7 +240,7 @@ def main(argv=None):
         if name == "check.tdd-red-evidence" and args.has("raw"):
             print(result["verdict"])
         else:
-            text_verbs = {"git.base-branch", "resolve-package-manager", "normalize-test-command", "review-lane"}
+            text_verbs = {"git.base-branch"}
             print(raw(result) if args.has("raw") or args.has("pick") or name in text_verbs and isinstance(result, str) and not args.has("json") else json.dumps(result, ensure_ascii=False, indent=2))
         return status
     except Failure as exc:
