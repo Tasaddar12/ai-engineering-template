@@ -185,7 +185,7 @@ If user selects "Proceed anyway": set `closeout_type=override_closeout`; note in
 <config-check>
 
 ```bash
-cat .planning/config.json 2>/dev/null || true
+cat .planning/config.yaml 2>/dev/null || true
 ```
 
 </config-check>

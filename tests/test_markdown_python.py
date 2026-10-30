@@ -258,9 +258,9 @@ class InlineHelpers(RuntimeCase):
         config = self.code(file, 'use_worktrees')
         self.env["ENGINEER_PROJECT_DIR"] = str(self.root)
         self.assertEqual("true", self.run_code(config).stdout)
-        self.put('.planning/config.json', '{"workflow":{"use_worktrees":false}}')
+        self.put('.planning/config.yaml', 'workflow:\n  use_worktrees: false\n')
         self.assertEqual("false", self.run_code(config).stdout)
-        self.put('.planning/config.json', 'malformed')
+        self.put('.planning/config.yaml', 'workflow: [malformed')
         self.assertEqual("true", self.run_code(config).stdout)
         sentinel = self.root/'recovery with spaces.json'
         writer = self.code(file, 'started_at')

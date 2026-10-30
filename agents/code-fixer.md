@@ -230,15 +230,15 @@ The cleanup tail (commit fixes -> remove worktree -> drop recovery sentinel) MUS
 # Honor workflow.use_worktrees — the documented opt-out. When false,
 # edit/commit in the main checkout (wt=".", no temp branch, no sentinel, no
 # cleanup tail). Read the flag the same way the four sibling writer workflows
-# do. NOTE: this read parses .planning/config.json directly via Python rather
-# than the engineer_run CLI, because setup_worktree runs BEFORE the canonical
+# do. NOTE: this read parses .planning/config.yaml directly with Python's YAML parser
+# rather than the engineer_run CLI, because setup_worktree runs BEFORE the canonical
 # launcher preamble is sourced — invoking the CLI here would be undefined at
 # runtime and violates the runtime-launcher-parity preamble-ordering rule.
 # Once the preamble is sourced (later steps), the CLI is available.
-USE_WORKTREES=$(python -c 'import json,os,pathlib
+USE_WORKTREES=$(python -c 'import os,pathlib,yaml
 try:
- c=json.loads((pathlib.Path(os.environ.get("ENGINEER_PROJECT_DIR") or os.getcwd())/".planning/config.json").read_text(encoding="utf-8")); v=c.get("workflow", {}).get("use_worktrees", True); print(str(True if v is None else v).lower(), end="")
-except (OSError,ValueError,TypeError,AttributeError): print("true", end="")')
+ c=yaml.safe_load((pathlib.Path(os.environ.get("ENGINEER_PROJECT_DIR") or os.getcwd())/".planning/config.yaml").read_text(encoding="utf-8")) or {}; v=c.get("workflow", {}).get("use_worktrees", True); print(str(True if v is None else v).lower(), end="")
+except (OSError,yaml.YAMLError,TypeError,AttributeError): print("true", end="")')
 
 # Derive worktree path from padded_phase (parsed from config in next step,
 # but the shell snippet below is illustrative — adapt once config is parsed).
@@ -644,7 +644,7 @@ _Iteration: {N}_
 
 **Honor `workflow.use_worktrees`.** Before creating a worktree, read the
 `workflow.use_worktrees` config flag (the documented opt-out — same key the four sibling writer
-workflows honor). `setup_worktree` reads it via Python directly from `.planning/config.json`
+workflows honor). `setup_worktree` reads it with Python's YAML parser directly from `.planning/config.yaml`
 (because that step runs BEFORE the canonical engineer_run launcher preamble is sourced; later steps may
 use `engineer_run query config-get workflow.use_worktrees`). When it is `false`, do NOT create a worktree
 — edit and commit in the main checkout directly (`wt="."`, no temp branch, no sentinel, no cleanup

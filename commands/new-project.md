@@ -26,7 +26,7 @@ Initialize a new project through unified flow: questioning → research (optiona
 
 **Creates:**
 - `.planning/PROJECT.md` — project context
-- `.planning/config.json` — workflow preferences
+- `.planning/config.yaml` — workflow preferences
 - `.planning/research/` — domain research (optional)
 - `.planning/REQUIREMENTS.md` — scoped requirements
 - `.planning/ROADMAP.md` — phase structure
