@@ -647,9 +647,10 @@ engineer_run query commit "chore: add project config" --files .planning/config.y
 
 **Detect multi-repo workspace:**
 
-Check for directories with their own `.git` (separate repos within the workspace —
-this also finds linked git worktree children, whose `.git` is a file rather than a
-directory, unlike a plain `find -type d` predicate would):
+During initialization, `init.new-project` returns registered Git submodule paths from
+`.gitmodules` in `sub_repos_detected`. For commit routing, `commit-to-subrepo` can also
+scan immediate child directories for a `.git` file or directory when no explicit
+repository path is supplied:
 
 ```bash
 engineer_run query init.new-project
@@ -668,15 +669,13 @@ Use AskUserQuestion:
 - options: one option per detected directory
   - "[directory name]" — Separate git repo
 
-**If user selects one or more directories:**
+**If user selects one or more directories:** Use each selected directory as an explicit
+`--subrepo <directory>` target when invoking `commit-to-subrepo`. The selection is
+workflow context; do not store it in `.planning/config.yaml`.
 
-- Set `planning.sub_repos` in `.planning/config.yaml` to the selected directory names array (e.g., `["backend", "frontend"]`)
-- Auto-set `planning.commit_docs` to `false` (planning docs stay local in multi-repo workspaces)
-- Add `.planning/` to `.gitignore` if not already present
-
-Config changes are saved locally — no commit needed since `commit_docs` is `false` in multi-repo mode.
-
-**If no sub-repos found or user selects none:** Continue with no changes to config.
+**If no sub-repos are listed or user selects none:** Continue without explicit targets.
+When a later `commit-to-subrepo` call omits `--subrepo`, the runtime scans immediate
+child repositories at that time.
 
 ## 5.5. Resolve Model Profile
 

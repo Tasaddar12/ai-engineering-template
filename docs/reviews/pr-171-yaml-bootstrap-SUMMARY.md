@@ -5,7 +5,7 @@ Base: `5ad2f56f75be94185fea3edc5d3b232291934571`
 ## Changes
 
 - Changed code-fixer's early worktree opt-out read to locate and import the bundled `lib.text.yaml_load` parser before the launcher preamble, preserving the default-enabled fallback for unavailable or malformed config. Its isolated fixture uses `-I -S` and controlled temp project/runtime roots.
-- Corrected remaining config filename references in new-project and related docs; clarified git-integration discovery behavior. Updated health workflow guidance to match active YAML validation while preserving the retained upstream JSON diagnostic codes and labeling them as inactive metadata.
+- Corrected remaining config filename references in new-project and related docs; clarified git-integration discovery behavior. Updated health workflow guidance to match active YAML validation while preserving retained upstream JSON diagnostic codes as inactive metadata. Removed unsupported persisted `planning.sub_repos` instructions; documented `.gitmodules` discovery, explicit `--subrepo` targeting, and immediate-child runtime scanning.
 
 ## Checks
 
@@ -20,4 +20,4 @@ Base: `5ad2f56f75be94185fea3edc5d3b232291934571`
 
 ## Remaining
 
-- `validate.health` records missing config.yaml, then lets `FileNotFoundError` escape from `config.load()` before returning JSON. Documented; runtime fix is outside this docs slice.
+- The coordinator-owned structured finding for an inaccessible config.yaml is pending integration; missing and malformed config already produce structured diagnostics.
