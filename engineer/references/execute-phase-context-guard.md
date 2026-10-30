@@ -9,8 +9,8 @@
    | Tier | `warn` (default) | `auto` | `off` |
    |------|-----------------|--------|-------|
    | PEAK / GOOD | No output | No output | No output |
-   | DEGRADING (50-70%) | Emit: "⚠ Context pressure DEGRADING — use focused reads for remaining waves." Continue. | Same as warn | Skip |
-   | POOR (70%+) | Emit: "⚠ Context pressure POOR — risk of context exhaustion. Capture a concise handoff before continuing this wave." Continue. | Capture a concise handoff before continuing this wave. | Skip |
+   | DEGRADING (50-70%) | Emit: "⚠ Context pressure DEGRADING — switching to frontmatter-only reads for remaining waves." Continue. | Same as warn | Skip |
+   | POOR (70%+) | Emit: "🛑 Context pressure POOR — risk of context exhaustion. Run `/pause-work` to checkpoint before this wave, then resume in a fresh session." Continue (user decides). | Invoke `/pause-work` immediately and halt. Do NOT spawn wave agents. | Skip |
 
    The guard is heuristic — no programmatic context-percentage API exists. Use your
    assessment of degradation signals, not a fixed token count.
