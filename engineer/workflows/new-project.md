@@ -173,7 +173,7 @@ Ask inline (freeform, NOT AskUserQuestion):
 
 Wait for their response. This gives you the context needed to ask intelligent follow-up questions.
 
-**Research-before-questions mode:** Check if `workflow.research_before_questions` is enabled in `.planning/config.json` (or the config from init context). When enabled, before asking follow-up questions about a topic area:
+**Research-before-questions mode:** Check if `workflow.research_before_questions` is enabled in `.planning/config.yaml` (or the config from init context). When enabled, before asking follow-up questions about a topic area:
 
 1. Do a brief web search for best practices related to what the user described
 2. Mention key findings naturally as you ask questions (e.g., "Most projects like this use X — is that what you're thinking, or something different?")
@@ -640,7 +640,7 @@ Create the project configuration through `engineer_run query config-new-project`
 **Commit config.json:**
 
 ```bash
-engineer_run query commit "chore: add project config" --files .planning/config.json
+engineer_run query commit "chore: add project config" --files .planning/config.yaml
 ```
 
 ## 5.1. Sub-Repo Detection
@@ -1104,7 +1104,7 @@ Present completion summary:
 | Artifact       | Location                    |
 |----------------|-----------------------------|
 | Project        | `.planning/PROJECT.md`      |
-| Config         | `.planning/config.json`     |
+| Config         | `.planning/config.yaml`     |
 | Research       | `.planning/research/`       |
 | Requirements   | `.planning/REQUIREMENTS.md` |
 | Roadmap        | `.planning/ROADMAP.md`      |
@@ -1178,7 +1178,7 @@ PHASE1_HAS_UI=$(echo "$PHASE1_SECTION" | grep -qi "UI hint.*yes" && echo "true" 
 <output>
 
 - `.planning/PROJECT.md`
-- `.planning/config.json`
+- `.planning/config.yaml`
 - `.planning/research/` (if research selected)
   - `STACK.md`
   - `FEATURES.md`

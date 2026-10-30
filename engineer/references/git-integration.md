@@ -262,7 +262,7 @@ For workspaces with separate git repos (e.g., `backend/`, `frontend/`, `shared/`
 
 ### Configuration
 
-In `.planning/config.json`, list sub-repo directories under `planning.sub_repos`:
+In `.planning/config.yaml`, list sub-repo directories under `planning.sub_repos`:
 
 ```json
 {

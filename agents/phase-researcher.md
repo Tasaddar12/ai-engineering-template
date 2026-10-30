@@ -453,7 +453,7 @@ Verified patterns from official sources:
 
 ## Validation Architecture
 
-> Skip this section entirely if workflow.nyquist_validation is explicitly set to false in .planning/config.json. If the key is absent, treat as enabled.
+> Skip this section entirely if workflow.nyquist_validation is explicitly set to false in .planning/config.yaml. If the key is absent, treat as enabled.
 
 ### Test Framework
 | Property | Value |
@@ -543,7 +543,7 @@ INIT=$(engineer_run query init.phase-op "${PHASE}")
 
 Extract from init JSON: `phase_dir`, `padded_phase`, `phase_number`, `commit_docs`.
 
-Also read `.planning/config.json` — include Validation Architecture section in RESEARCH.md unless `workflow.nyquist_validation` is explicitly `false`. If the key is absent or `true`, include the section.
+Also read `.planning/config.yaml` — include Validation Architecture section in RESEARCH.md unless `workflow.nyquist_validation` is explicitly `false`. If the key is absent or `true`, include the section.
 
 Then read CONTEXT.md if exists:
 ```bash
