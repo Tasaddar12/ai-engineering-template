@@ -166,6 +166,27 @@ def quick_append(args):
     return {"added": True, "row": row, "quick_id": identifier, "date": now()[:10], "commit": revision}
 
 
+def _quick_history_identity(record, planning_dir):
+    """Resolve a history projection to its existing authoritative QUICK.md."""
+    directory = record.get("Directory", "").strip()
+    if directory in ("", "-", "\u2014"):
+        return None
+    link = re.fullmatch(r"\[[^\]]*\]\(([^)]+)\)", directory)
+    target = link.group(1) if link else directory
+    directory = safe(planning_dir/target)
+    path = safe(directory/"QUICK.md")
+    if not path.is_file():
+        return None
+    quick_dir = safe(planning_dir/"quick")
+    identity = re.fullmatch(r"(\d+)-[A-Za-z0-9._-]+", directory.name)
+    metadata, _ = split_frontmatter(read(path))
+    identifier = str(metadata.get("id", ""))
+    if (directory.parent != quick_dir or not identity or not identifier.isdigit()
+            or int(identifier) != int(identity.group(1))):
+        raise Failure("quick-migration-identity-mismatch", str(directory), 2)
+    return path
+
+
 def quick_migrate(args):
     from . import records
     path = safe(records.planning()/"STATE.md")
@@ -187,7 +208,11 @@ def quick_migrate(args):
         # The original row identifies the migration; preserve source bytes and QUICK.md authority.
         original = [line for line in selected["body"].splitlines() if line.strip().startswith("|")][2:]
         decoded = list(zip(original, parsed["value"]["rows"]))
-        for line, record in decoded:
+        identities = [_quick_history_identity(record, path.parent) for _, record in decoded]
+        for (line, record), authoritative in zip(decoded, identities):
+            if authoritative is not None:
+                skipped.append(str(authoritative))
+                continue
             source_id = hashlib.sha256(line.encode()).hexdigest()
             existing = []
             for item in (records.planning()/"quick").glob("*/QUICK.md"):

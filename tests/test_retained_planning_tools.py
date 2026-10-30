@@ -100,6 +100,48 @@ class RetainedPlanningTools(RuntimeCase):
         self.assertIn("pipes \\|", state)
         self.assertNotIn("replay", state)
 
+    def test_quick_history_migration_reuses_authoritative_directory_identity(self):
+        self.init_records()
+        quick = self.cli("quick.create", "Original authority")
+        slug = Path(quick["directory"]).name.split("-", 1)[1]
+        self.cli("quick-tasks-append", "--task", "History projection", "--quick-id", quick["quick_id"], "--slug", slug)
+        state = self.root / ".planning/STATE.md"
+        before = state.read_bytes()
+        authoritative = Path(quick["path"]).read_bytes()
+        # Legacy # cells may be row counters rather than global quick IDs.
+        state.write_text(state.read_text(encoding="utf-8").replace("| 001 |", "| 7 |"), encoding="utf-8")
+        before = state.read_bytes()
+        migration = self.cli("quick-tasks-migrate")
+        self.assertEqual(0, migration["count"])
+        self.assertEqual([quick["path"]], migration["skipped"])
+        self.assertEqual(1, self.cli("quick.list")["count"])
+        self.assertEqual(before, state.read_bytes())
+        self.assertEqual(authoritative, Path(quick["path"]).read_bytes())
+
+    def test_quick_migration_imports_orphan_canonical_row_once(self):
+        self.init_records()
+        self.cli("quick-tasks-append", "--task", "Orphan legacy task")
+        self.assertEqual(1, self.cli("quick-tasks-migrate")["count"])
+        self.assertEqual(0, self.cli("quick-tasks-migrate")["count"])
+        self.assertEqual(1, self.cli("quick.list")["count"])
+
+    def test_quick_migration_rejects_unsafe_or_mismatched_history_identity(self):
+        self.init_records()
+        quick = self.cli("quick.create", "Authority")
+        self.cli("quick-tasks-append", "--task", "History", "--quick-id", quick["quick_id"], "--slug", "authority")
+        state = self.root / ".planning/STATE.md"
+        original = state.read_text(encoding="utf-8")
+        for target in ("../outside/", "./quick/001-authority/../../outside/"):
+            state.write_text(original.replace("./quick/001-authority/", target), encoding="utf-8")
+            self.cli("quick-tasks-migrate", status=2, raw=True)
+            self.assertEqual(1, self.cli("quick.list")["count"])
+        state.write_text(original, encoding="utf-8")
+        authoritative = Path(quick["path"])
+        metadata = authoritative.read_text(encoding="utf-8")
+        authoritative.write_text(metadata.replace("id: ", "id: 9"), encoding="utf-8")
+        self.cli("quick-tasks-migrate", status=2, raw=True)
+        self.assertEqual(1, self.cli("quick.list")["count"])
+
     def test_quick_migration_preserves_escaped_source_and_is_idempotent(self):
         self.init_records()
         state = self.root / ".planning/STATE.md"

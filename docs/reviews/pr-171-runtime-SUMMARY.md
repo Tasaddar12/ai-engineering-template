@@ -37,3 +37,12 @@ Coordinator extended ownership to planning_integrity.py for the three restored m
 No runtime blocker. Coordinator owns integration, independent verification and publication. Doc writer received exact CLI contracts and QUICK.md authority guidance. Research fetches still require caller tools and actual citations; confidence describes provider authority, never correctness. Context freshness reports `block: true` at exit 0, so callers must inspect that field; unavailable evidence exits 69.
 
 Estimate calibration/check functions stay removed because their advisory estimate mechanism is outside retained runtime scope. Deleted external orchestration, PID/capability-loop and obsolete modules remain retired; no retired-verb rejection list was reintroduced.
+
+
+## Follow-up: canonical history identity
+
+Coordinator identified a real integration defect after the first commit: `quick.create` then `quick-tasks-append` then `quick-tasks-migrate` created a second QUICK.md because only migration-source hashes were matched. A new subprocess regression reproduced the defect (`count` was 1 instead of 0).
+
+Migration now validates history directory paths and existing QUICK.md identity, skips already-authoritative records without changing their bytes or status, and preflights identities before importing any rows. Orphan canonical rows still import once using the existing migration-source idempotence key. Conflicting IDs and traversal paths fail without creating another record. Source STATE.md bytes remain unchanged. Batch completionTransaction logic is unchanged.
+
+Correction checks: retained_planning_tools 11 tests, quick_batch 5 tests and markdown_table 89 tests all passed (105 tests); changed Python compiled; `git diff --check` passed. This follow-up is based on `121c6d596fb50804f29697a4cc968c4d8dc22383` and addresses the coordinator's named duplicate-identity risk only.
