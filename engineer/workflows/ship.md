@@ -365,6 +365,35 @@ fi
 ```
 </step>
 
+<step name="ship_post_capability_dispatch">
+
+Resolve active `ship:post` hooks through the runtime registry; hook conditions are evaluated by the registry. These hooks run after PR creation and do not change the PR result.
+
+```bash
+SHIP_POST_HOOKS_JSON=$(engineer_run loop render-hooks ship:post --raw)
+```
+
+Read the `activeHooks` array from `SHIP_POST_HOOKS_JSON` in-context. For each entry with `kind == "step"`, honor `consumes`: if a consumed artifact is absent, skip the hook.
+
+If `ref.agent` is set, first validate its value in-context against `^[A-Za-z0-9][A-Za-z0-9._-]*$`. Do not interpolate the manifest value into a shell command before this check. If it fails validation, warn and skip the hook. Resolve the model for the validated agent through the existing resolver:
+
+```bash
+HOOK_AGENT_MODEL=$(engineer_run query resolve-model "<validatedagent>" --raw 2>/dev/null || true)
+```
+
+Omit `model=` when `HOOK_AGENT_MODEL` is `inherit` or empty. Dispatch the exact validated `ref.agent` as a native agent type, with the phase, phase directory and consumed files in the prompt:
+
+```text
+◆ Spawning ship:post capability agent... (runs in a subagent — no output until it returns; expected)
+```
+
+```text
+Agent(subagent_type=ref.agent, prompt="Ship-time capability hook for phase ${PHASE_NUMBER}. Phase dir: ${PHASE_DIR}. Consume: ${consumed_files}. Follow your agent instructions.", model="{HOOK_AGENT_MODEL}")
+```
+
+When the resolved model is `inherit` or empty, omit the `model` argument. Dispatch failures are best-effort: record a warning and continue.
+</step>
+
 
 <step name="report">
 ```

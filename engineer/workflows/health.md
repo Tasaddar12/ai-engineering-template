@@ -209,7 +209,7 @@ Report final status.
 | W007 | warning | Phase on disk but not in ROADMAP | No |
 | W008 | warning | config.json: workflow.nyquist_validation absent (defaults to enabled but agents may skip) | Yes |
 | W009 | warning | Phase has Validation Architecture in RESEARCH.md but no VALIDATION.md | No |
-| W010 | warning | Engineer agent installation missing or incomplete | No |
+| W010 | warning | GSD agent installation missing or incomplete | No |
 | W011 | warning | STATE.md current-phase status disagrees with ROADMAP.md checkbox | No |
 | W012 | warning | config.json invalid branching_strategy value | No |
 | W013 | warning | config.json context_window not a positive integer | No |
@@ -217,7 +217,7 @@ Report final status.
 | W015 | warning | config.json milestone_branch_template missing {milestone} placeholder | No |
 | W017 | warning | Orphan git worktree (path no longer exists on disk) | No |
 | W018 | warning | MILESTONES.md missing entry for archived milestone snapshot | Yes (`--backfill`) |
-| W019 | warning | Unrecognized .planning/ root file — not a canonical Engineer artifact | No |
+| W019 | warning | Unrecognized .planning/ root file — not a canonical GSD artifact | No |
 | W020 | warning | Worktree health scan degraded — git worktree list timed out, failed, or a finding could not be verified | No |
 | W021 | warning | Phase's integer prefix implies a different milestone than its ROADMAP section (phase_id_convention: milestone-prefixed) | No |
 | W022 | warning | config.json models entry malformed (unknown phase type, invalid tier, or non-object value) | No |
@@ -225,13 +225,13 @@ Report final status.
 | W024 | warning | STATE.md was written many commits ago — treat its contents as approximate | No |
 | W026 | warning | STATE says milestone complete but ROADMAP lists an unstarted phase for that milestone | No |
 | W027 | warning | Stale git worktree (not modified in a long time) | No |
-| W028 | warning | A Engineer-owned install scope shadows another on this machine | No |
+| W028 | warning | A GSD-owned install scope shadows another on this machine | No |
 | W029 | warning | .planning/ matches a gitignore rule but is still tracked by git (gitignore has no effect on already-tracked files) | No |
 | W030 | warning | Phase verification report status is outside the closed set | Yes (known legacy statuses only) |
 | I001 | info | Plan without SUMMARY (may be in progress) | No |
 | I010 | info | Resolved CWD reported alongside the E010 home-directory guard | No |
 
-This table describes the retained Python health metadata: 36 diagnostic codes and 6 repair actions. `engineer/bin/lib/health_diagnostic_rules.py` owns the diagnostic catalog. Keep the tables synchronized with that metadata when changing a code or repair action. W025 is the workflow-layer mandatory-isolation diagnostic above.
+Note: this table is **generated** — do not hand-edit it. It is produced by `python -m engineer.bin.lib.gen_health_docs --write` from `engineer/bin/lib/health_diagnostic.py`'s `RULES` table (31 rules as of #3309, each carrying a static `description`/`repairable` on its `Rule` entry — see `engineer/bin/lib/health_diagnostic_rules.py`) plus the 3 pre-checks that stay outside the rule table by design (`E001`, `E010`, `I010` — safety rails in `cmdValidateHealth`, `engineer/bin/lib/workflow_ops.py`, never `.planning/` findings). `engineer/bin/lib/lint_health_diagnostic_rule_table.py` already enforces the 1:1 code invariant this table depends on (no duplicate codes; severity is always a `Rule` property, never set per emit call) — before assigning a new code, add a `Rule` entry under `engineer/bin/lib/health_diagnostic_rules.py` (its `code` is simply the next free number the lint guard has not yet seen) and run `python -m engineer.bin.lib.gen_health_docs --write` to regenerate this table; `python -m engineer.bin.lib.gen_health_docs --check` fails if it drifts. `W025` (the `workflow.use_worktrees`/`dispatch.isolation` check, #2486) is a workflow-layer diagnostic emitted directly by this file's own `run_health_check` step, not by `cmdValidateHealth` — it stays documented in that step, not in this generated table.
 
 </error_codes>
 

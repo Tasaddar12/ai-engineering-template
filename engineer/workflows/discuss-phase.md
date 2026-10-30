@@ -1,4 +1,10 @@
-<!-- workflow: native orchestrator and declared agents -->
+<!-- engineer:loop-host
+step: discuss
+points: discuss:pre, discuss:post
+agent-roles: orchestrator
+produces: CONTEXT.md
+consumes:
+-->
 <purpose>
 Extract implementation decisions that downstream agents need. Analyze the phase to identify gray areas, let the user choose what to discuss, then deep-dive each selected area until satisfied.
 
@@ -133,6 +139,8 @@ prompting.
 </discussion_analysis>
 
 <process>
+
+**Express path available:** If you already have a PRD or acceptance criteria document, use `/plan-phase {phase} --prd path/to/prd.md` to skip this discussion and go straight to planning.
 
 
 <step name="initialize" priority="first">
@@ -387,6 +395,8 @@ We'll clarify HOW to implement this. (New capabilities belong in other phases.)
   ```
 
 **Do NOT include a "skip" or "you decide" option.** User ran this command to discuss — give real choices.
+
+Continue to `discuss_areas` with selected areas
 
 </step>
 

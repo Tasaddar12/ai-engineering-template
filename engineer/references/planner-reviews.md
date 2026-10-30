@@ -54,8 +54,8 @@ the ledger's shape rather than restating it — this is the one place it is defi
 Add or extend a `## Review Dispositions Ledger` section in the affected PLAN.md, containing one
 `### Round {N} — {REVIEWS_sha}` subsection per reviews-mode round that touched this plan, where
 `{REVIEWS_sha}` is the commit that wrote the REVIEWS.md snapshot being ruled on (the short sha from
-`git log -1 --format=%h -- <phase_dir>/<NN>-REVIEWS.md` after that snapshot is committed). Under
-each round heading, use the two tables from Step 4 above, unchanged in shape:
+`git log -1 --format=%h -- <phase_dir>/<NN>-REVIEWS.md`, after `workflows/review.md`'s REVIEWS.md
+commit step). Under each round heading, use the two tables from Step 4 above, unchanged in shape:
 
 ```markdown
 ## Review Dispositions Ledger
@@ -75,8 +75,7 @@ each round heading, use the two tables from Step 4 above, unchanged in shape:
 
 **Anchoring.** Any reference to a specific REVIEWS.md line cites `L##@{REVIEWS_sha}` (e.g.
 `L32@a1b2c3d`) — a bare line number is meaningless once the next round rewrites REVIEWS.md
-wholesale. `{Concern}` and `{Reason}` stay free text; do not invent a reviewer or severity enum.
-Preserve reviewer labels supplied with the review evidence.
+wholesale. `{Concern}` and `{Reason}` stay free text; do not invent a reviewer/severity enum.
 
 **Append-only.** A later round never edits or deletes a prior round's tables. To overturn a prior
 round's verdict, add a new row in the current round's table whose Reason/How Addressed names the

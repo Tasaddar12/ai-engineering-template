@@ -1,6 +1,6 @@
 <purpose>
 
-Mark a shipped version (v1.0, v1.1, v2.0) as complete. Creates historical record in MILESTONES.md, reorganizes ROADMAP.md with milestone groupings.
+Mark a shipped version (v1.0, v1.1, v2.0) as complete. Creates historical record in MILESTONES.md, performs the full PROJECT.md evolution review, reorganizes ROADMAP.md with milestone groupings, and tags the release in git.
 
 </purpose>
 
@@ -22,6 +22,7 @@ When a milestone completes:
 2. Archive requirements to `.planning/milestones/v[X.Y]-REQUIREMENTS.md`
 3. Update ROADMAP.md — overwrite in place with milestone grouping (preserve Backlog section)
 4. Safety commit archive files + updated ROADMAP.md, then `git rm REQUIREMENTS.md` (fresh for next milestone)
+5. Perform the full PROJECT.md evolution review
 6. Offer to create next milestone inline
 7. Archive UI artifacts (`*-UI-SPEC.md`, `*-UI-REVIEW.md`) alongside other phase documents
 8. Clean up `.planning/ui-reviews/` screenshot files (binary assets, never archived)
@@ -280,6 +281,10 @@ If additional details are needed (e.g., user-provided "Delivered" summary, git r
 
 </step>
 
+<step name="project_md_evolution_review">
+Read and execute `engineer/workflows/complete-milestone/steps/project-md-evolution-review.md`.
+</step>
+
 <step name="archive_milestone">
 
 **Text mode (`workflow.text_mode: true` in config or `--text` flag):** Set `TEXT_MODE=true` if `--text` is present in `$ARGUMENTS` OR `text_mode` from init JSON is `true`. When TEXT_MODE is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for non-Claude runtimes (OpenAI Codex) where `AskUserQuestion` is not available.
@@ -334,6 +339,7 @@ Verify after a default (archived) completion: `✅ Phase directories archived to
 
 After archival, the AI still handles:
 - Reorganizing ROADMAP.md with milestone grouping (requires judgment) — overwrite in place after extracting Backlog section, with the write-guard's single-use sentinel armed first (a per-step env var cannot reach a hook — see the reorganize step for the sentinel mechanics)
+- Full PROJECT.md evolution review (requires understanding)
 - Safety commit of archive files + updated ROADMAP.md, then `git rm .planning/REQUIREMENTS.md`
 - These are NOT fully delegated because they require AI interpretation of content
 
@@ -611,6 +617,7 @@ Milestone completion is successful when:
 - [ ] Known deferred items count noted in MILESTONES.md entry
 
 - [ ] MILESTONES.md entry created with stats and accomplishments
+- [ ] Full PROJECT.md evolution review completed
 - [ ] All shipped requirements moved to Validated in PROJECT.md
 - [ ] Key Decisions updated with outcomes
 - [ ] ROADMAP.md Backlog section extracted before rewrite, re-appended after (skipped if absent)
