@@ -25,14 +25,14 @@ class PerPlanWorktreeGate(unittest.TestCase):
     def setUpClass(cls):
         cls.doc, cls.gate = extract_gate()
 
-    def run_gate(self, files="", deletions="", submodule=True):
+    def run_gate(self, files="", deletions="", submodule="vendor/library"):
         lines = [
             'work=$(mktemp -d) || exit 2',
             'trap \'rm -rf "$work"\' EXIT',
             'cd "$work" || exit 2',
         ]
         if submodule:
-            lines.append("git config --file .gitmodules submodule.library.path vendor/library || exit 2")
+            lines.append(f"git config --file .gitmodules submodule.library.path {shlex.quote(submodule)} || exit 2")
         lines.extend((
             f"export PLAN_FILES={shlex.quote(files)} PLAN_DELETIONS={shlex.quote(deletions)} plan_id=03-01",
             "{",
@@ -59,10 +59,31 @@ class PerPlanWorktreeGate(unittest.TestCase):
         self.assertEqual(1, result.returncode, result.stdout + result.stderr)
         self.assertIn("submodule paths are unsupported", result.stdout)
 
+    def test_modified_equivalent_paths_block_dispatch(self):
+        for path in ("././vendor/library/src.c", "vendor//library/src.c", "vendor/./library/src.c"):
+            with self.subTest(path=path):
+                result = self.run_gate(files=path)
+                self.assertEqual(1, result.returncode, result.stdout + result.stderr)
+                self.assertIn("submodule paths are unsupported", result.stdout)
+
     def test_deletion_only_submodule_intersection_blocks_dispatch(self):
         result = self.run_gate(deletions="vendor/library/old.c")
         self.assertEqual(1, result.returncode, result.stdout + result.stderr)
         self.assertIn("submodule paths are unsupported", result.stdout)
+
+    def test_deletion_equivalent_paths_block_dispatch(self):
+        for path in ("././vendor/library/old.c", "vendor//library/old.c", "vendor/./library/old.c"):
+            with self.subTest(path=path):
+                result = self.run_gate(deletions=path)
+                self.assertEqual(1, result.returncode, result.stdout + result.stderr)
+                self.assertIn("submodule paths are unsupported", result.stdout)
+
+    def test_equivalent_registered_submodule_path_blocks_dispatch(self):
+        for submodule in ("././vendor/library", "vendor//library", "vendor/./library"):
+            with self.subTest(submodule=submodule):
+                result = self.run_gate(files="vendor/library/src.c", submodule=submodule)
+                self.assertEqual(1, result.returncode, result.stdout + result.stderr)
+                self.assertIn("submodule paths are unsupported", result.stdout)
 
     def test_unknown_scope_fails_closed_when_submodules_exist(self):
         result = self.run_gate()
