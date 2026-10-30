@@ -375,7 +375,7 @@ SHIP_POST_HOOKS_JSON=$(engineer_run loop render-hooks ship:post --raw)
 
 Read the `activeHooks` array from `SHIP_POST_HOOKS_JSON` in-context. For each entry with `kind == "step"`, honor `consumes`: if a consumed artifact is absent, skip the hook.
 
-If `ref.agent` is set, first validate its value in-context against `^[A-Za-z0-9][A-Za-z0-9._-]*$`. Do not interpolate the manifest value into a shell command before this check. If it fails validation, warn and skip the hook. Resolve the model for the validated agent through the existing resolver:
+If `ref.agent` is set, validate its value **IN-CONTEXT, before any shell use** against `^[A-Za-z0-9][A-Za-z0-9._-]*$`. Do not interpolate the manifest value into a shell command before this check. If it fails validation, warn and skip the hook. Resolve the model for the validated agent through the existing resolver:
 
 ```bash
 HOOK_AGENT_MODEL=$(engineer_run query resolve-model "<validatedagent>" --raw 2>/dev/null || true)
