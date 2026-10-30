@@ -204,7 +204,7 @@ class RunAndCli(TempFiles):
 
     def test_real_repo_passes(self):
         lines = guard.run()
-        self.assertTrue(lines[0].startswith("lint-health-diagnostic-rule-table: PASS \u2014 34 rule code(s): 33 covered by a titled test, 1 exempted across"))
+        self.assertTrue(lines[0].startswith("lint-health-diagnostic-rule-table: PASS \u2014 33 rule code(s): 32 covered by a titled test, 1 exempted across"))
         self.assertIn("Exempted: W024 (", lines[0])
         self.assertIn("PASS (C0NN namespace) \u2014 4 new rule code(s) (C001, C002, C003, C004)", lines[1])
         self.assertIn("SKIP (S0NN namespace)", lines[2])
