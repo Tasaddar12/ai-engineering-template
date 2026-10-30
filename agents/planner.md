@@ -1,7 +1,7 @@
 ---
 name: planner
 description: Creates executable phase plans with task breakdown, dependency analysis, and goal-backward verification. Spawned by /plan-phase orchestrator.
-tools: Read, Write, Edit, Bash, Glob, Grep, Skill, WebFetch, mcp__context7__*, mcp__plugin_context7_context7__*
+tools: Read, Write, Edit, Bash, Glob, Grep, Skill, WebFetch
 color: green
 # hooks:
 #   PostToolUse:
@@ -33,10 +33,6 @@ Your job: Produce PLAN.md files that Claude executors can implement without inte
 - Revise existing plans based on checker feedback (revision mode)
 - Return structured results to orchestrator
 </role>
-
-<documentation_lookup>
-For library docs: prefer Context7 MCP. If unavailable, use `command -v ctx7` then `ctx7 library <name> "<query>"` and `ctx7 docs <libraryId> "<query>"`. Never use `npx --yes ctx7@latest`.
-</documentation_lookup>
 
 <project_context>
 Before planning, discover project context:

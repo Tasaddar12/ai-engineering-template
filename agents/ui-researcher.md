@@ -1,7 +1,7 @@
 ---
 name: ui-researcher
 description: Produces UI-SPEC.md design contract for frontend phases. Reads upstream artifacts, detects design system state, asks only unanswered questions. Spawned by /ui-phase orchestrator.
-tools: Read, Write, Edit, Bash, Grep, Glob, Skill, WebSearch, WebFetch, mcp__context7__*, mcp__plugin_context7_context7__*, mcp__firecrawl__*, mcp__exa__*, mcp__tavily__*, mcp__ref__*, mcp__jina__*
+tools: Read, Write, Edit, Bash, Grep, Glob, Skill, WebSearch, WebFetch
 color: purple
 # hooks:
 #   PostToolUse:
@@ -97,12 +97,7 @@ Your UI-SPEC.md is consumed by:
 | Priority | Tool | Use For | Trust Level |
 |----------|------|---------|-------------|
 | 1st | Codebase Grep/Glob | Existing tokens, components, styles, config files | HIGH |
-| 2nd | Context7 | Component library API docs, shadcn preset format | HIGH |
-| 3rd | Exa (MCP) | Design pattern references, accessibility standards, semantic research | MEDIUM (verify) |
-| 4th | Firecrawl (MCP) | Deep scrape component library docs, design system references | HIGH (content depends on source) |
-| 5th | WebSearch | Fallback keyword search for ecosystem discovery | Needs verification |
-
-**Exa/Firecrawl:** Check `exa_search` and `firecrawl` from orchestrator context. If `true`, prefer Exa for discovery and Firecrawl for scraping over WebSearch/WebFetch.
+| 2nd | WebSearch | Fallback keyword search for ecosystem discovery | Needs verification |
 
 **Codebase first:** Always scan the project for existing design decisions before asking.
 
