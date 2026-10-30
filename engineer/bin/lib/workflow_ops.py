@@ -1,13 +1,13 @@
 """Deterministic workflow dispatch ledgers and cited evidence reports."""
-import ast
 import fnmatch
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import sys
 from . import config, models, records
-from .core import Args, Failure, digest, load_json, now, planning_lock, read, root, run, safe_path, slug, write_json
+from .core import Args, Failure, digest, load_json, now, planning_lock, read, root, run, safe_path, write_json
 from .text import split_frontmatter
 
 
@@ -222,81 +222,9 @@ def _citations(items):
     return result
 
 
-def predicate(args):
-    value = args.json("predicate")
-    directory = _phase(args)
-    def evaluate(item, depth=0):
-        if depth > 12 or not isinstance(item, dict):
-            raise Failure("invalid-predicate", "Predicate nesting or shape is invalid", 2)
-        kind = item.get("kind", item.get("type"))
-        if kind in ("all", "any"):
-            children = item.get("items", item.get("predicates"))
-            if not isinstance(children, list) or not children:
-                raise Failure("invalid-predicate", "Boolean predicates need nonempty children", 2)
-            results = [evaluate(child, depth+1) for child in children]
-            return {"kind": kind, "satisfied": all(child["satisfied"] for child in results) if kind == "all" else any(child["satisfied"] for child in results), "children": results}
-        if kind not in ("file-exists", "frontmatter-equals", "frontmatter-nonempty"):
-            raise Failure("unsupported-predicate", "Only retained record predicates are executable", kind=kind)
-        target = str(item.get("path", "")).replace("${PHASE_DIR}", str(directory)).replace("${PHASE_NUMBER}", str(args.get("phase-number", directory.name.split("-")[0])))
-        if not target:
-            raise Failure("invalid-predicate", "Record predicate requires a path", 2)
-        path = safe_path(target, directory) if not Path(target).is_absolute() else safe_path(target)
-        if not path.is_relative_to(directory):
-            raise Failure("predicate-outside-phase", str(path), 2)
-        exists = path.is_file()
-        if kind == "file-exists":
-            satisfied = exists
-        else:
-            metadata, _ = split_frontmatter(read(path))
-            key = item.get("field")
-            if not isinstance(key, str) or not key:
-                raise Failure("invalid-predicate", "Frontmatter predicate requires field", 2)
-            actual = metadata
-            for part in key.split("."):
-                actual = actual.get(part) if isinstance(actual, dict) else None
-            satisfied = exists and (actual == item.get("value") if kind == "frontmatter-equals" else actual not in (None, "", [], {}))
-        return {"kind": kind, "path": str(path), "satisfied": satisfied, "digest": digest([path])}
-    result = evaluate(value)
-    return {"block": not result["satisfied"], "predicate": result, "structuralOnly": True}
-
-
-def auto_mode(args):
-    value = config.lookup(config.load(), "workflow.auto_advance", False)
-    return {"active": value is True, "implementationAuthorized": False}
-
-
-def check(args):
-    """Compatibility dispatcher for copied `check ${hook.check.query}` calls."""
-    selector = args.need().replace(".", "-")
-    tail = Args([])
-    tail.pos, tail.opts = args.pos[1:], dict(args.opts)
-    from . import decisions, plans, quality, scope, tdd, ui
-    routes = {
-        "auto-mode": auto_mode, "predicate": predicate, "ui-plan-gate": ui.plan_gate,
-        "ui-safety-gate": ui.safety_gate, "evaluation-scope": scope.evaluation,
-        "tdd-red-evidence": tdd.red, "tdd-review-checkpoint": lambda a: command(a, "tdd-review-checkpoint"),
-        "security-status": lambda a: command(a, "security"), "validation-coverage": lambda a: command(a, "validation"),
-        "decision-coverage-plan": lambda a: decisions.coverage(a, "plan"),
-        "decision-coverage-verify": lambda a: decisions.coverage(a, "verify"),
-        "verify-command-paths": lambda a: plans.check(a, "paths"),
-        "verify-failure-directions": lambda a: plans.check(a, "failure-directions"),
-        "windows-status": lambda a: quality.command(a, "status"),
-    }
-    if selector not in routes:
-        raise Failure("unsupported-check", "Dynamic checks are restricted to retained record/evidence operations", query=selector)
-    result = routes[selector](tail)
-    packet = result[0] if isinstance(result, tuple) else result
-    if isinstance(packet, dict) and "block" not in packet and "passed" in packet:
-        packet["block"] = not packet["passed"]
-    return result
-
-
 def review_dispatch(args):
     if args.has("explicit"):
-        if args.has("fix"):
-            raise Failure("review-execution-read-only", "Independent CLI reviews cannot apply fixes; use a separate bounded repair assignment")
-        from .review_execution import command as execute_review
-        return execute_review(args, "run")
+        raise Failure("unsupported-review-selection", "Use the native independent reviewer assignment", 2)
     base = args.get("base-sha", args.get("base"))
     if not base:
         raise Failure("review-base-required", "Independent review requires an explicit base revision", 2)
@@ -361,30 +289,6 @@ def review_record(args):
     return ledger
 
 
-def review_lane(args, action):
-    if action == "flags":
-        return "--claude --codex"
-    if action == "sections":
-        return "claude\tIndependent Claude read-only review\ncodex\tIndependent Codex read-only review"
-    if action == "explicit-from-argv":
-        values = args.all("_body") or args.pos
-        selected = []
-        for value in values:
-            if value in ("--claude", "--codex"):
-                selected.append(value[2:])
-            elif value.startswith(("--claude=", "--codex=")):
-                name, active = value[2:].split("=", 1)
-                if active not in ("true", "false"):
-                    raise Failure("invalid-review-selection", "Reviewer flag values must be true or false", 2)
-                if active == "true":
-                    selected.append(name)
-        return ",".join(dict.fromkeys(selected))
-    if action != "dispatch-step":
-        raise Failure("unknown-review-lane-action", action, 2)
-    from .review_execution import command as execute_review
-    return execute_review(args, "dispatch-step")
-
-
 def _health(args):
     errors, warnings, info = [], [], []
     for name in ("PROJECT.md", "REQUIREMENTS.md", "ROADMAP.md", "STATE.md", "config.yaml"):
@@ -412,35 +316,47 @@ def _health(args):
             "counts": {"errors": len(errors), "warnings": len(warnings), "info": len(info)}, "structuralOnly": True}
 
 
-def _intel(args):
-    files = args.all("files")
-    if not files:
-        files = run(["git", "ls-files", "--", "*.py"], root()).stdout.splitlines()
-    query = str(args.get("query", "")).casefold()
-    symbols, errors = [], []
-    for value in files:
-        path = safe_path(value)
-        if path.suffix != ".py" or not path.is_file():
-            continue
-        try:
-            tree = ast.parse(read(path))
-        except SyntaxError as exc:
-            errors.append({"path": str(path), "line": exc.lineno, "error": exc.msg})
-            continue
-        for node in tree.body:
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and not node.name.startswith("_"):
-                symbol = {"path": str(path), "name": node.name, "line": node.lineno, "kind": type(node).__name__, "digest": digest([path])}
-                if not query or query in json.dumps(symbol).casefold():
-                    symbols.append(symbol)
-    return {"symbols": symbols, "errors": errors, "scope": "Tracked Python declarations only; dynamic exports and other languages require specialist inspection", "behaviorVerified": False}
-
-
 def _learnings(args, action):
     directory = records.planning()/"learnings"
+    enabled = config.lookup(config.load(), "features.global_learnings", False) is True
+    knowledge = Path(os.environ.get("ENGINEER_KNOWLEDGE_DIR", str(Path.home()/".engineer/knowledge"))).expanduser()
     if action == "learnings-query":
         query = str(args.get("query", args.arg(0, ""))).casefold()
         items = [load_json(safe_path(path)) for path in sorted(directory.glob("*.json"))]
-        return {"items": [item for item in items if query in json.dumps(item).casefold()]}
+        if enabled:
+            for path in sorted(knowledge.glob("*.md")):
+                metadata, body = split_frontmatter(read(path))
+                items.append({**metadata, "text": body, "source": str(path)})
+            items.extend(load_json(path) for path in sorted(knowledge.glob("*.json")))
+        tag = str(args.get("tag", "")).casefold()
+        try:
+            limit = int(args.get("limit", 5))
+        except (TypeError, ValueError) as exc:
+            raise Failure("invalid-learning-limit", "Supply a positive integer", 2) from exc
+        if limit < 1:
+            raise Failure("invalid-learning-limit", "Supply a positive integer", 2)
+        matches = [item for item in items if query in json.dumps(item).casefold()
+                   and (not tag or tag in json.dumps(item).casefold())]
+        return {"items": matches[:limit]}
+    if action == "learnings-copy" and not args.has("input"):
+        if not enabled:
+            return {"stored": False, "copied": False, "reason": "feature-disabled"}
+        phase = _phase(args)
+        sources = sorted(phase.glob("*-LEARNINGS.md"))
+        if not sources:
+            raise Failure("learnings-not-found", str(phase), 2)
+        copied = []
+        for source in sources:
+            source = safe_path(source)
+            metadata, _ = split_frontmatter(read(source))
+            if not metadata.get("project"):
+                raise Failure("invalid-learnings", "Learning artifact needs its source project", 2)
+            key = hashlib.sha256((str(root())+"\n"+source.relative_to(root()).as_posix()).encode()).hexdigest()
+            destination = knowledge/(key+".md")
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(source.read_bytes())
+            copied.append(str(destination))
+        return {"stored": True, "copied": True, "paths": copied, "globalCopy": True}
     packet = load_json(safe_path(args.get("input", "")))
     if not isinstance(packet, dict) or not isinstance(packet.get("items"), list):
         raise Failure("invalid-learnings", "Supply authored items; source interpretation belongs to the specialist", 2)
@@ -471,8 +387,6 @@ def command(args, action):
         if not packet:
             raise Failure("review-not-found", key)
         return {**packet, "current": packet["assignment"]["head"] == _head()}
-    if action == "predicate":
-        return predicate(args)
     if action == "context":
         used, window = int(args.get("tokens-used", -1)), int(args.get("context-window", 0))
         if used < 0 or window <= 0:
@@ -483,8 +397,6 @@ def command(args, action):
                 "message": f"Context utilization: {percent:.1f}% ({state})"}
     if action == "health":
         return _health(args)
-    if action in ("intel", "intel-query"):
-        return _intel(args)
     if action.startswith("learnings-"):
         return _learnings(args, action)
     if action == "threadscan":
@@ -542,22 +454,4 @@ def command(args, action):
         return {"reports": reports, "missing": missing, "block": missing or bool(gaps), "gaps": gaps,
                 "status": "missing" if missing else "blocked" if gaps else "reported-evidence-current",
                 "reported_claims": claims, "structuralOnly": True, "behaviorVerified": False}
-    if action == "teams-status":
-        host = models.resolve_host()
-        runs = []
-        for path in sorted((records.planning()/"worktrees").glob("*.json")):
-            packet = load_json(safe_path(path))
-            if not isinstance(packet, dict):
-                raise Failure("invalid-worker-record", str(path))
-            entries = packet.get("workers", [packet])
-            if not isinstance(entries, list):
-                raise Failure("invalid-worker-record", str(path))
-            for entry in entries:
-                if not isinstance(entry, dict):
-                    raise Failure("invalid-worker-record", str(path))
-                state = entry.get("status", entry.get("state"))
-                if state in ("active", "running", "dispatched") or (state is None and entry.get("path") and not entry.get("merged") and not entry.get("cleaned")):
-                    runs.append({**entry, "record": str(path), "recorded_state": state or "ownership-not-released"})
-        result = {"host": host, "active": bool(runs), "runs": runs, "nativeLiveStatus": "unavailable", "evidence": "Coordinator-owned worker records; not proof of live process exit"}
-        return (result, 0 if runs else 1) if args.has("active") else result
     raise Failure("unknown-workflow-operation", action, 2)

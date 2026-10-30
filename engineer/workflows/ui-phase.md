@@ -65,11 +65,9 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.plan-phase ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} "$PHASE")
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_UI=$(engineer_run query agent-skills ui-researcher ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-AGENT_SKILLS_UI_CHECKER=$(engineer_run query agent-skills ui-checker ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
+INIT=$(engineer_run query init.plan-phase  "$PHASE")
+AGENT_SKILLS_UI=$(engineer_run query agent-skills ui-researcher )
+AGENT_SKILLS_UI_CHECKER=$(engineer_run query agent-skills ui-checker )
 ```
 
 Parse JSON for: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `has_context`, `has_research`, `commit_docs`, `response_language`.

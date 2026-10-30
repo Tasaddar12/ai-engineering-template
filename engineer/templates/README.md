@@ -23,7 +23,6 @@ These files live directly at `.planning/` — not inside phase subdirectories.
 | `config.json` | `config.json` | `/new-project`, `/health --repair` | Project-specific Engineer configuration |
 | `CLAUDE.md` | *(inline)* | `/profile` | Auto-assembled Claude Code context file |
 | `RETROSPECTIVE.md` | *(inline)* | `/complete-milestone` | Living milestone retrospective updated at each milestone close |
-| `WINDOWS.md` | *(none)* | broken-windows ledger (`src/broken-windows.cts`) | Tracked known-broken items pending resolution |
 | `STATE-ARCHIVE.md` | *(none)* | `state.cts`'s `cmdStatePrune` | Pruned historical STATE.md entries |
 | `milestone.lock` | *(none)* | `src/milestone-lock.cts` | Persistent milestone (phase + session) claim, unlike the transient `STATE.md.lock`/`WAITING.json`  |
 | `state.json` | *(none)* | `src/state-contract.cts` | Machine-readable state contract published at step boundaries |
@@ -49,13 +48,12 @@ These files live inside a phase directory. They are NOT checked by W019 (which o
 | `NN-MM-PLAN.md` | `phase-prompt.md` | `/plan-phase` | Executable implementation plan |
 | `NN-MM-SUMMARY.md` | `summary.md` | `/execute-phase` | Post-execution summary with learnings |
 | `NN-CONTEXT.md` | `context.md` | `/discuss-phase` | Scoped discussion decisions for the phase |
-| `NN-RESEARCH.md` | `research.md` | `/plan-phase`, `/plan-phase --research-phase <N>` | Technical research for the phase |
+| `NN-RESEARCH.md` | `research.md` | `/plan-phase`, `/plan-phase <N> --research` | Technical research for the phase; `--research` refreshes research and planning together |
 | `NN-VALIDATION.md` | `VALIDATION.md` | `/plan-phase` (Nyquist) | Validation architecture (Nyquist method) |
 | `NN-UAT.md` | `UAT.md` | `/validate-phase` | User acceptance test results |
 | `NN-PATTERNS.md` | *(inline)* | `/plan-phase` (pattern mapper) | Analog file mapping for the phase |
 | `NN-UI-SPEC.md` | `UI-SPEC.md` | `/ui-phase` | UI design contract |
 | `NN-SECURITY.md` | `SECURITY.md` | `/secure-phase` | Security threat model |
-| `NN-AI-SPEC.md` | `AI-SPEC.md` | `/ai-integration-phase` | AI integration spec with eval strategy |
 | `NN-DEBUG.md` | `DEBUG.md` | `/debug` | Debug session log |
 | `NN-REVIEWS.md` | *(inline)* | `/review` | Cross-AI review feedback |
 

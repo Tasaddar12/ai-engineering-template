@@ -1,5 +1,5 @@
 <purpose>
-Execute small, ad-hoc tasks with Engineer guarantees (atomic commits, STATE.md tracking). Quick mode spawns planner (quick mode) + executor(s), tracks tasks in `.planning/quick/`, and updates STATE.md's "Quick Tasks Completed" table.
+Execute small, ad-hoc tasks with Engineer guarantees (atomic commits, STATE.md tracking). Quick mode spawns planner (quick mode) + executor(s), tracks tasks in `.planning/quick/`, and records completion with `engineer_run query quick.update`.
 
 With `--full` flag: enables the complete quality pipeline — discussion + research + plan-checking + verification. One flag for everything.
 
@@ -41,6 +41,8 @@ Parse `$ARGUMENTS` for:
 - Remaining text → use as `$DESCRIPTION` if non-empty
 
 After parsing, normalize: if `$DISCUSS_MODE` and `$RESEARCH_MODE` and `$VALIDATE_MODE` are all true, set `$FULL_MODE=true`. This ensures `--discuss --research --validate` is treated identically to `--full`.
+
+Before creating a new quick record, run `quick-tasks-migrate` to import any legacy Quick Tasks table rows into canonical QUICK.md records. Migration is idempotent and preserves the source table. `quick.create`/`quick.update` remain authoritative for the active task; after completion, `quick-tasks-append` writes its history row through the schema-safe table helper.
 
 ```bash
 _engineer_identity_ok() {
@@ -170,14 +172,13 @@ DISCUSS_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--discuss([[:space:]]
 RESEARCH_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--research([[:space:]]|$) ]]; then RESEARCH_PARAM="--research"; fi
 VALIDATE_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--validate([[:space:]]|$) ]]; then VALIDATE_PARAM="--validate"; fi
 FULL_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--full([[:space:]]|$) ]]; then FULL_PARAM="--full"; fi
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.quick ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} "$DESCRIPTION" $DISCUSS_PARAM $RESEARCH_PARAM $VALIDATE_PARAM $FULL_PARAM)
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_PLANNER=$(engineer_run query agent-skills planner ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-AGENT_SKILLS_EXECUTOR=$(engineer_run query agent-skills executor ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-AGENT_SKILLS_CHECKER=$(engineer_run query agent-skills plan-checker ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-AGENT_SKILLS_VERIFIER=$(engineer_run query agent-skills verifier ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-AGENT_SKILLS_RESEARCHER=$(engineer_run query agent-skills phase-researcher ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
+engineer_run quick-tasks-migrate || exit $?
+INIT=$(engineer_run query init.quick  "$DESCRIPTION" $DISCUSS_PARAM $RESEARCH_PARAM $VALIDATE_PARAM $FULL_PARAM)
+AGENT_SKILLS_PLANNER=$(engineer_run query agent-skills planner )
+AGENT_SKILLS_EXECUTOR=$(engineer_run query agent-skills executor )
+AGENT_SKILLS_CHECKER=$(engineer_run query agent-skills plan-checker )
+AGENT_SKILLS_VERIFIER=$(engineer_run query agent-skills verifier )
+AGENT_SKILLS_RESEARCHER=$(engineer_run query agent-skills phase-researcher )
 ```
 
 Parse JSON for: `planner_model`, `executor_model`, `checker_model`, `verifier_model`, `reviewer_model`, `researcher_model`, `commit_docs`, `branch_name`, `quick_id`, `slug`, `date`, `timestamp`, `quick_dir`, `task_dir`, `roadmap_exists`, `planning_exists`, `response_language`.
@@ -189,8 +190,7 @@ PROJECT_PATH="$(dirname "${quick_dir}")/PROJECT.md"
 ```
 
 ```bash
-USE_WORKTREES=$(engineer_run query config-get workflow.use_worktrees --raw 2>/dev/null || echo "true")
-RUNTIME=$(engineer_run query config-get runtime --default claude --raw 2>/dev/null || echo "claude")
+RUNTIME=$(engineer_run query runtime-identity --pick host --raw 2>/dev/null || echo "claude")
 ```
 
 **Resolve isolation now.** Read @~/.claude/engineer/references/dispatch-isolation-gate.md
@@ -201,10 +201,10 @@ in Step 6's `Agent()` with `$HARNESS_FLAG`+comma when `ISOLATION = "harness-work
 empty. `{harnessFlag}`
 is a template placeholder, not a shell variable.
 
-If `USE_WORKTREES` is not `"false"`, run a startup orphan sweep before spawning any executors. This reaps locked worktrees whose lock-owner process is dead, whose branch is merged into the default branch, and whose lock file mtime is older than 5 minutes. Running it at startup prevents accumulation of orphaned worktrees from prior sessions that exited without cleanup.
+Before isolated dispatch, run a startup orphan sweep before spawning any executors. This reaps locked worktrees whose lock-owner process is dead, whose branch is merged into the default branch, and whose lock file mtime is older than 5 minutes. Running it at startup prevents accumulation of orphaned worktrees from prior sessions that exited without cleanup.
 
 ```bash
-if [ "$USE_WORKTREES" != "false" ]; then
+if true; then
   engineer_run query worktree.reap-orphans 2>/dev/null || true
 fi
 ```
@@ -225,7 +225,7 @@ else
 fi
 ```
 
-Quick mode does not have a pre-declared `files_modified` list (the task is freeform), so use a fail-loud guard at commit time: when the executor stages files for the quick-task commit, if any staged path falls inside a `SUBMODULE_PATHS` entry, abort with a clear error explaining that worktree-isolated commits cannot safely span submodule boundaries — the user can re-run with `workflow.use_worktrees=false` to fall back to sequential execution on the main tree. If `SUBMODULE_PATHS` is empty (no `.gitmodules` in the repo), worktree isolation proceeds normally.
+The quick planner declares the exact `files_modified` and `files_deleted` paths before dispatch. Block a declared submodule intersection and retain the fail-loud commit-time guard: if any staged path falls inside `SUBMODULE_PATHS`, abort and report the unsupported submodule scope. Resolve that scope before retrying in an isolated checkout. If `SUBMODULE_PATHS` is empty (no `.gitmodules` in the repo), worktree isolation proceeds normally.
 
 **If `roadmap_exists` is false:** Error — Quick mode requires an active project with ROADMAP.md. Run `/new-project` first.
 
@@ -342,12 +342,7 @@ If RESEARCH_MODE is true, read and execute `engineer/workflows/quick/steps/resea
 
 **Step 5: Spawn planner (quick mode)**
 
-**Capability gate:**
-```bash
-PLAN_PRE_HOOKS_JSON=$(engineer_run loop render-hooks plan:pre --raw)
-```
-
-**Contribution dispatch:** read `PLAN_PRE_HOOKS_JSON.activeHooks` directly in context. In registry order, inject only active entries with `kind == "contribution"` and `into == "planner"` into each Quick planner prompt below, using `fragment.inline` verbatim plus resolved `configValues`. Do not paste `rendered`. Empty, inactive, incompatible, or non-planner entries inject nothing and do not error. Reuse this snapshot for revisions; do not render again.
+Read `workflow.tdd_mode` directly; when enabled, pass the native TDD flag and `engineer/references/tdd.md` guidance to this planner and its revisions.
 
 **If `$VALIDATE_MODE`:** Use `quick-full` mode with stricter constraints.
 
@@ -375,12 +370,12 @@ ${AGENT_SKILLS_PLANNER}
 
 **Project skills:** Check .claude/skills/ or .agents/skills/ directory (if either exists) — read SKILL.md files, plans should account for project skill rules
 
-{For each active entry in `PLAN_PRE_HOOKS_JSON` where `kind == "contribution"` and `into == "planner"` (in array order): inject the entry's `fragment.inline` verbatim here, plus its resolved `configValues` when the entry carries them. If no active planner contributions exist, omit this block entirely.}
 
 </planning_context>
 
 <constraints>
 - Create a SINGLE plan with 1-3 focused tasks
+- Declare exact repo-relative `files_modified` and `files_deleted` arrays in frontmatter; no globs or implicit deletion authority. These arrays become mandatory worktree ownership inputs.
 - Quick tasks should be atomic and self-contained
 - PATH FORM : every path in the plan BODY — `files`, `verify`, `<automated>`, task actions — is repo-root-relative, and every `<automated>` command assumes cwd at the checkout root. Only the `<required_reading>` inputs above are absolute . An absolute path copied from this context into `<automated>` pins the command to THIS checkout; a worktree-isolated executor then runs it against the main tree and it passes on unchanged code.
 - MUTABLE-SCOPE AUTHORITY : when concrete edit or verification scope depends on mutable external state (a merge index, PR/base diffs, the working tree), authorize scope ONLY from a live observation made at planning time — for conflict resolution that is the fresh merge index via `git diff --name-only --diff-filter=U` — or keep `files`/`verify` CONDITIONAL on that observation. Historical STATE.md entries, recovery notes, and cached PR/base diff paths may guide investigation only; they are never edit or verification authority, and a plan must not enumerate them as authorized files "pending replacement".
@@ -426,53 +421,54 @@ If `section_manifest` is `null` or `"worktree-pre-dispatch-commit"` is in its `i
 
 **Step 6: Spawn executor**
 
-Auto-degrade to sequential if HEAD has diverged from the worktree fork base (mirrors
-execute-phase's guard). Claude Code's `isolation="worktree"` forks new worktrees from
-`origin/HEAD`, not the live local HEAD. If a prior quick task in this session (or the Step 5.6
-pre-dispatch plan commit above) advanced local HEAD without an intervening `git push`,
-`origin/HEAD` stays pinned to a stale ancestor and the executor's `worktree_branch_check` guard
-halts with a base-mismatch fatal — potentially many commits behind, not just one. Run this check
-immediately before capturing `EXPECTED_BASE` so it reflects the most current local state.
+Mandatory isolation is required; resolve only harness-worktree or orchestrator-worktree. Failure blocks executor dispatch.
+
+The coordinator performs setup **before** the Agent call. The completed quick plan and produced discussion/research artifacts must already be committed by Step 5.6. Keep this setup result in the coordinator's invocation state between tool calls.
 
 ```bash
-if [ "$ISOLATION" = "harness-worktree" ] && [ "${USE_WORKTREES:-true}" != "false" ]; then
-  _QUICK_SHOULD_DEGRADE=$(engineer_run query worktree.base-check --mode "$ISOLATION" --pick shouldDegrade 2>/dev/null || true)
-  if [ "$_QUICK_SHOULD_DEGRADE" = "true" ]; then
-    _QUICK_DEGRADE_MSG=$(engineer_run query worktree.base-check --mode "$ISOLATION" --pick message 2>/dev/null || true)
-    [ -n "$_QUICK_DEGRADE_MSG" ] && printf '%s\n' "$_QUICK_DEGRADE_MSG" >&2
-    echo "⚠  Worktree fork base diverged from orchestrator HEAD — auto-degrading to sequential mode for this quick task to avoid a base-mismatch halt." >&2
-    USE_WORKTREES=false
-    ISOLATION=none
-  fi
-fi
-
-# Re-resolve (and, as a side effect, re-persist) now that the base-check
-# auto-degrade above may have changed $ISOLATION since the Step 2 gate's
-# `dispatch-isolation` call. That first call recorded the NATURALLY
-# resolved mode into the run-scoped sentinel the isolation guard hooks read
-# (hooks/engineer-agent-isolation-guard.js via
-# hooks/lib/isolation-sentinel.js). The degrade above is decided HERE, in
-# shell — the resolver cannot see it — so without this the sentinel still
-# asserts `harness-worktree` while the dispatch below correctly omits the
-# harness flag, and the guard denies the dispatch with exit 2. `--force-isolation`
-# pushes the FINAL, shell-computed value through that SAME single write path
-# (`none` also clears the stored harnessFlag, since none applies to sequential
-# dispatch). Best-effort: a write failure here must never fail the task — the
-# guards' own sentinel-absent fallback is safe, just less precise.
-engineer_run query dispatch-isolation --raw --force-isolation "$ISOLATION" >/dev/null 2>&1 || true
+ORCH_ROOT=$(git rev-parse --show-toplevel) || exit $?
+EXPECTED_BASE=$(git rev-parse HEAD) || exit $?
+QUICK_PLAN_PATH="${QUICK_DIR_REL}/${quick_id}-PLAN.md"
+QUICK_SUMMARY_PATH="${QUICK_DIR_REL}/${quick_id}-SUMMARY.md"
+QUICK_PLAN_JSON=$(engineer_run query frontmatter.get "$QUICK_PLAN_PATH") || exit $?
+QUICK_FILES_JSON=$(printf '%s' "$QUICK_PLAN_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const v=JSON.parse(s).files_modified;if(!Array.isArray(v)||v.some(x=>typeof x!=="string"))process.exit(1);process.stdout.write(JSON.stringify(v))})') || exit $?
+QUICK_DELETIONS_JSON=$(printf '%s' "$QUICK_PLAN_JSON" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const v=JSON.parse(s).files_deleted||[];if(!Array.isArray(v)||v.some(x=>typeof x!=="string"))process.exit(1);process.stdout.write(JSON.stringify(v))})') || exit $?
+QUICK_ALLOWED_BASES=$(EXPECTED_BASE="$EXPECTED_BASE" QUICK_PLAN_PARENT="${QUICK_PLAN_PARENT:-}" node -e 'process.stdout.write(JSON.stringify([...new Set([process.env.EXPECTED_BASE,process.env.QUICK_PLAN_PARENT].filter(Boolean))]))') || exit $?
+QUICK_WORKTREE_MANIFEST=$(mktemp "${TMPDIR:-/tmp}/engineer-quick-worktree-XXXXXX") || exit $?
+mv "$QUICK_WORKTREE_MANIFEST" "${QUICK_WORKTREE_MANIFEST}.json" && QUICK_WORKTREE_MANIFEST="${QUICK_WORKTREE_MANIFEST}.json" || exit 1
+engineer_run query worktree.manifest init --manifest "$QUICK_WORKTREE_MANIFEST" --root "$ORCH_ROOT" || exit $?
+case "$ISOLATION" in
+  orchestrator-worktree)
+    QUICK_WORKTREE=$(engineer_run query worktree.create "quick-${quick_id}" --phase "quick-${quick_id}" --manifest "$QUICK_WORKTREE_MANIFEST" --root "$ORCH_ROOT" --base "$EXPECTED_BASE" --allowed-bases "$QUICK_ALLOWED_BASES" --files-json "$QUICK_FILES_JSON" --deletions-json "$QUICK_DELETIONS_JSON" --summary-path "$QUICK_SUMMARY_PATH") || exit $?
+    QUICK_WORKTREE_PATH=$(engineer_run query json.get --payload "$QUICK_WORKTREE" --field worktree_path --raw) || exit $?
+    QUICK_WORKTREE_BRANCH=$(engineer_run query json.get --payload "$QUICK_WORKTREE" --field branch --raw) || exit $?
+    QUICK_WORKTREE_BASE=$(engineer_run query json.get --payload "$QUICK_WORKTREE" --field expected_base --raw) || exit $?
+    [ "$(git -C "$QUICK_WORKTREE_PATH" rev-parse HEAD)" = "$QUICK_WORKTREE_BASE" ] || exit 42
+    [ "$(git -C "$QUICK_WORKTREE_PATH" branch --show-current)" = "$QUICK_WORKTREE_BRANCH" ] || exit 42
+    ;;
+  harness-worktree) ;;
+  *) echo "FATAL: mandatory quick-task isolation unavailable" >&2; exit 1 ;;
+esac
 ```
 
-Capture current HEAD before spawning (used for worktree branch check):
+For orchestrator isolation, the coordinator generates the literal runnable root guard from the returned checkout before composing the prompt:
+
 ```bash
-EXPECTED_BASE=$(git rev-parse HEAD)
-if [ "$ISOLATION" = "harness-worktree" ]; then   # keyed on ISOLATION like every other dispatch-coupled branch 
-  # BSD/macOS mktemp only randomizes XXXXXX when it is the final path component, so make a
-  # suffixless temp then append the extension — portable across BSD + GNU.
-  QUICK_WORKTREE_MANIFEST=$(mktemp "${TMPDIR:-/tmp}/engineer-quick-worktree-XXXXXX") && mv "$QUICK_WORKTREE_MANIFEST" "${QUICK_WORKTREE_MANIFEST}.json" && QUICK_WORKTREE_MANIFEST="${QUICK_WORKTREE_MANIFEST}.json" || exit 1
-  printf '{"worktrees":[]}\n' > "$QUICK_WORKTREE_MANIFEST"
-  export QUICK_WORKTREE_MANIFEST
+QUICK_ROOT_GUARD=""
+if [ "$ISOLATION" = "orchestrator-worktree" ]; then
+  QUICK_ROOT_GUARD=$(QUICK_WORKTREE_PATH="$QUICK_WORKTREE_PATH" node <<'NODE'
+const q = value => "'" + value.replaceAll("'", "'\\''") + "'";
+process.stdout.write(`PINNED_ROOT=${q(process.env.QUICK_WORKTREE_PATH)}
+ACTUAL_ROOT=$(git rev-parse --show-toplevel) || exit 42
+PINNED_TL=$(git -C "$PINNED_ROOT" rev-parse --show-toplevel) || exit 42
+[ "$ACTUAL_ROOT" = "$PINNED_TL" ] || { echo "FATAL: executor root differs from assigned isolated checkout" >&2; exit 42; }
+`);
+NODE
+  ) || exit $?
 fi
 ```
+
+Bind the native Agent tool's supported working-directory/workspace input to the exact `QUICK_WORKTREE_PATH` for orchestrator isolation. If this host cannot bind a native worker to that checkout, stop before dispatch and preserve it. The prompt guard verifies this binding; it does not create a checkout or dispatch another worker. For harness isolation, pass the declared harness flag and retain the existing branch/base guard and artifact materialization below. Never dispatch into the primary checkout.
 
 Spawn executor with plan reference:
 
@@ -516,15 +512,16 @@ if [ ! -f "$QUICK_RESEARCH_PATH" ] && git cat-file -e "${QUICK_PLAN_COMMIT}:$QUI
 fi
 ` : ''}\`\`\`
 ` : `
-<sequential_execution>
-You are running as a SEQUENTIAL executor agent on the main working tree (set SEQUENTIAL=true in your Step 0 commit guard; a linked worktree on the configured branch is allowed, ).
-</sequential_execution>
+<project_root_pin>
+${QUICK_ROOT_GUARD}
+</project_root_pin>
+Run the literal guard before the first read/write and every commit. Do not create or dispatch worktrees; setup belongs to the coordinator.
 `}
 
 <required_reading>
-- ${QUICK_DIR}/${quick_id}-PLAN.md (Plan)
-${DISCUSS_MODE ? '- ' + QUICK_DIR + '/' + quick_id + '-CONTEXT.md (User decisions — locked, do not revisit)' : ''}
-${RESEARCH_MODE ? '- ' + QUICK_DIR + '/' + quick_id + '-RESEARCH.md (Research findings — use to inform implementation choices)' : ''}
+- ${QUICK_DIR_REL}/${quick_id}-PLAN.md (Plan)
+${DISCUSS_MODE ? '- ' + QUICK_DIR_REL + '/' + quick_id + '-CONTEXT.md (User decisions — locked, do not revisit)' : ''}
+${RESEARCH_MODE ? '- ' + QUICK_DIR_REL + '/' + quick_id + '-RESEARCH.md (Research findings — use to inform implementation choices)' : ''}
 - ${STATE_PATH} (Project state)
 - ./CLAUDE.md or ./.claude/CLAUDE.md (Project instructions, if exists)
 - .claude/skills/ or .agents/skills/ (Project skills, if either exists — list skills, read SKILL.md for each, follow relevant rules during implementation)
@@ -537,8 +534,7 @@ SUBMODULE_PATHS for this project: ${SUBMODULE_PATHS}
 
 If SUBMODULE_PATHS is non-empty, you MUST run this fail-loud guard immediately
 before EVERY git commit you create during this quick task (after \`git add\`,
-before \`git commit\`). Quick mode does not have a pre-declared files_modified
-list, so the guard runs at commit time:
+before \`git commit\`). The planner declared exact files_modified/files_deleted paths. This additional guard runs at commit time:
 
 \`\`\`bash
 SUBMODULE_PATHS=\"${SUBMODULE_PATHS}\"
@@ -553,7 +549,7 @@ if [ -n \"\$SUBMODULE_PATHS\" ]; then
       f=\"\${f%/}\"
       case \"\$f\" in
         \"\$sm\"|\"\$sm\"/*)
-          echo \"ABORT: staged path \$f_raw falls inside submodule \$sm — worktree-isolated commits cannot safely span submodule boundaries. Re-run with workflow.use_worktrees=false.\" >&2
+          echo \"ABORT: staged path \$f_raw falls inside submodule \$sm — worktree-isolated commits cannot safely span submodule boundaries. Resolve submodule scope before retrying in a supported isolated checkout.\" >&2
           exit 1 ;;
       esac
     done
@@ -563,15 +559,15 @@ fi
 
 If the guard aborts, do NOT attempt the commit, do NOT remove the staged files,
 and do NOT continue subsequent tasks. Surface the abort message in your
-SUMMARY.md and stop — the user must rerun with worktrees disabled.
+SUMMARY.md and stop — the coordinator must resolve submodule scope before retrying.
 </submodule_commit_guard>
 
 <constraints>
 - Execute all tasks in the plan
 - Commit each task atomically (code changes only)
 - Run the <submodule_commit_guard> bash block before every \`git commit\` if SUBMODULE_PATHS is non-empty
-- Create summary at: ${ISOLATION === "harness-worktree" ? QUICK_DIR_REL : QUICK_DIR}/${quick_id}-SUMMARY.md with `status: complete` in SUMMARY frontmatter (required so the audit-open milestone-close scanner recognises the task as done, not [unknown])
-- Do NOT commit docs artifacts (SUMMARY.md, STATE.md, PLAN.md) — the orchestrator handles the docs commit in Step 8
+- Create summary at: ${QUICK_DIR_REL}/${quick_id}-SUMMARY.md with `status: complete` in SUMMARY frontmatter (required so the audit-open milestone-close scanner recognises the task as done, not [unknown])
+- Commit the assigned SUMMARY.md with status complete before returning; completion requires committed source and SUMMARY output. Do NOT modify or commit shared STATE.md, ROADMAP.md, REQUIREMENTS.md or config. The coordinator handles remaining shared records in Step 8.
 - If a Write/Edit is denied by engineer-worktree-path-guard, stop and report the denial in your final message — do not work around it by copying or moving the file with Bash (cp, mv, redirects)
 - Do NOT update ROADMAP.md (quick tasks are separate from planned phases)
 </constraints>
@@ -585,32 +581,41 @@ SUMMARY.md and stop — the user must rerun with worktrees disabled.
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
-If the executor ran isolated (`ISOLATION = "harness-worktree"` at dispatch), append its returned `{agent_id, worktree_path, branch, expected_base, allowed_bases}` metadata to `QUICK_WORKTREE_MANIFEST` before cleanup. Set `expected_base` to `${EXPECTED_BASE}` and `allowed_bases` to `["${EXPECTED_BASE}", "${QUICK_PLAN_PARENT}"]` with duplicates and empty values removed. If any required field is unavailable, stop and ask for recovery; do not discover global worktrees.
+For **both** isolation modes, capture the native host's actual agent identifier at dispatch and its terminal result through the host wait/status tool. Preserve the original host event as a JSON file outside the worker checkout. Agent prose, an artifact, elapsed time and a timeout are not stop evidence. Until the host confirms terminal state, preserve the checkout, do not reassign its paths and do not merge it.
 
-After executor returns:
-1. **Worktree cleanup:** If the executor ran isolated (`ISOLATION = "harness-worktree"` at dispatch), merge the worktree branch back and clean up:
-   ```bash
-   QUICK_WORKTREE_MANIFEST=${QUICK_WORKTREE_MANIFEST:-$WAVE_WORKTREE_MANIFEST}
-   [ -n "${QUICK_WORKTREE_MANIFEST:-}" ] && [ -f "$QUICK_WORKTREE_MANIFEST" ] || {
-     echo "BLOCKED: missing QUICK_WORKTREE_MANIFEST; refusing broad worktree cleanup." >&2
-     exit 1
-   }
+Under harness isolation, obtain the checkout path from the host's worktree metadata, then query its actual branch and head with Git; retain the captured expected base and allowed bases. Under orchestrator isolation, use the exact path/branch/base returned by `worktree.create` above. Read and execute the **native terminal receipt** procedure in `engineer/workflows/execute-phase/steps/executor-isolation-dispatch.md` with these bindings: `plan_id=quick-${quick_id}`, `WORKTREE_PATH=QUICK_WORKTREE_PATH`, `WORKTREE_BRANCH=QUICK_WORKTREE_BRANCH`, `EXPECTED_BASE=QUICK_WORKTREE_BASE` (or the captured harness base), `ALLOWED_BASES_JSON=QUICK_ALLOWED_BASES`, `PLAN_FILES_JSON=QUICK_FILES_JSON`, `PLAN_DELETIONS_JSON=QUICK_DELETIONS_JSON`, `SUMMARY_PATH=QUICK_SUMMARY_PATH`, `WAVE_WORKTREE_MANIFEST=QUICK_WORKTREE_MANIFEST`. It writes the host-sourced receipt and calls `worktree.record-agent --terminal-receipt` against the same manifest **before** integration; first receipt attachment binds a precreated entry to the actual host agent id.
 
-   # Prefer the bounded cleanup helper. It verifies branch identity, expected
-   # base, deletion diffs, merge result, and worktree removal before branch
-   # deletion. If it blocks, resolve the reported manifest entry and rerun.
-   # Fail closed: SDK refusal (safety guard /) must surface — do not swallow exit 1.
-   engineer_run query worktree.cleanup-wave --manifest "$QUICK_WORKTREE_MANIFEST" || exit 1
-   ```
-   If `ISOLATION` was not `"harness-worktree"` at dispatch (including a base-check degrade — that is *this* file's degrade; is the `diagnose-issues.md` / `execute-plan.md` one), skip this step.
+```bash
+if [ "$ISOLATION" = "harness-worktree" ]; then
+  : "${HOST_WORKTREE_PATH:?Use the checkout path from actual host metadata}"
+  QUICK_WORKTREE_PATH="$HOST_WORKTREE_PATH"
+  QUICK_WORKTREE_BRANCH=$(git -C "$QUICK_WORKTREE_PATH" branch --show-current) || exit $?
+  QUICK_WORKTREE_BASE="$EXPECTED_BASE"
+fi
+plan_id="quick-${quick_id}"
+WORKTREE_PATH="$QUICK_WORKTREE_PATH"
+WORKTREE_BRANCH="$QUICK_WORKTREE_BRANCH"
+EXPECTED_BASE="$QUICK_WORKTREE_BASE"
+ALLOWED_BASES_JSON="$QUICK_ALLOWED_BASES"
+PLAN_FILES_JSON="$QUICK_FILES_JSON"
+PLAN_DELETIONS_JSON="$QUICK_DELETIONS_JSON"
+SUMMARY_PATH="$QUICK_SUMMARY_PATH"
+WAVE_WORKTREE_MANIFEST="$QUICK_WORKTREE_MANIFEST"
+```
 
-   > **ISOLATED-RUN RECOVERY — FAIL SAFE:** When an isolated (worktree) run is *rejected* — the user declines to merge it, the orchestrator surfaces recovery guidance for a blocked/halted plan, or the run over-reached the requested scope — the worktree-isolation contract MUST hold through recovery. Do **NOT** propose continuing on `main`/the primary checkout as the default or recommended recovery path. Default to a **safe halt** and offer: (a) re-attempt in a **fresh, narrowly-scoped worktree**, or (b) inspect or discard the rejected worktree without merging. Any path that edits the primary checkout requires an **explicit, clearly-labeled confirmation** from the user first — editing `main` directly is never the proposed or default option for a run the user configured to be isolated.
+Now execute the receipt procedure with the actual host event before either merge call below.
 
-2. Verify summary exists at `${QUICK_DIR}/${quick_id}-SUMMARY.md`
-3. Extract commit hash from executor output
-4. Report completion status
+After the host has stopped and the terminal receipt is recorded, the coordinator verifies committed SUMMARY and source output, then integrates **both** modes from its captured root:
 
-**Known Claude Code bug (classifyHandoffIfNeeded):** If executor reports "failed" with error `classifyHandoffIfNeeded is not defined`, this is a Claude Code runtime bug — not a real failure. Check if summary file exists and git log shows commits. If so, treat as successful.
+```bash
+[ "$(git rev-parse --show-toplevel)" = "$ORCH_ROOT" ] || { echo "FATAL: quick integrator root drift" >&2; exit 42; }
+engineer_run query worktree.merge-wave --manifest "$QUICK_WORKTREE_MANIFEST" || exit $?
+engineer_run query worktree.cleanup-wave --manifest "$QUICK_WORKTREE_MANIFEST" || exit $?
+```
+
+A rejected receipt, dirty worker, missing/uncommitted SUMMARY, scope violation or failed merge preserves the checkout and blocks completion. Never use a primary-checkout fallback or force cleanup. Confirm `${QUICK_DIR}/${quick_id}-SUMMARY.md` is present after integration and derive the resulting commit with Git before reporting completion.
+
+**Known Claude Code bug (classifyHandoffIfNeeded):** If executor reports "failed" with error `classifyHandoffIfNeeded is not defined`, this is a Claude Code runtime bug — not a real failure. Check if summary file exists and git log shows commits. If so, reconcile the artifacts, but still obtain the native host terminal receipt and pass the normal record/merge checks before treating the task as successful.
 
 If summary not found, error: "Executor failed to create ${quick_id}-SUMMARY.md"
 
@@ -622,16 +627,7 @@ Note: For quick tasks producing multiple plans (rare), spawn executors in parall
 
 Skip this step entirely if `$FULL_MODE` is false.
 
-**Capability gate:**
-```bash
-EXECUTE_POST_HOOKS_JSON=$(engineer_run loop render-hooks execute:post --raw)
-```
-
-**Generic step dispatch:** dispatch every `kind == "step"` hook from `EXECUTE_POST_HOOKS_JSON` per @~/.claude/engineer/references/loop-hook-dispatch.md (skip silently when none); each step is advisory and best-effort. The code-review specialization below is one such hook, not a replacement for the generic dispatch.
-
-Resolve active step hooks from `EXECUTE_POST_HOOKS_JSON` where `kind == "step"` and `ref.skill == "code-review"`.
-
-If no active code-review step hook exists, skip with message "Code review skipped (code-review capability inactive)" — after dispatching any other active step hooks above — and proceed.
+Read `workflow.code_review` directly with `config-get`; when false skip automatic review. When true, use the independent internal code-reviewer below.
 
 **Scope files from executor's commits:**
 ```bash
@@ -679,71 +675,28 @@ If `section_manifest` is `null` or `"quick-verification"` is in its `included` l
 
 ---
 
-**Step 7: Update STATE.md**
+**Step 7: Update the existing quick-task record**
 
-Update STATE.md with quick task completion record.
+After the executor's committed output has been integrated, update the same `${quick_id}` created during initialization. The runtime owns quick records and state synchronization. Preserve the actual verification outcome; a blocked or unverified task cannot become passed through a display label.
 
-**7a. Check if "Quick Tasks Completed" section exists:**
-
-Read STATE.md and check for `### Quick Tasks Completed` section.
-
-**7b. If section doesn't exist, create it:**
-
-Insert after `### Blockers/Concerns` section:
-
-**If `$VALIDATE_MODE`:**
-```markdown
-### Quick Tasks Completed
-
-| # | Description | Date | Commit | Status | Directory |
-|---|-------------|------|--------|--------|-----------|
-```
-
-**If NOT `$VALIDATE_MODE`:**
-```markdown
-### Quick Tasks Completed
-
-| # | Description | Date | Commit | Directory |
-|---|-------------|------|--------|-----------|
-```
-
-**Note:** If the table already exists in a legacy (pre-registry) column format, first run `engineer_run quick-tasks-migrate` — the maintainer-decided repair path that rewrites the table onto the canonical schema, losslessly bucketing unmapped columns into Description. It is a silent no-op when the table is already canonical or the section is absent, so running it before the first append of every quick task migrates exactly once and never prompts otherwise. After migration, use the canonical column format below.
-
-**7c. Append new row to table:**
-
-Append the row through the schema-backed `engineer_run quick-tasks-append` command (`appendQuickTaskRow`)
-rather than authoring the row as raw markdown — this shares the exact
-escaping the reader (`parseMarkdownTable`) requires, so a `${DESCRIPTION}` containing a literal `|`
-(a Jinja filter, an Ansible task name) can never permanently rag the table ( Phase 3).
-Do NOT use the Edit tool to write this row directly; that raw-interpolation path is the defect this
-step now avoids.
-
-**If `$VALIDATE_MODE` (or table has Status column):**
 ```bash
-engineer_run quick-tasks-append --quick-id "${quick_id}" --slug "${slug}" --task "${DESCRIPTION}" --status "${VERIFICATION_STATUS}"
+QUICK_COMMIT=$(git rev-parse HEAD) || exit $?
+if [ "$VALIDATE_MODE" = "true" ]; then
+  QUICK_VERIFICATION=$(engineer_run query verification.status "$QUICK_DIR" --pick status) || exit $?
+  case "$QUICK_VERIFICATION" in
+    passed) QUICK_RECORD_STATUS=passed ;;
+    gaps_found|human_needed|missing|stale|unparseable|phase_dir_not_found) QUICK_RECORD_STATUS=blocked ;;
+    *) echo "ERROR: unsupported verification status: $QUICK_VERIFICATION" >&2; exit 1 ;;
+  esac
+else
+  QUICK_RECORD_STATUS=complete
+  QUICK_VERIFICATION=not_run
+fi
+engineer_run query quick.update "$quick_id" --status "$QUICK_RECORD_STATUS" --verification "$QUICK_VERIFICATION" --commit "$QUICK_COMMIT" || exit $?
+engineer_run quick-tasks-append --quick-id "${quick_id}" --slug "${slug}" --task "${DESCRIPTION}" --status "${QUICK_RECORD_STATUS}" || exit $?
 ```
 
-**If NOT `$VALIDATE_MODE` (and table has no Status column):**
-```bash
-engineer_run quick-tasks-append --quick-id "${quick_id}" --slug "${slug}" --task "${DESCRIPTION}"
-```
-
-Both forms emit the row this step previously authored by hand: `--quick-id`/`--slug` derive the same
-`[${quick_id}-${slug}](./quick/${quick_id}-${slug}/)` permalink, and `date`/commit are
-computed by the command itself — from the current day and the current `HEAD` (already the executor's
-own commit from Step 6 at this point in the workflow) — never passed explicitly. For a schema-safe
-append outside this workflow, with neither a quick id nor a task directory (e.g. `fast.md`),
-`engineer_run quick-tasks-append --task <text>` alone remains the fallback shape — the `#` cell is
-a positional ordinal and `Directory` reads `—`.
-
-**7d. Update "Last activity" line:**
-
-Use `date` from init:
-```
-Last activity: ${date} - Completed quick task ${quick_id}: ${DESCRIPTION}
-```
-
-Use the Edit tool for 7a/7b/7d (section creation and the Last activity line). 7c above writes through `engineer_run quick-tasks-append`, not the Edit tool.
+When validation ran, the fresh canonical status above corresponds to the earlier `$VERIFICATION_STATUS` display labels: Verified → passed; Needs Review or Gaps → blocked; Unverified → blocked. Keep those display labels for the completion report while storing the actual canonical verification value in the record.
 
 ---
 
@@ -763,7 +716,7 @@ Build file list:
 ```bash
 # Explicitly stage all artifacts before commit — PLAN.md may be untracked
 # if the executor ran without worktree isolation and committed docs early
-# Filter .planning/ files from staging if commit_docs is disabled 
+# Filter .planning/ files from staging if commit_docs is disabled
 COMMIT_DOCS=$(engineer_run query config-get commit_docs --raw 2>/dev/null || echo "true")
 if [ "$COMMIT_DOCS" = "false" ]; then
   file_list_filtered=$(echo "${file_list}" | tr ' ' '\n' | grep -v '^\.planning/' | tr '\n' ' ')
@@ -796,7 +749,7 @@ Commit: ${commit_hash}
 
 ---
 
-Ready for next task: /quick ${ENGINEER_WS}
+Ready for next task: /quick
 ```
 
 **If NOT `$VALIDATE_MODE`:**
@@ -813,7 +766,7 @@ Commit: ${commit_hash}
 
 ---
 
-Ready for next task: /quick ${ENGINEER_WS}
+Ready for next task: /quick
 ```
 
 </process>

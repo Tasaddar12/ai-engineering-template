@@ -231,6 +231,7 @@ passed as one shell argument. `--raw`, `--json`, and `--pick FIELD` are global.
 | `check.verify-command-paths`, `check.verify-failure-directions` | `N [--dir DIR]` or `--plan PATH` | `valid, findings[]`; findings exit 1 |
 | `check.decision-coverage-plan`, `check.decision-coverage-verify` | `N [--dir DIR]` | `passed, decisions[], uncovered[], files[]`; uncovered IDs exit 1 |
 | `check.ui-plan-gate` | `N` | `blocked, required, reason`; required unapproved UI spec exits 1 |
+| `check.prohibition-enforcement` | `--payload JSON` or `REQUEST.json` | direct fail-first enforcement disposition; missing or invalid input exits 2 |
 | `check.tdd-red-evidence` | `RECORD.json` | verdict/evidence; raw verdict string; unreadable exits 69, rejected evidence exits 1 |
 | `task.is-behavior-adding` | `TASK_JSON` | `is_behavior_adding, reason` |
 | `user-story.validate` | `STORY` | `valid, errors[], slots` |
@@ -265,7 +266,7 @@ passed as one shell argument. `--raw`, `--json`, and `--pick FIELD` are global.
 | `quick-batch.create` | `--file FILE [--base-revision SHA --id ID]` | batch path/id/items and one quick record per item |
 | `quick-batch.update` | `ID --updates JSON_ARRAY` | batch with updates merged by quickId |
 | `quick-batch.resume` | `ID [--current-base-revision SHA]` | eligible/in_flight/done/base_drift |
-| `quick-batch.complete` | `ID --quick-id QUICK_ID [--commit SHA --description TEXT --date YYYY-MM-DD --directory DIR]` | completes one item after verifying its integrated commit, PLAN scope and SUMMARY task commits, appends its STATE row, and completes the batch when every item is terminal |
+| `quick-batch.complete` | `ID --quick-id QUICK_ID [--commit SHA --description TEXT --date YYYY-MM-DD --directory DIR]` | completes one item after verifying its integrated commit, PLAN scope and SUMMARY task commits, updates its authoritative QUICK.md record through a durable batch completion transaction, and completes the batch when every item is terminal |
 | `quick-batch.effective-concurrency` | `[--jobs N --task-count N --capacity N --mutating --isolation MODE]` | concurrency/effective_concurrency |
 | `quick-batch.filter-executed` | `--eligible JSON_ARRAY --executed JSON_ARRAY` | spawnEligible/alreadyExecuted |
 | `quick-batch.merge-eligible` | `--wave-order JSON_ARRAY --ready JSON_ARRAY` | mergeable prefix |
@@ -376,3 +377,48 @@ use `phase.locate N` first, then invoke initialization from its returned worktre
 `init.quick-batch` adds quick_root/quick_dir/open_batches/capacity/isolation.
 `init.todos` adds todos/count. `init.progress` and `init.complete-milestone` add
 roadmap phases/counts/percent, progress_percent, and all_phases_verified.
+
+The retired dynamic `check`, `check.predicate`, capability execution, external
+`review.run`/`review.collect` and `review-lane`, PID `worktree.worker-*`,
+broken-windows and intel routes are
+not registered. Unknown `check.*` names are rejected. Native review uses
+`review.dispatch`, `review.record` and `review.status`.
+
+`check.prohibition-enforcement --payload JSON` (or a positional request file)
+runs the direct prohibition gate. Missing enforcement proof stays flagged and
+unverified; a caller assertion never replaces an actual fail-first check.
+
+`learnings.extract --input FILE` retains authored items with repository citations.
+With `features.global_learnings` enabled, `learnings.copy --phase N` copies the
+phase's existing LEARNINGS.md artifact into `~/.engineer/knowledge/`, preserving
+its source project and bytes. `learnings.query --tag TAG --limit 5` reads matching
+local and enabled global knowledge; project decisions still take precedence.
+
+
+Retained evidence and planning utilities:
+
+| Verb | Inputs | Result |
+|---|---|---|
+| `verify.context-drift` | `N [--record|--stamp] [--paths PATH ...]` | Hashes CONTEXT and declared `source_paths` (or `files`); reports unchanged stale artifacts after premises change. `workflow.context_drift_action` selects `warn` (default) or `block`; unavailable evidence exits 69. This is a freshness signal, not semantic assessment. |
+| `roadmap.annotate-dependencies` | `N` | Unions cross-phase plan dependencies with existing roadmap dependencies using the maintained phase edit operation. |
+| `quick-tasks-append` | `--task TEXT [--quick-id N --slug SLUG] [--status STATUS]` | Schema-safe compatibility table append; escapes cells, preserves surrounding prose and deduplicates a supplied directory link. Existing tables without Status retain their schema. `QUICK.md` remains authoritative; table rows do not complete tasks or recover batch transactions. |
+| `quick-tasks-migrate` | none | Idempotently imports orphan legacy table rows into authoritative `quick/*/QUICK.md`; rows referencing an existing validated task directory are skipped. Preserves the original table and its bytes. |
+| `research-plan` | `--input FILE [--max-age-hours 168]` | Reads explicit JSON input (including external temp files), plans caller-executed fetches, or reuses fresh cache entries; never fetches implicitly. |
+| `research-store.put` | `KEY --content TEXT --source curated\|web --provider ID --confidence HIGH\|MEDIUM\|LOW --kind docs\|web [--url URL]` (or cited `--sources URL ...`) | Stores source metadata under a SHA256 key; omitted citations are marked not-provided. Provided local source files must exist within the repository. |
+| `research-store.get` / `list` / `query` | `KEY` / none / `[--query TEXT]` | Reads cached evidence. `research-store put/get/list/query` are equivalent spellings. |
+| `classify-confidence` | `--provider PROVIDER [--verified]` | Provider authority: verified official/primary/context7/ref gives HIGH, unverified gives MEDIUM; other providers give MEDIUM/LOW. This never establishes correctness or goal verification. |
+| `estimate-calibration` / `estimate-calibrate` | none | Rebuilds `.planning/estimation-calibration.json` from recorded raw_tokens and SUMMARY actuals; factor 1 before 3 samples, confidence low <3, med 3–5, high ≥6. |
+| `estimate-check` | `--tokens N [--calibrated]` | Advisory projected cost versus workflow.smart_zone_tokens; never blocks execution. |
+| `loop.render-hooks` / `loop render-hooks` | `EVENT [--active-cap ID] [--after-fingerprint SHA]` | Renders conditional retained hooks from a closed code-owned catalog; data only. Unknown events fail. `loop.events` and `loop.list` describe the catalog. |
+
+A research input is a JSON object such as
+`{"ecosystem":"python","questions":[{"text":"Versioned API","kind":"docs","library":"example","version":"1.0"}]}`.
+Question kinds are `docs`, `web`, or `scrape`. Provider routing prefers
+native websearch for docs and web, and webfetch for scrape. Legacy provider
+availability flags do not change this routing. Fetch instructions include the question key; use that
+key with `research-store.put` after recording source metadata and any actual citations.
+Freshness defaults to seven days; missing,
+expired, invalidly dated or incomplete-provenance entries request a new fetch.
+
+`workflow.context_guard_mode` accepts `warn` (default), `auto`, or `off` for the
+workflow context-budget heuristic; it is distinct from source/context freshness.

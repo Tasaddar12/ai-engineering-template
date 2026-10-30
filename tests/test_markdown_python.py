@@ -211,33 +211,23 @@ class InlineHelpers(RuntimeCase):
         self.assertEqual(0, result.returncode, result.stderr.decode("utf-8"))
         self.assertEqual(f"C:/work/{chr(0x6f22)}/STATE.md\n\nfalse\n\n2\n", result.stdout.decode("utf-8"))
 
-    def test_runtime_lane_reader_is_utf8_and_falls_back_for_null_or_bad_manifest(self):
-        source = (SOURCE/"engineer/workflows/execute-phase.md").read_text(encoding="utf-8")
-        primary = next(line for line in source.splitlines() if line.startswith("PRIMARY_WT=$(engineer_run query json.get"))
-        normalize = next(line for line in source.splitlines() if line.startswith("case \"$PRIMARY_WT\" in"))
-        fallback = next(line for line in source.splitlines() if line.startswith("[ -n \"$PRIMARY_WT\" ] || PRIMARY_WT=$(git worktree list"))
+    def test_native_manifest_root_is_utf8_and_rejects_invalid_ownership(self):
         manifest = self.root/"manifest.json"
         self.env["WAVE_WORKTREE_MANIFEST"] = str(manifest)
-        script = "\n".join([
-            "engineer_run() { \"$ENGINEER_PYTHON\" -I \"$ENGINEER_RUNTIME\" \"$@\"; }",
-            "git() { printf 'worktree C:/first-main\\n'; }",
-            primary,
-            normalize,
-            fallback,
-            "printf '%s' \"$PRIMARY_WT\"",
+        script = '\n'.join([
+            'engineer_run() { "$ENGINEER_PYTHON" -I "$ENGINEER_RUNTIME" "$@"; }',
+            'engineer_run query worktree.manifest root --manifest "$WAVE_WORKTREE_MANIFEST" --pick orchestrator_root --raw',
         ])
-        for data, expected in (
-            ({"orchestrator_root": f"C:/work/{chr(0x6f22)}/lane"}, f"C:/work/{chr(0x6f22)}/lane"),
-            ({"orchestrator_root": None}, "C:/first-main"),
-        ):
-            manifest.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
-            result = self.bash(script)
-            self.assertEqual(0, result.returncode, result.stderr.decode("utf-8"))
-            self.assertEqual(expected, result.stdout.decode("utf-8"))
-        manifest.write_text("{bad", encoding="utf-8")
+        owner = f"C:/work/{chr(0x6f22)}/lane"
+        manifest.write_text(json.dumps({"orchestrator_root": owner, "worktrees": []}, ensure_ascii=False), encoding="utf-8")
         result = self.bash(script)
         self.assertEqual(0, result.returncode, result.stderr.decode("utf-8"))
-        self.assertEqual("C:/first-main", result.stdout.decode("utf-8"))
+        self.assertEqual(owner, result.stdout.decode("utf-8").strip())
+        for invalid in ('{bad', '{"orchestrator_root":null,"worktrees":[]}'):
+            manifest.write_text(invalid, encoding="utf-8")
+            result = self.bash(script)
+            self.assertNotEqual(0, result.returncode)
+            self.assertEqual(b'', result.stdout)
 
     def test_standalone_readers_emit_utf8_for_non_cp1252_paths(self):
         sentinel = self.root/"recovery.json"
@@ -255,20 +245,13 @@ class InlineHelpers(RuntimeCase):
         self.assertEqual(f"C:/work/{chr(0x6f22)}/orphan\nrepair/01", result.stdout.decode("utf-8").replace("\r\n", "\n"))
 
         manifest = self.root/"cleanup.json"
-        manifest.write_text(json.dumps({"worktrees": [{"worktree_path": f"C:/work/{chr(0x6f22)}/agent"}, {}]},
-                                       ensure_ascii=False), encoding="utf-8")
-        cleanup = self.code("engineer/workflows/execute-phase.md", "WAVE_WORKTREE_MANIFEST is unset")
-        script = "\"$ENGINEER_PYTHON\" -c "+shlex.quote(cleanup)+" > \"$1\"\n"
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory)/"fixture.sh"
-            output = Path(directory)/"paths.txt"
-            path.write_text(script, encoding="utf-8")
-            result = subprocess.run([find_posix_shell(), path.as_posix(), output.as_posix()], cwd=self.root,
-                                    env={**self.env, "ENGINEER_PYTHON": Path(sys.executable).as_posix(),
-                                         "WAVE_WORKTREE_MANIFEST": manifest.as_posix(),
-                                         "PYTHONIOENCODING": "cp1252"}, capture_output=True, timeout=15)
-            self.assertEqual(0, result.returncode, result.stderr.decode("utf-8"))
-            self.assertEqual(f"C:/work/{chr(0x6f22)}/agent\n", output.read_bytes().decode("utf-8").replace("\r\n", "\n"))
+        manifest.write_text(json.dumps({"orchestrator_root": str(self.root), "worktrees": [
+            {"worktree_path": f"C:/work/{chr(0x6f22)}/agent"}]}, ensure_ascii=False), encoding="utf-8")
+        self.env["WAVE_WORKTREE_MANIFEST"] = str(manifest)
+        result = self.bash('engineer_run() { "$ENGINEER_PYTHON" -I "$ENGINEER_RUNTIME" "$@"; }\n'
+                           'engineer_run query worktree.manifest paths --manifest "$WAVE_WORKTREE_MANIFEST" --lines --raw')
+        self.assertEqual(0, result.returncode, result.stderr.decode("utf-8"))
+        self.assertEqual(f"C:/work/{chr(0x6f22)}/agent\n", result.stdout.decode("utf-8").replace("\r\n", "\n"))
 
     def test_config_and_recovery_sentinels(self):
         file = "agents/code-fixer.md"
@@ -292,25 +275,28 @@ class InlineHelpers(RuntimeCase):
         self.assertEqual('\n', failed.stdout)
         self.assertIn('Warning: malformed recovery sentinel', failed.stderr)
 
-    def test_manifest_write_read_and_fail_closed_cleanup(self):
-        file = 'engineer/workflows/execute-phase.md'
-        path = self.root/'manifest with spaces.json'
-        self.env.update(MANIFEST=str(path), WAVE_WORKTREE_MANIFEST=str(path), ORCH_ROOT='C:/quoted "é" root')
-        self.run_code(self.code(file, 'write_text'), stdin='')
+    def test_documented_native_manifest_init_and_fail_closed_cleanup(self):
+        source = (SOURCE/'engineer/workflows/execute-phase.md').read_text(encoding='utf-8')
+        initializer = next(line.strip() for line in source.splitlines() if line.strip().startswith('MANIFEST_STATE='))
+        selector = next(line.strip() for line in source.splitlines() if line.strip().startswith('WAVE_WORKTREE_MANIFEST=$('))
+        script = '\n'.join([
+            'set -e',
+            'engineer_run() { "$ENGINEER_PYTHON" -I "$ENGINEER_RUNTIME" "$@"; }',
+            'PHASE_NUMBER=1', 'ORCH_ROOT='+shlex.quote(self.root.as_posix()),
+            initializer, selector, 'printf "%s" "$WAVE_WORKTREE_MANIFEST"',
+        ])
+        result = self.bash(script)
+        self.assertEqual(0, result.returncode, result.stderr.decode('utf-8'))
+        path = Path(result.stdout.decode('utf-8'))
         data = json.loads(path.read_text(encoding='utf-8'))
         self.assertEqual([], data['worktrees'])
-        self.assertEqual(self.env['ORCH_ROOT'], self.cli('json.get', '--field', 'orchestrator_root', '--raw',
-                                                         stdin=path.read_text(encoding='utf-8'), raw=True))
-        data['worktrees'] = [{'worktree_path':'C:/space tree'}, {}]
-        path.write_text(json.dumps(data), encoding='utf-8')
-        cleanup = self.code(file, 'WAVE_WORKTREE_MANIFEST is unset')
-        self.assertEqual('C:/space tree\n', self.run_code(cleanup).stdout)
+        self.assertEqual(self.root, Path(data['orchestrator_root']))
+        unrelated = self.put('unrelated/preserve.txt', 'keep')
         path.write_text('{bad', encoding='utf-8')
-        self.assertIn('ERROR: cannot read worktree manifest', self.run_code(cleanup, status=1).stderr)
-        del self.env['WAVE_WORKTREE_MANIFEST']
-        self.assertIn('(unset)', self.run_code(cleanup, status=1).stderr)
+        self.cli('worktree.cleanup-wave', '--manifest', path, status=2, raw=True)
+        self.assertEqual('keep', unrelated.read_text(encoding='utf-8'))
 
-    def test_json_frontmatter_depth_and_contribution_snippets(self):
+    def test_json_frontmatter_and_depth_snippets(self):
         file='engineer/workflows/code-review.md'
         report=self.put('review with spaces.md', '---\r\nstatus: clean\r\n---\r\nBody\r\n')
         self.env.update(REVIEW_PATH=str(report), FIX_REPORT_PATH=str(report))
@@ -322,21 +308,23 @@ class InlineHelpers(RuntimeCase):
             report.write_text('---\nstatus: clean\n---\n', encoding='utf-8')
         errors=self.run_code(self.code(file,'workflow.code_review_depth_overrides:'),stdin='{"errors":["bad rule"]}')
         self.assertIn('Error: workflow.code_review_depth_overrides: bad rule',errors.stderr)
-        hooks={'activeHooks':[{'kind':'contribution','into':'code-reviewer','fragment':{'inline':'Do </capability_review_rules> safely'}},None]}
-        contribution=self.run_code(self.code(file,'activeHooks'),stdin=json.dumps(hooks)).stdout
-        self.assertIn('<capability_review_rules>\n',contribution)
-        self.assertIn('Do <\\/capability_review_rules> safely',contribution)
 
-    def test_section_fields_and_optional_manifest(self):
-        file='engineer/workflows/complete-milestone.md'
-        status=self.code(file,'PROJECT_MD_REVIEW=')
-        self.assertEqual('PROJECT_MD_REVIEW=run\n',self.run_code(status,'{}').stdout)
-        self.assertEqual('PROJECT_MD_REVIEW=skip\n',self.run_code(status,'{"section_manifest":{"included":[]}}').stdout)
-        gate=self.code(file,'sys.exit(0 if m')
-        self.run_code(gate,'{}','any')
-        self.run_code(gate,'{"section_manifest":{"included":[]}}','any',status=1)
+    def test_milestone_field_reader_preserves_unicode_and_missing_fields(self):
+        line = next(line for line in (SOURCE/'engineer/workflows/complete-milestone.md').read_text(encoding='utf-8').splitlines()
+                    if line.startswith('_engineer_field()'))
+        value = json.dumps({'archive_dir': f'C:/work/{chr(0x6f22)}/milestones'}, ensure_ascii=False)
+        script = '\n'.join([
+            'set -e',
+            'engineer_run() { "$ENGINEER_PYTHON" -I "$ENGINEER_RUNTIME" "$@"; }',
+            line,
+            'printf "%s\\n" "$(_engineer_field '+shlex.quote(value)+' archive_dir)"',
+            'printf "%s\\n" "$(_engineer_field '+shlex.quote('{}')+' archive_dir)"',
+        ])
+        result = self.bash(script)
+        self.assertEqual(0, result.returncode, result.stderr.decode('utf-8'))
+        self.assertEqual(f'C:/work/{chr(0x6f22)}/milestones\n\n', result.stdout.decode('utf-8'))
 
-    def test_api_module_package_and_verdict_examples(self):
+    def test_api_and_module_examples(self):
         api=self.code('agents/verifier.md','d=json.load')
         self.run_code(api,stdin='[1]')
         self.run_code(api,stdin='[]',status=1)
@@ -344,9 +332,6 @@ class InlineHelpers(RuntimeCase):
             self.run_code(api,stdin=value,status=status)
         module=self.put('module with spaces.py','def exposed():\n    return 1\n')
         self.assertEqual('function\n',self.run_code(self.code('agents/verifier.md','importlib.util'),module,'exposed').stdout)
-        verdict=self.code('engineer/workflows/ship.md','INVALID_JSON')
-        self.assertEqual('APPROVED\n',self.run_code(verdict,stdin='{"verdict":"APPROVED"}').stdout)
-        self.assertEqual('INVALID_JSON\n',self.run_code(verdict,stdin='{bad').stdout)
 
 
 class RuntimeAdapters(RuntimeCase):

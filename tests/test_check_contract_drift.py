@@ -434,7 +434,7 @@ class TypedSurface(unittest.TestCase):
         self.assertEqual(200, len(drift.sanitize_echo("x" * 500)))
 
     def test_non_agent_tokens_membership_is_locked(self):
-        self.assertEqual(["GRAPHIFY BUILD COMPLETE", "GRAPHIFY BUILD FAILED"], sorted(drift.NON_AGENT_TOKENS))
+        self.assertEqual([], sorted(drift.NON_AGENT_TOKENS))
 
 
 class ParseConsumedByCell(unittest.TestCase):
@@ -511,8 +511,9 @@ class UnmatchedConsumerTokens(unittest.TestCase):
     def test_agents_are_not_scanned(self):
         self.assertEqual([], drift.unmatched_consumer_tokens({"agents/a.md": "returns `## PHANTOM COMPLETE`"}, set()))
 
-    def test_non_agent_tokens_are_exempt(self):
-        self.assertEqual([], drift.unmatched_consumer_tokens({"commands/x.md": "display `## GRAPHIFY BUILD COMPLETE`"}, set()))
+    def test_retired_graphify_markers_are_not_exempt(self):
+        findings = drift.unmatched_consumer_tokens({"commands/x.md": "display `## GRAPHIFY BUILD COMPLETE`"}, set())
+        self.assertEqual(["GRAPHIFY BUILD COMPLETE"], [finding["marker"] for finding in findings])
 
     def test_mixed_case_and_long_tokens_are_not_flagged(self):
         text = "match `## Self-Check: FAILED` and `## " + "X" * 61 + " COMPLETE`"
@@ -728,6 +729,8 @@ class EndToEnd(FixtureCase):
         self.assertEqual(1, code)
         found = next(v for v in report["violations"] if v["kind"] == "read_tag_gate_missing")
         self.assertEqual("alpha", found["agent"])
+        self.assertIn("mandatory-initial-read.md", drift.remedy_for(found["kind"]))
+        self.assertTrue((ROOT / "engineer/references/mandatory-initial-read.md").is_file())
 
     def test_gate_delivered_by_an_included_reference_counts(self):
         self.write_fixture(FIXTURE_REGISTRY,

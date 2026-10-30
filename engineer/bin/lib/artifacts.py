@@ -13,7 +13,7 @@ Deviations:
 - The anchors use ``\\Z`` and ``[0-9]`` and ``.`` is narrowed to exclude the ECMAScript line terminators
   so the patterns accept exactly what the JavaScript ones accept.
 - Upstream's registry content is carried verbatim, including entries for upstream-only producers
-  (``WINDOWS.md``, ``milestone.lock``, ``state.json``, ``skill-manifest.json``, ``PATTERNS.md``); this
+  (``milestone.lock``, ``state.json``, ``skill-manifest.json``, ``PATTERNS.md``); this
   repo's ``engineer/templates/README.md`` index may list a different set, which is not reconciled here.
 """
 from __future__ import annotations
@@ -35,7 +35,6 @@ CANONICAL_EXACT = frozenset([
     "config.json",
     "CLAUDE.md",
     "RETROSPECTIVE.md",
-    "WINDOWS.md",  # broken-windows ledger
     "STATE-ARCHIVE.md",  # state prune writes this at the .planning/ root
     "milestone.lock",  # milestone (phase + session) claim; persistent, unlike the transient STATE.md.lock/WAITING.json
     "state.json",  # machine-readable state contract published at step boundaries

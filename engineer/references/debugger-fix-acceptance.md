@@ -114,7 +114,7 @@ Revise the fix so the failing signal passes, or accept as documented technical
 debt (requires explicit justification recorded in the debug file).
 ```
 
-The session-manager continuation loop handles this return: it surfaces the
+The `debug-session-manager` continuation loop handles this return: it surfaces the
 failing signal and offers revise / accept-as-debt / abandon. It does **not** mark
 the session resolved.
 
@@ -143,7 +143,7 @@ This preserves the debugger DATA boundary.
 
 ## Escape hatch — documented technical debt
 
-If a signal cannot be made to pass and the human (via the session-manager
+If a signal cannot be made to pass and the human (via `debug-session-manager`
 continuation) accepts the fix anyway, record `guardrail_verdict: accepted_debt`
 with an explicit justification and the name of the unmet signal. This is the only
 way a fix lands without the gate passing, and it is never silent — the debt is

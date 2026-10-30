@@ -15,9 +15,6 @@ Valid Engineer subagent types (use exact names — do not fall back to 'general-
 
 <auto_mode>
 
-<!-- engineer:section id="auto-mode-detection" when="flag:--auto" -->
-If `section_manifest` is `null` or `"auto-mode-detection"` is in its `included` list: read and execute `engineer/workflows/new-project/steps/auto-mode-detection.md`. Otherwise skip — do not read the file.
-<!-- /section -->
 
 </auto_mode>
 
@@ -77,7 +74,6 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
 fi
 AUTO_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--auto([[:space:]]|$) ]]; then AUTO_PARAM="--auto"; fi
 INIT=$(engineer_run query init.new-project $AUTO_PARAM)
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 AGENT_SKILLS_RESEARCHER=$(engineer_run query agent-skills phase-researcher)
 AGENT_SKILLS_DOC_WRITER=$(engineer_run query agent-skills doc-writer)
 AGENT_SKILLS_PLANNER=$(engineer_run query agent-skills planner)
@@ -152,9 +148,6 @@ If `section_manifest` is `null` or `"codebase-map-offer"` is in its `included` l
 
 **If "Skip mapping" OR `needs_codebase_map` is false:** Continue to Step 3.
 
-<!-- engineer:section id="auto-mode-config" when="flag:--auto" -->
-If `section_manifest` is `null` or `"auto-mode-config"` is in its `included` list: read and execute `engineer/workflows/new-project/steps/auto-mode-config.md`. Otherwise skip — do not read the file.
-<!-- /section -->
 
 ## 2b. Prior Spike/Sketch Detection
 
@@ -554,10 +547,6 @@ These spawn additional agents during planning/execution. They add tokens and tim
 
 All recommended for important projects. Skip for quick experiments.
 
-A fourth question in this same round covers Compact Content — not a spawned agent,
-but grouped here because it's the last general workflow-behavior toggle before the more
-involved AI-models round below.
-
 ```
 questions: [
   {
@@ -585,15 +574,6 @@ questions: [
     options: [
       { label: "Yes (Recommended)", description: "Confirm deliverables match phase goals" },
       { label: "No", description: "Trust execution, skip verification" }
-    ]
-  },
-  {
-    header: "Compact Content",
-    question: "Use token-minimized instruction content where available? (smaller context footprint)",
-    multiSelect: false,
-    options: [
-      { label: "No (Recommended)", description: "Full instruction detail loaded every time. Best while evaluating Engineer or on a large context window." },
-      { label: "Yes", description: "Terser instructions where a compact variant exists; canonical detail loads only when actually needed. Frees up context for long sessions or large codebases." }
     ]
   }
 ]
@@ -643,21 +623,8 @@ questions: [
 // Q1 "Standard tier…" + Q2 "Budget" → model_profile = "budget"
 ```
 
-**PR body onboarding:** Ask which optional PRD-style sections `/ship` should append to generated PR bodies. Use the same `ship.pr_body_sections` mapping as Step 2a: selected sections get `enabled: true`, seeded-but-unselected sections get `enabled: false`, and selecting none writes an empty list. Prefer lean/agile PRD sections that make user value, acceptance criteria, Definition of Done, and stakeholder traceability explicit.
 
-Recommended options:
-
-- `User Stories & Acceptance Criteria`
-- `Risks & Dependencies`
-- `Success Metrics & Release Criteria`
-- `Stakeholder Review & Approval`
-
-Create `.planning/config.json` with all settings (CLI fills in remaining defaults automatically):
-
-```bash
-mkdir -p .planning
-engineer_run query config-new-project '{"mode":"[yolo|interactive]","granularity":"[selected]","parallelization":true|false,"commit_docs":true|false,"model_profile":"quality|balanced|budget|adaptive|inherit","workflow":{"research":true|false,"plan_check":true|false,"verifier":true|false,"nyquist_validation":[false if granularity=coarse, true otherwise]},"plan_review":{"source_grounding":true|false},"ship":{"pr_body_sections":[{"heading":"User Stories & Acceptance Criteria","enabled":true|false,"source":"REQUIREMENTS.md ## User Stories || REQUIREMENTS.md ## Acceptance Criteria","fallback":"- Acceptance criteria are covered by the linked requirements and verification evidence."},{"heading":"Risks & Dependencies","enabled":true|false,"source":"PLAN.md ## Risks || PLAN.md ## Dependencies","fallback":"- No known high-risk rollout dependencies."},{"heading":"Success Metrics & Release Criteria","enabled":true|false,"source":"REQUIREMENTS.md ## Definition of Done || VERIFICATION.md ## Release Criteria","fallback":"- Release when automated verification and required manual checks pass."},{"heading":"Stakeholder Review & Approval","enabled":true|false,"template":"- Product owner approval pending for {phase_name}."}]}}'
-```
+Create the project configuration through `engineer_run query config-new-project` using the selected research, plan-check, verifier, Nyquist, granularity and model choices. Do not add compact-content settings or custom PR sections.
 
 **Note:** Run `/settings` anytime to update model profile, workflow agents, branching strategy, and other preferences.
 

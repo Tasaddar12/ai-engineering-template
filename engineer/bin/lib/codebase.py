@@ -3,8 +3,8 @@ import hashlib
 import re
 from pathlib import Path
 from . import config, records
-from .core import Failure, digest, load_json, now, planning_lock, read, root, run, write, write_json
 from .text import split_frontmatter
+from .core import Failure, digest, load_json, now, planning_lock, read, root, run, write, write_json
 
 
 def git(*values, check=True):
@@ -215,8 +215,11 @@ def context_drift(args):
                     'source_paths': declared, 'semantic_assessment': False}
         changed(baseline['revision'])
         if not declared and baseline.get('source_paths'):
-            packet['source_paths'] = baseline['source_paths']
-            packet['source_hash'] = inputs(baseline['source_paths'])['digest']
+            paths = baseline['source_paths']
+            if not isinstance(paths, list) or any(not isinstance(p, str) for p in paths):
+                raise Failure('invalid-context-paths', 'Baseline source_paths must be an array', 69)
+            packet['source_paths'] = [safe(root()/p).relative_to(root()).as_posix() for p in paths]
+            packet['source_hash'] = inputs(packet['source_paths'])['digest']
         premise_changed = any(packet.get(k) != baseline.get(k) for k in ('context_hash','source_hash','source_paths'))
         stale = []
         for name, original_hash in baseline.get('artifacts',{}).items():
@@ -241,7 +244,7 @@ def command(args, action):
         return stamp(args)
     if action in ('drift','codebase-drift'):
         return drift(args)
-    if action in ('context-drift','context_drift'):
+    if action in ('context-drift', 'context_drift'):
         return context_drift(args)
     if action != 'status':
         raise Failure('unknown-codebase-action', action, 2)

@@ -2,9 +2,8 @@
 import json
 from pathlib import Path
 import re
-import shlex
 import sys
-from .core import Failure, input_json, now, pick, read, root, safe_path, write_json
+from .core import Failure, input_json, pick, read, root, safe_path, write_json
 from .text import split_frontmatter
 
 
@@ -114,65 +113,6 @@ def json_command(args, action):
     raise Failure("unknown-json-action", action, 2)
 
 
-def package_manager(args):
-    directory = safe_path(args.get("cwd", "."))
-    package = directory/"package.json"
-    try:
-        metadata = json.loads(read(package, "{}"))
-    except ValueError as exc:
-        raise Failure("invalid-package-json", str(package), 2) from exc
-    explicit = str(metadata.get("packageManager", "")).partition("@")[0]
-    locks = (("pnpm-lock.yaml", "pnpm"), ("yarn.lock", "yarn"), ("bun.lock", "bun"),
-             ("bun.lockb", "bun"), ("package-lock.json", "npm"), ("npm-shrinkwrap.json", "npm"))
-    manager = explicit if explicit in ("npm", "pnpm", "yarn", "bun") else next((name for lock, name in locks if (directory/lock).is_file()), "npm")
-    script = args.arg(0, "test")
-    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9:_-]*", str(script)):
-        raise Failure("invalid-script", str(script), 2)
-    scripts = metadata.get("scripts", {})
-    if not isinstance(scripts, dict) or script not in scripts:
-        raise Failure("package-script-missing", "No project script named "+str(script))
-    argv = [manager, "run", script] if manager in ("npm", "bun") else [manager, script]
-    if args.has("json"):
-        return {"manager": manager, "argv": argv, "command": shlex.join(argv), "cwd": str(directory), "script": scripts[script]}
-    return shlex.join(argv)
-
-
-def normalize_test_command(args):
-    command = str(args.need())
-    # Shell pipelines are left intact; only a recognized single runner is changed.
-    if re.search(r"[;&|`\n]|\$\(", command):
-        return command
-    try:
-        argv = shlex.split(command)
-    except ValueError as exc:
-        raise Failure("invalid-test-command", str(exc), 2) from exc
-    if not argv:
-        raise Failure("empty-test-command", "Supply a command", 2)
-    names = {Path(word).name for word in argv}
-    if "vitest" in names:
-        argv = [word for word in argv if word not in ("--watch", "-w", "--watch=true")]
-        position = next(i for i, word in enumerate(argv) if Path(word).name == "vitest")
-        if "run" not in argv[position+1:] and "--run" not in argv[position+1:]:
-            argv.insert(position+1, "run")
-    elif "jest" in names:
-        argv = [word for word in argv if word not in ("--watch", "--watchAll", "--watch=true", "--watchAll=true")]
-        if "--watch=false" not in argv:
-            argv.append("--watch=false")
-    elif argv[0] in ("npm", "pnpm", "yarn", "bun"):
-        directory = safe_path(args.get("cwd", "."))
-        try:
-            scripts = json.loads(read(directory/"package.json", "{}" )).get("scripts", {})
-        except ValueError as exc:
-            raise Failure("invalid-package-json", str(exc), 2) from exc
-        script = next((word for word in argv[1:] if word != "run" and not word.startswith("-")), None)
-        definition = str(scripts.get(script, ""))
-        if "vitest" in definition and "--run" not in argv:
-            argv.extend((["--"] if argv[0] == "npm" and "--" not in argv else [])+["--run"])
-        elif "jest" in definition and not any(word.startswith("--watch") for word in argv):
-            argv.extend((["--"] if argv[0] == "npm" and "--" not in argv else [])+["--watch=false"])
-    return shlex.join(argv)
-
-
 def review_adapter(args, action):
     if action == "parse-flags":
         from .code_review_flags import parse_code_review_flags
@@ -244,16 +184,6 @@ def review_adapter(args, action):
             paths.append(str(safe_path(name).relative_to(root())).replace("\\", "/"))
         return "\n".join(dict.fromkeys(paths))
     data = payload(args)
-    if action == "contributions":
-        hooks = data.get("activeHooks", []) if isinstance(data, dict) else []
-        fragments = []
-        for hook in hooks:
-            if hook.get("kind") == "contribution" and hook.get("into") in ("reviewer", "code-reviewer"):
-                fragment = hook.get("fragment", {}).get("inline")
-                if not isinstance(fragment, str):
-                    raise Failure("review-contribution-schema", "Expected inline contribution text")
-                fragments.append(fragment)
-        return "\n".join(fragments)
     if action == "evidence":
         results = data.get("results", []) if isinstance(data, dict) else data
         if not isinstance(results, list):
@@ -268,8 +198,7 @@ def review_adapter(args, action):
                     selected = Path(path).expanduser()
                     actual = (root()/selected).resolve() if not selected.is_absolute() else selected.resolve()
                     if not actual.is_relative_to(root().resolve()):
-                        from .review_execution import verify_result
-                        actual = verify_result(result)
+                        raise Failure("review-path-outside-root", "Native review evidence must belong to the selected project")
                     else:
                         actual = safe_path(path)
                     if not actual.is_file():

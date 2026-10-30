@@ -1,7 +1,7 @@
 ---
 name: discuss-phase
 description: Gather phase context through adaptive questioning before planning.
-argument-hint: "<phase> [--all] [--auto] [--chain] [--text] [--power] [--assumptions]"
+argument-hint: "<phase> [--all] [--auto] [--text] [--assumptions]"
 allowed-tools:
   - Read
   - Write
@@ -12,7 +12,7 @@ allowed-tools:
   - Agent
   - mcp__context7__resolve-library-id
   - mcp__context7__query-docs
-requires: [config, phase]
+requires: [phase]
 ---
 
 <arguments>$ARGUMENTS</arguments>
@@ -96,15 +96,12 @@ If `--assumptions` is in the `<arguments>` block:
 Read and execute `engineer/workflows/list-phase-assumptions.md` end-to-end.
 Stop here.
 
-Otherwise, if `DISCUSS_MODE` is `"assumptions"`:
-Read and execute `engineer/workflows/discuss-phase-assumptions.md` end-to-end.
-
 Otherwise (`"discuss"` / unset / any other value):
 Read and execute `engineer/workflows/discuss-phase.md` end-to-end.
 
 **MANDATORY:** Read the appropriate workflow file BEFORE taking any action. The objective and success_criteria sections in this command file are summaries — the workflow file contains the complete step-by-step process with all required behaviors, config checks, and interaction patterns. Do not improvise from the summary.
 
-**Lazy loading:** `templates/context.md` is loaded inside the `write_context` step of the active workflow. `discuss-phase-power.md` is loaded inside `discuss-phase.md` when `--power` is detected. Do not load either here.
+**Lazy loading:** `templates/context.md` is loaded inside the `write_context` step of the active workflow. Do not load it here.
 </process>
 
 <success_criteria>

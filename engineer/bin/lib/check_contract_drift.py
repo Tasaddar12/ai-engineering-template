@@ -22,10 +22,9 @@ Deviations:
   Reference pointers are therefore ``@(~|$HOME)/.claude/engineer/references/...`` or the bare
   ``@engineer/references/...``. Agent names carry no ``gsd-`` prefix in this repo.
 - ``unmatched_consumer_tokens`` scans ``engineer/workflows/`` and ``commands/`` (upstream
-  ``gsd-core/workflows/`` and ``commands/``). ``NON_AGENT_TOKENS`` keeps the two upstream
-  ``GRAPHIFY BUILD`` entries unchanged; this repo has no graphify command, so they are inert.
-- The ``read_tag_gate_missing`` remedy points at ``engineer/references/mandatory-initial-read.md``
-  instead of upstream's ``docs/reference/agents.md``, which this repo does not have.
+  ``gsd-core/workflows/`` and ``commands/``). Retired GRAPHIFY completion markers
+  have no exemption from contract checks.
+- The ``read_tag_gate_missing`` remedy points at ``engineer/references/mandatory-initial-read.md``.
 - Helpers of ``command-contract-helpers.cjs`` this script never calls (``parseFrontmatter``,
   ``executionContextRefs``, ``workflowPathRefs``, ``unreachableWorkflows``, ``CANONICAL_TOOLS``)
   are not ported; they belong to the command-contract lint.
@@ -250,8 +249,6 @@ CONTRACT_KINDS = frozenset(("sentinel-match", "artifact+query", "structured-retu
 
 # Tokens that look like completion markers but are tool output, not agent contracts.
 NON_AGENT_TOKENS = frozenset((
-    "GRAPHIFY BUILD COMPLETE",
-    "GRAPHIFY BUILD FAILED",
 ))
 
 VIOLATION_KINDS = {

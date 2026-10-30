@@ -11,7 +11,7 @@ Run prior phases' test suites to catch cross-phase regressions BEFORE verificati
 PRIOR_VERIFICATIONS=$(find .planning/phases/ -name "*-VERIFICATION.md" ! -path "*${PHASE_NUMBER}*" 2>/dev/null)
 # engineer-handoff:begin regression-files-reset
 _ENGINEER_HANDOFF="$( { git rev-parse --absolute-git-dir 2>/dev/null || echo "${TMPDIR:-/tmp}/engineer-$(pwd | cksum | cut -d' ' -f1)"; } )/handoff"; mkdir -p "$_ENGINEER_HANDOFF"
-rm -f "$_ENGINEER_HANDOFF/regression-files"  # a list left by an earlier run must never reach this gate 
+rm -f "$_ENGINEER_HANDOFF/regression-files"  # a list left by an earlier run must never reach this gate
 # engineer-handoff:end regression-files-reset
 ```
 
@@ -37,7 +37,7 @@ ENGINEER_REGRESSION_FILES
 # engineer-handoff:end regression-files-write
 ```
 
-**Step 3: Run regression tests (if any found)** — Read and execute `engineer/workflows/execute-phase/steps/regression-gate-run.md`. It resolves the project test command, normalizes it to a one-shot form (defeating vitest/jest watch mode via the shared `normalize-test-command` helper), runs it under `workflow.test_gate_timeout`, and aborts on timeout with a watch-mode hint. On `REGRESSION GATE ABORTED` (exit 124), HALT — do not proceed to verification.
+**Step 3: Run configured checks** — Read and execute `engineer/workflows/execute-phase/steps/regression-gate-run.md`. Use `verification.run-checks` receipts; failed or unavailable required checks halt verification.
 
 **Step 4: Report results**
 

@@ -52,7 +52,6 @@ Load execution context:
 
 ```bash
 INIT=$(engineer_run query init.execute-phase "${PHASE}")
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
 Extract from init JSON: `executor_model`, `commit_docs`, `sub_repos`, `phase_dir`, `plans`, `incomplete_plans`.
@@ -191,7 +190,7 @@ This exclusion exists because a failed install may indicate a slopsquatted or ha
     `[package-name]` could not be installed. Before proceeding:
     1. Verify the package exists and is legitimate: https://npmjs.com/package/[package-name]
     2. Confirm the package name is spelled correctly in PLAN.md
-    3. If the package does not exist, re-run /plan-phase --research-phase <N> to find the correct package
+    3. If the package does not exist, re-run `/plan-phase <N> --research` to refresh research and planning and find the correct package. This is a full research-plus-planning run, not a research-only mode.
   </how-to-verify>
   <resume-signal>Type "verified" with the correct package name, or "abort" to stop the phase</resume-signal>
 </task>
@@ -512,7 +511,6 @@ git commit -m "{type}({phase}-{plan}): {concise task description}
 **5. Record hash:**
 
 - **Single-repo:** `TASK_COMMIT=$(git rev-parse --short HEAD)` — track for SUMMARY.
-- **Multi-repo (sub_repos):** Extract hashes from `commit-to-subrepo` JSON output (`repos.{name}.hash`). Record all hashes for SUMMARY (e.g., `backend@abc1234, frontend@def5678`).
 
 **6. Post-commit deletion check:** After recording the hash, verify the commit did not accidentally delete tracked files:
 
@@ -670,21 +668,6 @@ Or: "None - plan executed exactly as written."
 - Components with no data source wired (props always receiving empty/mock data)
 
 If any stubs exist, add a `## Known Stubs` section to the SUMMARY listing each stub with its file, line, and reason. These are tracked for the verifier to catch. Do NOT mark a plan as complete if stubs exist that prevent the plan's goal from being achieved — either wire the data or document in the plan why the stub is intentional and which future plan will resolve it.
-
-**Broken-windows ledger** For each stub, skipped test, or unrun `<verify>` recorded above, ALSO append it to the cross-phase defect register at `.planning/WINDOWS.md`. The ledger accumulates across phases and blocks `/ship` while any entry is `open`, so a stub written here is visible at ship time even after the per-phase SUMMARY scrolls out of context. Append one entry per defect:
-
-```bash
-engineer_run windows append \
-  --kind stub \
-  --phase "${PHASE_NUMBER}" \
-  --file "<path-relative-to-repo-root>" \
-  --line "<line-number-or-omit>" \
-  --description "<one-line description, same wording as the Known Stubs row>"
-```
-
-Use `--kind skipped-test` for a `t.skip(...)` / `test.todo(...)` you left behind, `--kind unrun-verify` for a `<verify>` you could not run, or `--kind deviation` for a documented plan deviation. The full kind vocabulary: `stub | todo | fixme | skipped-test | lint-warning | unmet-truth | unrun-verify | deviation`.
-
-The ledger is **optional**: if `engineer_run windows append` returns `windows_ledger_missing` or `windows_ok` without writing, continue without error — population is best-effort and never blocks execution. Recording here is what makes the defect visible to the ship gate later; forgetting to record is the failure mode this ledger exists to prevent.
 
 **Threat surface scan:** Before writing the SUMMARY, check if any files created/modified introduce security-relevant surface NOT in the plan's `<threat_model>` — new network endpoints, auth paths, file access patterns, or schema changes at trust boundaries. If found, add:
 

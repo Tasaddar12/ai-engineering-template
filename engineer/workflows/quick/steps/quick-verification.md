@@ -77,7 +77,7 @@ fi
 STATUS=$(engineer_run query verification.status "${QUICK_DIR}" --pick status) || { echo "verification.status refused this task's report — see the error above." >&2; exit 1; }
 ```
 
-`--pick status` returns the bare value, so this path needs **no `jq`**. That is deliberate: 
+`--pick status` returns the bare value, so this path needs **no `jq`**. That is deliberate:
 established that a `| jq -r '.field'` pipe yields an **empty** variable with no diagnostic on any
 machine without jq — the default on Windows/Git-Bash — which here would route a perfectly good
 `passed` verification into the recovery arm below.

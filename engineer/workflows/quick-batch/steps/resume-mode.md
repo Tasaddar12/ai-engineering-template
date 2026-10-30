@@ -53,7 +53,6 @@ fi
 CURRENT_BASE=$(git rev-parse HEAD)
 QB_RESUME_JSON=$(engineer_run quick-batch resume --batch "$RESUME_BATCH_ID" --current-base-revision "$CURRENT_BASE" --raw)
 QB_RESUME_RC=$?
-if [[ "$QB_RESUME_JSON" == @file:* ]]; then QB_RESUME_JSON=$(cat "${QB_RESUME_JSON#@file:}"); fi
 ```
 
 **If `$QB_RESUME_RC` is non-zero:** the resume was refused closed — an unknown
@@ -63,9 +62,9 @@ anything, do not create a new batch on the user's behalf.
 
 **Otherwise:** parse `$QB_RESUME_JSON` for `eligible` (array of quick ids),
 `transitions` (status changes just applied — e.g. a `blocked` item reverting
-to `pending`, or a crash-window STATE-row detection completing an item
-without re-appending, row 45), and `manifest` (the full, current batch
-document).
+to `pending`, or recovery replaying a durable `completionTransaction` into
+the authoritative `QUICK.md` record and batch manifest), and `manifest` (the
+full, current batch document).
 
 ```bash
 BATCH_ID="$RESUME_BATCH_ID"

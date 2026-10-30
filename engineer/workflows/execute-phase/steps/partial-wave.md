@@ -62,8 +62,8 @@ Apply the same "incomplete" filtering rules as earlier:
 
 Selected wave finished successfully. This phase still has incomplete plans, so phase-level verification and completion were intentionally skipped.
 
-/execute-phase {phase} ${ENGINEER_WS}                # Continue remaining waves
-/execute-phase {phase} --wave {next} ${ENGINEER_WS}  # Run the next wave explicitly
+/execute-phase {phase}                 # Continue remaining waves
+/execute-phase {phase} --wave {next}   # Run the next wave explicitly
 ```
 
 **If no incomplete plans remain after the selected wave finishes:**

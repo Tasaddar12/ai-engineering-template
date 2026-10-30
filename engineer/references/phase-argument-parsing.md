@@ -5,9 +5,9 @@ Parse and normalize phase arguments for commands that operate on phases.
 ## Extraction
 
 From `$ARGUMENTS`:
-- Extract phase number (first numeric argument)
-- Extract flags (prefixed with `--`)
-- Remaining text is description (for insert/add commands)
+- Extract the phase token according to the command's argument contract.
+- Extract flags (prefixed with `--`) independently of the phase token.
+- Remaining text is a description for add/insert operations.
 
 ## Using engineer_run
 
@@ -25,39 +25,22 @@ Returns JSON with:
 - `plans`: Array of PLAN.md files
 - `summaries`: Array of SUMMARY.md files
 
-## Manual Normalization (Legacy)
-
-Zero-pad the leading integer to 2 digits. Preserve a letter suffix and any dotted
-segments — the canonical grammar in `src/phase-id.cts` (`normalizePhaseName`):
-`8 → 08`, `2.1 → 02.1`, `3A → 03A`, `23.1.2 → 23.1.2`.
-
-```bash
-# Normalize phase number
-# One branch for the whole canonical token — digits, optional [A-Z],
-# dotted segments. Pad through $((10#…)) so an already-padded `08` is not read
-# as octal by printf; anything non-canonical passes through untouched.
-if [[ "$PHASE" =~ ^([0-9]+)([A-Z]?)((\.[0-9]+)*)$ ]]; then
-  PHASE_INT=${BASH_REMATCH[1]}
-  PHASE=$(printf "%02d" "$((10#$PHASE_INT))")${BASH_REMATCH[2]}${BASH_REMATCH[3]}
-fi
-```
-
 ## Validation
 
-Use `roadmap get-phase` to validate phase exists:
+Fail clearly when `found` is false:
 
 ```bash
-PHASE_CHECK=$(engineer_run query roadmap.get-phase "${PHASE}" --pick found)
+PHASE_CHECK=$(engineer_run query find-phase "${PHASE}" --pick found)
 if [ "$PHASE_CHECK" = "false" ]; then
-  echo "ERROR: Phase ${PHASE} not found in roadmap"
+  echo "ERROR: Phase ${PHASE} not found"
   exit 1
 fi
 ```
 
-## Directory Lookup
+## Directory lookup
 
-Use `find-phase` for directory lookup:
+Read the canonical directory from the same resolver:
 
 ```bash
-PHASE_DIR=$(engineer_run query find-phase "${PHASE}" --raw)
+PHASE_DIR=$(engineer_run query find-phase "${PHASE}" --pick directory)
 ```

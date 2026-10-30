@@ -24,9 +24,7 @@ $ARGUMENTS
 ENGINEER_ARGS_END
 ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 _ENGINEER_SHIM_NAME="engineer_run"; _ENGINEER_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; ENGINEER_TOOLS="${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}"; _engineer_at() { for _p; do if [ -f "$_p" ]; then ENGINEER_TOOLS="$_p"; return 0; fi; done; return 1; }; _engineer_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"engineer-runtime"'*'}') return 0;; *) return 1;; esac; }; _engineer_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _engineer_at "$_h/engineer/bin/${_ENGINEER_SHIM_NAME}" && return 0; done; return 1; }; if _engineer_at "${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.claude/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.codex/engineer/bin/${_ENGINEER_SHIM_NAME}"; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif _engineer_homes; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif unset -f engineer_run; _G="$(command -v engineer_run)"; [ -n "$_G" ] && _engineer_id_ok "$_G"; then ENGINEER_TOOLS="$_G"; engineer_run() { "$ENGINEER_TOOLS" "$@"; }; else echo "ERROR: engineer_run not found at $ENGINEER_TOOLS and no identity-proving engineer_run is on PATH. Run: python -I bin/install.py --source <local-source> --ref <pinned-ref> --target <project-root> --host claude --local" >&2; exit 1; fi; ENGINEER_IDENTITY_STATUS=unverified; _engineer_id_ok engineer_run && ENGINEER_IDENTITY_STATUS=ok; export ENGINEER_IDENTITY_STATUS; [ "$ENGINEER_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$ENGINEER_TOOLS\" did not prove it is engineer-runtime - it is either a different package or an engineer-runtime older than the runtime-identity verb." >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${ENGINEER_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${ENGINEER_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.manager ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
+INIT=$(engineer_run query init.manager )
 ```
 
 Parse JSON for: `milestone_version`, `milestone_name`, `phase_count`, `completed_count`, `in_progress_count`, `phases`, `recommended_actions`, `all_complete`, `waiting_signal`, `manager_flags`, `response_language`, and the optional trio `queued_milestone_version`, `queued_milestone_name`, `queued_phases` (added in SDK fix `2495-2496-2497` — may be absent on older SDK versions, treat missing as empty).
@@ -42,6 +40,23 @@ These are empty strings by default. Set via: `engineer_run query config-set mana
 
 **If error:** Display the error message and exit.
 
+Resolve the dispatch capability **once per manager session**, after successful initialization and before displaying or dispatching any action:
+
+```bash
+if FLATTEN=$(engineer_run query dispatch-should-flatten --raw); then
+  case "$FLATTEN" in
+    true) PLAN_EXECUTE_MODE=inline ;;
+    false) PLAN_EXECUTE_MODE=background ;;
+    *) printf 'ERROR: invalid dispatch-should-flatten result: %s (expected true or false)\n' "$FLATTEN" >&2; exit 1 ;;
+  esac
+else
+  echo "ERROR: dispatch-should-flatten capability query failed; manager stopped." >&2
+  exit 1
+fi
+```
+
+The planned API contract is an explicit boolean: `true` selects complete plan/execute pipelines inline; `false` selects background orchestrators capable of nesting those pipelines' workers. Preserve the captured `FLATTEN` and `PLAN_EXECUTE_MODE` for all dashboard refreshes, compound actions and individual plan/execute handlers. Do not re-query or substitute a default after an error. Both routes retain the complete Skill pipelines, worker isolation and quality gates.
+
 Display startup banner:
 
 ```
@@ -50,7 +65,7 @@ Display startup banner:
  {milestone_version} — {milestone_name}
  {phase_count} phases · {completed_count} complete
 
- ✓ Discuss → inline    ◆ Plan/Execute → inline (background when FLATTEN=false)
+ ✓ Discuss → inline    ◆ Plan/Execute → {PLAN_EXECUTE_MODE}
  Dashboard auto-refreshes when background work is active.
 
 ---
@@ -71,12 +86,10 @@ IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
 ENGINEER_ARGS_END
 ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.manager ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
+INIT=$(engineer_run query init.manager )
 ```
 
-Parse the full JSON. Build the dashboard display.
+Parse the full JSON. Build the dashboard display. Show `◆ Plan/Execute → {PLAN_EXECUTE_MODE}` using the session's captured mode; state refresh does not resolve dispatch capability again.
 
 Build dashboard from JSON. Symbols: `✓` done, `◆` active, `○` pending, `·` queued. Progress bar: 20-char `█░`.
 
@@ -158,28 +171,28 @@ Handle responses:
 
 **If NOT all_complete**, build compound options from `recommended_actions`:
 
-**Compound option logic:** Group background actions (plan/execute) together, and pair them with the single inline action (discuss) when one exists. The goal is to present the fewest options possible — one option can dispatch multiple background agents plus one inline action.
+**Compound option logic:** Group plan/execute actions together, then verification and the single discuss action when present. Label every plan/execute action with the captured `{PLAN_EXECUTE_MODE}`; verification and discuss always run inline. One option may dispatch multiple actions.
 
 **Building options:**
 
-1. Collect all background actions (execute and plan recommendations) — there can be multiple of each.
+1. Collect all plan/execute actions (execute and plan recommendations) — there can be multiple of each.
 2. Collect verification actions (`verify`) for implementation-complete phases whose canonical verification has not passed.
 3. Collect the inline action (discuss recommendation, if any — there will be at most one since discuss is sequential).
 4. Build compound options:
 
-   **If there are ANY recommended actions (background, inline, or both):**
+   **If there are ANY recommended actions:**
    Create ONE primary "Continue" option that dispatches ALL of them together:
    - Label: `"Continue"` — always this exact word
    - Below the label, list every action that will happen. Enumerate ALL recommended actions — do not cap or truncate:
      ```
      Continue:
-       → Execute Phase 32 (background)
-       → Plan Phase 34 (background)
+       → Execute Phase 32 ({PLAN_EXECUTE_MODE})
+       → Plan Phase 34 ({PLAN_EXECUTE_MODE})
        → Verify Phase 33
        → Discuss Phase 35 (inline)
      ```
-   - This dispatches all background agents first, runs verification actions inline, then runs the inline discuss (if any).
-   - If there is no inline discuss, the dashboard refreshes after spawning background agents and inline verification.
+   - For `FLATTEN=false`, dispatch all plan/execute background orchestrators first, then run verification actions and discuss inline. For `FLATTEN=true`, complete plan/execute inline in listed order, then verification and discuss.
+   - If there is no discuss, refresh the dashboard after these dispatches and inline actions.
 
    **Important:** The Continue option must include EVERY action from `recommended_actions` — not just 2. If there are 3 actions, list 3. If there are 5, list 5.
 
@@ -193,8 +206,8 @@ Display recommendations compactly:
 ### ▶ Next Steps
 
 Continue:
-  → Execute Phase 32 (background)
-  → Plan Phase 34 (background)
+  → Execute Phase 32 ({PLAN_EXECUTE_MODE})
+  → Plan Phase 34 ({PLAN_EXECUTE_MODE})
   → Discuss Phase 35 (inline)
 ```
 
@@ -222,12 +235,12 @@ Loop back to dashboard step.
 
 Go to exit step.
 
-### Compound Action (background + inline)
+### Compound Action (resolved plan/execute mode + inline verification/discuss)
 
-When the user selects a compound option, behavior depends on whether the runtime supports background dispatch of nesting-capable orchestrators — the Plan Phase N / Execute Phase N handlers below resolve it via `engineer_run query dispatch-should-flatten`:
+Use the session's captured `FLATTEN` and the Plan Phase N / Execute Phase N handlers below:
 
-- **If `FLATTEN` is `false` (the host can background a nesting-capable orchestrator — e.g. codex):** **Spawn all background agents first** (plan/execute) — dispatch them in parallel using the Plan Phase N / Execute Phase N handlers below — then run verification actions, then run the inline discuss; the background agents continue while you verify/discuss.
-- **Otherwise (`FLATTEN` is `true` — run inline):** run the chosen plan/execute step(s) **inline** via their handlers below (in order), then run verification actions, then run the inline discuss. There is no overlap.
+- **If `FLATTEN=false`:** Dispatch all selected plan/execute background orchestrators first, then run verification actions inline, then discuss inline. The background pipelines continue during verification/discussion. In a compound action, defer each handler's dashboard return until all selected actions have been dispatched; do not wait for background completion before dispatching the remaining actions.
+- **If `FLATTEN=true`:** Complete the selected plan/execute pipelines inline in listed order, then verification actions, then discuss. Defer each handler's dashboard return until the compound action finishes. There is no overlap.
 
 Inline verification:
 
@@ -256,11 +269,7 @@ After discuss completes, loop back to dashboard step.
 
 ### Plan Phase N
 
-Planning runs autonomously. **First resolve whether background dispatch is safe.** Background dispatch is only safe on a runtime where a backgrounded agent can still nest the pipeline's subagents (plan-checker / worktree executors / verifier). This is determined from the documentation-sourced dispatch capability in the registry; Claude Code's backgrounded agents have no `Agent`/`Task` tool, and every other runtime either prohibits nested subagents or disables them by default. So run **inline** everywhere except where `dispatch-should-flatten` returns `false`.
-
-```bash
-FLATTEN=$(engineer_run query dispatch-should-flatten --raw 2>/dev/null || echo "true")
-```
+Planning uses the session's captured `FLATTEN`; do not query again. Both routes invoke the complete Skill pipeline, including its worker isolation and quality gates.
 
 **If `FLATTEN` is `false`:** Spawn a background agent that delegates to the Skill pipeline with any configured flags:
 
@@ -284,7 +293,7 @@ Important: You are running in the background. Do NOT use AskUserQuestion — mak
 )
 ```
 
-> **ORCHESTRATOR RULE — BACKGROUND DISPATCH**: After calling Agent() above with `run_in_background=true`, do NOT do any planning work for this phase independently. Return to the dashboard immediately and wait for the background agent to report back. Only resume planning-related work when the subagent result is available. Never call `ScheduleWakeup` or any host wake/sleep-scheduling tool while waiting — a partial-args wake call surfaces a red validation error; the dashboard loop is the wait.
+> **ORCHESTRATOR RULE — BACKGROUND DISPATCH**: After calling Agent() above with `run_in_background=true`, do NOT do any planning work for this phase independently. Return to the dashboard immediately and wait for the background agent to report back. Only resume planning-related work when the subagent result is available. Use the dashboard loop while waiting; do not duplicate the background pipeline. For a compound action, dispatch the remaining selected actions before returning to the dashboard.
 
 Display:
 
@@ -310,11 +319,7 @@ Then loop back to dashboard step.
 
 ### Execute Phase N
 
-Execution runs autonomously. **First resolve whether background dispatch is safe.** Background dispatch is only safe on a runtime where a backgrounded agent can still nest the pipeline's subagents (plan-checker / worktree executors / verifier). This is determined from the documentation-sourced dispatch capability in the registry; Claude Code's backgrounded agents have no `Agent`/`Task` tool, and every other runtime either prohibits nested subagents or disables them by default. So run **inline** everywhere except where `dispatch-should-flatten` returns `false`.
-
-```bash
-FLATTEN=$(engineer_run query dispatch-should-flatten --raw 2>/dev/null || echo "true")
-```
+Execution uses the session's captured `FLATTEN`; do not query again. Both routes invoke the complete Skill pipeline, including its worker isolation and quality gates.
 
 **If `FLATTEN` is `false`:** Spawn a background agent that delegates to the Skill pipeline with any configured flags:
 
@@ -332,13 +337,13 @@ Manager flags: {manager_flags.execute}
 Run the execute-phase Skill with any configured manager flags:
 Skill(skill=\"execute-phase\", args=\"{N} {manager_flags.execute}\")
 
-This delegates to the full execute-phase pipeline including local patches, branching, wave-based execution, verification, and all quality gates.
+This delegates to the full execute-phase pipeline including local patches, branching, worker worktree isolation, wave-based execution, verification, and all quality gates.
 
 Important: You are running in the background. Do NOT use AskUserQuestion — make autonomous decisions. Do NOT use --no-verify on git commits — let pre-commit hooks run normally. If you hit a permission error, file lock, or any access issue, do NOT work around it — let it fail and write the error to STATE.md as a blocker so the manager can surface it with resolution guidance."
 )
 ```
 
-> **ORCHESTRATOR RULE — BACKGROUND DISPATCH**: After calling Agent() above with `run_in_background=true`, do NOT do any execution work for this phase independently. Return to the dashboard immediately and wait for the background agent to report back. Only resume execution-related work when the subagent result is available. Never call `ScheduleWakeup` or any host wake/sleep-scheduling tool while waiting — a partial-args wake call surfaces a red validation error; the dashboard loop is the wait.
+> **ORCHESTRATOR RULE — BACKGROUND DISPATCH**: After calling Agent() above with `run_in_background=true`, do NOT do any execution work for this phase independently. Return to the dashboard immediately and wait for the background agent to report back. Only resume execution-related work when the subagent result is available. Use the dashboard loop while waiting; do not duplicate the background pipeline. For a compound action, dispatch the remaining selected actions before returning to the dashboard.
 
 Display:
 
@@ -390,7 +395,7 @@ Classify the error:
   - **question:** "Phase {N} failed — permission denied for `{tool_or_command}`. Want me to add it to settings.local.json so it's allowed?"
   - **options:** "Add permission and retry" / "Run this phase inline instead" / "Skip and continue"
   - "Add permission and retry": Use `Skill(skill="update-config")` to add the permission to `settings.local.json`, then re-spawn the background agent. Loop to dashboard.
-  - "Run this phase inline instead": Dispatch the same action inline via the appropriate Skill — use `Skill(skill="plan-phase", args="{N}")` if the failed action was planning, or `Skill(skill="execute-phase", args="{N}")` if the failed action was execution. Loop to dashboard after.
+  - "Run this phase inline instead": Dispatch the same action inline via the appropriate Skill — use `Skill(skill="plan-phase", args="{N} --auto {manager_flags.plan}")` if the failed action was planning, or `Skill(skill="execute-phase", args="{N} {manager_flags.execute}")` if the failed action was execution. Loop to dashboard after.
   - "Skip and continue": Loop to dashboard (phase stays in current state).
 
 **Other errors** (git lock, file conflict, logic error, etc.):
@@ -398,7 +403,7 @@ Classify the error:
   - **question:** "Background agent for Phase {N} encountered an issue: {error}. What next?"
   - **options:** "Retry" / "Run inline instead" / "Skip and continue" / "View details"
   - "Retry": Re-spawn the same background agent. Loop to dashboard.
-  - "Run inline instead": Dispatch the action inline via the appropriate Skill — use `Skill(skill="plan-phase", args="{N}")` if the failed action was planning, or `Skill(skill="execute-phase", args="{N}")` if the failed action was execution. Loop to dashboard after.
+  - "Run inline instead": Dispatch the action inline via the appropriate Skill — use `Skill(skill="plan-phase", args="{N} --auto {manager_flags.plan}")` if the failed action was planning, or `Skill(skill="execute-phase", args="{N} {manager_flags.execute}")` if the failed action was execution. Loop to dashboard after.
   - "Skip and continue": Loop to dashboard (phase stays in current state).
   - "View details": Read STATE.md blockers section, display, then re-present options.
 
@@ -433,8 +438,8 @@ Display final status with progress bar:
 - [ ] Dependency resolution: blocked phases show which deps are missing
 - [ ] Recommendations prioritize: execute > plan > discuss
 - [ ] Discuss phases run inline via Skill() — interactive questions work
-- [ ] Plan phases run inline (or as background Task agents on Codex) — dashboard resumes when complete
-- [ ] Execute phases run inline (or as background Task agents on Codex) — dashboard resumes when complete
+- [ ] Plan phases follow the captured capability: complete pipeline inline if true, background orchestrator if false — dashboard resumes when complete
+- [ ] Execute phases follow the captured capability: complete pipeline inline if true, background orchestrator if false — dashboard resumes when complete
 - [ ] Dashboard refreshes pick up changes from background agents via disk state
 - [ ] Background agent completion triggers notification and dashboard refresh
 - [ ] Background agent errors present retry/skip options

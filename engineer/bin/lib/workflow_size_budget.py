@@ -16,8 +16,6 @@ Deviations:
   ``agents/<name>.md``; ``commands/gsd/`` -> ``commands/``.
 - Tier membership keeps the upstream stems verbatim; stems with no file here
   (autonomous, transition, discuss-phase-assumptions, review) are inert.
-- The ``execute-plan.md`` build-time embed path is ``engineer/workflows/execute-plan.md``
-  (backticked, no ``@`` sigil) rather than ``~/.claude/gsd-core/workflows/execute-plan.md``.
 - Shipped content here carries no issue-number citations, so the ``#3370`` and
   ``#3324`` citation assertions are dropped; the behavioral assertions remain.
 - ``GITHUB_STEP_SUMMARY`` reporting and the fast-check properties are kept
@@ -45,13 +43,12 @@ LARGE_WORKFLOWS = frozenset({
     "discuss-phase-assumptions", "progress", "new-milestone", "update", "quick", "code-review", "review",
 })
 
-DISCUSS_EXPECTED_MODES = ("power", "all", "auto", "chain", "text", "batch", "analyze", "default", "advisor")
+DISCUSS_EXPECTED_MODES = ("all", "auto", "text", "batch", "analyze", "default")
 DISCUSS_EXPECTED_TEMPLATES = ("context.md", "discussion-log.md", "checkpoint.json")
 CONTEXT_SECTIONS = ("<domain>", "<decisions>", "<canonical_refs>", "<code_context>", "<specifics>", "<deferred>")
 CHECKPOINT_KEYS = ("phase", "phase_name", "timestamp", "areas_completed", "areas_remaining", "decisions")
 
 BARE_INCLUDE_LINE = re.compile(r"^\s*@(\$HOME|~)/")
-ANTI_AUTO_APPROVAL = re.compile(r"never auto-approve|do not auto-approve|must not auto-approve|under any circumstance, including")
 
 
 # --- measurement ------------------------------------------------------------
@@ -209,22 +206,6 @@ def context_template_lazy_violations(parent):
     return findings
 
 
-def advisor_gate_violations(parent):
-    findings = []
-    if not re.search(r"USER-PROFILE\.md", parent):
-        findings.append("Parent must reference USER-PROFILE.md to detect advisor mode.")
-    guarded = (re.search(r"test\s+-[ef]\s+[\"'$].*USER-PROFILE", parent) or re.search(r"\[\[\s+-[ef]\s+[\"'$].*USER-PROFILE", parent)
-               or re.search(r"\[\s+-[ef]\s+[\"'$].*USER-PROFILE", parent))
-    if not guarded:
-        findings.append("Advisor mode detection must use a file-existence guard (test -f / [ -f ]).")
-    advisor_read = (re.search(r"ADVISOR_MODE.{0,200}?modes/advisor\.md", parent, re.S)
-                    or re.search(r"modes/advisor\.md.{0,200}?ADVISOR_MODE", parent, re.S)
-                    or re.search(r"if.{0,200}?ADVISOR_MODE.{0,400}?advisor\.md", parent, re.S))
-    if not advisor_read:
-        findings.append("Read of modes/advisor.md must be guarded by ADVISOR_MODE.")
-    return findings
-
-
 def mode_content_violations(mode, content):
     """Behavior-preservation regexes for each extracted discuss-phase mode body."""
     rules = {
@@ -238,12 +219,6 @@ def mode_content_violations(mode, content):
     if re.search(rules[mode][0], content, flags):
         return []
     return ["%s mode body lost its documented behavior (%s)." % (mode, rules[mode][0])]
-
-
-def chain_mode_violations(content):
-    if re.search("plan-phase", content) and re.search(r"(auto-advance|auto\s+plan)", content, re.I):
-        return []
-    return ["chain.md must preserve the documented auto-advance to plan-phase behavior."]
 
 
 def text_mode_violations(content):
@@ -275,7 +250,7 @@ def inline_discussion_log_occurrences(parent):
 
 
 def dispatch_flag_present(parent):
-    return bool(re.search(r"ARGUMENTS|--auto|--chain|--all|--power", parent))
+    return bool(re.search(r"ARGUMENTS|--auto|--all|--text", parent))
 
 
 # --- lazy MVP bodies --------------------------------------------------------
@@ -340,23 +315,6 @@ def bare_include_offenders(directory=WORKFLOWS_DIR, repo_root=SOURCE):
     return offenders
 
 
-def execution_context_block(content):
-    match = re.search(r"<execution_context>(.{0,4000}?)</execution_context>", content, re.S)
-    return match.group(1) if match else None
-
-
-def execution_context_violations(content, embed_path):
-    block = execution_context_block(content)
-    if block is None:
-        return ["execute-phase.md must keep an <execution_context> block in the executor dispatch prompt"]
-    findings = []
-    if not re.search("ORCHESTRATOR build-time embed", block):
-        findings.append("<execution_context> must carry the ORCHESTRATOR build-time embed instruction")
-    if "`%s`" % embed_path not in block:
-        findings.append("<execution_context> must list %s (backticked, no @ sigil) for build-time embed" % embed_path)
-    return findings
-
-
 def dispatch_region(content, from_anchor, to_anchor):
     """Text from ``from_anchor`` up to the next ``to_anchor``; ValueError when an anchor is missing."""
     start = content.find(from_anchor)
@@ -366,40 +324,6 @@ def dispatch_region(content, from_anchor, to_anchor):
     if end == -1:
         raise ValueError('anchor "%s" not found after "%s"' % (to_anchor, from_anchor))
     return content[start:end]
-
-
-def gate_routing_fragment_violations(fragment):
-    findings = []
-    if not re.search(r'gate="blocking"', fragment):
-        findings.append('the gate rule must name gate="blocking"')
-    if not re.search(r"auto-approv", fragment, re.I):
-        findings.append("the gate rule must state blocking is auto-approvable in auto-mode")
-    if not re.search("blocking-human", fragment):
-        findings.append('the gate rule must name gate="blocking-human" as the always-surface carve-out')
-    if not re.search(r"do NOT add text refusing or overriding\s+auto-approval", fragment):
-        findings.append("the gate rule must forbid composing dispatch text that refuses or overrides auto-approval")
-    findings += anti_auto_approval_violations(fragment, "the gate rule")
-    return findings
-
-
-def anti_auto_approval_violations(text, label):
-    if ANTI_AUTO_APPROVAL.search(text):
-        return ["%s must not contain anti-auto-approval instructions" % label]
-    return []
-
-
-def pattern_a_violations(region):
-    findings = []
-    if not re.search(r'gate="blocking"', region):
-        findings.append('Pattern A must name gate="blocking"')
-    if not re.search("blocking-human", region):
-        findings.append('Pattern A must name gate="blocking-human"')
-    if not re.search(r"auto-approv", region, re.I):
-        findings.append("Pattern A must state blocking is auto-approvable in auto-mode")
-    if not re.search(r"no instruction (?:that )?overrid", region, re.I):
-        findings.append("Pattern A must forbid adding instructions that override the executor checkpoint protocol")
-    findings += anti_auto_approval_violations(region, "Pattern A")
-    return findings
 
 
 def missing_markers(content, markers):

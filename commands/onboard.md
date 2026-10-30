@@ -1,6 +1,6 @@
 ---
 name: onboard
-description: Guide existing codebase onboarding through mapping, doc ingest, and planning setup
+description: Guide existing codebase onboarding through mapping and planning setup
 argument-hint: "[--fast] [--text]"
 allowed-tools:
   - Read
@@ -10,7 +10,7 @@ allowed-tools:
   - Grep
   - Agent
   - AskUserQuestion
-requires: [config, new-project, map-codebase, ingest-docs, manager]
+requires: [new-project, map-codebase, manager]
 ---
 
 <arguments>$ARGUMENTS</arguments>
@@ -21,11 +21,11 @@ The text inside `<arguments>` is exactly what the user typed after the command n
 </runtime_note>
 
 <objective>
-Guide brownfield onboarding for an existing codebase by routing through the existing Engineer primitives in the safe order: codebase map → docs ingest → project initialization → onboarding summary.
+Guide brownfield onboarding for an existing codebase by routing through the existing Engineer primitives in the safe order: codebase map → project initialization → onboarding summary.
 
 **Creates or confirms:**
 - `.planning/codebase/` — evidence-backed codebase map from `/map-codebase`
-- `.planning/PROJECT.md`, `REQUIREMENTS.md`, `ROADMAP.md`, `STATE.md` — project setup from `/new-project` or `/ingest-docs`
+- `.planning/PROJECT.md`, `REQUIREMENTS.md`, `ROADMAP.md`, `STATE.md` — project setup from `/new-project`
 - `.planning/onboarding/SUMMARY.md` — lightweight index of what was learned and the next command
 
 **Non-goals:** This command does not execute phases, ship work, or overwrite existing planning artifacts without an explicit gate.

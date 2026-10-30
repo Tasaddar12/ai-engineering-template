@@ -75,9 +75,7 @@ commit step). Under each round heading, use the two tables from Step 4 above, un
 
 **Anchoring.** Any reference to a specific REVIEWS.md line cites `L##@{REVIEWS_sha}` (e.g.
 `L32@a1b2c3d`) — a bare line number is meaningless once the next round rewrites REVIEWS.md
-wholesale. `{Concern}` and `{Reason}` stay free text; do not invent a reviewer/severity enum — the
-reviewer roster is capability-owned and open to third-party additions (see each capability's
-`reviewer.reviewsSection`).
+wholesale. `{Concern}` and `{Reason}` stay free text; do not invent a reviewer/severity enum.
 
 **Append-only.** A later round never edits or deletes a prior round's tables. To overturn a prior
 round's verdict, add a new row in the current round's table whose Reason/How Addressed names the

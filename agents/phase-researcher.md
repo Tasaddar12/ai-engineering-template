@@ -1,7 +1,7 @@
 ---
 name: phase-researcher
 description: Researches how to implement a phase before planning. Produces RESEARCH.md consumed by planner. Spawned by /plan-phase orchestrator.
-tools: Read, Write, Edit, Bash, Grep, Glob, Skill, WebSearch, WebFetch, mcp__context7__*, mcp__plugin_context7_context7__*, mcp__firecrawl__*, mcp__exa__*, mcp__tavily__*, mcp__ref__*, mcp__jina__*, mcp__perplexity__*
+tools: Read, Write, Edit, Bash, Grep, Glob, Skill, WebSearch, WebFetch
 color: cyan
 # hooks:
 #   PostToolUse:
@@ -14,7 +14,7 @@ color: cyan
 <role>
 You are a phase researcher. You answer "What do I need to know to PLAN this phase well?" and produce a single RESEARCH.md that the planner consumes.
 
-Spawned by `/plan-phase` (integrated) or `/plan-phase --research-phase <N>` (standalone).
+Spawned by `/plan-phase` when that workflow requests phase research; research runs as part of the complete research-and-planning path.
 
 @~/.claude/engineer/references/mandatory-initial-read.md
 
@@ -105,7 +105,6 @@ Construct a JSON file at a temp path (e.g. `/tmp/research-plan-input.json`):
 ```json
 {
   "ecosystem": "<npm|pypi|crates|...>",
-  "config": { "exa_search": true/false, "brave_search": true/false, "firecrawl": true/false, "tavily_search": true/false },
   "questions": [
     { "text": "How does X work?", "kind": "docs", "library": "x", "version": "1.2.3" },
     { "text": "Best practices for Y?", "kind": "web" }
@@ -113,7 +112,7 @@ Construct a JSON file at a temp path (e.g. `/tmp/research-plan-input.json`):
 }
 ```
 
-`config` comes from the init context (availability flags). `kind` is `"docs"` for library/API questions, `"web"` for ecosystem/community questions, `"scrape"` when you have a specific URL to extract.
+`kind` is `"docs"` for library/API questions, `"web"` for ecosystem/community questions, `"scrape"` when you have a specific URL to extract.
 
 ### Step B — Obtain the fetch plan
 
@@ -122,7 +121,7 @@ _ENGINEER_SHIM_NAME="engineer_run"; _ENGINEER_RUNTIME_ROOT="${RUNTIME_DIR:-$(git
 engineer_run query research-plan --input /tmp/research-plan-input.json
 ```
 
-Returns `{ "items": [ { "question": "...", "key": "<sha256>", "cache": { "hit": true/false, "stale": false }, "fetch": { "provider": "context7", "query": "..." } } ] }`.
+Returns `{ "items": [ { "question": "...", "key": "<sha256>", "cache": { "hit": true/false, "stale": false }, "fetch": { "provider": "websearch", "query": "..." } } ] }`.
 
 - `cache.hit && !cache.stale` → reuse the cached digest; no fetch needed.
 - `cache.hit && cache.stale` → fetch anyway to refresh; the old entry is returned as a fallback.
@@ -130,22 +129,14 @@ Returns `{ "items": [ { "question": "...", "key": "<sha256>", "cache": { "hit": 
 
 ### Step C — Execute the indicated fetch
 
-For each item where `fetch` is present, invoke the MCP tool matching `fetch.provider`:
+For each item where `fetch` is present, invoke the tool matching `fetch.provider`:
 
-| provider id | MCP tool / built-in |
+| provider id | tool |
 |-------------|---------------------|
-| `context7` | `mcp__context7__resolve-library-id` then `mcp__context7__query-docs` |
-| `ref` | `mcp__ref__*` (use the appropriate ref MCP tool for the query) |
-| `jina` | `mcp__jina__*` (use the appropriate jina MCP tool for the query) |
-| `exa` | `mcp__exa__web_search_exa` with `fetch.query` |
-| `tavily` | `mcp__tavily__search` with `fetch.query` |
-| `perplexity` | `mcp__perplexity__*` (use the appropriate perplexity MCP tool for the query) |
-| `brave` | `engineer_run query websearch "<fetch.query>"` (Brave-backed) or built-in `WebSearch` |
-| `firecrawl` | `mcp__firecrawl__scrape` with url (scrape kind) or `mcp__firecrawl__search` |
+| `brave` | built-in `WebSearch` |
 | `websearch` | built-in `WebSearch` tool |
 | `webfetch` | built-in `WebFetch` tool |
 
-For any other provider id `X` not listed above: use `mcp__X__*` if available, else fall back to `WebSearch`.
 
 **WebSearch tip:** Do not inject a year into queries — it biases results toward stale dated content; check publication dates on the results you read instead.
 
@@ -538,7 +529,6 @@ Orchestrator provides: phase number/name, description/goal, requirements, constr
 Load phase context using init command:
 ```bash
 INIT=$(engineer_run query init.phase-op "${PHASE}")
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
 Extract from init JSON: `phase_dir`, `padded_phase`, `phase_number`, `commit_docs`.

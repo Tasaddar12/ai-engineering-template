@@ -1,4 +1,4 @@
-# TDD-applicability resolution 
+# TDD-applicability resolution
 
 Run for each plan, immediately after executor routing and before composing
 that plan's `Agent()` prompt in step 3. Resolves whether this dispatch is TDD

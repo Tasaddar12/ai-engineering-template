@@ -7,7 +7,7 @@ allowed-tools:
   - Bash
   - Grep
   - AskUserQuestion
-requires: [phase, review]
+requires: [phase]
 ---
 
 <objective>

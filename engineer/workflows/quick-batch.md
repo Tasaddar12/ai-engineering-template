@@ -91,7 +91,6 @@ if [ $QB_PARSE_RC -ne 0 ]; then
   echo "$QB_PARSE_JSON" >&2
   exit 1
 fi
-if [[ "$QB_PARSE_JSON" == @file:* ]]; then QB_PARSE_JSON=$(cat "${QB_PARSE_JSON#@file:}"); fi
 ```
 
 Parse `$QB_PARSE_JSON` for `jobs` (`"auto"` or an integer), `validate` (bool), `research` (bool), `resume` (batch id or null). Store as `$JOBS`, `$VALIDATE_MODE`, `$RESEARCH_MODE`, `$RESUME_BATCH_ID`.
@@ -105,14 +104,12 @@ ENGINEER_ARGS_END
 ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 VALIDATE_PARAM=""; if [ "$VALIDATE_MODE" = true ]; then VALIDATE_PARAM="--validate"; fi
 RESEARCH_PARAM=""; if [ "$RESEARCH_MODE" = true ]; then RESEARCH_PARAM="--research"; fi
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.quick-batch ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} $VALIDATE_PARAM $RESEARCH_PARAM)
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_PLANNER=$(engineer_run query agent-skills planner ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-AGENT_SKILLS_EXECUTOR=$(engineer_run query agent-skills executor ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-AGENT_SKILLS_CHECKER=$(engineer_run query agent-skills plan-checker ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-AGENT_SKILLS_VERIFIER=$(engineer_run query agent-skills verifier ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-AGENT_SKILLS_RESEARCHER=$(engineer_run query agent-skills phase-researcher ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
+INIT=$(engineer_run query init.quick-batch  $VALIDATE_PARAM $RESEARCH_PARAM)
+AGENT_SKILLS_PLANNER=$(engineer_run query agent-skills planner )
+AGENT_SKILLS_EXECUTOR=$(engineer_run query agent-skills executor )
+AGENT_SKILLS_CHECKER=$(engineer_run query agent-skills plan-checker )
+AGENT_SKILLS_VERIFIER=$(engineer_run query agent-skills verifier )
+AGENT_SKILLS_RESEARCHER=$(engineer_run query agent-skills phase-researcher )
 ```
 
 Parse `$INIT` for: `planner_model`, `executor_model`, `checker_model`, `verifier_model`, `researcher_model`, `commit_docs`, `quick_dir`, `quick_batches_dir`, `roadmap_exists`, `planning_exists`.
@@ -124,8 +121,7 @@ Parse `$INIT` for: `planner_model`, `executor_model`, `checker_model`, `verifier
 ```bash
 STATE_PATH="${quick_dir%/quick}/STATE.md"
 PROJECT_PATH="${quick_dir%/quick}/PROJECT.md"
-USE_WORKTREES=$(engineer_run query config-get workflow.use_worktrees --raw 2>/dev/null || echo "true")
-RUNTIME=$(engineer_run query config-get runtime --default claude --raw 2>/dev/null || echo "claude")
+RUNTIME=$(engineer_run query runtime-identity --pick host --raw 2>/dev/null || echo "claude")
 ```
 
 **If `roadmap_exists` is false:** Error — quick-batch requires an active project with ROADMAP.md. Run `/new-project` first.
@@ -156,9 +152,9 @@ dispatch-isolation`. `ISOLATION` gates every worktree decision below —
 substitute `{harnessFlag}` in Step 6's `Agent()` with `$HARNESS_FLAG`+comma
 when `ISOLATION = "harness-worktree"`, else empty.
 
-If `USE_WORKTREES` is not `"false"`, sweep orphaned worktrees before dispatching anything (mirrors `/quick`'s own startup sweep):
+Before isolated dispatch, sweep orphaned worktrees before dispatching anything (mirrors `/quick`'s own startup sweep):
 ```bash
-if [ "$USE_WORKTREES" != "false" ]; then
+if true; then
   engineer_run query worktree.reap-orphans 2>/dev/null || true
 fi
 ```
@@ -245,7 +241,6 @@ complete item, updates STATE.md, and prints the final batch report.
 - [ ] (--research) Researcher dispatched per item before planning
 - [ ] (--validate) Plan-checker loop runs per item after planning (≤2 iterations)
 - [ ] Worktree create/merge/cleanup serialized; concurrent leaves inside already-created worktrees
-- [ ] `isolation == none` forces a mutating wave's concurrency to 1; a research-only wave is unaffected
 - [ ] Merges apply in deterministic wave order, never completion order
 - [ ] (--validate) Verifier dispatched per item post-merge; `human_needed` never completes the item, `gaps_found` fails it without rollback or retry
 - [ ] A merge_failed/scope_violation item is marked failed with the worktree PRESERVED

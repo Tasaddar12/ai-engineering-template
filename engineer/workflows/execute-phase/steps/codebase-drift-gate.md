@@ -74,9 +74,7 @@ ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
 # here via the workflow's shared shell scope — defining it once keeps the file compliant
 # with the single-canonical-preamble parity invariant. This block only runs on the
 # `auto-remap` directive, which is always reached after the drift check above has run.
-# This file is Read, not textually substituted - write the parent command's original argument string in place of $ARGUMENTS so --ws reaches the query.
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-AGENT_SKILLS_MAPPER=$(engineer_run query agent-skills codebase-mapper ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
+AGENT_SKILLS_MAPPER=$(engineer_run query agent-skills codebase-mapper )
 ```
 
 Then spawn `codebase-mapper` agents with the `--paths` hint (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze):

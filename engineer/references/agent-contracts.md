@@ -10,7 +10,7 @@ This doc describes what IS, not what should be. Casing inconsistencies are docum
 
 | Agent | Role | Completion Markers | Consumed by | Kind |
 |-------|------|--------------------|--------------|------|
-| planner | Plan creation | `## PLANNING COMPLETE`, `## PHASE SPLIT RECOMMENDED`, `## ⚠ Source Audit`, `## CHECKPOINT REACHED`, `## PLANNING INCONCLUSIVE`, `## REVISION_CONFLICT` | `engineer/workflows/plan-phase.md`, `engineer/workflows/plan-review-convergence.md`, `engineer/workflows/quick.md`, `engineer/workflows/quick/steps/plan-checker-loop.md`, `engineer/workflows/verify-work.md` | sentinel-match |
+| planner | Plan creation | `## PLANNING COMPLETE`, `## PHASE SPLIT RECOMMENDED`, `## ⚠ Source Audit`, `## CHECKPOINT REACHED`, `## PLANNING INCONCLUSIVE`, `## REVISION_CONFLICT` | `engineer/workflows/plan-phase.md`, `engineer/workflows/quick.md`, `engineer/workflows/quick/steps/plan-checker-loop.md`, `engineer/workflows/verify-work.md` | sentinel-match |
 | executor | Plan execution | `## PLAN COMPLETE`, `## CHECKPOINT REACHED` | `engineer/workflows/plan-phase.md`, `agents/debug-session-manager.md`, `agents/debugger.md` | sentinel-match |
 | phase-researcher | Phase-scoped research | `## RESEARCH COMPLETE`, `## RESEARCH BLOCKED` | `engineer/workflows/plan-phase.md`, `engineer/workflows/quick/steps/research-phase.md` | sentinel-match |
 | plan-checker | Plan validation | `## VERIFICATION PASSED`, `## ISSUES FOUND` | `engineer/workflows/plan-phase.md`, `engineer/workflows/plan-phase/steps/stall-detection-helpers.md`, `engineer/workflows/quick/steps/plan-checker-loop.md`, `engineer/workflows/import.md`, `engineer/workflows/ui-phase.md`, `engineer/workflows/verify-work.md`, `agents/ui-checker.md` | sentinel-match |

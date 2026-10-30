@@ -1,13 +1,13 @@
 """Planning record boundaries, read-only views and explicit lifecycle helpers."""
 from __future__ import annotations
 import hashlib
-import json
+import math
+import statistics
 from pathlib import Path
 import re
 import stat
-import statistics
-from .core import Args, Failure, now, planning_lock, read, root, run, write
-from .text import split_frontmatter, join_frontmatter
+from .core import Args, Failure, now, planning_lock, read, root, run, write, write_json
+from .text import split_frontmatter
 
 
 def safe(path):
@@ -145,52 +145,89 @@ def quick_append(args):
     path = safe(records.planning()/"STATE.md")
     with planning_lock():
         content = read(path)
-        found = section(content, "### Quick Tasks Completed")
-        block = content[found[1]:found[2]] if found else ""
-        rows = [line for line in block.splitlines() if line.startswith("|")]
-        headers = [part.strip() for part in re.split(r"(?<!\\)\|", rows[0])[1:-1]] if rows else ["#", "Description", "Date", "Commit", "Directory"]
-        if args.has("status") and "Status" not in headers:
-            headers.append("Status")
-            rows = [line.rstrip()+(" Status |" if index == 0 else " --- |" if index == 1 else " — |") for index, line in enumerate(rows)]
-        if not rows:
-            rows = ["| "+" | ".join(headers)+" |", "| "+" | ".join("---" for _ in headers)+" |"]
+        from . import markdown_table as tables
+        selected = tables._select_quick_tasks_section(content)
+        if selected is None:
+            content = replace_section(content, "### Quick Tasks Completed",
+                                      "| # | Description | Date | Commit | Status | Directory |\n| --- | --- | --- | --- | --- | --- |")
+            selected = tables._select_quick_tasks_section(content)
+        parsed = tables.parse_markdown_table(selected["body"])
+        if not parsed["ok"]:
+            raise Failure("invalid-quick-table", parsed["reason"], 2)
         directory = "./quick/"+str(identifier)+"-"+str(task_slug)+"/" if identifier and task_slug else None
-        if directory and any(directory in row for row in rows[2:]):
+        if directory and any(directory in row.get("Directory", "") for row in parsed["value"]["rows"]):
             return {"added": False, "duplicate": True, "quick_id": identifier}
-        number = identifier or str(len(rows)-1)
-        values = {"#": number, "Description": task, "Task": task, "Date": now()[:10], "Commit": revision,
-                  "Directory": "["+str(identifier)+"-"+str(task_slug)+"]("+directory+")" if directory else "—",
-                  "Status": args.get("status", "complete")}
-        unknown = set(headers)-set(values)
-        if unknown:
-            raise Failure("unsupported-quick-table-columns", ", ".join(sorted(unknown)), 2)
-        row = "| "+" | ".join(cell(values[key]) for key in headers)+" |"
-        rows.append(row)
-        narrative = "\n".join(line for line in block.splitlines() if not line.startswith("|"))
-        write(path, replace_section(content, "### Quick Tasks Completed", narrative+"\n\n"+"\n".join(rows)))
+        fields = {"description": task, "date": now()[:10], "commit": revision,
+                  "status": args.get("status", "complete"), "quickId": identifier,
+                  "directory": "["+str(identifier)+"-"+str(task_slug)+"]("+directory+")" if directory else "—"}
+        result = tables.append_quick_task_row(content, fields)
+        if not result["ok"]:
+            raise Failure("invalid-quick-table", result["reason"], 2)
+        row = result["value"]["row"]
+        write(path, result["value"]["content"])
     return {"added": True, "row": row, "quick_id": identifier, "date": now()[:10], "commit": revision}
+
+
+def _quick_history_identity(record, planning_dir):
+    """Resolve a history projection to its existing authoritative QUICK.md."""
+    directory = record.get("Directory", "").strip()
+    if directory in ("", "-", "\u2014"):
+        return None
+    link = re.fullmatch(r"\[[^\]]*\]\(([^)]+)\)", directory)
+    target = link.group(1) if link else directory
+    directory = safe(planning_dir/target)
+    path = safe(directory/"QUICK.md")
+    if not path.is_file():
+        return None
+    quick_dir = safe(planning_dir/"quick")
+    identity = re.fullmatch(r"(\d+)-[A-Za-z0-9._-]+", directory.name)
+    metadata, _ = split_frontmatter(read(path))
+    identifier = str(metadata.get("id", ""))
+    if (directory.parent != quick_dir or not identity or not identifier.isdigit()
+            or int(identifier) != int(identity.group(1))):
+        raise Failure("quick-migration-identity-mismatch", str(directory), 2)
+    return path
+
+
+def _quick_history_status(record):
+    """Completed history defaults to complete; ambiguous labels need explicit repair."""
+    status = record.get("Status", "").strip().casefold()
+    if status in ("", "-", "\u2014", "n/a", "done", "completed"):
+        return "complete"
+    status = status.replace(" ", "_").replace("-", "_")
+    if status not in ("pending", "planned", "in_progress", "blocked", "complete", "passed", "closed"):
+        raise Failure("unsupported-quick-history-status", "Repair the historical Status before migration: "+status, 2)
+    return status
 
 
 def quick_migrate(args):
     from . import records
     path = safe(records.planning()/"STATE.md")
     created, skipped = [], []
+    safe(records.planning()/"quick")
     with planning_lock():
-        found = section(read(path), "### Quick Tasks Completed")
-        if not found:
+        from . import markdown_table as tables
+        content = read(path)
+        selected = tables._select_quick_tasks_section(content)
+        if selected is None:
             return {"migrated": [], "count": 0, "reason": "no-legacy-quick-table"}
-        block = read(path)[found[1]:found[2]]
-        rows = [line for line in block.splitlines() if line.startswith("|")]
-        if len(rows) < 3:
-            return {"migrated": [], "count": 0}
-        headers = [value.strip() for value in re.split(r"(?<!\\)\|", rows[0])[1:-1]]
-        decoded = []
-        for line in rows[2:]:
-            columns = [value.strip().replace("\\|", "|") for value in re.split(r"(?<!\\)\|", line)[1:-1]]
-            if len(columns) != len(headers):
-                raise Failure("invalid-quick-row", line, 2)
-            decoded.append((line, dict(zip(headers, columns))))
-        for line, record in decoded:
+        migrated = tables.migrate_quick_tasks_table(content)
+        if not migrated["ok"]:
+            raise Failure("invalid-quick-table", migrated["reason"], 2)
+        canonical = tables._select_quick_tasks_section(migrated["value"]["content"])
+        parsed = tables.parse_markdown_table(canonical["body"])
+        if not parsed["ok"]:
+            raise Failure("invalid-quick-table", parsed["reason"], 2)
+        # The original row identifies the migration; preserve source bytes and QUICK.md authority.
+        original = [line for line in selected["body"].splitlines() if line.strip().startswith("|")][2:]
+        decoded = list(zip(original, parsed["value"]["rows"]))
+        identities = [_quick_history_identity(record, path.parent) for _, record in decoded]
+        statuses = [_quick_history_status(record) if identity is None else None
+                    for (_, record), identity in zip(decoded, identities)]
+        for (line, record), authoritative, status in zip(decoded, identities, statuses):
+            if authoritative is not None:
+                skipped.append(str(authoritative))
+                continue
             source_id = hashlib.sha256(line.encode()).hexdigest()
             existing = []
             for item in (records.planning()/"quick").glob("*/QUICK.md"):
@@ -202,25 +239,33 @@ def quick_migrate(args):
                 continue
             item = records.quick_create(record.get("Description", record.get("Task", "Migrated quick task")),
                                         {"migration_source": source_id, "source": ".planning/STATE.md", "legacy_row": line,
-                                         "status": record.get("Status", "complete"), "commit": record.get("Commit", "")})
+                                         "status": status, "commit": record.get("Commit", "")})
             file = Path(item["path"])
             created.append(str(file))
     return {"migrated": created, "skipped": skipped, "count": len(created), "source_preserved": True}
 
 
 def calibration(args):
+    from . import records
     samples = []
     for item in history(args)["summaries"]:
-        estimate, actual = item.get("estimate", {}), item.get("actuals", {})
+        plan_path = safe(Path(item["path"]).with_name(Path(item["path"]).name.replace("-SUMMARY.md", "-PLAN.md")))
+        plan_metadata, _ = split_frontmatter(read(plan_path))
+        estimate = plan_metadata.get("estimate", item.get("estimate", {}))
+        actual = item.get("actuals", {})
         if not isinstance(estimate, dict) or not isinstance(actual, dict):
             continue
-        predicted = estimate.get("tokens") or estimate.get("raw_tokens")
-        observed = actual.get("tokens")
-        if isinstance(predicted, (int, float)) and not isinstance(predicted, bool) and predicted > 0 and isinstance(observed, (int, float)) and not isinstance(observed, bool) and observed >= 0:
+        predicted, observed = estimate.get("raw_tokens"), actual.get("tokens")
+        if (isinstance(predicted, (int, float)) and not isinstance(predicted, bool) and math.isfinite(predicted) and predicted > 0
+                and isinstance(observed, (int, float)) and not isinstance(observed, bool) and math.isfinite(observed) and observed >= 0):
             samples.append({"path": item["path"], "predicted": predicted, "actual": observed, "ratio": observed/predicted})
-    return {"sample_count": len(samples), "samples": samples, "calibrated": len(samples) >= 3,
-            "factor": statistics.median(item["ratio"] for item in samples) if samples else None,
-            "confidence": "high" if len(samples) >= 10 else "medium" if len(samples) >= 3 else "low", "read_only": True}
+    count = len(samples)
+    data = {"sample_count": count, "samples": samples, "calibrated": count >= 3, "applied": count >= 3,
+            "factor": statistics.median(item["ratio"] for item in samples) if count >= 3 else 1,
+            "confidence": "high" if count >= 6 else "med" if count >= 3 else "low"}
+    with planning_lock():
+        write_json(safe(records.planning()/"estimation-calibration.json"), data)
+    return data
 
 
 def estimate_check(args):
@@ -229,11 +274,11 @@ def estimate_check(args):
         tokens = float(args.get("tokens", args.arg(0)))
     except (ValueError, TypeError) as exc:
         raise Failure("invalid-token-estimate", "Supply nonnegative --tokens", 2) from exc
-    if tokens < 0 or tokens == float("inf") or tokens != tokens:
+    if not math.isfinite(tokens) or tokens < 0:
         raise Failure("invalid-token-estimate", str(tokens), 2)
     data = calibration(args)
-    factor = data["factor"] if args.has("calibrated") and data["calibrated"] else 1
-    budget = config.load()["context_window"] * .6
+    factor = data["factor"] if args.has("calibrated") else 1
+    budget = config.load()["workflow"]["smart_zone_tokens"]
     projected = tokens*factor
     return {"tokens": tokens, "projected_tokens": projected, "budget": budget, "within_budget": projected <= budget,
             "calibrated": bool(args.has("calibrated") and data["calibrated"]), "sample_count": data["sample_count"],

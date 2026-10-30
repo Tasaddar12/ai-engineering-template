@@ -1,11 +1,12 @@
 **Step 9: Completion**
 
 For every item that merged successfully in Step 7 AND (NOT `$VALIDATE_MODE`,
-OR Step 8 routed it to `complete`): call `completeQuickItem` via its CLI verb
-— this is the ONLY writer of a "Quick Tasks Completed" STATE.md row and the
-item's `complete` status; both happen inside ONE lock transaction, exactly
-once per item (idempotent — re-running this step for an already-complete
-item is a no-op, same guarantee `/quick` relies on):
+OR Step 8 routed it to `complete`): call `quick-batch complete`. The runtime
+first records a durable `completionTransaction` intent in `BATCH.json`, then
+updates that item's authoritative `QUICK.md` status and commit, and finalizes
+the batch record. If interrupted between those writes, `quick-batch resume`
+replays the recorded intent after checking the completion evidence. Repeating
+completion for an already-complete item is a no-op:
 
 ```bash
 _engineer_identity_ok() {
@@ -62,13 +63,13 @@ engineer_run quick-batch complete \
 
 Items NOT reaching this call — `human_needed`, `failed` (planner/checker/
 merge/verification failure), or still `blocked`/`pending` (a dependency
-failed, row 32) — are left exactly as their respective routing step set
-them. No STATE row, no `complete` status, worktree preserved where
-applicable.
+failed, row 32) — remain at their respective batch status. They do not receive
+a completion intent or a `complete` status in `QUICK.md`; preserve a worktree
+where applicable.
 
 **Final commit.** Stage every artifact produced this run (PLAN.md, SUMMARY.md,
-`--research` RESEARCH.md, `--validate` VERIFICATION.md, per item, plus
-`.planning/STATE.md`) and commit:
+`--research` RESEARCH.md, `--validate` VERIFICATION.md, each affected task
+`QUICK.md`, and the batch `BATCH.json`) and commit:
 `$BATCH_ARTIFACT_FILES` is a bash ARRAY (not a plain string — a plain
 space-joined string re-splits unpredictably under `set -f`/globbing and
 diverges between bash and zsh, the word-splitting bug class):

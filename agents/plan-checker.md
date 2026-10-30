@@ -302,18 +302,6 @@ issue:
 1. Count tasks per plan
 2. Estimate files modified per plan
 3. Check against thresholds
-4. **Smart-zone estimate check.** For each plan carrying an `estimate` block, run the
-   `estimate-check --calibrated` verb against its `estimate.tokens` (the `--calibrated` flag is required —
-   the plan's figure already has the factor applied, and omitting it would square the correction) (invoked in Step 1 below, after the launcher
-   preamble). The verb reads `workflow.smart_zone_tokens` and applies the project's calibration. Report
-   one line per plan: plan id, estimated tokens, the budget, and — when `over_budget` is true — the
-   returned `recommendation`, which names how many slices the phase should become.
-
-   **Over budget is a WARNING, never a blocker**. Recommend re-slicing into smaller plans; never fail the check on it. Report `estimate.confidence` alongside: `low` means
-   fewer than 3 completed phases carry actuals, so the figure is not yet calibrated for this project — say
-   so rather than presenting it as precise, and weigh the task/file thresholds above more heavily.
-
-   A plan with no `estimate` block is not a defect; the field is optional and additive.
 
 **Thresholds:**
 | Metric | Target | Warning | Blocker |
@@ -729,7 +717,6 @@ Load phase operation context:
 
 ```bash
 INIT=$(engineer_run query init.phase-op "${PHASE_ARG}")
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
 Extract from init JSON: `phase_dir`, `phase_number`, `has_plans`, `plan_count`.
@@ -746,12 +733,6 @@ engineer_run query phase.list-artifacts "$phase_number" --type research
 engineer_run query roadmap.get-phase "$phase_number"
 engineer_run query phase.list-artifacts "$phase_number" --type summary
 
-# Smart-zone estimate check  — advisory, never fails the check.
-for plan in "${phase_dir:-$PHASE_DIR}"/*-PLAN.md; do
-  [ -f "$plan" ] || continue   # unmatched glob leaves the literal pattern — skip it
-  EST=$(sed -n '/^estimate:/,/^[a-z_]*:/p' "$plan" | grep -o 'tokens: *[0-9]*' | head -1 | grep -o '[0-9]*')
-  [ -n "$EST" ] && engineer_run query estimate-check --tokens "$EST" --calibrated 2>/dev/null || true
-done
 ```
 
 **Extract:** Phase goal, requirements (decompose goal), locked decisions, deferred ideas.

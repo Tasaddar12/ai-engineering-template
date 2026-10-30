@@ -2,17 +2,43 @@
 import datetime as dt
 import hashlib
 import json
+import math
 import re
 from urllib.parse import urlparse
 from . import records
-from .core import Args, Failure, digest, load_json, now, planning_lock, read, safe_path, write_json
+from .core import Args, Failure, digest, input_json, load_json, now, planning_lock, read, safe_path, write_json
 from .text import split_frontmatter
 
 
 def _key(value):
     if not re.fullmatch(r"[a-f0-9]{64}", str(value)):
         raise Failure("invalid-research-key", "Research keys must be SHA256 values", 2)
-    return records.planning()/"research-cache"/(value+".json")
+    return safe_path(records.planning()/"research-cache"/(value+".json"))
+
+
+def _cited_entry(entry):
+    """Reuse only actual cited cache content; a tier is not a truth judgment."""
+    if not isinstance(entry, dict) or not isinstance(entry.get("content"), str) or not entry["content"].strip():
+        return False
+    sources = entry.get("sources")
+    if not isinstance(sources, list):
+        return False
+    if not sources:
+        return (entry.get("citationStatus") == "not-provided" and entry.get("source") in ("curated", "web")
+                and isinstance(entry.get("provider"), str) and bool(entry["provider"].strip())
+                and entry.get("kind") in ("docs", "web") and entry.get("confidence") in ("HIGH", "MEDIUM", "LOW"))
+    for source in sources:
+        if not isinstance(source, str):
+            return False
+        parsed = urlparse(source)
+        if parsed.scheme in ("https", "http") and parsed.hostname:
+            continue
+        try:
+            if not safe_path(source).is_file():
+                return False
+        except Failure:
+            return False
+    return True
 
 
 def confidence(args):
@@ -41,11 +67,17 @@ def store(args, action):
     if action != "put":
         raise Failure("unknown-research-action", action, 2)
     content = str(args.get("content", "")).strip()
-    sources = args.all("sources") or args.all("urls")
+    for field, allowed in (("source", ("curated", "web")), ("kind", ("docs", "web"))):
+        if args.has(field) and args.get(field) not in allowed:
+            raise Failure("invalid-research-"+field, str(args.get(field)), 2)
+    sources = list(args.all("sources") or args.all("urls"))
     if args.has("url"):
         sources.append(args.get("url"))
-    if not content or not sources:
-        raise Failure("uncited-research", "Cache entries require content and actual --sources/--url citations", 2)
+    provenance = (args.get("source") in ("curated", "web") and isinstance(args.get("provider"), str)
+                  and bool(args.get("provider").strip()) and args.get("kind") in ("docs", "web")
+                  and args.get("confidence") in ("HIGH", "MEDIUM", "LOW"))
+    if not content or not sources and not provenance:
+        raise Failure("uncited-research", "Cache entries require content and citations or complete source/provider/confidence/kind metadata", 2)
     for source in sources:
         parsed = urlparse(str(source))
         if parsed.scheme not in ("https", "http") or not parsed.hostname:
@@ -56,7 +88,7 @@ def store(args, action):
         raise Failure("invalid-confidence", tier, 2)
     item = {"key": path.stem, "content": content, "sources": sources, "provider": args.get("provider", "unknown"),
             "source": args.get("source", "web"), "kind": args.get("kind", "docs"), "confidence": tier,
-            "recorded": now(), "claimJudgment": False}
+            "recorded": now(), "claimJudgment": False, "citationStatus": "provided" if sources else "not-provided"}
     with planning_lock():
         write_json(path, item)
     return {"stored": True, "entry": item}
@@ -70,16 +102,24 @@ def store_command(args):
 
 
 def plan(args):
-    source = safe_path(args.get("input", args.arg(0, "")))
-    payload = load_json(source)
+    source = args.get("input", args.arg(0))
+    if not isinstance(source, str) or not source.strip():
+        raise Failure("invalid-research-input", "Supply an explicit JSON input file", 2)
+    payload = input_json(source)
     if not isinstance(payload, dict) or not isinstance(payload.get("questions"), list):
         raise Failure("invalid-research-input", "Research input requires a questions array", 2)
+    try:
+        max_age = float(args.get("max-age-hours", 168))
+    except (ValueError, TypeError) as exc:
+        raise Failure("invalid-research-age", "Supply nonnegative finite --max-age-hours", 2) from exc
+    if not math.isfinite(max_age) or max_age < 0:
+        raise Failure("invalid-research-age", "Supply nonnegative finite --max-age-hours", 2)
     availability = payload.get("config", {})
     if not isinstance(availability, dict):
         raise Failure("invalid-research-input", "Research provider availability must be a mapping", 2)
     items = []
     for question in payload["questions"]:
-        if not isinstance(question, dict) or not str(question.get("text", "")).strip() or question.get("kind", "docs") not in ("docs", "web", "scrape"):
+        if not isinstance(question, dict) or not isinstance(question.get("text"), str) or not question["text"].strip() or question.get("kind", "docs") not in ("docs", "web", "scrape"):
             raise Failure("invalid-research-question", "Each question needs text and docs/web/scrape kind", 2)
         identity = {"ecosystem": payload.get("ecosystem"), **question}
         key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
@@ -87,19 +127,16 @@ def plan(args):
         stale = True
         if entry:
             try:
-                stale = (dt.datetime.now(dt.timezone.utc)-dt.datetime.fromisoformat(entry["recorded"])).total_seconds() > float(args.get("max-age-hours", 168))*3600
-            except (KeyError, ValueError, TypeError):
+                age = (dt.datetime.now(dt.timezone.utc)-dt.datetime.fromisoformat(entry["recorded"])).total_seconds()
+                stale = not _cited_entry(entry) or age < 0 or age > max_age*3600
+            except (KeyError, ValueError, TypeError, AttributeError):
                 stale = True
         kind = question.get("kind", "docs")
-        order = (("context7", "ref", "websearch") if kind == "docs" else
-                 ("firecrawl", "webfetch") if kind == "scrape" else ("exa", "tavily", "brave", "websearch"))
-        provider = next((name for name in order if availability.get(name, availability.get(name+"_search", False)) is True), None)
+        provider = "webfetch" if kind == "scrape" else "websearch"
         item = {"question": question["text"], "key": key, "cache": {"hit": bool(entry), "stale": stale, "entry": entry}}
         if not entry or stale:
             item["fetch"] = {"provider": provider, "query": question["text"], "library": question.get("library"),
                              "version": question.get("version"), "url": question.get("url"), "available": provider is not None}
-            if provider is None:
-                item["blocked"] = "No caller-declared source provider; use an available primary-documentation tool and record the actual citation"
         items.append(item)
     return {"items": items, "executesFetch": False}
 

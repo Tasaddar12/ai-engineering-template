@@ -1,6 +1,6 @@
 <purpose>
 
-Mark a shipped version (v1.0, v1.1, v2.0) as complete. Creates historical record in MILESTONES.md, performs the full PROJECT.md evolution review (flat mode only; skipped under `--ws`, because PROJECT.md is shared across workstreams), reorganizes ROADMAP.md with milestone groupings, and tags the release in git.
+Mark a shipped version (v1.0, v1.1, v2.0) as complete. Creates historical record in MILESTONES.md, performs the full PROJECT.md evolution review, reorganizes ROADMAP.md with milestone groupings, and tags the release in git.
 
 </purpose>
 
@@ -22,7 +22,7 @@ When a milestone completes:
 2. Archive requirements to `.planning/milestones/v[X.Y]-REQUIREMENTS.md`
 3. Update ROADMAP.md — overwrite in place with milestone grouping (preserve Backlog section)
 4. Safety commit archive files + updated ROADMAP.md, then `git rm REQUIREMENTS.md` (fresh for next milestone)
-5. Perform full PROJECT.md evolution review (flat mode only — skipped under an active workstream)
+5. Perform the full PROJECT.md evolution review
 6. Offer to create next milestone inline
 7. Archive UI artifacts (`*-UI-SPEC.md`, `*-UI-REVIEW.md`) alongside other phase documents
 8. Clean up `.planning/ui-reviews/` screenshot files (binary assets, never archived)
@@ -109,7 +109,6 @@ If output shows all clear (no open items): set `closeout_type=verified_closeout`
 <!-- engineer:protected -->
 SECURITY: Audit JSON output is structured data from the `audit-open` query handler (same JSON contract as legacy `engineer_run query audit-open`) — validated and sanitized at source. The `audit-open acknowledge` writer is the only path that sets the `audit_acknowledged` suppression marker — it snapshots each artifact's current state itself from the identifiers passed on the command line, so this workflow never hand-authors the marker. When writing the STATE.md disclosure table, item identifiers, statuses, and deferred-item text are sanitized via `sanitizeForDisplay()` before inclusion. Never inject raw user-supplied content into STATE.md without sanitization.
 
-Exact per-category bash (including the `@file:` large-payload handling, the `todos` 5-per-scan cap, and the phase-scoped `--archived-milestone` handling) and the exact STATE.md table shape: `engineer/workflows/complete-milestone/detail/elaboration.md` § 1.
 </step>
 
 <step name="verify_readiness">
@@ -121,9 +120,7 @@ IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
 ENGINEER_ARGS_END
 ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT_MANAGER=$(engineer_run query init.manager ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-if [[ "$INIT_MANAGER" == @file:* ]]; then INIT_MANAGER=$(cat "${INIT_MANAGER#@file:}"); fi
+INIT_MANAGER=$(engineer_run query init.manager )
 ```
 
 This returns all phases with implementation and verification projection. Use this to verify:
@@ -284,22 +281,9 @@ If additional details are needed (e.g., user-provided "Delivered" summary, git r
 
 </step>
 
-**Resolve the PROJECT.md review gate first.** This is the first `init.complete-milestone` call in the workflow, so the section manifest does not exist before it; reading `section_manifest` without making this call would fall into the fail-open `null` branch below and rewrite the shared PROJECT.md under `--ws`. `init.complete-milestone` is a pure read, so the later full call in `reorganize_roadmap_and_delete_originals` is unaffected.
-
-```bash
-IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
-$ARGUMENTS
-ENGINEER_ARGS_END
-ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT_EARLY=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-if [[ "$INIT_EARLY" == @file:* ]]; then INIT_EARLY=$(cat "${INIT_EARLY#@file:}"); fi
-python -c 'import json,sys; m=json.loads(sys.argv[1]).get("section_manifest"); print("PROJECT_MD_REVIEW="+("run" if m is None or "project-md-evolution-review" in m["included"] else "skip"))' "$INIT_EARLY"
-```
-
-<!-- engineer:section id="project-md-evolution-review" when="state:flat-mode" -->
-If the line above printed `PROJECT_MD_REVIEW=run` (the manifest is `null` or lists `"project-md-evolution-review"` in `included`): read and execute `engineer/workflows/complete-milestone/steps/project-md-evolution-review.md`. If it printed `PROJECT_MD_REVIEW=skip` (a workstream is active) — do not read the file; PROJECT.md is shared across workstreams, so a workstream's milestone close never rewrites it; proceed to `archive_milestone`.
-<!-- /section -->
+<step name="project_md_evolution_review">
+Read and execute `engineer/workflows/complete-milestone/steps/project-md-evolution-review.md`.
+</step>
 
 <step name="archive_milestone">
 
@@ -313,7 +297,6 @@ AskUserQuestion: "Archive completed quick tasks into this milestone too?" with o
 
 If "Yes": set `ARCHIVE_QUICK_FLAG="--archive-quick"`. If "Skip" (or `.planning/quick/` is empty): set `ARCHIVE_QUICK_FLAG=""`.
 
-**Per-repository release mapping (opt-in).** Set `PER_REPO_TAGGING=true` only when `INIT_EARLY` has `repo_tagging` equal to `per_repo` AND a non-empty `sub_repos`; otherwise it is `false` and this paragraph changes nothing. Shell state does not persist between commands, so later steps recompute it from their own `init.complete-milestone` JSON (`INIT_REORG`). When `true`, read and execute `engineer/workflows/complete-milestone/steps/release-map.md` Part 1 now (collect, validate, one consolidated confirmation, create the tags, record the outcome in `release-map.json`), and append `--release-map "${TMPDIR:-/tmp}/engineer-release-map-v[X.Y]/release-map.json"` to EVERY `milestone complete` call below (including the `--no-archive-phases` form); when `false`, append nothing. A Engineer milestone version may differ from every repository's release version.
 
 **Delegate archival to `engineer_run query milestone.complete`:**
 
@@ -333,7 +316,7 @@ The CLI handles:
 - Moving audit file to milestones if it exists
 - Creating/appending MILESTONES.md entry with accomplishments from SUMMARY.md files
 - Updating STATE.md (status, last activity)
-- When `ARCHIVE_QUICK_FLAG` is `--archive-quick`: moving every directory under `.planning/quick/` into `.planning/milestones/v[X.Y]-quick/`, writing a `README.md` index into that archive directory (generated by scanning the archive directory itself), and clearing the data rows of STATE.md's `### Quick Tasks Completed` table — preserving the table's header and whichever column variant (with/without a Status column) was detected
+- When `ARCHIVE_QUICK_FLAG` is `--archive-quick`: moving every directory under `.planning/quick/` into `.planning/milestones/v[X.Y]-quick/`, writing a `README.md` index into that archive directory (generated by scanning the archive directory itself), and archiving the corresponding runtime quick-task records
 
 Extract from result: `version`, `date`, `phases`, `plans`, `tasks`, `accomplishments`, `archived`.
 
@@ -351,13 +334,12 @@ If the user explicitly wants to keep phase directories in place as raw execution
 engineer_run query milestone complete v[X.Y] --no-archive-phases --confirm
 ```
 
-(When `PER_REPO_TAGGING` is `true`, this form takes the same `--release-map` argument.)
 
 Verify after a default (archived) completion: `✅ Phase directories archived to .planning/milestones/v[X.Y]-phases/`
 
 After archival, the AI still handles:
 - Reorganizing ROADMAP.md with milestone grouping (requires judgment) — overwrite in place after extracting Backlog section, with the write-guard's single-use sentinel armed first (a per-step env var cannot reach a hook — see the reorganize step for the sentinel mechanics)
-- Full PROJECT.md evolution review (requires understanding; flat mode only — skipped under `--ws`)
+- Full PROJECT.md evolution review (requires understanding)
 - Safety commit of archive files + updated ROADMAP.md, then `git rm .planning/REQUIREMENTS.md`
 - These are NOT fully delegated because they require AI interpretation of content
 
@@ -376,9 +358,7 @@ IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
 ENGINEER_ARGS_END
 ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT_REORG=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
+INIT_REORG=$(engineer_run query init.complete-milestone )
 _engineer_field() { value=$(printf '%s' "$1" | engineer_run query json.get --field "$2" --default '""' --raw) || return $?; [ "$value" = null ] && value=""; printf '%s' "$value"; }
 ROADMAP_PATH=$(_engineer_field "$INIT_REORG" roadmap_path)
 # Extract lines under ## Backlog through end of file (or next ## section)
@@ -398,16 +378,14 @@ IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
 ENGINEER_ARGS_END
 ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT_REORG=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
+INIT_REORG=$(engineer_run query init.complete-milestone )
 _engineer_field() { value=$(printf '%s' "$1" | engineer_run query json.get --field "$2" --default '""' --raw) || return $?; [ "$value" = null ] && value=""; printf '%s' "$value"; }
 ROADMAP_PATH=$(_engineer_field "$INIT_REORG" roadmap_path)
 printf '%s\n' "$ROADMAP_PATH" > .planning/.engineer-allow-shrink
 echo "Write target: $ROADMAP_PATH"
 ```
 
-2. Compose the full new ROADMAP.md content (template below) and overwrite the file at **`$ROADMAP_PATH`** (the "Write target" path printed above — under an active workstream this is the workstream-scoped roadmap, NOT the literal `.planning/ROADMAP.md`) with the **Write tool** — the normal path. The guard allows this one shrink and deletes the sentinel. If the Write is blocked anyway, the sentinel was stale or consumed — re-run the `printf` and retry the Write.
+2. Compose the full new ROADMAP.md content (template below) and overwrite the file at **`$ROADMAP_PATH`** (the runtime-resolved write target) with the **Write tool** — the normal path. The guard allows this one shrink and deletes the sentinel. If the Write is blocked anyway, the sentinel was stale or consumed — re-run the `printf` and retry the Write.
 
 Template for the composed content:
 
@@ -441,24 +419,18 @@ IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
 ENGINEER_ARGS_END
 ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT_REORG=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
+INIT_REORG=$(engineer_run query init.complete-milestone )
 _engineer_field() { value=$(printf '%s' "$1" | engineer_run query json.get --field "$2" --default '""' --raw) || return $?; [ "$value" = null ] && value=""; printf '%s' "$value"; }
 STATE_PATH=$(_engineer_field "$INIT_REORG" state_path)
 ROADMAP_PATH=$(_engineer_field "$INIT_REORG" roadmap_path)
 ARCHIVE_DIR=$(_engineer_field "$INIT_REORG" archive_dir)
 MILESTONES_PATH=$(_engineer_field "$INIT_REORG" milestones_path)
 PROJECT_PATH=$(_engineer_field "$INIT_REORG" project_path)
-# PROJECT.md is shared across workstreams. Stage it only when init's own section manifest says this run edited it (the evolution review is included in flat mode only) — the same source the review step is gated on, so the two cannot disagree.
-_engineer_has_section() { python -c 'import json,sys; m=json.loads(sys.argv[1]).get("section_manifest"); sys.exit(0 if m is None or sys.argv[2] in m["included"] else 1)' "$1" "$2"; }
-_engineer_has_section "$INIT_REORG" project-md-evolution-review || PROJECT_PATH=""
 engineer_run query commit "chore: archive v[X.Y] milestone files" --files "${ARCHIVE_DIR}/v[X.Y]-ROADMAP.md" "${ARCHIVE_DIR}/v[X.Y]-REQUIREMENTS.md" "${ARCHIVE_DIR}/v[X.Y]-MILESTONE-AUDIT.md" "$MILESTONES_PATH" ${PROJECT_PATH:+"$PROJECT_PATH"} "$STATE_PATH" "$ROADMAP_PATH"
 ```
 
 This creates a durable checkpoint in git history. If anything fails after this point, the working tree can be reconstructed from git.
 
-MILESTONES.md is workstream-scoped the same way STATE.md/ROADMAP.md are (`planningPaths(cwd).planning`) — under an active workstream this commits the actual files `milestone complete` wrote, not the root copies. PROJECT.md is NOT: it is shared across workstreams, so under an active workstream it is neither reviewed nor staged here.
 
 **Remove REQUIREMENTS.md via git rm** (preserves history, stages deletion atomically):
 
@@ -467,9 +439,7 @@ IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
 ENGINEER_ARGS_END
 ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT_REORG=$(engineer_run query init.complete-milestone ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-if [[ "$INIT_REORG" == @file:* ]]; then INIT_REORG=$(cat "${INIT_REORG#@file:}"); fi
+INIT_REORG=$(engineer_run query init.complete-milestone )
 _engineer_field() { value=$(printf '%s' "$1" | engineer_run query json.get --field "$2" --default '""' --raw) || return $?; [ "$value" = null ] && value=""; printf '%s' "$value"; }
 REQUIREMENTS_PATH=$(_engineer_field "$INIT_REORG" requirements_path)
 git rm "$REQUIREMENTS_PATH"
@@ -562,24 +532,13 @@ See: .planning/PROJECT.md (updated [today])
 
 <step name="handle_branches">
 
-Check the project's `branching_strategy` (from `init.execute-phase`/`init.complete-milestone`). `"none"` skips straight to `git_tag`. For `"phase"` or `"milestone"`, list the matching branches (by the configured prefix template); no branches found also skips to `git_tag`. Resolve the base branch through the single shared resolver, never a bare `main`/`master` fallback:
+Check the project's `branching_strategy` (from `init.execute-phase`/`init.complete-milestone`). `"none"` skips branch handling. For `"phase"` or `"milestone"`, list the matching branches (by the configured prefix template); no branches found also skips branch handling. Resolve the base branch through the single shared resolver, never a bare `main`/`master` fallback:
 ```bash
 BASE_BRANCH=$(engineer_run query git.base-branch)
 ```
 
 If branches exist, present them and ask (AskUserQuestion): **Squash merge** (recommended) / **Merge with history** / **Delete without merging** / **Keep branches**. All three merge/delete options iterate every matching branch (phase strategy) or the one milestone branch, checking out `BASE_BRANCH` first and returning to the original branch after; both merge options strip `.planning/` from staging first when `commit_docs` is false. "Keep branches" just reports them as preserved for manual handling.
 
-Exact bash for each of the four options (squash, history-preserving merge, delete, keep): `engineer/workflows/complete-milestone/detail/elaboration.md` § 2.
-
-</step>
-
-<!-- engineer:section id="git-tag" when="state:git-create-tag" -->
-If `PER_REPO_TAGGING` is `true`, skip this section: the per-repository tags were created in `archive_milestone`, and no `v[X.Y]` tag is created in the current directory. Otherwise, if `section_manifest` is `null` or `"git-tag"` is in its `included` list: read and execute `engineer/workflows/complete-milestone/steps/git-tag.md`. Otherwise skip — do not read the file; proceed to `git_commit_milestone`.
-<!-- /section -->
-
-<step name="push_release_tags">
-
-Recompute `PER_REPO_TAGGING` and `git_create_tag` from the latest `init.complete-milestone` JSON (`INIT_REORG`). If `PER_REPO_TAGGING` is `true` and `git_create_tag` is not `false`: read and execute `engineer/workflows/complete-milestone/steps/release-map.md` Part 2 (a separate push confirmation per repository naming the repository and its remote; nothing is pushed by default). Otherwise skip this step.
 
 </step>
 
@@ -593,7 +552,6 @@ git commit -m "chore: remove REQUIREMENTS.md for v[X.Y] milestone"
 
 Confirm: "Committed: chore: remove REQUIREMENTS.md for v[X.Y] milestone"
 
-When `PER_REPO_TAGGING` was `true`, remove the scratch directory: `rm -rf "${TMPDIR:-/tmp}/engineer-release-map-v[X.Y]"` (the archived copy lives in `.planning/milestones/`).
 
 </step>
 
@@ -611,7 +569,6 @@ Archived:
 - milestones/v[X.Y]-REQUIREMENTS.md
 
 Summary: .planning/MILESTONES.md
-Tag: v[X.Y]
 
 ---
 
@@ -660,8 +617,8 @@ Milestone completion is successful when:
 - [ ] Known deferred items count noted in MILESTONES.md entry
 
 - [ ] MILESTONES.md entry created with stats and accomplishments
-- [ ] PROJECT.md full evolution review completed (flat mode only; skipped under `--ws`)
-- [ ] All shipped requirements moved to Validated in PROJECT.md (flat mode only; skipped under `--ws`)
+- [ ] Full PROJECT.md evolution review completed
+- [ ] All shipped requirements moved to Validated in PROJECT.md
 - [ ] Key Decisions updated with outcomes
 - [ ] ROADMAP.md Backlog section extracted before rewrite, re-appended after (skipped if absent)
 - [ ] ROADMAP.md reorganized with milestone grouping (overwritten in place, not deleted)
@@ -670,8 +627,6 @@ Milestone completion is successful when:
 - [ ] Safety commit made (archive files + updated ROADMAP.md) BEFORE deleting REQUIREMENTS.md
 - [ ] REQUIREMENTS.md removed via `git rm` (fresh for next milestone, history preserved)
 - [ ] STATE.md updated with fresh project reference
-- [ ] Git tag created (v[X.Y]) (if `git.create_tag` enabled and `PER_REPO_TAGGING` is not `true`)
-- [ ] Release map archived and per-repository tags created (if `PER_REPO_TAGGING` is `true`); no tag pushed without a per-repository confirmation
 - [ ] Milestone commit made (includes archive files and deletion)
 - [ ] Requirements completion checked against REQUIREMENTS.md traceability table
 - [ ] Incomplete requirements surfaced with proceed/audit/abort options

@@ -18,7 +18,6 @@ Run the standard `engineer_run` resolver from the reference above, then run the 
 INIT=$(engineer_run --cwd "$_ENGINEER_RUNTIME_ROOT" init onboard --fast --raw)
 # Otherwise:
 INIT=$(engineer_run --cwd "$_ENGINEER_RUNTIME_ROOT" init onboard --raw)
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
 Parse JSON fields from `INIT`:

@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 import math
+import re
 from pathlib import Path
 import shutil
 import sys
@@ -44,11 +45,20 @@ def descriptor(args, inspect=False):
               "exec": None, "harnessFlag": "isolation" if mode == "harness-worktree" else None,
               "harnessValue": "worktree" if mode == "harness-worktree" else None,
               "reason": None if binary else "The selected host CLI is not on PATH"}
-    if args.has("force-isolation") and not inspect:
+    phase = args.get("phase")
+    plan = args.get("plan-id", args.get("plan"))
+    if phase is not None or plan is not None:
+        if not isinstance(phase, str) or not re.fullmatch(r"\d+(?:\.\d+)?", phase):
+            raise Failure("invalid-phase-number", str(phase), 2)
+        phase_number = records.number(phase)
+    if plan is not None:
+        if not isinstance(plan, str) or not re.fullmatch(r"\d+(?:\.\d+)?-\d+(?:-[A-Za-z0-9._-]+)?", plan) or records.number(plan) != phase_number:
+            raise Failure("invalid-dispatch-plan", "Plan must belong to the supplied phase", 2)
+    if not inspect and (args.has("force-isolation") or phase is not None):
         with planning_lock():
             write_json(records.planning()/"dispatch-isolation.json", {
                 "isolation": mode, "mode": mode, "host": host, "root": str(root()),
-                "phase": args.get("phase"), "plan_id": args.get("plan-id", args.get("plan")),
+                "phase": phase, "plan_id": plan, "plan": plan,
                 "revision": run(["git", "rev-parse", "HEAD"], root(), timeout=30).stdout.strip(), "recorded": now()})
     if inspect or not args.has("cwd-target"):
         return mode if args.has("raw") else packet

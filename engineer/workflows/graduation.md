@@ -1,6 +1,6 @@
 # graduation.md — LEARNINGS.md Cross-Phase Graduation Helper
 
-**Invoked by:** `transition.md` step `graduation_scan`. Never invoked directly by users.
+**Invoked by:** the retained phase-completion tail of `execute-phase.md`. Never invoked directly by users.
 
 This workflow clusters recurring items across the last N phases' LEARNINGS.md files and surfaces promotion candidates to the developer via HITL. No item is promoted without explicit developer approval.
 

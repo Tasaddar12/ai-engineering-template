@@ -51,7 +51,7 @@ def find(value):
     summaries = [p for p in artifacts if p.endswith("-SUMMARY.md")]
     return {"found": True, "directory": str(directory), "phase_dir": str(directory),
             "number": directory.name.split("-")[0], "phase_number": directory.name.split("-")[0],
-            "name": directory.name.split("-", 1)[-1], "artifacts": artifacts,
+            "name": directory.name.split("-", 1)[-1], "phase_name": directory.name.split("-", 1)[-1], "artifacts": artifacts,
             "plans": plans, "summaries": summaries, "plan_count": len(plans), "plan_count_all": len(plans),
             "summary_count": len(summaries), "has_context": any(p.endswith("CONTEXT.md") for p in artifacts),
             "has_research": any(p.endswith("RESEARCH.md") for p in artifacts)}

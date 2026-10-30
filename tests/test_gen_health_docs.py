@@ -58,12 +58,12 @@ class CheckWriteRoundTrip(TempHealthMd):
         self.assertEqual(0, code, err)
         code, out, err = run_gen(["--check", "--target", str(self.target)])
         self.assertEqual(0, code, err)
-        self.assertIn("up to date (37 codes, 7 repair actions)", out)
+        self.assertIn("up to date (36 codes, 6 repair actions)", out)
 
     def test_write_reports_counts(self):
         code, out, _ = run_gen(["--write", "--target", str(self.target)])
         self.assertEqual(0, code)
-        self.assertEqual(f"Wrote {self.target} — 37 error/warning/info code(s), 7 repair action(s).\n", out)
+        self.assertEqual(f"Wrote {self.target} — 36 error/warning/info code(s), 6 repair action(s).\n", out)
 
     def test_check_fails_when_the_tagged_region_is_stale(self):
         run_gen(["--write", "--target", str(self.target)])
@@ -133,7 +133,6 @@ class CheckWriteRoundTrip(TempHealthMd):
         self.assertIn("up to date", done.stdout)
         self.assertEqual(1, run("--bogus").returncode)
 
-    @unittest.expectedFailure
     def test_shipped_health_md_already_passes_check(self):
         # KNOWN DRIFT: engineer/workflows/health.md localises W010/W019/W028 descriptions
         # ("Engineer" for upstream "GSD") and rewords the generated footnote paragraph.
@@ -146,9 +145,9 @@ class RowContent(unittest.TestCase):
         region = gen.render_error_codes_region(RULES)
         return next((line for line in region.split("\n") if line.startswith(f"| {code} |")), None)
 
-    def test_37_row_table_is_34_rules_plus_3_prechecks(self):
+    def test_36_row_table_is_33_rules_plus_3_prechecks(self):
         rows = gen.build_error_code_rows(RULES)
-        self.assertEqual(37, len(rows))
+        self.assertEqual(36, len(rows))
         codes = [r["code"] for r in rows]
         for precheck in gen.PRECHECK_CODES:
             self.assertIn(precheck["code"], codes)
@@ -212,9 +211,8 @@ class RowContent(unittest.TestCase):
         region = gen.render_repair_actions_region()
         for action in gen.REMEDY_ACTION_ORDER:
             self.assertIn(f"| {action} |", region)
-        self.assertEqual(7, len(gen.REMEDY_ACTION_ORDER))
+        self.assertEqual(6, len(gen.REMEDY_ACTION_ORDER))
         self.assertEqual(set(gen.REMEDY_ACTION_ORDER), {v for k, v in hd.REMEDY_ACTION.items() if k != "ADVISE"})
-        self.assertIn("addAiIntegrationPhaseKey", region)
         self.assertTrue(region.endswith("**Not repairable (too risky):**\n- PROJECT.md, ROADMAP.md content\n- Phase directory renaming\n- Orphaned plan cleanup\n"))
 
     def test_missing_action_metadata_raises(self):

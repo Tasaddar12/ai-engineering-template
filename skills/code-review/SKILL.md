@@ -1,7 +1,7 @@
 ---
 name: code-review
 description: Review source files changed during a phase for bugs, security issues, and code quality problems
-argument-hint: "<phase-number> [--depth=quick|standard|deep] [--files file1,file2,...] [--fix [--all] [--auto]] [reviewer-lane flags]"
+argument-hint: "<phase-number> [--depth=quick|standard|deep] [--files file1,file2,...] [--fix [--all] [--auto]]"
 allowed-tools:
   - Read
   - Bash
@@ -9,7 +9,7 @@ allowed-tools:
   - Grep
   - Write
   - Agent
-requires: [config, import, phase, quick, review]
+requires: [phase, quick]
 ---
 
 <arguments>$ARGUMENTS</arguments>
@@ -31,7 +31,6 @@ Arguments:
 - `--fix` (optional) — after review completes (or if REVIEW.md already exists), auto-apply fixes found. Spawns code-fixer agent. Accepts sub-flags:
   - `--all` — include Info findings in fix scope (default: Critical + Warning only)
   - `--auto` — enable fix + re-review iteration loop, capped at 3 iterations
-- Optional reviewer-lane flags — any flag returned by `engineer_run review-lane flags` (the canonical reviewer-lane roster; e.g. `--codex`) requests that lane independently review the same already-resolved scope alongside the internal `code-reviewer` agent. Its findings are corroborating evidence only — `code-reviewer` alone verifies each claim against the actual source and writes REVIEW.md; there is exactly one REVIEW.md schema. No reviewer-lane flag (the default) reviews with only the internal agent.
 
 Output: {padded_phase}-REVIEW.md in phase directory + inline summary of findings
 </objective>
@@ -49,13 +48,6 @@ Optional flags parsed from the `<arguments>` block:
 
 Context files (CLAUDE.md, SUMMARY.md, phase state) are resolved inside the workflow via `engineer_run query init.phase-op` and delegated to agent via `<required_reading>` blocks.
 
-## Outside a phase
-
-Reviewer lanes run without a phase (`engineer_run` is defined by the runtime-launcher preamble inside workflow fences; in a plain shell call `python -I <install>/engineer/bin/engineer.py` instead): pipe canonical repo-relative file paths (one per line) to stdin of
-`engineer_run review-lane dispatch-step --repo-root <root> --depth <quick|standard|deep> --base-sha <sha> --run-dir "$(mktemp -d)" --cap-id code-review --point execute:post --explicit <slugs> --raw`.
-`review-lane` flags are space-separated (`--depth quick`), never `--flag=value`. `--explicit` (omitted, nothing dispatches yet the call exits ok), `--depth`, `--base-sha` (lane reviews changes relative to it; commit them first) and stdin paths are required; `--run-dir` should be a fresh temp dir (default `.` writes the prompt file into the current directory); read each lane's output path (`results[].reviewPath`) from the JSON before removing it. `--cap-id`/`--point` select the `code-review` capability, which must be enabled (`workflow.code_review`) and active at `--point` — `execute:post`, or `execute:wave:post` when `workflow.code_review_point` selects it; otherwise nothing dispatches.
-`--explicit` takes comma-separated canonical slugs, no spaces, not flag aliases; slugs: first column of `engineer_run review-lane sections` (`review-lane flags` lists flags/aliases).
-Each lane declares its own model key, which is not always its slug; see the `review.models.*` table in `docs/CONFIGURATION.md`. Unset = lane default model.
 </context>
 
 <process>

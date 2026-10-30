@@ -66,11 +66,9 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 PHASE_ARG="${1}"
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.phase-op ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} "${PHASE_ARG}")
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_FIXER=$(engineer_run query agent-skills code-fixer ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
-AGENT_SKILLS_REVIEWER=$(engineer_run query agent-skills code-reviewer ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
+INIT=$(engineer_run query init.phase-op  "${PHASE_ARG}")
+AGENT_SKILLS_FIXER=$(engineer_run query agent-skills code-fixer )
+AGENT_SKILLS_REVIEWER=$(engineer_run query agent-skills code-reviewer )
 # Resolve the routed models so model_overrides / models.<phaseType> are honored
 # (code-reviewer → "verification", code-fixer → "execution"); thread them below.
 REVIEWER_MODEL=$(engineer_run query resolve-model code-reviewer --raw)
@@ -126,25 +124,6 @@ FIX_REPORT_PATH="${PHASE_DIR}/${PADDED_PHASE}-REVIEW-FIX.md"
 ```
 </step>
 
-<step name="check_config_gate">
-Check if code review is active via the capability registry:
-
-```bash
-EXECUTE_POST_HOOKS_JSON=$(engineer_run loop render-hooks execute:post --raw)
-```
-
-Resolve active step hooks from `EXECUTE_POST_HOOKS_JSON` where `kind == "step"` and `ref.skill == "code-review"`.
-
-If no active code-review step hook exists:
-```
-Code review fix skipped (code-review capability inactive)
-```
-Exit workflow.
-
-Default is active through the Capability Registry schema — only skip when the registry resolves no active code-review step hook. This check runs AFTER phase validation so invalid phase errors are shown first.
-
-Note: This reuses the code-review capability activation rather than introducing a separate code-review-fix capability. Rationale: fixes are meaningless without review, so a single activation boundary makes sense. If independent control is needed later, a separate key can be added in v2.
-</step>
 
 <step name="check_review_exists">
 Verify that REVIEW.md exists:
@@ -271,16 +250,16 @@ if [ "$AUTO_MODE" = "true" ]; then
 
   while [ $ITERATION -lt $MAX_ITERATIONS ]; do
     ITERATION=$((ITERATION + 1))
-    
+
     echo ""
     echo "═══════════════════════════════════════════════════════"
     echo "  --auto: Starting iteration ${ITERATION}/${MAX_ITERATIONS}"
     echo "═══════════════════════════════════════════════════════"
     echo ""
-    
+
     # Re-review using same depth and file scope as original review
     echo "Re-reviewing phase ${PHASE_ARG} at ${REVIEW_DEPTH} depth..."
-    
+
     # Backup previous REVIEW.md and REVIEW-FIX.md before overwriting
     if [ -f "${REVIEW_PATH}" ]; then
       cp "${REVIEW_PATH}" "${REVIEW_PATH%.md}.iter${ITERATION}.md" 2>/dev/null || true
@@ -288,7 +267,7 @@ if [ "$AUTO_MODE" = "true" ]; then
     if [ -f "${FIX_REPORT_PATH}" ]; then
       cp "${FIX_REPORT_PATH}" "${FIX_REPORT_PATH%.md}.iter${ITERATION}.md" 2>/dev/null || true
     fi
-    
+
     # If original review had explicit file list, pass it safely to re-review agent
     FILES_CONFIG=""
     if [ ${#REVIEW_FILES_ARRAY[@]} -gt 0 ]; then
@@ -298,7 +277,7 @@ if [ "$AUTO_MODE" = "true" ]; then
   - ${f}"
       done
     fi
-    
+
     # Spawn code-reviewer agent to re-review (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
     # (This overwrites REVIEW_PATH with latest review state)
     Agent(subagent_type="code-reviewer", model="{REVIEWER_MODEL}", prompt="
@@ -313,7 +292,7 @@ Re-review the phase at ${REVIEW_DEPTH} depth. Write findings to ${REVIEW_PATH}.
 Do NOT commit the output — the orchestrator handles that.
 ${AGENT_SKILLS_REVIEWER}")
     # ORCHESTRATOR RULE — CODEX RUNTIME: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result before proceeding.
-    
+
     # Check new REVIEW.md status
     NEW_STATUS=$(REVIEW_PATH="${REVIEW_PATH}" engineer_run query review.field --report "$REVIEW_PATH" --field status --default unknown --raw 2>/dev/null)
     
@@ -324,10 +303,10 @@ ${AGENT_SKILLS_REVIEWER}")
       echo "✓ All issues resolved after iteration ${ITERATION}."
       break
     fi
-    
+
     # Still has issues — spawn fixer again (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
     echo "Issues remain. Applying fixes for iteration ${ITERATION}..."
-    
+
     Agent(subagent_type="code-fixer", model="{FIXER_MODEL}", prompt="
 <required_reading>
 ${REVIEW_PATH}
@@ -345,14 +324,14 @@ iteration: ${ITERATION}
 Read REVIEW.md findings, apply fixes, commit each atomically, write REVIEW-FIX.md (overwrite previous). Do NOT commit REVIEW-FIX.md.
 ${AGENT_SKILLS_FIXER}")
     # ORCHESTRATOR RULE — CODEX RUNTIME: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result before proceeding.
-    
+
     # Check if fixer succeeded
     if [ ! -f "${FIX_REPORT_PATH}" ]; then
       echo "Warning: Iteration ${ITERATION} fixer failed to produce fix report. Stopping auto-loop."
       break
     fi
   done
-  
+
   # After loop completes. The iteration COUNTER alone does not distinguish degradation from success:
   # a loop that converges on the final iteration exits with ITERATION == MAX_ITERATIONS and printed
   # "Reached maximum iterations. Remaining issues documented in REVIEW-FIX.md" over a run in which
@@ -398,7 +377,7 @@ if [ -f "${FIX_REPORT_PATH}" ]; then
   
   if [ "$HAS_STATUS" = "valid" ]; then
     echo "REVIEW-FIX.md created at ${FIX_REPORT_PATH}"
-    
+
     if [ "$COMMIT_DOCS" = "true" ]; then
       # --auto's re-review loop overwrote REVIEW.md each iteration
       # (auto_iteration_loop), but the only prior REVIEW.md commit is the

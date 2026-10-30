@@ -67,60 +67,20 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
-TDD_MODE=${TDD_MODE:-$(engineer_run loop render-hooks execute:post --active-cap tdd)}
-# This file is Read, not textually substituted - write the parent command's original argument string in place of $ARGUMENTS so --ws reaches the query.
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-VERIFIER_SKILLS=$(engineer_run query agent-skills verifier ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
+TDD_MODE=$(engineer_run query config-get workflow.tdd_mode --raw)
+VERIFIER_SKILLS=$(engineer_run query agent-skills verifier )
 CONTEXT_WINDOW=$(engineer_run query config-get context_window --raw 2>/dev/null || echo "200000")
-PHASE_GOAL=$(engineer_run query roadmap.get-phase "${PHASE_NUMBER}" ${ENGINEER_WS:+--ws} ${ENGINEER_WS:+"${ENGINEER_WS##*[[:space:]]}"} --pick goal)
+PHASE_GOAL=$(engineer_run query roadmap.get-phase "${PHASE_NUMBER}"  --pick goal)
 ```
 </step>
 
 <step name="verify_post_security_gate">
-**`verify:post` hook dispatch and the SECURITY threats-open gate.** This runs BEFORE the verifier
-writes (and fingerprints) the report, so the dispatch takes no `--after-fingerprint` — nothing is
-fingerprinted yet, and gating on it here would be a no-op by construction (the allowlisted exception
-in `scripts/lint-verify-lifecycle-writes.allowlist.json`).
-
-```bash
-VERIFY_POST_HOOKS_JSON=$(engineer_run loop render-hooks verify:post --raw)
-SECURITY_FILE=$(ls "${PHASE_DIR}"/*-SECURITY.md 2>/dev/null | head -1)
-```
-
-Dispatch every `kind == "step"` hook per @~/.claude/engineer/references/loop-hook-dispatch.md (skip when none). The secure-phase routing below applies when that specific hook is active.
-
-If no active secure-phase step hook exists: skip.
-
-If an active secure-phase step hook exists AND `SECURITY_FILE` is empty (no SECURITY.md yet):
-Include in the next-steps routing output:
-```
-⚠ Security enforcement enabled — run before advancing:
-  /secure-phase {PHASE} ${ENGINEER_WS}
-```
-
-If an active secure-phase step hook exists AND SECURITY.md exists: check frontmatter `threats_open`. If > 0:
-```
-⚠ Security gate: {threats_open} threats open
-  /secure-phase {PHASE} — resolve before advancing
-```
+Read `workflow.security_enforcement` and `workflow.nyquist_validation` directly with `config-get`.
+When enabled, run `/secure-phase {PHASE}` and `/validate-phase {PHASE}` before the verifier fingerprints its report. Require their SECURITY.md and VALIDATION.md artifacts; a failed dispatch or missing required artifact blocks advancement. Always inspect existing SECURITY.md: `threats_open > 0` blocks advancement, even if enforcement is disabled.
 </step>
 
 <step name="code_review_gate" required="true">
-**This step is REQUIRED to evaluate the capability hook.** When the code-review capability is active, auto-invoke code review on the phase's source changes. Advisory only — never blocks execution flow. Also dispatches advisory execute:post gate hooks (e.g. tdd.review-checkpoint).
-
-**Capability gate:**
-```bash
-EXECUTE_POST_HOOKS_JSON=${EXECUTE_POST_HOOKS_JSON:-$(engineer_run loop render-hooks execute:post --raw)}
-```
-
-Dispatch `kind == "step"` hooks per @~/.claude/engineer/references/loop-hook-dispatch.md. `ref.skill == "code-review"`:
-
-If no active code-review step hook exists: display "Code review skipped (code-review capability inactive)" and proceed to gate dispatch.
-
-**Invoke review:**
-```
-Skill(skill="${ref.skill}", args="${PHASE_NUMBER}")
-```
+Read `workflow.code_review` directly with `config-get`. When true, invoke the independent internal reviewer through `Skill(skill="code-review", args="${PHASE_NUMBER}")` and wait for its result. When false, record that automatic review was skipped.
 
 **Report the review, and record what happened to each finding.** Read and execute `engineer/workflows/execute-phase/steps/code-review-disposition.md`.
 It parses REVIEW.md's frontmatter, states the per-severity counts, and writes
@@ -128,19 +88,18 @@ It parses REVIEW.md's frontmatter, states the per-severity counts, and writes
 distinguishable downstream from a forgotten one. It consumes `PHASE_DIR` and `PHASE_NUMBER`, and is
 advisory throughout: it never blocks.
 
-**Error handling:** If the Skill invocation fails or throws, catch the error, display "Code review encountered an error (non-blocking): {error}" and proceed to gate dispatch. Review failures must never block execution.
+**Error handling:** Report unavailable review and preserve the missing evidence for the coordinator.
 
-**Execute:post gate hook dispatch.** After code review, dispatch all active gate hooks from `EXECUTE_POST_HOOKS_JSON` where `kind == "gate"`. ⚠ **Validate `check` before shell use** (third-party manifest input; wherever `${hook.check.query}` appears, write the dot-normalized query, each `.` as `-`, and validate and pass that same value) — `loop-hook-dispatch.md` § `gate`. For each, run the form below, or — for a `predicate` gate — `engineer_run check predicate --predicate '<predicate JSON>' --phase-dir "${PHASE_DIR}" --phase-number "${PHASE_NUMBER}" --raw`:
+Run the registered direct TDD gate and retain its result for the escalation below. A failed command or unreadable result cannot establish the gate:
 
 ```bash
-GATE_RESULT=$(engineer_run check ${hook.check.query} "${PHASE_NUMBER}" --raw) && CHECK_EXIT=0 || CHECK_EXIT=$?
+GATE_RESULT=$(engineer_run query tdd.review-checkpoint "${PHASE_NUMBER}" --raw) || { echo "TDD review checkpoint unavailable; preserve the diagnostic and stop." >&2; exit 1; }
+GATE_BLOCK=$(engineer_run query json.get --payload "$GATE_RESULT" --field block --raw) || exit $?
 ```
 
-`${hook.check.query}` is deliberately left unquoted: it is a multi-word query (verb plus flags) that must word-split, and it is safe only because it is charset-validated first per `loop-hook-dispatch.md` § `gate`.
+Use the parsed `$GATE_BLOCK` as `GATE_RESULT.block` below.
 
-**Gate evaluation** uses the same two-step contract as the `execute:wave:post` gates (`execute-phase/steps/wave-post-gate-hooks.md`).
-
-**TDD review escalation (overrides the advisory default for the `tdd.review-checkpoint` gate only).** The tdd `execute:post` gate is declared `blocking: false`, so by the generic contract above it displays its `message`/table and continues. There is ONE documented exception (see `engineer/references/tdd.md`): when `TDD_MODE=true` AND `GATE_RESULT.block == true` (one or more TDD plans miss a RED or GREEN gate commit, or have no GREEN commit that follows a RED commit — `reason: green_before_red`), the end-of-phase TDD review escalates from advisory to **blocking under TDD** — refuse to mark the phase complete and present:
+**TDD review escalation.** See `engineer/references/tdd.md`: when `TDD_MODE=true` AND `GATE_RESULT.block == true` (one or more TDD plans miss a RED or GREEN gate commit, or have no GREEN commit that follows a RED commit — `reason: green_before_red`), the end-of-phase TDD review escalates from advisory to **blocking under TDD** — refuse to mark the phase complete and present:
 
 ```
 Phase blocked: {N} TDD plan(s) violate the RED→GREEN gate sequence under TDD.

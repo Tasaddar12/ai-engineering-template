@@ -71,16 +71,12 @@ Before editing ANY file for a finding, establish safe rollback capability.
 **Rollback Protocol:**
 
 1. **Record files to touch:** Note each file path in `touched_files` before editing anything.
-
 2. **Apply fix:** Use Edit tool (preferred) for targeted changes.
-
 3. **Verify fix:** Apply 3-tier verification strategy (see verification_strategy).
-
 4. **On verification failure:**
    - Run `git checkout -- {file}` for EACH file in `touched_files`.
    - This is safe: the fix has NOT been committed yet (commit happens only after verification passes). `git checkout --` reverts only the uncommitted in-progress change for that file and does not affect commits from prior findings.
    - **DO NOT use Write tool for rollback** — a partial write on tool failure leaves the file corrupted with no recovery path.
-
 5. **After rollback:**
    - Re-read the file and confirm it matches pre-fix state.
    - Mark finding as "skipped: fix caused errors, rolled back".

@@ -115,22 +115,20 @@ Use conventional commit format: `fix:`, `feat:`, `docs:`, `chore:`, `refactor:` 
 </step>
 
 <step name="log_to_state">
-If `.planning/STATE.md` exists and has a "Quick Tasks Completed" table, append a row
-that matches the existing table's schema via the schema-backed `engineer_run
-quick-tasks-append` helper (`markdown-table.cjs`'s `appendQuickTaskRow`).
-If no table exists, skip silently. If the table's schema is
-unrecognized, the helper fails loud (non-zero exit) instead of silently guessing
-a column count.
+After the task's change has been verified and committed, create its canonical quick record and complete that returned identity. Inspect and report persistence errors; do not report an unfinished task as complete.
+Run `quick-tasks-migrate` first to import legacy table rows into canonical QUICK.md records without changing the source table. After `quick.update` marks this task complete, append the history row through `quick-tasks-append` using the id and slug derived from the returned directory.
 
 ```bash
-# Detect whether STATE.md has a Quick Tasks Completed table
-if grep -q "Quick Tasks Completed" .planning/STATE.md 2>/dev/null; then
-  # Bring a legacy pre-registry table onto the canonical schema BEFORE
-  # appending — silent no-op when already canonical, so this runs harmlessly
-  # on every fast task and migrates exactly once, on the first.
-  engineer_run quick-tasks-migrate || true
-  engineer_run quick-tasks-append --task "$TASK" || echo "⚠ fast.md log_to_state: could not append Quick Tasks row (see message above); continuing."
-fi
+engineer_run quick-tasks-migrate || exit $?
+FAST_RECORD=$(engineer_run query quick.create "$TASK") || exit $?
+FAST_QUICK_ID=$(engineer_run query json.get --payload "$FAST_RECORD" --field quick_id --raw) || exit $?
+FAST_DIRECTORY=$(engineer_run query json.get --payload "$FAST_RECORD" --field directory --raw) || exit $?
+FAST_SLUG=${FAST_DIRECTORY##*/}
+FAST_SLUG=${FAST_SLUG#*-}
+[ -n "$FAST_QUICK_ID" ] || { echo "ERROR: quick.create returned no task id" >&2; exit 1; }
+FAST_COMMIT=$(git rev-parse HEAD) || exit $?
+engineer_run query quick.update "$FAST_QUICK_ID" --status complete --commit "$FAST_COMMIT" || exit $?
+engineer_run quick-tasks-append --quick-id "$FAST_QUICK_ID" --slug "$FAST_SLUG" --task "$TASK" --status complete || exit $?
 ```
 </step>
 

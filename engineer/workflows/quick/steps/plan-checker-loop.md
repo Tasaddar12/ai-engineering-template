@@ -96,7 +96,7 @@ replacement path.
 - Requirement coverage: Does the plan address the task description?
 - Task completeness: Do tasks have files, action, verify, done fields?
 - Key links: Are referenced files real?
-- Verify-command path resolvability: act on the `<verify_command_path_probe>` verdicts above 
+- Verify-command path resolvability: act on the `<verify_command_path_probe>` verdicts above
 - Scope sanity: Is this appropriately sized for a quick task (1-3 tasks)?
 - must_haves derivation: Are must_haves traceable to the task description?
 
@@ -136,7 +136,6 @@ Display: `Sending back to planner for revision... (iteration ${N}/2)`
 
 Revision prompt:
 
-Reuse the `PLAN_PRE_HOOKS_JSON` snapshot captured by Quick Step 5; do not render hooks again.
 
 ```markdown
 <revision_context>
@@ -148,7 +147,6 @@ Reuse the `PLAN_PRE_HOOKS_JSON` snapshot captured by Quick Step 5; do not render
 
 ${AGENT_SKILLS_PLANNER}
 
-{For each active entry in `PLAN_PRE_HOOKS_JSON` where `kind == "contribution"` and `into == "planner"` (in array order): inject the entry's `fragment.inline` verbatim here, plus its resolved `configValues` when the entry carries them. If no active planner contributions exist, omit this block entirely.}
 
 **Checker issues:** ${structured_issues_from_checker}
 
@@ -189,8 +187,6 @@ amend the constraint itself. Every option resolves the conflict. Accepting the p
 blocker still open is NOT offered here — the blocking `required_property` still fails, and that
 choice belongs to the max-iteration escalation below, which is unchanged.
 
-A quick task has no REVIEWS.md and no phase, so `workflow.plan_review_convergence` has nothing to
-arbitrate over here; the user is the only route. `plan-phase` is where the convergence hand-off
 lives.
 
 Re-spawn the planner with the chosen resolution, then **re-evaluate its return from the top of

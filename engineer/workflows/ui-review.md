@@ -63,11 +63,9 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
 fi
 RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --default "" 2>/dev/null || echo "")
-PHASE_ARG=$(echo "$ENGINEER_ARGS" | sed -E 's/--ws[[:space:]]+[A-Za-z0-9._-]+//g' | xargs)
-ENGINEER_WS=$(echo " $ENGINEER_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(engineer_run query init.phase-op ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }} "${PHASE_ARG}")
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_UI_REVIEWER=$(engineer_run query agent-skills ui-auditor ${ENGINEER_WS:+--ws=${ENGINEER_WS##* }})
+PHASE_ARG=$(echo "$ENGINEER_ARGS" | xargs)
+INIT=$(engineer_run query init.phase-op  "${PHASE_ARG}")
+AGENT_SKILLS_UI_REVIEWER=$(engineer_run query agent-skills ui-auditor )
 # workflow.ui_interaction_capture (default false): read here and handed to the auditor
 # through its <config> block — the agent carries no engineer_run resolver of its own.
 INTERACTION_CAPTURE=$(engineer_run query config-get workflow.ui_interaction_capture --raw 2>/dev/null || echo "false")

@@ -335,6 +335,8 @@ def apply_updates(data,updates):
         if set(normalized)-MUTABLE:
             raise Failure('immutable-or-unknown-batch-field',','.join(sorted(set(normalized)-MUTABLE)),2)
         item = indexed[identifier]
+        if item.get('completionTransaction') and any(item.get(k) != v for k, v in normalized.items()):
+            raise Failure('completion-recovery-required', 'Resume the recorded completion before changing the item')
         if item['status'] in ACTIVE | {'merged','complete'} and any(key in normalized and item.get(key) != normalized[key] for key in ('dependsOn','plannedFiles','deletedFiles')):
             raise Failure('executing-item-scope-immutable',identifier)
         if item['status'] == 'complete' and any(item.get(k) != v for k,v in normalized.items()):
@@ -397,36 +399,18 @@ def reconcile(data):
 
 
 def recover_completions(data):
-    """Finish only an interrupted, already-recorded completion transaction."""
-    from .planning import safe, section
-    content = read(safe(records.planning()/'STATE.md'))
-    found = section(content,'### Quick Tasks Completed')
-    if not found:
-        return []
-    lines = [v for v in content[found[1]:found[2]].splitlines() if v.startswith('|')]
-    if len(lines) < 3:
-        return []
-    headers = [v.strip() for v in re.split(r'(?<!\\)\|',lines[0])[1:-1]]
-    rows = []
-    for line in lines[2:]:
-        values = [v.strip() for v in re.split(r'(?<!\\)\|',line)[1:-1]]
-        if len(values) == len(headers):
-            rows.append(dict(zip(headers,values)))
+    """Replay durable batch completion intents against authoritative QUICK.md records."""
     transitions = []
     for item in data['items']:
-        if item['status'] in TERMINAL:
+        transaction = item.get('completionTransaction')
+        if item['status'] in TERMINAL or not transaction:
             continue
-        relative = Path(item['directory']).relative_to(root()).as_posix()
-        matches = [row for row in rows if relative in row.get('Directory','')]
-        if not matches:
-            continue
-        if len(matches) != 1:
-            raise Failure('ambiguous-completion-row',item['quickId'])
-        recorded = matches[0].get('Commit','').strip('` ')
-        revision,_ = evidence(item,data,recorded)
-        records.quick(Args([item['quickId'],'--status','complete','--commit',revision]),'update')
-        transitions.append({'quickId':item['quickId'],'from':item['status'],'to':'complete','reason':'recovered existing completion row','commit':revision})
-        item.update(status='complete',commit=revision,completed=now())
+        revision, _ = evidence(item, data, transaction['commit'])
+        records.quick(Args([item['quickId'], '--status', 'complete', '--commit', revision]), 'update')
+        transitions.append({'quickId': item['quickId'], 'from': item['status'], 'to': 'complete',
+                            'reason': 'recovered durable completion transaction', 'commit': revision})
+        item.update(status='complete', commit=revision, completed=transaction['at'])
+        item.pop('completionTransaction')
     return transitions
 
 
@@ -446,35 +430,16 @@ def complete(args,path,data):
     revision,summary = evidence(item,data,args.get('commit'))
     if any(next(v for v in data['items'] if v['quickId'] == dep)['status'] != 'complete' for dep in item.get('dependsOn',[])):
         raise Failure('batch-dependencies-incomplete',identifier)
-    from .planning import safe, section, replace_section, cell
-    state_path = safe(records.planning()/'STATE.md')
-    content = read(state_path)
-    if not state_path.is_file():
-        raise Failure('state-not-found',str(state_path))
-    heading = '### Quick Tasks Completed'
-    found = section(content,heading)
-    block = content[found[1]:found[2]] if found else ''
-    directory = Path(item['directory']).relative_to(root()).as_posix()
-    existing = [line for line in block.splitlines() if line.startswith('|') and directory in line]
-    if existing and not any(revision in line or revision[:7] in line for line in existing):
-        raise Failure('quick-state-row-conflict',identifier)
-    if not existing:
-        rows = [line for line in block.splitlines() if line.startswith('|')]
-        if len(rows) < 2:
-            rows = ['| # | Description | Date | Commit | Directory | Status |','|---|---|---|---|---|---|']
-        headers = [v.strip() for v in re.split(r'(?<!\\)\|',rows[0])[1:-1]]
-        date = args.get('date',now()[:10])
-        if not re.fullmatch(r'\d{4}-\d{2}-\d{2}',str(date)):
-            raise Failure('invalid-completion-date',str(date),2)
-        values = {'#':identifier,'Description':item['description'],'Task':item['description'],'Date':date,'Commit':revision,
-                  'Directory':'['+Path(directory).name+']('+directory+')','Status':'complete'}
-        if set(headers)-set(values):
-            raise Failure('unsupported-quick-table-columns',str(set(headers)-set(values)))
-        narrative = '\n'.join(v for v in block.splitlines() if not v.startswith('|'))
-        row = '| '+' | '.join(cell(values[key]) for key in headers)+' |'
-        write(state_path,replace_section(content,heading,narrative+'\n\n'+'\n'.join([*rows,row])))
-    # Persisting the state row first is intentional: a crash resumes through the exact row above.
-    records.quick(Args([identifier,'--status','complete','--commit',revision]),'update')
+    date = args.get('date', now()[:10])
+    if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', str(date)):
+        raise Failure('invalid-completion-date', str(date), 2)
+    transaction = item.get('completionTransaction')
+    if transaction and transaction['commit'] != revision:
+        raise Failure('quick-completion-conflict', identifier)
+    item['completionTransaction'] = transaction or {'commit': revision, 'at': now()}
+    write_json(path, data)
+    records.quick(Args([identifier, '--status', 'complete', '--commit', revision]), 'update')
+    item.pop('completionTransaction')
     item.setdefault('history',[]).append({'at':now(),'from':item['status'],'to':'complete','commit':revision,'summary':str(summary)})
     item.update(status='complete',commit=revision,completed=now())
     data['status'] = 'complete' if all(v['status'] in TERMINAL for v in data['items']) else 'pending'

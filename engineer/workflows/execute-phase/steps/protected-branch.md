@@ -1,4 +1,4 @@
-# Protected-branch warning for `branching_strategy: none` 
+# Protected-branch warning for `branching_strategy: none`
 
 Run this from the `handle_branching` step's `"none"` arm, after deciding to
 continue on the current branch. It warns without refusing execution — the
