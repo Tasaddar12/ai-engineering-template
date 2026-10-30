@@ -82,9 +82,11 @@ QUICK_BATCH_WORKTREE_MANIFEST=$(engineer_run query json.get --payload "$QB_WORKT
    purely status/dependency-derived; it does NOT know an item already
    finished executing. A coordinator crash between this step returning
    (executor committed, `SUMMARY.md` written) and Step 7's merge leaves
-   `BATCH.json` at `pending` with no STATE.md row yet (that row is written
-   only in Step 9) — so on `--resume`, such an item still comes back
-   `eligible` here. Before computing `spawn-plan`, determine which eligible
+   `BATCH.json` at `pending`; completion has not run, so the task's `QUICK.md`
+   also remains unchanged. On `--resume`, such an item still comes back
+   `eligible` here. Separately, if Step 9 is interrupted after writing a
+   `completionTransaction`, resume replays that durable intent against the
+   `QUICK.md` record after rechecking completion evidence. Before computing `spawn-plan`, determine which eligible
    items already have `${item_dir}/${quick_id}-SUMMARY.md` on disk (same
    `item_dir` derivation via `generate-slug` every other step uses), then
    let the PURE `quick-batch filter-executed` verb
@@ -199,7 +201,7 @@ NODE
    - Create summary at: ${ITEM_DIR_REL}/${quick_id}-SUMMARY.md with `status: complete` in frontmatter
    - NEVER invoke /quick or any other Engineer command — you are a leaf, not a coordinator
    - NEVER write .planning/quick-batches/${BATCH_ID}/BATCH.json
-   - Do NOT update STATE.md or ROADMAP.md — the orchestrator owns those writes after every item in this dispatch round completes
+   - Do NOT update shared STATE.md or ROADMAP.md; quick-batch completion is tracked in BATCH.json and each task's QUICK.md
    - Commit this assigned SUMMARY.md with status complete before returning. Completion requires source and SUMMARY committed in this attempt. Do NOT modify shared STATE.md, ROADMAP.md, REQUIREMENTS.md or config; the coordinator owns those records.
    </constraints>
    ",
