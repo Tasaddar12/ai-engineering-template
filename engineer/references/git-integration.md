@@ -260,31 +260,26 @@ Each plan produces 2-4 commits (tasks + metadata). Clear, granular, bisectable.
 
 For workspaces with separate git repos (e.g., `backend/`, `frontend/`, `shared/`), Engineer routes commits to each repo independently.
 
-### Configuration
+### Repository Discovery and Targeting
 
-In `.planning/config.yaml`, list sub-repo directories under `planning.sub_repos`:
-
-```json
-{
-  "planning": {
-    "commit_docs": false,
-    "sub_repos": ["backend", "frontend", "shared"]
-  }
-}
-```
-
-Set `commit_docs: false` so planning docs stay local and are not committed to any sub-repo.
+During `/new-project`, `init.new-project` reports Git submodule paths listed in
+`.gitmodules` as `sub_repos_detected`. For a commit, pass a selected repository
+explicitly with `--subrepo <path>`. If that option is omitted,
+`commit-to-subrepo` scans immediate child directories of the workspace for a
+`.git` file or directory (excluding `.worktrees`, `.claude`, and `.codex`) and
+validates each repository root. This scan runs against the current filesystem;
+there is no persisted `sub_repos` configuration list.
 
 ### How It Works
 
-1. **Auto-detection:** During `/new-project`, directories with their own `.git` folder are detected and offered for selection as sub-repos. On subsequent runs, `loadConfig` auto-syncs the `sub_repos` list with the filesystem — adding newly created repos and removing deleted ones. This means `config.json` may be rewritten automatically when repos change on disk.
+1. **Discovery:** `init.new-project` reports registered Git submodules; `commit-to-subrepo` uses an explicit `--subrepo` path or scans immediate child directories at invocation.
 2. **File grouping:** Code files are grouped by their sub-repo prefix (e.g., `backend/src/api/users.ts` belongs to the `backend/` repo).
 3. **Independent commits:** Each sub-repo receives its own atomic commit via `engineer_run commit-to-subrepo`. File paths are made relative to the sub-repo root before staging.
 4. **Planning stays local:** The `.planning/` directory is not committed; it acts as cross-repo coordination.
 
 ### Commit Routing
 
-Instead of the standard `commit` command, use `commit-to-subrepo` when `sub_repos` is configured:
+Use `commit-to-subrepo` when files should be committed to their owning child repository:
 
 ```bash
 engineer_run query commit-to-subrepo "feat(02-01): add user API" \

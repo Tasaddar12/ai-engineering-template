@@ -1,5 +1,5 @@
 <purpose>
-Validate `.planning/` directory integrity and report actionable issues. Checks for missing files, invalid configurations, inconsistent state, and orphaned plans. Optionally repairs auto-fixable issues.
+Validate `.planning/` directory integrity and report actionable issues. The current runtime checks required planning records, loads `.planning/config.yaml`, and checks phase names and plan/summary pairing. It reports structural findings without rewriting records.
 </purpose>
 
 <required_reading>
@@ -7,6 +7,9 @@ Read all files referenced by the invoking prompt's execution_context before star
 </required_reading>
 
 <process>
+
+**Runtime behavior:** `validate.health` reads the canonical YAML config through `config.load`. A missing config is reported as a `missing-record`; malformed YAML or unsupported values are returned with the runtime failure code and message. The current command is structural-only: `--repair` and `--backfill` are refused with `health-repair-requires-planning-review` and make no changes. The diagnostic-code and repair-action tables below describe retained `health_diagnostic.py` metadata, which still models upstream JSON `config.json` behavior; those codes and actions are not the response format of current `validate.health`.
+
 ```bash
 _ENGINEER_SHIM_NAME="engineer_run"; _ENGINEER_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; ENGINEER_TOOLS="${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}"; _engineer_at() { for _p; do if [ -f "$_p" ]; then ENGINEER_TOOLS="$_p"; return 0; fi; done; return 1; }; _engineer_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"engineer-runtime"'*'}') return 0;; *) return 1;; esac; }; _engineer_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _engineer_at "$_h/engineer/bin/${_ENGINEER_SHIM_NAME}" && return 0; done; return 1; }; if _engineer_at "${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.claude/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.codex/engineer/bin/${_ENGINEER_SHIM_NAME}"; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif _engineer_homes; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif unset -f engineer_run; _G="$(command -v engineer_run)"; [ -n "$_G" ] && _engineer_id_ok "$_G"; then ENGINEER_TOOLS="$_G"; engineer_run() { "$ENGINEER_TOOLS" "$@"; }; else echo "ERROR: engineer_run not found at $ENGINEER_TOOLS and no identity-proving engineer_run is on PATH. Run: python -I bin/install.py --source <local-source> --ref <pinned-ref> --target <project-root> --host claude --local" >&2; exit 1; fi; ENGINEER_IDENTITY_STATUS=unverified; _engineer_id_ok engineer_run && ENGINEER_IDENTITY_STATUS=ok; export ENGINEER_IDENTITY_STATUS; [ "$ENGINEER_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$ENGINEER_TOOLS\" did not prove it is engineer-runtime - it is either a different package or an engineer-runtime older than the runtime-identity verb." >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${ENGINEER_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${ENGINEER_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
 RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --default "" 2>/dev/null || echo "")
@@ -75,11 +78,13 @@ engineer_run query validate.health $REPAIR_FLAG $BACKFILL_FLAG
 
 Parse JSON output:
 - `status`: "healthy" | "degraded" | "broken"
-- `errors[]`: Critical issues (code, message, fix, repairable)
-- `warnings[]`: Non-critical issues
-- `info[]`: Informational notes
-- `repairable_count`: Number of auto-fixable issues
-- `repairs_performed[]`: Actions taken if --repair was used
+- `errors[]`: Missing required records or config load failures (`code` with `path` or `message`)
+- `warnings[]`: Phase naming mismatches or orphan summaries
+- `info[]`: Plans without summaries
+- `counts`: Error, warning, and info totals
+- `structuralOnly`: `true`
+
+If `--repair` or `--backfill` was supplied, the runtime rejects the request with `health-repair-requires-planning-review`. Display that failure and stop; do not parse it as a health report or offer an automatic repair.
 
 **Isolation compatibility check:** use the read-only inspection verb to report whether either supported worktree mode is available. Unknown or missing capability blocks write-capable dispatch; there is no opt-out.
 
@@ -120,73 +125,20 @@ Status: HEALTHY | DEGRADED | BROKEN
 Errors: N | Warnings: N | Info: N
 ```
 
-**If repairs were performed:**
-```
-## Repairs Performed
-
-- ✓ config.json: Created with defaults
-- ✓ STATE.md: Regenerated from roadmap
-```
-
 **If errors exist:**
 ```
 ## Errors
 
-- [E001] config.json: JSON parse error at line 5
-  Fix: Run /health --repair to reset to defaults
+- [missing-record] .planning/PROJECT.md is missing
+  Fix: Create the project through `/new-project`.
 
-- [E002] PROJECT.md not found
-  Fix: Run /new-project to create
+- [invalid-yaml] <runtime message>
+  Fix: Correct `.planning/config.yaml` and rerun `/health`.
 ```
 
-**If warnings exist:**
-```
-## Warnings
+**If warnings exist:** report the phase directory or orphan summary path returned by the runtime. **If info exists:** report the plan path without its SUMMARY.md; it may be unexecuted or in progress.
 
-- [W002] STATE.md references phase 5, but only phases 1-3 exist
-  Fix: Review STATE.md manually before changing it; repair will not overwrite an existing STATE.md
-
-- [W005] Phase directory "1-setup" doesn't follow NN-name format
-  Fix: Rename to match pattern (e.g., 01-setup)
-```
-
-**If info exists:**
-```
-## Info
-
-- [I001] 02-implementation/02-01-PLAN.md has no SUMMARY.md
-  Note: May be in progress
-```
-
-**Footer (if repairable issues exist and --repair was NOT used):**
-```
----
-N issues can be auto-repaired. Run: /health --repair
-```
-</step>
-
-<step name="offer_repair">
-**If repairable issues exist and --repair was NOT used:**
-
-Ask user if they want to run repairs:
-
-```
-Would you like to run /health --repair to fix N issues automatically?
-```
-
-If yes, re-run with --repair flag and display results.
-</step>
-
-<step name="verify_repairs">
-**If repairs were performed:**
-
-Re-run health check without --repair to confirm issues are resolved:
-
-```bash
-engineer_run query validate.health
-```
-
-Report final status.
+Do not report automatic repairs: the current `validate.health` command is structural-only and refuses `--repair`/`--backfill` without changing files.
 </step>
 
 </process>
@@ -231,7 +183,7 @@ Report final status.
 | I001 | info | Plan without SUMMARY (may be in progress) | No |
 | I010 | info | Resolved CWD reported alongside the E010 home-directory guard | No |
 
-This table describes the retained Python health metadata: 36 diagnostic codes and 6 repair actions. `engineer/bin/lib/health_diagnostic_rules.py` owns the diagnostic catalog. Keep the tables synchronized with that metadata when changing a code or repair action. W025 is the workflow-layer mandatory-isolation diagnostic above.
+This table describes retained upstream Python health metadata: 36 diagnostic codes and 6 repair actions. Its JSON config diagnostics are not emitted by the current structural-only `validate.health` command. `engineer/bin/lib/health_diagnostic_rules.py` owns the diagnostic catalog. Keep the tables synchronized with that metadata when changing a code or repair action. W025 is the workflow-layer mandatory-isolation diagnostic above.
 
 </error_codes>
 

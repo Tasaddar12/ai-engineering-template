@@ -8,7 +8,7 @@ This workflow clusters recurring items across the last N phases' LEARNINGS.md fi
 
 ## Configuration
 
-Read from project config (`config.json`):
+Read from project config (`.planning/config.yaml`):
 
 | Key | Default | Description |
 |-----|---------|-------------|

@@ -165,10 +165,12 @@ class MarkdownScan(unittest.TestCase):
 
 
 class InlineHelpers(RuntimeCase):
-    def run_code(self, code, *argv, stdin="", status=0, encoding=None):
+    def run_code(self, code, *argv, stdin="", status=0, encoding=None, isolated=False, environment=None):
         # Execute the actual shell-decoded documentation argument as Python argv.
-        environment = {key:value for key,value in self.env.items() if key not in ("PYTHONUTF8", "PYTHONIOENCODING")}
-        process = subprocess.run([sys.executable, "-c", code, *map(str, argv)], cwd=self.root,
+        environment = {key:value for key,value in (environment or self.env).items()
+                       if key not in ("PYTHONUTF8", "PYTHONIOENCODING")}
+        interpreter = [sys.executable, "-I", "-S"] if isolated else [sys.executable]
+        process = subprocess.run([*interpreter, "-c", code, *map(str, argv)], cwd=self.root,
                                  env=environment, input=stdin,
                                  encoding=encoding or locale.getencoding(), capture_output=True, timeout=10)
         self.assertEqual(status, process.returncode, process.stderr+"\n"+code)
@@ -256,12 +258,27 @@ class InlineHelpers(RuntimeCase):
     def test_config_and_recovery_sentinels(self):
         file = "agents/code-fixer.md"
         config = self.code(file, 'use_worktrees')
-        self.env["ENGINEER_PROJECT_DIR"] = str(self.root)
-        self.assertEqual("true", self.run_code(config).stdout)
-        self.put('.planning/config.yaml', 'workflow:\n  use_worktrees: false\n')
-        self.assertEqual("false", self.run_code(config).stdout)
-        self.put('.planning/config.yaml', 'workflow: [malformed')
-        self.assertEqual("true", self.run_code(config).stdout)
+        with tempfile.TemporaryDirectory() as directory:
+            project = Path(directory)/"project"
+            runtime = Path(directory)/"runtime"
+            planning = project/".planning"
+            planning.mkdir(parents=True)
+            bundled_lib = runtime/"engineer"/"bin"/"lib"
+            bundled_lib.mkdir(parents=True)
+            for name in ("__init__.py", "core.py", "text.py"):
+                shutil.copyfile(SOURCE/"engineer/bin/lib"/name, bundled_lib/name)
+            environment = {**self.env, "ENGINEER_PROJECT_DIR": str(project), "RUNTIME_DIR": str(runtime)}
+            config_path = planning/"config.yaml"
+            for content, expected in ((None, "true"),
+                                      ("workflow:\n  use_worktrees: false\n", "false"),
+                                      ("workflow:\n  use_worktrees: true\n", "true"),
+                                      ("workflow: [malformed", "true")):
+                if content is None:
+                    config_path.unlink(missing_ok=True)
+                else:
+                    config_path.write_text(content, encoding="utf-8")
+                result = self.run_code(config, isolated=True, environment=environment)
+                self.assertEqual(expected, result.stdout)
         sentinel = self.root/'recovery with spaces.json'
         writer = self.code(file, 'started_at')
         self.run_code(writer, sentinel, 'C:/work tree/quoted "é"', 'codex/base', 'reviewfix/01', '01')
