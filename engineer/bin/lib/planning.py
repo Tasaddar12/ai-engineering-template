@@ -1,9 +1,10 @@
 """Planning record boundaries, read-only views and explicit lifecycle helpers."""
 from __future__ import annotations
+import hashlib
 from pathlib import Path
 import re
 import stat
-from .core import Args, Failure, now, read, root
+from .core import Args, Failure, now, planning_lock, read, root, run, write
 from .text import split_frontmatter
 
 
@@ -112,6 +113,96 @@ def milestone_scope(args):
     phases = records.roadmap_phases()
     return {"milestone": records.milestone_name(), "phases": [{key: item[key] for key in ("number", "name", "goal", "depends_on", "requirements")} for item in phases],
             "phase_count": len(phases), "requirements": sorted({req for item in phases for req in item["requirements"]})}
+
+
+def annotate_dependencies(args):
+    from . import records
+    phase = records.roadmap_phase(args.need())
+    index = records.plan_index(Args([phase["number"]]))
+    external = sorted({records.number(str(dep).split("-", 1)[0]) for plan in index["plans"] for dep in plan.get("depends_on", [])
+                       if records.number(str(dep).split("-", 1)[0]) != phase["number"]})
+    if not external:
+        return {"updated": False, "phase": phase["number"], "dependencies": [], "reason": "no-cross-phase-plan-dependencies"}
+    existing = {records.number(value) for value in re.findall(r"\d+(?:\.\d+)?", phase["depends_on"])}
+    dependencies = sorted(existing | set(external), key=lambda value: tuple(map(int, value.split("."))))
+    return {**records.phase_change(Args([phase["number"], "--depends-on", ", ".join("Phase "+value for value in dependencies)]), "edit"), "dependencies": dependencies}
+
+
+def quick_append(args):
+    from . import records
+    task = args.get("task", args.arg(0))
+    if not isinstance(task, str) or not task.strip():
+        raise Failure("missing-task", "quick-tasks-append requires --task", 2)
+    identifier = args.get("quick-id")
+    task_slug = args.get("slug")
+    if identifier is not None and not re.fullmatch(r"\d+", str(identifier)):
+        raise Failure("invalid-quick-id", str(identifier), 2)
+    if task_slug is not None and not re.fullmatch(r"[A-Za-z0-9._-]+", str(task_slug)):
+        raise Failure("invalid-quick-slug", str(task_slug), 2)
+    revision = run(["git", "rev-parse", "--short", "HEAD"], root(), check=False).stdout.strip() or "uncommitted"
+    path = safe(records.planning()/"STATE.md")
+    with planning_lock():
+        content = read(path)
+        from . import markdown_table as tables
+        selected = tables._select_quick_tasks_section(content)
+        if selected is None:
+            content = replace_section(content, "### Quick Tasks Completed",
+                                      "| # | Description | Date | Commit | Status | Directory |\n| --- | --- | --- | --- | --- | --- |")
+            selected = tables._select_quick_tasks_section(content)
+        parsed = tables.parse_markdown_table(selected["body"])
+        if not parsed["ok"]:
+            raise Failure("invalid-quick-table", parsed["reason"], 2)
+        directory = "./quick/"+str(identifier)+"-"+str(task_slug)+"/" if identifier and task_slug else None
+        if directory and any(directory in row.get("Directory", "") for row in parsed["value"]["rows"]):
+            return {"added": False, "duplicate": True, "quick_id": identifier}
+        fields = {"description": task, "date": now()[:10], "commit": revision,
+                  "status": args.get("status", "complete"), "quickId": identifier,
+                  "directory": "["+str(identifier)+"-"+str(task_slug)+"]("+directory+")" if directory else "—"}
+        result = tables.append_quick_task_row(content, fields)
+        if not result["ok"]:
+            raise Failure("invalid-quick-table", result["reason"], 2)
+        row = result["value"]["row"]
+        write(path, result["value"]["content"])
+    return {"added": True, "row": row, "quick_id": identifier, "date": now()[:10], "commit": revision}
+
+
+def quick_migrate(args):
+    from . import records
+    path = safe(records.planning()/"STATE.md")
+    created, skipped = [], []
+    safe(records.planning()/"quick")
+    with planning_lock():
+        from . import markdown_table as tables
+        content = read(path)
+        selected = tables._select_quick_tasks_section(content)
+        if selected is None:
+            return {"migrated": [], "count": 0, "reason": "no-legacy-quick-table"}
+        migrated = tables.migrate_quick_tasks_table(content)
+        if not migrated["ok"]:
+            raise Failure("invalid-quick-table", migrated["reason"], 2)
+        canonical = tables._select_quick_tasks_section(migrated["value"]["content"])
+        parsed = tables.parse_markdown_table(canonical["body"])
+        if not parsed["ok"]:
+            raise Failure("invalid-quick-table", parsed["reason"], 2)
+        # The original row identifies the migration; preserve source bytes and QUICK.md authority.
+        original = [line for line in selected["body"].splitlines() if line.strip().startswith("|")][2:]
+        decoded = list(zip(original, parsed["value"]["rows"]))
+        for line, record in decoded:
+            source_id = hashlib.sha256(line.encode()).hexdigest()
+            existing = []
+            for item in (records.planning()/"quick").glob("*/QUICK.md"):
+                metadata, _ = split_frontmatter(read(safe(item)))
+                if metadata.get("migration_source") == source_id:
+                    existing.append(item)
+            if existing:
+                skipped.append(str(existing[0]))
+                continue
+            item = records.quick_create(record.get("Description", record.get("Task", "Migrated quick task")),
+                                        {"migration_source": source_id, "source": ".planning/STATE.md", "legacy_row": line,
+                                         "status": record.get("Status", "complete"), "commit": record.get("Commit", "")})
+            file = Path(item["path"])
+            created.append(str(file))
+    return {"migrated": created, "skipped": skipped, "count": len(created), "source_preserved": True}
 
 
 def smart_entry(args):

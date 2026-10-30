@@ -23,7 +23,7 @@ DEFAULTS = {
         "research": True, "plan_check": True, "verifier": True, "research_before_questions": False,
         "task_cap": 5,
         "pattern_mapping": True,
-        "drift_threshold": 3, "drift_action": "warn",
+        "drift_threshold": 3, "drift_action": "warn", "context_drift_action": "warn", "context_guard_mode": "warn",
     },
     "features": {"global_learnings": False},
     "executor": {"stall_detect_interval_minutes": 5, "stall_threshold_minutes": 10},
@@ -188,6 +188,7 @@ def validate(data):
     enums = {"mode": {"interactive", "auto", "yolo"},
              "workflow.isolation": {"auto", "harness-worktree", "orchestrator-worktree"}, "workflow.code_review_depth": {"quick", "standard", "deep"},
              "workflow.drift_action": {"warn","auto-remap"},
+             "workflow.context_drift_action": {"warn","block"}, "workflow.context_guard_mode": {"warn","auto","off"},
              "workflow.security_block_on": {"none", "low", "medium", "high", "critical"},
              "workflow.discuss_mode": {"discuss", "auto", "text"}, "workflow.human_verify_mode": {"end-of-phase", "per-task", "manual", "none"}}
     for key, allowed in enums.items():

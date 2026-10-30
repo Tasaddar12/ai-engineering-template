@@ -106,6 +106,11 @@ def registry():
         "update.changes": installation.changes,
         "stamp-codebase-map": codebase.stamp,
         "verify.codebase-drift": codebase.drift,
+        "verify.context-drift": codebase.context_drift,
+        "research-plan": research.plan, "research-store": research.store_command,
+        "classify-confidence": research.confidence,
+        "quick-tasks-append": planning.quick_append, "quick-tasks-migrate": planning.quick_migrate,
+        "roadmap.annotate-dependencies": planning.annotate_dependencies,
     }
     for action in ("add", "insert", "edit", "remove", "complete"):
         verbs["phase."+action] = lambda a, action=action: records.phase_change(a, action)
@@ -156,6 +161,8 @@ def registry():
         verbs["project."+action] = lambda a, action=action: onboarding.command(a, action)
     for action in ("capture", "recover", "list"):
         verbs["archive."+action] = lambda a, action=action: archive_service.command(a, action)
+    for action in ("put", "get", "list", "query"):
+        verbs["research-store."+action] = lambda a, action=action: research.store(a, action)
     for action in ("discussion", "research", "patterns"):
         verbs["phase."+action+"-inputs"] = lambda a, action=action: research.inputs(a, "discuss" if action == "discussion" else action)
     for action in ("prohibitions", "ui", "project", "coverage"):
@@ -208,9 +215,11 @@ def main(argv=None):
     if not values:
         return 2
     name = values.pop(0)
-    if name in ("init", "check", "verify", "verification", "frontmatter", "quick-batch", "quick", "todo", "milestone", "spec", "phase", "phases", "state", "roadmap", "worktree", "uat", "pipeline", "manager", "idea", "issue", "project", "archive", "review", "json", "security", "validation", "validate", "requirements", "update", "codebase", "handoff", "session", "pr", "planning", "cleanup", "tdd", "task", "agent", "progress") and values and not values[0].startswith("-"):
+    if name in ("init", "check", "verify", "verification", "frontmatter", "quick-batch", "quick", "todo", "milestone", "spec", "phase", "phases", "state", "roadmap", "worktree", "uat", "pipeline", "manager", "idea", "issue", "project", "archive", "research-store", "review", "json", "security", "validation", "validate", "requirements", "update", "codebase", "handoff", "session", "pr", "planning", "cleanup", "tdd", "task", "agent", "progress") and values and not values[0].startswith("-"):
         name += "."+values.pop(0)
     extra_flags = {"context"} if name in ("validate.health", "validate.context") else {"completed"} if name.startswith("worktree.") else set()
+    if name == "classify-confidence":
+        extra_flags |= {"verified"}
     args = Args(values, flags=extra_flags)
     try:
         if args.has("host"):
