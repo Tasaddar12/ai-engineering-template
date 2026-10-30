@@ -7,10 +7,10 @@ except ImportError:
 
 class PlanChecks(RuntimeCase):
     def test_structured_plan_and_multiline_frontmatter(self):
-        path = self.plan(self.phase(), extra="purpose: |\n  First line\n  Second line\n")
+        path = self.plan(self.phase(), extra="x-purpose: |\n  First line\n  Second line\n")
         self.assertTrue(self.cli("verify.plan-structure", path)["valid"])
         self.assertEqual("Add behavior", self.cli("plan.task-structure", path)["tasks"][0]["name"])
-        self.assertIn("Second line", self.cli("frontmatter.get", path, "--field", "purpose"))
+        self.assertIn("Second line", self.cli("frontmatter.get", path, "--field", "x-purpose"))
         self.cli("frontmatter.set", path, "--field", "wave", "--value", "2")
         self.assertEqual(2, self.cli("frontmatter.get", path, "--field", "wave"))
 

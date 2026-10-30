@@ -1,9 +1,6 @@
 # docs-update.md — deferred elaboration
 
-Read in full when `workflow.compact_content` is `false` (the default) — see
-`gsd-core/references/compact-content-gate.md` for the check and resolution rule this
-spine defers to. Each `§` below is the full text the spine condenses at the point it
-names.
+Read in full for the corresponding steps in `engineer/workflows/docs-update.md`.
 
 ## § 1 — sequential_generation
 
@@ -13,7 +10,7 @@ When the `Task` tool is unavailable, generate docs sequentially in the current c
 
 **IMPORTANT:** Do NOT use `browser_subagent`, `Explore`, or any browser-based tool. Use only file system tools (Read, Bash, Write, Grep, Glob, or equivalent tools available in your runtime).
 
-Read `agents/gsd-doc-writer.md` instructions once before beginning. Follow the create_mode or update_mode instructions from that agent for each doc, using the same doc_assignment fields as the parallel path.
+Read `agents/doc-writer.md` instructions once before beginning. Follow the create_mode or update_mode instructions from that agent for each doc, using the same doc_assignment fields as the parallel path.
 
 **Wave 1 (sequential — complete all three before starting Wave 2):**
 
@@ -21,18 +18,18 @@ For each Wave 1 doc, construct the equivalent doc_assignment block and generate 
 
 1. **README** — mode from resolve_modes; for update/supplement mode, include existing_content
    - Construct doc_assignment: `type: readme`, `mode: {create|update|supplement}`, `preservation_mode: {value|null}`, `project_context: {INIT JSON}`, `existing_content:` (if update/supplement)
-   - Explore the codebase (Read, Grep, Glob, Bash) following gsd-doc-writer create_mode / update_mode instructions
+   - Explore the codebase (Read, Grep, Glob, Bash) following doc-writer create_mode / update_mode instructions
    - Write the file to the resolved path (README.md)
 
 2. **ARCHITECTURE** — mode from resolve_modes; for update/supplement mode, include existing_content
    - Construct doc_assignment: `type: architecture`, `mode: {create|update|supplement}`, `preservation_mode: {value|null}`, `project_context: {INIT JSON}`, `existing_content:` (if update/supplement)
-   - Explore the codebase following gsd-doc-writer instructions
+   - Explore the codebase following doc-writer instructions
    - Write the file to the resolved path (docs/ARCHITECTURE.md, or ARCHITECTURE.md if found at root as fallback)
 
 3. **CONFIGURATION** — mode from resolve_modes; for update/supplement mode, include existing_content
    - Construct doc_assignment: `type: configuration`, `mode: {create|update|supplement}`, `preservation_mode: {value|null}`, `project_context: {INIT JSON}`, `existing_content:` (if update/supplement)
    - Apply VERIFY markers to any infrastructure claim not discoverable from the repository
-   - Explore the codebase following gsd-doc-writer instructions
+   - Explore the codebase following doc-writer instructions
    - Write the file to the resolved path (docs/CONFIGURATION.md, or CONFIGURATION.md if found at root as fallback)
 
 **Wave 2 (sequential — begin only after all Wave 1 docs are written):**
@@ -53,7 +50,7 @@ After all 9 root-level docs are written, generate per-package READMEs sequential
 For each resolved package directory (from workspace glob expansion) that contains a `package.json`:
 - Determine mode: if `{package_dir}/README.md` exists, mode = `update`; else mode = `create`
 - Construct doc_assignment: `type: readme`, `mode: {create|update}`, `scope: per_package`, `package_dir: {absolute path}`, `project_context: {INIT JSON with project_root set to package directory}`, `existing_content:` (if update)
-- Follow gsd-doc-writer instructions for per_package scope
+- Follow doc-writer instructions for per_package scope
 - Write the file to `{package_dir}/README.md`
 
 Continue to verify_docs.
@@ -75,7 +72,7 @@ Correct flagged inaccuracies by re-sending failing docs to the doc-writer in fix
 
 1. For each doc with `claims_failed > 0` in the latest verification_results:
    a. Read the current file content from disk (the spine's truncation guard captures its line count from this same read).
-   b. Spawn `gsd-doc-writer` agent (or invoke sequentially) with a fix assignment:
+   b. Spawn `doc-writer` agent (or invoke sequentially) with a fix assignment:
       ```xml
       <doc_assignment>
       type: {original doc type from the queue, e.g. readme}
@@ -132,10 +129,10 @@ Continue to scan_for_secrets.
 
 **Reached when `--verify-only` is present in `$ARGUMENTS`.** This is an early-exit step — do not proceed to dispatch, generation, commit, or report steps after this step.
 
-Invoke the gsd-doc-verifier agent in read-only mode for each file in `existing_docs` from the init JSON. Resolve `DISPATCH_CAPACITY` and compute each doc's `doc_key`/`result_path` as `verify_docs` § Dispatch bound and § Result file contract specify (#5050), and spawn in batches of at most `DISPATCH_CAPACITY`, waiting for a batch to return before starting the next:
+Invoke the doc-verifier agent in read-only mode for each file in `existing_docs` from the init JSON. Resolve `DISPATCH_CAPACITY` and compute each doc's `doc_key`/`result_path` as `verify_docs` § Dispatch bound and § Result file contract specify, and spawn in batches of at most `DISPATCH_CAPACITY`, waiting for a batch to return before starting the next:
 
 1. For each doc in `existing_docs`:
-   a. Spawn `gsd-doc-verifier` (or invoke sequentially if Task tool is unavailable), passing `model="{DOC_VERIFIER_MODEL}"` as the Task/Agent call's `model` parameter — not part of the `<verify_assignment>` prompt — so `dynamic_routing`/`model_profile` tiers apply instead of the caller's session model (#3602). Omit the parameter entirely when the value is `"inherit"` or empty (#2517). Each spawn carries:
+   a. Spawn `doc-verifier` (or invoke sequentially if Task tool is unavailable), passing `model="{DOC_VERIFIER_MODEL}"` as the Task/Agent call's `model` parameter — not part of the `<verify_assignment>` prompt — so `dynamic_routing`/`model_profile` tiers apply instead of the caller's session model. Omit the parameter entirely when the value is `"inherit"` or empty. Each spawn carries:
       ```xml
       <verify_assignment>
       doc_path: {doc.path}
@@ -171,8 +168,8 @@ Failed claims:
 
 Display note:
 ```
-To fix failures automatically: /gsd:docs-update (runs generation + fix loop)
-To regenerate all docs from scratch: /gsd:docs-update --force
+To fix failures automatically: /docs-update (runs generation + fix loop)
+To regenerate all docs from scratch: /docs-update --force
 ```
 
 Clean up temp files: remove `{project_root}/.planning/tmp/verify-*.json` files.

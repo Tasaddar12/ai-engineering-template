@@ -4,411 +4,401 @@ Anchor baseline: `9443672`. Origins compare Git blob content with the downloaded
 
 Regenerate with `python -I scripts/inventory.py --apply`; compare with `--check`.
 
-| File | Origin | Lines | Remaining gsd references |
-|---|---|---:|---:|
-| `agents/AGENT.md` | upstream | 0 | 0 |
-| `agents/code-fixer.md` | upstream | 770 | 80 |
-| `agents/code-reviewer.md` | upstream | 403 | 65 |
-| `agents/codebase-mapper.md` | upstream | 855 | 9 |
-| `agents/debug-session-manager.md` | reconciled | 421 | 79 |
-| `agents/debugger.md` | upstream | 1279 | 84 |
-| `agents/doc-verifier.md` | upstream | 218 | 4 |
-| `agents/doc-writer.md` | upstream | 631 | 26 |
-| `agents/dom-verifier.md` | upstream | 169 | 3 |
-| `agents/executor.md` | upstream | 858 | 0 |
-| `agents/integration-checker.md` | upstream | 475 | 3 |
-| `agents/nyquist-auditor.md` | upstream | 206 | 3 |
-| `agents/pattern-mapper.md` | upstream | 346 | 9 |
-| `agents/phase-researcher.md` | upstream | 902 | 91 |
-| `agents/plan-checker.md` | upstream | 1076 | 38 |
-| `agents/planner.md` | upstream | 1008 | 70 |
-| `agents/security-auditor.md` | upstream | 175 | 6 |
-| `agents/ui-auditor.md` | upstream | 586 | 9 |
-| `agents/ui-checker.md` | upstream | 416 | 12 |
-| `agents/ui-researcher.md` | upstream | 474 | 78 |
-| `agents/verifier.md` | upstream | 968 | 46 |
-| `bin/install.py` | upstream | 0 | 0 |
-| `bin/migrate.py` | upstream | 0 | 0 |
-| `bin/update.py` | upstream | 0 | 0 |
-| `commands/COMMAND.md` | upstream | 0 | 0 |
-| `commands/add-tests.md` | upstream | 47 | 4 |
-| `commands/audit-fix.md` | upstream | 39 | 2 |
-| `commands/audit-milestone.md` | upstream | 42 | 2 |
-| `commands/audit-uat.md` | upstream | 24 | 2 |
-| `commands/capture.md` | upstream | 70 | 9 |
-| `commands/cleanup.md` | upstream | 25 | 2 |
-| `commands/code-review.md` | reconciled | 73 | 14 |
-| `commands/complete-milestone.md` | upstream | 148 | 12 |
-| `commands/debug.md` | upstream | 57 | 6 |
-| `commands/discuss-phase.md` | reconciled | 77 | 61 |
-| `commands/docs-update.md` | upstream | 54 | 6 |
-| `commands/execute-phase.md` | reconciled | 66 | 4 |
-| `commands/explore.md` | upstream | 27 | 4 |
-| `commands/extract-learnings.md` | upstream | 28 | 3 |
-| `commands/fast.md` | upstream | 35 | 5 |
-| `commands/forensics.md` | upstream | 61 | 4 |
-| `commands/health.md` | upstream | 37 | 4 |
-| `commands/inbox.md` | upstream | 44 | 2 |
-| `commands/manager.md` | upstream | 50 | 6 |
-| `commands/map-codebase.md` | upstream | 87 | 10 |
-| `commands/milestone-summary.md` | upstream | 55 | 2 |
-| `commands/new-milestone.md` | upstream | 51 | 7 |
-| `commands/new-project.md` | reconciled | 49 | 7 |
-| `commands/next.md` | upstream | 35 | 8 |
-| `commands/onboard.md` | reconciled | 50 | 10 |
-| `commands/pause-work.md` | upstream | 48 | 3 |
-| `commands/phase.md` | upstream | 61 | 5 |
-| `commands/plan-phase.md` | reconciled | 66 | 8 |
-| `commands/progress.md` | reconciled | 54 | 11 |
-| `commands/quick-batch.md` | upstream | 117 | 15 |
-| `commands/quick.md` | reconciled | 185 | 10 |
-| `commands/resume-work.md` | upstream | 31 | 2 |
-| `commands/review-backlog.md` | upstream | 65 | 3 |
-| `commands/secure-phase.md` | upstream | 41 | 2 |
-| `commands/ship.md` | upstream | 29 | 4 |
-| `commands/spec-phase.md` | reconciled | 63 | 4 |
-| `commands/thread.md` | upstream | 29 | 2 |
-| `commands/ui-phase.md` | upstream | 40 | 5 |
-| `commands/ui-review.md` | upstream | 38 | 3 |
-| `commands/update.md` | upstream | 53 | 8 |
-| `commands/validate-phase.md` | upstream | 41 | 2 |
-| `commands/verify-work.md` | upstream | 44 | 4 |
-| `docs/INVENTORY.md` | local-only | 414 | 2 |
-| `docs/prompts.md` | upstream | 200 | 0 |
-| `engineer/bin/README.md` | local-only | 356 | 0 |
-| `engineer/bin/engineer.py` | local-only | 157 | 0 |
-| `engineer/bin/engineer_run` | reconciled | 24 | 0 |
-| `engineer/bin/lib/__init__.py` | local-only | 1 | 0 |
-| `engineer/bin/lib/bundles.py` | local-only | 146 | 0 |
-| `engineer/bin/lib/cleanup.py` | local-only | 66 | 0 |
-| `engineer/bin/lib/codebase.py` | local-only | 33 | 0 |
-| `engineer/bin/lib/config.py` | local-only | 105 | 0 |
-| `engineer/bin/lib/core.py` | local-only | 183 | 0 |
-| `engineer/bin/lib/decisions.py` | local-only | 17 | 0 |
-| `engineer/bin/lib/delivery.py` | local-only | 126 | 0 |
-| `engineer/bin/lib/frontmatter.py` | local-only | 49 | 0 |
-| `engineer/bin/lib/gitops.py` | local-only | 34 | 0 |
-| `engineer/bin/lib/handoff.py` | local-only | 66 | 0 |
-| `engineer/bin/lib/issues.py` | local-only | 112 | 0 |
-| `engineer/bin/lib/misc.py` | local-only | 177 | 0 |
-| `engineer/bin/lib/models.py` | local-only | 127 | 2 |
-| `engineer/bin/lib/numbering.py` | local-only | 57 | 0 |
-| `engineer/bin/lib/packages.py` | local-only | 39 | 0 |
-| `engineer/bin/lib/phase_issues.py` | local-only | 147 | 0 |
-| `engineer/bin/lib/planning_integrity.py` | local-only | 55 | 0 |
-| `engineer/bin/lib/planning_review.py` | local-only | 146 | 0 |
-| `engineer/bin/lib/plans.py` | local-only | 99 | 0 |
-| `engineer/bin/lib/probes.py` | local-only | 67 | 0 |
-| `engineer/bin/lib/quick_batch.py` | local-only | 159 | 0 |
-| `engineer/bin/lib/records.py` | local-only | 506 | 0 |
-| `engineer/bin/lib/repository.py` | local-only | 28 | 0 |
-| `engineer/bin/lib/requirements.py` | local-only | 41 | 0 |
-| `engineer/bin/lib/scope.py` | local-only | 50 | 0 |
-| `engineer/bin/lib/sessions.py` | local-only | 110 | 0 |
-| `engineer/bin/lib/tdd.py` | local-only | 153 | 0 |
-| `engineer/bin/lib/text.py` | local-only | 252 | 0 |
-| `engineer/bin/lib/uat.py` | local-only | 139 | 0 |
-| `engineer/bin/lib/ui.py` | local-only | 23 | 0 |
-| `engineer/bin/lib/verification.py` | local-only | 176 | 0 |
-| `engineer/bin/lib/verify.py` | local-only | 56 | 0 |
-| `engineer/bin/lib/worktrees.py` | local-only | 139 | 0 |
-| `engineer/bin/requirements.txt` | local-only | 1 | 0 |
-| `engineer/references/REFERENCE.md` | upstream | 0 | 0 |
-| `engineer/references/agent-contracts.md` | upstream | 97 | 112 |
-| `engineer/references/agent-skills-bootstrap.md` | reconciled | 66 | 6 |
-| `engineer/references/artifact-types.md` | upstream | 138 | 12 |
-| `engineer/references/checkpoints.md` | upstream | 878 | 3 |
-| `engineer/references/common-bug-patterns.md` | upstream | 127 | 0 |
-| `engineer/references/compact-content-gate.md` | upstream | 66 | 8 |
-| `engineer/references/context-budget.md` | upstream | 125 | 10 |
-| `engineer/references/continuation-format.md` | upstream | 253 | 16 |
-| `engineer/references/debugger-bug-taxonomy.md` | upstream | 111 | 1 |
-| `engineer/references/debugger-fix-acceptance.md` | upstream | 157 | 3 |
-| `engineer/references/debugger-philosophy.md` | upstream | 77 | 1 |
-| `engineer/references/debugger-prevention.md` | upstream | 98 | 1 |
-| `engineer/references/debugger-rca-branching.md` | upstream | 98 | 1 |
-| `engineer/references/debugger-repro-hardening.md` | upstream | 130 | 1 |
-| `engineer/references/debugger-sbfl.md` | upstream | 110 | 1 |
-| `engineer/references/debugger-semantic-recall.md` | upstream | 81 | 2 |
-| `engineer/references/debugger-techniques.md` | upstream | 255 | 4 |
-| `engineer/references/dispatch-isolation-gate.md` | reconciled | 138 | 18 |
-| `engineer/references/domain-probes.md` | upstream | 125 | 2 |
-| `engineer/references/edge-probe-fixtures/01-round-half-even/expected-coverage.json` | upstream | 32 | 0 |
-| `engineer/references/edge-probe-fixtures/01-round-half-even/requirements.json` | upstream | 1 | 0 |
-| `engineer/references/edge-probe-fixtures/02-merge-intervals/expected-coverage.json` | upstream | 41 | 0 |
-| `engineer/references/edge-probe-fixtures/02-merge-intervals/requirements.json` | upstream | 1 | 0 |
-| `engineer/references/edge-probe-fixtures/03-truncate-graphemes/expected-coverage.json` | upstream | 32 | 0 |
-| `engineer/references/edge-probe-fixtures/03-truncate-graphemes/requirements.json` | upstream | 1 | 0 |
-| `engineer/references/edge-probe-fixtures/04-money-rounding/expected-coverage.json` | upstream | 32 | 0 |
-| `engineer/references/edge-probe-fixtures/04-money-rounding/requirements.json` | upstream | 1 | 0 |
-| `engineer/references/edge-probe-fixtures/05-list-dedupe/expected-coverage.json` | upstream | 41 | 0 |
-| `engineer/references/edge-probe-fixtures/05-list-dedupe/requirements.json` | upstream | 1 | 0 |
-| `engineer/references/edge-probe-fixtures/06-resolved-mixed/expected-coverage.json` | upstream | 41 | 0 |
-| `engineer/references/edge-probe-fixtures/06-resolved-mixed/requirements.json` | upstream | 1 | 0 |
-| `engineer/references/edge-probe-fixtures/06-resolved-mixed/resolutions.json` | upstream | 4 | 0 |
-| `engineer/references/edge-probe.md` | upstream | 458 | 3 |
-| `engineer/references/execute-mvp-tdd.md` | upstream | 76 | 8 |
-| `engineer/references/execute-phase-context-guard.md` | upstream | 16 | 3 |
-| `engineer/references/executor-examples.md` | upstream | 158 | 0 |
-| `engineer/references/failing-direction.md` | upstream | 78 | 3 |
-| `engineer/references/few-shot-examples/plan-checker.md` | upstream | 73 | 3 |
-| `engineer/references/few-shot-examples/verifier.md` | upstream | 109 | 14 |
-| `engineer/references/gate-prompts.md` | upstream | 103 | 4 |
-| `engineer/references/gates.md` | upstream | 70 | 2 |
-| `engineer/references/git-integration.md` | upstream | 309 | 13 |
-| `engineer/references/git-planning-commit.md` | upstream | 41 | 3 |
-| `engineer/references/gsd-run-resolver.md` | reconciled | 8 | 58 |
-| `engineer/references/honest-verifier.md` | upstream | 105 | 4 |
-| `engineer/references/ios-scaffold.md` | upstream | 123 | 0 |
-| `engineer/references/mandatory-initial-read.md` | upstream | 2 | 0 |
-| `engineer/references/model-profile-resolution.md` | reconciled | 88 | 5 |
-| `engineer/references/model-profiles.md` | reconciled | 271 | 77 |
-| `engineer/references/nyquist-compliance.md` | upstream | 74 | 4 |
-| `engineer/references/offer-next.md` | upstream | 86 | 20 |
-| `engineer/references/phase-argument-parsing.md` | upstream | 63 | 4 |
-| `engineer/references/phase-id-convention.md` | upstream | 28 | 2 |
-| `engineer/references/plan-checker-examples.md` | upstream | 41 | 2 |
-| `engineer/references/planner-antipatterns.md` | upstream | 255 | 1 |
-| `engineer/references/planner-chunked.md` | upstream | 53 | 2 |
-| `engineer/references/planner-coupling.md` | upstream | 42 | 3 |
-| `engineer/references/planner-gap-closure.md` | upstream | 64 | 0 |
-| `engineer/references/planner-guidance.md` | upstream | 246 | 4 |
-| `engineer/references/planner-interface-context.md` | upstream | 62 | 0 |
-| `engineer/references/planner-load-graph-context.md` | upstream | 47 | 39 |
-| `engineer/references/planner-mvp-mode.md` | upstream | 52 | 2 |
-| `engineer/references/planner-preconditions.md` | upstream | 156 | 5 |
-| `engineer/references/planner-quick-batch.md` | upstream | 71 | 3 |
-| `engineer/references/planner-reversibility.md` | upstream | 146 | 8 |
-| `engineer/references/planner-reviews.md` | upstream | 89 | 3 |
-| `engineer/references/planner-revision.md` | upstream | 160 | 1 |
-| `engineer/references/planner-source-audit.md` | upstream | 73 | 1 |
-| `engineer/references/planner-verify-command-grounding.md` | upstream | 49 | 1 |
-| `engineer/references/prohibition-probe-fixtures/01-streak-reminder/expected.json` | upstream | 14 | 0 |
-| `engineer/references/prohibition-probe-fixtures/02-clean-utility/expected.json` | upstream | 4 | 0 |
-| `engineer/references/prohibition-probe-fixtures/03-multi-prohibition/expected.json` | upstream | 32 | 0 |
-| `engineer/references/prohibition-probe.md` | upstream | 332 | 13 |
-| `engineer/references/project-skills-discovery.md` | upstream | 21 | 1 |
-| `engineer/references/questioning.md` | upstream | 162 | 0 |
-| `engineer/references/research-documentation-lookup.md` | upstream | 31 | 0 |
-| `engineer/references/research-philosophy.md` | upstream | 29 | 0 |
-| `engineer/references/research-verification-protocol.md` | upstream | 27 | 0 |
-| `engineer/references/response-language-directive.md` | upstream | 9 | 0 |
-| `engineer/references/revision-loop.md` | upstream | 204 | 11 |
-| `engineer/references/run-resolver.md` | reconciled | 20 | 58 |
-| `engineer/references/scout-codebase.md` | upstream | 51 | 0 |
-| `engineer/references/security-asvs-levels.md` | upstream | 27 | 1 |
-| `engineer/references/skeleton-template.md` | upstream | 48 | 1 |
-| `engineer/references/specless-probe-fallback.md` | upstream | 173 | 35 |
-| `engineer/references/tdd.md` | upstream | 366 | 1 |
-| `engineer/references/thinking-models-debug.md` | upstream | 44 | 1 |
-| `engineer/references/thinking-models-execution.md` | upstream | 50 | 1 |
-| `engineer/references/thinking-models-planning.md` | upstream | 80 | 2 |
-| `engineer/references/thinking-models-research.md` | upstream | 50 | 1 |
-| `engineer/references/thinking-models-verification.md` | upstream | 55 | 1 |
-| `engineer/references/ui-brand.md` | upstream | 206 | 5 |
-| `engineer/references/ui-consideration-probe.md` | upstream | 78 | 1 |
-| `engineer/references/universal-anti-patterns.md` | upstream | 63 | 17 |
-| `engineer/references/untrusted-input-boundary.md` | upstream | 13 | 0 |
-| `engineer/references/user-story-template.md` | upstream | 58 | 2 |
-| `engineer/references/verification-overrides.md` | upstream | 227 | 4 |
-| `engineer/references/verification-patterns.md` | upstream | 625 | 1 |
-| `engineer/references/verifier-evidence-gate.md` | upstream | 160 | 1 |
-| `engineer/references/verifier-phase-gates.md` | upstream | 202 | 7 |
-| `engineer/references/verifier-wiring-patterns.md` | upstream | 100 | 2 |
-| `engineer/references/verify-command-path-resolvability.md` | upstream | 50 | 3 |
-| `engineer/references/verify-mvp-mode.md` | upstream | 85 | 8 |
-| `engineer/references/worktree-branch-check.md` | upstream | 44 | 0 |
-| `engineer/references/worktree-path-safety.md` | upstream | 498 | 10 |
-| `engineer/templates/DEBUG.md` | upstream | 208 | 9 |
-| `engineer/templates/README.md` | upstream | 83 | 39 |
-| `engineer/templates/SECURITY.md` | upstream | 63 | 0 |
-| `engineer/templates/TEMPLATE.md` | reconciled | 0 | 0 |
-| `engineer/templates/UAT.md` | upstream | 306 | 5 |
-| `engineer/templates/UI-SPEC.md` | upstream | 147 | 3 |
-| `engineer/templates/VALIDATION.md` | upstream | 78 | 1 |
-| `engineer/templates/codebase/architecture.md` | upstream | 255 | 2 |
-| `engineer/templates/codebase/stack.md` | upstream | 186 | 0 |
-| `engineer/templates/context.md` | upstream | 352 | 4 |
-| `engineer/templates/continue-here.md` | upstream | 78 | 0 |
-| `engineer/templates/discussion-log.md` | upstream | 63 | 0 |
-| `engineer/templates/milestone-archive.md` | upstream | 123 | 0 |
-| `engineer/templates/milestone.md` | upstream | 115 | 0 |
-| `engineer/templates/phase-prompt.md` | upstream | 615 | 11 |
-| `engineer/templates/planner-subagent-prompt.md` | upstream | 117 | 7 |
-| `engineer/templates/project.md` | upstream | 203 | 2 |
-| `engineer/templates/requirements.md` | upstream | 231 | 0 |
-| `engineer/templates/research-project/ARCHITECTURE.md` | upstream | 204 | 0 |
-| `engineer/templates/research-project/FEATURES.md` | upstream | 147 | 0 |
-| `engineer/templates/research-project/PITFALLS.md` | upstream | 200 | 0 |
-| `engineer/templates/research-project/STACK.md` | upstream | 120 | 0 |
-| `engineer/templates/research-project/SUMMARY.md` | upstream | 170 | 0 |
-| `engineer/templates/research.md` | upstream | 592 | 2 |
-| `engineer/templates/roadmap.md` | upstream | 202 | 0 |
-| `engineer/templates/spec.md` | upstream | 333 | 13 |
-| `engineer/templates/state.md` | upstream | 205 | 2 |
-| `engineer/templates/summary.md` | upstream | 321 | 0 |
-| `engineer/templates/user-setup.md` | upstream | 302 | 0 |
-| `engineer/templates/verification-report.md` | upstream | 348 | 2 |
-| `engineer/workflows/WORKFLOW.md` | upstream | 1 | 0 |
-| `engineer/workflows/_runtime-launcher.snippet.sh` | reconciled | 1 | 56 |
-| `engineer/workflows/add-backlog.md` | reconciled | 101 | 81 |
-| `engineer/workflows/add-phase.md` | reconciled | 122 | 77 |
-| `engineer/workflows/add-tests.md` | reconciled | 357 | 78 |
-| `engineer/workflows/add-todo.md` | reconciled | 198 | 74 |
-| `engineer/workflows/analyze-dependencies.md` | upstream | 98 | 4 |
-| `engineer/workflows/audit-fix.md` | reconciled | 198 | 68 |
-| `engineer/workflows/audit-milestone.md` | reconciled | 387 | 97 |
-| `engineer/workflows/audit-uat.md` | reconciled | 127 | 60 |
-| `engineer/workflows/check-todos.md` | reconciled | 189 | 78 |
-| `engineer/workflows/cleanup.md` | reconciled | 262 | 59 |
-| `engineer/workflows/code-review-fix.md` | reconciled | 634 | 100 |
-| `engineer/workflows/code-review.md` | reconciled | 1020 | 250 |
-| `engineer/workflows/code-review/steps/dispatch-fix.md` | upstream | 40 | 2 |
-| `engineer/workflows/complete-milestone.md` | reconciled | 643 | 167 |
-| `engineer/workflows/debug.md` | reconciled | 296 | 96 |
-| `engineer/workflows/diagnose-issues.md` | reconciled | 337 | 85 |
-| `engineer/workflows/discuss-phase.md` | reconciled | 547 | 97 |
-| `engineer/workflows/discuss-phase/modes/all.md` | upstream | 30 | 0 |
-| `engineer/workflows/discuss-phase/modes/auto.md` | upstream | 53 | 0 |
-| `engineer/workflows/discuss-phase/modes/text.md` | upstream | 57 | 2 |
-| `engineer/workflows/discuss-phase/templates/checkpoint.json` | upstream | 18 | 0 |
-| `engineer/workflows/discuss-phase/templates/context.md` | upstream | 152 | 2 |
-| `engineer/workflows/discuss-phase/templates/discussion-log.md` | upstream | 52 | 0 |
-| `engineer/workflows/docs-update.md` | reconciled | 1016 | 118 |
-| `engineer/workflows/docs-update/detail/elaboration.md` | upstream | 180 | 11 |
-| `engineer/workflows/docs-update/steps/dispatch-monorepo-packages.md` | upstream | 51 | 3 |
-| `engineer/workflows/edit-phase.md` | reconciled | 327 | 85 |
-| `engineer/workflows/execute-phase.md` | reconciled | 1444 | 177 |
-| `engineer/workflows/execute-phase/steps/code-review-disposition.md` | reconciled | 1019 | 67 |
-| `engineer/workflows/execute-phase/steps/codebase-drift-gate.md` | reconciled | 127 | 77 |
-| `engineer/workflows/execute-phase/steps/completion-reconciliation.md` | reconciled | 59 | 57 |
-| `engineer/workflows/execute-phase/steps/executor-isolation-dispatch.md` | reconciled | 374 | 95 |
-| `engineer/workflows/execute-phase/steps/executor-progress-policy.md` | upstream | 43 | 0 |
-| `engineer/workflows/execute-phase/steps/gap-closure-artifacts.md` | reconciled | 52 | 58 |
-| `engineer/workflows/execute-phase/steps/partial-wave.md` | reconciled | 31 | 61 |
-| `engineer/workflows/execute-phase/steps/per-plan-executor-routing.md` | reconciled | 77 | 67 |
-| `engineer/workflows/execute-phase/steps/per-plan-worktree-gate.md` | reconciled | 145 | 60 |
-| `engineer/workflows/execute-phase/steps/post-merge-gate.md` | reconciled | 169 | 79 |
-| `engineer/workflows/execute-phase/steps/protected-branch.md` | reconciled | 21 | 58 |
-| `engineer/workflows/execute-phase/steps/ready-wave-gate.md` | upstream | 37 | 0 |
-| `engineer/workflows/execute-phase/steps/regression-gate-run.md` | reconciled | 62 | 71 |
-| `engineer/workflows/execute-phase/steps/regression-gate.md` | upstream | 67 | 17 |
-| `engineer/workflows/execute-phase/steps/sequential-root-pin.md` | upstream | 35 | 1 |
-| `engineer/workflows/execute-phase/steps/tdd-applicability-resolution.md` | reconciled | 25 | 58 |
-| `engineer/workflows/execute-phase/steps/threat-id-gate.md` | upstream | 28 | 3 |
-| `engineer/workflows/execute-phase/steps/verify-phase-goal.md` | reconciled | 191 | 95 |
-| `engineer/workflows/execute-phase/steps/worktree-base-check.md` | reconciled | 25 | 3 |
-| `engineer/workflows/execute-phase/steps/worktree-recovery-policy.md` | upstream | 11 | 0 |
-| `engineer/workflows/explore.md` | reconciled | 278 | 84 |
-| `engineer/workflows/extract-learnings.md` | reconciled | 272 | 75 |
-| `engineer/workflows/fast.md` | reconciled | 124 | 66 |
-| `engineer/workflows/forensics.md` | reconciled | 285 | 72 |
-| `engineer/workflows/graduation.md` | reconciled | 199 | 60 |
-| `engineer/workflows/health.md` | reconciled | 298 | 82 |
-| `engineer/workflows/inbox.md` | reconciled | 393 | 65 |
-| `engineer/workflows/insert-phase.md` | reconciled | 159 | 81 |
-| `engineer/workflows/list-phase-assumptions.md` | upstream | 180 | 5 |
-| `engineer/workflows/list-seeds.md` | reconciled | 67 | 61 |
-| `engineer/workflows/manager.md` | reconciled | 446 | 106 |
-| `engineer/workflows/map-codebase.md` | reconciled | 504 | 91 |
-| `engineer/workflows/milestone-summary.md` | reconciled | 235 | 79 |
-| `engineer/workflows/new-milestone.md` | reconciled | 727 | 212 |
-| `engineer/workflows/new-milestone/steps/project-md-milestone-write.md` | upstream | 16 | 2 |
-| `engineer/workflows/new-project.md` | reconciled | 1241 | 152 |
-| `engineer/workflows/new-project/steps/codebase-map-offer.md` | reconciled | 18 | 3 |
-| `engineer/workflows/next.md` | reconciled | 368 | 108 |
-| `engineer/workflows/note.md` | upstream | 160 | 8 |
-| `engineer/workflows/onboard.md` | reconciled | 280 | 10 |
-| `engineer/workflows/pause-work.md` | reconciled | 265 | 62 |
-| `engineer/workflows/plan-phase.md` | reconciled | 1574 | 317 |
-| `engineer/workflows/plan-phase/steps/closed-phase-gate.md` | upstream | 46 | 9 |
-| `engineer/workflows/plan-phase/steps/stall-detection-helpers.md` | reconciled | 176 | 71 |
-| `engineer/workflows/plan-phase/steps/windows-troubleshooting.md` | upstream | 23 | 2 |
-| `engineer/workflows/plant-seed.md` | reconciled | 279 | 77 |
-| `engineer/workflows/progress.md` | reconciled | 714 | 156 |
-| `engineer/workflows/progress/steps/forensic-audit.md` | upstream | 125 | 5 |
-| `engineer/workflows/quick-batch.md` | reconciled | 212 | 123 |
-| `engineer/workflows/quick-batch/steps/batch-init.md` | reconciled | 55 | 59 |
-| `engineer/workflows/quick-batch/steps/completion.md` | reconciled | 65 | 64 |
-| `engineer/workflows/quick-batch/steps/merge-wave.md` | reconciled | 100 | 61 |
-| `engineer/workflows/quick-batch/steps/plan-checker-loop.md` | upstream | 148 | 7 |
-| `engineer/workflows/quick-batch/steps/planner-wave.md` | reconciled | 158 | 63 |
-| `engineer/workflows/quick-batch/steps/research-phase.md` | reconciled | 95 | 61 |
-| `engineer/workflows/quick-batch/steps/resume-mode.md` | reconciled | 49 | 57 |
-| `engineer/workflows/quick-batch/steps/verification-wave.md` | reconciled | 79 | 61 |
-| `engineer/workflows/quick-batch/steps/worktree-dispatch.md` | reconciled | 169 | 77 |
-| `engineer/workflows/quick.md` | reconciled | 793 | 158 |
-| `engineer/workflows/quick/steps/discussion-phase.md` | reconciled | 120 | 1 |
-| `engineer/workflows/quick/steps/plan-checker-loop.md` | reconciled | 171 | 61 |
-| `engineer/workflows/quick/steps/quick-verification.md` | reconciled | 65 | 59 |
-| `engineer/workflows/quick/steps/research-phase.md` | reconciled | 66 | 3 |
-| `engineer/workflows/quick/steps/worktree-pre-dispatch-commit.md` | reconciled | 63 | 62 |
-| `engineer/workflows/remove-phase.md` | reconciled | 163 | 79 |
-| `engineer/workflows/resume-project.md` | reconciled | 360 | 86 |
-| `engineer/workflows/scan.md` | reconciled | 118 | 73 |
-| `engineer/workflows/secure-phase.md` | reconciled | 201 | 95 |
-| `engineer/workflows/session-report.md` | upstream | 149 | 4 |
-| `engineer/workflows/ship.md` | reconciled | 615 | 111 |
-| `engineer/workflows/spec-phase.md` | reconciled | 559 | 90 |
-| `engineer/workflows/thread.md` | reconciled | 236 | 91 |
-| `engineer/workflows/ui-phase.md` | reconciled | 535 | 133 |
-| `engineer/workflows/ui-review.md` | reconciled | 210 | 90 |
-| `engineer/workflows/update.md` | reconciled | 577 | 129 |
-| `engineer/workflows/validate-phase.md` | reconciled | 193 | 95 |
-| `engineer/workflows/verify-work.md` | reconciled | 943 | 161 |
-| `engineer/workflows/verify-work/steps/automated-ui-verification.md` | reconciled | 60 | 59 |
-| `hooks/worktree-path-guard.py` | upstream | 0 | 0 |
-| `scripts/SCRIPT.py` | upstream | 0 | 0 |
-| `scripts/anchor.py` | local-only | 65 | 1 |
-| `scripts/check.py` | local-only | 66 | 0 |
-| `scripts/common.py` | local-only | 142 | 0 |
-| `scripts/delete_batch.py` | local-only | 42 | 0 |
-| `scripts/inventory.py` | local-only | 71 | 3 |
-| `scripts/links.py` | local-only | 65 | 0 |
-| `scripts/manifest.json` | local-only | 195 | 34 |
-| `scripts/progress.py` | local-only | 38 | 0 |
-| `scripts/rename.py` | local-only | 74 | 12 |
-| `scripts/verbs.py` | local-only | 72 | 0 |
-| `skills/SKILL/SKILL.md` | upstream | 0 | 0 |
-| `skills/add-tests/SKILL.md` | local-only | 47 | 4 |
-| `skills/audit-fix/SKILL.md` | local-only | 39 | 2 |
-| `skills/audit-milestone/SKILL.md` | local-only | 42 | 2 |
-| `skills/audit-uat/SKILL.md` | local-only | 24 | 2 |
-| `skills/capture/SKILL.md` | local-only | 70 | 9 |
-| `skills/cleanup/SKILL.md` | local-only | 25 | 2 |
-| `skills/code-review/SKILL.md` | local-only | 73 | 14 |
-| `skills/complete-milestone/SKILL.md` | local-only | 148 | 12 |
-| `skills/debug/SKILL.md` | local-only | 57 | 6 |
-| `skills/discuss-phase/SKILL.md` | local-only | 77 | 61 |
-| `skills/docs-update/SKILL.md` | local-only | 54 | 6 |
-| `skills/execute-phase/SKILL.md` | local-only | 66 | 4 |
-| `skills/explore/SKILL.md` | local-only | 27 | 4 |
-| `skills/extract-learnings/SKILL.md` | local-only | 28 | 3 |
-| `skills/fast/SKILL.md` | local-only | 35 | 5 |
-| `skills/forensics/SKILL.md` | local-only | 61 | 4 |
-| `skills/health/SKILL.md` | local-only | 37 | 4 |
-| `skills/inbox/SKILL.md` | local-only | 44 | 2 |
-| `skills/manager/SKILL.md` | local-only | 50 | 6 |
-| `skills/map-codebase/SKILL.md` | local-only | 87 | 10 |
-| `skills/milestone-summary/SKILL.md` | local-only | 55 | 2 |
-| `skills/new-milestone/SKILL.md` | local-only | 51 | 7 |
-| `skills/new-project/SKILL.md` | local-only | 49 | 7 |
-| `skills/next/SKILL.md` | local-only | 35 | 8 |
-| `skills/onboard/SKILL.md` | local-only | 50 | 10 |
-| `skills/pause-work/SKILL.md` | local-only | 48 | 3 |
-| `skills/phase/SKILL.md` | local-only | 61 | 5 |
-| `skills/plan-phase/SKILL.md` | local-only | 66 | 8 |
-| `skills/progress/SKILL.md` | local-only | 54 | 11 |
-| `skills/quick-batch/SKILL.md` | local-only | 117 | 15 |
-| `skills/quick/SKILL.md` | local-only | 185 | 10 |
-| `skills/resume-work/SKILL.md` | local-only | 31 | 2 |
-| `skills/review-backlog/SKILL.md` | local-only | 65 | 3 |
-| `skills/secure-phase/SKILL.md` | local-only | 41 | 2 |
-| `skills/ship/SKILL.md` | local-only | 29 | 4 |
-| `skills/spec-phase/SKILL.md` | local-only | 63 | 4 |
-| `skills/thread/SKILL.md` | local-only | 29 | 2 |
-| `skills/ui-phase/SKILL.md` | local-only | 40 | 5 |
-| `skills/ui-review/SKILL.md` | local-only | 38 | 3 |
-| `skills/update/SKILL.md` | local-only | 53 | 8 |
-| `skills/validate-phase/SKILL.md` | local-only | 41 | 2 |
-| `skills/verify-work/SKILL.md` | local-only | 44 | 4 |
+| File | Origin | Lines |
+|---|---|---:|
+| `agents/AGENT.md` | upstream | 0 |
+| `agents/code-fixer.md` | reconciled | 771 |
+| `agents/code-reviewer.md` | reconciled | 403 |
+| `agents/codebase-mapper.md` | reconciled | 855 |
+| `agents/debug-session-manager.md` | reconciled | 421 |
+| `agents/debugger.md` | reconciled | 1279 |
+| `agents/doc-verifier.md` | reconciled | 218 |
+| `agents/doc-writer.md` | reconciled | 631 |
+| `agents/dom-verifier.md` | reconciled | 169 |
+| `agents/executor.md` | reconciled | 858 |
+| `agents/integration-checker.md` | reconciled | 475 |
+| `agents/nyquist-auditor.md` | reconciled | 206 |
+| `agents/pattern-mapper.md` | reconciled | 346 |
+| `agents/phase-researcher.md` | reconciled | 859 |
+| `agents/plan-checker.md` | reconciled | 1076 |
+| `agents/planner.md` | reconciled | 991 |
+| `agents/security-auditor.md` | reconciled | 175 |
+| `agents/ui-auditor.md` | reconciled | 586 |
+| `agents/ui-checker.md` | reconciled | 416 |
+| `agents/ui-researcher.md` | reconciled | 474 |
+| `agents/verifier.md` | reconciled | 941 |
+| `bin/install.py` | upstream | 0 |
+| `bin/migrate.py` | upstream | 0 |
+| `bin/update.py` | upstream | 0 |
+| `commands/COMMAND.md` | upstream | 0 |
+| `commands/add-tests.md` | reconciled | 47 |
+| `commands/audit-fix.md` | reconciled | 39 |
+| `commands/audit-milestone.md` | reconciled | 42 |
+| `commands/audit-uat.md` | reconciled | 24 |
+| `commands/capture.md` | reconciled | 70 |
+| `commands/cleanup.md` | reconciled | 25 |
+| `commands/code-review.md` | reconciled | 73 |
+| `commands/complete-milestone.md` | reconciled | 148 |
+| `commands/debug.md` | reconciled | 57 |
+| `commands/discuss-phase.md` | reconciled | 118 |
+| `commands/docs-update.md` | reconciled | 54 |
+| `commands/execute-phase.md` | reconciled | 66 |
+| `commands/explore.md` | reconciled | 27 |
+| `commands/extract-learnings.md` | reconciled | 28 |
+| `commands/fast.md` | reconciled | 35 |
+| `commands/forensics.md` | reconciled | 61 |
+| `commands/health.md` | reconciled | 37 |
+| `commands/inbox.md` | reconciled | 44 |
+| `commands/manager.md` | reconciled | 50 |
+| `commands/map-codebase.md` | reconciled | 87 |
+| `commands/milestone-summary.md` | reconciled | 55 |
+| `commands/new-milestone.md` | reconciled | 51 |
+| `commands/new-project.md` | reconciled | 49 |
+| `commands/next.md` | reconciled | 35 |
+| `commands/onboard.md` | reconciled | 50 |
+| `commands/pause-work.md` | reconciled | 48 |
+| `commands/phase.md` | reconciled | 61 |
+| `commands/plan-phase.md` | reconciled | 65 |
+| `commands/progress.md` | reconciled | 54 |
+| `commands/quick-batch.md` | reconciled | 117 |
+| `commands/quick.md` | reconciled | 185 |
+| `commands/resume-work.md` | reconciled | 31 |
+| `commands/review-backlog.md` | reconciled | 65 |
+| `commands/secure-phase.md` | reconciled | 41 |
+| `commands/ship.md` | reconciled | 29 |
+| `commands/spec-phase.md` | reconciled | 63 |
+| `commands/thread.md` | reconciled | 29 |
+| `commands/ui-phase.md` | reconciled | 40 |
+| `commands/ui-review.md` | reconciled | 38 |
+| `commands/update.md` | reconciled | 53 |
+| `commands/validate-phase.md` | reconciled | 41 |
+| `commands/verify-work.md` | reconciled | 44 |
+| `docs/INVENTORY.md` | local-only | 404 |
+| `docs/prompts.md` | upstream | 200 |
+| `engineer/bin/README.md` | local-only | 356 |
+| `engineer/bin/engineer.py` | local-only | 157 |
+| `engineer/bin/engineer_run` | reconciled | 24 |
+| `engineer/bin/lib/__init__.py` | local-only | 1 |
+| `engineer/bin/lib/bundles.py` | local-only | 146 |
+| `engineer/bin/lib/cleanup.py` | local-only | 66 |
+| `engineer/bin/lib/codebase.py` | local-only | 33 |
+| `engineer/bin/lib/config.py` | local-only | 105 |
+| `engineer/bin/lib/core.py` | local-only | 183 |
+| `engineer/bin/lib/decisions.py` | local-only | 17 |
+| `engineer/bin/lib/delivery.py` | local-only | 126 |
+| `engineer/bin/lib/frontmatter.py` | local-only | 49 |
+| `engineer/bin/lib/gitops.py` | local-only | 34 |
+| `engineer/bin/lib/handoff.py` | local-only | 66 |
+| `engineer/bin/lib/issues.py` | local-only | 112 |
+| `engineer/bin/lib/misc.py` | local-only | 177 |
+| `engineer/bin/lib/models.py` | local-only | 127 |
+| `engineer/bin/lib/numbering.py` | local-only | 57 |
+| `engineer/bin/lib/packages.py` | local-only | 39 |
+| `engineer/bin/lib/phase_issues.py` | local-only | 147 |
+| `engineer/bin/lib/planning_integrity.py` | local-only | 55 |
+| `engineer/bin/lib/planning_review.py` | local-only | 146 |
+| `engineer/bin/lib/plans.py` | local-only | 99 |
+| `engineer/bin/lib/probes.py` | local-only | 67 |
+| `engineer/bin/lib/quick_batch.py` | local-only | 159 |
+| `engineer/bin/lib/records.py` | local-only | 506 |
+| `engineer/bin/lib/repository.py` | local-only | 28 |
+| `engineer/bin/lib/requirements.py` | local-only | 41 |
+| `engineer/bin/lib/scope.py` | local-only | 50 |
+| `engineer/bin/lib/sessions.py` | local-only | 110 |
+| `engineer/bin/lib/tdd.py` | local-only | 153 |
+| `engineer/bin/lib/text.py` | local-only | 252 |
+| `engineer/bin/lib/uat.py` | local-only | 139 |
+| `engineer/bin/lib/ui.py` | local-only | 23 |
+| `engineer/bin/lib/verification.py` | local-only | 176 |
+| `engineer/bin/lib/verify.py` | local-only | 56 |
+| `engineer/bin/lib/worktrees.py` | local-only | 139 |
+| `engineer/bin/requirements.txt` | local-only | 1 |
+| `engineer/references/REFERENCE.md` | upstream | 0 |
+| `engineer/references/agent-contracts.md` | reconciled | 97 |
+| `engineer/references/agent-skills-bootstrap.md` | reconciled | 66 |
+| `engineer/references/artifact-types.md` | reconciled | 138 |
+| `engineer/references/checkpoints.md` | reconciled | 878 |
+| `engineer/references/common-bug-patterns.md` | upstream | 127 |
+| `engineer/references/context-budget.md` | reconciled | 125 |
+| `engineer/references/continuation-format.md` | reconciled | 253 |
+| `engineer/references/debugger-bug-taxonomy.md` | reconciled | 111 |
+| `engineer/references/debugger-fix-acceptance.md` | reconciled | 157 |
+| `engineer/references/debugger-philosophy.md` | reconciled | 77 |
+| `engineer/references/debugger-prevention.md` | reconciled | 98 |
+| `engineer/references/debugger-rca-branching.md` | reconciled | 98 |
+| `engineer/references/debugger-repro-hardening.md` | reconciled | 130 |
+| `engineer/references/debugger-sbfl.md` | reconciled | 110 |
+| `engineer/references/debugger-semantic-recall.md` | reconciled | 81 |
+| `engineer/references/debugger-techniques.md` | reconciled | 255 |
+| `engineer/references/dispatch-isolation-gate.md` | reconciled | 138 |
+| `engineer/references/domain-probes.md` | reconciled | 125 |
+| `engineer/references/edge-probe-fixtures/01-round-half-even/expected-coverage.json` | upstream | 32 |
+| `engineer/references/edge-probe-fixtures/01-round-half-even/requirements.json` | upstream | 1 |
+| `engineer/references/edge-probe-fixtures/02-merge-intervals/expected-coverage.json` | upstream | 41 |
+| `engineer/references/edge-probe-fixtures/02-merge-intervals/requirements.json` | upstream | 1 |
+| `engineer/references/edge-probe-fixtures/03-truncate-graphemes/expected-coverage.json` | upstream | 32 |
+| `engineer/references/edge-probe-fixtures/03-truncate-graphemes/requirements.json` | upstream | 1 |
+| `engineer/references/edge-probe-fixtures/04-money-rounding/expected-coverage.json` | upstream | 32 |
+| `engineer/references/edge-probe-fixtures/04-money-rounding/requirements.json` | upstream | 1 |
+| `engineer/references/edge-probe-fixtures/05-list-dedupe/expected-coverage.json` | upstream | 41 |
+| `engineer/references/edge-probe-fixtures/05-list-dedupe/requirements.json` | upstream | 1 |
+| `engineer/references/edge-probe-fixtures/06-resolved-mixed/expected-coverage.json` | upstream | 41 |
+| `engineer/references/edge-probe-fixtures/06-resolved-mixed/requirements.json` | upstream | 1 |
+| `engineer/references/edge-probe-fixtures/06-resolved-mixed/resolutions.json` | upstream | 4 |
+| `engineer/references/edge-probe.md` | reconciled | 458 |
+| `engineer/references/execute-phase-context-guard.md` | reconciled | 16 |
+| `engineer/references/executor-examples.md` | upstream | 158 |
+| `engineer/references/failing-direction.md` | reconciled | 78 |
+| `engineer/references/few-shot-examples/plan-checker.md` | reconciled | 73 |
+| `engineer/references/few-shot-examples/verifier.md` | reconciled | 109 |
+| `engineer/references/gate-prompts.md` | reconciled | 103 |
+| `engineer/references/gates.md` | reconciled | 70 |
+| `engineer/references/git-integration.md` | reconciled | 309 |
+| `engineer/references/git-planning-commit.md` | reconciled | 41 |
+| `engineer/references/honest-verifier.md` | reconciled | 105 |
+| `engineer/references/mandatory-initial-read.md` | upstream | 2 |
+| `engineer/references/model-profile-resolution.md` | reconciled | 88 |
+| `engineer/references/model-profiles.md` | reconciled | 271 |
+| `engineer/references/nyquist-compliance.md` | reconciled | 74 |
+| `engineer/references/offer-next.md` | reconciled | 86 |
+| `engineer/references/phase-argument-parsing.md` | reconciled | 63 |
+| `engineer/references/phase-id-convention.md` | reconciled | 28 |
+| `engineer/references/plan-checker-examples.md` | reconciled | 41 |
+| `engineer/references/planner-antipatterns.md` | reconciled | 255 |
+| `engineer/references/planner-coupling.md` | reconciled | 42 |
+| `engineer/references/planner-gap-closure.md` | upstream | 64 |
+| `engineer/references/planner-guidance.md` | reconciled | 246 |
+| `engineer/references/planner-interface-context.md` | upstream | 62 |
+| `engineer/references/planner-preconditions.md` | reconciled | 156 |
+| `engineer/references/planner-quick-batch.md` | reconciled | 71 |
+| `engineer/references/planner-reversibility.md` | reconciled | 146 |
+| `engineer/references/planner-reviews.md` | reconciled | 89 |
+| `engineer/references/planner-revision.md` | reconciled | 160 |
+| `engineer/references/planner-source-audit.md` | reconciled | 73 |
+| `engineer/references/planner-verify-command-grounding.md` | reconciled | 49 |
+| `engineer/references/prohibition-probe-fixtures/01-streak-reminder/expected.json` | upstream | 14 |
+| `engineer/references/prohibition-probe-fixtures/02-clean-utility/expected.json` | upstream | 4 |
+| `engineer/references/prohibition-probe-fixtures/03-multi-prohibition/expected.json` | upstream | 32 |
+| `engineer/references/prohibition-probe.md` | reconciled | 332 |
+| `engineer/references/project-skills-discovery.md` | reconciled | 21 |
+| `engineer/references/questioning.md` | upstream | 162 |
+| `engineer/references/research-documentation-lookup.md` | upstream | 31 |
+| `engineer/references/research-philosophy.md` | upstream | 29 |
+| `engineer/references/research-verification-protocol.md` | upstream | 27 |
+| `engineer/references/response-language-directive.md` | upstream | 9 |
+| `engineer/references/revision-loop.md` | reconciled | 204 |
+| `engineer/references/run-resolver.md` | reconciled | 8 |
+| `engineer/references/scout-codebase.md` | upstream | 51 |
+| `engineer/references/security-asvs-levels.md` | reconciled | 27 |
+| `engineer/references/specless-probe-fallback.md` | reconciled | 173 |
+| `engineer/references/tdd.md` | reconciled | 366 |
+| `engineer/references/thinking-models-debug.md` | reconciled | 44 |
+| `engineer/references/thinking-models-execution.md` | reconciled | 50 |
+| `engineer/references/thinking-models-planning.md` | reconciled | 80 |
+| `engineer/references/thinking-models-research.md` | reconciled | 50 |
+| `engineer/references/thinking-models-verification.md` | reconciled | 55 |
+| `engineer/references/ui-brand.md` | reconciled | 206 |
+| `engineer/references/ui-consideration-probe.md` | reconciled | 78 |
+| `engineer/references/universal-anti-patterns.md` | reconciled | 59 |
+| `engineer/references/untrusted-input-boundary.md` | upstream | 13 |
+| `engineer/references/verification-overrides.md` | reconciled | 227 |
+| `engineer/references/verification-patterns.md` | reconciled | 625 |
+| `engineer/references/verifier-evidence-gate.md` | reconciled | 160 |
+| `engineer/references/verifier-phase-gates.md` | reconciled | 202 |
+| `engineer/references/verifier-wiring-patterns.md` | reconciled | 100 |
+| `engineer/references/verify-command-path-resolvability.md` | reconciled | 50 |
+| `engineer/references/worktree-branch-check.md` | upstream | 44 |
+| `engineer/references/worktree-path-safety.md` | reconciled | 498 |
+| `engineer/templates/DEBUG.md` | reconciled | 208 |
+| `engineer/templates/README.md` | reconciled | 83 |
+| `engineer/templates/SECURITY.md` | upstream | 63 |
+| `engineer/templates/TEMPLATE.md` | reconciled | 0 |
+| `engineer/templates/UAT.md` | reconciled | 306 |
+| `engineer/templates/UI-SPEC.md` | reconciled | 147 |
+| `engineer/templates/VALIDATION.md` | reconciled | 78 |
+| `engineer/templates/codebase/architecture.md` | upstream | 255 |
+| `engineer/templates/codebase/stack.md` | upstream | 186 |
+| `engineer/templates/context.md` | reconciled | 352 |
+| `engineer/templates/continue-here.md` | upstream | 78 |
+| `engineer/templates/discussion-log.md` | upstream | 63 |
+| `engineer/templates/milestone-archive.md` | upstream | 123 |
+| `engineer/templates/milestone.md` | upstream | 115 |
+| `engineer/templates/phase-prompt.md` | reconciled | 615 |
+| `engineer/templates/planner-subagent-prompt.md` | reconciled | 117 |
+| `engineer/templates/project.md` | reconciled | 203 |
+| `engineer/templates/requirements.md` | upstream | 231 |
+| `engineer/templates/research-project/ARCHITECTURE.md` | upstream | 204 |
+| `engineer/templates/research-project/FEATURES.md` | upstream | 147 |
+| `engineer/templates/research-project/PITFALLS.md` | upstream | 200 |
+| `engineer/templates/research-project/STACK.md` | upstream | 120 |
+| `engineer/templates/research-project/SUMMARY.md` | upstream | 170 |
+| `engineer/templates/research.md` | reconciled | 592 |
+| `engineer/templates/roadmap.md` | upstream | 202 |
+| `engineer/templates/spec.md` | reconciled | 333 |
+| `engineer/templates/state.md` | reconciled | 205 |
+| `engineer/templates/summary.md` | upstream | 321 |
+| `engineer/templates/user-setup.md` | upstream | 302 |
+| `engineer/templates/verification-report.md` | reconciled | 348 |
+| `engineer/workflows/WORKFLOW.md` | upstream | 1 |
+| `engineer/workflows/_runtime-launcher.snippet.sh` | reconciled | 42 |
+| `engineer/workflows/add-backlog.md` | reconciled | 101 |
+| `engineer/workflows/add-phase.md` | reconciled | 163 |
+| `engineer/workflows/add-tests.md` | reconciled | 398 |
+| `engineer/workflows/add-todo.md` | reconciled | 239 |
+| `engineer/workflows/analyze-dependencies.md` | reconciled | 98 |
+| `engineer/workflows/audit-fix.md` | reconciled | 239 |
+| `engineer/workflows/audit-milestone.md` | reconciled | 387 |
+| `engineer/workflows/audit-uat.md` | reconciled | 168 |
+| `engineer/workflows/check-todos.md` | reconciled | 230 |
+| `engineer/workflows/cleanup.md` | reconciled | 303 |
+| `engineer/workflows/code-review-fix.md` | reconciled | 675 |
+| `engineer/workflows/code-review.md` | reconciled | 1061 |
+| `engineer/workflows/code-review/steps/dispatch-fix.md` | reconciled | 40 |
+| `engineer/workflows/complete-milestone.md` | reconciled | 683 |
+| `engineer/workflows/debug.md` | reconciled | 296 |
+| `engineer/workflows/diagnose-issues.md` | reconciled | 337 |
+| `engineer/workflows/discuss-phase.md` | reconciled | 588 |
+| `engineer/workflows/discuss-phase/modes/all.md` | upstream | 30 |
+| `engineer/workflows/discuss-phase/modes/auto.md` | upstream | 53 |
+| `engineer/workflows/discuss-phase/modes/text.md` | reconciled | 57 |
+| `engineer/workflows/discuss-phase/templates/checkpoint.json` | upstream | 18 |
+| `engineer/workflows/discuss-phase/templates/context.md` | reconciled | 152 |
+| `engineer/workflows/discuss-phase/templates/discussion-log.md` | upstream | 52 |
+| `engineer/workflows/docs-update.md` | reconciled | 1016 |
+| `engineer/workflows/docs-update/detail/elaboration.md` | reconciled | 177 |
+| `engineer/workflows/docs-update/steps/dispatch-monorepo-packages.md` | reconciled | 51 |
+| `engineer/workflows/edit-phase.md` | reconciled | 368 |
+| `engineer/workflows/execute-phase.md` | reconciled | 1438 |
+| `engineer/workflows/execute-phase/steps/code-review-disposition.md` | reconciled | 1060 |
+| `engineer/workflows/execute-phase/steps/codebase-drift-gate.md` | reconciled | 127 |
+| `engineer/workflows/execute-phase/steps/completion-reconciliation.md` | reconciled | 100 |
+| `engineer/workflows/execute-phase/steps/executor-isolation-dispatch.md` | reconciled | 415 |
+| `engineer/workflows/execute-phase/steps/executor-progress-policy.md` | upstream | 43 |
+| `engineer/workflows/execute-phase/steps/gap-closure-artifacts.md` | reconciled | 93 |
+| `engineer/workflows/execute-phase/steps/partial-wave.md` | reconciled | 72 |
+| `engineer/workflows/execute-phase/steps/per-plan-executor-routing.md` | reconciled | 118 |
+| `engineer/workflows/execute-phase/steps/per-plan-worktree-gate.md` | reconciled | 186 |
+| `engineer/workflows/execute-phase/steps/post-merge-gate.md` | reconciled | 210 |
+| `engineer/workflows/execute-phase/steps/protected-branch.md` | reconciled | 62 |
+| `engineer/workflows/execute-phase/steps/ready-wave-gate.md` | upstream | 37 |
+| `engineer/workflows/execute-phase/steps/regression-gate-run.md` | reconciled | 103 |
+| `engineer/workflows/execute-phase/steps/regression-gate.md` | reconciled | 67 |
+| `engineer/workflows/execute-phase/steps/sequential-root-pin.md` | reconciled | 35 |
+| `engineer/workflows/execute-phase/steps/tdd-applicability-resolution.md` | reconciled | 66 |
+| `engineer/workflows/execute-phase/steps/threat-id-gate.md` | reconciled | 28 |
+| `engineer/workflows/execute-phase/steps/verify-phase-goal.md` | reconciled | 232 |
+| `engineer/workflows/execute-phase/steps/worktree-base-check.md` | reconciled | 25 |
+| `engineer/workflows/execute-phase/steps/worktree-recovery-policy.md` | upstream | 11 |
+| `engineer/workflows/explore.md` | reconciled | 278 |
+| `engineer/workflows/extract-learnings.md` | reconciled | 272 |
+| `engineer/workflows/fast.md` | reconciled | 165 |
+| `engineer/workflows/forensics.md` | reconciled | 284 |
+| `engineer/workflows/graduation.md` | reconciled | 199 |
+| `engineer/workflows/health.md` | reconciled | 298 |
+| `engineer/workflows/inbox.md` | reconciled | 393 |
+| `engineer/workflows/insert-phase.md` | reconciled | 200 |
+| `engineer/workflows/list-phase-assumptions.md` | reconciled | 180 |
+| `engineer/workflows/list-seeds.md` | reconciled | 67 |
+| `engineer/workflows/manager.md` | reconciled | 446 |
+| `engineer/workflows/map-codebase.md` | reconciled | 504 |
+| `engineer/workflows/milestone-summary.md` | reconciled | 276 |
+| `engineer/workflows/new-milestone.md` | reconciled | 768 |
+| `engineer/workflows/new-milestone/steps/project-md-milestone-write.md` | upstream | 16 |
+| `engineer/workflows/new-project.md` | reconciled | 1281 |
+| `engineer/workflows/new-project/steps/codebase-map-offer.md` | reconciled | 18 |
+| `engineer/workflows/next.md` | reconciled | 409 |
+| `engineer/workflows/note.md` | reconciled | 160 |
+| `engineer/workflows/onboard.md` | reconciled | 280 |
+| `engineer/workflows/pause-work.md` | reconciled | 265 |
+| `engineer/workflows/plan-phase.md` | reconciled | 1556 |
+| `engineer/workflows/plan-phase/steps/closed-phase-gate.md` | reconciled | 46 |
+| `engineer/workflows/plan-phase/steps/stall-detection-helpers.md` | reconciled | 217 |
+| `engineer/workflows/plan-phase/steps/windows-troubleshooting.md` | reconciled | 23 |
+| `engineer/workflows/plant-seed.md` | reconciled | 279 |
+| `engineer/workflows/progress.md` | reconciled | 755 |
+| `engineer/workflows/progress/steps/forensic-audit.md` | reconciled | 125 |
+| `engineer/workflows/quick-batch.md` | reconciled | 253 |
+| `engineer/workflows/quick-batch/steps/batch-init.md` | reconciled | 96 |
+| `engineer/workflows/quick-batch/steps/completion.md` | reconciled | 106 |
+| `engineer/workflows/quick-batch/steps/merge-wave.md` | reconciled | 141 |
+| `engineer/workflows/quick-batch/steps/plan-checker-loop.md` | reconciled | 148 |
+| `engineer/workflows/quick-batch/steps/planner-wave.md` | reconciled | 199 |
+| `engineer/workflows/quick-batch/steps/research-phase.md` | reconciled | 136 |
+| `engineer/workflows/quick-batch/steps/resume-mode.md` | reconciled | 90 |
+| `engineer/workflows/quick-batch/steps/verification-wave.md` | reconciled | 120 |
+| `engineer/workflows/quick-batch/steps/worktree-dispatch.md` | reconciled | 210 |
+| `engineer/workflows/quick.md` | reconciled | 838 |
+| `engineer/workflows/quick/steps/discussion-phase.md` | reconciled | 120 |
+| `engineer/workflows/quick/steps/plan-checker-loop.md` | reconciled | 212 |
+| `engineer/workflows/quick/steps/quick-verification.md` | reconciled | 106 |
+| `engineer/workflows/quick/steps/research-phase.md` | reconciled | 66 |
+| `engineer/workflows/quick/steps/worktree-pre-dispatch-commit.md` | reconciled | 104 |
+| `engineer/workflows/remove-phase.md` | reconciled | 204 |
+| `engineer/workflows/resume-project.md` | reconciled | 360 |
+| `engineer/workflows/scan.md` | reconciled | 118 |
+| `engineer/workflows/secure-phase.md` | reconciled | 242 |
+| `engineer/workflows/session-report.md` | reconciled | 149 |
+| `engineer/workflows/ship.md` | reconciled | 656 |
+| `engineer/workflows/spec-phase.md` | reconciled | 600 |
+| `engineer/workflows/thread.md` | reconciled | 236 |
+| `engineer/workflows/ui-phase.md` | reconciled | 576 |
+| `engineer/workflows/ui-review.md` | reconciled | 251 |
+| `engineer/workflows/update.md` | reconciled | 597 |
+| `engineer/workflows/validate-phase.md` | reconciled | 234 |
+| `engineer/workflows/verify-work.md` | reconciled | 971 |
+| `engineer/workflows/verify-work/steps/automated-ui-verification.md` | reconciled | 101 |
+| `hooks/worktree-path-guard.py` | upstream | 0 |
+| `scripts/SCRIPT.py` | upstream | 0 |
+| `scripts/anchor.py` | local-only | 65 |
+| `scripts/check.py` | local-only | 66 |
+| `scripts/common.py` | local-only | 142 |
+| `scripts/delete_batch.py` | local-only | 42 |
+| `scripts/inventory.py` | local-only | 71 |
+| `scripts/links.py` | local-only | 65 |
+| `scripts/manifest.json` | local-only | 205 |
+| `scripts/progress.py` | local-only | 38 |
+| `scripts/rename.py` | local-only | 100 |
+| `scripts/verbs.py` | local-only | 72 |
+| `skills/SKILL/SKILL.md` | upstream | 0 |
+| `skills/add-tests/SKILL.md` | local-only | 47 |
+| `skills/audit-fix/SKILL.md` | local-only | 39 |
+| `skills/audit-milestone/SKILL.md` | local-only | 42 |
+| `skills/audit-uat/SKILL.md` | local-only | 24 |
+| `skills/capture/SKILL.md` | local-only | 70 |
+| `skills/cleanup/SKILL.md` | local-only | 25 |
+| `skills/code-review/SKILL.md` | local-only | 73 |
+| `skills/complete-milestone/SKILL.md` | local-only | 148 |
+| `skills/debug/SKILL.md` | local-only | 57 |
+| `skills/discuss-phase/SKILL.md` | local-only | 118 |
+| `skills/docs-update/SKILL.md` | local-only | 54 |
+| `skills/execute-phase/SKILL.md` | local-only | 66 |
+| `skills/explore/SKILL.md` | local-only | 27 |
+| `skills/extract-learnings/SKILL.md` | local-only | 28 |
+| `skills/fast/SKILL.md` | local-only | 35 |
+| `skills/forensics/SKILL.md` | local-only | 61 |
+| `skills/health/SKILL.md` | local-only | 37 |
+| `skills/inbox/SKILL.md` | local-only | 44 |
+| `skills/manager/SKILL.md` | local-only | 50 |
+| `skills/map-codebase/SKILL.md` | local-only | 87 |
+| `skills/milestone-summary/SKILL.md` | local-only | 55 |
+| `skills/new-milestone/SKILL.md` | local-only | 51 |
+| `skills/new-project/SKILL.md` | local-only | 49 |
+| `skills/next/SKILL.md` | local-only | 35 |
+| `skills/onboard/SKILL.md` | local-only | 50 |
+| `skills/pause-work/SKILL.md` | local-only | 48 |
+| `skills/phase/SKILL.md` | local-only | 61 |
+| `skills/plan-phase/SKILL.md` | local-only | 65 |
+| `skills/progress/SKILL.md` | local-only | 54 |
+| `skills/quick-batch/SKILL.md` | local-only | 117 |
+| `skills/quick/SKILL.md` | local-only | 185 |
+| `skills/resume-work/SKILL.md` | local-only | 31 |
+| `skills/review-backlog/SKILL.md` | local-only | 65 |
+| `skills/secure-phase/SKILL.md` | local-only | 41 |
+| `skills/ship/SKILL.md` | local-only | 29 |
+| `skills/spec-phase/SKILL.md` | local-only | 63 |
+| `skills/thread/SKILL.md` | local-only | 29 |
+| `skills/ui-phase/SKILL.md` | local-only | 40 |
+| `skills/ui-review/SKILL.md` | local-only | 38 |
+| `skills/update/SKILL.md` | local-only | 53 |
+| `skills/validate-phase/SKILL.md` | local-only | 41 |
+| `skills/verify-work/SKILL.md` | local-only | 44 |

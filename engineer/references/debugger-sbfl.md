@@ -1,6 +1,6 @@
 # Spectrum-Based Fault Localization (SBFL) Pre-filter
 
-Loaded by `gsd-debugger` via `@-include`. A deterministic ranked "where to look
+Loaded by `debugger` via `@-include`. A deterministic ranked "where to look
 first" list derived from existing test pass/fail coverage, computed before LLM
 reasoning over an unranked search space.
 

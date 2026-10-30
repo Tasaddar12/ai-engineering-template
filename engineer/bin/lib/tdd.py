@@ -19,10 +19,20 @@ def applicable(args):
 
 def behavior(args):
     value = args.arg(0, args.get("task", "{}"))
+    if isinstance(value, str) and value and not value.lstrip().startswith(("{", "[")):
+        try:
+            candidate = safe_path(value)
+            if candidate.is_file():
+                value = read(candidate)
+        except OSError:
+            # An inline task description may be longer than a legal filename.
+            pass
     try:
         task = json.loads(value)
     except ValueError:
         task = {"action": value, "files": args.all("files")}
+    if not isinstance(task, dict):
+        raise Failure("invalid-task", "Task classification requires a JSON object or concrete task text", 2)
     files = task.get("files", [])
     if isinstance(files, str):
         files = re.split(r"[,\s]+", files)

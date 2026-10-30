@@ -1,6 +1,6 @@
 Apply response_language to all user-facing prose — narration between tool calls, status updates, progress notes, and findings included; preserve code, paths, and identifiers.
 
-# Executor Progress Policy (#4218)
+# Executor Progress Policy
 
 Read this before treating any executor as stalled.
 

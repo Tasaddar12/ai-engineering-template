@@ -96,7 +96,7 @@ plans, or apply a `fix_hint` that contradicts a constraint from Step 2.5 — tha
 ### Step 6: Commit
 
 ```bash
-gsd_run query commit "fix($PHASE): revise plans based on checker feedback" --files .planning/phases/$PHASE-*/$PHASE-*-PLAN.md
+engineer_run query commit "fix($PHASE): revise plans based on checker feedback" --files .planning/phases/$PHASE-*/$PHASE-*-PLAN.md
 ```
 
 ### Step 7: Return Revision Summary
@@ -131,8 +131,8 @@ gsd_run query commit "fix($PHASE): revise plans based on checker feedback" --fil
 
 Emit this INSTEAD OF `## REVISION COMPLETE` when at least one issue could not be addressed
 without contradicting a constraint. Non-conflicting issues you already fixed stay listed under
-`### Changes Made` so the work is not lost. The orchestrator routes this to the user or to the
-configured plan-review convergence loop; it does not count as a failed revision iteration.
+`### Changes Made` so the work is not lost. The orchestrator returns this conflict to the user for
+resolution; it does not count as a failed revision iteration.
 
 ```markdown
 ## REVISION_CONFLICT

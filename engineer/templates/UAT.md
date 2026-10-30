@@ -42,7 +42,7 @@ result: pass
 expected: [observable behavior]
 result: issue
 reported: "[verbatim user response]"
-severity: major
+  severity: major
 
 ### 4. [Test Name]
 
@@ -81,8 +81,8 @@ blocked: [N]
   artifacts: [] # Filled by diagnosis
   missing: [] # Filled by diagnosis
   debug_session: "" # Filled by diagnosis
-  resolved_by: "" # Written by verify-work's reconcile_gaps (#1921) when # an executed gap-closure plan resolves this gap — # never author this directly. Plan basename.
-  resolved_at: "" # Written alongside resolved_by (#1921).
+  resolved_by: "" # Written by verify-work's reconcile_gaps  when # an executed gap-closure plan resolves this gap — # never author this directly. Plan basename.
+  resolved_at: "" # Written alongside resolved_by .
 ```
 
 ---
@@ -120,8 +120,8 @@ blocked: [N]
 
 - APPEND only when issue found (YAML format)
 - After diagnosis: fill `root_cause`, `artifacts`, `missing`, `debug_session`
-- This section feeds directly into /gsd:plan-phase --gaps
-- `status: resolved` (#1921, #4983): when `/gsd:verify-work`'s `reconcile_gaps`
+- This section feeds directly into /plan-phase --gaps
+- `status: resolved`: when `/verify-work`'s `reconcile_gaps`
   step finds an executed gap-closure plan (a `*-PLAN.md` naming this entry's
   `gap_id` with a matching `*-SUMMARY.md`), it updates the entry IN PLACE —
   `status: failed` → `status: resolved` — and adds `resolved_by` (the
@@ -146,7 +146,7 @@ blocked: [N]
 4. UAT.md Gaps section updated with diagnosis:
    - Each gap gets `root_cause`, `artifacts`, `missing`, `debug_session` filled
 5. status → "diagnosed"
-6. Ready for /gsd:plan-phase --gaps with root causes
+6. Ready for /plan-phase --gaps with root causes
 
 **After diagnosis:**
 
@@ -160,18 +160,18 @@ blocked: [N]
   test: 2
   root_cause: "useEffect in CommentList.tsx missing commentCount dependency"
   artifacts:
-    - path: "src/components/CommentList.tsx"
-      issue: "useEffect missing dependency"
+  - path: "src/components/CommentList.tsx"
+    issue: "useEffect missing dependency"
   missing:
     - "Add commentCount to useEffect dependency array"
-  debug_session: ".planning/debug/comment-not-refreshing.md"
+    debug_session: ".planning/debug/comment-not-refreshing.md"
 ```
 
 </diagnosis_lifecycle>
 
 <lifecycle>
 
-**Creation:** When /gsd:verify-work starts new session
+**Creation:** When /verify-work starts new session
 
 - Extract tests from SUMMARY.md files
 - Set status to "testing"
@@ -203,7 +203,7 @@ blocked: [N]
 
 **Resuming partial session:**
 
-- `/gsd:verify-work {phase}` picks up from first pending/blocked test
+- `/verify-work {phase}` picks up from first pending/blocked test
 - When all items resolved, status advances to "complete"
 
 **Resume after /clear:**
@@ -257,7 +257,7 @@ result: pass
 expected: Submit comment via rich text editor, appears in list with author info
 result: issue
 reported: "works but doesn't show until I refresh the page"
-severity: major
+  severity: major
 
 ### 3. Reply to a Comment
 

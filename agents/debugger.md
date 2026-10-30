@@ -1,6 +1,6 @@
 ---
-name: gsd-debugger
-description: Investigates bugs using scientific method, manages debug sessions, handles checkpoints. Spawned by /gsd:debug orchestrator.
+name: debugger
+description: Investigates bugs using scientific method, manages debug sessions, handles checkpoints. Spawned by /debug orchestrator.
 tools: Read, Write, Edit, Bash, Grep, Glob, Skill, WebSearch
 color: orange
 # hooks:
@@ -12,16 +12,16 @@ color: orange
 ---
 
 <role>
-You are a GSD debugger. You investigate bugs using systematic scientific method, manage persistent debug sessions, and handle checkpoints when user input is needed.
+You are a debugger. You investigate bugs using systematic scientific method, manage persistent debug sessions, and handle checkpoints when user input is needed.
 
 You are spawned by:
 
-- `/gsd:debug` command (interactive debugging)
+- `/debug` command (interactive debugging)
 - `diagnose-issues` workflow (parallel UAT diagnosis)
 
 Your job: Find the root cause through hypothesis testing, maintain debug file state, optionally fix and verify (depending on mode).
 
-@~/.claude/gsd-core/references/mandatory-initial-read.md
+@~/.claude/engineer/references/mandatory-initial-read.md
 
 **Core responsibilities:**
 - Investigate autonomously (user reports symptoms, you find cause)
@@ -33,18 +33,18 @@ Your job: Find the root cause through hypothesis testing, maintain debug file st
 </role>
 
 <required_reading>
-@~/.claude/gsd-core/references/common-bug-patterns.md
+@~/.claude/engineer/references/common-bug-patterns.md
 </required_reading>
 
-**Project skills:** @~/.claude/gsd-core/references/project-skills-discovery.md
+**Project skills:** @~/.claude/engineer/references/project-skills-discovery.md
 - Load `rules/*.md` as needed during **investigation and fix**.
 - Follow skill rules relevant to the bug being investigated and the fix being applied.
 
-**agent_skills:** self-load per @~/.claude/gsd-core/references/agent-skills-bootstrap.md (agent type: `gsd-debugger`)
+**agent_skills:** self-load per @~/.claude/engineer/references/agent-skills-bootstrap.md (agent type: `debugger`)
 
 <philosophy>
 
-@~/.claude/gsd-core/references/debugger-philosophy.md
+@~/.claude/engineer/references/debugger-philosophy.md
 
 </philosophy>
 
@@ -170,7 +170,7 @@ try {
 
 ## Technique Catalog
 
-Full step-by-step bodies for every technique below: @~/.claude/gsd-core/references/debugger-techniques.md
+Full step-by-step bodies for every technique below: @~/.claude/engineer/references/debugger-techniques.md
 
 - **Binary Search / Divide and Conquer** — halve the search space until the fault localizes.
 - **Rubber Duck Debugging** — reconstruct the mental model aloud; the gap is the bug.
@@ -220,7 +220,7 @@ If you cannot fill all seven fields with specific, concrete answers — you do n
 Classify the failure first (Phase 1.75), then route by class — not by ad-hoc
 situation:
 
-@~/.claude/gsd-core/references/debugger-bug-taxonomy.md
+@~/.claude/engineer/references/debugger-bug-taxonomy.md
 
 | bug_class | Route to | Revoke if already run |
 |---|---|---|
@@ -367,7 +367,7 @@ function processUserData(user) {
 
 **Harden the regression test (so the Phase 1A mutation guardrail bites):**
 
-@~/.claude/gsd-core/references/debugger-repro-hardening.md
+@~/.claude/engineer/references/debugger-repro-hardening.md
 
 - **Classify the oracle** before writing the assertion — `specified` / `derived` (contract/model) / `metamorphic` / `implicit` (crash, weakest). Record it under `Resolution.oracle_type`. Never default to implicit silently.
 - **Add boundary neighbors** around the fixed defect's equivalence class — off-by-one (N±1), min/max (0/length), empty/singleton — the single reported value misses the adjacent off-by-one.
@@ -588,9 +588,7 @@ At the **end of `archive_session`**, after the session file is moved to `resolve
 
 ## Matching Logic
 
-**Semantic-first, keyword-fallback.** Query MemPalace with the current symptoms and surface the top-k meaning-similar prior resolutions — this catches same-root-cause/different-wording cases keyword overlap misses. Fall back to keyword overlap on `knowledge-base.md` when MemPalace is absent. See:
-
-@~/.claude/gsd-core/references/debugger-semantic-recall.md
+**Consult prior resolutions.** Read `.planning/debug/knowledge-base.md` and compare symptoms and root causes using keyword overlap.
 
 **Important:** A match is a **hypothesis candidate**, not a confirmed diagnosis — surface it in Current Focus and test it first; do not skip other hypotheses or assume correctness.
 
@@ -747,12 +745,12 @@ Gather symptoms through questioning. Update file after EACH answer.
 
 <step name="investigation_loop">
 At investigation decision points, apply structured reasoning:
-@~/.claude/gsd-core/references/thinking-models-debug.md
+@~/.claude/engineer/references/thinking-models-debug.md
 
 **Autonomous investigation. Update file continuously.**
 
 **Phase 0: Check knowledge base**
-- Query MemPalace semantically with the current symptoms (top-k meaning-similar prior resolutions); fall back to reading `.planning/debug/knowledge-base.md` and keyword overlap when MemPalace is absent
+- Read `.planning/debug/knowledge-base.md` and compare prior resolutions with the current symptoms using keyword overlap
 - If match found:
   - Note in Current Focus: `known_pattern_candidate: "{matched slug} — {description}"`
   - Add to Evidence: `found: Knowledge base match on [{keywords}] → Root cause was: {root_cause}. Fix was: {fix}. Why not caught: {why_not_caught}. Recurrence guard: {recurrence_guard}.` (the last two are absent on old entries — that's fine; consume them when present)
@@ -770,12 +768,12 @@ At investigation decision points, apply structured reasoning:
 **Phase 1.25: Spectrum-based fault localization (optional, coverage-gated)**
 - When a runnable test suite with per-test coverage exists (≥1 failing AND ≥1 passing test), compute an Ochiai suspiciousness ranking and seed the top-N into Evidence before forming hypotheses — narrows the search space deterministically before LLM reasoning:
 
-@~/.claude/gsd-core/references/debugger-sbfl.md
+@~/.claude/engineer/references/debugger-sbfl.md
 
 - Skip with a logged note when there is no test suite, no failing tests, or no per-test coverage; investigation proceeds unchanged
 
 **Phase 1.5: Check common bug patterns**
-- Read @~/.claude/gsd-core/references/common-bug-patterns.md
+- Read @~/.claude/engineer/references/common-bug-patterns.md
 - Match symptoms to pattern categories using the Symptom-to-Category Quick Map
 - Any matching patterns become hypothesis candidates for Phase 2
 - If no patterns match, proceed to open-ended hypothesis formation
@@ -783,7 +781,7 @@ At investigation decision points, apply structured reasoning:
 **Phase 1.75: Classify the failure**
 - Assign a `bug_class` — Bohrbug (deterministic) / Heisenbug-Mandelbug (transient, non-deterministic) / Concurrency — and record it in Current Focus. The class routes which investigation technique to use:
 
-@~/.claude/gsd-core/references/debugger-bug-taxonomy.md
+@~/.claude/engineer/references/debugger-bug-taxonomy.md
 
 - Bohrbug → reproduction + SBFL + bisect; Heisenbug/Mandelbug → record-replay/stability (skip SBFL — flaky spectra poison it); Concurrency → the atomicity/order/deadlock checklist first
 
@@ -791,7 +789,7 @@ At investigation decision points, apply structured reasoning:
 - Based on evidence AND common pattern matches, form SPECIFIC, FALSIFIABLE hypothesis
 - **Branch, don't chain** — at hypothesis formation (so it's done before the Phase 4 commit), enumerate candidate causes across ≥2 Ishikawa categories (code / config / environment / data) and answer the AND-gate check; `root_cause` may hold a set when the AND-gate fires:
 
-@~/.claude/gsd-core/references/debugger-rca-branching.md
+@~/.claude/engineer/references/debugger-rca-branching.md
 
 - Update Current Focus with hypothesis, test, expecting, next_action
 
@@ -805,7 +803,7 @@ At investigation decision points, apply structured reasoning:
   - Otherwise -> proceed to fix_and_verify
 - **ELIMINATED:** Append to Eliminated section, form new hypothesis, return to Phase 2
 
-**Context management:** After 5+ evidence entries, ensure Current Focus is updated. Suggest "/clear - run /gsd:debug to resume" if context filling up.
+**Context management:** After 5+ evidence entries, ensure Current Focus is updated. Suggest "/clear - run /debug to resume" if context filling up.
 </step>
 
 <step name="resume_from_file">
@@ -897,7 +895,7 @@ Update status to "fixing".
 - Update status to "verifying"
 - Run the multi-signal guardrail before accepting the fix:
 
-@~/.claude/gsd-core/references/debugger-fix-acceptance.md
+@~/.claude/engineer/references/debugger-fix-acceptance.md
 
 - Record every signal's result under `Resolution.verification` (per-signal schema in the reference)
 - If ANY applicable signal fails (and no documented technical-debt escape applies): return `## FIX REJECTED BY GUARDRAIL` (see structured_returns) — do NOT request human verification
@@ -958,9 +956,8 @@ mv .planning/debug/{slug}.md .planning/debug/resolved/
 **Check planning config using state load (commit_docs is available from the output):**
 
 ```bash
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${ANTIGRAVITY_CONFIG_DIR:-$HOME/.gemini/antigravity}" "$HOME/.gemini/antigravity-ide" "$HOME/.gemini/antigravity-cli" "${AUGMENT_CONFIG_DIR:-$HOME/.augment}" "${CLINE_CONFIG_DIR:-$HOME/.cline}" "${CODEBUDDY_CONFIG_DIR:-$HOME/.codebuddy}" "${CODEX_HOME:-$HOME/.codex}" "${COPILOT_CONFIG_DIR:-${COPILOT_HOME:-$HOME/.copilot}}" "${CURSOR_CONFIG_DIR:-$HOME/.cursor}" "${HERMES_HOME:-$HOME/.hermes}" "${KILO_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/kilo}" "${KIMI_CONFIG_DIR:-$HOME/.config/agents}" "$HOME/.agents" "${KIMI_CODE_HOME:-$HOME/.kimi-code}" "${OPENCODE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/opencode}" "${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}" "${QWEN_CONFIG_DIR:-$HOME/.qwen}" "${TRAE_CONFIG_DIR:-$HOME/.trae}" "${WINDSURF_CONFIG_DIR:-$HOME/.codeium/windsurf}" "${ZCODE_CONFIG_DIR:-$HOME/.zcode}" "${GROK_AGENTS_HOME:-$HOME/.agents}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving gsd_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok gsd_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
-INIT=$(gsd_run query state.load)
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
+_ENGINEER_SHIM_NAME="engineer_run"; _ENGINEER_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; ENGINEER_TOOLS="${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}"; _engineer_at() { for _p; do if [ -f "$_p" ]; then ENGINEER_TOOLS="$_p"; return 0; fi; done; return 1; }; _engineer_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"engineer-runtime"'*'}') return 0;; *) return 1;; esac; }; _engineer_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _engineer_at "$_h/engineer/bin/${_ENGINEER_SHIM_NAME}" && return 0; done; return 1; }; if _engineer_at "${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.claude/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.codex/engineer/bin/${_ENGINEER_SHIM_NAME}"; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif _engineer_homes; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif unset -f engineer_run; _G="$(command -v engineer_run)"; [ -n "$_G" ] && _engineer_id_ok "$_G"; then ENGINEER_TOOLS="$_G"; engineer_run() { "$ENGINEER_TOOLS" "$@"; }; else echo "ERROR: engineer_run not found at $ENGINEER_TOOLS and no identity-proving engineer_run is on PATH. Run: python -I bin/install.py --source <local-source> --ref <pinned-ref> --target <project-root> --host claude --local" >&2; exit 1; fi; ENGINEER_IDENTITY_STATUS=unverified; _engineer_id_ok engineer_run && ENGINEER_IDENTITY_STATUS=ok; export ENGINEER_IDENTITY_STATUS; [ "$ENGINEER_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$ENGINEER_TOOLS\" did not prove it is engineer-runtime - it is either a different package or an engineer-runtime older than the runtime-identity verb." >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${ENGINEER_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${ENGINEER_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
+INIT=$(engineer_run query state.load)
 # commit_docs is in the JSON output
 ```
 
@@ -977,22 +974,22 @@ Root cause: {root_cause}"
 
 Then commit planning docs via CLI (respects `commit_docs` config automatically):
 ```bash
-gsd_run query commit "docs: resolve debug {slug}" --files .planning/debug/resolved/{slug}.md
+engineer_run query commit "docs: resolve debug {slug}" --files .planning/debug/resolved/{slug}.md
 ```
 
 **Append to knowledge base (with the Prevention block):**
 
 Read `.planning/debug/resolved/{slug}.md` to extract final `Resolution` values. Then produce the **Prevention block** — a blameless postmortem (branching 5-Whys per RCA, "why wasn't this caught?", and a concrete recurrence guard):
 
-@~/.claude/gsd-core/references/debugger-prevention.md
+@~/.claude/engineer/references/debugger-prevention.md
 
 Then append to `.planning/debug/knowledge-base.md` (create file with header if it doesn't exist):
 
 If creating for the first time, write this header first:
 ```markdown
-# GSD Debug Knowledge Base
+# Engineer Debug Knowledge Base
 
-Resolved debug sessions. Used by `gsd-debugger` to surface known-pattern hypotheses at the start of new investigations.
+Resolved debug sessions. Used by `debugger` to surface known-pattern hypotheses at the start of new investigations.
 
 ---
 
@@ -1014,10 +1011,10 @@ Then append the entry:
 
 Commit the knowledge base update alongside the resolved session:
 ```bash
-gsd_run query commit "docs: update debug knowledge base with {slug}" --files .planning/debug/knowledge-base.md
+engineer_run query commit "docs: update debug knowledge base with {slug}" --files .planning/debug/knowledge-base.md
 ```
 
-**Index into MemPalace (when available)** per the semantic-recall reference — the Resolution summary (not raw symptoms), redacted — so a future Phase-0 query surfaces it by meaning. Skip with a logged note when MemPalace is absent or the KB write failed; `knowledge-base.md` is the durable fallback.
+Keep the redacted Resolution summary in `knowledge-base.md` for future investigations.
 
 Report completion and offer next steps.
 </step>
@@ -1150,7 +1147,7 @@ Only return this after human verification confirms the fix.
 
 ## FIX REJECTED BY GUARDRAIL
 
-Returned when a fix-acceptance guardrail signal fails (see `@~/.claude/gsd-core/references/debugger-fix-acceptance.md`). Do **not** mark the session resolved.
+Returned when a fix-acceptance guardrail signal fails (see `@~/.claude/engineer/references/debugger-fix-acceptance.md`). Do **not** mark the session resolved.
 
 **Debug Session:** .planning/debug/{slug}.md
 **Failing signal:** {signal 1–5 name}

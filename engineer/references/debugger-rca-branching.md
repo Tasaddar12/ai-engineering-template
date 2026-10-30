@@ -1,6 +1,6 @@
 # RCA Branching — Anti-Single-Cause Bias
 
-Loaded by `gsd-debugger` via `@-include` from Phase 2 (form hypothesis) and the
+Loaded by `debugger` via `@-include` from Phase 2 (form hypothesis) and the
 pre-fix Structured Reasoning Checkpoint. A lightweight discipline that guards
 against the best-known Root-Cause-Analysis failure mode: **5-Whys single-cause
 bias** — a linear "why → why → why" chain tends to isolate ONE cause and stop,

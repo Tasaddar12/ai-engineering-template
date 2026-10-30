@@ -1,12 +1,12 @@
 # Dimension 8 — Nyquist Compliance (checks 8a–8e)
 
-> Reference file for gsd-plan-checker agent. Loaded on-demand via `@` reference.
-> Extracted from `agents/gsd-plan-checker.md` in #3172 to stay under the agent's
+> Reference file for plan-checker agent. Loaded on-demand via `@` reference.
+> Extracted from `agents/plan-checker.md` in to stay under the agent's
 > LARGE size cap. Checks 8a-8e are moved unchanged; the only edit is to the
 > Dimension 8 Output table, which gains a `Failing Direction` column and a
 > stated/runnable tally so check 8f's result is reported alongside them.
 > Check 8f itself lives in its own reference:
-> @gsd-core/references/failing-direction.md
+> @~/.claude/engineer/references/failing-direction.md
 
 **Skip if:** `workflow.nyquist_validation` is explicitly set to `false` in config.json
 (absent key = enabled), phase has no RESEARCH.md, or RESEARCH.md has no "Validation
@@ -22,7 +22,7 @@ ls "${PHASE_DIR}"/*-VALIDATION.md 2>/dev/null
 ```
 
 **If missing:** **BLOCKING FAIL** — "VALIDATION.md not found for phase {N}. Re-run
-`/gsd:plan-phase {N} --research` to regenerate."
+`/plan-phase {N} --research` to regenerate."
 Skip checks 8a-8d entirely. Report Dimension 8 as FAIL with this single issue.
 
 **If exists:** Proceed to checks 8a-8d.

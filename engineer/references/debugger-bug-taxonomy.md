@@ -1,6 +1,6 @@
 # Bug-Taxonomy Classification + Strategy Routing
 
-Loaded by `gsd-debugger` via `@-include` from Phase 1.75 (classify the failure)
+Loaded by `debugger` via `@-include` from Phase 1.75 (classify the failure)
 and the Technique Selection table. Classifies the failure early and **routes**
 which investigation technique to use, **replacing** (not appending to) the flat
 "pick something from the menu" habit with selection-by-class.

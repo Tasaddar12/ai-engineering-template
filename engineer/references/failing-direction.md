@@ -1,6 +1,6 @@
-# Check 8f — Stated Failing Direction (#3172)
+# Check 8f — Stated Failing Direction 
 
-> Reference file for gsd-plan-checker agent. Loaded on-demand via `@` reference.
+> Reference file for plan-checker agent. Loaded on-demand via `@` reference.
 
 **Question:** For each runnable `<automated>` command, does the plan say what output constitutes
 failure?
@@ -10,9 +10,7 @@ Resolvability asks whether its target *resolves*. This one asks whether the comm
 **falsifiable at all**. A command with no expressible failure mode is not an acceptance test —
 it reads as rigour and delivers none.
 
-#3172: a planner emitted 21 `<automated>` commands that could not run. Cargo exited non-zero, so
-that instance failed loudly — luck, not design. The same class of error with a command that
-exits 0 on a no-op passes green and silently. Requiring a stated failing direction is the only
+Requiring a stated failing direction is the only
 shape that catches the silent case, because it forces the plan to name the failure signal rather
 than assume the command has one.
 
@@ -31,10 +29,10 @@ statements.
 
 ## Do not hand-reason this
 
-`gsd-core/workflows/plan-phase.md` runs the deterministic probe **before** spawning this checker
+`engineer/workflows/plan-phase.md` runs the deterministic probe **before** spawning this checker
 and interpolates the result into the verification prompt as `{FAILING_DIRECTIONS}`, inside a
 `<failing_direction_probe>` block. This check reads that already-supplied JSON — it never invokes
-`gsd_run check verify-failure-directions` itself. If `{FAILING_DIRECTIONS}` is absent from the
+`engineer_run check verify-failure-directions` itself. If `{FAILING_DIRECTIONS}` is absent from the
 prompt, treat this check as silent (nothing to check) rather than trying to run the probe.
 
 The probe never executes command text (PLAN.md is untrusted, LLM-authored). It is a **presence**
@@ -55,7 +53,7 @@ Rules:
 
 - **Report, never prescribe.** State which command has no stated failure mode. Do **not** author
   the statement for the planner. A prescribed statement is copied verbatim and carries zero
-  information — that reproduces #3172 one level up, exactly as the #2401 probe refuses to
+  information — that reproduces one level up, exactly as the probe refuses to
   prescribe a replacement path.
 - `status: sentinel` is a `MISSING — Wave 0 must create …` placeholder command. It is not
   runnable, so it has no failure mode to state. **Not a finding.** Say nothing; checks 8a/8d

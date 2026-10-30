@@ -142,14 +142,14 @@ After completing first milestone, reorganize with milestone groupings:
 
 ## Milestones
 
-- ✅ **v1.0 MVP** - Phases 1-4 (shipped YYYY-MM-DD)
+- ✅ **v1.0** - Phases 1-4 (shipped YYYY-MM-DD)
 - 🚧 **v1.1 [Name]** - Phases 5-6 (in progress)
 - 📋 **v2.0 [Name]** - Phases 7-10 (planned)
 
 ## Phases
 
 <details>
-<summary>✅ v1.0 MVP (Phases 1-4) - SHIPPED YYYY-MM-DD</summary>
+<summary>✅ v1.0 (Phases 1-4) - SHIPPED YYYY-MM-DD</summary>
 
 ### Phase 1: [Name]
 **Goal**: [What this phase delivers]

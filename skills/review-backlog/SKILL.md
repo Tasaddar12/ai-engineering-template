@@ -1,5 +1,5 @@
 ---
-name: gsd:review-backlog
+name: review-backlog
 description: Review and promote backlog items to active milestone
 allowed-tools:
   - Read
@@ -7,7 +7,7 @@ allowed-tools:
   - Bash
   - Grep
   - AskUserQuestion
-requires: [phase, review]
+requires: [phase]
 ---
 
 <objective>
@@ -37,7 +37,7 @@ milestone sequence or remove stale entries.
    - Find the next sequential phase number in the active milestone
    - Rename the directory from `999.x-slug` to `{new_num}-slug`:
      ```bash
-     NEW_NUM=$(gsd-tools query phase.add "${DESCRIPTION}" --raw)
+     NEW_NUM=$(engineer_run query phase.add "${DESCRIPTION}" --raw)
      ```
    - Move accumulated artifacts to the new phase directory
    - Update ROADMAP.md: move the entry from `## Backlog` section to the active phase list
@@ -50,7 +50,7 @@ milestone sequence or remove stale entries.
 
 6. **Commit changes:**
    ```bash
-   gsd-tools query commit "docs: review backlog — promoted N, removed M" --files .planning/ROADMAP.md
+   engineer_run query commit "docs: review backlog — promoted N, removed M" --files .planning/ROADMAP.md
    ```
 
 7. **Report summary:**

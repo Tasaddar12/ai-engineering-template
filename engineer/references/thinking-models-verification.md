@@ -2,7 +2,7 @@
 
 Structured reasoning models for the **verifier** and **plan-checker** agents. Apply these during verification passes, not continuously. Each model counters a specific documented failure mode.
 
-Source: Curated from [thinking-partner](https://github.com/mattnowdev/thinking-partner) model catalog (150+ models). Selected for direct applicability to GSD verification workflow.
+Source: Curated from [thinking-partner](https://github.com/mattnowdev/thinking-partner) model catalog (150+ models). Selected for direct applicability to Engineer verification workflow.
 
 ## Conflict Resolution
 

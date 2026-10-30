@@ -1,14 +1,14 @@
-@~/.claude/gsd-core/references/response-language-directive.md
+@~/.claude/engineer/references/response-language-directive.md
 
 <purpose>
-Analyze ROADMAP.md phases for dependency relationships before execution. Detect file overlap between phases, semantic API/data-flow dependencies, and suggest `Depends on` entries to prevent merge conflicts during parallel execution by `/gsd:manager`.
+Analyze ROADMAP.md phases for dependency relationships before execution. Detect file overlap between phases, semantic API/data-flow dependencies, and suggest `Depends on` entries to prevent merge conflicts during parallel execution by `/manager`.
 </purpose>
 
 <process>
 
 ## 1. Load ROADMAP.md
 
-Read `.planning/ROADMAP.md`. If it does not exist, error: "No ROADMAP.md found — run `/gsd:new-project` first."
+Read `.planning/ROADMAP.md`. If it does not exist, error: "No ROADMAP.md found — run `/new-project` first."
 
 Extract all phases. For each phase capture:
 - Phase number and name
@@ -93,6 +93,6 @@ When writing to ROADMAP.md:
 - Preserve all other phase content unchanged
 - Do not reorder phases
 
-After applying: "ROADMAP.md updated. Run `/gsd:manager` to execute phases in the correct order."
+After applying: "ROADMAP.md updated. Run `/manager` to execute phases in the correct order."
 
 </process>

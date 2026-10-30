@@ -1,6 +1,6 @@
-# GSD Artifact Types
+# Engineer Artifact Types
 
-This reference documents all artifact types in the GSD planning taxonomy. Each type has a defined
+This reference documents all artifact types in the Engineer planning taxonomy. Each type has a defined
 shape, lifecycle, location, and consumption mechanism. A well-formatted artifact that no workflow
 reads is inert — the consumption mechanism is what gives an artifact meaning.
 
@@ -49,12 +49,12 @@ reads is inert — the consumption mechanism is what gives an artifact meaning.
   did its job. Marking a SUMMARY `halted` propagates transitively over `depends_on`: every
   plan that depends on it, directly or through a chain, is reported as **blocked** rather than
   offered to the executor as ordinary incomplete work, and is named with its cause. Any other
-  value — including no `status:` field at all — reads as complete. (#2830)
+  value — including no `status:` field at all — reads as complete.
 
 ### HANDOFF.json / .continue-here.md
 - **Shape**: Structured pause state (JSON machine-readable + Markdown human-readable)
 - **Lifecycle**: Created on pause → Consumed on resume → Replaced by next pause
-- **Location**: `.planning/HANDOFF.json` + `.planning/phases/XX-name/.continue-here.md` (or spike/deliberation path)
+- **Location**: `.planning/HANDOFF.json` + `.planning/phases/XX-name/ .continue-here.md` (or spike/deliberation path)
 - **Consumed by**: `resume-project` workflow
 
 ---
@@ -70,7 +70,7 @@ reads is inert — the consumption mechanism is what gives an artifact meaning.
 ### USER-PROFILE.md
 - **Shape**: Calibration tier and preferences profile
 - **Lifecycle**: Created by `profile-user` → Updated as preferences are observed
-- **Location**: `~/.claude/gsd-core/USER-PROFILE.md`
+- **Location**: `~/.claude/engineer/USER-PROFILE.md`
 - **Consumed by**: `discuss-phase-assumptions` (calibration tier), `plan-phase`
 
 ### SPIKE.md / DESIGN.md (per-spike)
@@ -79,21 +79,21 @@ reads is inert — the consumption mechanism is what gives an artifact meaning.
 - **Location**: `.planning/spikes/SPIKE-NNN/`
 - **Consumed by**: Planner when spike is referenced; `pause-work` for spike context handoff
 
-### Spike README.md (per-spike) / MANIFEST.md (per-project index, via /gsd:spike)
+### Spike README.md (per-spike) / MANIFEST.md (per-project index, via /spike)
 - **Shape**: README — YAML frontmatter (spike, idea, name, validates, verdict, related, tags) + run instructions + results. MANIFEST.md — one `### {idea-key}` section per idea under `## Ideas` (idea paragraph + its own scoped Requirements), plus one durable `## Spikes` table (with an Idea column) indexing every spike across every idea.
-- **Lifecycle**: Created by `/gsd:spike` → Verified → Wrapped up by `/gsd-spike-wrap-up`
+- **Lifecycle**: Created by `/spike` → Verified → Wrapped up by `/spike-wrap-up`
 - **Location**: `.planning/spikes/NNN-name/README.md`, `.planning/spikes/MANIFEST.md`
-- **Consumed by**: `/gsd-spike-wrap-up` for curation (Requirements pulled only from the idea key(s) it wraps); `pause-work` for spike context handoff
+- **Consumed by**: `/spike-wrap-up` for curation (Requirements pulled only from the idea key(s) it wraps); `pause-work` for spike context handoff
 
 ### Sketch README.md / MANIFEST.md / index.html (per-sketch)
 - **Shape**: YAML frontmatter (sketch, name, question, winner, tags) + variants as tabbed HTML
-- **Lifecycle**: Created by `/gsd:sketch` → Evaluated → Wrapped up by `/gsd-sketch-wrap-up`
+- **Lifecycle**: Created by `/sketch` → Evaluated → Wrapped up by `/sketch-wrap-up`
 - **Location**: `.planning/sketches/NNN-name/README.md`, `.planning/sketches/NNN-name/index.html`, `.planning/sketches/MANIFEST.md`
-- **Consumed by**: `/gsd-sketch-wrap-up` for curation; `pause-work` for sketch context handoff
+- **Consumed by**: `/sketch-wrap-up` for curation; `pause-work` for sketch context handoff
 
 ### WRAP-UP-SUMMARY.md (per wrap-up session)
 - **Shape**: Curation results, included/excluded items, feature/design area groupings
-- **Lifecycle**: Created by `/gsd-spike-wrap-up` or `/gsd-sketch-wrap-up`
+- **Lifecycle**: Created by `/spike-wrap-up` or `/sketch-wrap-up`
 - **Location**: `.planning/spikes/WRAP-UP-SUMMARY.md` or `.planning/sketches/WRAP-UP-SUMMARY.md`
 - **Consumed by**: Project history; not read by automated workflows
 

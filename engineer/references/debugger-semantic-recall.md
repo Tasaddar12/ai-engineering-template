@@ -1,81 +1,51 @@
-# Semantic Knowledge-Base Recall via MemPalace
+# Semantic Knowledge-Base Recall
 
-Loaded by `gsd-debugger` via `@-include` from the `knowledge_base_protocol`
-Matching Logic. Replaces keyword-overlap matching with **semantic recall** so a
-prior session that resolved "requests hang under load" surfaces for a new "API
-times out when many users connect" — same root cause, no shared keywords.
+Use the project's durable plain-text debug knowledge base to find earlier
+resolutions that may explain the current symptoms. Recall is a hypothesis
+generator: compare the prior case with the present evidence before adopting its
+root cause or fix.
 
-## Why this exists
+## Read and compare
 
-The knowledge base's self-noted limitation was explicit: *"Matching is keyword
-overlap, not semantic similarity."* Keyword overlap only fires on lexical
-coincidence — the highest-value recalls (same root cause, different wording)
-are exactly the ones it misses, and its value decays as the corpus grows.
+At the start of an investigation, inspect `.planning/debug/knowledge-base.md` if
+it exists. Search for error text, identifiers, affected components, and the
+observable behavior. `rg` can narrow the entries to inspect; it does not decide
+whether two cases are semantically equivalent.
 
-## The approach — reuse MemPalace, add no new infrastructure
+For each plausible entry, compare the cases across these dimensions:
 
-Layer semantic recall on top of the existing knowledge base by **reusing
-MemPalace** (the semantic-memory capability already in this environment) —
-**without adding new embedding or vector infrastructure** (Choose Boring /
-Zawinski: spend no new "innovation token" on a bespoke vector store the
-debugger would own).
+| Dimension | Compare |
+|---|---|
+| Trigger | What action, input, load, or sequence starts the failure? |
+| Observable behavior | What fails, hangs, changes, or remains unchanged? |
+| Conditions | Which environment, state, timing, or dependency conditions matter? |
+| Mechanism | Which component and causal mechanism produced the prior failure? |
+| Evidence | Which observations or checks established that mechanism? |
+| Resolution | What change fixed it, and what recurrence guard verified the fix? |
 
-`.planning/debug/knowledge-base.md` remains the **durable plain-text source of
-truth**; semantic recall is an additive layer over it, not a replacement.
+Treat wording and keyword overlap as weak signals. Two descriptions can refer to
+the same mechanism with different words; similar words can also describe
+different causes. State the matching and conflicting dimensions, then classify
+the entry as a useful hypothesis, a partial analogy, or unrelated. Test useful
+hypotheses against current evidence; do not copy a prior fix solely because the
+symptoms sound alike.
 
-## Write — index resolved sessions at archive
+If no entry is a plausible match, continue the investigation from current
+evidence. Do not infer that the knowledge base is complete or that a missing
+match rules out a known failure mode.
 
-At `archive_session`, after appending the entry to `knowledge-base.md` (the KB
-append + commit MUST succeed first — `knowledge-base.md` is the durable source
-of truth; skip indexing on KB-write failure), **index the resolved session into
-MemPalace**.
+## Record resolved cases
 
-**Index the agent-authored `Resolution` summary — `root_cause(s)` + `fix` + the
-Prevention `recurrence_guard` — NOT the raw user-supplied `Symptoms`.** The
-Resolution is the post-investigation, agent-synthesized signal; indexing it
-(rather than raw symptoms) excludes attacker-controlled prose from the
-cross-session index and reduces secret/PII leakage. Even so, **redact
-secret-shaped values** (API keys, bearer tokens, JWTs, passwords, credentials)
-from the summary before indexing — a bug report's error string can echo a
-secret, and MemPalace is a cross-session, cross-project store.
+The project knowledge base remains the durable source of truth. After the
+resolution is established, append a concise case using the repository's
+existing entry format and commit it through the owning workflow. Record the
+agent-authored root cause, verified fix, discriminating evidence, and a useful
+recurrence guard. Do not write raw user-supplied symptoms or unreviewed report
+text into a shared knowledge base. Remove secrets and personal data from any
+quoted error or example before recording it.
 
-## Invocation (the agent has no MCP tools — use the CLI)
+## Scope
 
-The `gsd-debugger` `tools:` frontmatter grants no MCP tools, so query and index
-via the **Bash CLI** (the headless/autonomous path): `mempalace search
-"<symptoms>" --wing <wing>` to recall, and the matching index command on
-archive. If an `mempalace_search(query, wing)` MCP tool is registered in the
-runtime, prefer it. **Resolve the wing** from `config.mempalace.wing` → else the
-project's `project_code` → else the project directory name (the same precedence
-every other MemPalace integration uses).
-
-## Read — query MemPalace at Phase 0
-
-At Phase 0, **query MemPalace semantically with the current symptoms** and
-surface the **top-k meaning-similar prior resolutions** as candidate
-hypotheses. Each surfaced candidate flows into Evidence exactly as a
-keyword-match candidate would — a hypothesis to test first, not a confirmed
-diagnosis.
-
-This catches the **same-root-cause / different-wording** case: a prior
-"requests hang under load" resolution surfaces for "API times out when many
-users connect" even though no keywords overlap.
-
-## Graceful degradation — MemPalace absent
-
-When MemPalace is unavailable (not installed, not configured, or the query
-errors), **fall back to keyword-overlap matching** against
-`knowledge-base.md`: extract nouns, error substrings, and **identifiers**
-(function/variable names — often the highest-signal token) from
-`Symptoms.errors` and `Symptoms.actual`, and scan each entry's `Error patterns`
-field for **2+ token overlap (case-insensitive)**. The fallback is logged
-(Kernighan — never a silent skip), and `knowledge-base.md` continues to be
-written regardless, so no session is lost to a missing palace.
-
-## Scope boundary (Zawinski's Law)
-
-An additive recall layer over the existing knowledge base, reusing an existing
-semantic-memory capability. Not a new command, not a vector database, not an
-embedding pipeline the debugger owns. Where MemPalace is absent the debugger
-behaves exactly as it did before this layer — keyword matching against the
-plain-text knowledge base.
+Recall uses ordinary files and search, followed by explicit semantic comparison
+and evidence checking. It introduces no external memory service, embedding
+pipeline, vector store, or new command.

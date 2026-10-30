@@ -1,6 +1,6 @@
 # Security ASVS Levels
 
-GSD threat modeling maps OWASP ASVS levels to planner disposition rigor and auditor verification depth. Higher levels are supersets of lower — L3 includes all L2 and L1 requirements.
+Engineer threat modeling maps OWASP ASVS levels to planner disposition rigor and auditor verification depth. Higher levels are supersets of lower — L3 includes all L2 and L1 requirements.
 
 ## L1 — Opportunistic (default)
 

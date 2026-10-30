@@ -8,30 +8,30 @@ from common import files, main_guard, manifest, parser, read_text, safe_path
 
 def substitutions(text, role_renames, launcher=None):
     counts = {}
-    # Replace complete upstream one-line launchers before token substitutions.
-    launcher_pattern = r'^_GSD_SHIM_NAME=[^\n]*(?:\n|$)'
-    if re.search(launcher_pattern, text, re.MULTILINE):
-        if not launcher or not launcher.strip() or any(token in launcher for token in ("gsd-tools", "gsd_run", "_GSD_SHIM")):
-            raise ValueError("Port engineer/workflows/_runtime-launcher.snippet.sh to engineer_run before replacing upstream launchers")
-        text, count = re.subn(launcher_pattern, lambda _: launcher.rstrip() + "\n", text, flags=re.MULTILINE)
-        counts["launcher"] = count
+    current_launcher = r'(?ms)^_engineer_identity_ok\(\) \{.*?^if \[ -n "\$\{CLAUDE_ENV_FILE:-\}" \]; then\n.*?^fi(?:\n|$)'
+    if launcher:
+        refreshed = 0
+        def refresh(match):
+            nonlocal refreshed
+            replacement = launcher.rstrip() + "\n"
+            if match[0] != replacement:
+                refreshed += 1
+            return replacement
+        text = re.sub(current_launcher, refresh, text)
+        if refreshed:
+            counts["launcher-refresh"] = refreshed
     replacements = [
-        ("runtime", r'\bgsd_run\b', "engineer_run"),
-        ("tools-query", r'(?<![A-Za-z0-9_./-])gsd-tools\s+query\b', "engineer_run query"),
-        ("references", re.escape("~/.claude/gsd-core/references/"), "engineer/references/"),
-        ("templates", re.escape("~/.claude/gsd-core/templates/"), "engineer/templates/"),
-        ("workflows", r'(?:~\/\.claude\/)?gsd-core/workflows/', "engineer/workflows/"),
-        ("commands", r'/gsd:([A-Za-z][A-Za-z0-9_-]*)', r'/\1'),
-        ("command-name", r'(?m)^(name:\s*)gsd:', r'\1'),
         ("local-methods", re.escape(".ai/references/methods/"), "engineer/references/"),
         ("local-paths", r'\.ai/(references|templates|workflows)/', r'engineer/\1/'),
         ("local-runtime", r'\bphase_run(?=\s+query\b)', "engineer_run"),
-        ("instruction-file", r'\bCLAUDE\.md\b', "AGENTS.md"),
+        # These standalone verbs retain their CLI shape in section 14. Family
+        # dispatch, DROP verbs and argument rewrites remain reconciliation work.
+        ("query-prefix", r'\bengineer_run\s+(?=(?:run-with-timeout|audit-open)\b)', "engineer_run query "),
+        ("runtime-invocation", r'\bnode\s+(?=[^\s`]*engineer\.py\b)', "python -I "),
+        ("removed-host-alias", re.escape(', `--agy`'), ""),
     ]
-    roles = sorted({Path(source).stem for source in role_renames} | {"gsd-executor"}, key=len, reverse=True)
-    replacements.append(("roles", r'(?<![A-Za-z0-9_-])(?:' + "|".join(map(re.escape, roles)) + r')(?![A-Za-z0-9_-])', None))
     for label, pattern, replacement in replacements:
-        text, count = re.subn(pattern, (lambda match: match[0][4:]) if replacement is None else replacement, text)
+        text, count = re.subn(pattern, replacement, text)
         if count:
             counts[label] = count
     return text, counts

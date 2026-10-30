@@ -1,5 +1,5 @@
 ---
-name: gsd:resume-work
+name: resume-work
 description: Resume work from previous session with full context restoration
 allowed-tools:
   - Read
@@ -23,7 +23,7 @@ Routes to the resume-project workflow which handles:
   </objective>
 
 <execution_context>
-@~/.claude/gsd-core/workflows/resume-project.md
+@~/.claude/engineer/workflows/resume-project.md
 </execution_context>
 
 <process>
