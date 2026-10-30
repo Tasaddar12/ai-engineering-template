@@ -412,13 +412,12 @@ Retained evidence and planning utilities:
 | `estimate-check` | `--tokens N [--calibrated]` | Advisory projected cost versus workflow.smart_zone_tokens; never blocks execution. |
 
 A research input is a JSON object such as
-`{"ecosystem":"python","config":{"context7":true,"websearch":true},"questions":[{"text":"Versioned API","kind":"docs","library":"example","version":"1.0"}]}`.
+`{"ecosystem":"python","questions":[{"text":"Versioned API","kind":"docs","library":"example","version":"1.0"}]}`.
 Question kinds are `docs`, `web`, or `scrape`. Provider routing prefers
-context7/ref/websearch for docs, exa/tavily/brave/websearch for web, and
-firecrawl/webfetch for scrape. Availability must be declared true in `config`
-(or `PROVIDER_search`). Fetch instructions include the question key; use that
-key with `research-store.put` after recording source metadata and any actual citations. Missing providers
-produce an explicit blocked item. Freshness defaults to seven days; missing,
+native websearch for docs and web, and webfetch for scrape. Legacy provider
+availability flags do not change this routing. Fetch instructions include the question key; use that
+key with `research-store.put` after recording source metadata and any actual citations.
+Freshness defaults to seven days; missing,
 expired, invalidly dated or incomplete-provenance entries request a new fetch.
 
 `workflow.context_guard_mode` accepts `warn` (default), `auto`, or `off` for the

@@ -105,7 +105,6 @@ Construct a JSON file at a temp path (e.g. `/tmp/research-plan-input.json`):
 ```json
 {
   "ecosystem": "<npm|pypi|crates|...>",
-  "config": { "exa_search": true/false, "brave_search": true/false, "firecrawl": true/false, "tavily_search": true/false },
   "questions": [
     { "text": "How does X work?", "kind": "docs", "library": "x", "version": "1.2.3" },
     { "text": "Best practices for Y?", "kind": "web" }
@@ -113,7 +112,7 @@ Construct a JSON file at a temp path (e.g. `/tmp/research-plan-input.json`):
 }
 ```
 
-`config` comes from the init context (availability flags). `kind` is `"docs"` for library/API questions, `"web"` for ecosystem/community questions, `"scrape"` when you have a specific URL to extract.
+`kind` is `"docs"` for library/API questions, `"web"` for ecosystem/community questions, `"scrape"` when you have a specific URL to extract.
 
 ### Step B — Obtain the fetch plan
 
@@ -122,7 +121,7 @@ _ENGINEER_SHIM_NAME="engineer_run"; _ENGINEER_RUNTIME_ROOT="${RUNTIME_DIR:-$(git
 engineer_run query research-plan --input /tmp/research-plan-input.json
 ```
 
-Returns `{ "items": [ { "question": "...", "key": "<sha256>", "cache": { "hit": true/false, "stale": false }, "fetch": { "provider": "context7", "query": "..." } } ] }`.
+Returns `{ "items": [ { "question": "...", "key": "<sha256>", "cache": { "hit": true/false, "stale": false }, "fetch": { "provider": "websearch", "query": "..." } } ] }`.
 
 - `cache.hit && !cache.stale` → reuse the cached digest; no fetch needed.
 - `cache.hit && cache.stale` → fetch anyway to refresh; the old entry is returned as a fallback.

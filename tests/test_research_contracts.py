@@ -1,5 +1,6 @@
 """Original research and measured estimate contracts through the real CLI."""
 import json
+import datetime as dt
 from pathlib import Path
 import tempfile
 try:
@@ -9,6 +10,34 @@ except ImportError:
 
 
 class ResearchContracts(RuntimeCase):
+    def test_documented_input_routes_natively_and_refreshes_stale_cache(self):
+        questions = [
+            {"text": "How does X work?", "kind": "docs", "library": "x", "version": "1.2.3"},
+            {"text": "Best practices for Y?", "kind": "web"},
+            {"text": "Read the API page", "kind": "scrape", "url": "https://example.com/api"},
+        ]
+        source = self.put("research-plan-input.json", json.dumps({"ecosystem": "npm", "questions": questions}))
+        plan = self.cli("research-plan", "--input", source)
+        self.assertFalse(plan["executesFetch"])
+        self.assertEqual(["websearch", "websearch", "webfetch"], [item["fetch"]["provider"] for item in plan["items"]])
+        self.assertTrue(all("blocked" not in item for item in plan["items"]))
+        self.assertEqual("https://example.com/api", plan["items"][2]["fetch"]["url"])
+        key = plan["items"][0]["key"]
+        self.cli("research-store.put", key, "--content", "Digest", "--source", "curated",
+                 "--provider", "official", "--confidence", "MEDIUM", "--kind", "docs")
+        cache_path = self.root/".planning/research-cache"/(key+".json")
+        entry = json.loads(cache_path.read_text())
+        entry["recorded"] = (dt.datetime.now(dt.timezone.utc)-dt.timedelta(days=8)).isoformat()
+        cache_path.write_text(json.dumps(entry), encoding="utf-8")
+        stale = self.cli("research-plan", source)["items"][0]
+        self.assertTrue(stale["cache"]["stale"])
+        self.assertEqual("websearch", stale["fetch"]["provider"])
+        self.assertEqual([], stale["cache"]["entry"]["sources"])
+        legacy = {"context7": True, "ref": True, "exa_search": True, "tavily_search": True, "firecrawl": True}
+        source.write_text(json.dumps({"ecosystem": "npm", "config": legacy, "questions": questions}), encoding="utf-8")
+        routed = self.cli("research-plan", source)["items"]
+        self.assertEqual(["websearch", "websearch", "webfetch"], [item["fetch"]["provider"] for item in routed])
+
     def test_external_temp_input_and_full_original_cache_arguments(self):
         with tempfile.TemporaryDirectory() as external:
             path = Path(external)/"research-plan-input.json"
@@ -17,7 +46,7 @@ class ResearchContracts(RuntimeCase):
             path.write_text(content, encoding="utf-8")
             item = self.cli("research-plan", "--input", path)["items"][0]
             key = item["key"]
-            self.assertEqual("brave", item["fetch"]["provider"])
+            self.assertEqual("websearch", item["fetch"]["provider"])
             self.cli("research-store", "put", key, "--content", "Source digest", "--source", "curated",
                      "--provider", "official", "--confidence", "HIGH", "--kind", "docs")
             cached = self.cli("research-plan", "--input", path)["items"][0]

@@ -132,15 +132,11 @@ def plan(args):
             except (KeyError, ValueError, TypeError, AttributeError):
                 stale = True
         kind = question.get("kind", "docs")
-        order = (("context7", "ref", "websearch") if kind == "docs" else
-                 ("firecrawl", "webfetch") if kind == "scrape" else ("exa", "tavily", "brave", "websearch"))
-        provider = next((name for name in order if availability.get(name, availability.get(name+"_search", False)) is True), None)
+        provider = "webfetch" if kind == "scrape" else "websearch"
         item = {"question": question["text"], "key": key, "cache": {"hit": bool(entry), "stale": stale, "entry": entry}}
         if not entry or stale:
             item["fetch"] = {"provider": provider, "query": question["text"], "library": question.get("library"),
                              "version": question.get("version"), "url": question.get("url"), "available": provider is not None}
-            if provider is None:
-                item["blocked"] = "No caller-declared source provider; use an available primary-documentation tool and record the actual citation"
         items.append(item)
     return {"items": items, "executesFetch": False}
 

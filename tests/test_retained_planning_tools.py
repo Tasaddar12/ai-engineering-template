@@ -17,7 +17,7 @@ class RetainedPlanningTools(RuntimeCase):
         source = self.research_input()
         source = self.put(".planning/tmp/research-plan-input.json", source.read_text(encoding="utf-8"))
         planned = self.cli("research-plan", "--input", source)["items"][0]
-        self.assertEqual("context7", planned["fetch"]["provider"])
+        self.assertEqual("websearch", planned["fetch"]["provider"])
         key = planned["key"]
         self.cli("research-store.put", key, "--content", "Actual documentation", status=2, raw=True)
         self.cli("research-store", "put", key, "--content", "Actual documentation", "--url", "https://docs.python.org/3/", "--provider", "official")
@@ -41,7 +41,7 @@ class RetainedPlanningTools(RuntimeCase):
     def test_research_routes_sources_and_rejects_invalid_input(self):
         source = self.research_input([{"text": "News", "kind": "web"}, {"text": "Read page", "kind": "scrape"}])
         items = self.cli("research-plan", source)["items"]
-        self.assertEqual(["websearch", "firecrawl"], [item["fetch"]["provider"] for item in items])
+        self.assertEqual(["websearch", "webfetch"], [item["fetch"]["provider"] for item in items])
         for age in ("-1", "nan", "infinity", "bad"):
             self.cli("research-plan", source, "--max-age-hours", age, status=2, raw=True)
         key = "a" * 64
@@ -49,7 +49,7 @@ class RetainedPlanningTools(RuntimeCase):
         citation = self.put("evidence.md", "Observed source")
         self.assertTrue(self.cli("research-store.put", key, "--content", "Citation", "--sources", citation)["stored"])
         source.write_text('{"questions":[{"text":"Unavailable"}]}', encoding="utf-8")
-        self.assertIn("blocked", self.cli("research-plan", source)["items"][0])
+        self.assertEqual("websearch", self.cli("research-plan", source)["items"][0]["fetch"]["provider"])
 
     def test_confidence_is_provider_authority_with_bare_verified(self):
         self.assertEqual("HIGH", self.cli("classify-confidence", "--verified", "--provider", "official"))

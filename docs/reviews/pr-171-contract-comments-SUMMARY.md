@@ -14,8 +14,8 @@ original CLI contracts. The template's adopting-project records remain unfilled.
 | Review comment | Result |
 |---|---|
 | Researcher base 103 | Restored original temporary JSON input instruction. |
-| Researcher base 108 | Removed added provider config fields and MCP tool declarations/references. |
-| Researcher base 116 | Restored original config/kind explanation. |
+| Researcher base 108 | Removed the entire provider config object, its availability explanation, and MCP tool declarations/references. |
+| Researcher base 116 | Retained original kind explanation after removing config availability prose. |
 | Researcher base 159–162 | Restored all original cache arguments; CLI accepts full metadata without mandatory URL. |
 | Researcher base 165 | Restored key/confidence assignment instruction. |
 | Researcher base 179 | Restored classify-confidence command reference and output assignment. |
@@ -38,6 +38,9 @@ original CLI contracts. The template's adopting-project records remain unfilled.
 
 - Research JSON uses the existing bounded explicit-input reader, which supports
   external temporary files read-only. Cache destinations remain repository-contained.
+- Research fetch descriptors always select native websearch for docs/web and
+  webfetch for scrape. No availability config is needed; legacy provider flags
+  cannot route to an MCP provider. The runtime never executes a network fetch.
 - Full original source/provider/confidence/kind metadata permits cache reuse.
   Missing citations remain an empty sources list with citationStatus not-provided;
   actual provided citations are validated and claimJudgment remains false.
@@ -56,6 +59,9 @@ original CLI contracts. The template's adopting-project records remain unfilled.
 - python -m unittest tests.test_research_contracts -v: 2 passed.
 - python -m unittest tests.test_research_contracts tests.test_retained_planning_tools -q:
   15 passed after the final source validation change.
+- Follow-up native routing: the same focused command passed all 16 tests,
+  including no-config docs/web/scrape routing, stale-cache native refresh and
+  legacy MCP flags that cannot select an MCP provider. git diff --check passed.
 - python -m unittest tests.test_model_omit_when_inherit_guard tests.test_retained_planning_tools -q:
   41 run, 1 skipped, 1 failed. The sole failure is the restored real-tree ship
   validation test: this isolated input lacks the original ref.agent regex and
