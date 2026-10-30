@@ -13,8 +13,7 @@ Instantly restore full project context so "Where were we?" has an immediate, com
 </purpose>
 
 <required_reading>
-Preserve the recorded phase, plan, blockers, completed commits and next action in every continuation. Read actual session records before choosing a route; never infer completion from position alone.
-
+@~/.claude/engineer/references/continuation-format.md
 </required_reading>
 
 <process>

@@ -1,5 +1,5 @@
 <purpose>
-Execute small, ad-hoc tasks with Engineer guarantees (atomic commits, STATE.md tracking). Quick mode spawns planner (quick mode) + executor(s), tracks tasks in `.planning/quick/`, and records completion through the runtime.
+Execute small, ad-hoc tasks with Engineer guarantees (atomic commits, STATE.md tracking). Quick mode spawns planner (quick mode) + executor(s), tracks tasks in `.planning/quick/`, and records completion with `engineer_run query quick.update`.
 
 With `--full` flag: enables the complete quality pipeline — discussion + research + plan-checking + verification. One flag for everything.
 

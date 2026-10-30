@@ -9,15 +9,21 @@ From `$ARGUMENTS`:
 - Extract flags (prefixed with `--`) independently of the phase token.
 - Remaining text is a description for add/insert operations.
 
-## Canonical lookup
+## Using engineer_run
 
-Use `find-phase` to normalize the phase identifier, validate the roadmap entry, and locate its directory in one call:
+The `find-phase` command handles normalization and validation in one step:
 
 ```bash
-PHASE_INFO=$(engineer_run query find-phase "${PHASE}" --raw)
+PHASE_INFO=$(engineer_run query find-phase "${PHASE}")
 ```
 
-The result includes the found status, directory, phase number/name, plans, and summaries. Prefer this runtime lookup to hand-written normalization or filesystem globs.
+Returns JSON with:
+- `found`: true/false
+- `directory`: Full path to phase directory
+- `phase_number`: Normalized number (e.g., "06", "06.1")
+- `phase_name`: Name portion (e.g., "foundation")
+- `plans`: Array of PLAN.md files
+- `summaries`: Array of SUMMARY.md files
 
 ## Validation
 

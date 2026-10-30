@@ -1,4 +1,10 @@
-<!-- workflow: native orchestrator and declared agents -->
+<!-- engineer:loop-host
+step: ship
+points: ship:pre, ship:post
+agent-roles: orchestrator
+produces:
+consumes: UAT.md
+-->
 <purpose>
 Create a pull request from completed phase/milestone work, generate a rich PR body from planning artifacts, optionally run code review, and prepare for merge. Closes the plan → execute → verify → ship loop.
 </purpose>
