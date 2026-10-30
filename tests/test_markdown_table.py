@@ -173,6 +173,26 @@ def head_section(content):
 
 
 class AppendQuickTaskRowTests(unittest.TestCase):
+    def test_extra_table_is_untouched_and_appended_task_is_in_quick_table(self):
+        for eol in ("\n", "\r\n"):
+            suffix = eol.join(["", "", "| Note | Text |", "| --- | --- |", "| untouched | bytes |", ""])
+            state = head_section(NO_STATUS_STATE).rstrip().replace("\n", eol) + suffix
+            appended = append_quick_task_row(state, fields("new task"))
+            self.assertTrue(appended["ok"])
+            content = appended["value"]["content"]
+            parsed = parse_markdown_table(content)
+            self.assertTrue(parsed["ok"])
+            self.assertEqual(["fix typo", "new task"], [row["Description"] for row in parsed["value"]["rows"]])
+            self.assertTrue(content.endswith(suffix))
+            reset = reset_quick_task_rows(content)
+            self.assertTrue(reset["ok"])
+            self.assertEqual(2, reset["value"]["cleared"])
+            self.assertTrue(reset["value"]["content"].endswith(suffix))
+            legacy = eol.join(["## Quick Tasks Completed", "", "| Task | Date |", "| --- | --- |", "| legacy | 2026-01-01 |"])+suffix
+            migrated = migrate_quick_tasks_table(legacy)
+            self.assertTrue(migrated["ok"])
+            self.assertTrue(migrated["value"]["content"].endswith(suffix))
+
     def test_no_status_table(self):
         result = append_quick_task_row(NO_STATUS_STATE, fields("add missing import"))
         self.assertTrue(result["ok"])

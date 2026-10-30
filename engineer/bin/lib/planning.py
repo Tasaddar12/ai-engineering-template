@@ -187,6 +187,17 @@ def _quick_history_identity(record, planning_dir):
     return path
 
 
+def _quick_history_status(record):
+    """Completed history defaults to complete; ambiguous labels need explicit repair."""
+    status = record.get("Status", "").strip().casefold()
+    if status in ("", "-", "\u2014", "n/a", "done", "completed"):
+        return "complete"
+    status = status.replace(" ", "_").replace("-", "_")
+    if status not in ("pending", "planned", "in_progress", "blocked", "complete", "passed", "closed"):
+        raise Failure("unsupported-quick-history-status", "Repair the historical Status before migration: "+status, 2)
+    return status
+
+
 def quick_migrate(args):
     from . import records
     path = safe(records.planning()/"STATE.md")
@@ -209,7 +220,9 @@ def quick_migrate(args):
         original = [line for line in selected["body"].splitlines() if line.strip().startswith("|")][2:]
         decoded = list(zip(original, parsed["value"]["rows"]))
         identities = [_quick_history_identity(record, path.parent) for _, record in decoded]
-        for (line, record), authoritative in zip(decoded, identities):
+        statuses = [_quick_history_status(record) if identity is None else None
+                    for (_, record), identity in zip(decoded, identities)]
+        for (line, record), authoritative, status in zip(decoded, identities, statuses):
             if authoritative is not None:
                 skipped.append(str(authoritative))
                 continue
@@ -224,7 +237,7 @@ def quick_migrate(args):
                 continue
             item = records.quick_create(record.get("Description", record.get("Task", "Migrated quick task")),
                                         {"migration_source": source_id, "source": ".planning/STATE.md", "legacy_row": line,
-                                         "status": record.get("Status", "complete"), "commit": record.get("Commit", "")})
+                                         "status": status, "commit": record.get("Commit", "")})
             file = Path(item["path"])
             created.append(str(file))
     return {"migrated": created, "skipped": skipped, "count": len(created), "source_preserved": True}

@@ -15,6 +15,7 @@ class RetainedPlanningTools(RuntimeCase):
 
     def test_research_cache_citations_freshness_and_reuse(self):
         source = self.research_input()
+        source = self.put(".planning/tmp/research-plan-input.json", source.read_text(encoding="utf-8"))
         planned = self.cli("research-plan", "--input", source)["items"][0]
         self.assertEqual("context7", planned["fetch"]["provider"])
         key = planned["key"]
@@ -153,6 +154,34 @@ class RetainedPlanningTools(RuntimeCase):
         task = self.cli("quick.list")["tasks"][0]
         self.assertIn("Repair | parser", task["description"])
         self.assertIn("Owner: Sam", task["description"])
+        self.assertEqual("complete", task["status"])
+        self.assertEqual(0, self.cli("quick.list", "--status", "open")["count"])
+        self.assertEqual(before, state.read_bytes())
+
+    def test_quick_history_status_defaults_and_explicit_states(self):
+        self.init_records()
+        statuses = ["", "-", "\u2014", "pending", "planned", "in_progress", "blocked", "complete", "passed", "closed", "Completed"]
+        expected = ["complete"]*3 + statuses[3:-1] + ["complete"]
+        state = self.root / ".planning/STATE.md"
+        with state.open("a", encoding="utf-8") as stream:
+            stream.write("\n### Quick Tasks Completed\n\n| # | Description | Date | Commit | Status | Directory |\n| --- | --- | --- | --- | --- | --- |\n")
+            for index, status in enumerate(statuses):
+                stream.write(f"| {index+1} | task {index} | 2026-01-01 | abc | {status} | - |\n")
+        before = state.read_bytes()
+        self.assertEqual(len(statuses), self.cli("quick-tasks-migrate")["count"])
+        self.assertEqual(expected, [task["status"] for task in self.cli("quick.list")["tasks"]])
+        self.assertEqual(4, self.cli("quick.list", "--status", "open")["count"])
+        self.assertEqual(0, self.cli("quick-tasks-migrate")["count"])
+        self.assertEqual(before, state.read_bytes())
+
+    def test_quick_history_unsupported_status_fails_before_import(self):
+        self.init_records()
+        self.cli("quick-tasks-append", "--task", "Valid history", "--status", "complete")
+        self.cli("quick-tasks-append", "--task", "Ambiguous history", "--status", "Needs Review")
+        state = self.root / ".planning/STATE.md"
+        before = state.read_bytes()
+        self.cli("quick-tasks-migrate", status=2, raw=True)
+        self.assertEqual(0, self.cli("quick.list")["count"])
         self.assertEqual(before, state.read_bytes())
 
     def test_roadmap_dependencies_union_plans_and_existing_dependencies(self):

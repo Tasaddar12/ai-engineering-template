@@ -472,28 +472,24 @@ def append_quick_task_row(state_content, fields):
 
     def cell_for(col):
         if col == "#":
-            return escape_cell(pick("quickId", str(row_number)))
+            return pick("quickId", str(row_number))
         if col == "Description":
-            return escape_cell(fields["description"])
+            return fields["description"]
         if col == "Date":
-            return escape_cell(fields["date"])
+            return fields["date"]
         if col == "Commit":
-            return escape_cell(fields["commit"])
+            return fields["commit"]
         if col == "Status":
-            return escape_cell(pick("status", "—"))
+            return pick("status", "—")
         if col == "Directory":
-            return escape_cell(pick("directory", "—"))
+            return pick("directory", "—")
         return "—"
 
-    row = "| " + " | ".join(cell_for(c) for c in columns) + " |"
-    eol = _eol_of(section["body"])
-    lines = _LINE_SPLIT.split(section["body"])
-    last_table_line_idx = -1
-    for i, line in enumerate(lines):
-        if _trim(line).startswith("|"):
-            last_table_line_idx = i
-    new_lines = lines[:last_table_line_idx + 1] + [row] + lines[last_table_line_idx + 1:]
-    content = replace_section(state_content, section, eol.join(new_lines))
+    row = "| " + " | ".join(escape_cell(cell_for(c)) for c in columns) + " |"
+    inserted = insert_table_row(section["body"], cell_for)
+    if not inserted["ok"]:
+        return _fail(f"quick-tasks table: {inserted['reason']}")
+    content = replace_section(state_content, section, inserted["value"])
     return _ok({"content": content, "row": row, "variant": matched["label"]})
 
 
