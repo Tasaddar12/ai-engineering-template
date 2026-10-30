@@ -115,11 +115,11 @@ Review the flagged items above before acting on the routing suggestion.
 ```
 
 Then for each failed check, add a concrete next action:
-- Check 2 (orphaned handoff): `Read the handoff file(s) and resume from where work was paused: /resume-work `
+- Check 2 (orphaned handoff): `Read the handoff file(s) and resume from where work was paused: /resume-work`
 - Check 3 (deferred scope): `Add the missing phases to ROADMAP.md or update the deferred references`
 - Check 4 (memory pending): `Review the flagged memory entries and resolve or clear them`
 - Check 5 (blocking todos): `Complete the operational steps in .planning/todos/pending/ before continuing`
 - Check 6 (uncommitted code): `Commit or stash the uncommitted changes before advancing`
 - Check 7 (unresolved deferred items): `Address each deferred item and mark it status: resolved in its deferred-items.md, or fold it into the roadmap`
-- Check 1 (STATE inconsistency): `Run /verify-work ${PHASE}  to reconcile state`
+- Check 1 (STATE inconsistency): `Run /verify-work ${PHASE} to reconcile state`
 </step>
