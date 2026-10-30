@@ -174,6 +174,7 @@ VALIDATE_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--validate([[:space:
 FULL_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--full([[:space:]]|$) ]]; then FULL_PARAM="--full"; fi
 engineer_run quick-tasks-migrate || exit $?
 INIT=$(engineer_run query init.quick  "$DESCRIPTION" $DISCUSS_PARAM $RESEARCH_PARAM $VALIDATE_PARAM $FULL_PARAM)
+AGENT_SKILLS_PLANNER=$(engineer_run query agent-skills planner )
 AGENT_SKILLS_EXECUTOR=$(engineer_run query agent-skills executor )
 AGENT_SKILLS_CHECKER=$(engineer_run query agent-skills plan-checker )
 AGENT_SKILLS_VERIFIER=$(engineer_run query agent-skills verifier )

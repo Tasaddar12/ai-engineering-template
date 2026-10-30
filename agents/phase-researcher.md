@@ -105,7 +105,7 @@ Construct a JSON file at a temp path (e.g. `/tmp/research-plan-input.json`):
 ```json
 {
   "ecosystem": "<npm|pypi|crates|...>",
-  "config": { "context7": true/false, "ref": true/false, "exa_search": true/false, "brave_search": true/false, "firecrawl": true/false, "tavily_search": true/false },
+  "config": { "context7": true/false, "ref": true/false, "websearch": true/false, "webfetch": true/false, "exa_search": true/false, "brave_search": true/false, "firecrawl": true/false, "tavily_search": true/false },
   "questions": [
     { "text": "How does X work?", "kind": "docs", "library": "x", "version": "1.2.3" },
     { "text": "Best practices for Y?", "kind": "web" }
@@ -113,7 +113,7 @@ Construct a JSON file at a temp path (e.g. `/tmp/research-plan-input.json`):
 }
 ```
 
-`config` comes from the init context (availability flags). `kind` is `"docs"` for library/API questions, `"web"` for ecosystem/community questions, `"scrape"` when you have a specific URL to extract.
+`config` comes from the init context and reflects tool availability on this host, including built-in WebSearch/WebFetch. Set each flag from actual availability; never assume a provider is available. `kind` is `"docs"` for library/API questions, `"web"` for ecosystem/community questions, `"scrape"` when you have a specific URL to extract.
 
 ### Step B — Obtain the fetch plan
 

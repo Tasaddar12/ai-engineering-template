@@ -26,13 +26,14 @@ base: 5ad2f56f75be94185fea3edc5d3b232291934571
 
 - `python -m unittest tests.test_agent_sources` — 16 tests passed.
 - Command/skill parity — 42 commands checked, 0 mismatches, 0 missing skills; `COMMAND.md` skipped per the test's documented template exception.
-- `git diff --check` — passed after whitespace cleanup.
+- Targeted diff checks passed for owned changes; `planner-antipatterns.md` is byte-for-byte identical to the parent, so its inherited trailing spaces are absent from the final PR diff.
 
 ## Deviations
 
 - Kept retired Teams, capability registry, profile-output, io-output, external review-lane/convergence, and estimate-calibration calls retired.
 - Did not restore `phase-id-convention.md`: its generated-card instructions target the upstream runtime format and have no supported local caller. `offer-next.md` remains unnecessary because the guidance is inline in the workflow.
 - Documented runtime call shapes from the coder's confirmed CLI contract; runtime integration and the migration regression remain coordinator/coder-owned.
+- Restored the quick planner skill-loading call, made context-baseline stamping conditional on genuine refresh/reconciliation, and restored `planner-antipatterns.md` byte-for-byte to the parent.
 
 ## Remaining
 
