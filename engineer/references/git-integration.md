@@ -263,7 +263,7 @@ For workspaces with separate git repos (e.g., `backend/`, `frontend/`, `shared/`
 ### Repository Discovery and Targeting
 
 During `/new-project`, `init.new-project` reports Git submodule paths listed in
-`.gitmodules` as `sub_repos_detected`. For a commit, pass a selected repository
+`.gitmodules` as `sub_repos`. For a commit, pass a selected repository
 explicitly with `--subrepo <path>`. If that option is omitted,
 `commit-to-subrepo` scans immediate child directories of the workspace for a
 `.git` file or directory (excluding `.worktrees`, `.claude`, and `.codex`) and

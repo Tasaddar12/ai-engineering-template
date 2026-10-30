@@ -648,7 +648,7 @@ engineer_run query commit "chore: add project config" --files .planning/config.y
 **Detect multi-repo workspace:**
 
 During initialization, `init.new-project` returns registered Git submodule paths from
-`.gitmodules` in `sub_repos_detected`. For commit routing, `commit-to-subrepo` can also
+`.gitmodules` in `sub_repos`. For commit routing, `commit-to-subrepo` can also
 scan immediate child directories for a `.git` file or directory when no explicit
 repository path is supplied:
 
@@ -656,7 +656,7 @@ repository path is supplied:
 engineer_run query init.new-project
 ```
 
-Read the `sub_repos_detected` array from the JSON output — each entry is a bare
+Read the `sub_repos` array from the JSON output — each entry is a bare
 directory name already relative to the workspace root (e.g. `"backend"`).
 
 **If sub-repos found:**
