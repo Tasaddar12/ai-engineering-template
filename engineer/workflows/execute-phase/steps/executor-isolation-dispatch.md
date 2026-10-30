@@ -162,8 +162,9 @@ Before dispatch, read each file below and inline its actual contents verbatim in
 
 The prompt's provenance list names the files embedded, and the text of every listed file is present in the prompt. Preserve the mandatory SUMMARY commit and gitignored-planning skip semantics from those embedded sources.
 
-At execution start, the executor reads these project inputs, resolving each path from the worktree root:
+Include the following tagged block in the dispatched executor prompt so the mandatory reading gate runs. The executor resolves each path from the worktree root:
 
+<required_reading>
 - `{phase_dir}/{plan_file}`
 - `.planning/PROJECT.md`
 - `.planning/STATE.md`
@@ -173,6 +174,7 @@ At execution start, the executor reads these project inputs, resolving each path
 - `{prior_wave_summaries}`, when this is not wave 1
 - `CLAUDE.md`, if present
 - `.claude/skills/` or `.agents/skills/`, if present; read each applicable `SKILL.md`
+</required_reading>
 
 Capture the actual host agent id from the dispatch tool's result. Follow the native host's lifecycle, `completion-reconciliation.md` and the confirmed-stop rule: a timeout is not proof of exit. Wait for the terminal result and run the receipt procedure below before integrating. Preserve failed, dirty and unmerged checkouts.
 
