@@ -190,7 +190,7 @@ This exclusion exists because a failed install may indicate a slopsquatted or ha
     `[package-name]` could not be installed. Before proceeding:
     1. Verify the package exists and is legitimate: https://npmjs.com/package/[package-name]
     2. Confirm the package name is spelled correctly in PLAN.md
-    3. If the package does not exist, re-run /plan-phase --research-phase <N> to find the correct package
+    3. If the package does not exist, re-run `/plan-phase <N> --research` to refresh research and planning and find the correct package. This is a full research-plus-planning run, not a research-only mode.
   </how-to-verify>
   <resume-signal>Type "verified" with the correct package name, or "abort" to stop the phase</resume-signal>
 </task>

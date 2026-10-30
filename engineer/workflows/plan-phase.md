@@ -237,6 +237,27 @@ If "Run discuss-phase first":
   **Exit the plan-phase workflow. Do not continue.**
 
 
+## 4.6. Context Drift Pre-Check
+
+Before reusing existing research or pattern artifacts, check whether their recorded inputs have changed. This check runs before the reuse decision in Step 5 and before pattern-mapper reuse.
+
+```bash
+DRIFT_ACTION=$(engineer_run query config-get workflow.context_drift_action --raw 2>/dev/null || echo "warn")
+DRIFT=$(engineer_run verify context-drift "${PHASE}" --raw 2>/dev/null) || {
+  DRIFT_EXIT=$?
+  echo "Warning: context-drift check could not look (exit ${DRIFT_EXIT}); continuing without a drift verdict." >&2
+  DRIFT='{"status":"unresolvable","stale_artifacts":[],"block":false}'
+}
+DRIFT_BLOCK=$(printf '%s' "$DRIFT" | jq -r '.block // false')
+DRIFT_MESSAGE=$(printf '%s' "$DRIFT" | jq -r '.message // empty')
+if [ -n "$DRIFT_MESSAGE" ]; then echo "$DRIFT_MESSAGE"; fi
+if [ "$DRIFT_BLOCK" = "true" ] && [ "$DRIFT_ACTION" = "block" ]; then
+  echo "Planning stopped: regenerate or reconcile the listed artifacts, then rerun /plan-phase ${PHASE}." >&2
+  exit 1
+fi
+```
+
+When `workflow.context_drift_action` is `warn` (default), report stale artifacts and continue. When it is `block`, stop only when the check returns `block: true`; a check that could not look is reported and does not claim a pass.
 ## 5. Handle Research
 
 **Skip if:** `--gaps` flag or `--skip-research` flag or `--reviews` flag.
@@ -1028,6 +1049,19 @@ between discuss-phase and execute-phase; if a decision isn't visible in any
 plan, no executor will implement it. Catching that now beats discovering it
 after thousands of dollars of execution.
 
+## 13b. Record Context Drift Baseline
+
+After research, pattern references, and plans have been refreshed against the current context, record their source hashes for the next plan-phase freshness check. Do not record before the earlier context-drift comparison, because doing so would replace the baseline before it is checked.
+
+```bash
+DRIFT_BASELINE=$(engineer_run verify context-drift "${PHASE}" --record --raw) && DRIFT_RECORD_EXIT=0 || DRIFT_RECORD_EXIT=$?
+if [ "$DRIFT_RECORD_EXIT" -eq 69 ]; then
+  echo "Warning: context-drift baseline could not be recorded; later freshness checks may be unavailable." >&2
+elif [ "$DRIFT_RECORD_EXIT" -ne 0 ]; then
+  echo "ERROR: context-drift baseline recording failed (exit ${DRIFT_RECORD_EXIT}): ${DRIFT_BASELINE}" >&2
+  exit "$DRIFT_RECORD_EXIT"
+fi
+```
 ## 13b. Record Planning Completion in STATE.md
 
 After plans pass all gates, record that planning is complete so STATE.md reflects the new phase status:
@@ -1039,6 +1073,15 @@ engineer_run query state.planned-phase --phase "${PHASE_NUMBER}" --name "${PHASE
 This updates STATUS to "Ready to execute", sets the correct plan count, and timestamps Last Activity.
 
 
+## 13c. Annotate ROADMAP with Cross-Phase Dependencies
+
+After plans are finalized, update the roadmap phase dependencies from their `depends_on` declarations. The runtime preserves existing dependencies and adds the cross-phase dependencies represented by current plans; it makes no change when no cross-phase dependency exists. Skip when `plan_count` is zero.
+
+```bash
+engineer_run query roadmap.annotate-dependencies "${PHASE_NUMBER}"
+```
+
+This operation uses the runtime's maintained roadmap edit path and is safe to repeat. Include the updated ROADMAP.md with planning artifacts when committing.
 ## 13d. Commit Plans if commit_docs is true
 
 If `commit_docs` is true (from the init JSON parsed in step 1), commit the generated plan artifacts (including the current planning records):

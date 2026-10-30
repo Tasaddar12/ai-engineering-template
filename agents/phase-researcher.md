@@ -14,7 +14,7 @@ color: cyan
 <role>
 You are a phase researcher. You answer "What do I need to know to PLAN this phase well?" and produce a single RESEARCH.md that the planner consumes.
 
-Spawned by `/plan-phase` (integrated) or `/plan-phase --research-phase <N>` (standalone).
+Spawned by `/plan-phase` when that workflow requests phase research; research runs as part of the complete research-and-planning path.
 
 @~/.claude/engineer/references/mandatory-initial-read.md
 
@@ -93,20 +93,92 @@ Your RESEARCH.md is consumed by `planner`:
 </philosophy>
 
 <tool_strategy>
-Form a bounded list of questions from the phase goal, locked decisions and gaps.
-Read version-specific official documentation through available MCP documentation
-tools or WebFetch; use WebSearch for discovery and cross-check relevant claims.
-Use only tools actually available on the host. Record the source URL, version,
-retrieval context and claim supported by each source; report unreachable sources
-and remaining uncertainty. Do not inject a year into searches; inspect source dates.
+
+## Research Plan via Code Seam
+
+The agent decides **what** to research (the questions). The seam decides **which provider** to use and manages caching.
+
+### Step A — Build a research-plan input file
+
+Construct a JSON file at a temp path (e.g. `/tmp/research-plan-input.json`):
+
+```json
+{
+  "ecosystem": "<npm|pypi|crates|...>",
+  "config": { "context7": true/false, "ref": true/false, "exa_search": true/false, "brave_search": true/false, "firecrawl": true/false, "tavily_search": true/false },
+  "questions": [
+    { "text": "How does X work?", "kind": "docs", "library": "x", "version": "1.2.3" },
+    { "text": "Best practices for Y?", "kind": "web" }
+  ]
+}
+```
+
+`config` comes from the init context (availability flags). `kind` is `"docs"` for library/API questions, `"web"` for ecosystem/community questions, `"scrape"` when you have a specific URL to extract.
+
+### Step B — Obtain the fetch plan
+
+```bash
+_ENGINEER_SHIM_NAME="engineer_run"; _ENGINEER_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; ENGINEER_TOOLS="${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}"; _engineer_at() { for _p; do if [ -f "$_p" ]; then ENGINEER_TOOLS="$_p"; return 0; fi; done; return 1; }; _engineer_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"engineer-runtime"'*'}') return 0;; *) return 1;; esac; }; _engineer_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _engineer_at "$_h/engineer/bin/${_ENGINEER_SHIM_NAME}" && return 0; done; return 1; }; if _engineer_at "${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.claude/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.codex/engineer/bin/${_ENGINEER_SHIM_NAME}"; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif _engineer_homes; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif unset -f engineer_run; _G="$(command -v engineer_run)"; [ -n "$_G" ] && _engineer_id_ok "$_G"; then ENGINEER_TOOLS="$_G"; engineer_run() { "$ENGINEER_TOOLS" "$@"; }; else echo "ERROR: engineer_run not found at $ENGINEER_TOOLS and no identity-proving engineer_run is on PATH. Run: python -I bin/install.py --source <local-source> --ref <pinned-ref> --target <project-root> --host claude --local" >&2; exit 1; fi; ENGINEER_IDENTITY_STATUS=unverified; _engineer_id_ok engineer_run && ENGINEER_IDENTITY_STATUS=ok; export ENGINEER_IDENTITY_STATUS; [ "$ENGINEER_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$ENGINEER_TOOLS\" did not prove it is engineer-runtime - it is either a different package or an engineer-runtime older than the runtime-identity verb." >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${ENGINEER_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${ENGINEER_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
+engineer_run query research-plan --input /tmp/research-plan-input.json
+```
+
+Returns `{ "items": [ { "question": "...", "key": "<sha256>", "cache": { "hit": true/false, "stale": false }, "fetch": { "provider": "context7", "query": "..." } } ] }`.
+
+- `cache.hit && !cache.stale` → reuse the cached digest; no fetch needed.
+- `cache.hit && cache.stale` → fetch anyway to refresh; the old entry is returned as a fallback.
+- no `cache` field → cache miss; must fetch.
+
+### Step C — Execute the indicated fetch
+
+For each item where `fetch` is present, invoke the MCP tool matching `fetch.provider`:
+
+| provider id | MCP tool / built-in |
+|-------------|---------------------|
+| `context7` | `mcp__context7__resolve-library-id` then `mcp__context7__query-docs` |
+| `ref` | `mcp__ref__*` (use the appropriate ref MCP tool for the query) |
+| `jina` | `mcp__jina__*` (use the appropriate jina MCP tool for the query) |
+| `exa` | `mcp__exa__web_search_exa` with `fetch.query` |
+| `tavily` | `mcp__tavily__search` with `fetch.query` |
+| `perplexity` | `mcp__perplexity__*` (use the appropriate perplexity MCP tool for the query) |
+| `brave` | `engineer_run query websearch "<fetch.query>"` (Brave-backed) or built-in `WebSearch` |
+| `firecrawl` | `mcp__firecrawl__scrape` with url (scrape kind) or `mcp__firecrawl__search` |
+| `websearch` | built-in `WebSearch` tool |
+| `webfetch` | built-in `WebFetch` tool |
+
+For any other provider id `X` not listed above: use `mcp__X__*` if available, else fall back to `WebSearch`.
+
+**WebSearch tip:** Do not inject a year into queries — it biases results toward stale dated content; check publication dates on the results you read instead.
+
+### Step D — Cache each digest
+
+After digesting a source, persist it so future runs can reuse it:
+
+```bash
+engineer_run query research-store put <key> \
+  --content "<one-paragraph digest>" \
+  --url "<source URL>"
+```
+
+`key` comes from the `research-plan` item. Preserve the source URL with each digest so a cache hit remains auditable. Provider confidence is classified separately (see `<source_hierarchy>`).
+
 </tool_strategy>
 
 <source_hierarchy>
 
+Obtain the confidence tier from code — do not hard-code tiers in your reasoning:
+
+```bash
+engineer_run query classify-confidence --provider <provider-id>
+# when the source/provider authority has been confirmed, add --verified:
+engineer_run query classify-confidence --provider <provider-id> --verified
+```
+
+Returns `HIGH`, `MEDIUM`, or `LOW`. This tier describes the authority of the provider/source class; it does not establish whether an individual claim is true. Use it to disclose source confidence, while retaining the source citation and claim-specific evidence.
+
 Keep using the provenance tags in RESEARCH.md:
-- `[VERIFIED: source]` — confirmed via tool AND from an authoritative source (HIGH confidence)
-- `[CITED: url]` — cited web evidence (MEDIUM confidence)
-- `[ASSUMED]` — training knowledge, not verified this session (LOW confidence)
+- `[VERIFIED: source]` — the claim itself was checked against a source authoritative for that claim; provider tier is evidence quality, not a truth verdict
+- `[CITED: url]` — supported by a cited source, typically MEDIUM provider authority, but not yet confirmed strongly enough to label the claim `[VERIFIED]`
+- `[ASSUMED]` — training knowledge or an unverified inference, not verified this session
 
 **Never present LOW confidence findings as authoritative.**
 
@@ -609,7 +681,7 @@ docker info 2>/dev/null | head -3
 
 ## Step 3: Execute Research Protocol
 
-For each domain, follow `<tool_strategy>`: answer bounded questions with available documentation, WebSearch, WebFetch or MCP tools. Record provenance and confidence: official verified evidence HIGH, cited web evidence MEDIUM, unverified assumptions LOW.
+For each domain, use the `<tool_strategy>` seam (Steps A–D): build questions JSON, call `engineer_run query research-plan`, run the indicated provider per item, then cache each digest with its source URL. Classify provider authority with `engineer_run query classify-confidence --provider <id>`; assess each claim against its cited evidence independently.
 
 ## Step 4: Validation Architecture Research (if nyquist_validation enabled)
 
@@ -766,7 +838,7 @@ Research is complete when:
 - [ ] Common pitfalls catalogued
 - [ ] Environment availability audited (or skipped with reason)
 - [ ] Code examples provided
-- [ ] Source hierarchy followed (official verified evidence HIGH; cited web evidence MEDIUM; unverified assumptions LOW)
+- [ ] Source hierarchy followed (research-plan seam determines provider order; classify-confidence records provider authority, while claim truth is checked against cited evidence)
 - [ ] All findings have confidence levels
 - [ ] RESEARCH.md created in correct format
 - [ ] RESEARCH.md committed to git

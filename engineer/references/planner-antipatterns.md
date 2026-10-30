@@ -181,7 +181,7 @@ If region-scoping is genuinely impractical and the file split is intentional, su
 
 One marker per pattern. The marker exempts only the exact pattern it names. Prefer region-scoping over suppression.
 
-## CLI Output Format Anchor Mismatch 
+## CLI Output Format Anchor Mismatch
 
 `pnpm ls vite | grep -E '^vite@7\.'` looks correct but silently fails. `pnpm ls` uses tree characters as line prefixes:
 ```
@@ -196,14 +196,14 @@ Lines begin with `└──`, not `vite`. The `^` anchor matches line start, whi
 
 Same trap: `npm ls`, `yarn list`, `docker ps` column output, `kubectl get` table output.
 
-## Fabricated Numeric Baselines 
+## Fabricated Numeric Baselines
 
 Never emit `grep '714 tests'` or `grep '52 test files'` unless you ran the count command in this session. Model-recalled counts are stale from training.
 
 **Bad:** `npm test 2>&1 | grep '714 passed'`
 **Good:** `npm test 2>&1 | grep -E '[0-9]+ passed'` or just `npm test`
 
-## Error-Suppressing Fallbacks in Verify Gates 
+## Error-Suppressing Fallbacks in Verify Gates
 
 `2>/dev/null || echo "0"` in an assignment that feeds a comparison converts any failure into a passing gate that measures nothing.
 
@@ -228,3 +228,28 @@ test -f src/i18n/en.json && test -f src/i18n/de.json || { echo "missing input fi
 ```
 
 **When `|| echo "default"` is acceptable:** only when absence is semantically the default AND the result is NOT used in a comparison that should detect absence.
+
+## External Review Before PR Open
+
+Apply this ordering only when opening the PR is known to trigger automatic external review and the plan also has internal review lanes.
+
+**Bad:**
+
+```text
+Wave 1: Open PR; automatic external review starts
+Wave 2: Run internal review
+Wave 3: Apply accepted fixes
+```
+
+The external reviewer spends its first pass on a diff the plan already expects to change.
+
+**Good:**
+
+```text
+Wave 1: Run internal review
+Wave 2: Apply accepted fixes
+Wave 3: If applicable, re-check the open-time property; then immediately open PR
+Wave 4+: Run post-open CI, external review, and tracking work
+```
+
+Nothing may intervene between an applicable re-check and the open. Post-open work may follow; "immediately" constrains only that gap. Opening-time properties do not justify an early PR.

@@ -116,13 +116,19 @@ Use conventional commit format: `fix:`, `feat:`, `docs:`, `chore:`, `refactor:` 
 
 <step name="log_to_state">
 After the task's change has been verified and committed, create its canonical quick record and complete that returned identity. Inspect and report persistence errors; do not report an unfinished task as complete.
+Run `quick-tasks-migrate` first to import legacy table rows into canonical QUICK.md records without changing the source table. After `quick.update` marks this task complete, append the history row through `quick-tasks-append` using the id and slug derived from the returned directory.
 
 ```bash
+engineer_run quick-tasks-migrate || exit $?
 FAST_RECORD=$(engineer_run query quick.create "$TASK") || exit $?
 FAST_QUICK_ID=$(engineer_run query json.get --payload "$FAST_RECORD" --field quick_id --raw) || exit $?
+FAST_DIRECTORY=$(engineer_run query json.get --payload "$FAST_RECORD" --field directory --raw) || exit $?
+FAST_SLUG=${FAST_DIRECTORY##*/}
+FAST_SLUG=${FAST_SLUG#*-}
 [ -n "$FAST_QUICK_ID" ] || { echo "ERROR: quick.create returned no task id" >&2; exit 1; }
 FAST_COMMIT=$(git rev-parse HEAD) || exit $?
 engineer_run query quick.update "$FAST_QUICK_ID" --status complete --commit "$FAST_COMMIT" || exit $?
+engineer_run quick-tasks-append --quick-id "$FAST_QUICK_ID" --slug "$FAST_SLUG" --task "$TASK" --status complete || exit $?
 ```
 </step>
 

@@ -454,6 +454,7 @@ between a large tool_result and the next assistant turn (seen on Claude Code
 
 **For each wave:**
 
+Before the wave's other dispatch gates, read and execute `engineer/references/execute-phase-context-guard.md`. It applies the configured `workflow.context_guard_mode` (`warn` by default): warn reports pressure and continues, auto captures a concise handoff before the next wave and continues, and off suppresses only the advisory. Context pressure never skips required work.
 @~/.claude/engineer/references/execute-phase-wave-guard.md
 
 
