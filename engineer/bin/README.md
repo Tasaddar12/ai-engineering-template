@@ -380,7 +380,7 @@ roadmap phases/counts/percent, progress_percent, and all_phases_verified.
 
 The retired dynamic `check`, `check.predicate`, capability `loop.*`, external
 `review.run`/`review.collect` and `review-lane`, PID `worktree.worker-*`,
-`research-store.*`, estimator, broken-windows and intel routes are
+estimator, broken-windows and intel routes are
 not registered. Unknown `check.*` names are rejected. Native review uses
 `review.dispatch`, `review.record` and `review.status`.
 
@@ -393,3 +393,30 @@ With `features.global_learnings` enabled, `learnings.copy --phase N` copies the
 phase's existing LEARNINGS.md artifact into `~/.engineer/knowledge/`, preserving
 its source project and bytes. `learnings.query --tag TAG --limit 5` reads matching
 local and enabled global knowledge; project decisions still take precedence.
+
+
+Retained evidence and planning utilities:
+
+| Verb | Inputs | Result |
+|---|---|---|
+| `verify.context-drift` | `N [--record|--stamp] [--paths PATH ...]` | Hashes CONTEXT and declared `source_paths` (or `files`); reports unchanged stale artifacts after premises change. `workflow.context_drift_action` selects `warn` (default) or `block`; unavailable evidence exits 69. This is a freshness signal, not semantic assessment. |
+| `roadmap.annotate-dependencies` | `N` | Unions cross-phase plan dependencies with existing roadmap dependencies using the maintained phase edit operation. |
+| `quick-tasks-append` | `--task TEXT [--quick-id N --slug SLUG] [--status STATUS]` | Schema-safe compatibility table append; escapes cells, preserves surrounding prose and deduplicates a supplied directory link. Existing tables without Status retain their schema. `QUICK.md` remains authoritative; table rows do not complete tasks or recover batch transactions. |
+| `quick-tasks-migrate` | none | Idempotently imports orphan legacy table rows into authoritative `quick/*/QUICK.md`; rows referencing an existing validated task directory are skipped. Preserves the original table and its bytes. |
+| `research-plan` | `--input FILE [--max-age-hours 168]` | Plans caller-executed fetches, or reuses fresh cited cache entries; never fetches implicitly. |
+| `research-store.put` | `KEY --content TEXT --url URL` (or `--sources URL ...`) | Stores cited content under a SHA256 key; local source files must exist within the repository. |
+| `research-store.get` / `list` / `query` | `KEY` / none / `[--query TEXT]` | Reads cached evidence. `research-store put/get/list/query` are equivalent spellings. |
+| `classify-confidence` | `--provider PROVIDER [--verified]` | Provider authority: verified official/primary/context7/ref gives HIGH, unverified gives MEDIUM; other providers give MEDIUM/LOW. This never establishes correctness or goal verification. |
+
+A research input is a JSON object such as
+`{"ecosystem":"python","config":{"context7":true,"websearch":true},"questions":[{"text":"Versioned API","kind":"docs","library":"example","version":"1.0"}]}`.
+Question kinds are `docs`, `web`, or `scrape`. Provider routing prefers
+context7/ref/websearch for docs, exa/tavily/brave/websearch for web, and
+firecrawl/webfetch for scrape. Availability must be declared true in `config`
+(or `PROVIDER_search`). Fetch instructions include the question key; use that
+key with `research-store.put` after obtaining real citations. Missing providers
+produce an explicit blocked item. Freshness defaults to seven days; missing,
+expired, invalidly dated or uncited entries request a new fetch.
+
+`workflow.context_guard_mode` accepts `warn` (default), `auto`, or `off` for the
+workflow context-budget heuristic; it is distinct from source/context freshness.

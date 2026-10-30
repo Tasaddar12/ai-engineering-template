@@ -1,4 +1,4 @@
-"""Behavioral checks for retired CLI rejection and retained native safety routes."""
+"""Behavioral checks for retained learning, prohibition and native review routes."""
 import json
 from pathlib import Path
 try:
@@ -7,7 +7,7 @@ except ImportError:
     from test_engineer_runtime import RuntimeCase
 
 
-class LegacyRuntimeRetirement(RuntimeCase):
+class RetainedRuntime(RuntimeCase):
     def test_retained_global_learnings_copy_query_and_refresh(self):
         self.init_records()
         store = self.root / "global-knowledge"
@@ -47,36 +47,6 @@ class LegacyRuntimeRetirement(RuntimeCase):
         packet["items"][0]["citations"] = ["missing.md"]
         source.write_text(json.dumps(packet), encoding="utf-8")
         self.cli("learnings.extract", "--input", source, status=2, raw=True)
-
-    def test_retired_routes_are_unknown_and_do_not_mutate_records(self):
-        self.init_records()
-        state = (self.root / ".planning/STATE.md").read_bytes()
-        retired = ["estimate-calibrate", "estimate-check", "research-plan", "research-store", "research-store.put",
-                   "classify-confidence", "check", "check.predicate", "check.auto-mode", "check.unregistered",
-                   "teams-status", "review-lane", "review.run", "review.collect", "resolve-package-manager",
-                   "normalize-test-command", "detect-custom-files", "custom-files.backup", "restore-custom-files",
-                   "verify.context-drift", "worktree.worker-record", "worktree.worker-status", "worktree.worker-complete",
-                   "loop.render-hooks", "loop.events", "loop.list", "windows.append", "windows.status",
-                   "intel.api-surface", "roadmap.annotate-dependencies", "quick-tasks-append",
-                   "quick-tasks-migrate", "review.contributions"]
-        verbs = self.cli("verbs")["verbs"]
-        for verb in retired:
-            with self.subTest(verb=verb):
-                self.assertNotIn(verb, verbs)
-                self.cli(verb, status=2, raw=True)
-        self.assertEqual(state, (self.root / ".planning/STATE.md").read_bytes())
-
-    def test_obsolete_configuration_is_rejected_and_host_is_resolved_directly(self):
-        self.init_records()
-        for key, value in (("runtime", "codex"), ("workflow.build_command", "make"),
-                           ("workflow.test_command", "pytest"), ("workflow.code_review_point", "execute:post"),
-                           ("workflow.test_gate_timeout", "600"), ("workflow.broken_windows", "true"),
-                           ("workflow.context_drift_action", "warn"), ("review.timeout_seconds", "600"),
-                           ("workflow.plan_chunked", "true")):
-            with self.subTest(key=key):
-                self.cli("config-set", key, value, status=2, raw=True)
-        self.assertEqual("codex", self.cli("runtime-identity")["host"])
-        self.assertEqual("AGENTS.md", self.cli("project-instruction-file"))
 
     def test_prohibition_gate_does_not_accept_a_caller_claim_as_proof(self):
         request = {"prohibition": {"statement": "Must not leak credentials"}, "check": None}

@@ -16,6 +16,7 @@ MUTATIONS = {
     "phases.clear", "milestone.archive-quick", "review.record", "review.dispatch", "review.reconcile",
     "review.normalize-structural", "learnings.copy", "learnings.extract",
     "stamp-codebase-map", "dispatch-isolation",
+    "quick-tasks-append", "quick-tasks-migrate", "roadmap.annotate-dependencies",
 }
 
 
