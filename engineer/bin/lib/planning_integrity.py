@@ -4,6 +4,7 @@ from .core import Failure, digest, read
 from .text import split_frontmatter
 
 MUTATIONS = {
+    "estimate-calibration", "estimate-calibrate", "estimate-check", "research-store.put", "research-store",
     "config-set", "config-new-project", "commit", "generate-claude-md", "run-with-timeout",
     "frontmatter.set", "roadmap.set-plans", "roadmap.update-plan-progress", "verification.fingerprint",
     "verification.append-audit", "verification.run-checks", "uat.complete-session", "planning.repair",

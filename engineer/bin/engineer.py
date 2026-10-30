@@ -109,6 +109,8 @@ def registry():
         "verify.context-drift": codebase.context_drift,
         "research-plan": research.plan, "research-store": research.store_command,
         "classify-confidence": research.confidence,
+        "estimate-calibration": planning.calibration, "estimate-calibrate": planning.calibration,
+        "estimate-check": planning.estimate_check,
         "quick-tasks-append": planning.quick_append, "quick-tasks-migrate": planning.quick_migrate,
         "roadmap.annotate-dependencies": planning.annotate_dependencies,
     }

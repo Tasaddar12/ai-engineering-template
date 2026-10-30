@@ -1,10 +1,12 @@
 """Planning record boundaries, read-only views and explicit lifecycle helpers."""
 from __future__ import annotations
 import hashlib
+import math
+import statistics
 from pathlib import Path
 import re
 import stat
-from .core import Args, Failure, now, planning_lock, read, root, run, write
+from .core import Args, Failure, now, planning_lock, read, root, run, write, write_json
 from .text import split_frontmatter
 
 
@@ -241,6 +243,46 @@ def quick_migrate(args):
             file = Path(item["path"])
             created.append(str(file))
     return {"migrated": created, "skipped": skipped, "count": len(created), "source_preserved": True}
+
+
+def calibration(args):
+    from . import records
+    samples = []
+    for item in history(args)["summaries"]:
+        plan_path = safe(Path(item["path"]).with_name(Path(item["path"]).name.replace("-SUMMARY.md", "-PLAN.md")))
+        plan_metadata, _ = split_frontmatter(read(plan_path))
+        estimate = plan_metadata.get("estimate", item.get("estimate", {}))
+        actual = item.get("actuals", {})
+        if not isinstance(estimate, dict) or not isinstance(actual, dict):
+            continue
+        predicted, observed = estimate.get("raw_tokens"), actual.get("tokens")
+        if (isinstance(predicted, (int, float)) and not isinstance(predicted, bool) and math.isfinite(predicted) and predicted > 0
+                and isinstance(observed, (int, float)) and not isinstance(observed, bool) and math.isfinite(observed) and observed >= 0):
+            samples.append({"path": item["path"], "predicted": predicted, "actual": observed, "ratio": observed/predicted})
+    count = len(samples)
+    data = {"sample_count": count, "samples": samples, "calibrated": count >= 3, "applied": count >= 3,
+            "factor": statistics.median(item["ratio"] for item in samples) if count >= 3 else 1,
+            "confidence": "high" if count >= 6 else "med" if count >= 3 else "low"}
+    with planning_lock():
+        write_json(safe(records.planning()/"estimation-calibration.json"), data)
+    return data
+
+
+def estimate_check(args):
+    from . import config
+    try:
+        tokens = float(args.get("tokens", args.arg(0)))
+    except (ValueError, TypeError) as exc:
+        raise Failure("invalid-token-estimate", "Supply nonnegative --tokens", 2) from exc
+    if not math.isfinite(tokens) or tokens < 0:
+        raise Failure("invalid-token-estimate", str(tokens), 2)
+    data = calibration(args)
+    factor = data["factor"] if args.has("calibrated") else 1
+    budget = config.load()["workflow"]["smart_zone_tokens"]
+    projected = tokens*factor
+    return {"tokens": tokens, "projected_tokens": projected, "budget": budget, "within_budget": projected <= budget,
+            "calibrated": bool(args.has("calibrated") and data["calibrated"]), "sample_count": data["sample_count"],
+            "advisory": True, "recommendation": "within-budget" if projected <= budget else "split-independent-outcomes"}
 
 
 def smart_entry(args):

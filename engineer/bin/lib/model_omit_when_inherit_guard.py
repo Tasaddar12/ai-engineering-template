@@ -2,7 +2,7 @@
 
 Ported from upstream gsd-core ``tests/model-omit-when-inherit-guard.test.cjs``
 at commit d37ff11b47258b560f0cf8f1132b42ecd90e0c79 (MIT, Copyright (c) 2026 Open GSD).
-Rule owner: ``AGENTS.md`` (Dispatch).
+Rule owner: ``engineer/references/model-profile-resolution.md``.
 
 Workflow orchestrators must omit the ``model=`` parameter from ``Agent()`` calls
 when the bound ``*_model`` value is ``inherit`` or empty, every ``model="{X}"``
@@ -12,6 +12,8 @@ an empty list means the rule holds.
 
 Deviations:
 - ``gsd-core/workflows`` -> ``engineer/workflows``;
+  ``gsd-core/references/model-profile-resolution.md`` ->
+  ``engineer/references/model-profile-resolution.md``;
   ``gsd_run`` -> ``engineer_run``; ``gsd-<agent>`` -> ``<agent>`` (names come
   from ``agents/*.md``).
 - Agent names carry no ``gsd-`` prefix here, so the spawn collector matches only
@@ -42,11 +44,12 @@ SOURCE = Path(__file__).resolve().parents[3]
 WORKFLOWS = SOURCE/"engineer/workflows"
 AGENTS = SOURCE/"agents"
 RUNTIME = SOURCE/"engineer/bin/engineer.py"
-MODEL_REFERENCE = SOURCE/"AGENTS.md"
+MODEL_REFERENCE = SOURCE/"engineer/references/model-profile-resolution.md"
 
 OMIT_RULE_MARKER = "<!-- model-omit-on-inherit -->"
 MODEL_PLACEHOLDER_RE = re.compile(r'model="\{([A-Za-z0-9_]+)\}"')
 MODEL_SITE_RE = re.compile(r'model="\{')
+SHIP_GATE_RE = re.compile(r"`(\^\[A-Za-z0-9\]\[[^`]*\]\*\$)`")
 
 
 def read_workflow_combined(workflow_path):
@@ -255,9 +258,9 @@ def spawn_coverage_findings(workflows_dir, resolve_init, agents=None):
     return findings, spawning, covered
 
 
-# --- authoritative model dispatch contract ----------------------------------
+# --- reference document and ship hook gate ----------------------------------
 
-def reference_violations(content, label="AGENTS.md"):
+def reference_violations(content, label="model-profile-resolution.md"):
     findings = []
     if re.search(r'model="inherit"', content):
         findings.append('%s: must not instruct passing model="inherit"; an inherit/empty model 404s on '
@@ -267,4 +270,21 @@ def reference_violations(content, label="AGENTS.md"):
                         "that field." % label)
     if not re.search("omit", content, re.I):
         findings.append("%s: must state the omit-on-inherit/empty rule." % label)
+    return findings
+
+
+def ship_gate_shape(content):
+    """Compiled capability-agent validation pattern published by ship.md, or None."""
+    match = SHIP_GATE_RE.search(content)
+    return re.compile(match.group(1)) if match else None
+
+
+def ship_hook_violations(content):
+    findings = []
+    if not SHIP_GATE_RE.search(content):
+        findings.append("ship.md must publish the shape `ref.agent` has to match before it is used.")
+    if not re.search(r"IN-CONTEXT, before any shell use", content, re.I):
+        findings.append("ship.md must require the ref.agent check to run IN-CONTEXT before any shell use.")
+    if re.search(r'HOOK_AGENT="', content):
+        findings.append("ship.md must not assign the raw ref.agent value into a shell variable.")
     return findings

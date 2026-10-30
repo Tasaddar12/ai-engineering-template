@@ -152,7 +152,7 @@ Discovery is MANDATORY unless you can prove current context exists.
 - Level 2+: New library not in package.json, external API, "choose/select/evaluate" in description
 - Level 3: "architecture/design/system", multiple external services, data modeling, auth design
 
-For niche domains (3D/games/audio/shaders/ML), suggest `/plan-phase <N> --research` first. This refreshes research and planning together; there is no research-only mode.
+For niche domains (3D/games/audio/shaders/ML), suggest `/plan-phase <N> --research` first.
 
 </discovery_levels>
 
@@ -263,7 +263,9 @@ See @~/.claude/engineer/references/planner-guidance.md for dependency graph buil
 Full rules: @~/.claude/engineer/references/context-budget.md (Phase Sizing). Read before sizing.
 
 - **2-3 tasks per plan.** **ALWAYS split if:** >3 tasks, multiple subsystems, or any task touching >5 files.
-- **Emit `estimate`** when useful: provide an advisory `tokens` projection, the `tasks` count assumed, and qualitative `confidence` (`low`, `med`, or `high`) with its basis. Use the same rough chars/4 scale as the actuals recorded in summaries. Do not call an estimate-calibration command or claim confidence is derived from sample counts.
+- **Emit `estimate`**: run `estimate-calibration`; `tokens` = raw projection x factor, `raw_tokens` = that
+  projection before the factor (calibration measures actual/raw), `confidence` verbatim — derived from
+  sample count, never self-rated.
 - **Over the smart-zone budget?** Re-slice into smaller plans. Advisory, never a block.
 
 </scope_estimation>
@@ -284,10 +286,11 @@ autonomous: true            # false if plan has checkpoints
 requirements: []            # REQUIRED — Requirement IDs from ROADMAP this plan addresses. MUST NOT be empty.
 user_setup: []              # Human-required setup (omit if empty)
 
-estimate:                   # Advisory projected cost (see Estimate Emission)
-  tokens: 30000             # rough chars/4 projection
+estimate:                   # Projected execution cost (see Estimate Emission)
+  tokens: 60000             # calibrated projection
+  raw_tokens: 30000         # pre-factor projection
   tasks: 3                  # task count the projection assumes
-  confidence: low           # low | med | high — qualitative; note its basis
+  confidence: low           # low | med | high — DERIVED from sample count, never self-rated
 
 must_haves:
   truths: []                # Observable behaviors
@@ -372,7 +375,7 @@ Create `.planning/phases/XX-name/{padded_phase}-{plan}-SUMMARY.md` when done
 | `autonomous` | Yes | `true` if no checkpoints |
 | `requirements` | Yes | **MUST** list requirement IDs from ROADMAP. Every roadmap requirement ID MUST appear in at least one plan. |
 | `user_setup` | No | Human-required setup items |
-| `estimate` | No | Advisory projected cost `{tokens, tasks, confidence}`. See Estimate Emission. |
+| `estimate` | No | Projected cost `{tokens, tasks, confidence}`. See Estimate Emission. |
 | `must_haves` | Yes | Goal-backward verification criteria |
 
 Wave numbers are pre-computed during planning. Execute-phase reads `wave` directly from frontmatter.
