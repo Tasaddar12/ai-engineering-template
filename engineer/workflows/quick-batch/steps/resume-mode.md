@@ -62,9 +62,9 @@ anything, do not create a new batch on the user's behalf.
 
 **Otherwise:** parse `$QB_RESUME_JSON` for `eligible` (array of quick ids),
 `transitions` (status changes just applied — e.g. a `blocked` item reverting
-to `pending`, or a crash-window STATE-row detection completing an item
-without re-appending, row 45), and `manifest` (the full, current batch
-document).
+to `pending`, or recovery replaying a durable `completionTransaction` into
+the authoritative `QUICK.md` record and batch manifest), and `manifest` (the
+full, current batch document).
 
 ```bash
 BATCH_ID="$RESUME_BATCH_ID"
