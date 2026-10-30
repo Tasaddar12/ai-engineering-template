@@ -24,6 +24,9 @@ branch: review-pr171-contract-comments
   API does not add artifact consumption obligations or execute dispatches.
 - Clarified the existing estimate compatibility behavior: historical SUMMARY
   estimates may supply raw estimates when a PLAN estimate is absent.
+- README follow-up removed the stale estimator retirement claim, kept estimate
+  rows in the existing API table and described calibration as using recorded
+  raw_tokens, including the historical SUMMARY fallback.
 
 ## Checks
 
@@ -34,6 +37,8 @@ branch: review-pr171-contract-comments
   current query names, unknown event rejection, native receipt lifecycle and the
   preceding research/calibration contracts.
 - `git diff --check`: passed.
+- README-only follow-up: inspected the exact prose/table diff and passed
+  `git diff --check`; no source changes or repeated runtime tests.
 
 ## Remaining
 
