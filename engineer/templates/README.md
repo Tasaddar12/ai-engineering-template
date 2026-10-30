@@ -48,12 +48,13 @@ These files live inside a phase directory. They are NOT checked by W019 (which o
 | `NN-MM-PLAN.md` | `phase-prompt.md` | `/plan-phase` | Executable implementation plan |
 | `NN-MM-SUMMARY.md` | `summary.md` | `/execute-phase` | Post-execution summary with learnings |
 | `NN-CONTEXT.md` | `context.md` | `/discuss-phase` | Scoped discussion decisions for the phase |
-| `NN-RESEARCH.md` | `research.md` | `/plan-phase`, `/plan-phase --research-phase <N>` | Technical research for the phase |
+| `NN-RESEARCH.md` | `research.md` | `/plan-phase`, `/plan-phase <N> --research` | Technical research for the phase; `--research` refreshes research and planning together |
 | `NN-VALIDATION.md` | `VALIDATION.md` | `/plan-phase` (Nyquist) | Validation architecture (Nyquist method) |
 | `NN-UAT.md` | `UAT.md` | `/validate-phase` | User acceptance test results |
 | `NN-PATTERNS.md` | *(inline)* | `/plan-phase` (pattern mapper) | Analog file mapping for the phase |
 | `NN-UI-SPEC.md` | `UI-SPEC.md` | `/ui-phase` | UI design contract |
 | `NN-SECURITY.md` | `SECURITY.md` | `/secure-phase` | Security threat model |
+| `NN-DEBUG.md` | `DEBUG.md` | `/debug` | Debug session log |
 | `NN-REVIEWS.md` | *(inline)* | `/review` | Cross-AI review feedback |
 
 ---

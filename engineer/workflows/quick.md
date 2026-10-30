@@ -42,6 +42,8 @@ Parse `$ARGUMENTS` for:
 
 After parsing, normalize: if `$DISCUSS_MODE` and `$RESEARCH_MODE` and `$VALIDATE_MODE` are all true, set `$FULL_MODE=true`. This ensures `--discuss --research --validate` is treated identically to `--full`.
 
+Before creating a new quick record, run `quick-tasks-migrate` to import any legacy Quick Tasks table rows into canonical QUICK.md records. Migration is idempotent and preserves the source table. `quick.create`/`quick.update` remain authoritative for the active task; after completion, `quick-tasks-append` writes its history row through the schema-safe table helper.
+
 ```bash
 _engineer_identity_ok() {
   [ -f "$1" ] || return 1
@@ -170,6 +172,7 @@ DISCUSS_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--discuss([[:space:]]
 RESEARCH_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--research([[:space:]]|$) ]]; then RESEARCH_PARAM="--research"; fi
 VALIDATE_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--validate([[:space:]]|$) ]]; then VALIDATE_PARAM="--validate"; fi
 FULL_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--full([[:space:]]|$) ]]; then FULL_PARAM="--full"; fi
+engineer_run quick-tasks-migrate || exit $?
 INIT=$(engineer_run query init.quick  "$DESCRIPTION" $DISCUSS_PARAM $RESEARCH_PARAM $VALIDATE_PARAM $FULL_PARAM)
 AGENT_SKILLS_PLANNER=$(engineer_run query agent-skills planner )
 AGENT_SKILLS_EXECUTOR=$(engineer_run query agent-skills executor )
@@ -690,6 +693,7 @@ else
   QUICK_VERIFICATION=not_run
 fi
 engineer_run query quick.update "$quick_id" --status "$QUICK_RECORD_STATUS" --verification "$QUICK_VERIFICATION" --commit "$QUICK_COMMIT" || exit $?
+engineer_run quick-tasks-append --quick-id "${quick_id}" --slug "${slug}" --task "${DESCRIPTION}" --status "${QUICK_RECORD_STATUS}" || exit $?
 ```
 
 When validation ran, the fresh canonical status above corresponds to the earlier `$VERIFICATION_STATUS` display labels: Verified → passed; Needs Review or Gaps → blocked; Unverified → blocked. Keep those display labels for the completion report while storing the actual canonical verification value in the record.

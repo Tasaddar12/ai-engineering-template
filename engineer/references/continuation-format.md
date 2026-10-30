@@ -103,7 +103,7 @@ Add note that this is the last plan and what comes after:
 
 **Also available:**
 - `/discuss-phase 2` — gather context first
-- `/plan-phase --research-phase 2` — investigate unknowns
+- `/plan-phase 2 --research` — investigate unknowns
 - Review roadmap
 
 ---
@@ -132,7 +132,7 @@ Show completion status before next action:
 
 **Also available:**
 - `/discuss-phase 3` — gather context first
-- `/plan-phase --research-phase 3` — investigate unknowns
+- `/plan-phase 3 --research` — investigate unknowns
 - Review what Phase 2 built
 
 ---
@@ -155,7 +155,7 @@ When there's no clear primary action:
 
 **To discuss context first:** `/discuss-phase 3`
 
-**To research unknowns:** `/plan-phase --research-phase 3`
+**To research unknowns:** `/plan-phase 3 --research`
 
 ---
 ```

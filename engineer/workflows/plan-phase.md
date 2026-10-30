@@ -237,17 +237,41 @@ If "Run discuss-phase first":
   **Exit the plan-phase workflow. Do not continue.**
 
 
+## 4.6. Context Drift Pre-Check
+
+Before reusing existing research or pattern artifacts, check whether their recorded inputs have changed. This check runs before the reuse decision in Step 5 and before pattern-mapper reuse.
+
+```bash
+DRIFT_ACTION=$(engineer_run query config-get workflow.context_drift_action --raw 2>/dev/null || echo "warn")
+DRIFT=$(engineer_run verify context-drift "${PHASE}" --raw 2>/dev/null) || {
+  DRIFT_EXIT=$?
+  echo "Warning: context-drift check could not look (exit ${DRIFT_EXIT}); continuing without a drift verdict." >&2
+  DRIFT='{"status":"unresolvable","available":false,"stale_artifacts":[],"block":false}'
+}
+DRIFT_STATUS=$(printf '%s' "$DRIFT" | jq -r '.status // "unknown"')
+DRIFT_AVAILABLE=$(printf '%s' "$DRIFT" | jq -r '.available // true')
+DRIFT_BLOCK=$(printf '%s' "$DRIFT" | jq -r '.block // false')
+STALE_ARTIFACTS=$(printf '%s' "$DRIFT" | jq -c '.stale_artifacts // []')
+DRIFT_MESSAGE=$(printf '%s' "$DRIFT" | jq -r '.message // empty')
+if [ -n "$DRIFT_MESSAGE" ]; then echo "$DRIFT_MESSAGE"; fi
+if [ "$DRIFT_BLOCK" = "true" ] && [ "$DRIFT_ACTION" = "block" ]; then
+  echo "Planning stopped: regenerate or reconcile the listed artifacts, then rerun /plan-phase ${PHASE}." >&2
+  exit 1
+fi
+```
+
+When `workflow.context_drift_action` is `warn` (default), report stale artifacts and continue. Carry `DRIFT_STATUS`, `DRIFT_AVAILABLE`, and `STALE_ARTIFACTS` through planning. A `skipped` result with reason `no-context-source-baseline` is not freshness proof; existing research/pattern artifacts without a baseline remain unverified until regenerated or explicitly reconciled. For each path in `STALE_ARTIFACTS`, regenerate or explicitly reconcile it before treating it as current; reusing it alone does not resolve drift. When `block`, stop only when the check returns `block: true`; a check that could not look is reported and does not claim a pass.
 ## 5. Handle Research
 
 **Skip if:** `--gaps` flag or `--skip-research` flag or `--reviews` flag.
 
 
-**If `has_research` is true (from init) AND no `--research` flag:** Use existing, skip to step 6.
+**If `has_research` is true (from init), no `--research` flag was provided, and the RESEARCH.md path is not stale or unverified:** Use existing research and skip to step 6.
 
-**If RESEARCH.md missing OR `--research` flag:**
+**If RESEARCH.md is missing, stale/unverified, or `--research` was provided:** Refresh the research against current context and source files, even when `--research` was not explicitly requested. A stale or unverified file cannot be treated as current. Continue through the research dispatch below.
 
-**If no explicit flag (`--research` or `--skip-research`) and not `--auto`:**
-Ask the user whether to research, with a contextual recommendation based on the phase:
+**If no explicit flag (`--research` or `--skip-research`), no stale or unverified RESEARCH.md is present, and not `--auto`:**
+Ask the user whether to research, with a contextual recommendation based on the phase. When existing research is stale or unverified, refresh it without offering the skip-research choice; a later baseline must not mark reused stale research as current.
 
 If `TEXT_MODE` is true, present as a plain-text numbered list:
 ```
@@ -407,7 +431,7 @@ Proceed to Step 7.8 (or Step 8 if pattern mapper is disabled) only if user selec
 
 Read `workflow.pattern_mapping` directly with `config-get`; skip when false. Also skip if neither CONTEXT.md nor RESEARCH.md exists.
 
-**If PATTERNS.md already exists** (`PATTERNS_PATH` is non-empty from step 7): Skip to step 8 (use existing).
+**If PATTERNS.md already exists** (`PATTERNS_PATH` is non-empty from step 7) and is not stale or unverified: Skip to step 8 (use existing). If it is stale or unverified, rerun pattern mapping and reconcile it with current context and source files before recording a new baseline.
 
 Display banner:
 ```
@@ -1028,7 +1052,21 @@ between discuss-phase and execute-phase; if a decision isn't visible in any
 plan, no executor will implement it. Catching that now beats discovering it
 after thousands of dollars of execution.
 
-## 13b. Record Planning Completion in STATE.md
+## 13b. Record Context Drift Baseline
+
+Record a new freshness baseline only after every stale or unverified artifact identified by the pre-check has been regenerated or explicitly reconciled against the current context and source files. Reusing an artifact does not refresh it. Keep `DRIFT_BASELINE_READY=false` unless the check was available and returned no stale artifacts, or every stale/unverified artifact was regenerated or explicitly reconciled during this run. For `no-context-source-baseline`, existing reused artifacts remain unverified. If any stale/unverified artifact remains, do not record a new baseline; preserve the old baseline and report which artifacts need regeneration or reconciliation.
+
+```bash
+# Execute only when DRIFT_BASELINE_READY is true in workflow state.
+DRIFT_BASELINE=$(engineer_run verify context-drift "${PHASE}" --record --raw) && DRIFT_RECORD_EXIT=0 || DRIFT_RECORD_EXIT=$?
+if [ "$DRIFT_RECORD_EXIT" -eq 69 ]; then
+  echo "Warning: context-drift baseline could not be recorded; later freshness checks may be unavailable." >&2
+elif [ "$DRIFT_RECORD_EXIT" -ne 0 ]; then
+  echo "ERROR: context-drift baseline recording failed (exit ${DRIFT_RECORD_EXIT}): ${DRIFT_BASELINE}" >&2
+  exit "$DRIFT_RECORD_EXIT"
+fi
+```
+## 13c. Record Planning Completion in STATE.md
 
 After plans pass all gates, record that planning is complete so STATE.md reflects the new phase status:
 
@@ -1039,7 +1077,16 @@ engineer_run query state.planned-phase --phase "${PHASE_NUMBER}" --name "${PHASE
 This updates STATUS to "Ready to execute", sets the correct plan count, and timestamps Last Activity.
 
 
-## 13d. Commit Plans if commit_docs is true
+## 13d. Annotate ROADMAP with Cross-Phase Dependencies
+
+After plans are finalized, update the roadmap phase dependencies from their `depends_on` declarations. The runtime preserves existing dependencies and adds the cross-phase dependencies represented by current plans; it makes no change when no cross-phase dependency exists. Skip when `plan_count` is zero.
+
+```bash
+engineer_run query roadmap.annotate-dependencies "${PHASE_NUMBER}"
+```
+
+This operation uses the runtime's maintained roadmap edit path and is safe to repeat. Include the updated ROADMAP.md with planning artifacts when committing.
+## 13e. Commit Plans if commit_docs is true
 
 If `commit_docs` is true (from the init JSON parsed in step 1), commit the generated plan artifacts (including the current planning records):
 

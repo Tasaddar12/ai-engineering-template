@@ -70,9 +70,8 @@ the no-op/deletion detector (signal 3) and revert-and-reconfirm (signal 5).
 
 ## Per-signal results recorded to the debug file
 
-Every signal's result is written to `Resolution.verification` in the active
-`.planning/debug/{slug}.md` session record, using this structured per-signal
-record:
+Every signal's result is written to `Resolution.verification` as a structured
+per-signal record (see `engineer/templates/DEBUG.md`):
 
 ```yaml
 verification:
@@ -115,9 +114,9 @@ Revise the fix so the failing signal passes, or accept as documented technical
 debt (requires explicit justification recorded in the debug file).
 ```
 
-The orchestrator surfaces the failing signal and routes the next step: revise,
-accept as documented debt, or abandon. A rejected fix does **not** mark the
-session resolved.
+The `debug-session-manager` continuation loop handles this return: it surfaces the
+failing signal and offers revise / accept-as-debt / abandon. It does **not** mark
+the session resolved.
 
 ## Bounded subprocesses (CLAUDE.md gauntlet)
 
@@ -144,9 +143,9 @@ This preserves the debugger DATA boundary.
 
 ## Escape hatch — documented technical debt
 
-If a signal cannot be made to pass and the human accepts the fix as documented
-debt, record `guardrail_verdict: accepted_debt` with an explicit justification
-and the name of the unmet signal. This is the only
+If a signal cannot be made to pass and the human (via `debug-session-manager`
+continuation) accepts the fix anyway, record `guardrail_verdict: accepted_debt`
+with an explicit justification and the name of the unmet signal. This is the only
 way a fix lands without the gate passing, and it is never silent — the debt is
 written to the debug file and surfaced in the resolution summary.
 

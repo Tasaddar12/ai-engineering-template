@@ -290,7 +290,7 @@ Resume-specific exception: do **not** emit `/clear then:` here. Resume is alread
 
   **Also available:**
   - `/discuss-phase [N] ` — gather context first
-  - `/plan-phase --research-phase [N] ` — investigate unknowns
+  - `/plan-phase [N] --research` — investigate unknowns
 
   ---
   ```
