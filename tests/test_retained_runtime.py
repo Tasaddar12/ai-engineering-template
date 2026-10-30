@@ -1,13 +1,60 @@
 """Behavioral checks for retained learning, prohibition and native review routes."""
 import json
+import subprocess
+import sys
 from pathlib import Path
 try:
-    from .test_engineer_runtime import RuntimeCase
+    from .test_engineer_runtime import RuntimeCase, RUNTIME
 except ImportError:
-    from test_engineer_runtime import RuntimeCase
+    from test_engineer_runtime import RuntimeCase, RUNTIME
 
 
 class RetainedRuntime(RuntimeCase):
+    def test_health_missing_and_malformed_config_are_structured_and_read_only(self):
+        self.init_records()
+        config = self.root / ".planning/config.yaml"
+        for malformed in (None, "workflow: [unterminated\n"):
+            with self.subTest(config=malformed):
+                if malformed is None:
+                    config.unlink()
+                else:
+                    config.write_text(malformed, encoding="utf-8")
+                before = {path.relative_to(self.root): path.read_bytes() for path in self.root.rglob("*") if path.is_file()}
+                report = self.cli("validate.health")
+                self.assertEqual("broken", report["status"])
+                self.assertTrue(report["structuralOnly"])
+                if malformed is None:
+                    self.assertEqual([{"code": "missing-record", "path": str(config)}], report["errors"])
+                    self.assertFalse(config.exists())
+                else:
+                    self.assertEqual("invalid-yaml", report["errors"][0]["code"])
+                self.assertEqual(before, {path.relative_to(self.root): path.read_bytes() for path in self.root.rglob("*") if path.is_file()})
+
+    def test_health_config_read_error_is_structured_and_read_only(self):
+        self.init_records()
+        config = self.root / ".planning/config.yaml"
+        before = config.read_bytes()
+        # Deterministically exercise file-read denial; chmod cannot deny a Windows owner.
+        seam = """import pathlib, runpy, sys
+runtime, config = sys.argv[1:]
+original = pathlib.Path.read_text
+def guarded(path, *args, **kwargs):
+    if path == pathlib.Path(config):
+        raise PermissionError('config read denied')
+    return original(path, *args, **kwargs)
+pathlib.Path.read_text = guarded
+sys.argv = [runtime, 'query', 'validate.health']
+runpy.run_path(runtime, run_name='__main__')
+"""
+        result = subprocess.run([sys.executable, "-I", "-c", seam, str(RUNTIME), str(config)],
+                                cwd=self.root, env=self.env, text=True, encoding="utf-8", capture_output=True)
+        self.assertEqual(0, result.returncode, result.stderr)
+        report = json.loads(result.stdout)
+        self.assertEqual("broken", report["status"])
+        self.assertEqual("config-unreadable", report["errors"][0]["code"])
+        self.assertEqual(str(config), report["errors"][0]["path"])
+        self.assertEqual(before, config.read_bytes())
+
     def test_retained_global_learnings_copy_query_and_refresh(self):
         self.init_records()
         store = self.root / "global-knowledge"
