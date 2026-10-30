@@ -20,7 +20,7 @@ These files live directly at `.planning/` — not inside phase subdirectories.
 | `BACKLOG.md` | *(inline)* | `/capture --backlog` | Pending ideas and deferred work |
 | `LEARNINGS.md` | *(inline)* | `/extract-learnings`, `/execute-phase` (gated: `features.global_learnings`) | Phase retrospective learnings for future plans |
 | `THREADS.md` | *(inline)* | `/thread` | Persistent discussion threads |
-| `config.yaml` | `config.yaml` | `/new-project`, `/health` | Project-specific Engineer configuration |
+| `config.json` | `config.json` | `/new-project`, `/health --repair` | Project-specific Engineer configuration |
 | `CLAUDE.md` | *(inline)* | `/profile` | Auto-assembled Claude Code context file |
 | `RETROSPECTIVE.md` | *(inline)* | `/complete-milestone` | Living milestone retrospective updated at each milestone close |
 | `STATE-ARCHIVE.md` | *(none)* | `state.cts`'s `cmdStatePrune` | Pruned historical STATE.md entries |

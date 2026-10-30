@@ -128,7 +128,7 @@ INSTRUCTION_FILE=$(engineer_run query project-instruction-file --runtime "$RUNTI
 
 All subsequent references to the project instruction file use `$INSTRUCTION_FILE`.
 
-**If `project_exists` is true and `init_incomplete` is true (interrupted bootstrap):** Resume initialization instead of erroring. `.planning/` exists but initialization stopped before all core artifacts landed. Keep the existing `PROJECT.md` and any already-created artifacts (`REQUIREMENTS.md` if present, `.planning/config.yaml`); skip the steps that would recreate them and continue the flow from the first missing artifact in init order — `REQUIREMENTS.md` → `ROADMAP.md` + `STATE.md` — until all exist. Do not error and do not bounce the user back to `/progress` (that routing loop is the bug).
+**If `project_exists` is true and `init_incomplete` is true (interrupted bootstrap):** Resume initialization instead of erroring. `.planning/` exists but initialization stopped before all core artifacts landed. Keep the existing `PROJECT.md` and any already-created artifacts (`REQUIREMENTS.md` if present, `config.json`); skip the steps that would recreate them and continue the flow from the first missing artifact in init order — `REQUIREMENTS.md` → `ROADMAP.md` + `STATE.md` — until all exist. Do not error and do not bounce the user back to `/progress` (that routing loop is the bug).
 
 **If `project_exists` is true and `init_incomplete` is false:** Error — project already initialized. Use `/progress`.
 
@@ -173,7 +173,7 @@ Ask inline (freeform, NOT AskUserQuestion):
 
 Wait for their response. This gives you the context needed to ask intelligent follow-up questions.
 
-**Research-before-questions mode:** Check if `workflow.research_before_questions` is enabled in `.planning/config.yaml` (or the config from init context). When enabled, before asking follow-up questions about a topic area:
+**Research-before-questions mode:** Check if `workflow.research_before_questions` is enabled in `.planning/config.json` (or the config from init context). When enabled, before asking follow-up questions about a topic area:
 
 1. Do a brief web search for best practices related to what the user described
 2. Mention key findings naturally as you ask questions (e.g., "Most projects like this use X — is that what you're thinking, or something different?")
@@ -379,7 +379,7 @@ AskUserQuestion([
 ])
 ```
 
-**If "Use as-is":** use the defaults values for `.planning/config.yaml` and skip directly to **Commit `.planning/config.yaml`** below.
+**If "Use as-is":** use the defaults values for config.json and skip directly to **Commit config.json** below.
 
 **If "Modify some settings":** present a selection of every setting with its current saved value.
 
@@ -487,7 +487,7 @@ AskUserQuestion([
 For each selected setting across both blocks, ask only that question using the
 option set from Round 1 / Round 2 below. Merge user answers over the saved
 defaults — unchanged settings retain their saved values. Then skip to
-**Commit `.planning/config.yaml`**.
+**Commit config.json**.
 
 **If "Configure fresh" or `~/.engineer/defaults.json` doesn't exist:** proceed with the questions below.
 
@@ -630,34 +630,33 @@ Create the project configuration through `engineer_run query config-new-project`
 
 **If commit_docs = No:**
 
-- Set `commit_docs: false` in `.planning/config.yaml`
+- Set `commit_docs: false` in config.json
 - Add `.planning/` to `.gitignore` (create if needed)
 
 **If commit_docs = Yes:**
 
 - No additional gitignore entries needed
 
-**Commit `.planning/config.yaml`:**
+**Commit config.json:**
 
 ```bash
-engineer_run query commit "chore: add project config" --files .planning/config.yaml
+engineer_run query commit "chore: add project config" --files .planning/config.json
 ```
 
 ## 5.1. Sub-Repo Detection
 
 **Detect multi-repo workspace:**
 
-During initialization, `init.new-project` returns registered Git submodule paths from
-`.gitmodules` in `sub_repos`. For commit routing, `commit-to-subrepo` can also
-scan immediate child directories for a `.git` file or directory when no explicit
-repository path is supplied:
+Check for directories with their own `.git` (separate repos within the workspace —
+this also finds linked git worktree children, whose `.git` is a file rather than a
+directory, unlike a plain `find -type d` predicate would):
 
 ```bash
 engineer_run query init.new-project
 ```
 
-Read the `sub_repos` array from the JSON output — each entry is a repository
-path relative to the workspace root (e.g. `"libs/backend"`).
+Read the `sub_repos_detected` array from the JSON output — each entry is a bare
+directory name already relative to the workspace root (e.g. `"backend"`).
 
 **If sub-repos found:**
 
@@ -669,13 +668,15 @@ Use AskUserQuestion:
 - options: one option per detected directory
   - "[directory name]" — Separate git repo
 
-**If user selects one or more directories:** Use each selected directory as an explicit
-`--subrepo <directory>` target when invoking `commit-to-subrepo`. The selection is
-workflow context; do not store it in `.planning/config.yaml`.
+**If user selects one or more directories:**
 
-**If no sub-repos are listed or user selects none:** Continue without explicit targets.
-When a later `commit-to-subrepo` call omits `--subrepo`, the runtime scans immediate
-child repositories at that time.
+- Set `planning.sub_repos` in config.json to the selected directory names array (e.g., `["backend", "frontend"]`)
+- Auto-set `planning.commit_docs` to `false` (planning docs stay local in multi-repo workspaces)
+- Add `.planning/` to `.gitignore` if not already present
+
+Config changes are saved locally — no commit needed since `commit_docs` is `false` in multi-repo mode.
+
+**If no sub-repos found or user selects none:** Continue with no changes to config.
 
 ## 5.5. Resolve Model Profile
 
@@ -1103,7 +1104,7 @@ Present completion summary:
 | Artifact       | Location                    |
 |----------------|-----------------------------|
 | Project        | `.planning/PROJECT.md`      |
-| Config         | `.planning/config.yaml`     |
+| Config         | `.planning/config.json`     |
 | Research       | `.planning/research/`       |
 | Requirements   | `.planning/REQUIREMENTS.md` |
 | Roadmap        | `.planning/ROADMAP.md`      |
@@ -1177,7 +1178,7 @@ PHASE1_HAS_UI=$(echo "$PHASE1_SECTION" | grep -qi "UI hint.*yes" && echo "true" 
 <output>
 
 - `.planning/PROJECT.md`
-- `.planning/config.yaml`
+- `.planning/config.json`
 - `.planning/research/` (if research selected)
   - `STACK.md`
   - `FEATURES.md`
@@ -1198,7 +1199,7 @@ PHASE1_HAS_UI=$(echo "$PHASE1_SECTION" | grep -qi "UI hint.*yes" && echo "true" 
 - [ ] Brownfield detection completed
 - [ ] Deep questioning completed (threads followed, not rushed)
 - [ ] PROJECT.md captures full context → **committed**
-- [ ] `.planning/config.yaml` has workflow mode, granularity, parallelization → **committed**
+- [ ] config.json has workflow mode, granularity, parallelization → **committed**
 - [ ] Research completed (if selected) — 4 parallel agents spawned → **committed**
 - [ ] Requirements gathered (from research or conversation)
 - [ ] User scoped each category (v1/v2/out of scope)

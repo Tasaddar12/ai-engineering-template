@@ -8,7 +8,7 @@ Rules that apply to ALL workflows and agents. Individual workflows may have addi
 
 1. **Never** read agent definition files (`agents/*.md`) -- `subagent_type` auto-loads them. Reading agent definitions into the orchestrator wastes context for content automatically injected into subagent sessions.
 2. **Never** inline large files into subagent prompts -- tell agents to read files from disk instead. Agents have their own context windows.
-3. **Read depth scales with context window** -- check `context_window` in `.planning/config.yaml`. At < 500000: read only frontmatter, status fields, or summaries. At >= 500000 (1M model): full body reads permitted when content is needed for inline decisions. See `engineer/references/context-budget.md` for the complete table.
+3. **Read depth scales with context window** -- check `context_window` in `.planning/config.json`. At < 500000: read only frontmatter, status fields, or summaries. At >= 500000 (1M model): full body reads permitted when content is needed for inline decisions. See `engineer/references/context-budget.md` for the complete table.
 4. **Delegate** heavy work to subagents -- the orchestrator routes, it does not build, analyze, research, investigate, or verify.
 5. **Proactive pause warning**: If you have already consumed significant context (large file reads, multiple subagent results), warn the user: "Context budget is getting heavy. Consider checkpointing progress."
 
@@ -47,7 +47,7 @@ Reference: `engineer/references/questioning.md` for the full anti-pattern list.
 ## Error Recovery Rules
 
 21. **Git lock detection**: Before any git operation, if it fails with "Unable to create lock file", check for stale `.git/index.lock` and advise the user to remove it (do not remove automatically).
-22. **Config error handling**: The runtime reads `.planning/config.yaml` and does not silently return `null` or continue with defaults when the file is malformed. Surface the runtime error and let the user correct the YAML or configuration value before relying on config-dependent behavior.
+22. **Config fallback awareness**: Config loading returns `null` silently on invalid JSON. If your workflow depends on config values, check for null and warn the user: "config.json is invalid or missing -- running with defaults."
 23. **Partial state recovery**: If STATE.md references a phase directory that doesn't exist, do not proceed silently. Warn the user and suggest diagnosing the mismatch.
 
 ## Engineer-Specific Rules

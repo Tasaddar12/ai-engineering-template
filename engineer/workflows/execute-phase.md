@@ -627,7 +627,7 @@ Read and execute `engineer/workflows/execute-phase/steps/per-plan-worktree-gate.
        - ${PROJECT_ROOT}/{phase_dir}/{plan_file} (Plan)
        - ${PROJECT_ROOT}/.planning/PROJECT.md (Project context — core value, requirements, evolution rules)
        - ${PROJECT_ROOT}/.planning/STATE.md (State)
-       - ${PROJECT_ROOT}/.planning/config.yaml (Config, if exists)
+       - ${PROJECT_ROOT}/.planning/config.json (Config, if exists)
        ${CONTEXT_WINDOW >= 500000 ? `
        - ${PROJECT_ROOT}/${phase_dir}/*-CONTEXT.md (User decisions from discuss-phase — honors locked choices)
        - ${PROJECT_ROOT}/${phase_dir}/*-RESEARCH.md (Technical research — pitfalls and patterns to follow)
