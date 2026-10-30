@@ -378,9 +378,9 @@ use `phase.locate N` first, then invoke initialization from its returned worktre
 `init.todos` adds todos/count. `init.progress` and `init.complete-milestone` add
 roadmap phases/counts/percent, progress_percent, and all_phases_verified.
 
-The retired dynamic `check`, `check.predicate`, capability `loop.*`, external
+The retired dynamic `check`, `check.predicate`, capability execution, external
 `review.run`/`review.collect` and `review-lane`, PID `worktree.worker-*`,
-estimator, broken-windows and intel routes are
+broken-windows and intel routes are
 not registered. Unknown `check.*` names are rejected. Native review uses
 `review.dispatch`, `review.record` and `review.status`.
 
@@ -407,9 +407,9 @@ Retained evidence and planning utilities:
 | `research-store.put` | `KEY --content TEXT --source curated\|web --provider ID --confidence HIGH\|MEDIUM\|LOW --kind docs\|web [--url URL]` (or cited `--sources URL ...`) | Stores source metadata under a SHA256 key; omitted citations are marked not-provided. Provided local source files must exist within the repository. |
 | `research-store.get` / `list` / `query` | `KEY` / none / `[--query TEXT]` | Reads cached evidence. `research-store put/get/list/query` are equivalent spellings. |
 | `classify-confidence` | `--provider PROVIDER [--verified]` | Provider authority: verified official/primary/context7/ref gives HIGH, unverified gives MEDIUM; other providers give MEDIUM/LOW. This never establishes correctness or goal verification. |
-
-| `estimate-calibration` / `estimate-calibrate` | none | Rebuilds `.planning/estimation-calibration.json` from PLAN raw_tokens and SUMMARY actuals; factor 1 before 3 samples, confidence low <3, med 3–5, high ≥6. |
+| `estimate-calibration` / `estimate-calibrate` | none | Rebuilds `.planning/estimation-calibration.json` from recorded raw_tokens and SUMMARY actuals; factor 1 before 3 samples, confidence low <3, med 3–5, high ≥6. |
 | `estimate-check` | `--tokens N [--calibrated]` | Advisory projected cost versus workflow.smart_zone_tokens; never blocks execution. |
+| `loop.render-hooks` / `loop render-hooks` | `EVENT [--active-cap ID] [--after-fingerprint SHA]` | Renders conditional retained hooks from a closed code-owned catalog; data only. Unknown events fail. `loop.events` and `loop.list` describe the catalog. |
 
 A research input is a JSON object such as
 `{"ecosystem":"python","questions":[{"text":"Versioned API","kind":"docs","library":"example","version":"1.0"}]}`.
