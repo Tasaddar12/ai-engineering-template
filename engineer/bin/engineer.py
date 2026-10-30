@@ -25,7 +25,7 @@ from lib import planning_integrity
 from lib import manager, pipelines, ideas
 from lib import archive as archive_service
 from lib import dispatch, installation, onboarding, planning, research, review_ledger, runtime_tools, specs, workflow_ops
-from lib import security_tracking
+from lib import security_tracking, capabilities
 from lib.core import Args, Failure, pick, raw, root, slug
 
 IDENTITY = {"packageName": "engineer-runtime", "contract": "2.0"}
@@ -40,6 +40,9 @@ def registry():
         "resolve-agent": lambda a: models.resolution(a, "agent"), "agent-skills": models.agent_skills,
         "agent.classify-failure": models.classify, "commit": gitops.commit, "git.base-branch": gitops.base_branch,
         "dispatch-isolation": dispatch.descriptor, "dispatch-capacity": quick_batch.capacity,
+        "loop.render-hooks": lambda a: capabilities.command(a, "render-hooks"),
+        "loop.events": lambda a: capabilities.command(a, "events"),
+        "loop.list": lambda a: capabilities.command(a, "list"),
         "find-phase": lambda a: records.find(a.need()), "phases.list": records.phase_list,
         "phase-plan-index": records.plan_index, "roadmap.analyze": records.roadmap_analyze,
         "roadmap.get-phase": lambda a: records.roadmap_phase(a.need()),
@@ -217,7 +220,7 @@ def main(argv=None):
     if not values:
         return 2
     name = values.pop(0)
-    if name in ("init", "check", "verify", "verification", "frontmatter", "quick-batch", "quick", "todo", "milestone", "spec", "phase", "phases", "state", "roadmap", "worktree", "uat", "pipeline", "manager", "idea", "issue", "project", "archive", "research-store", "review", "json", "security", "validation", "validate", "requirements", "update", "codebase", "handoff", "session", "pr", "planning", "cleanup", "tdd", "task", "agent", "progress") and values and not values[0].startswith("-"):
+    if name in ("init", "check", "verify", "verification", "frontmatter", "quick-batch", "quick", "todo", "milestone", "spec", "phase", "phases", "state", "roadmap", "worktree", "uat", "pipeline", "manager", "idea", "issue", "project", "archive", "research-store", "review", "json", "security", "validation", "validate", "requirements", "update", "codebase", "handoff", "session", "pr", "planning", "cleanup", "tdd", "task", "agent", "progress", "loop") and values and not values[0].startswith("-"):
         name += "."+values.pop(0)
     extra_flags = {"context"} if name in ("validate.health", "validate.context") else {"completed"} if name.startswith("worktree.") else set()
     if name == "classify-confidence":

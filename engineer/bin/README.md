@@ -378,7 +378,7 @@ use `phase.locate N` first, then invoke initialization from its returned worktre
 `init.todos` adds todos/count. `init.progress` and `init.complete-milestone` add
 roadmap phases/counts/percent, progress_percent, and all_phases_verified.
 
-The retired dynamic `check`, `check.predicate`, capability `loop.*`, external
+The retired dynamic `check`, `check.predicate`, capability execution, external
 `review.run`/`review.collect` and `review-lane`, PID `worktree.worker-*`,
 estimator, broken-windows and intel routes are
 not registered. Unknown `check.*` names are rejected. Native review uses
@@ -410,6 +410,7 @@ Retained evidence and planning utilities:
 
 | `estimate-calibration` / `estimate-calibrate` | none | Rebuilds `.planning/estimation-calibration.json` from PLAN raw_tokens and SUMMARY actuals; factor 1 before 3 samples, confidence low <3, med 3–5, high ≥6. |
 | `estimate-check` | `--tokens N [--calibrated]` | Advisory projected cost versus workflow.smart_zone_tokens; never blocks execution. |
+| `loop.render-hooks` / `loop render-hooks` | `EVENT [--active-cap ID] [--after-fingerprint SHA]` | Renders conditional retained hooks from a closed code-owned catalog; data only. Unknown events fail. `loop.events` and `loop.list` describe the catalog. |
 
 A research input is a JSON object such as
 `{"ecosystem":"python","questions":[{"text":"Versioned API","kind":"docs","library":"example","version":"1.0"}]}`.

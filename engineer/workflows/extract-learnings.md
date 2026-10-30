@@ -199,7 +199,7 @@ Rebuild the estimate-vs-actual calibration from every completed phase.
 engineer_run query estimate-calibrate
 ```
 
-This pairs each phase's PLAN `estimate` with its SUMMARY `actuals`, writes
+This pairs each phase's PLAN `estimate` (or a historical SUMMARY `estimate`) with its SUMMARY `actuals`, writes
 `.planning/estimation-calibration.json`, and reports the resulting correction factor.
 The planner reads it on the next `/plan-phase`, so estimates improve for THIS project
 over time.
