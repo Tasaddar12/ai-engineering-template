@@ -18,7 +18,8 @@ You are a thinking partner, not an interviewer. The user is the visionary — yo
 </required_reading>
 
 <progressive_disclosure>
-Read the applicable discussion mode and full templates for the current invocation:
+**Per-mode bodies and templates are lazy-loaded** to keep
+this file under the discuss-phase byte budget (32000 bytes; mirrors the agent size-budget convention). Read only the files needed for the current invocation:
 
 | When | Read |
 |---|---|

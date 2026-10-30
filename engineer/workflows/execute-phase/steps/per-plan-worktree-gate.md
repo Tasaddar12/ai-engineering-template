@@ -42,27 +42,41 @@ if [ -n "$SUBMODULE_PATHS" ]; then
     exit 1
   else
     # Compute intersection with glob-safe normalization. Both sides are
-    # normalized (strip leading "./", strip trailing "/") and matched
+    # normalized (collapse repeated separators, remove leading and internal
+    # "/./" segments, strip trailing "/") and matched
     # bidirectionally so a globby planned path like "vendor/**/*.c" still
     # matches submodule "vendor/foo", and "./vendor/foo/bar.c" matches
     # submodule "vendor/foo".
     INTERSECT=""
     set -f  # disable globbing while iterating literal patterns
+    normalize_scope_path() {
+      local path="$1" previous
+      # Keep reducing until repeated separators and dot segments are gone.
+      # This is lexical normalization only: do not resolve symlinks or expand
+      # glob characters from a plan's literal scope patterns.
+      while :; do
+        previous="$path"
+        path="${path//\/\//\/}"
+        path="${path//\/\.\//\/}"
+        [ "$path" = "$previous" ] && break
+      done
+      while [ "${path#./}" != "$path" ]; do path="${path#./}"; done
+      path="${path%/}"
+      printf '%s' "$path"
+    }
     # Rewrapped through unquoted command substitution (): a bare
     # `$VAR` word-splits under bash but not zsh, collapsing every element onto
     # one iteration there.
     for sm_raw in $(printf '%s' "$SUBMODULE_PATHS"); do
-      # Normalize submodule path: strip ./ prefix and trailing /
-      sm="${sm_raw#./}"
-      sm="${sm%/}"
+      # Normalize the submodule path before comparing it with plan scope.
+      sm=$(normalize_scope_path "$sm_raw")
       [ -z "$sm" ] && continue
       # Rewrapped through unquoted command substitution (): a bare
       # `$VAR` word-splits under bash but not zsh, collapsing every element onto
       # one iteration there.
       for pf_raw in $(printf '%s' "$PLAN_SCOPE_PATHS"); do
-        # Normalize planned path the same way
-        pf="${pf_raw#./}"
-        pf="${pf%/}"
+        # Normalize the planned path the same way; retain pf_raw for reporting.
+        pf=$(normalize_scope_path "$pf_raw")
         [ -z "$pf" ] && continue
         matched=0
         # Direction 1: planned path is the submodule or lies inside it
