@@ -21,7 +21,7 @@ DEFAULTS = {
         "specless_probe_fallback": True, "ui_interaction_capture": False,
         "ui_phase": "auto", "nyquist_validation": True, "tdd_mode": False,
         "research": True, "plan_check": True, "verifier": True, "research_before_questions": False,
-        "task_cap": 5,
+        "task_cap": 5, "smart_zone_tokens": 120000,
         "pattern_mapping": True,
         "drift_threshold": 3, "drift_action": "warn", "context_drift_action": "warn", "context_guard_mode": "warn",
     },
