@@ -58,7 +58,7 @@ Record:
 Read these files if they exist:
 - `.planning/STATE.md` — current milestone, phase, progress, blockers, last session
 - `.planning/ROADMAP.md` — phase list with status
-- `.planning/config.yaml` — workflow configuration
+- `.planning/config.json` — workflow configuration
 
 Extract:
 - Current phase and its status

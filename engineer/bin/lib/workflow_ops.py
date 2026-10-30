@@ -291,19 +291,13 @@ def review_record(args):
 
 def _health(args):
     errors, warnings, info = [], [], []
-    for name in ("PROJECT.md", "REQUIREMENTS.md", "ROADMAP.md", "STATE.md"):
+    for name in ("PROJECT.md", "REQUIREMENTS.md", "ROADMAP.md", "STATE.md", "config.yaml"):
         if not (records.planning()/name).is_file():
             errors.append({"code": "missing-record", "path": str(records.planning()/name)})
-    config_path = records.planning()/"config.yaml"
     try:
-        if config_path.is_file():
-            config.load()
-        else:
-            errors.append({"code": "missing-record", "path": str(config_path)})
+        config.load()
     except Failure as exc:
         errors.append({"code": exc.code, "message": exc.message})
-    except OSError as exc:
-        errors.append({"code": "config-unreadable", "path": str(config_path), "message": str(exc)})
     for directory in sorted((records.planning()/"phases").glob("*")):
         if not directory.is_dir():
             continue

@@ -228,16 +228,14 @@ def main(argv=None):
             os.environ["ENGINEER_HOST"] = str(args.get("host"))
         if args.has("ws"):
             raise Failure("workspace-selection-unavailable", "Select the project's checkout with --cwd; retired workstream storage is not restored", 2)
-        # Health must diagnose unreadable records that the integrity snapshot cannot hash.
-        # Its read-only behavior is covered by subprocess no-mutation regressions.
-        before = None if name == "validate.health" else planning_integrity.capture()
+        before = planning_integrity.capture()
         if name in ("help", "verbs", "--help", "-h"):
             result = {"usage": "engineer_run query <verb>", "verbs": sorted([*VERBS, "help", "verbs"])}
         elif name not in VERBS:
             raise Failure("unknown-verb", f"Unknown runtime verb: {name}", 2)
         else:
             result = VERBS[name](args)
-        warnings = [] if name == "validate.health" else planning_integrity.finish(name, before, planning_integrity.capture())
+        warnings = planning_integrity.finish(name, before, planning_integrity.capture())
         if warnings:
             print(json.dumps({"warning": "planning-integrity", "findings": warnings}, ensure_ascii=False), file=sys.stderr)
         status = 0

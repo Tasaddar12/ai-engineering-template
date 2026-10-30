@@ -1,85 +1,13 @@
 """Behavioral checks for retained learning, prohibition and native review routes."""
 import json
-import subprocess
-import sys
 from pathlib import Path
 try:
-    from .test_engineer_runtime import RuntimeCase, RUNTIME
+    from .test_engineer_runtime import RuntimeCase
 except ImportError:
-    from test_engineer_runtime import RuntimeCase, RUNTIME
+    from test_engineer_runtime import RuntimeCase
 
 
 class RetainedRuntime(RuntimeCase):
-    def test_health_missing_and_malformed_config_are_structured_and_read_only(self):
-        self.init_records()
-        config = self.root / ".planning/config.yaml"
-        for malformed in (None, "workflow: [unterminated\n"):
-            with self.subTest(config=malformed):
-                if malformed is None:
-                    config.unlink()
-                else:
-                    config.write_text(malformed, encoding="utf-8")
-                before = {path.relative_to(self.root): path.read_bytes() for path in self.root.rglob("*") if path.is_file()}
-                report = self.cli("validate.health")
-                self.assertEqual("broken", report["status"])
-                self.assertTrue(report["structuralOnly"])
-                if malformed is None:
-                    self.assertEqual([{"code": "missing-record", "path": str(config)}], report["errors"])
-                    self.assertFalse(config.exists())
-                else:
-                    self.assertEqual("invalid-yaml", report["errors"][0]["code"])
-                self.assertEqual(before, {path.relative_to(self.root): path.read_bytes() for path in self.root.rglob("*") if path.is_file()})
-
-    def test_health_config_read_error_is_structured_and_read_only(self):
-        self.init_records()
-        config = self.root / ".planning/config.yaml"
-        before = {path.relative_to(self.root): path.read_bytes() for path in self.root.rglob("*") if path.is_file()}
-        # Deterministically exercise file-read denial; chmod cannot deny a Windows owner.
-        seam = """import pathlib, runpy, sys
-runtime, config = sys.argv[1:]
-def deny_config_read(original):
-    def guarded(path, *args, **kwargs):
-        if path == pathlib.Path(config):
-            raise PermissionError('config read denied')
-        return original(path, *args, **kwargs)
-    return guarded
-pathlib.Path.read_text = deny_config_read(pathlib.Path.read_text)
-pathlib.Path.read_bytes = deny_config_read(pathlib.Path.read_bytes)
-sys.argv = [runtime, 'query', 'validate.health']
-runpy.run_path(runtime, run_name='__main__')
-"""
-        result = subprocess.run([sys.executable, "-I", "-c", seam, str(RUNTIME), str(config)],
-                                cwd=self.root, env=self.env, text=True, encoding="utf-8", capture_output=True)
-        self.assertEqual(0, result.returncode, result.stderr)
-        report = json.loads(result.stdout)
-        self.assertEqual("broken", report["status"])
-        self.assertEqual("config-unreadable", report["errors"][0]["code"])
-        self.assertEqual(str(config), report["errors"][0]["path"])
-        self.assertEqual(before, {path.relative_to(self.root): path.read_bytes() for path in self.root.rglob("*") if path.is_file()})
-
-    def test_non_health_dispatch_still_enforces_read_only_and_mutation_integrity(self):
-        self.init_records()
-        seam = """import pathlib, sys
-runtime, verb = sys.argv[1:]
-sys.path.insert(0, str(pathlib.Path(runtime).parent))
-import engineer
-from lib import core
-def mutate(args):
-    path = core.root()/'.planning/STATE.md'
-    core.write(path, core.read(path)+'\\nIntegrity marker\\n')
-    return {'updated': True}
-engineer.VERBS[verb] = mutate
-raise SystemExit(engineer.main(['query', verb]))
-"""
-        for verb, status in (("state.get", 1), ("state.patch", 0)):
-            result = subprocess.run([sys.executable, "-I", "-c", seam, str(RUNTIME), verb],
-                                    cwd=self.root, env=self.env, text=True, encoding="utf-8", capture_output=True)
-            self.assertEqual(status, result.returncode, result.stderr)
-            if status:
-                self.assertEqual("unexpected-planning-write", json.loads(result.stderr)["error"])
-            else:
-                self.assertTrue(json.loads(result.stdout)["updated"])
-
     def test_retained_global_learnings_copy_query_and_refresh(self):
         self.init_records()
         store = self.root / "global-knowledge"

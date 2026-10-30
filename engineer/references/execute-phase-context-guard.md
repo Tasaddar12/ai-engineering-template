@@ -4,7 +4,7 @@
    degradation signals in `engineer/references/context-budget.md`. Signs of POOR tier (70%+):
    increasing vagueness, skipped steps, silent partial completion.
 
-   Read `workflow.context_guard_mode` from `.planning/config.yaml` (default `warn`).
+   Read `workflow.context_guard_mode` from `.planning/config.json` (default `warn`).
 
    | Tier | `warn` (default) | `auto` | `off` |
    |------|-----------------|--------|-------|

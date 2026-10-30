@@ -454,7 +454,7 @@ if [ "$IS_PROTECTED" = "__engineer_run_UNAVAILABLE__" ] || [ -z "$IS_PROTECTED" 
 fi
 if [ "$IS_PROTECTED" != "false" ]; then
   echo "FATAL: refusing to commit — HEAD is on '$ACTUAL_BRANCH' (protected/default branch)." >&2
-  echo "Re-home onto a phase/agent branch; override: git.allow_default_branch_commits:true in .planning/config.yaml." >&2
+  echo "Re-home onto a phase/agent branch; override: git.allow_default_branch_commits:true in .planning/config.json." >&2
   exit 1
 fi
 # Set SEQUENTIAL=true ONLY if your prompt has a `<sequential_execution>` block (the
@@ -776,7 +776,7 @@ one of these shapes:
 - `{committed: true, hash, reason: 'committed'}` — commit succeeded; record
   the hash in the completion format.
 - `{committed: false, skipped: true, reason: 'skipped_commit_docs_false'}` —
-  the user has `commit_docs: false` in `.planning/config.yaml`. **This is an
+  the user has `commit_docs: false` in `.planning/config.json`. **This is an
   intentional success path.** Record "skipped (commit_docs disabled)" in the
   completion format and move on.
 - `{committed: false, skipped: true, reason: 'skipped_gitignored'}` —

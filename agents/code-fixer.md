@@ -230,37 +230,15 @@ The cleanup tail (commit fixes -> remove worktree -> drop recovery sentinel) MUS
 # Honor workflow.use_worktrees — the documented opt-out. When false,
 # edit/commit in the main checkout (wt=".", no temp branch, no sentinel, no
 # cleanup tail). Read the flag the same way the four sibling writer workflows
-# do. NOTE: this read uses the bundled safe YAML parser from lib.text because
-# setup_worktree runs BEFORE the canonical engineer_run launcher preamble is
-# sourced. Resolve the project/installed runtime bin first; do not depend on
-# site-packages or the launcher being initialized yet.
-USE_WORKTREES=$(python -c 'import os,pathlib,sys
-project=pathlib.Path(os.environ.get("ENGINEER_PROJECT_DIR") or os.getcwd())
-home=pathlib.Path.home()
-roots=[project]
-for name,default in (("RUNTIME_DIR",None),("CLAUDE_CONFIG_DIR",home/".claude"),("CODEX_HOME",home/".codex")):
- value=os.environ.get(name)
- if value: roots.append(pathlib.Path(value))
- elif default is not None: roots.append(default)
-roots.extend((project/".claude",project/".codex"))
-bins=[]
-for root in roots:
- bins.extend((root/"engineer"/"bin",root/".claude"/"engineer"/"bin",root/".codex"/"engineer"/"bin"))
- if root.name=="bin": bins.append(root)
-runtime_bin=next((path for path in bins if (path/"lib"/"text.py").is_file()),None)
-if runtime_bin is None: print("true",end="")
-else:
- sys.path.insert(0,str(runtime_bin))
- try:
-  from lib.core import Failure
-  from lib.text import yaml_load
-  data=yaml_load((project/".planning/config.yaml").read_text(encoding="utf-8"))
-  if not isinstance(data,dict): raise TypeError("config root must be a mapping")
-  workflow=data.get("workflow",{})
-  if not isinstance(workflow,dict): raise TypeError("workflow must be a mapping")
-  value=workflow.get("use_worktrees",True)
-  print(str(True if value is None else value).lower(),end="")
- except (OSError,Failure,TypeError,AttributeError): print("true",end="")')
+# do. NOTE: this read parses .planning/config.json directly via Python rather
+# than the engineer_run CLI, because setup_worktree runs BEFORE the canonical
+# launcher preamble is sourced — invoking the CLI here would be undefined at
+# runtime and violates the runtime-launcher-parity preamble-ordering rule.
+# Once the preamble is sourced (later steps), the CLI is available.
+USE_WORKTREES=$(python -c 'import json,os,pathlib
+try:
+ c=json.loads((pathlib.Path(os.environ.get("ENGINEER_PROJECT_DIR") or os.getcwd())/".planning/config.json").read_text(encoding="utf-8")); v=c.get("workflow", {}).get("use_worktrees", True); print(str(True if v is None else v).lower(), end="")
+except (OSError,ValueError,TypeError,AttributeError): print("true", end="")')
 
 # Derive worktree path from padded_phase (parsed from config in next step,
 # but the shell snippet below is illustrative — adapt once config is parsed).
@@ -666,7 +644,7 @@ _Iteration: {N}_
 
 **Honor `workflow.use_worktrees`.** Before creating a worktree, read the
 `workflow.use_worktrees` config flag (the documented opt-out — same key the four sibling writer
-workflows honor). `setup_worktree` resolves the installed runtime and uses its bundled safe YAML parser to read `.planning/config.yaml`
+workflows honor). `setup_worktree` reads it via Python directly from `.planning/config.json`
 (because that step runs BEFORE the canonical engineer_run launcher preamble is sourced; later steps may
 use `engineer_run query config-get workflow.use_worktrees`). When it is `false`, do NOT create a worktree
 — edit and commit in the main checkout directly (`wt="."`, no temp branch, no sentinel, no cleanup

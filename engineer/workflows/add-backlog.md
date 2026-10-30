@@ -52,7 +52,7 @@ Plans:
 
 ## Step 4: Create the phase directory
 
-Apply the `project_code` prefix (if set in `.planning/config.yaml`) so the backlog directory name is consistent with all other phase-creation paths:
+Apply the `project_code` prefix (if set in `.planning/config.json`) so the backlog directory name is consistent with all other phase-creation paths:
 
 ```bash
 IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true

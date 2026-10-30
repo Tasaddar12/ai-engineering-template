@@ -18,7 +18,7 @@ Model profiles control which Claude model each Engineer agent uses. This allows 
 
 ## Per-Phase-Type Model Map 
 
-`.planning/config.yaml` accepts a coarse per-**phase-type** map under the `models` key. Use this when you want tuning at the phase level ("Opus for planning and execution, Sonnet for the rest") without learning the agent taxonomy.
+`.planning/config.json` accepts a coarse per-**phase-type** map under the `models` key. Use this when you want tuning at the phase level ("Opus for planning and execution, Sonnet for the rest") without learning the agent taxonomy.
 
 ```json
 {
@@ -145,7 +145,7 @@ The advisor is a single session-wide setting inherited by all subagents; there i
 
 ## Dynamic Routing with Failure-Tier Escalation 
 
-When `dynamic_routing.enabled = true` in `.planning/config.yaml`, the resolver picks a model from a tier-mapped table based on the agent's *default tier* (light / standard / heavy) and escalates to the next tier up on orchestrator-detected soft failure.
+When `dynamic_routing.enabled = true` in `.planning/config.json`, the resolver picks a model from a tier-mapped table based on the agent's *default tier* (light / standard / heavy) and escalates to the next tier up on orchestrator-detected soft failure.
 
 ```json
 {
@@ -192,7 +192,7 @@ Orchestrators resolve model before spawning. The full precedence ladder
 is (highest → lowest):
 
 ```text
-1. Read .planning/config.yaml
+1. Read .planning/config.json
 2. Check model_overrides[<agent>] (full IDs accepted; targeted exceptions)
 3. If dynamic_routing.enabled, return tier_models[escalated_tier]
    (see §Dynamic Routing — escalation steps tier up per attempt counter)
@@ -207,7 +207,7 @@ is (highest → lowest):
 
 `model` and `effort` resolve through different mechanisms at different
 times — they do not share the ladder above. `model` resolves at runtime,
-per spawn, from `.planning/config.yaml`; a config change takes effect on
+per spawn, from `.planning/config.json`; a config change takes effect on
 the next spawn. `effort` (claude runtime) has its own cascade
 (`agent_overrides` → `routing_tier_defaults` → `default`; see
 `docs/CONFIGURATION.md` § "Where effort actually reaches") and is baked at
@@ -240,7 +240,7 @@ On the Claude runtime, fully-qualified Claude model IDs are honored as explicit 
 
 Runtime: `/set-profile <profile>`
 
-Per-project default: Set in `.planning/config.yaml`:
+Per-project default: Set in `.planning/config.json`:
 ```json
 {
   "model_profile": "balanced"
