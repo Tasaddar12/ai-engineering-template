@@ -151,6 +151,29 @@ PLAN_DELETIONS_JSON=$(engineer_run query json.get --payload "$CREATED_WORKTREE" 
 
 Bind the native executor's working-directory/workspace input to this exact `WORKTREE_PATH`. Before composing the call, copy the complete runnable root guard from `sequential-root-pin.md` with this returned root embedded; no checkout creation or nested dispatch instruction may remain inside the executor prompt. Resolve model and effort inline. Pass the full assigned PLAN, required reading, constraints and committed SUMMARY requirement unchanged. If the host cannot bind an isolated native worker, stop before dispatch and preserve the created checkout.
 
+Before dispatch, read each file below and inline its actual contents verbatim in the executor prompt's `<execution_context>`, in this order. Keep the provenance list with the prompt; if a required source is missing or truncated, stop before dispatch rather than asking the executor to reconstruct it:
+
+- `agents/executor.md` (executor role definition, per-commit HEAD/cwd-drift/path-guard requirements, and final commit contract)
+- `engineer/templates/summary.md`
+- `engineer/references/checkpoints.md`
+- `engineer/references/tdd.md` when this plan is TDD (`type: tdd`, `tdd: "true"`, or `workflow.tdd_mode`)
+- `engineer/references/worktree-path-safety.md`
+- `engineer/references/executor-examples.md` when `CONTEXT_WINDOW >= 200000`
+
+The prompt's provenance list names the files embedded, and the text of every listed file is present in the prompt. Preserve the mandatory SUMMARY commit and gitignored-planning skip semantics from those embedded sources.
+
+At execution start, the executor reads these project inputs, resolving each path from the worktree root:
+
+- `{phase_dir}/{plan_file}`
+- `.planning/PROJECT.md`
+- `.planning/STATE.md`
+- `.planning/config.json`, if present
+- `{phase_dir}/*-CONTEXT.md`, if present
+- `{phase_dir}/*-RESEARCH.md`, if present
+- `{prior_wave_summaries}`, when this is not wave 1
+- `CLAUDE.md`, if present
+- `.claude/skills/` or `.agents/skills/`, if present; read each applicable `SKILL.md`
+
 Capture the actual host agent id from the dispatch tool's result. Follow the native host's lifecycle, `completion-reconciliation.md` and the confirmed-stop rule: a timeout is not proof of exit. Wait for the terminal result and run the receipt procedure below before integrating. Preserve failed, dirty and unmerged checkouts.
 
 ## Native terminal receipt — both isolation modes

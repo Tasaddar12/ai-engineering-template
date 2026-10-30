@@ -1,4 +1,10 @@
-<!-- workflow: native orchestrator and declared agents -->
+<!-- engineer:loop-host
+step: execute
+points: execute:pre, execute:wave:pre, execute:wave:post, execute:post
+agent-roles: executor, verifier, code-reviewer
+produces: SUMMARY.md
+consumes: PLAN.md
+-->
 <purpose>
 Execute all plans in a phase using wave-based parallel execution. Orchestrator stays lean — delegates plan execution to subagents.
 </purpose>
