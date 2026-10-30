@@ -656,8 +656,8 @@ repository path is supplied:
 engineer_run query init.new-project
 ```
 
-Read the `sub_repos` array from the JSON output — each entry is a bare
-directory name already relative to the workspace root (e.g. `"backend"`).
+Read the `sub_repos` array from the JSON output — each entry is a repository
+path relative to the workspace root (e.g. `"libs/backend"`).
 
 **If sub-repos found:**
 
