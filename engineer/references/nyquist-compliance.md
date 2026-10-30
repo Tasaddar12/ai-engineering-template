@@ -8,7 +8,7 @@
 > Check 8f itself lives in its own reference:
 > @~/.claude/engineer/references/failing-direction.md
 
-**Skip if:** `workflow.nyquist_validation` is explicitly set to `false` in config.json
+**Skip if:** `workflow.nyquist_validation` is explicitly set to `false` in `.planning/config.yaml`
 (absent key = enabled), phase has no RESEARCH.md, or RESEARCH.md has no "Validation
 Architecture" section. Output: "Dimension 8: SKIPPED (nyquist_validation disabled or not
 applicable)"

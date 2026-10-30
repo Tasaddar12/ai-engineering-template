@@ -47,7 +47,7 @@ Reference: `engineer/references/questioning.md` for the full anti-pattern list.
 ## Error Recovery Rules
 
 21. **Git lock detection**: Before any git operation, if it fails with "Unable to create lock file", check for stale `.git/index.lock` and advise the user to remove it (do not remove automatically).
-22. **Config fallback awareness**: Config loading returns `null` silently on invalid JSON. If your workflow depends on config values, check for null and warn the user: "config.json is invalid or missing -- running with defaults."
+22. **Config error handling**: The runtime reads `.planning/config.yaml` and does not silently return `null` or continue with defaults when the file is malformed. Surface the runtime error and let the user correct the YAML or configuration value before relying on config-dependent behavior.
 23. **Partial state recovery**: If STATE.md references a phase directory that doesn't exist, do not proceed silently. Warn the user and suggest diagnosing the mismatch.
 
 ## Engineer-Specific Rules

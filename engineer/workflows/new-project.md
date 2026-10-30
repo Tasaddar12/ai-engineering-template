@@ -128,7 +128,7 @@ INSTRUCTION_FILE=$(engineer_run query project-instruction-file --runtime "$RUNTI
 
 All subsequent references to the project instruction file use `$INSTRUCTION_FILE`.
 
-**If `project_exists` is true and `init_incomplete` is true (interrupted bootstrap):** Resume initialization instead of erroring. `.planning/` exists but initialization stopped before all core artifacts landed. Keep the existing `PROJECT.md` and any already-created artifacts (`REQUIREMENTS.md` if present, `config.json`); skip the steps that would recreate them and continue the flow from the first missing artifact in init order — `REQUIREMENTS.md` → `ROADMAP.md` + `STATE.md` — until all exist. Do not error and do not bounce the user back to `/progress` (that routing loop is the bug).
+**If `project_exists` is true and `init_incomplete` is true (interrupted bootstrap):** Resume initialization instead of erroring. `.planning/` exists but initialization stopped before all core artifacts landed. Keep the existing `PROJECT.md` and any already-created artifacts (`REQUIREMENTS.md` if present, `.planning/config.yaml`); skip the steps that would recreate them and continue the flow from the first missing artifact in init order — `REQUIREMENTS.md` → `ROADMAP.md` + `STATE.md` — until all exist. Do not error and do not bounce the user back to `/progress` (that routing loop is the bug).
 
 **If `project_exists` is true and `init_incomplete` is false:** Error — project already initialized. Use `/progress`.
 
@@ -379,7 +379,7 @@ AskUserQuestion([
 ])
 ```
 
-**If "Use as-is":** use the defaults values for config.json and skip directly to **Commit config.json** below.
+**If "Use as-is":** use the defaults values for `.planning/config.yaml` and skip directly to **Commit `.planning/config.yaml`** below.
 
 **If "Modify some settings":** present a selection of every setting with its current saved value.
 
@@ -487,7 +487,7 @@ AskUserQuestion([
 For each selected setting across both blocks, ask only that question using the
 option set from Round 1 / Round 2 below. Merge user answers over the saved
 defaults — unchanged settings retain their saved values. Then skip to
-**Commit config.json**.
+**Commit `.planning/config.yaml`**.
 
 **If "Configure fresh" or `~/.engineer/defaults.json` doesn't exist:** proceed with the questions below.
 
@@ -630,14 +630,14 @@ Create the project configuration through `engineer_run query config-new-project`
 
 **If commit_docs = No:**
 
-- Set `commit_docs: false` in config.json
+- Set `commit_docs: false` in `.planning/config.yaml`
 - Add `.planning/` to `.gitignore` (create if needed)
 
 **If commit_docs = Yes:**
 
 - No additional gitignore entries needed
 
-**Commit config.json:**
+**Commit `.planning/config.yaml`:**
 
 ```bash
 engineer_run query commit "chore: add project config" --files .planning/config.yaml
@@ -670,7 +670,7 @@ Use AskUserQuestion:
 
 **If user selects one or more directories:**
 
-- Set `planning.sub_repos` in config.json to the selected directory names array (e.g., `["backend", "frontend"]`)
+- Set `planning.sub_repos` in `.planning/config.yaml` to the selected directory names array (e.g., `["backend", "frontend"]`)
 - Auto-set `planning.commit_docs` to `false` (planning docs stay local in multi-repo workspaces)
 - Add `.planning/` to `.gitignore` if not already present
 
@@ -1199,7 +1199,7 @@ PHASE1_HAS_UI=$(echo "$PHASE1_SECTION" | grep -qi "UI hint.*yes" && echo "true" 
 - [ ] Brownfield detection completed
 - [ ] Deep questioning completed (threads followed, not rushed)
 - [ ] PROJECT.md captures full context → **committed**
-- [ ] config.json has workflow mode, granularity, parallelization → **committed**
+- [ ] `.planning/config.yaml` has workflow mode, granularity, parallelization → **committed**
 - [ ] Research completed (if selected) — 4 parallel agents spawned → **committed**
 - [ ] Requirements gathered (from research or conversation)
 - [ ] User scoped each category (v1/v2/out of scope)
