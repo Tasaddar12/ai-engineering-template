@@ -6,6 +6,7 @@ import subprocess
 import os
 import hashlib
 from . import config, records
+from . import verification_successor_evidence as successor_evidence
 from .core import Args, Failure, digest, load_json, now, planning_lock, read, root, run, safe_path, write, write_json
 from .text import join_frontmatter, split_frontmatter
 
@@ -68,7 +69,7 @@ def phase_fingerprint(directory, extra=()):
     return hashlib.sha256((snapshot['digest']+goal).encode()).hexdigest()
 
 
-def current_evidence(value):
+def current_evidence(value,args=None):
     directory = records.phase_dir(value)
     report = resolve_file(directory)
     metadata, body = split_frontmatter(read(report))
@@ -97,11 +98,30 @@ def current_evidence(value):
     if run(["git", "status", "--porcelain"], root()).stdout:
         reasons.append("working tree is dirty")
     settings = configured_checks()
+    qualified = None
+    evidence_flags = args is not None and any(args.has(key) for key in ('evidence-file','fresh-evidence-file'))
+    if evidence_flags:
+        if (not args.get('evidence-file') or not args.get('expected-head') or args.has('report-only-paths')
+                or not settings):
+            raise Failure('successor-context-required','Currentness requires original evidence, expected HEAD and configured checks; phase owns its report',2)
+        options = ['--evidence-file',str(args.get('evidence-file')),'--expected-head',str(args.get('expected-head'))]
+        if args.has('fresh-evidence-file'):
+            options.extend(['--fresh-evidence-file',str(args.get('fresh-evidence-file'))])
+        qualified = qualify_successor(Args(options),report.relative_to(root()).as_posix())
     if settings:
-        receipt_status = check_status(None)
-        if receipt_status.get("passed") is not True:
+        receipt_status = qualified if evidence_flags else check_status(None)
+        if receipt_status.get('qualified' if evidence_flags else 'passed') is not True:
             reasons.append("configured checks lack passing receipts at current HEAD")
-    return {"current": not reasons, "reasons": reasons, "revision": head, "verified_revision": revision, "fingerprint": expected}
+    return {"current": not reasons, "reasons": reasons, "revision": head, "verified_revision": revision,
+            "fingerprint": expected,**({'successor_qualification':qualified} if evidence_flags else {})}
+
+
+def current(args):
+    allowed = {'evidence-file','fresh-evidence-file','expected-head','raw','json','pick'}
+    if (set(args.opts)-allowed or len(args.pos) != 1
+            or args.has('expected-head') and not args.has('evidence-file')):
+        raise Failure('successor-context-required','Use a phase and complete explicit evidence options',2)
+    return current_evidence(args.need(),args)
 
 
 def fingerprint(args):
@@ -362,11 +382,20 @@ def _run_checks(args):
     import time
     import uuid
     settings = config.load()['verification']
-    checks = _selected(args,configured_checks())
+    all_checks = configured_checks()
+    subset = args.has('only-checks')
+    if subset and args.has('checks'):
+        raise Failure('incompatible-check-selection','Use --checks names or --only-checks indices',2)
+    indices = successor_evidence.selected_indices(args.all('only-checks'),len(all_checks)) if subset else None
+    checks = [all_checks[index] for index in indices] if subset else _selected(args,all_checks)
     revision = _head()
     if not checks:
         return {'passed':None,'status':'not_configured','revision':revision,'checks':[],'count':0},69
     inherited = dict(os.environ)
+    inputs = successor_evidence.capture_inputs(root(),all_checks,settings,revision,inherited)
+    input_by_name = {check['id']:inputs[index] for index,check in enumerate(all_checks)}
+    frozen_sources = successor_evidence.safe_snapshot(root(),guarded=True)
+    source_guards = [successor_evidence.safe_snapshot(root(),check.get('sources'),guarded=True) for check in all_checks]
     bindings = {check['id']:_binding(check,revision,inherited) for check in checks}
     _freeze_unchanged(checks,bindings,revision,settings)
     previous,invalid = _load_receipts()
@@ -376,7 +405,7 @@ def _run_checks(args):
         binding = bindings[check['id']]
         candidates = [item for item,path in previous if _compatible(item,check,binding,revision)]
         latest = max(candidates,key=lambda item:item['finished_ns'],default=None)
-        if latest and latest['status'] == 'passed' and not _current_damage(invalid) and settings['reuse'] and check['reuse'] and not args.has('force'):
+        if latest and latest['status'] == 'passed' and not _current_damage(invalid) and settings['reuse'] and check['reuse'] and not args.has('force') and not subset:
             results[check['id']] = {**latest,'reused':True,'reusable':True}
         else:
             queued.append(check)
@@ -401,8 +430,12 @@ def _run_checks(args):
             'started':started,'finished':now(),'finished_ns':finished_ns,'exit_code':code,'timed_out':code == 124,
             'stdout':_redact(stdout,binding['environment'],check.get('environment')),'stderr':_redact(stderr,binding['environment'],check.get('environment')),
             'status':'passed' if code == 0 else 'failed','required':check['required'],'independent':check['independent'],
-            'resources':check['resources'],'exact_revision':check['revision'],'reuse_allowed':settings['reuse'] and check['reuse'],
+            'resources':check['resources'],'exact_revision':check['revision'],'reuse_allowed':settings['reuse'] and check['reuse'] and not subset,
             'process_ownership':execution.get('_process_ownership'),'process_terminal':execution.get('_process_terminal')}
+        receipt['inputs'] = {**input_by_name[check['id']],**({'fresh_execution_revision':revision} if subset else {})}
+        receipt['full_index'] = receipt['inputs']['index']
+        receipt['snapshot_valid'] = True
+        receipt['receipt'] = successor_evidence.STORE + '/' + receipt['receipt_id'] + '.json'
         receipt['receipt_hash'] = _receipt_hash(receipt)
         return receipt
     # Consecutive independent checks may share a wave only with disjoint resources.
@@ -439,6 +472,12 @@ def _run_checks(args):
                 _freeze_unchanged(checks,bindings,revision,settings)
             cursor = end
     _freeze_unchanged(checks,bindings,revision,settings)
+    # Unavailable prospective proof can fall back to a real check. A detected
+    # rewrite/restore during execution invalidates that execution's evidence.
+    if (frozen_sources is not None and successor_evidence.safe_snapshot(root(),guarded=True) != frozen_sources
+            or any(guard is not None and successor_evidence.safe_snapshot(root(),check.get('sources'),guarded=True) != guard
+                   for check,guard in zip(all_checks,source_guards))):
+        raise Failure('verification-input-drift','Source metadata changed during the frozen verification run')
     with planning_lock():
         _freeze_unchanged(checks,bindings,revision,settings)
         entries = {item['name']:{'receipt_id':item['receipt_id'],'fingerprint':item['fingerprint']} for item,path in previous}
@@ -453,15 +492,36 @@ def _run_checks(args):
         for check in checks:
             receipt = results[check['id']]
             entries[check['id']] = {'receipt_id':receipt['receipt_id'],'fingerprint':receipt['fingerprint']}
-        index = {'schema':2,'revision':revision,'updated':now(),'entries':entries}
-        index['index_hash'] = _hash(index)
-        write_json(_safe(records.planning()/'verification-receipts/current.json'),index)
+        if not subset:
+            index = {'schema':2,'revision':revision,'updated':now(),'entries':entries}
+            index['index_hash'] = _hash(index)
+            write_json(_safe(records.planning()/'verification-receipts/current.json'),index)
     ordered = [{**results[check['id']],'reused':results[check['id']].get('reused',False),
-                'reusable':settings['reuse'] and check['reuse']} for check in checks]
+                'reusable':settings['reuse'] and check['reuse'] and not subset} for check in checks]
     required = [v for v in ordered if v['required']] or ordered
-    passed = all(v['status'] == 'passed' for v in required)
-    return {'passed':passed,'status':'passed' if passed else 'failed','revision':revision,'checks':ordered,'count':len(ordered),
-            'invalid_receipts':invalid,'frozen':True,'max_parallel':settings['max_parallel']},int(not passed)
+    selected_passed = all(v['status'] == 'passed' for v in required)
+    partial = subset and len(checks) != len(all_checks)
+    passed = selected_passed and not partial
+    return {'passed':passed,'status':'passed' if passed else 'partial' if partial else 'failed',
+            'revision':revision,'tested_revision':revision,'checks':ordered,'count':len(ordered),
+            'configured':True,'snapshot_valid':True,'partial':partial,'selected_passed':selected_passed,
+            'selected_indices':[all_checks.index(check) for check in checks],
+            'full_configuration_sha256':successor_evidence.successors.digest(settings),
+            'full_order_sha256':successor_evidence.successors.digest(all_checks),
+            'invalid_receipts':invalid,'frozen':True,'max_parallel':settings['max_parallel']},int(not selected_passed)
+
+
+def qualify_successor(args,report_path=None):
+    allowed = {'evidence-file','fresh-evidence-file','report-only-paths','expected-head','raw','json','pick'}
+    if (set(args.opts)-allowed or args.pos or not args.get('evidence-file') or not args.get('expected-head')
+            or not (report_path or args.all('report-only-paths'))
+            or any(len(args.all(key)) != 1 for key in ('evidence-file','expected-head'))
+            or args.has('fresh-evidence-file') and len(args.all('fresh-evidence-file')) != 1):
+        raise Failure('successor-context-required','Specify original evidence, exact report paths and expected HEAD',2)
+    paths = [report_path] if report_path else args.all('report-only-paths')
+    evidence = successor_evidence.read_evidence(args.get('evidence-file'))
+    fresh = successor_evidence.read_evidence(args.get('fresh-evidence-file')) if args.get('fresh-evidence-file') else None
+    return successor_evidence.validate_successor(evidence,paths,args.get('expected-head'),fresh)
 
 
 def check_status(args):

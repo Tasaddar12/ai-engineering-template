@@ -81,7 +81,7 @@ def canonical_key(key):
 
 def normalize_check(original,index=0):
     allowed = {"id","name","command","argv","cwd","timeout","timeout_seconds","required","environment","env",
-               "inputs","sources","independent","resources","revision","reuse"}
+               "inputs","sources","independent","resources","revision","reuse","successor_independence"}
     check = {"argv":original} if isinstance(original,(list,str)) else deepcopy(original)
     if not isinstance(check,dict) or set(check)-allowed:
         raise Failure("invalid-verification-command","Use argv or a declared check mapping with known fields",2)
@@ -125,9 +125,30 @@ def normalize_check(original,index=0):
     cwd = check.get("cwd",".")
     if not isinstance(cwd,str) or not cwd or "\x00" in cwd:
         raise Failure("invalid-check-cwd",name,2)
-    return {"id":name,"argv":argv,"cwd":cwd,"timeout":timeout,"required":check.get("required",True),
+    if 'successor_independence' in check:
+        from . import verification_successors as successors
+        contract = check['successor_independence']
+        if (not isinstance(contract,dict)
+                or set(contract) != {'schema','report_paths','protected_inputs','revision_semantics'}
+                or type(contract.get('schema')) is not int or contract['schema'] != 1
+                or contract.get('protected_inputs') != 'all-other-inputs'
+                or contract.get('revision_semantics') != 'provenance-only'):
+            raise Failure('invalid-successor-contract','Invalid prospective successor_independence contract',2)
+        reports = contract.get('report_paths')
+        if (not isinstance(reports,list) or not reports or any(not isinstance(v,str) for v in reports)
+                or len(set(reports)) != len(reports)):
+            raise Failure('invalid-successor-contract','Declare exact unique report paths',2)
+        try:
+            for report in reports:
+                successors.literal_path(report)
+        except ValueError as exc:
+            raise Failure('invalid-successor-contract',str(exc),2) from exc
+    result = {"id":name,"argv":argv,"cwd":cwd,"timeout":timeout,"required":check.get("required",True),
         "independent":check.get("independent",False),"resources":check.get("resources",[]),"sources":check.get("sources",[]),
         "environment":environment,"revision":check.get("revision",False),"reuse":check.get("reuse",True)}
+    if 'successor_independence' in check:
+        result['successor_independence'] = check['successor_independence']
+    return result
 
 
 def merge(base, overrides):
