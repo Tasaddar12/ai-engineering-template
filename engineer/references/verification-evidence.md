@@ -106,6 +106,17 @@ retroactively. Preserve revision and reuse flags; normal execution and cache
 semantics do not change. Report/HEAD-reading, opaque/full-tree diff and
 unbound-volatile checks remain fresh-required.
 
+A declared directory dependency binds its root and complete recursive topology,
+including ignored contents and empty directories. Protect existence, entry kind,
+mode and file contents; additions, removals, type changes and mode changes
+invalidate equality. Successor proof includes directory dependencies from all
+configured checks, even checks not selected for a fresh subset. Ordinary named
+check selection captures the selected checks' dependencies only. Do not declare
+Git administration as a dependency; runtime-owned receipt storage retains its
+narrow exclusion. These boundaries do not exempt the rest of a declared
+`.planning/` tree or any other directory. Apart from the exact approved phase
+report, a protected-input change requires a complete fresh baseline.
+
 The response separates tested_revision (R) from qualified_revision (H), and
 returns approved paths, checked commits, original receipt references, ordered
 qualifications and fresh_required zero-based indices. It preserves original

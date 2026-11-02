@@ -113,6 +113,14 @@ the contract, complete ordered checks, effective configuration, runtime/tool and
 environment identities and protected inputs. Adding a contract later does not
 grandfather an old receipt or alter ordinary revision/reuse behavior.
 
+Declared directory dependencies bind their roots and all descendants, including
+ignored contents and empty directories, with existence, kind, mode and file
+content protection. Successor proof protects directories from all configured
+checks; ordinary named selection captures only selected checks' dependencies.
+Git administration is not a declared dependency, and runtime-owned receipt
+storage retains its narrow exclusion. No blanket exclusion removes the rest of
+a declared `.planning/` tree or another directory from protection.
+
 `verification.qualify-successor --evidence-file ORIGINAL --report-only-paths PATH
 --expected-head H [--fresh-evidence-file FRESH]` is a read-only qualification of
 configured-check evidence. ORIGINAL and FRESH are explicit regular JSON files
