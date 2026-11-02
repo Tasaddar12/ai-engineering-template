@@ -19,6 +19,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    # Preserve main's Windows allowance for the full Git/process and hook coverage.
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4

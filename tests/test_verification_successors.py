@@ -24,6 +24,31 @@ CONTRACT = dict(schema=1, report_paths=[REPORT], protected_inputs='all-other-inp
                 revision_semantics='provenance-only')
 
 class SuccessorTests(unittest.TestCase):
+    def test_report_only_qualifier_never_exempts_success_bookkeeping(self):
+        self.write('.planning/STATE.md', 'status: verified\n')
+        self.commit('success bookkeeping')
+        head = self.git('rev-parse', 'HEAD')
+        result = self.proof(paths=['.planning/STATE.md'])
+        self.assertFalse(result['qualified'])
+        self.assertIn('unsupported generated report owner', result['reason'])
+        self.assertEqual(head, self.git('rev-parse', 'HEAD'))
+
+    def test_subset_preserves_full_identity_and_cannot_claim_aggregate_pass(self):
+        self.write('second.py', "from pathlib import Path\np=Path('.generated/second.count');p.parent.mkdir(exist_ok=True);p.write_text('1')\n")
+        self.configure([self.command, {'argv': [sys.executable, 'second.py']}])
+        self.commit('two checks for fresh subset')
+        result = self.cli('verification.run-checks', '--only-checks', '1')
+        self.assertFalse(result['passed'])
+        self.assertTrue(result['selected_passed'])
+        self.assertTrue(result['partial'])
+        self.assertEqual([1], result['selected_indices'])
+        self.assertEqual(1, result['checks'][0]['full_index'])
+        self.assertFalse((self.root / '.generated/count').exists())
+        self.assertEqual('1', (self.root / '.generated/second.count').read_text())
+        stored = json.loads((self.root / result['checks'][0]['receipt']).read_text())
+        self.assertEqual(stored['inputs']['configuration'], result['full_configuration_sha256'])
+        self.assertEqual(stored['inputs']['order'], result['full_order_sha256'])
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
