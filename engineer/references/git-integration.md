@@ -297,13 +297,13 @@ Files that don't match any configured sub-repo are reported as unmatched.
 
 ### Milestone Tagging Across Sub-Repos
 
-A Engineer milestone version names planned work in `.planning/`; it is not any repository's release version. With `git.repo_tagging: "per_repo"` and a non-empty `sub_repos`, `/complete-milestone` records one release map entry per repository (status, release, reference, environment, tag choice) instead of creating one `v[X.Y]` tag in the current directory:
+A Engineer milestone version names planned work in `.planning/`; it is not any repository's release version. Retain one release map entry per repository (status, release, reference, environment, tag choice) instead of assuming one `v[X.Y]` tag applies everywhere. The Python runtime does not implement the upstream release-tag helper or release-map automation. For an explicitly authorized tagging request, apply this protocol with Git in each selected repository:
 
-1. `engineer_run query milestone release-tags --map <tags.json> --dry-run` checks every requested tag (repository listed in `sub_repos`, ref resolves, tag name valid, no tag at a different commit) before anything is written.
-2. After one consolidated confirmation, `engineer_run query milestone release-tags --map <tags.json>` creates the annotated tags, each with the target repository as its working directory. Re-running the same map is idempotent (`already_tagged`).
-3. `milestone complete <version> --release-map <file>` archives the map by recorded value.
-4. Nothing is pushed by default. Each repository's tag has its own confirmation naming the repository and its remote.
+1. Inspect the complete release map and check every requested tag before writing: selected repository, resolved ref, valid tag name, and no existing tag at a different commit.
+2. Under the user's specific tagging authorization, create each annotated tag with that repository as Git's working directory. Verify an existing matching tag rather than recreating it.
+3. Preserve the reviewed release map and observed results in the milestone records. Do not pass unsupported release-map options to the runtime.
+4. Push tags only when the user's authorization covers the named repositories and remotes.
 
-With `git.create_tag: false` the map is still recorded and no tag is created.
+When tagging is not authorized, retain the map without creating or pushing tags.
 
 </sub_repos_support>

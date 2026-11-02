@@ -27,6 +27,7 @@ jobs:
           python-version: '3.11'
       - run: python -I scripts/links.py
       - run: python -I scripts/check_markdown_python.py
+      - run: python -I scripts/verbs.py --fail-on-unknown
       - run: python -m unittest discover -s tests -v
 
   # Keep the existing branch-protection context while checking both platforms.

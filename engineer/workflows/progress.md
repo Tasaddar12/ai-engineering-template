@@ -162,11 +162,11 @@ Use this instead of manually reading/parsing ROADMAP.md.
 > blocks are a secondary config aid that may be significantly stale — do NOT use the
 > CLAUDE.md project description as a source for any progress report field.
 
-**Generate progress bar from `engineer_run query progress` / `progress.json`, then present rich status report:**
+**Generate progress bar from `engineer_run query progress.bar`, then present rich status report:**
 
 ```bash
 # Get formatted progress bar
-PROGRESS_BAR=$(engineer_run query progress.bar --raw)
+PROGRESS_BAR=$(engineer_run query progress.bar --pick bar --raw)
 ```
 
 Present:

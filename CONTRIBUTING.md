@@ -24,7 +24,7 @@ Static source checks include:
 ```sh
 python -I scripts/check_markdown_python.py
 python -I scripts/links.py
-python -I scripts/verbs.py
+python -I scripts/verbs.py --fail-on-unknown
 ```
 
 These checks answer different questions: retired runtime-helper references,

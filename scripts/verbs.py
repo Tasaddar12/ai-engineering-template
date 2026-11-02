@@ -104,7 +104,7 @@ def call_sites(root, known=()):
         for number, line in enumerate(text.splitlines(), 1):
             for match in CALL.finditer(line):
                 name = match[1]
-                if name.endswith('.') or (match.end(1) < len(line) and line[match.end(1)] in '<{$'):
+                if name == 'VERB' or name.endswith('.') or (match.end(1) < len(line) and line[match.end(1)] in '<{$'):
                     continue
                 if name not in known and name in namespaces and match[2]:
                     name += '.'+match[2]
@@ -118,7 +118,7 @@ def main():
     command.add_argument("--fail-on-unknown", action="store_true")
     args = command.parse_args()
     runtime = safe_path(args.root, "engineer/bin/engineer.py")
-    known = registered_verbs(runtime.read_text(encoding="utf-8"))
+    known = registered_verbs(runtime.read_text(encoding="utf-8")) | {"help", "verbs"}
     sites = call_sites(args.root, known)
     unknown = [(verb, path, number) for verb, path, number in sites if verb not in known]
     for verb, path, number in sorted(unknown):
