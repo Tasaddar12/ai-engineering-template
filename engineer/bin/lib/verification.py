@@ -395,7 +395,9 @@ def _run_checks(args):
     inputs = successor_evidence.capture_inputs(root(),all_checks,settings,revision,inherited)
     input_by_name = {check['id']:inputs[index] for index,check in enumerate(all_checks)}
     successor_context = subset or any('successor_independence' in check for check in checks)
-    guarded_checks = all_checks if successor_context else checks
+    # Ordinary runs retain the native selected bindings, including their default
+    # planning-output exclusions. Extra proof guards belong to successor runs.
+    guarded_checks = all_checks if successor_context else []
     frozen_sources = successor_evidence.safe_snapshot(root(),guarded=True) if successor_context else None
     source_guards = [successor_evidence.safe_snapshot(root(),check.get('sources'),guarded=True) for check in guarded_checks]
     bindings = {check['id']:_binding(check,revision,inherited) for check in checks}

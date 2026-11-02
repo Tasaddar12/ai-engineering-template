@@ -518,6 +518,16 @@ class SuccessorTests(unittest.TestCase):
                 self.assertEqual(['build'],[row['name'] for row in result['checks']])
                 self.assertEqual('built',output.read_text())
 
+    def test_ordinary_default_sources_allow_planning_output(self):
+        command = dict(id='build',argv=[sys.executable,'-c',
+            "from pathlib import Path; Path('.planning/out').write_text('built')"],environment=[])
+        self.configure([command]); self.commit('ordinary default-source planning output')
+        for selection in ([],['--checks','build']):
+            with self.subTest(selection=selection):
+                result = self.cli('verification.run-checks',*selection,'--force')
+                self.assertTrue(result['passed'],result)
+                self.assertEqual('built',(self.root/'.planning/out').read_text())
+
     def directory_fixture(self):
         (self.root/'.generated/existing/nested').mkdir(parents=True)
         self.write('check.py',"from pathlib import Path\nassert Path('.generated').is_dir()\nassert not Path('.generated/changed').exists()\n")
