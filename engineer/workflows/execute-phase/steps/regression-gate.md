@@ -1,0 +1,67 @@
+Apply response_language to all user-facing prose — narration between tool calls, status updates, progress notes, and findings included; preserve code, paths, and identifiers.
+
+<step name="regression_gate">
+Run prior phases' test suites to catch cross-phase regressions BEFORE verification.
+
+**Skip if:** This is the first phase (no prior phases), or no prior VERIFICATION.md files exist.
+
+**Step 1: Discover prior phases' test files**
+```bash
+# Find all VERIFICATION.md files from prior phases in current milestone
+PRIOR_VERIFICATIONS=$(find .planning/phases/ -name "*-VERIFICATION.md" ! -path "*${PHASE_NUMBER}*" 2>/dev/null)
+# engineer-handoff:begin regression-files-reset
+_ENGINEER_HANDOFF="$( { git rev-parse --absolute-git-dir 2>/dev/null || echo "${TMPDIR:-/tmp}/engineer-$(pwd | cksum | cut -d' ' -f1)"; } )/handoff"; mkdir -p "$_ENGINEER_HANDOFF"
+rm -f "$_ENGINEER_HANDOFF/regression-files"  # a list left by an earlier run must never reach this gate
+# engineer-handoff:end regression-files-reset
+```
+
+**Step 2: Extract test file lists from prior verifications**
+
+For each VERIFICATION.md found, look for test file references:
+- Lines containing `test`, `spec`, or `__tests__` paths
+- The "Test Suite" or "Automated Checks" section
+- File patterns from `key-files.created` in corresponding SUMMARY.md files that match `*.test.*` or `*.spec.*`
+
+Write all unique test file paths to the handoff file, one path per line. Each fenced
+`bash` block is dispatched as its own shell, so a shell variable assigned here would never reach
+`regression-gate-run.md` — the file is the hand-off. Replace the example lines with the real paths;
+write none when no test file was found:
+
+```bash
+# engineer-handoff:begin regression-files-write
+_ENGINEER_HANDOFF="$( { git rev-parse --absolute-git-dir 2>/dev/null || echo "${TMPDIR:-/tmp}/engineer-$(pwd | cksum | cut -d' ' -f1)"; } )/handoff"; mkdir -p "$_ENGINEER_HANDOFF"
+cat > "$_ENGINEER_HANDOFF/regression-files" <<'ENGINEER_REGRESSION_FILES'
+tests/test_example_one.py
+tests/test_example_two.py
+ENGINEER_REGRESSION_FILES
+# engineer-handoff:end regression-files-write
+```
+
+**Step 3: Run configured checks** — Read and execute `engineer/workflows/execute-phase/steps/regression-gate-run.md`. Use `verification.run-checks` receipts; failed or unavailable required checks halt verification.
+
+**Step 4: Report results**
+
+If all tests pass:
+```
+✓ Regression gate: {N} prior-phase test files passed — no regressions detected
+```
+→ Proceed to verify_phase_goal
+
+If any tests fail:
+```
+## ⚠ Cross-Phase Regression Detected
+
+Phase {X} execution may have broken functionality from prior phases.
+
+| Test File | Phase | Status | Detail |
+|-----------|-------|--------|--------|
+| {file} | {origin_phase} | FAILED | {first_failure_line} |
+
+Options:
+1. Fix regressions before verification (recommended)
+2. Continue to verification anyway (regressions will compound)
+3. Abort phase — roll back and re-plan
+```
+
+If `TEXT_MODE` is true, present as a plain-text numbered list and ask the user to type their choice number. Otherwise, use AskUserQuestion to present the options.
+</step>

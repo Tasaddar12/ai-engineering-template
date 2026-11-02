@@ -37,10 +37,10 @@ their assumptions are checked again. Planning never authorizes execution.
 recorded for review; downstream assumptions may need revision after prerequisites
 land.
 
-**Sources:** [plan-phase command](../.ai/commands/plan-phase.md),
-[planning workflow](../.ai/workflows/plan-phase.md),
-[session registry](../.ai/runtime/lib/worktrees.py),
-[execution gate](../.ai/RULES.md#phase-authority).
+**Sources:** [plan-phase command](../commands/plan-phase.md),
+[planning workflow](../engineer/workflows/plan-phase.md),
+[session registry](../engineer/bin/lib/worktrees.py),
+[execution gate](../AGENTS.md#authority).
 
 ## Define a milestone objective
 
@@ -69,8 +69,8 @@ or execution.
 **Expected result:** A milestone outline and scoped requirements in the project
 records, subject to the workflow's checks and user decisions.
 
-**Sources:** [new-milestone command](../.ai/commands/new-milestone.md),
-[milestone workflow](../.ai/workflows/new-milestone.md).
+**Sources:** [new-milestone command](../commands/new-milestone.md),
+[milestone workflow](../engineer/workflows/new-milestone.md).
 
 ## Discuss a phase
 
@@ -94,9 +94,9 @@ do not plan or implement the phase.
 **Expected result:** A phase `CONTEXT.md` with recorded decisions and open
 questions; durable decisions may also update `PROJECT.md`.
 
-**Sources:** [discuss-phase command](../.ai/commands/discuss-phase.md),
-[discussion skill](../.agents/skills/discuss-phase/SKILL.md),
-[phase discussion rules](../.ai/RULES.md#phase-authority).
+**Sources:** [discuss-phase command](../commands/discuss-phase.md),
+[discussion skill](../skills/discuss-phase/SKILL.md),
+[phase discussion rules](../AGENTS.md#authority).
 
 ## Discuss unfinished phases in a milestone
 
@@ -154,12 +154,12 @@ use exclusive ownership in an isolated worktree.
 questions needing human resolution, and provisional dependencies. The report is
 discussion output, not a planning or execution authorization.
 
-**Sources:** [discuss-phase command](../.ai/commands/discuss-phase.md),
-[discussion skill](../.agents/skills/discuss-phase/SKILL.md),
-[discussion workflow](../.ai/workflows/discuss-phase.md),
-[phase authority and decision rules](../.ai/RULES.md#phase-authority),
-[worktree session guidance](../.ai/references/worktree-sessions.md),
-[session registry implementation](../.ai/runtime/lib/worktrees.py).
+**Sources:** [discuss-phase command](../commands/discuss-phase.md),
+[discussion skill](../skills/discuss-phase/SKILL.md),
+[discussion workflow](../engineer/workflows/discuss-phase.md),
+[phase authority and decision rules](../AGENTS.md#authority),
+[worktree session guidance](../engineer/bin/README.md),
+[session registry implementation](../engineer/bin/lib/worktrees.py).
 
 ## Read-only progress check
 
@@ -181,8 +181,8 @@ incomplete-phase check. Recommend one next command, but do not run it.
 **Expected result:** A status report and one recommendation. `/progress` reports;
 `/next` decides and proceeds.
 
-**Sources:** [progress command](../.ai/commands/progress.md),
-[command overview](../.ai/commands/README.md#the-lifecycle).
+**Sources:** [progress command](../commands/progress.md),
+[command overview](../commands/COMMAND.md).
 
 ## Future prompt ideas
 

@@ -1,0 +1,208 @@
+**Step 5.5: Plan-checker loop (only when `$VALIDATE_MODE`)**
+
+Skip this step entirely if NOT `$VALIDATE_MODE`.
+
+Display banner:
+```
+### Engineer ► CHECKING PLAN
+
+◆ Spawning plan checker... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
+```
+
+**Verify-command path probe.** Before spawning, run the deterministic probe over
+the quick plan's `<automated>` commands and hand its JSON to the checker, exactly as
+`plan-phase.md` does. Quick plans live under `${QUICK_DIR}`, not `.planning/phases/`, so the
+probe takes the directory directly. It never executes command text and never prescribes a
+replacement path.
+
+```bash
+_engineer_identity_ok() {
+  [ -f "$1" ] || return 1
+  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
+}
+_engineer_select() {
+  for _engineer_candidate do
+    if _engineer_identity_ok "$_engineer_candidate"; then
+      ENGINEER_RUN="$_engineer_candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+if [ -n "${ENGINEER_RUN:-}" ]; then
+  _engineer_identity_ok "$ENGINEER_RUN" || {
+    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
+    exit 1
+  }
+else
+  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
+  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
+  _engineer_select \
+    "$_engineer_root/engineer/bin/engineer_run" \
+    "$_engineer_runtime_root/engineer/bin/engineer_run" \
+    "$_engineer_root/.claude/engineer/bin/engineer_run" \
+    "$_engineer_root/.codex/engineer/bin/engineer_run" \
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
+    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
+    "$_engineer_path_candidate" || {
+    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
+    exit 1
+  }
+fi
+export ENGINEER_RUN
+engineer_run() {
+  sh "$ENGINEER_RUN" "$@"
+}
+if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
+  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
+fi
+VERIFY_PATHS=$(engineer_run check verify-command-paths --dir "${QUICK_DIR}" --raw) && VERIFY_PATHS_EXIT=0 || VERIFY_PATHS_EXIT=$?
+```
+
+Branch on `VERIFY_PATHS_EXIT`: `0` — the probe looked. `69` (`UNAVAILABLE`) — it could not look: the JSON is still printed with `status: 'unresolvable'`, so hand it to the checker unchanged. Any other non-zero is a command failure: stop and surface it rather than hand the checker an empty value.
+
+Checker prompt:
+
+```markdown
+<verification_context>
+**Mode:** quick-full
+**Task Description:** ${DESCRIPTION}
+
+<required_reading>
+- ${QUICK_DIR}/${quick_id}-PLAN.md (Plan to verify)
+</required_reading>
+
+${AGENT_SKILLS_CHECKER}
+
+<verify_command_path_probe>
+**Deterministic verify-command path probe ** — already run; do NOT re-derive these
+verdicts by reading the filesystem yourself. Act on `severity` per the "Verify Command Path
+Resolvability" dimension: `blocker` → BLOCKER, `warning` → WARNING, `none` → silent.
+`status: pending_creation` is not a finding. A non-empty `readError` means the probe could not
+look — a WARNING, not a pass. Report the failing target verbatim; never prescribe a
+replacement path.
+
+```json
+{VERIFY_PATHS}
+```
+</verify_command_path_probe>
+
+**Scope:** This is a quick task, not a full phase. Skip checks that require a ROADMAP phase goal.
+</verification_context>
+
+<check_dimensions>
+- Requirement coverage: Does the plan address the task description?
+- Task completeness: Do tasks have files, action, verify, done fields?
+- Key links: Are referenced files real?
+- Verify-command path resolvability: act on the `<verify_command_path_probe>` verdicts above
+- Scope sanity: Is this appropriately sized for a quick task (1-3 tasks)?
+- must_haves derivation: Are must_haves traceable to the task description?
+
+Skip: cross-plan deps (single plan), ROADMAP alignment
+${DISCUSS_MODE ? '- Context compliance: Does the plan honor locked decisions from CONTEXT.md?' : '- Skip: context compliance (no CONTEXT.md)'}
+</check_dimensions>
+
+<expected_output>
+- ## VERIFICATION PASSED — all checks pass
+- ## ISSUES FOUND — structured issue list
+</expected_output>
+```
+
+```
+Agent(
+  prompt=checker_prompt,
+  subagent_type="plan-checker",
+  model="{checker_model}",
+  description="Check quick plan: ${DESCRIPTION}"
+)
+```
+
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+
+**Handle checker return:**
+
+- **`## VERIFICATION PASSED`:** If the return lists an entry whose severity is BLOCKER or WARNING, in the YAML issues block or listed in prose (a mention such as "no warnings" or a zero count is not an entry), handle it as `## ISSUES FOUND` below, counting the prose entries as BLOCKER/WARNING entries; the sentinel never decides alone, and an entry with a missing or unrecognized severity counts as a BLOCKER. Otherwise display confirmation, proceed to step 6.
+- **`## ISSUES FOUND`:** Count BLOCKER + WARNING entries in the YAML issues block; an entry whose severity is missing or unrecognized counts as a BLOCKER (fail closed). If zero — every entry is explicitly INFO — display `ℹ advisory — {dimension}: {description}` per entry and proceed to step 6; INFO is advisory and never enters the loop. Otherwise display issues, check iteration count, enter revision loop.
+
+**Revision loop (max 2 iterations):**
+
+Track `iteration_count` (starts at 1 after initial plan + check).
+
+**If iteration_count < 2:**
+
+Display: `Sending back to planner for revision... (iteration ${N}/2)`
+
+Revision prompt:
+
+
+```markdown
+<revision_context>
+**Mode:** quick-full (revision)
+
+<required_reading>
+- ${QUICK_DIR}/${quick_id}-PLAN.md (Existing plan)
+</required_reading>
+
+${AGENT_SKILLS_PLANNER}
+
+
+**Checker issues:** ${structured_issues_from_checker}
+
+</revision_context>
+
+<instructions>
+Make targeted updates to address checker issues.
+
+`required_property` + evidence + severity BIND. `fix_hint` is ONE non-binding example route: a
+smaller or different mechanism reaching the same property addresses the issue in full — say which
+you used. Re-check ${DISCUSS_MODE ? 'locked decisions in ' + quick_id + '-CONTEXT.md, ' : ''}capability guidance (CLAUDE.md, project skills) and the
+constraints these plans already encode BEFORE editing; if a hint would contradict one, or the
+property is unreachable without breaking one, return `## REVISION_CONFLICT` with the conflict and
+the alternatives rather than applying or working around it. Full contract:
+`engineer/references/planner-revision.md`, which you load in revision mode.
+
+Do NOT replan from scratch unless issues are fundamental.
+Return what changed.
+</instructions>
+```
+
+```
+Agent(
+  prompt=revision_prompt,
+  subagent_type="planner",
+  model="{planner_model}",
+  description="Revise quick plan: ${DESCRIPTION}"
+)
+```
+
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+
+**If the planner returns `## REVISION_CONFLICT`:** a conflict is not resolvable by re-running the
+same loop, so it must not consume retry budget. Do NOT increment `iteration_count` and do NOT
+re-spawn the checker yet. Present the conflict table and its alternatives to the user and ask
+which to take: adopt a named alternative / override the named constraint and apply the hint /
+amend the constraint itself. Every option resolves the conflict. Accepting the plan with the
+blocker still open is NOT offered here — the blocking `required_property` still fails, and that
+choice belongs to the max-iteration escalation below, which is unchanged.
+
+lives.
+
+Re-spawn the planner with the chosen resolution, then **re-evaluate its return from the top of
+this handler** — do not fall through to the checker spawn below. A second conflict is still a
+conflict, not a revised plan.
+
+**Bounded:** A conflict naming the SAME `required_property` twice in a row (no successful revision in between) is a stall, and so is the
+THIRD conflict return of this loop whatever property it names — alternating property names
+would otherwise never trip the repeat rule and the path would be unbounded. Stop re-spawning and
+route it to the same iteration-count check below, so declining to spend an iteration cannot make
+this path unbounded.
+
+**Otherwise (the planner returns a revised plan, not `## REVISION_CONFLICT`):** spawn checker again, increment `iteration_count`.
+
+**If iteration_count >= 2:**
+
+Display: `Max iterations reached. ${N} issues remain:` + issue list
+
+Offer: 1) Force proceed, 2) Abort

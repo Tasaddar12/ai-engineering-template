@@ -2,8 +2,10 @@ name: Validate phase workflows
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -11,31 +13,29 @@ permissions:
 jobs:
   platform:
     name: phase tests (${{ matrix.os }})
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft != true }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    # The Windows test suite took about 27 minutes; allow room for all four
-    # following hook steps. Per-test limits stay intact.
+    # Preserve main's Windows allowance for the full Git/process and hook coverage.
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: python -m pip install -r .ai/runtime/requirements.txt
+      - run: python -I scripts/links.py
+      - run: python -I scripts/check_markdown_python.py
+      - run: python -I scripts/verbs.py --fail-on-unknown
       - run: python -m unittest discover -s tests -v
-      - run: bash .ai/hooks/ai-tier-notice.test.sh
-      - run: bash .ai/hooks/worktree-guard.test.sh
-      - run: bash .ai/hooks/context-handoff.test.sh
-      - run: bash .ai/hooks/worktree-location.test.sh
 
   # Keep the existing branch-protection context while checking both platforms.
   validate:
     name: validate
     needs: platform
-    if: ${{ always() }}
+    if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.draft != true) }}
     runs-on: ubuntu-latest
     steps:
       - name: Require both platform suites

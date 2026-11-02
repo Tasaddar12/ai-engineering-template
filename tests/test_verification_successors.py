@@ -10,20 +10,45 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNTIME = ROOT / '.ai/runtime/phase.py'
-sys.path.insert(0, str(ROOT / '.ai/runtime'))
+RUNTIME = ROOT / 'engineer/bin/engineer.py'
+sys.path.insert(0, str(ROOT / 'engineer/bin'))
 from lib import verification_successors as successors
-from lib import verification_checks as checks
-from lib.paths import Workspace
+from lib import verification_successor_evidence as checks
+from lib import config, verification
+from lib.text import yaml_dump, yaml_load
 
 REPORT = '.planning/phases/01-test/01-VERIFICATION.md'
 CONTRACT = dict(schema=1, report_paths=[REPORT], protected_inputs='all-other-inputs',
                 revision_semantics='provenance-only')
 
 class SuccessorTests(unittest.TestCase):
+    def test_report_only_qualifier_never_exempts_success_bookkeeping(self):
+        self.write('.planning/STATE.md', 'status: verified\n')
+        self.commit('success bookkeeping')
+        head = self.git('rev-parse', 'HEAD')
+        result = self.proof(paths=['.planning/STATE.md'])
+        self.assertFalse(result['qualified'])
+        self.assertIn('unsupported generated report owner', result['reason'])
+        self.assertEqual(head, self.git('rev-parse', 'HEAD'))
+
+    def test_subset_preserves_full_identity_and_cannot_claim_aggregate_pass(self):
+        self.write('second.py', "from pathlib import Path\np=Path('.generated/second.count');p.parent.mkdir(exist_ok=True);p.write_text('1')\n")
+        self.configure([self.command, {'argv': [sys.executable, 'second.py']}])
+        self.commit('two checks for fresh subset')
+        result = self.cli('verification.run-checks', '--only-checks', '1')
+        self.assertFalse(result['passed'])
+        self.assertTrue(result['selected_passed'])
+        self.assertTrue(result['partial'])
+        self.assertEqual([1], result['selected_indices'])
+        self.assertEqual(1, result['checks'][0]['full_index'])
+        self.assertFalse((self.root / '.generated/count').exists())
+        self.assertEqual('1', (self.root / '.generated/second.count').read_text())
+        stored = json.loads((self.root / result['checks'][0]['receipt']).read_text())
+        self.assertEqual(stored['inputs']['configuration'], result['full_configuration_sha256'])
+        self.assertEqual(stored['inputs']['order'], result['full_order_sha256'])
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -49,7 +74,7 @@ class SuccessorTests(unittest.TestCase):
         target.write_text(content, encoding='utf-8', newline='\n')
 
     def configure(self, commands):
-        self.write('.planning/config.yaml', yaml.safe_dump({'verification': {'commands': commands}}))
+        self.write('.planning/config.yaml', yaml_dump({'verification': {'commands': commands}}))
 
     def git(self, *args):
         return subprocess.run(['git', *args], cwd=self.root, capture_output=True,
@@ -60,13 +85,13 @@ class SuccessorTests(unittest.TestCase):
         self.git('commit', '-qm', message)
 
     def cli(self, verb, *args, ok=True, environment=None):
-        env = dict(os.environ, PYTHONIOENCODING='utf-8')
+        env = dict(os.environ, PYTHONIOENCODING='utf-8', ENGINEER_ROOT=str(self.root))
         env.update(environment or {})
-        result = subprocess.run([sys.executable, str(RUNTIME), 'query', verb, *args],
+        result = subprocess.run([sys.executable, '-I', str(RUNTIME), 'query', verb, *args],
                                 cwd=self.root, env=env, capture_output=True, text=True, timeout=60)
         self.assertNotIn('Traceback', result.stderr)
-        payload = json.loads(result.stdout)
-        self.assertEqual(payload['ok'], ok, payload)
+        payload = json.loads(result.stdout if result.stdout.strip() else result.stderr)
+        self.assertEqual('error' not in payload, ok, payload)
         return payload
 
     def baseline(self):
@@ -98,7 +123,7 @@ class SuccessorTests(unittest.TestCase):
         self.assertEqual(result['checks'], original['checks'])
         self.assertEqual((self.root / '.generated/count').read_text(), '1')
         self.assertEqual(before, {p.name: p.read_bytes() for p in (self.root / checks.STORE).iterdir()})
-        receipt = json.loads((self.root / original['checks'][0]['receipt']).read_text())['receipt']
+        receipt = json.loads((self.root / original['checks'][0]['receipt']).read_text())
         self.assertTrue(receipt['inputs']['specification']['revision'])
         self.assertFalse(receipt['inputs']['specification']['reuse'])
         self.assertEqual(receipt['inputs']['revision'], self.r)
@@ -111,16 +136,52 @@ class SuccessorTests(unittest.TestCase):
         self.assertFalse(result['qualified'])
         self.assertEqual(result['fresh_required'], [0])
 
+    def test_currentness_consumer_keeps_exact_phase_report_and_other_gates(self):
+        self.write('.planning/ROADMAP.md',
+                   '### Phase 01: Test\n**Goal:** Preserve evidence\n**Requirements:** None\n\n'
+                   '### Phase 02: Other\n**Goal:** Separate owner\n**Requirements:** None\n')
+        self.write('.planning/phases/02-other/02-CONTEXT.md','Other phase')
+        for report,phase in ((REPORT,'01'),('.planning/phases/02-other/02-VERIFICATION.md','02')):
+            self.write(report,'---\nphase: "'+phase+'"\nstatus: passed\ncovered_files: []\n---\nEvidence\n')
+        self.commit('consumer fixture sources')
+        self.cli('verification.fingerprint','2'); self.commit('other report fingerprint')
+        self.cli('verification.fingerprint','1'); self.commit('phase report fingerprint')
+        self.baseline()
+        self.write(REPORT,(self.root/REPORT).read_text()+'\n## Audit\nComplete\n')
+        self.commit('publish passed report audit')
+        head = self.git('rev-parse','HEAD')
+        flags = ['--evidence-file',str(self.evidence),'--expected-head',head]
+        before = (self.root/REPORT).read_bytes()
+        self.assertFalse(self.cli('verification.current','1')['current'])
+        result = self.cli('verification.current','1',*flags)
+        self.assertTrue(result['current'],result)
+        self.assertTrue(result['successor_qualification']['qualified'])
+        self.assertEqual(before,(self.root/REPORT).read_bytes())
+        other = self.cli('verification.current','2',*flags)
+        self.assertFalse(other['current'])
+        self.assertFalse(other['successor_qualification']['qualified'])
+        self.cli('verification.current','1','--fresh-evidence-file',str(self.evidence),ok=False)
+        self.cli('verification.current','1','--expected-head',head,ok=False)
+        self.assertFalse(self.cli('verification.current','1','--evidence-file',str(self.evidence),
+                                  '--expected-head',self.r)['current'])
+        self.write('input.txt','dirty source')
+        self.assertFalse(self.cli('verification.current','1',*flags)['current'])
+        self.git('restore','input.txt')
+        report_text = (self.root/REPORT).read_text()
+        self.assertIn('status: "passed"',report_text)
+        self.write(REPORT,report_text.replace('status: "passed"','status: "gaps_found"'))
+        result = self.cli('verification.current','1',*flags)
+        self.assertFalse(result['current'])
+        self.assertIn('verification has not passed',result['reasons'])
+
     def proof(self, paths=None, tested=None, head=None, root=None):
         return successors.prove_report_only_successor(root or self.root, tested or self.r,
                     head or self.git('rev-parse', 'HEAD'), paths or [REPORT])
 
     def direct(self, evidence=None, fresh=None, root=None):
-        configuration = yaml.safe_load((self.root / '.planning/config.yaml').read_text())['verification']
-        commands = checks.normalise(configuration['commands'], 600)
-        with patch.dict(os.environ, {'PYTHONIOENCODING': 'utf-8'}):
-            return checks.validate_successor(Workspace(root or self.root), evidence or json.loads(self.evidence.read_text()),
-                        [REPORT], self.git('rev-parse', 'HEAD'), commands, configuration, 600, fresh)
+        with patch.dict(os.environ, {'PYTHONIOENCODING': 'utf-8', 'ENGINEER_ROOT': str(root or self.root)}):
+            return checks.validate_successor(evidence or json.loads(self.evidence.read_text()),
+                        [REPORT], self.git('rev-parse', 'HEAD'), fresh)
 
     def test_history_checks_touches_even_after_revert(self):
         self.write('input.txt', 'changed'); self.commit('source touch')
@@ -213,20 +274,23 @@ class SuccessorTests(unittest.TestCase):
                          dict(CONTRACT, report_paths=[REPORT, REPORT])]:
             with self.subTest(contract=contract):
                 with self.assertRaises(Exception):
-                    checks.normalise([dict(self.command, successor_independence=contract)], 600)
+                    config.normalize_check(dict(self.command, successor_independence=contract))
 
     def test_tampered_missing_receipt_logs_and_result_flags_reject(self):
         evidence = self.baseline(); self.report()
         row = evidence['checks'][0]
         receipt = self.root / row['receipt']; saved = receipt.read_bytes()
-        log = self.root / row['stdout_log']; log_saved = log.read_bytes()
         for changed in [b'{}', saved[:-5]]:
             receipt.write_bytes(changed)
             self.assertFalse(self.direct()['qualified'])
         receipt.unlink(); self.assertFalse(self.direct()['qualified']); receipt.write_bytes(saved)
-        log.write_bytes(b'tampered'); self.assertFalse(self.direct()['qualified'])
-        log.unlink(); self.assertFalse(self.direct()['qualified']); log.write_bytes(log_saved)
-        for field, value in [('passed', False), ('passed', None), ('snapshot_valid', False),
+        for stream in ('stdout','stderr'):
+            tampered = json.loads(saved); tampered[stream] = 'tampered inline output'
+            receipt.write_text(json.dumps(tampered)); self.assertFalse(self.direct()['qualified'])
+            tampered.pop(stream); receipt.write_text(json.dumps(tampered))
+            self.assertFalse(self.direct()['qualified'])
+        receipt.write_bytes(saved)
+        for field, value in [('status', False), ('status', None), ('snapshot_valid', False),
                              ('exit_code', False), ('exit_code', None), ('reused', True)]:
             with self.subTest(field=field, value=value):
                 mutated = copy.deepcopy(evidence); mutated['checks'][0][field] = value
@@ -243,7 +307,7 @@ class SuccessorTests(unittest.TestCase):
             self.assertFalse(self.direct(mutated)['qualified'])
 
     def test_source_test_dependency_and_config_history_changes_reject(self):
-        for name in ['tests/test.py', '.ai/runtime/phase.py', 'requirements.txt', '.planning/config.yaml']:
+        for name in ['tests/test.py', 'engineer/bin/engineer.py', 'requirements.txt', '.planning/config.yaml']:
             with self.subTest(name=name):
                 self.write(name, 'changed'); self.commit('protected change')
                 self.assertFalse(self.proof()['qualified'])
@@ -346,11 +410,11 @@ class SuccessorTests(unittest.TestCase):
         fresh = self.cli('verification.run-checks', '--only-checks', '1', '2')
         self.assertTrue(fresh['partial']); self.assertFalse(fresh['passed']); self.assertTrue(fresh['selected_passed'])
         self.assertEqual([r['full_index'] for r in fresh['checks']], [1, 2])
-        self.assertIn('report', fresh['checks'][1]['stdout_tail'])
+        self.assertIn('report', fresh['checks'][1]['stdout'])
         fresh_file = Path(self.temp.name) / 'fresh.json'; fresh_file.write_text(json.dumps(fresh))
         result = self.qualify(head, '--fresh-evidence-file', str(fresh_file))
         self.assertTrue(result['qualified'], result)
-        self.assertEqual([r['tested_revision'] for r in result['checks']], [evidence['tested_revision'], head, head])
+        self.assertEqual([r['revision'] for r in result['checks']], [evidence['tested_revision'], head, head])
         self.assertEqual((self.root / '.generated/count').read_text(), '1')
         self.assertEqual(result['checks'][0], evidence['checks'][0])
         for field, value in [('selected_indices', [2, 1]), ('selected_indices', [1, 1]),
@@ -385,16 +449,186 @@ class SuccessorTests(unittest.TestCase):
         self.configure([self.command, cheap]); self.commit('scoped HEAD reader')
         evidence = self.baseline()
         old_path = self.root / evidence['checks'][1]['receipt']; old_bytes = old_path.read_bytes()
+        index_path = self.root / checks.STORE / 'current.json'
+        index_bytes = index_path.read_bytes()
         head = self.report()
         fresh = self.cli('verification.run-checks', '--only-checks', '1')
         self.assertFalse(fresh['checks'][0]['reused'])
-        self.assertIn(head, fresh['checks'][0]['stdout_tail'])
+        self.assertIn(head, fresh['checks'][0]['stdout'])
         self.assertNotEqual(fresh['checks'][0]['receipt'], evidence['checks'][1]['receipt'])
         self.assertEqual(old_path.read_bytes(), old_bytes)
+        self.assertEqual(index_path.read_bytes(),index_bytes)
         self.assertTrue(self.direct(evidence, fresh)['qualified'])
         repeated = self.cli('verification.run-checks', '--only-checks', '1')
         self.assertFalse(repeated['checks'][0]['reused'])
         self.assertEqual(old_path.read_bytes(), old_bytes)
+        self.assertEqual(index_path.read_bytes(),index_bytes)
+
+    def test_execution_rewrite_restore_cannot_publish_successor_receipt(self):
+        self.write('check.py',"from pathlib import Path\np=Path('input.txt'); old=p.read_text(); p.write_text('temporary'); p.write_text(old)\n")
+        self.commit('check rewrites and restores its protected input')
+        result = self.cli('verification.run-checks',ok=False)
+        self.assertEqual('verification-input-drift',result['error'])
+        store = self.root / checks.STORE
+        self.assertFalse(store.exists() and list(store.glob('*.json')))
+
+    def test_native_name_selection_reuse_and_force_keep_existing_protocol(self):
+        self.command.update(id='first',revision=False,reuse=True,sources=['input.txt','check.py'],environment=[])
+        second = dict(id='second',argv=[sys.executable,'-c','print("second")'],sources=['input.txt'],environment=[])
+        self.configure([self.command,second]); self.commit('native named check configuration')
+        original = self.baseline()
+        old_path = self.root / original['checks'][0]['receipt']; old_bytes = old_path.read_bytes()
+        reused = self.cli('verification.run-checks','--checks','first')
+        self.assertTrue(reused['passed']); self.assertFalse(reused['partial'])
+        self.assertEqual(1,reused['count']); self.assertTrue(reused['checks'][0]['reused'])
+        self.assertEqual('1',(self.root/'.generated/count').read_text())
+        forced = self.cli('verification.run-checks','--checks','first','--force')
+        self.assertTrue(forced['passed']); self.assertFalse(forced['checks'][0]['reused'])
+        self.assertEqual('2',(self.root/'.generated/count').read_text())
+        self.assertEqual(old_bytes,old_path.read_bytes())
+        self.cli('verification.run-checks','--checks','first','--only-checks','0',ok=False)
+
+    def test_native_receipt_input_identity_does_not_expose_declared_secrets(self):
+        secret = 'successor-fixture-secret-value'
+        self.command.update(argv=[sys.executable,'-c','import os; print(os.environ["API_TOKEN"])'],
+                            environment={'API_TOKEN':secret})
+        self.command.pop('command')
+        self.configure([self.command]); self.commit('native redaction configuration')
+        evidence = self.baseline()
+        receipt = json.loads((self.root/evidence['checks'][0]['receipt']).read_text())
+        self.assertNotIn(secret,json.dumps(receipt))
+        self.assertIn('[environment value]',receipt['stdout'])
+
+    def test_named_selection_does_not_guard_an_unselected_ignored_output(self):
+        self.write('build.py',"from pathlib import Path\np=Path('.generated/out');p.parent.mkdir(exist_ok=True);p.write_text('built')\n")
+        self.write('inspect.py',"from pathlib import Path\nassert Path('.generated/out').read_text()=='built'\n")
+        build = dict(id='build',argv=[sys.executable,'build.py'],sources=['build.py'],environment=[])
+        inspect = dict(id='inspect',argv=[sys.executable,'inspect.py'],sources=['.generated/out'],environment=[])
+        for unselected_contract in (False,True):
+            with self.subTest(unselected_contract=unselected_contract):
+                other = dict(inspect)
+                if unselected_contract:
+                    other['successor_independence'] = copy.deepcopy(CONTRACT)
+                output = self.root/'.generated/out'
+                if output.exists():
+                    output.unlink()
+                self.configure([build,other]); self.commit('ordinary named selection configuration')
+                result = self.cli('verification.run-checks','--checks','build','--force')
+                self.assertTrue(result['passed'],result)
+                self.assertEqual(['build'],[row['name'] for row in result['checks']])
+                self.assertEqual('built',output.read_text())
+
+    def test_ordinary_default_sources_allow_planning_output(self):
+        command = dict(id='build',argv=[sys.executable,'-c',
+            "from pathlib import Path; Path('.planning/out').write_text('built')"],environment=[])
+        self.configure([command]); self.commit('ordinary default-source planning output')
+        for selection in ([],['--checks','build']):
+            with self.subTest(selection=selection):
+                result = self.cli('verification.run-checks',*selection,'--force')
+                self.assertTrue(result['passed'],result)
+                self.assertEqual('built',(self.root/'.planning/out').read_text())
+
+    def directory_fixture(self):
+        (self.root/'.generated/existing/nested').mkdir(parents=True)
+        self.write('check.py',"from pathlib import Path\nassert Path('.generated').is_dir()\nassert not Path('.generated/changed').exists()\n")
+        self.command.update(sources=['check.py','.generated'],environment=[])
+        self.configure([self.command]); self.commit('declared directory contract')
+        self.r = self.git('rev-parse','HEAD')
+        evidence = self.baseline(); self.report()
+        return evidence
+
+    def test_unchanged_declared_empty_directories_qualify(self):
+        evidence = self.directory_fixture()
+        result = self.qualify()
+        self.assertTrue(result['qualified'],result)
+        inputs = json.loads((self.root/evidence['checks'][0]['receipt']).read_text())['inputs']
+        entries = {row[0]:row[1] for row in inputs['directory_inputs']['entries']}
+        for name in ('.generated','.generated/existing','.generated/existing/nested'):
+            self.assertEqual('directory',entries[name])
+
+    def test_declared_directory_add_remove_rename_and_mode_changes_reject(self):
+        self.directory_fixture()
+        changed = self.root/'.generated/changed'
+        nested = self.root/'.generated/existing/nested'
+        renamed = self.root/'.generated/existing/renamed'
+        for mutation in ('add','remove','rename'):
+            with self.subTest(mutation=mutation):
+                if mutation == 'add': changed.mkdir()
+                elif mutation == 'remove': nested.rmdir()
+                else: nested.rename(renamed)
+                result = self.qualify()
+                self.assertFalse(result['qualified'],result)
+                self.assertIn('directory',result['reason'])
+                if mutation == 'add': changed.rmdir()
+                elif mutation == 'remove': nested.mkdir()
+                else: renamed.rename(nested)
+        from types import SimpleNamespace
+        original = Path.lstat
+        target = (self.root/'.generated').resolve()
+        def different_mode(path,*args,**kwargs):
+            info = original(path,*args,**kwargs)
+            if path == target:
+                return SimpleNamespace(st_mode=info.st_mode ^ 0o010,
+                    st_file_attributes=getattr(info,'st_file_attributes',0),st_mtime_ns=info.st_mtime_ns,
+                    st_ctime_ns=info.st_ctime_ns,st_ino=info.st_ino)
+            return info
+        with patch.object(Path,'lstat',different_mode):
+            result = self.direct()
+        self.assertFalse(result['qualified'],result)
+        self.assertIn('directory',result['reason'])
+
+    def test_all_configured_declared_directory_topology_protects_retained_checks(self):
+        (self.root/'.generated').mkdir()
+        self.write('check.py','print("retained")\n')
+        self.command.update(sources=['check.py'],environment=[])
+        cheap = dict(argv=[sys.executable,'-c','print("fresh")'],sources=['.generated'],environment=[],reuse=False)
+        self.configure([self.command,cheap]); self.commit('protected directory belongs to another check')
+        evidence = self.baseline(); self.report()
+        (self.root/'.generated/changed').mkdir()
+        fresh = self.cli('verification.run-checks','--only-checks','1')
+        result = self.direct(evidence,fresh)
+        self.assertFalse(result['qualified'],result)
+        self.assertEqual([0,1],result['fresh_required'])
+        self.assertIn('directory',result['reason'])
+
+    def test_directory_rewrite_restore_during_qualification_rejects(self):
+        self.directory_fixture()
+        original = checks.authentic_result
+        def mutate(root,row):
+            parent = self.root/'.generated'
+            before = parent.stat()
+            child = parent/'temporary'; child.mkdir(); child.rmdir()
+            os.utime(parent,ns=(before.st_atime_ns,before.st_mtime_ns+1000000))
+            return original(root,row)
+        with patch.object(checks,'authentic_result',side_effect=mutate):
+            result = self.direct()
+        self.assertFalse(result['qualified'],result)
+        self.assertIn('moved',result['reason'])
+
+    def test_directory_rewrite_restore_during_execution_rejects(self):
+        (self.root/'.generated').mkdir()
+        self.write('check.py',"from pathlib import Path\nimport os\np=Path('.generated');s=p.stat();q=p/'temporary';q.mkdir();q.rmdir();os.utime(p,ns=(s.st_atime_ns,s.st_mtime_ns+1000000))\n")
+        self.command.update(sources=['check.py','.generated'],environment=[])
+        self.configure([self.command]); self.commit('directory rewrite restore in execution')
+        result = self.cli('verification.run-checks',ok=False)
+        self.assertEqual('verification-input-drift',result['error'])
+
+    def test_report_parent_directory_and_receipt_publication_remain_supported(self):
+        self.command.update(sources=['.planning'],environment=[])
+        self.configure([self.command]); self.commit('declared report parent directory')
+        self.baseline(); self.report()
+        result = self.qualify()
+        self.assertTrue(result['qualified'],result)
+
+    def test_directory_topology_manifest_validation_fails_closed(self):
+        (self.root/'.generated').mkdir()
+        value = checks.directory_inputs(self.root,['.generated'])
+        cases = [None,dict(value,schema=True),dict(value,extra=True),dict(value,entries=[]),
+                 dict(value,sha256='wrong'),dict(value,roots=['../escape'])]
+        for candidate in cases:
+            with self.subTest(candidate=candidate):
+                with self.assertRaises(ValueError):
+                    checks.validate_directory_inputs(candidate)
 
     def test_declared_dependency_rewrite_restore_during_validation_rejects(self):
         self.write('.generated/dependency', 'one')
@@ -413,19 +647,21 @@ class SuccessorTests(unittest.TestCase):
         evidence = self.baseline(); self.report()
         receipt_path = self.root / evidence['checks'][0]['receipt']
         original = json.loads(receipt_path.read_text())
-        for change in ['bundle', 'runtime']:
+        for change in ['bundle', 'runtime', 'directory_inputs', 'protected_directory_inputs']:
             envelope = copy.deepcopy(original)
-            if change == 'bundle': envelope['receipt']['inputs'].pop('successor')
-            else: envelope['receipt']['inputs']['runtime']['implementation'] = 'old-validator'
+            if change == 'bundle': envelope['inputs'].pop('successor')
+            elif change == 'runtime': envelope['inputs']['runtime']['implementation'] = 'old-validator'
+            else: envelope['inputs'].pop(change)
             # Even a structurally self-consistent rewritten envelope cannot
             # acquire the original prospective inputs or the current runtime.
-            key = checks.digest(envelope['receipt']['inputs'])
+            key = 'mutated-' + change
             new_reference = checks.STORE + '/' + key + '.json'
-            envelope['receipt']['key'] = key
-            envelope['receipt']['result']['receipt'] = new_reference
-            envelope['sha256'] = checks.digest(envelope['receipt'])
+            envelope['receipt_id'] = key
+            envelope['receipt'] = new_reference
+            envelope['receipt_hash'] = verification._receipt_hash(envelope)
             (self.root / new_reference).write_text(json.dumps(envelope))
-            modified = copy.deepcopy(evidence); modified['checks'][0]['receipt'] = new_reference
+            modified = copy.deepcopy(evidence)
+            modified['checks'][0] = {**envelope,'reused':False,'reusable':False}
             self.assertFalse(self.direct(modified)['qualified'])
 
     def test_duplicate_json_fields_and_boolean_schema_reject(self):
@@ -433,8 +669,8 @@ class SuccessorTests(unittest.TestCase):
         with self.assertRaises(ValueError): checks.strict_json('{"exit_code":NaN}')
         evidence = self.baseline(); self.report()
         path = self.root / evidence['checks'][0]['receipt']
-        envelope = json.loads(path.read_text()); envelope['receipt']['schema'] = True
-        envelope['sha256'] = checks.digest(envelope['receipt']); path.write_text(json.dumps(envelope))
+        envelope = json.loads(path.read_text()); envelope['schema'] = True
+        envelope['receipt_hash'] = verification._receipt_hash(envelope); path.write_text(json.dumps(envelope))
         self.assertFalse(self.direct()['qualified'])
 
     def test_portable_history_helper_freezes_source_during_traversal(self):
