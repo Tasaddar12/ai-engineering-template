@@ -255,7 +255,10 @@ def exports(source, pin, target, host, scope, no_hooks=False):
              '<!-- ENGINEER MANAGED END -->').encode()
     add(entry, managed_block(prior, block, '<!-- ENGINEER MANAGED BEGIN -->', '<!-- ENGINEER MANAGED END -->'), origin='generated:entry')
     shared.add(entry)
-    hook_command = '"' + sys.executable + '" -I "' + str(ns / 'hooks/worktree-path-guard.py') + '" --host ' + host
+    hook_command = shlex.join([Path(sys.executable).as_posix(), '-I',
+                               (ns / 'hooks/worktree-path-guard.py').as_posix(), '--host', host])
+    # Retire the exact command generated before paths were shell-quoted as data.
+    legacy_hook_command = '"' + sys.executable + '" -I "' + str(ns / 'hooks/worktree-path-guard.py') + '" --host ' + host
     if host == 'codex':
         name = nsname + '/config.toml'
         path = safe(target, name)
@@ -278,8 +281,18 @@ def exports(source, pin, target, host, scope, no_hooks=False):
         settings = json.loads(path.read_text(encoding='utf-8-sig')) if path.exists() else {}
         hooks = settings.setdefault('hooks', {})
         entries = hooks.setdefault('PreToolUse', [])
-        # Remove only this install's own exact guard registration, never other hooks.
-        entries[:] = [e for e in entries if not any(h.get('command') == hook_command for h in e.get('hooks', []))]
+        # A user can place several hooks in one matcher group. Remove only our
+        # exact command entries; retain sibling order and all group metadata.
+        preserved = []
+        for group in entries:
+            siblings = [h for h in group.get('hooks', [])
+                        if not (h.get('type') == 'command'
+                                and h.get('command') in (hook_command, legacy_hook_command))]
+            if len(siblings) == len(group.get('hooks', [])):
+                preserved.append(group)
+            elif siblings:
+                preserved.append({**group, 'hooks': siblings})
+        entries[:] = preserved
         entries.append({'matcher': 'Agent|Task|Write|Edit|MultiEdit|NotebookEdit|apply_patch',
                         'hooks': [{'type': 'command', 'command': hook_command, 'timeout': 10}]})
         add(name, json.dumps(settings, indent=2, ensure_ascii=False).encode() + b'\n', origin='generated:claude-settings')
@@ -518,7 +531,17 @@ def apply(plan, selected=None):
                 raise Refusal('plan-content-corrupt', entry['path'])
             writes[entry['path']] = (content, entry['mode'])
             manifest['files'][entry['path']] = {'sha256': entry['sha256'], 'mode': entry['mode'], 'source_path': entry['source_path']}
-        manifest['complete'] = not any(e['action'] not in ('unchanged', 'backup-only') and e['path'] not in writes for e in plan['entries'])
+        # Identical pre-existing bytes do not establish ownership when --select
+        # applies only part of a plan. Every current export must have both the
+        # expected ownership record and the expected installed bytes/mode.
+        current_exports = [e for e in fresh['entries'] if not e.get('legacy_path')]
+        manifest['complete'] = all(
+            manifest['files'].get(e['path']) == {
+                'sha256': e['sha256'], 'mode': e['mode'], 'source_path': e['source_path']}
+            and ({'sha256': sha(writes[e['path']][0]), 'mode': writes[e['path']][1]}
+                 if e['path'] in writes else current(root, e['path'])) == {
+                     'sha256': e['sha256'], 'mode': e['mode']}
+            for e in current_exports)
         writes[manifest_name] = (json.dumps(manifest, indent=2, ensure_ascii=False).encode() + b'\n', 0o644)
         for index, (name, (content, mode)) in enumerate(writes.items()):
             before = current(root, name)

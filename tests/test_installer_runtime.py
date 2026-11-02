@@ -182,6 +182,7 @@ class CurrentInstallerTests(unittest.TestCase):
         entry = next(e for e in preview["entries"] if e["path"] == ".codex/commands/ship.md")
         entry["resolution"] = "backup-and-replace"
         result = self.apply_plan(preview, "--select", entry["path"])
+        self.assertTrue(result["complete"])
         journal = json.loads((Path(result["backup"]) / "journal.json").read_text())
         change = next(e for e in journal["changes"] if e["path"] == entry["path"])
         self.assertEqual(b"# Customer shipping process\n", (Path(result["backup"]) / change["backup"]).read_bytes())
@@ -253,6 +254,82 @@ class CurrentInstallerTests(unittest.TestCase):
                                 capture_output=True, text=True, encoding="utf-8", timeout=30)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual("engineer-runtime", result.stdout.strip())
+
+    def test_reviewfix_claude_mixed_hook_group_preserves_siblings_and_metadata(self):
+        self.install("claude")
+        settings_path = self.target / ".claude/settings.json"
+        settings = json.loads(settings_path.read_text())
+        own = settings["hooks"]["PreToolUse"][0]["hooks"][0]
+        legacy = ('"' + sys.executable + '" -I "' + str(self.target / ".claude/hooks/worktree-path-guard.py")
+                  + '" --host claude')
+        siblings = [{"type": "command", "command": "keep-first", "timeout": 7},
+                    {"type": "command", "command": "keep-last", "timeout": 19}]
+        original = {"matcher": "Write|Edit", "timeout": 23, "custom_metadata": {"keep": True},
+                    "hooks": [siblings[0], own, {**own, "command": legacy}, siblings[1]]}
+        settings["hooks"]["PreToolUse"] = [original]
+        settings_path.write_text(json.dumps(settings))
+        self.install("claude")
+        refreshed = json.loads(settings_path.read_text())["hooks"]["PreToolUse"]
+        self.assertEqual({**original, "hooks": siblings}, refreshed[0])
+        managed = [hook for group in refreshed for hook in group["hooks"]
+                   if hook.get("command") in (own["command"], legacy)]
+        self.assertEqual([own], managed)
+        before = settings_path.read_bytes()
+        self.assertTrue(self.install("claude")["no_op"])
+        self.assertEqual(before, settings_path.read_bytes())
+
+    def test_reviewfix_registered_hook_executes_literal_paths_and_retains_advice(self):
+        shell = posix_shell.find_posix_shell("bash")
+        if not shell:
+            self.skipTest("No POSIX shell is installed")
+        for host in ("codex", "claude"):
+            with self.subTest(host=host):
+                self.target = self.base / (host + " project $ENGINEER_REVIEW_LITERAL ' $(printf injected)")
+                self.target.mkdir()
+                git(self.target, "init", "-b", "main")
+                self.install(host)
+                namespace = self.target / ("." + host)
+                settings = (tomllib.loads((namespace / "config.toml").read_text()) if host == "codex"
+                            else json.loads((namespace / "settings.json").read_text()))
+                registered = settings["hooks"]["PreToolUse"][0]["hooks"][0]["command"]
+                payload = {"tool_name": "Write", "cwd": str(self.target),
+                           "tool_input": {"file_path": str(self.base / "outside-checkout.txt")}}
+                result = subprocess.run([shell, "-c", registered], cwd=self.base, input=json.dumps(payload),
+                                        env={**os.environ, "ENGINEER_REVIEW_LITERAL": "expanded"},
+                                        capture_output=True, text=True, encoding="utf-8", timeout=30)
+                self.assertEqual(0, result.returncode, result.stderr)
+                advice = json.loads(result.stdout)["hookSpecificOutput"]["additionalContext"]
+                self.assertIn("Write target is outside the actual assigned checkout", advice)
+
+    def test_reviewfix_partial_selection_does_not_claim_unowned_identical_exports(self):
+        source = self.base / "minimal-source"
+        (source / "engineer/bin").mkdir(parents=True)
+        (source / "commands").mkdir()
+        (source / "engineer/bin/engineer.py").write_text("# Fixture runtime\n")
+        (source / "commands/task.md").write_text("# Fixture command\n")
+        git(source, "init", "-b", "main")
+        git(source, "config", "user.name", "Installer Fixture")
+        git(source, "config", "user.email", "fixture@example.invalid")
+        git(source, "add", "engineer", "commands")
+        git(source, "commit", "-m", "Minimal source ownership fixture")
+        exported = installer.exports(source, "HEAD", self.target, "codex", "local", no_hooks=True)
+        self.assertEqual(5, len(exported["payload"]))
+        for name, (data, mode) in exported["payload"].items():
+            installer.atomic(self.target / name, data, mode)
+        preview = self.cli("--source", source, "--ref", "HEAD", "--target", self.target,
+                           "--host", "codex", "--local", "--no-hooks", "--dry-run")
+        self.assertTrue(all(e["action"] == "unchanged" for e in preview["entries"]))
+        selected = preview["entries"][0]["path"]
+        applied = self.apply_plan(preview, "--select", selected)
+        self.assertFalse(applied["complete"])
+        manifest_path = self.target / ".codex/engineer-install/manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        self.assertFalse(manifest["complete"])
+        self.assertEqual([selected], list(manifest["files"]))
+        preview = self.cli("--source", source, "--ref", "HEAD", "--target", self.target,
+                           "--host", "codex", "--local", "--no-hooks", "--dry-run")
+        self.assertTrue(self.apply_plan(preview)["complete"])
+        self.assertEqual(5, len(json.loads(manifest_path.read_text())["files"]))
 
 
 class ExportJsonAdapters(unittest.TestCase):
