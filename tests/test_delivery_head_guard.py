@@ -1,7 +1,5 @@
 """Main PR109 merge-head and provider-race regressions on the installed runtime API."""
 import importlib.util
-import json
-from pathlib import Path
 import sys
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -103,6 +101,33 @@ class MergeHeadGuard(RuntimeCase):
         with self.assertRaises(Failure):
             self.merge()
         self.provider.assert_not_called()
+
+    def test_failing_and_pending_checks_remain_blocking(self):
+        for conclusion in ("FAILURE", "PENDING", "IN_PROGRESS"):
+            self.pull["statusCheckRollup"] = [{"name": "validate", "conclusion": conclusion}]
+            with self.subTest(conclusion=conclusion), self.assertRaises(Failure):
+                self.merge()
+        self.provider.assert_not_called()
+
+    def test_invalid_provider_identity_and_ready_refusal_do_not_merge(self):
+        for number in (True, "12", 0, None):
+            self.pull["number"] = number
+            with self.subTest(number=number), self.assertRaises(Failure):
+                self.merge()
+        self.provider.assert_not_called()
+        self.pull.update(number=12, isDraft=True)
+        self.provider.return_value = SimpleNamespace(returncode=1, stderr="not ready", stdout="")
+        with self.assertRaises(Failure):
+            self.merge()
+        self.assertEqual(["pr", "ready", "12"], self.provider.call_args.args[0])
+        self.assertEqual(1, self.provider.call_count)
+
+    def test_boolean_merged_identity_is_not_successful_readback(self):
+        self.pull["number"] = 1
+        self.views.side_effect = [self.pull, {**self.merged, "number": True}]
+        result, status = self.merge()
+        self.assertFalse(result["merged"])
+        self.assertEqual(1, status)
 
     def test_qualification_requires_expected_head_and_is_revalidated(self):
         with self.assertRaises(Failure):

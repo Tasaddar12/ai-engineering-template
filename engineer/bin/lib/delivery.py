@@ -105,6 +105,8 @@ def command(args, action):
             raise Failure("pr-not-found", branch)
         if pr.get("state") != "OPEN":
             raise Failure("pr-not-open", "The selected pull request is not OPEN")
+        if type(pr.get("number")) is not int or pr["number"] < 1:
+            raise Failure("pr-identity-invalid", "Provider returned an invalid pull-request number")
         if expected_head is not None and pr.get("headRefOid") != expected_head:
             raise Failure("head-mismatch", "OPEN PR head differs from the expected qualifying head")
         verdict = classify_checks(pr.get("statusCheckRollup", []))
@@ -113,7 +115,9 @@ def command(args, action):
         if verdict["status"] == "none" and not verification.configured_checks():
             raise Failure("missing-check-evidence", "Merging without CI requires configured passing local checks")
         if pr.get("isDraft"):
-            gh(["pr", "ready", str(pr["number"])])
+            ready = gh(["pr", "ready", str(pr["number"])])
+            if ready.returncode:
+                raise Failure("ready-refused", ready.stderr.strip() or "Provider refused the ready transition")
         if expected_head is not None and run(["git", "rev-parse", "HEAD"], root()).stdout.strip() != expected_head:
             raise Failure("head-mismatch", "Local HEAD moved before provider merge")
         if args.has("evidence-file"):
@@ -128,6 +132,7 @@ def command(args, action):
             raise Failure("merge-refused", result.stderr.strip() or "Provider refused the merge")
         merged = view(branch)
         observed = bool(merged and merged.get("state") == "MERGED"
+                        and type(merged.get("number")) is int
                         and merged.get("number") == pr["number"] and merged.get("url") == pr["url"]
                         and merged.get("headRefName") == branch
                         and (expected_head is None or merged.get("headRefOid") == expected_head))
