@@ -29,10 +29,27 @@ installer = load("update_installer", ROOT / ".ai/install.py")
 legacy_update = load("install_update", ROOT / ".ai/install_update.py")
 
 
+def seed_installer_skills(source):
+    """Give the template installer the `.agents/skills/` source layout it reads.
+
+    The repository's own skills live in `skills/` since 45b28e8 deleted
+    `.agents/`; the template installer still consumes `.agents/skills/<name>/
+    SKILL.md` from its pinned source, so each fixture mirrors `.ai/commands/`
+    one-for-one there, exactly as the deleted tree did.
+    """
+    for command in sorted((ROOT / ".ai" / "commands").glob("*.md")):
+        if command.name in ("README.md", "install.md"):
+            continue
+        skill = source / ".agents" / "skills" / command.stem / "SKILL.md"
+        skill.parent.mkdir(parents=True, exist_ok=True)
+        skill.write_bytes(command.read_bytes())
+
+
 def seed_source(directory):
-    for name in (".ai", ".agents", ".planning"):
+    for name in (".ai", ".planning"):
         shutil.copytree(ROOT / name, directory / name,
                         ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+    seed_installer_skills(directory)
     subprocess.run(["git", "init", "--quiet", str(directory)], check=True)
     subprocess.run(["git", "add", "."], cwd=directory, check=True,
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -464,9 +481,7 @@ class ReviewedUpdates(unittest.TestCase):
         cls.temp = tempfile.TemporaryDirectory(prefix="update-fixture-")
         cls.source = Path(cls.temp.name) / "source"
         cls.source.mkdir()
-        for folder in (".ai", ".agents", ".planning"):
-            shutil.copytree(ROOT / folder, cls.source / folder,
-                            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+        seed_source(cls.source)
         git("init", "--quiet", cwd=cls.source)
         git("add", ".", cwd=cls.source)
         git("-c", "user.name=Fixture", "-c", "user.email=test@example.invalid", "commit", "--quiet", "-m", "baseline", cwd=cls.source)

@@ -40,7 +40,7 @@ If MILESTONES.md doesn't exist, create it with header:
 
 <guidelines>
 **When to create milestones:**
-- Initial v1.0 MVP shipped
+- Initial v1.0 shipped
 - Major version releases (v2.0, v3.0)
 - Significant feature milestones (v1.1, v1.2)
 - Before archiving planning (capture what was shipped)
@@ -89,7 +89,7 @@ If MILESTONES.md doesn't exist, create it with header:
 
 ---
 
-## v1.0 MVP (Shipped: 2025-11-25)
+## v1.0 (Shipped: 2025-11-25)
 
 **Delivered:** Menu bar weather app with current conditions and 3-day forecast
 

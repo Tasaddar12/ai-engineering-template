@@ -13,7 +13,7 @@ def guidance_files():
     for name in ("AGENTS.md", "CLAUDE.md", "README.md"):
         if (ROOT / name).is_file():
             yield ROOT / name
-    for directory in (".ai", ".codex", ".claude", ".agents", ".planning", "docs"):
+    for directory in (".ai", ".codex", ".claude", "skills", ".planning", "docs"):
         for path in (ROOT / directory).rglob("*.md"):
             relative = path.relative_to(ROOT).as_posix()
             if any(relative.startswith(root + "/templates/") for root in (".ai", ".codex", ".claude")):

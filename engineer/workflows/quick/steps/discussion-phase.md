@@ -2,7 +2,7 @@
 
 Display banner:
 ```
-### GSD ► DISCUSSING QUICK TASK
+### Engineer ► DISCUSSING QUICK TASK
 
 ◆ Surfacing gray areas for: ${DESCRIPTION}
 ```

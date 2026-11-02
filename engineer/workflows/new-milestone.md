@@ -1,6 +1,6 @@
 <purpose>
 
-Start a new milestone cycle for an existing project. Loads project context, gathers milestone goals (from MILESTONE-CONTEXT.md or conversation), updates PROJECT.md and STATE.md, optionally runs parallel research, defines scoped requirements with REQ-IDs, spawns the roadmapper to create phased execution plan, and commits all artifacts. Brownfield equivalent of new-project.
+Start a new milestone cycle for an existing project. Loads project context, gathers milestone goals (from MILESTONE-CONTEXT.md or conversation), updates PROJECT.md and STATE.md, optionally runs parallel research, defines scoped requirements with REQ-IDs, spawns the planner to create phased execution plan, and commits all artifacts. Brownfield equivalent of new-project.
 
 </purpose>
 
@@ -11,10 +11,10 @@ Read all files referenced by the invoking prompt's execution_context before star
 </required_reading>
 
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd-project-researcher — Researches project-level technical decisions
-- gsd-research-synthesizer — Synthesizes findings from parallel research agents
-- gsd-roadmapper — Creates phased execution roadmaps
+Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
+- phase-researcher — Researches the assigned project-level technical decisions
+- doc-writer — Synthesizes the complete findings from parallel research agents
+- planner — Proposes phased execution roadmaps for coordinator application
 </available_agent_types>
 
 <process>
@@ -24,50 +24,76 @@ Valid GSD subagent types (use exact names — do not fall back to 'general-purpo
 Parse `$ARGUMENTS` before doing anything else:
 
 - `--reset-phase-numbers` flag → opt into restarting roadmap phase numbering at `1`. If absent, keep the current behavior of continuing phase numbering from the previous milestone.
-- `--ws <name>` flag → active workstream scope, parsed into `GSD_WS`
-- remaining text, with `--ws <name>` stripped → use as milestone name if present, captured into `MILESTONE_ARG`
 
-Parse `GSD_WS` and `MILESTONE_ARG` using the established idiom (see `verify-work.md`):
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving gsd_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok gsd_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
-GSD_WS=""
-echo "$GSD_ARGS" | grep -qE -- '--ws[[:space:]]+[A-Za-z0-9._-]+' && GSD_WS=$(echo "$GSD_ARGS" | grep -oE -- '--ws[[:space:]]+[A-Za-z0-9._-]+')
-MILESTONE_ARG=$(echo "$GSD_ARGS" | sed -E 's/--ws[[:space:]]+[A-Za-z0-9._-]+//g' | xargs)
-# #4456: persist GSD_WS to a file so later steps' bash fences (each a
-# separate shell) can forward it — the same cross-fence problem Step 5/6
-# already solve for OUTGOING_MILESTONE via .gsd-outgoing-milestone.
-printf '%s' "$GSD_WS" > .planning/.gsd-ws-arg 2>/dev/null || true
-RESPONSE_LANGUAGE=$(gsd_run query config-get response_language --raw --default "" 2>/dev/null || echo "")
-# #2994: EARLY, section-manifest-only init.new-milestone call — needed here
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
+_engineer_identity_ok() {
+  [ -f "$1" ] || return 1
+  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
+}
+_engineer_select() {
+  for _engineer_candidate do
+    if _engineer_identity_ok "$_engineer_candidate"; then
+      ENGINEER_RUN="$_engineer_candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+if [ -n "${ENGINEER_RUN:-}" ]; then
+  _engineer_identity_ok "$ENGINEER_RUN" || {
+    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
+    exit 1
+  }
+else
+  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
+  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
+  _engineer_select \
+    "$_engineer_root/engineer/bin/engineer_run" \
+    "$_engineer_runtime_root/engineer/bin/engineer_run" \
+    "$_engineer_root/.claude/engineer/bin/engineer_run" \
+    "$_engineer_root/.codex/engineer/bin/engineer_run" \
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
+    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
+    "$_engineer_path_candidate" || {
+    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
+    exit 1
+  }
+fi
+export ENGINEER_RUN
+engineer_run() {
+  sh "$ENGINEER_RUN" "$@"
+}
+if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
+  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
+fi
+MILESTONE_ARG=$(echo "$ENGINEER_ARGS" | xargs)
+RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --default "" 2>/dev/null || echo "")
+# EARLY, section-manifest-only init.new-milestone call — needed here
 # (before Step 4) to gate the project-md-milestone-write section. This is
 # DELIBERATELY separate from Step 7's full init.new-milestone call below,
 # which must stay AFTER Step 6's phase archival/phases.clear so its
 # phase_dir_count / roadmap_exists / latest_completed_milestone fields
 # reflect POST-archival state — moving that call here would compute those
-# fields too early and corrupt the roadmapper's phase-numbering context.
+# fields too early and corrupt the planner's phase-numbering context.
 # init.new-milestone is a pure read (no mutation), so calling it twice is
 # safe; only `section_manifest` is consumed from this early call.
-# #4456: $GSD_WS forwarded (same fence as the parse above, no round-trip
-# needed here) so the section manifest — and the shared PROJECT.md write
-# guard it gates — reflects the EXPLICITLY requested workstream, not
-# whatever ambient GSD_WORKSTREAM/session pointer happens to be active.
-INIT_EARLY=$(gsd_run query init.new-milestone ${GSD_WS:+--ws=${GSD_WS##* }})
-if [[ "$INIT_EARLY" == @file:* ]]; then INIT_EARLY=$(cat "${INIT_EARLY#@file:}"); fi
+INIT_EARLY=$(engineer_run query init.new-milestone )
 ```
 
-`GSD_WS` must chain to every downstream routing suggestion in this workflow (Step 4's shared-file guard, and the `/gsd:discuss-phase`/`/gsd:plan-phase` routing hints below) per the routing-propagation contract in `gsd-core/references/workstream-flag.md` — never let it silently drop.
 
 **If `response_language` is set:** All user-facing output of this workflow — narration between tool calls, status updates, progress notes, findings, questions, prompts, and explanations (including the "What do you want to build next?" prompt and seed-selection questions below) — MUST be presented in `{response_language}`. Technical terms, code, file paths, and subagent prompts stay in English — only user-facing output is translated.
 
 - Read PROJECT.md (existing project, validated requirements, decisions)
 - Read MILESTONES.md (what shipped previously)
 - Read STATE.md (pending todos, blockers)
-- Check for MILESTONE-CONTEXT.md (from /gsd-discuss-milestone)
+- Check for MILESTONE-CONTEXT.md (from /discuss-milestone)
 
 ## 2. Gather Milestone Goals
 
@@ -143,7 +169,7 @@ AskUserQuestion(
 Before writing any files, present a summary of what was gathered and ask for confirmation.
 
 ```
-### GSD ► MILESTONE SUMMARY
+### Engineer ► MILESTONE SUMMARY
 
 **Milestone v[X.Y]: [Name]**
 
@@ -170,27 +196,25 @@ AskUserQuestion:
 
 ## 4. Update PROJECT.md
 
-PROJECT.md is shared across workstreams (`gsd-core/references/workstream-flag.md` marks it `# Shared` in the directory diagram). This step has two independently-scoped parts — only Part A is workstream-guarded.
 
-<!-- gsd:section id="project-md-milestone-write" when="state:flat-mode" -->
-If `section_manifest` (from `INIT_EARLY`) is `null` or `"project-md-milestone-write"` is in its `included` list: read and execute `gsd-core/workflows/new-milestone/steps/project-md-milestone-write.md`. Otherwise (a workstream is active) skip — do not read the file; Part B below still runs regardless of `GSD_WS`.
-<!-- /gsd:section -->
+Read and execute `engineer/workflows/new-milestone/steps/project-md-milestone-write.md`.
 
-**Part B — Evolution structural repair (always runs, regardless of `GSD_WS`).** `## Evolution` is a shared, idempotent structural section, not workstream state — a pre-Evolution project must be backfilled whether or not a workstream is active, so this part is NOT covered by Part A's skip. Ensure the `## Evolution` section exists in PROJECT.md. If missing (projects created before this feature), add it before the footer:
+Ensure the Evolution section exists; if absent, add the following narrative:
+
 
 ```markdown
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
-**After each phase transition** (via `/gsd-transition`):
+**After each phase transition** (through the canonical phase-completion owner):
 1. Requirements invalidated? → Move to Out of Scope with reason
 2. Requirements validated? → Move to Validated with phase reference
 3. New requirements emerged? → Add to Active
 4. Decisions to log? → Add to Key Decisions
 5. "What This Is" still accurate? → Update if drifted
 
-**After each milestone** (via `/gsd:complete-milestone`):
+**After each milestone** (via `/complete-milestone`):
 1. Full review of all sections
 2. Core Value check — still the right priority?
 3. Audit Out of Scope — reasons still valid?
@@ -207,19 +231,18 @@ blockers, todos) is preserved across the switch — symmetric with
 `milestone.complete`.
 
 ```bash
-GSD_WS_ARG=$(cat .planning/.gsd-ws-arg 2>/dev/null || true)
-OUTGOING_MILESTONE=$(gsd_run query state.get milestone --raw $GSD_WS_ARG 2>/dev/null || true)
-printf '%s' "$OUTGOING_MILESTONE" > .planning/.gsd-outgoing-milestone 2>/dev/null || true
+OUTGOING_MILESTONE=$(engineer_run query state.get milestone --raw 2>/dev/null || true)
+printf '%s' "$OUTGOING_MILESTONE" > .planning/.engineer-outgoing-milestone 2>/dev/null || true
 echo "Outgoing milestone (phase history archives under THIS version in step 6): ${OUTGOING_MILESTONE:-<unknown>}"
-gsd_run query state.milestone-switch --milestone "v[X.Y]" --name "[Name]" $GSD_WS_ARG
+engineer_run query state.milestone-switch --milestone "v[X.Y]" --name "[Name]"
 ```
 
 **Capture the outgoing version now.** The lines above read the *current* (previous) milestone
 version BEFORE the switch flips STATE.md's `milestone:` field to the new one, and persist it to
-`.planning/.gsd-outgoing-milestone` so Step 6 can consume it via a shell variable — do NOT
+`.planning/.engineer-outgoing-milestone` so Step 6 can consume it via a shell variable — do NOT
 transcribe the echoed value into a later command by hand. Step 6 reads that file back into
 `--archive-version` so the previous milestone's phase directories archive under
-`<outgoing-version>-phases/`, not the new one (#2288). Once `state.milestone-switch` runs,
+`<outgoing-version>-phases/`, not the new one. Once `state.milestone-switch` runs,
 current-milestone state no longer holds the outgoing version, which is why it is captured here.
 
 The resulting Current Position section looks like:
@@ -233,7 +256,7 @@ Status: Defining requirements
 Last activity: [today] — Milestone v[X.Y] started
 ```
 
-Bug #2630: a prior version of this workflow rewrote the Current Position body
+Bug: a prior version of this workflow rewrote the Current Position body
 manually but left the frontmatter pointing at the previous milestone, so every
 downstream reader (`state.json`, `getMilestoneInfo`, progress bars) reported the
 stale milestone until the first phase advance forced a resync. Always use the
@@ -247,19 +270,18 @@ Clear leftover phase directories from the previous milestone. Read the outgoing 
 persisted in Step 5 back into a shell variable and pass it as `--archive-version` so the
 archive lands under the *previous* milestone's label — the switch in Step 5 has already
 advanced current-milestone state, so without this override the archive would be mislabeled
-with the *new* version (#2288). Use the shell variable directly (quoted) — never hand-retype
+with the *new* version. Use the shell variable directly (quoted) — never hand-retype
 the captured value into the command, so untrusted STATE.md content cannot be re-parsed by the
 shell:
 
 ```bash
-GSD_WS_ARG=$(cat .planning/.gsd-ws-arg 2>/dev/null || true)
-OUTGOING_MILESTONE=$(cat .planning/.gsd-outgoing-milestone 2>/dev/null || true)
+OUTGOING_MILESTONE=$(cat .planning/.engineer-outgoing-milestone 2>/dev/null || true)
 if [ -n "$OUTGOING_MILESTONE" ]; then
-  gsd_run query phases.clear --confirm --archive-version "$OUTGOING_MILESTONE" $GSD_WS_ARG
+  engineer_run query phases.clear --confirm --archive-version "$OUTGOING_MILESTONE"
 else
-  gsd_run query phases.clear --confirm $GSD_WS_ARG
+  engineer_run query phases.clear --confirm
 fi
-rm -f .planning/.gsd-outgoing-milestone 2>/dev/null || true
+rm -f .planning/.engineer-outgoing-milestone 2>/dev/null || true
 ```
 
 If the captured file is empty or absent (a fresh project with no prior milestone), the
@@ -268,16 +290,14 @@ state, and a dated archive label only if no version label is resolvable at all. 
 rejects any `--archive-version` value that is not a plain version token (no path separators or
 `..`), so a malformed capture fails loudly rather than writing outside the archive directory.
 
-Stage the phase archive move + source removal so they land in the same commit as the milestone start (atomic — no orphaned uncommitted deletions, no un-archived dirs carried forward). `phases.clear` archives each non-999 dir to `milestones/<version>-phases/`; staging both dirs captures the new archive and the removals together (#1871).
+Stage the phase archive move + source removal so they land in the same commit as the milestone start (atomic — no orphaned uncommitted deletions, no un-archived dirs carried forward). `phases.clear` archives each non-999 dir to `milestones/<version>-phases/`; staging both dirs captures the new archive and the removals together.
 
 ```bash
-COMMIT_DOCS=$(gsd_run query config-get commit_docs --raw 2>/dev/null || echo "true")
-GSD_WS_ARG=$(cat .planning/.gsd-ws-arg 2>/dev/null || true)
-INIT_STAGE=$(gsd_run query init.new-milestone ${GSD_WS_ARG:+--ws=${GSD_WS_ARG##* }})
-if [[ "$INIT_STAGE" == @file:* ]]; then INIT_STAGE=$(cat "${INIT_STAGE#@file:}"); fi
-_gsd_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
-ARCHIVE_DIR=$(_gsd_field "$INIT_STAGE" archive_dir)
-PHASES_DIR=$(_gsd_field "$INIT_STAGE" phases_dir)
+COMMIT_DOCS=$(engineer_run query config-get commit_docs --raw 2>/dev/null || echo "true")
+INIT_STAGE=$(engineer_run query init.new-milestone )
+_engineer_field() { value=$(printf '%s' "$1" | engineer_run query json.get --field "$2" --default '""' --raw) || return $?; [ "$value" = null ] && value=""; printf '%s' "$value"; }
+ARCHIVE_DIR=$(_engineer_field "$INIT_STAGE" archive_dir)
+PHASES_DIR=$(_engineer_field "$INIT_STAGE" phases_dir)
 if [ "$COMMIT_DOCS" != "false" ]; then
   git add "$ARCHIVE_DIR/" "$PHASES_DIR/" 2>/dev/null || true
 fi
@@ -285,57 +305,48 @@ fi
 
 When `commit_docs` is false, the archive move and phase removals are deliberately left unstaged here — not a bug — since Step 6's commit is skipped too.
 
-Stage PROJECT.md in both modes. Step 4's Part A guard — not this commit — is what protects the shared `## Current Milestone` heading (#2308): when a workstream is active Part A never writes it, so the only change PROJECT.md can carry here is Part B's idempotent `## Evolution` backfill, which must be committed rather than stranded as a dangling edit. Do NOT reintroduce a `[ -n "$GSD_WS" ]` branch around this commit: `GSD_WS` is set in Step 1's shell and each step's bash block runs in its own shell (the same reason Step 5 round-trips `OUTGOING_MILESTONE` through a file), so such a guard reads an unset variable, always takes the flat-mode branch, and only appears to work. STATE.md, unlike PROJECT.md, IS workstream-scoped (Step 5's switch just wrote the workstream's own copy) — resolved below via `init.new-milestone` rather than a literal `.planning/STATE.md`, which would commit the wrong (or a stale, unrelated) file under an active workstream.
 
 ```bash
-GSD_WS_ARG=$(cat .planning/.gsd-ws-arg 2>/dev/null || true)
-INIT_COMMIT=$(gsd_run query init.new-milestone ${GSD_WS_ARG:+--ws=${GSD_WS_ARG##* }})
-if [[ "$INIT_COMMIT" == @file:* ]]; then INIT_COMMIT=$(cat "${INIT_COMMIT#@file:}"); fi
-_gsd_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
-STATE_PATH=$(_gsd_field "$INIT_COMMIT" state_path)
-PROJECT_PATH=$(_gsd_field "$INIT_COMMIT" project_path)
-gsd_run query commit "docs: start milestone v[X.Y] [Name]" --files "$PROJECT_PATH" "$STATE_PATH"
+INIT_COMMIT=$(engineer_run query init.new-milestone )
+_engineer_field() { value=$(printf '%s' "$1" | engineer_run query json.get --field "$2" --default '""' --raw) || return $?; [ "$value" = null ] && value=""; printf '%s' "$value"; }
+STATE_PATH=$(_engineer_field "$INIT_COMMIT" state_path)
+PROJECT_PATH=$(_engineer_field "$INIT_COMMIT" project_path)
+engineer_run query commit "docs: start milestone v[X.Y] [Name]" --files "$PROJECT_PATH" "$STATE_PATH"
 ```
 
 ## 7. Load Context and Resolve Models
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-RESET_PHASE_NUMBERS_PARAM=""; if [[ "$GSD_ARGS" =~ (^|[[:space:]])--reset-phase-numbers([[:space:]]|$) ]]; then RESET_PHASE_NUMBERS_PARAM="--reset-phase-numbers"; fi
-GSD_WS_ARG=$(cat .planning/.gsd-ws-arg 2>/dev/null || true)
-INIT=$(gsd_run query init.new-milestone $RESET_PHASE_NUMBERS_PARAM ${GSD_WS_ARG:+--ws=${GSD_WS_ARG##* }})
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_RESEARCHER=$(gsd_run query agent-skills gsd-project-researcher ${GSD_WS_ARG:+--ws=${GSD_WS_ARG##* }})
-AGENT_SKILLS_SYNTHESIZER=$(gsd_run query agent-skills gsd-research-synthesizer ${GSD_WS_ARG:+--ws=${GSD_WS_ARG##* }})
-AGENT_SKILLS_ROADMAPPER=$(gsd_run query agent-skills gsd-roadmapper ${GSD_WS_ARG:+--ws=${GSD_WS_ARG##* }})
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
+RESET_PHASE_NUMBERS_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--reset-phase-numbers([[:space:]]|$) ]]; then RESET_PHASE_NUMBERS_PARAM="--reset-phase-numbers"; fi
+INIT=$(engineer_run query init.new-milestone $RESET_PHASE_NUMBERS_PARAM )
+AGENT_SKILLS_RESEARCHER=$(engineer_run query agent-skills phase-researcher )
+AGENT_SKILLS_DOC_WRITER=$(engineer_run query agent-skills doc-writer )
+AGENT_SKILLS_PLANNER=$(engineer_run query agent-skills planner )
 ```
-<!-- #4456: .planning/.gsd-ws-arg is NOT cleaned up here — Steps 9 and 10
 below still need to re-read it (each is its own shell) to resolve
-REQUIREMENTS.md/ROADMAP.md/STATE.md correctly under a workstream. It is
+REQUIREMENTS.md/ROADMAP.md/STATE.md through the runtime-resolved paths. It is
 removed in Step 10, its true last consumer. -->
 
-Extract from init JSON: `researcher_model`, `synthesizer_model`, `roadmapper_model`, `commit_docs`, `research_enabled`, `current_milestone`, `project_exists`, `roadmap_exists`, `latest_completed_milestone`, `phase_dir_count`, `phase_archive_path`, `agents_installed`, `missing_agents`, `project_path`, `roadmap_path`, `requirements_path`, `config_path`, `research_dir`, `milestones_path`, `phases_dir`, `archive_dir`.
+Extract from init JSON: `researcher_model`, `doc_writer_model`, `planner_model`, `commit_docs`, `research_enabled`, `current_milestone`, `project_exists`, `roadmap_exists`, `latest_completed_milestone`, `phase_dir_count`, `phase_archive_path`, `agents_installed`, `missing_agents`, `project_path`, `roadmap_path`, `requirements_path`, `config_path`, `research_dir`, `milestones_path`, `phases_dir`, `archive_dir`.
 
 **If `agents_installed` is false:** Display a warning before proceeding:
 ```
-⚠ GSD agents not installed. The following agents are missing from your agents directory:
+⚠ Engineer agents not installed. The following agents are missing from your agents directory:
   {missing_agents joined with newline}
 
-Subagent spawns (gsd-project-researcher, gsd-research-synthesizer, gsd-roadmapper) will fail
+Subagent spawns (phase-researcher, doc-writer, planner) will fail
 with "agent type not found". Run the installer with --global to make agents available:
 
-  npx @opengsd/gsd-core@latest --global
+  python -I bin/install.py --source <local-source> --ref <pinned-ref> --target <project-root> --host claude --local
 
 Proceeding without research subagents — roadmap will be generated inline.
 ```
 Skip the parallel research spawn step and generate the roadmap inline.
 
-<!-- gsd:section id="reset-phase-safety" when="flag:--reset-phase-numbers" -->
-If `section_manifest` is `null` or `"reset-phase-safety"` is in its `included` list: read and execute `gsd-core/workflows/new-milestone/steps/reset-phase-safety.md`. Otherwise skip — do not read the file.
-<!-- /gsd:section -->
 
 ## 8. Research Decision
 
@@ -353,12 +364,12 @@ AskUserQuestion: "Research the domain ecosystem for new features before defining
 - "Skip research (current default)" — Go straight to requirements
 - "Research first" — Discover patterns, features, architecture for NEW capabilities
 
-**IMPORTANT:** Do NOT persist this choice to config.json. The `workflow.research` setting is a persistent user preference that controls plan-phase behavior across the project. Changing it here would silently alter future `/gsd:plan-phase` behavior. To change the default, use `/gsd:settings`.
+**IMPORTANT:** Do NOT persist this choice to config.json. The `workflow.research` setting is a persistent user preference that controls plan-phase behavior across the project. Changing it here would silently alter future `/plan-phase` behavior. To change the default, use `/settings`.
 
 **If user chose "Research first":**
 
 ```
-### GSD ► RESEARCHING
+### Engineer ► RESEARCHING
 
 ◆ Spawning 4 researchers in parallel... (each runs in a subagent — no output until they return, ~1–5 min; expected, not a freeze)
   → Stack, Features, Architecture, Pitfalls
@@ -368,12 +379,12 @@ AskUserQuestion: "Research the domain ecosystem for new features before defining
 mkdir -p .planning/research
 ```
 
-Spawn 4 parallel gsd-project-researcher agents. Each uses this template with dimension-specific fields:
+Spawn 4 parallel phase-researcher agents. Each uses this template with dimension-specific fields:
 
 **Common structure for all 4 researchers:**
-<!-- #2517 model-omit-on-inherit -->
+<!-- model-omit-on-inherit -->
 
-> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`researcher_model`, `synthesizer_model`, `roadmapper_model`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @gsd-core/references/model-profile-resolution.md.
+> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`researcher_model`, `doc_writer_model`, `planner_model`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```text
 Agent(prompt="
@@ -399,9 +410,9 @@ ${AGENT_SKILLS_RESEARCHER}
 
 <output>
 Write to: {research_dir}/{FILE}
-Use template: ~/.claude/gsd-core/templates/research-project/{FILE}
+Use template: engineer/templates/research-project/{FILE}
 </output>
-", subagent_type="gsd-project-researcher", model="{researcher_model}", description="{DIMENSION} research")
+", subagent_type="phase-researcher", model="{researcher_model}", description="{DIMENSION} research")
 ```
 
 **Dimension-specific fields:**
@@ -414,9 +425,9 @@ Use template: ~/.claude/gsd-core/templates/research-project/{FILE}
 | GATES | Versions current (verify with Context7), rationale explains WHY, integration considered | Categories clear, complexity noted, dependencies identified | Integration points identified, new vs modified explicit, build order considers deps | Pitfalls specific to adding these features, integration pitfalls covered, prevention actionable |
 | FILE | STACK.md | FEATURES.md | ARCHITECTURE.md | PITFALLS.md |
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling all 4 researcher Agent() calls above, do NOT read research files or synthesize content independently while the subagents are active. Wait for all 4 researchers to complete before spawning the synthesizer. This prevents duplicate work and wasted context.
+> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling all 4 researcher Agent() calls above, do NOT read research files or synthesize content independently while the subagents are active. Wait for all 4 researchers to complete before spawning the doc-writer. This prevents duplicate work and wasted context.
 
-After all 4 complete, spawn synthesizer:
+After all 4 complete, spawn doc-writer:
 
 ```text
 Agent(prompt="
@@ -429,27 +440,27 @@ Synthesize research outputs into SUMMARY.md.
 - {research_dir}/PITFALLS.md
 </required_reading>
 
-${AGENT_SKILLS_SYNTHESIZER}
+${AGENT_SKILLS_DOC_WRITER}
 
 Write to: {research_dir}/SUMMARY.md
-Use template: ~/.claude/gsd-core/templates/research-project/SUMMARY.md
+Use template: engineer/templates/research-project/SUMMARY.md
 Commit after writing.
-", subagent_type="gsd-research-synthesizer", model="{synthesizer_model}", description="Synthesize research")
+", subagent_type="doc-writer", model="{doc_writer_model}", description="Synthesize research")
 ```
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
 
-**Synthesizer output self-heal (#222) — verify SUMMARY.md materialized:** The synthesizer's canonical output is `.planning/research/SUMMARY.md` on disk; its brief structured return (`## SYNTHESIS COMPLETE` plus a few `###` confirmation lines) is NOT the file content. The restriction is not always fabricated: Claude Code refuses a subagent's `Write` to a few exact basenames — `SUMMARY.md` among them — with `Subagents should return findings as text, not write report files` (observed on Claude Code 2.1.301), and the synthesizer is told to return the full document inline when its `Write` hits that error; the refusal is real, not fabricated. It depends on the exact basename (`SUMMARY.md`, `REPORT.md`, `FINDINGS.md`, `ANALYSIS.md`, case-insensitive; a prefixed name such as `01-01-SUMMARY.md` and other agents' files write fine), so do not tell other agents to avoid `Write`. Either cause lands in step 2. A known LLM false-refusal (issue #222) sometimes makes the agent return the full SUMMARY.md document inline — fabricating a write restriction (e.g. "the runtime is blocking file writes") — instead of writing the file. Prompt hardening alone does not fully eliminate it, so the orchestrator MUST absorb either cause deterministically before spawning `gsd-roadmapper`:
+**Doc-writer output self-heal — verify SUMMARY.md materialized:** The doc-writer's canonical output is `.planning/research/SUMMARY.md` on disk; its brief structured return (`## SYNTHESIS COMPLETE` plus a few `###` confirmation lines) is NOT the file content. The restriction is not always fabricated: Claude Code refuses a subagent's `Write` to a few exact basenames — `SUMMARY.md` among them — with `Subagents should return findings as text, not write report files` (observed on Claude Code 2.1.301), and the doc-writer is told to return the full document inline when its `Write` hits that error; the refusal is real, not fabricated. It depends on the exact basename (`SUMMARY.md`, `REPORT.md`, `FINDINGS.md`, `ANALYSIS.md`, case-insensitive; a prefixed name such as `01-01-SUMMARY.md` and other agents' files write fine), so do not tell other agents to avoid `Write`. Either cause lands in step 2. A known LLM false-refusal sometimes makes the agent return the full SUMMARY.md document inline — fabricating a write restriction (e.g. "the runtime is blocking file writes") — instead of writing the file. Prompt hardening alone does not fully eliminate it, so the orchestrator MUST absorb either cause deterministically before spawning `planner`:
 
-1. Verify `.planning/research/SUMMARY.md` exists AND is substantive — non-empty, and free of any leftover `<!-- gsd:write-continue -->` continuation sentinel (which marks a truncated/incomplete write). You may validate with `gsd_run verify-summary .planning/research/SUMMARY.md` — it exits 0 regardless, so check its JSON `passed` field (`"passed": false` means missing or invalid), not the process exit code. If it passes, continue normally.
-2. If it is MISSING or invalid AND the synthesizer's return message contains the FULL SUMMARY.md document — recognizable by the template's top-level markers `# Project Research Summary`, `## Key Findings`, `## Implications for Roadmap`, and `## Sources`, not merely the brief `## SYNTHESIS COMPLETE` confirmation — the synthesizer returned the document inline (the #222 false-refusal, or the runtime's real refusal of the name `SUMMARY.md`): write that returned document to `.planning/research/SUMMARY.md` with the Write tool, then commit ALL research artifacts the synthesizer owns (it commits on behalf of the four researchers) with `gsd_run query commit "docs: complete project research" --files .planning/research/` unless they are already committed. Log `⚠ #222 self-heal: synthesizer returned SUMMARY.md inline without writing it; orchestrator persisted the file.`
-3. If it is MISSING or invalid AND the return is only a brief confirmation (no full SUMMARY document to recover), the synthesizer genuinely failed — surface the error and stop; do NOT spawn `gsd-roadmapper` against a missing or incomplete SUMMARY.md.
+1. Verify `.planning/research/SUMMARY.md` exists AND is substantive — non-empty, and free of any leftover `<!-- engineer:write-continue -->` continuation sentinel (which marks a truncated/incomplete write). You may validate with `engineer_run verify-summary .planning/research/SUMMARY.md` — it exits 0 regardless, so check its JSON `passed` field (`"passed": false` means missing or invalid), not the process exit code. If it passes, continue normally.
+2. If it is MISSING or invalid AND the doc-writer's return message contains the FULL SUMMARY.md document — recognizable by the template's top-level markers `# Project Research Summary`, `## Key Findings`, `## Implications for Roadmap`, and `## Sources`, not merely the brief `## SYNTHESIS COMPLETE` confirmation — the doc-writer returned the document inline (the false-refusal, or the runtime's real refusal of the name `SUMMARY.md`): write that returned document to `.planning/research/SUMMARY.md` with the Write tool, then commit ALL research artifacts the doc-writer owns (it commits on behalf of the four researchers) with `engineer_run query commit "docs: complete project research" --files .planning/research/` unless they are already committed. Log `⚠  self-heal: doc-writer returned SUMMARY.md inline without writing it; orchestrator persisted the file.`
+3. If it is MISSING or invalid AND the return is only a brief confirmation (no full SUMMARY document to recover), the doc-writer genuinely failed — surface the error and stop; do NOT spawn `planner` against a missing or incomplete SUMMARY.md.
 
-This guarantees `gsd-roadmapper` (which lists SUMMARY.md as required reading) never runs against a missing or truncated SUMMARY.md.
+This guarantees `planner` (which lists SUMMARY.md as required reading) never runs against a missing or truncated SUMMARY.md.
 
 Display key findings from SUMMARY.md:
 ```
-### GSD ► RESEARCH COMPLETE ✓
+### Engineer ► RESEARCH COMPLETE ✓
 
 **Stack additions:** [from SUMMARY.md]
 **Feature table stakes:** [from SUMMARY.md]
@@ -461,7 +472,7 @@ Display key findings from SUMMARY.md:
 ## 9. Define Requirements
 
 ```
-### GSD ► DEFINING REQUIREMENTS
+### Engineer ► DEFINING REQUIREMENTS
 ```
 
 Read PROJECT.md: core value, current milestone goals, validated requirements (what exists).
@@ -526,20 +537,18 @@ If "adjust": Return to scoping.
 
 **Commit requirements:**
 ```bash
-GSD_WS_ARG=$(cat .planning/.gsd-ws-arg 2>/dev/null || true)
-INIT_REQ=$(gsd_run query init.new-milestone ${GSD_WS_ARG:+--ws=${GSD_WS_ARG##* }})
-if [[ "$INIT_REQ" == @file:* ]]; then INIT_REQ=$(cat "${INIT_REQ#@file:}"); fi
-_gsd_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
-REQUIREMENTS_PATH=$(_gsd_field "$INIT_REQ" requirements_path)
-gsd_run query commit "docs: define milestone v[X.Y] requirements" --files "$REQUIREMENTS_PATH"
+INIT_REQ=$(engineer_run query init.new-milestone )
+_engineer_field() { value=$(printf '%s' "$1" | engineer_run query json.get --field "$2" --default '""' --raw) || return $?; [ "$value" = null ] && value=""; printf '%s' "$value"; }
+REQUIREMENTS_PATH=$(_engineer_field "$INIT_REQ" requirements_path)
+engineer_run query commit "docs: define milestone v[X.Y] requirements" --files "$REQUIREMENTS_PATH"
 ```
 
 ## 10. Create Roadmap
 
 ```
-### GSD ► CREATING ROADMAP
+### Engineer ► CREATING ROADMAP
 
-◆ Spawning roadmapper... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
+◆ Spawning planner... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
 
 **Starting phase number:**
@@ -557,7 +566,7 @@ Agent(prompt="
 - {milestones_path}
 </required_reading>
 
-${AGENT_SKILLS_ROADMAPPER}
+${AGENT_SKILLS_PLANNER}
 
 </planning_context>
 
@@ -570,12 +579,12 @@ Create roadmap for milestone v[X.Y]:
 3. Map every requirement to exactly one phase
 4. Derive 2-5 success criteria per phase (observable user behaviors)
 5. Validate 100% coverage
-6. Write files immediately (ROADMAP.md, STATE.md, update REQUIREMENTS.md traceability)
-7. Return ROADMAP CREATED with summary
+6. Return the complete roadmap proposal, including every phase, success criterion, dependency and requirement-to-phase mapping; do not edit ROADMAP.md, STATE.md or REQUIREMENTS.md
+7. Return ## ROADMAP PROPOSED with the full proposal
 
-Write files first, then return.
+Return the full proposal before ending. The coordinator owns every shared-record write.
 </instructions>
-", subagent_type="gsd-roadmapper", model="{roadmapper_model}", description="Create roadmap")
+", subagent_type="planner", model="{planner_model}", description="Create roadmap")
 ```
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
@@ -584,7 +593,11 @@ Write files first, then return.
 
 **If `## ROADMAP BLOCKED`:** Present blocker, work with user, re-spawn.
 
-**If `## ROADMAP CREATED`:** Read ROADMAP.md, present inline:
+**If `## ROADMAP PROPOSED`:**
+
+The planner return is a complete proposal, not published shared records. The coordinator applies it only through supported runtime writes: `project.init --resume` for missing initialization artifacts, and `phase.add` / `phase.edit` plus the applicable `state.*` verbs for existing records. Before writing, compare every proposal field with the handler's supported inputs. If a success criterion, requirement-to-phase traceability mapping, numbering choice or other exact field cannot be preserved by the available runtime, stop, identify that unsupported field, and retain the full pending proposal. Do not hand-edit shared structures, invent a verb, or claim the roadmap was created. After supported writes succeed, read back and compare all phase fields and requirement ownership before presenting canonical records.
+
+Read the runtime-created ROADMAP.md, present inline:
 
 ```
 ## Proposed Roadmap
@@ -610,22 +623,17 @@ Success criteria:
 - "Adjust phases" — Tell me what to change
 - "Review full file" — Show raw ROADMAP.md
 
-**If "Adjust":** Get notes, re-spawn roadmapper with revision context, loop until approved.
+**If "Adjust":** Get notes, re-spawn planner with revision context and the complete current proposal. The planner returns a full revised proposal without editing shared records. Apply the same guarded coordinator runtime handoff above before canonical readback; stop with the exact unsupported field if fidelity cannot be preserved. Loop until approved.
 **If "Review":** Display raw ROADMAP.md, re-ask.
 
 **Commit roadmap** (after approval):
 ```bash
-GSD_WS_ARG=$(cat .planning/.gsd-ws-arg 2>/dev/null || true)
-INIT_ROADMAP=$(gsd_run query init.new-milestone ${GSD_WS_ARG:+--ws=${GSD_WS_ARG##* }})
-if [[ "$INIT_ROADMAP" == @file:* ]]; then INIT_ROADMAP=$(cat "${INIT_ROADMAP#@file:}"); fi
-_gsd_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
-ROADMAP_PATH=$(_gsd_field "$INIT_ROADMAP" roadmap_path)
-STATE_PATH=$(_gsd_field "$INIT_ROADMAP" state_path)
-REQUIREMENTS_PATH=$(_gsd_field "$INIT_ROADMAP" requirements_path)
-gsd_run query commit "docs: create milestone v[X.Y] roadmap ([N] phases)" --files "$ROADMAP_PATH" "$STATE_PATH" "$REQUIREMENTS_PATH"
-# #4456: true last consumer of the persisted --ws in this workflow — the
-# round-trip file is no longer needed after this commit.
-rm -f .planning/.gsd-ws-arg 2>/dev/null || true
+INIT_ROADMAP=$(engineer_run query init.new-milestone )
+_engineer_field() { value=$(printf '%s' "$1" | engineer_run query json.get --field "$2" --default '""' --raw) || return $?; [ "$value" = null ] && value=""; printf '%s' "$value"; }
+ROADMAP_PATH=$(_engineer_field "$INIT_ROADMAP" roadmap_path)
+STATE_PATH=$(_engineer_field "$INIT_ROADMAP" state_path)
+REQUIREMENTS_PATH=$(_engineer_field "$INIT_ROADMAP" requirements_path)
+engineer_run query commit "docs: create milestone v[X.Y] roadmap ([N] phases)" --files "$ROADMAP_PATH" "$STATE_PATH" "$REQUIREMENTS_PATH"
 ```
 
 ## 10.5. Link Pending Todos to Roadmap Phases
@@ -668,7 +676,7 @@ files: [existing]
 
 **If any todos were linked:**
 ```bash
-gsd_run query commit "docs: tag [count] pending todos with resolves_phase after milestone v[X.Y] roadmap" --files .planning/todos/pending/*.md
+engineer_run query commit "docs: tag [count] pending todos with resolves_phase after milestone v[X.Y] roadmap" --files .planning/todos/pending/*.md
 ```
 
 Print a summary:
@@ -681,7 +689,7 @@ Print a summary:
 ## 11. Done
 
 ```
-### GSD ► MILESTONE INITIALIZED ✓
+### Engineer ► MILESTONE INITIALIZED ✓
 
 **Milestone v[X.Y]: [Name]**
 
@@ -700,27 +708,27 @@ Print a summary:
 
 `/clear` then:
 
-`/gsd:discuss-phase [N] ${GSD_WS}` — gather context and clarify approach
+`/discuss-phase [N] ` — gather context and clarify approach
 
-Also: `/gsd:plan-phase [N] ${GSD_WS}` — skip discussion, plan directly
+Also: `/plan-phase [N] ` — skip discussion, plan directly
 ```
 
 </process>
 
 <success_criteria>
-- [ ] PROJECT.md updated with Current Milestone section (skipped when a workstream is active — shared file, see Step 4)
+- [ ] PROJECT.md updated with Current Milestone section
 - [ ] STATE.md reset for new milestone
 - [ ] MILESTONE-CONTEXT.md consumed and deleted (if existed)
 - [ ] Research completed (if selected) — 4 parallel agents, milestone-aware
 - [ ] Requirements gathered and scoped per category
 - [ ] REQUIREMENTS.md created with REQ-IDs
-- [ ] gsd-roadmapper spawned with phase numbering context
-- [ ] Roadmap files written immediately (not draft)
+- [ ] planner spawned with phase numbering context
+- [ ] Complete roadmap proposal applied by the coordinator through supported runtime writes and canonical records read back
 - [ ] User feedback incorporated (if any)
 - [ ] Phase numbering mode respected (continued or reset)
 - [ ] All commits made (if planning docs committed)
 - [ ] Pending todos scanned for phase matches; matched todos tagged with `resolves_phase: N`
-- [ ] User knows next step: `/gsd:discuss-phase [N] ${GSD_WS}`
+- [ ] User knows next step: `/discuss-phase [N] `
 
 **Atomic commits:** Each phase commits its artifacts immediately.
 </success_criteria>

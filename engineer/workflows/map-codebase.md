@@ -1,4 +1,4 @@
-@~/.claude/gsd-core/references/response-language-directive.md
+@~/.claude/engineer/references/response-language-directive.md
 
 <purpose>
 Orchestrate parallel codebase mapper agents to analyze codebase and produce structured documents in .planning/codebase/
@@ -9,8 +9,8 @@ Output: .planning/codebase/ folder with 7 structured documents about the codebas
 </purpose>
 
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd-codebase-mapper — Maps project structure and dependencies
+Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
+- codebase-mapper — Maps project structure and dependencies
 </available_agent_types>
 
 <philosophy>
@@ -31,11 +31,11 @@ Documents are reference material for Claude when planning/executing. Always incl
 
 <step name="parse_paths_flag" priority="first">
 Parse an optional `--paths <p1,p2,...>` argument. When supplied (by the
-post-execute codebase-drift gate in `/gsd:execute-phase` or by a user running
-`/gsd:map-codebase --paths apps/accounting,packages/ui`), the workflow
+post-execute codebase-drift gate in `/execute-phase` or by a user running
+`/map-codebase --paths apps/accounting,packages/ui`), the workflow
 operates in **incremental-remap mode**:
 
-- Pass `--paths <p1>,<p2>,...` through to each spawned `gsd-codebase-mapper`
+- Pass `--paths <p1>,<p2>,...` through to each spawned `codebase-mapper`
   agent's prompt. Agents scope their Glob/Grep/Bash exploration to the listed
   repo-relative prefixes only — no whole-repo scan.
 - Reject path values that contain `..`, start with `/`, or include shell
@@ -72,15 +72,13 @@ documents refreshed.
 Load codebase mapping context:
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving gsd_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok gsd_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(gsd_run query init.map-codebase ${GSD_WS:+--ws=${GSD_WS##* }})
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_MAPPER=$(gsd_run query agent-skills gsd-codebase-mapper ${GSD_WS:+--ws=${GSD_WS##* }})
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
+_ENGINEER_SHIM_NAME="engineer_run"; _ENGINEER_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; ENGINEER_TOOLS="${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}"; _engineer_at() { for _p; do if [ -f "$_p" ]; then ENGINEER_TOOLS="$_p"; return 0; fi; done; return 1; }; _engineer_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"engineer-runtime"'*'}') return 0;; *) return 1;; esac; }; _engineer_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _engineer_at "$_h/engineer/bin/${_ENGINEER_SHIM_NAME}" && return 0; done; return 1; }; if _engineer_at "${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.claude/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.codex/engineer/bin/${_ENGINEER_SHIM_NAME}"; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif _engineer_homes; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif unset -f engineer_run; _G="$(command -v engineer_run)"; [ -n "$_G" ] && _engineer_id_ok "$_G"; then ENGINEER_TOOLS="$_G"; engineer_run() { "$ENGINEER_TOOLS" "$@"; }; else echo "ERROR: engineer_run not found at $ENGINEER_TOOLS and no identity-proving engineer_run is on PATH. Run: python -I bin/install.py --source <local-source> --ref <pinned-ref> --target <project-root> --host claude --local" >&2; exit 1; fi; ENGINEER_IDENTITY_STATUS=unverified; _engineer_id_ok engineer_run && ENGINEER_IDENTITY_STATUS=ok; export ENGINEER_IDENTITY_STATUS; [ "$ENGINEER_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$ENGINEER_TOOLS\" did not prove it is engineer-runtime - it is either a different package or an engineer-runtime older than the runtime-identity verb." >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${ENGINEER_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${ENGINEER_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
+INIT=$(engineer_run query init.map-codebase )
+AGENT_SKILLS_MAPPER=$(engineer_run query agent-skills codebase-mapper )
 ```
 
 Extract from init JSON: `mapper_model`, `commit_docs`, `codebase_dir`, `existing_maps`, `has_maps`, `codebase_dir_exists`, `subagent_timeout`, `date`.
@@ -158,18 +156,18 @@ Before spawning agents, detect whether the current runtime supports the `Agent` 
 </step>
 
 <step name="spawn_agents" condition="Agent tool is available">
-Spawn 4 parallel gsd-codebase-mapper agents.
+Spawn 4 parallel codebase-mapper agents.
 
-<!-- #2508 runtime-aware-dispatch -->
+<!-- runtime-aware-dispatch -->
 
 
-<!-- #2517 model-omit-on-inherit -->
+<!-- model-omit-on-inherit -->
 
-> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`mapper_model`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @gsd-core/references/model-profile-resolution.md.
+> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`mapper_model`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
-Use Agent tool with `subagent_type="gsd-codebase-mapper"`, `model="{mapper_model}"`, and `run_in_background=true` for parallel execution.
+Use Agent tool with `subagent_type="codebase-mapper"`, `model="{mapper_model}"`, and `run_in_background=true` for parallel execution.
 
-**CRITICAL:** Use the dedicated `gsd-codebase-mapper` agent, NOT `Explore` or `browser_subagent`. The mapper agent writes documents directly.
+**CRITICAL:** Use the dedicated `codebase-mapper` agent, NOT `Explore` or `browser_subagent`. The mapper agent writes documents directly.
 
 Print: "Spawning 4 parallel codebase mapper agents (each runs in a subagent — no output until they return, ~1–5 min; expected, not a freeze)"
 
@@ -177,7 +175,7 @@ Print: "Spawning 4 parallel codebase mapper agents (each runs in a subagent — 
 
 ```text
 Agent(
-  subagent_type="gsd-codebase-mapper",
+  subagent_type="codebase-mapper",
   model="{mapper_model}",
   run_in_background=true,
   description="Map codebase tech stack",
@@ -203,7 +201,7 @@ ${AGENT_SKILLS_MAPPER}"
 
 ```text
 Agent(
-  subagent_type="gsd-codebase-mapper",
+  subagent_type="codebase-mapper",
   model="{mapper_model}",
   run_in_background=true,
   description="Map codebase architecture",
@@ -229,7 +227,7 @@ ${AGENT_SKILLS_MAPPER}"
 
 ```text
 Agent(
-  subagent_type="gsd-codebase-mapper",
+  subagent_type="codebase-mapper",
   model="{mapper_model}",
   run_in_background=true,
   description="Map codebase conventions",
@@ -255,7 +253,7 @@ ${AGENT_SKILLS_MAPPER}"
 
 ```
 Agent(
-  subagent_type="gsd-codebase-mapper",
+  subagent_type="codebase-mapper",
   model="{mapper_model}",
   run_in_background=true,
   description="Map codebase concerns",
@@ -345,7 +343,7 @@ Perform all 4 mapping passes sequentially:
 - Explore TODOs, known issues, fragile areas, security patterns
 - Write `.planning/codebase/CONCERNS.md` — Tech debt, bugs, security, performance, fragile areas
 
-Use the same document templates as the `gsd-codebase-mapper` agent. Include actual file paths formatted with backticks.
+Use the same document templates as the `codebase-mapper` agent. Include actual file paths formatted with backticks.
 
 Continue to verify_output.
 </step>
@@ -371,7 +369,7 @@ Continue to stamp_codebase_map.
 Stamp the drift baseline into every document that was just written:
 
 ```bash
-gsd_run stamp-codebase-map ${UPDATED_DOCS:+--files "$UPDATED_DOCS"}
+engineer_run stamp-codebase-map ${UPDATED_DOCS:+--files "$UPDATED_DOCS"}
 ```
 
 This writes `last_mapped_commit: <HEAD sha>` and `last_mapped_at: <date>` into
@@ -440,7 +438,7 @@ Continue to commit_codebase_map.
 Commit the codebase map:
 
 ```bash
-gsd_run query commit "docs: map existing codebase" --files .planning/codebase/*.md
+engineer_run query commit "docs: map existing codebase" --files .planning/codebase/*.md
 ```
 
 Continue to offer_next.
@@ -476,12 +474,12 @@ Created .planning/codebase/:
 
 `/clear` then:
 
-`/gsd:new-project`
+`/new-project`
 
 ---
 
 **Also available:**
-- Re-run mapping: `/gsd:map-codebase`
+- Re-run mapping: `/map-codebase`
 - Review specific file: `cat .planning/codebase/STACK.md`
 - Edit any document before proceeding
 
@@ -495,10 +493,10 @@ End workflow.
 
 <success_criteria>
 - .planning/codebase/ directory created
-- If Agent tool available: 4 parallel gsd-codebase-mapper agents spawned with run_in_background=true
+- If Agent tool available: 4 parallel codebase-mapper agents spawned with run_in_background=true
 - If Agent tool NOT available: 4 sequential mapping passes performed inline (never using browser_subagent)
 - All 7 codebase documents exist
 - No empty documents (each should have >20 lines)
 - Clear completion summary with line counts
-- User offered clear next steps in GSD style
+- User offered clear next steps in Engineer style
 </success_criteria>

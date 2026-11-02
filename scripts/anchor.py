@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import BASELINE, git, main_guard, parser, plan, rows
+from common import BASELINE, git, historical_path, main_guard, parser, plan, rows
 
 CITATION = re.compile(r'(?P<path>(?:\.?[A-Za-z0-9_-]+/)*\.?[A-Za-z0-9_.-]+\.(?:md|py|sh|json|yaml|yml|txt|cjs)):(?P<ranges>\d+(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*)')
 
@@ -22,9 +22,11 @@ def citations(cell):
 def anchor_lines(root, cell):
     result = []
     cache = {}
+    tree = git(root, "ls-tree", "-r", "--name-only", BASELINE).splitlines()
     for path, start, end in citations(cell):
         if path not in cache:
-            cache[path] = git(root, "show", f"{BASELINE}:{path}").splitlines()
+            source = historical_path(tree, path)
+            cache[path] = git(root, "show", f"{BASELINE}:{source}").splitlines()
         content = cache[path]
         if end > len(content):
             raise ValueError(f"Range exceeds baseline file: {path}:{start}-{end}")
@@ -55,7 +57,7 @@ def main():
     width = max(40, max(map(len, left)))
     print(f"{args.row_id} — baseline {BASELINE}")
     print(" | ".join(cells))
-    print(f"{'GSD target':<{width}} | Local source")
+    print(f"{'Upstream target':<{width}} | Local source")
     for original, local in zip_longest(left, right, fillvalue=""):
         print(f"{original:<{width}} | {local}")
     return 0

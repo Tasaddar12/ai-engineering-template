@@ -3,7 +3,7 @@ import datetime as dt
 import difflib
 import json
 from urllib.parse import quote
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 from .core import Failure
 
@@ -17,12 +17,26 @@ def check(args):
     if registry not in POPULAR:
         raise Failure("unknown-registry", registry, 2)
     items = []
-    for package in args.pos:
+    packages = args.pos[1:] if args.arg(0) == "check" else args.pos
+    if not packages:
+        raise Failure("missing-package", "Supply at least one concrete package name", 2)
+    for package in packages:
+        if not isinstance(package, str) or not package.strip() or any(ord(char) < 32 for char in package):
+            raise Failure("invalid-package", str(package), 2)
+        if args.has("offline"):
+            items.append({"package": package, "registry": registry, "verdict": "UNKNOWN", "reason": "Network lookup explicitly disabled"})
+            continue
         encoded = quote(package, safe="")
         urls = {"npm": f"https://registry.npmjs.org/{encoded}", "pypi": f"https://pypi.org/pypi/{encoded}/json", "crates": f"https://crates.io/api/v1/crates/{encoded}"}
         try:
-            with urlopen(urls[registry], timeout=10) as response:
-                metadata = json.load(response)
+            request = Request(urls[registry], headers={"User-Agent": "engineer-runtime/package-metadata", "Accept": "application/json"})
+            with urlopen(request, timeout=min(30, max(1, float(args.get("timeout", 10))))) as response:
+                data = response.read(2_000_001)
+            if len(data) > 2_000_000:
+                raise ValueError("Registry metadata exceeds the bounded response size")
+            metadata = json.loads(data)
+            if not isinstance(metadata, dict):
+                raise ValueError("Registry metadata must be an object")
             releases = metadata.get("releases", metadata.get("versions", []))
             created = metadata.get("time", {}).get("created") if registry == "npm" else metadata.get("crate", {}).get("created_at")
             if registry == "pypi":
@@ -36,4 +50,5 @@ def check(args):
             items.append({"package": package, "registry": registry, "verdict": "MISSING" if exc.code == 404 else "UNKNOWN", "reason": str(exc)})
         except (OSError, ValueError, TypeError, KeyError) as exc:
             items.append({"package": package, "registry": registry, "verdict": "UNKNOWN", "reason": str(exc)})
-    return {"packages": items, "count": len(items)}
+    return {"packages": items, "count": len(items), "advisoryOnly": True,
+            "limitation": "Registry metadata and name similarity do not certify package safety, compatibility or authenticity"}

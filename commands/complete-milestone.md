@@ -1,6 +1,6 @@
 ---
 type: prompt
-name: gsd:complete-milestone
+name: complete-milestone
 description: Archive completed milestone and prepare for next version
 argument-hint: <version>
 allowed-tools:
@@ -8,7 +8,7 @@ allowed-tools:
   - Write
   - Bash
   - Grep
-requires: [audit-milestone, discuss-phase, execute-phase, new-milestone, phase, plan-phase, stats, update]
+requires: [audit-milestone, discuss-phase, execute-phase, new-milestone, phase, plan-phase, update]
 ---
 
 <arguments>$ARGUMENTS</arguments>
@@ -25,8 +25,8 @@ Output: Milestone archived (roadmap + requirements), PROJECT.md evolved, git tag
 <execution_context>
 **Load these files NOW (before proceeding):**
 
-- @~/.claude/gsd-core/workflows/complete-milestone.md (main workflow)
-- @~/.claude/gsd-core/templates/milestone-archive.md (archive template)
+- @~/.claude/engineer/workflows/complete-milestone.md (main workflow)
+- @~/.claude/engineer/templates/milestone-archive.md (archive template)
   </execution_context>
 
 <context>
@@ -48,10 +48,10 @@ Output: Milestone archived (roadmap + requirements), PROJECT.md evolved, git tag
 0. **Check for audit:**
 
    - Look for `.planning/v{{version}}-MILESTONE-AUDIT.md`
-   - If missing or stale: recommend `/gsd:audit-milestone` first
+   - If missing or stale: recommend `/audit-milestone` first
    - If audit status is `gaps_found`: recommend closing the gaps inline
      (the audit output already enumerates them — insert closure phases
-     via `/gsd:phase --insert <N>` plus the standard
+     via `/phase --insert <N>` plus the standard
      discuss/plan/execute chain) before proceeding.
    - If audit status is `passed`: proceed to step 1
 
@@ -59,14 +59,14 @@ Output: Milestone archived (roadmap + requirements), PROJECT.md evolved, git tag
    ## Pre-flight Check
 
    {If no v{{version}}-MILESTONE-AUDIT.md:}
-   ⚠ No milestone audit found. Run `/gsd:audit-milestone` first to verify
+   ⚠ No milestone audit found. Run `/audit-milestone` first to verify
    requirements coverage, cross-phase integration, and E2E flows.
 
    {If audit has gaps:}
    ⚠ Milestone audit found gaps. The audit output already enumerates the
    unsatisfied requirements, cross-phase issues, and broken flows — insert
-   a closure phase per gap with `/gsd:phase --insert <N>` and run the
-   standard `/gsd:discuss-phase` → `/gsd:plan-phase` → `/gsd:execute-phase`
+   a closure phase per gap with `/phase --insert <N>` and run the
+   standard `/discuss-phase` → `/plan-phase` → `/execute-phase`
    chain. Or proceed anyway to accept the gaps as tech debt.
 
    {If audit passed:}
@@ -120,7 +120,7 @@ Output: Milestone archived (roadmap + requirements), PROJECT.md evolved, git tag
    - Ask about pushing tag
 
 8. **Offer next steps:**
-   - `/gsd:new-milestone` — start next milestone (questioning → research → requirements → roadmap)
+   - `/new-milestone` — start next milestone (questioning → research → requirements → roadmap)
 
 </process>
 
@@ -144,5 +144,5 @@ Output: Milestone archived (roadmap + requirements), PROJECT.md evolved, git tag
 - **Archive before deleting:** Always create archive files before updating/deleting originals
 - **One-line summary:** Collapsed milestone in ROADMAP.md should be single line with link
 - **Context efficiency:** Archive keeps ROADMAP.md and REQUIREMENTS.md constant size per milestone
-- **Fresh requirements:** Next milestone starts with `/gsd:new-milestone` which includes requirements definition
+- **Fresh requirements:** Next milestone starts with `/new-milestone` which includes requirements definition
   </critical_rules>

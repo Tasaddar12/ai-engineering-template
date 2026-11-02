@@ -2,7 +2,7 @@
 
 Standard rules for keeping orchestrator context lean. Reference this in workflows that spawn subagents or read significant content.
 
-See also: `gsd-core/references/universal-anti-patterns.md` for the complete set of universal rules.
+See also: `engineer/references/universal-anti-patterns.md` for the complete set of universal rules.
 
 ---
 
@@ -36,7 +36,7 @@ Monitor context usage and adjust behavior accordingly. The `workflow.context_gua
 | PEAK | 0-30% | Full operations. Read bodies, spawn multiple agents, inline results. | None |
 | GOOD | 30-50% | Normal operations. Prefer frontmatter reads, delegate aggressively. | None |
 | DEGRADING | 50-70% | Economize. Frontmatter-only reads, minimal inlining, warn user about budget. | Emit warning, continue |
-| POOR | 70%+ | Emergency mode. Checkpoint progress immediately. No new reads unless critical. | `warn`: emit warning + recommend `/gsd:pause-work`. `auto`: invoke pause-work before next wave. `off`: proceed anyway. |
+| POOR | 70%+ | Emergency mode. Checkpoint progress immediately. No new reads unless critical. | `warn`: emit warning + recommend `/pause-work`. `auto`: invoke pause-work before next wave. `off`: proceed anyway. |
 
 ## Context Degradation Warning Signs
 
@@ -50,7 +50,7 @@ When delegating to agents, the orchestrator cannot verify semantic correctness o
 
 ## MCP Tool Schema Cost (Harness Concern)
 
-Every enabled MCP server injects its tool schema into **every turn**, regardless of whether you call any of its tools. Heavyweight servers can cost 20k+ tokens per turn each — often dwarfing whatever GSD itself can save through `model_profile` tuning. This is a Claude Code harness concern, not a GSD concern: GSD does **not** manage MCP enablement. The toggle lives in `.claude/settings.json` under `enabledMcpjsonServers` and `disabledMcpjsonServers`.
+Every enabled MCP server injects its tool schema into **every turn**, regardless of whether you call any of its tools. Heavyweight servers can cost 20k+ tokens per turn each — often dwarfing whatever Engineer itself can save through `model_profile` tuning. This is a Claude Code harness concern, not an Engineer concern: Engineer does **not** manage MCP enablement. The toggle lives in `.claude/settings.json` under `enabledMcpjsonServers` and `disabledMcpjsonServers`.
 
 ### Why this is the biggest cost lever you don't own
 
@@ -58,7 +58,7 @@ Tool schemas count against the same context budget as model context, prompts, an
 
 ### Pre-Phase MCP Audit
 
-Before starting a long phase (especially `/gsd:execute-phase`, `/gsd:plan-phase`, or anything that fans out across many subagents), run this audit:
+Before starting a long phase (especially `/execute-phase`, `/plan-phase`, or anything that fans out across many subagents), run this audit:
 
 - [ ] **Browser / playwright tools enabled?** If this phase has no UI work, disable them. They're among the heaviest per-turn schemas.
 - [ ] **Platform-specific tools enabled?** Mac-tools / Windows-tools / OS-specific helpers should be disabled when not actively needed for the phase at hand.
@@ -78,7 +78,7 @@ The keys live in `.claude/settings.json` (project) or `~/.claude/settings.json` 
 }
 ```
 
-Either list works — `enabledMcpjsonServers` is an explicit allow-list, `disabledMcpjsonServers` is a block-list against the default. See the [Claude Code MCP documentation](https://docs.anthropic.com/en/docs/claude-code/mcp) for the canonical reference; this section just flags it as a context-budget lever GSD users routinely overlook.
+Either list works — `enabledMcpjsonServers` is an explicit allow-list, `disabledMcpjsonServers` is a block-list against the default. See the [Claude Code MCP documentation](https://docs.anthropic.com/en/docs/claude-code/mcp) for the canonical reference; this section just flags it as a context-budget lever Engineer users routinely overlook.
 
 ### Composition with model_profile
 
@@ -86,18 +86,18 @@ Trimming MCPs and tuning `model_profile` are independent levers that **compound*
 
 ---
 
-# Phase Sizing (gsd-planner)
+# Phase Sizing (planner)
 
-## Estimate Emission (#2631, ADR-2629)
+## Estimate Emission
 
-Every plan carries an `estimate` block. It is the quantitative reason a phase must be sliced — tracer-first says *slice thin*, the estimate says *how thin, for this codebase*.
+Every plan carries an `estimate` block. It is the quantitative reason a phase must be sliced — the estimate says *how thin, for this codebase*.
 
 **Compute it:**
 1. Sum `estimateTokens`-scale cost across the plan: implementation + the files each task reads + verification output. Roughly chars/4 over what the executor will actually touch.
 2. Run `estimate-calibration` and **multiply your raw figure by its `factor`.** It is the measured estimate-vs-actual ratio for THIS project — a factor of 1 means there is not yet enough history to correct.
 3. `confidence` is **derived, not judged**: it is the `confidence` value from the same calibration query, keyed to the sample count (`low` <3, `med` 3–5, `high` ≥6). **Do not rate your own certainty.** Self-rated confidence was measured in this project and found weak (`references/honest-verifier.md:25-29`); every signal here routes on measured history instead.
 
-**Over budget?** The plan-checker flags a plan whose estimate exceeds `workflow.smart_zone_tokens`. This is advisory — it never blocks. When flagged, re-slice: a tracer plus expansion slices, each inside the budget. Prefer more, smaller plans over one that spends the agent's best early-context tokens and finishes degraded.
+**Over budget?** The plan-checker flags a plan whose estimate exceeds `workflow.smart_zone_tokens`. This is advisory — it never blocks. When flagged, re-slice into smaller plans, each inside the budget. Prefer more, smaller plans over one that spends the agent's best early-context tokens and finishes degraded.
 
 ## Context Budget Rules
 
@@ -122,4 +122,4 @@ Plans should complete within ~50% context (not 80%). No context anxiety, quality
 
 **CONSIDER splitting:** >5 files total, natural semantic boundaries, context cost estimate exceeds 40% for a single plan. See `<planner_authority_limits>` for prohibited split reasons.
 
-See @~/.claude/gsd-core/references/planner-guidance.md for Granularity Calibration table (Coarse/Standard/Fine plans-per-phase).
+See @~/.claude/engineer/references/planner-guidance.md for Granularity Calibration table (Coarse/Standard/Fine plans-per-phase).

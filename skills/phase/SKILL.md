@@ -1,5 +1,5 @@
 ---
-name: gsd:phase
+name: phase
 description: Multi-phase management — add, insert, remove, or edit phases in ROADMAP.md (roadmap phase CRUD)
 argument-hint: "[--insert | --remove | --edit] <phase-name-or-number>"
 allowed-tools:
@@ -36,10 +36,10 @@ Mode routing:
 </routing>
 
 <execution_context>
-@~/.claude/gsd-core/workflows/add-phase.md
-@~/.claude/gsd-core/workflows/insert-phase.md
-@~/.claude/gsd-core/workflows/remove-phase.md
-@~/.claude/gsd-core/workflows/edit-phase.md
+@~/.claude/engineer/workflows/add-phase.md
+@~/.claude/engineer/workflows/insert-phase.md
+@~/.claude/engineer/workflows/remove-phase.md
+@~/.claude/engineer/workflows/edit-phase.md
 </execution_context>
 
 <context>

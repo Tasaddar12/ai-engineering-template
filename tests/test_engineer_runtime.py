@@ -9,13 +9,24 @@ import unittest
 
 SOURCE = Path(__file__).resolve().parents[1]
 RUNTIME = SOURCE/"engineer/bin/engineer.py"
+# Only the gh executable is replaced: it reports the merged pull request held in FAKE_GH_PR, then the real runtime runs.
+PROVIDER_SEAM = """import os, runpy, subprocess, sys
+original = subprocess.run
+def redirect(command, **options):
+    if command and command[0] == "gh":
+        return subprocess.CompletedProcess(command, 0, os.environ["FAKE_GH_PR"], "")
+    return original(command, **options)
+subprocess.run = redirect
+sys.argv = [os.environ["FAKE_RUNTIME"], *sys.argv[1:]]
+runpy.run_path(os.environ["FAKE_RUNTIME"], run_name="__main__")
+"""
 
 
 class RuntimeCase(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
-        self.root = Path(self.temporary.name)
+        self.root = Path(self.temporary.name).resolve()
         self.env = {**os.environ, "ENGINEER_ROOT": str(self.root), "ENGINEER_HOST": "codex"}
         self.git("init", "-b", "main")
         self.git("config", "user.name", "Runtime Test")
@@ -35,11 +46,18 @@ class RuntimeCase(unittest.TestCase):
 
     def cli(self, *args, status=0, raw=False, stdin=None):
         process = subprocess.run([sys.executable, "-I", str(RUNTIME), "query", *map(str, args)],
-                                 cwd=self.root, env=self.env, input=stdin, text=True, capture_output=True)
+                                 cwd=self.root, env=self.env, input=stdin, text=True, encoding="utf-8", capture_output=True)
         self.assertEqual(status, process.returncode, process.stderr or process.stdout)
         return process.stdout.strip() if raw else json.loads(process.stdout)
 
+    def init_records(self):
+        """Initialize project records with the runtime's own verb; the roadmap starts with no phases."""
+        if not (self.root/".planning/ROADMAP.md").is_file():
+            self.cli("project.init", "--name", "Fixture", "--description", "Runtime fixture project",
+                     "--core-value", "Records stay consistent")
+
     def phase(self, name="Behavior"):
+        self.init_records()
         return self.cli("phase.add", name)["directory"]
 
     def plan(self, directory, body=None, extra=""):
@@ -80,7 +98,7 @@ class RecordBehavior(RuntimeCase):
         self.plan(directory)
         self.cli("phase.remove", "1", status=1, raw=True)
         result = self.cli("phase.remove", "1", "--force")
-        self.assertTrue(Path(result["archive"]).joinpath("01-01-PLAN.md").exists())
+        self.assertTrue(Path(result["archive"]).joinpath("payload", "01-01-PLAN.md").exists())
 
     def test_quick_and_todo_records(self):
         quick = self.cli("quick.create", "Repair the login")
@@ -108,20 +126,39 @@ class IsolationSafety(RuntimeCase):
         self.assertEqual(first["worktree"], second["worktree"])
         self.assertEqual(1, self.cli("session.status")["open_count"])
 
+    def provider_cli(self, seam, pull, *args, status=0):
+        env = {**self.env, "FAKE_RUNTIME": str(RUNTIME), "FAKE_GH_PR": json.dumps(pull)}
+        process = subprocess.run([sys.executable, str(seam), "query", *args], cwd=self.root, env=env, text=True, capture_output=True)
+        self.assertEqual(status, process.returncode, process.stderr or process.stdout)
+        return json.loads(process.stdout) if status == 0 else process.stdout
+
     def test_cleanup_requires_exact_preview_and_revalidates_dirty_resources(self):
         self.prepare_isolation()
+        self.git("remote", "add", "origin", "https://github.com/acme/project.git")
         session = self.cli("session.open", "quick", "repair")
-        preview = self.cli("cleanup.preview")
+        # Session cleanup needs provider proof that this exact branch HEAD was merged into the caller's history.
+        pull = {"url": "https://github.com/acme/project/pull/1", "state": "MERGED", "mergedAt": "2026-01-01T00:00:00Z",
+                "headRefName": session["branch"], "headRefOid": session["head"], "baseRefName": "main",
+                "mergeCommit": {"oid": self.git("rev-parse", "HEAD")}}
+        seam_directory = tempfile.TemporaryDirectory()
+        self.addCleanup(seam_directory.cleanup)
+        seam = Path(seam_directory.name)/"provider_seam.py"
+        seam.write_text(PROVIDER_SEAM, encoding="utf-8")
+        preview = self.provider_cli(seam, pull, "cleanup.preview")
         self.assertEqual(1, preview["count"])
-        self.cli("cleanup.apply", "--approval-token", preview["approval_token"], status=1, raw=True)
+        self.provider_cli(seam, pull, "cleanup.apply", "--approval-token", preview["approval_token"], status=1)
         target = Path(session["worktree"])
         (target/"untracked.txt").write_text("keep", encoding="utf-8")
-        self.cli("cleanup.apply", "--approval-token", preview["approval_token"], "--confirm", status=1, raw=True)
+        self.provider_cli(seam, pull, "cleanup.apply", "--approval-token", preview["approval_token"], "--confirm", status=1)
         self.assertTrue(target.exists())
+        # An approval is consumed before removal starts, so the failed attempt needs a fresh exact preview.
         (target/"untracked.txt").unlink()
-        self.assertEqual(1, self.cli("cleanup.apply", "--approval-token", preview["approval_token"], "--confirm")["count"])
+        self.provider_cli(seam, pull, "cleanup.apply", "--approval-token", preview["approval_token"], "--confirm", status=1)
+        fresh = self.provider_cli(seam, pull, "cleanup.preview")
+        self.assertEqual(1, fresh["count"])
+        self.assertEqual(1, self.provider_cli(seam, pull, "cleanup.apply", "--approval-token", fresh["approval_token"], "--confirm")["count"])
         self.assertFalse(target.exists())
-        self.cli("cleanup.apply", "--approval-token", preview["approval_token"], "--confirm", status=1, raw=True)
+        self.provider_cli(seam, pull, "cleanup.apply", "--approval-token", fresh["approval_token"], "--confirm", status=1)
 
     def test_worker_undeclared_deletion_blocks_integration(self):
         self.prepare_isolation()

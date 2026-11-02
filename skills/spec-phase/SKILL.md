@@ -1,5 +1,5 @@
 ---
-name: gsd:spec-phase
+name: spec-phase
 description: Clarify WHAT a phase delivers with ambiguity scoring; produces a SPEC.md before discuss-phase.
 argument-hint: "<phase> [--auto] [--text]"
 allowed-tools:
@@ -33,8 +33,8 @@ Clarify phase requirements through structured Socratic questioning with quantita
 </objective>
 
 <execution_context>
-@~/.claude/gsd-core/workflows/spec-phase.md
-@~/.claude/gsd-core/templates/spec.md
+@~/.claude/engineer/workflows/spec-phase.md
+@~/.claude/engineer/templates/spec.md
 </execution_context>
 
 <context>
@@ -59,5 +59,5 @@ Execute end-to-end.
 - Gate passed: ambiguity ≤ 0.20 AND all dimension minimums met
 - SPEC.md written with falsifiable requirements, explicit boundaries, and acceptance criteria
 - SPEC.md committed atomically
-- User knows they can now run /gsd:discuss-phase which will load SPEC.md automatically
+- User knows they can now run /discuss-phase which will load SPEC.md automatically
 </success_criteria>

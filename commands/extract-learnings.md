@@ -1,5 +1,5 @@
 ---
-name: gsd:extract-learnings
+name: extract-learnings
 description: Extract decisions, lessons, patterns, and surprises from completed phase artifacts
 argument-hint: <phase-number>
 allowed-tools:
@@ -22,7 +22,7 @@ Extract structured learnings from completed phase artifacts (PLAN.md, SUMMARY.md
 </objective>
 
 <execution_context>
-@~/.claude/gsd-core/workflows/extract-learnings.md
+@~/.claude/engineer/workflows/extract-learnings.md
 </execution_context>
 
-Execute the extract-learnings workflow from @~/.claude/gsd-core/workflows/extract-learnings.md end-to-end.
+Execute the extract-learnings workflow from @~/.claude/engineer/workflows/extract-learnings.md end-to-end.

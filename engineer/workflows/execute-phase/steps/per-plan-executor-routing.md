@@ -1,38 +1,79 @@
-# Per-plan executor routing (#1689)
+# Per-plan executor routing
 
 Run for each plan, immediately before its `Agent()` dispatch in step 3. Sets
 `EXECUTOR_TYPE` so a plan can opt into a specialist executor instead of the
-default `gsd-executor`. `plan_json` (the current plan's object from
+default `executor`. `plan_json` (the current plan's object from
 `phase-plan-index`, same scope step 2.5 uses) is in scope.
 
 ## Contract
 
-- Default: `EXECUTOR_TYPE="gsd-executor"` — byte-identical to pre-#1689 dispatch.
+- Default: `EXECUTOR_TYPE="executor"` — byte-identical to pre- dispatch.
 - A plan opts into a specialist by declaring `agent_hint: <name>` in its PLAN.md
   frontmatter. The field reaches the orchestrator as `plan_json.agent_hint`
   (parsed by `phase-plan-index`; `null` when unset).
 - When routing is enabled AND the hint is non-empty AND the named agent resolves
   on the active runtime, `EXECUTOR_TYPE` becomes the hint. Otherwise it stays
-  `gsd-executor`.
+  `executor`.
 - The resolved `EXECUTOR_TYPE` is used as `subagent_type` in BOTH worktree and
   sequential dispatch (sequential reuses the worktree-mode `Agent()` template).
 
 ## Resolution
 
 ```bash
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving gsd_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok gsd_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
-# Default-on; opt out with: gsd config-set workflow.agent_hint_routing false
-AGENT_HINT_ROUTING=$(gsd_run query config-get workflow.agent_hint_routing --raw 2>/dev/null || echo "true")
+_engineer_identity_ok() {
+  [ -f "$1" ] || return 1
+  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
+}
+_engineer_select() {
+  for _engineer_candidate do
+    if _engineer_identity_ok "$_engineer_candidate"; then
+      ENGINEER_RUN="$_engineer_candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+if [ -n "${ENGINEER_RUN:-}" ]; then
+  _engineer_identity_ok "$ENGINEER_RUN" || {
+    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
+    exit 1
+  }
+else
+  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
+  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
+  _engineer_select \
+    "$_engineer_root/engineer/bin/engineer_run" \
+    "$_engineer_runtime_root/engineer/bin/engineer_run" \
+    "$_engineer_root/.claude/engineer/bin/engineer_run" \
+    "$_engineer_root/.codex/engineer/bin/engineer_run" \
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
+    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
+    "$_engineer_path_candidate" || {
+    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
+    exit 1
+  }
+fi
+export ENGINEER_RUN
+engineer_run() {
+  sh "$ENGINEER_RUN" "$@"
+}
+if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
+  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
+fi
+# Default-on; opt out with: engineer config-set workflow.agent_hint_routing false
+AGENT_HINT_ROUTING=$(engineer_run query config-get workflow.agent_hint_routing --raw 2>/dev/null || echo "true")
 
-EXECUTOR_TYPE="gsd-executor"
+EXECUTOR_TYPE="executor"
 if [ "${AGENT_HINT_ROUTING:-true}" != "false" ]; then
   PLAN_HINT=$(jq -r '.agent_hint // empty' <<<"$plan_json" 2>/dev/null | tr -d '"')
   if [ -n "$PLAN_HINT" ]; then
-    EXECUTOR_TYPE=$(gsd_run query resolve-agent --name "$PLAN_HINT" --raw 2>/dev/null || echo "gsd-executor")
+    EXECUTOR_TYPE=$(engineer_run query resolve-agent --name "$PLAN_HINT" --raw 2>/dev/null || echo "executor")
   fi
 fi
 
-# #1689 v1 routes only the Agent()-based dispatch. On the orchestrator-worktree
+# v1 routes only the Agent()-based dispatch. On the orchestrator-worktree
 # backend (process-spawn; no subagent_type) a resolved hint cannot be honored
 # yet — surface it so a set hint is never silently ignored.
 if [ "${ISOLATION:-}" = "orchestrator-worktree" ] && [ -n "${PLAN_HINT:-}" ]; then
@@ -40,10 +81,10 @@ if [ "${ISOLATION:-}" = "orchestrator-worktree" ] && [ -n "${PLAN_HINT:-}" ]; th
 fi
 ```
 
-`gsd_run query resolve-agent` consults the **active runtime's agent directory**
+`engineer_run query resolve-agent` consults the **active runtime's agent directory**
 (both project-local and user-global, across runtime filename variants — `.md`,
 `.toml`) and fails
-closed to `gsd-executor` when the named agent does not resolve or on any error,
+closed to `executor` when the named agent does not resolve or on any error,
 so a missing or misspelled hint never blocks dispatch.
 
 ## Scope
@@ -53,20 +94,20 @@ modes). The `orchestrator-worktree` isolation backend spawns executors via a
 separate process path that has no `subagent_type` and is not routed in this
 release.
 
-## Checkpoint gate rule (#3370)
+## Checkpoint gate rule
 
 Loaded with the routing resolution so the orchestrator reads it immediately
 before composing each dispatch prompt, in every isolation mode.
 
 On `checkpoint:human-verify` / `checkpoint:decision` tasks, `gate="blocking"`
 (the default) is auto-approvable in auto-mode — that is the executor's own
-`<checkpoint_protocol>` (`agents/gsd-executor.md`), and `checkpoints.md` (the
+`<checkpoint_protocol>` (`agents/executor.md`), and `checkpoints.md` (the
 full gate table) is embedded in the dispatch `<execution_context>` verbatim.
 Only `gate="blocking-human"` always surfaces to a human, regardless of
 auto-mode. An unmet `<precondition>` checkpoint (executor step 0, `Blocked by:
 Precondition not met` — unmet `user_setup` step, missing env var, absent
 prior-phase artifact) reports `blocking-human` and therefore always surfaces
-to a human, in every mode (#3210): the missing prerequisite is a fact only a
+to a human, in every mode: the missing prerequisite is a fact only a
 human can establish, not a verification step to rubber-stamp.
 
 When composing the `Agent()` prompt, do NOT add text refusing or overriding

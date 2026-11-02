@@ -24,9 +24,9 @@ class VerifyChecks(RuntimeCase):
         self.plan(directory)
         report = self.put(str(Path(directory).relative_to(self.root)/"01-VERIFICATION.md"), '---\nphase: "01"\nstatus: passed\n---\nEvidence\n')
         first = self.cli("verification.fingerprint", "1")["fingerprint"]
-        self.cli("frontmatter.set", report, "--field", "note", "--value", "changed")
+        self.cli("frontmatter.set", report, "--field", "x-note", "--value", "changed")
         self.assertEqual(first, self.cli("verification.fingerprint", "1")["fingerprint"])
         self.assertEqual("ship", self.cli("verification.status", directory)["route"])
-        audit = Path(directory)/"01-SECURITY.md"
+        audit = self.put(str(Path(directory).relative_to(self.root)/"01-SECURITY.md"), '---\nphase: "01"\nstatus: secured\n---\n# Security\n')
         self.assertTrue(self.cli("verification.append-audit", audit, "--heading", "Audit", "--body", "passed")["appended"])
         self.assertFalse(self.cli("verification.append-audit", audit, "--heading", "Audit", "--body", "passed")["appended"])

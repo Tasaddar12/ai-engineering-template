@@ -17,17 +17,17 @@ In your mandatory init step — right after `mandatory-initial-read.md` / the
    file states on its `agent_skills:` pointer line, as `(agent type: \`executor\`)`.
 Do not read it from your frontmatter `name:`— Claude Code shows a subagent only the
 body, and Codex keeps it in a TOML key. Run the
-query with`--skills-only`, in the **same bash call** as the launcher so `gsd_run`is
+query with`--skills-only`, in the **same bash call** as the launcher so `engineer_run`is
 defined when it runs. Substitute your type for`<your-agent-type>`:
 
    ```bash
-   # 1. Launcher: paste the bash block from gsd-run-resolver.md here unless gsd_run
-   #    is already defined in this shell (@~/.claude/references/gsd-run-resolver.md).
+   # 1. Launcher: paste the bash block from run-resolver.md here unless engineer_run
+   # is already defined in this shell (@~/.claude/engineer/references/run-resolver.md).
    # 2. Query:
-   _AGENT_SKILLS=$(gsd_run query agent-skills <your-agent-type> --skills-only)
+   _AGENT_SKILLS=$(engineer_run query agent-skills <your-agent-type> --skills-only)
    ```
 
-   Not every agent file defines `gsd_run`, so supply it as above rather than assuming
+   Not every agent file defines `engineer_run`, so supply it as above rather than assuming
    your init did. The query is read-only and idempotent. Its stderr and exit status stay
    visible, so a missing launcher or a failed query is never mistaken for "nothing
    configured".
@@ -38,23 +38,23 @@ defined when it runs. Substitute your type for`<your-agent-type>`:
 
 ## What the query returns, per runtime
 
-| Call                                                                          | Claude                               | Codex                                                                                                       |
-| ----------------------------------------------------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| `query agent-skills <type> --skills-only` (the self-load)                     | configured skills, or an empty block | configured skills, or an empty block                                                                        |
+| Call | Claude | Codex |
+| ---- | ------ | ----- |
+| `query agent-skills <type> --skills-only` (the self-load) | configured skills, or an empty block | configured skills, or an empty block |
 | `query agent-skills <type>` (orchestrator-side `${AGENT_SKILLS_*}` injection) | configured skills, or an empty block | configured skills, or — when nothing is configured and the agent is installed — the agent's own **persona** |
 
-On a non-Claude runtime the plain query can answer with the agent's whole persona
-(about 47 KB for the executor). `--skills-only` is what keeps the self-load from
+On a non-Claude runtime the plain query can answer with the agent's whole persona.
+`--skills-only` is what keeps the self-load from
 reading your own persona back into your context as if it were a skills block. Never
 run the query without it from inside an agent.
 
 ## What self-load does and does not cover
 
-| Skill form                                  | Self-loads?   | Notes                                                                                                                                                    |
-| ------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Project-relative path (`skills/my-skill`)   | ✅ everywhere | `Read` the `@`-include                                                                                                                                   |
-| Global personal (`global:<name>`)           | ✅ everywhere | resolves to the runtime global skills dir, then `Read`                                                                                                   |
-| Plugin-provided (`global:<plugin>:<skill>`) | Claude only   | emitted as a Skill-tool directive on Claude; **skipped with a warning on all other runtimes** — the plugin/Skill-tool model has no equivalent elsewhere. |
+| Skill form | Self-loads? | Notes |
+| ---------- | ----------- | ----- |
+| Project-relative path (`skills/my-skill`) | ✅ everywhere | `Read` the `@`-include |
+| Global personal (`global:<name>`) | ✅ everywhere | resolves to the runtime global skills dir, then `Read` |
+| Plugin-provided (`global:<plugin>:<skill>`) | Claude only | emitted as a Skill-tool directive on Claude; **skipped with a warning on all other runtimes** — the plugin/Skill-tool model has no equivalent elsewhere. |
 
 ## Notes
 

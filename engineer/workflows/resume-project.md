@@ -1,4 +1,4 @@
-@~/.claude/gsd-core/references/response-language-directive.md
+@~/.claude/engineer/references/response-language-directive.md
 
 <trigger>
 Use this workflow when:
@@ -13,7 +13,7 @@ Instantly restore full project context so "Where were we?" has an immediate, com
 </purpose>
 
 <required_reading>
-@~/.claude/gsd-core/references/continuation-format.md
+@~/.claude/engineer/references/continuation-format.md
 </required_reading>
 
 <process>
@@ -22,23 +22,21 @@ Instantly restore full project context so "Where were we?" has an immediate, com
 Load all context in one call:
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving gsd_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok gsd_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(gsd_run query init.resume ${GSD_WS:+--ws=${GSD_WS##* }})
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
+_ENGINEER_SHIM_NAME="engineer_run"; _ENGINEER_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; ENGINEER_TOOLS="${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}"; _engineer_at() { for _p; do if [ -f "$_p" ]; then ENGINEER_TOOLS="$_p"; return 0; fi; done; return 1; }; _engineer_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"engineer-runtime"'*'}') return 0;; *) return 1;; esac; }; _engineer_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _engineer_at "$_h/engineer/bin/${_ENGINEER_SHIM_NAME}" && return 0; done; return 1; }; if _engineer_at "${_ENGINEER_RUNTIME_ROOT}/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.claude/engineer/bin/${_ENGINEER_SHIM_NAME}" "${_ENGINEER_RUNTIME_ROOT}/.codex/engineer/bin/${_ENGINEER_SHIM_NAME}"; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif _engineer_homes; then engineer_run() { sh "$ENGINEER_TOOLS" "$@"; }; elif unset -f engineer_run; _G="$(command -v engineer_run)"; [ -n "$_G" ] && _engineer_id_ok "$_G"; then ENGINEER_TOOLS="$_G"; engineer_run() { "$ENGINEER_TOOLS" "$@"; }; else echo "ERROR: engineer_run not found at $ENGINEER_TOOLS and no identity-proving engineer_run is on PATH. Run: python -I bin/install.py --source <local-source> --ref <pinned-ref> --target <project-root> --host claude --local" >&2; exit 1; fi; ENGINEER_IDENTITY_STATUS=unverified; _engineer_id_ok engineer_run && ENGINEER_IDENTITY_STATUS=ok; export ENGINEER_IDENTITY_STATUS; [ "$ENGINEER_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$ENGINEER_TOOLS\" did not prove it is engineer-runtime - it is either a different package or an engineer-runtime older than the runtime-identity verb." >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${ENGINEER_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${ENGINEER_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
+INIT=$(engineer_run query init.resume )
 ```
 
 Parse JSON for: `state_exists`, `roadmap_exists`, `project_exists`, `planning_exists`, `requirements_exists`, `init_incomplete`, `has_interrupted_agent`, `interrupted_agent_id`, `commit_docs`.
 
-**If `init_incomplete` is true (#4040 — interrupted bootstrap):** `.planning/` exists but initialization never finished — one or more of `REQUIREMENTS.md`, `ROADMAP.md`, `STATE.md` were never created. This is NOT a STATE.md-reconstruction case (there is no project history to reconstruct from). Route to initialization recovery: resume `/gsd:new-project`, which continues from the first missing artifact and keeps the existing PROJECT.md and any already-created artifacts. Do not proceed to load_state.
+**If `init_incomplete` is true (interrupted bootstrap):** `.planning/` exists but initialization never finished — one or more of `REQUIREMENTS.md`, `ROADMAP.md`, `STATE.md` were never created. This is NOT a STATE.md-reconstruction case (there is no project history to reconstruct from). Route to initialization recovery: resume `/new-project`, which continues from the first missing artifact and keeps the existing PROJECT.md and any already-created artifacts. Do not proceed to load_state.
 
 **If `state_exists` is true:** Proceed to load_state
 **If `state_exists` is false but `roadmap_exists` or `project_exists` is true (and `init_incomplete` is false):** Offer to reconstruct STATE.md
-**If `planning_exists` is false:** This is a new project - route to /gsd:new-project
+**If `planning_exists` is false:** This is a new project - route to /new-project
 </step>
 
 <step name="load_state">
@@ -73,18 +71,18 @@ cat .planning/PROJECT.md
 Look for incomplete work that needs attention:
 
 ```bash
-# #2962: zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
+# Zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
 shopt -s nullglob 2>/dev/null; setopt NULL_GLOB 2>/dev/null
 
 # Check for structured handoff (preferred — machine-readable)
 cat .planning/HANDOFF.json 2>/dev/null || true
 
 # Check for continue-here files (phase + non-phase + legacy fallback), three levels below .planning.
-# Guarded glob loops, not `find` and not a chained `ls` of bare globs (#4805, #3689):
-#  - a chained `ls` of bare globs aborts under zsh's default NOMATCH on the first miss, silently
-#    dropping every pattern after it, including `.planning/.continue-here*.md` (#3689);
-#  - `find` is an external binary that allowlisted agent shells (an fd-only policy, for one) refuse, and a
-#    per-line `2>/dev/null || true` then hid the refusal, so a checkpoint on disk looked absent (#4805).
+# Guarded glob loops, not `find` and not a chained `ls` of bare globs:
+# - a chained `ls` of bare globs aborts under zsh's default NOMATCH on the first miss, silently
+# dropping every pattern after it, including `.planning/.continue-here*.md`;
+# - `find` is an external binary that allowlisted agent shells (an fd-only policy, for one) refuse, and a
+# per-line `2>/dev/null || true` then hid the refusal, so a checkpoint on disk looked absent.
 # The shell alone does this: nullglob (set above) drops an unmatched glob, `[ -e ]` guards the shells that
 # keep it, and an absent directory simply matches nothing. Output is `.planning/...` and `./...` as before.
 for f in .planning/.continue-here*.md .planning/*/.continue-here*.md .planning/*/*/.continue-here*.md ./.continue-here*.md; do
@@ -115,7 +113,7 @@ fi
 
 **If HANDOFF.json exists:**
 
-- This is the primary resumption source — structured data from `/gsd:pause-work`
+- This is the primary resumption source — structured data from `/pause-work`
 - Parse `status`, `phase`, `plan`, `task`, `total_tasks`, `next_action`
 - Check `blockers` and `human_actions_pending` — surface these immediately
 - Check `completed_tasks` for `in_progress` items — these need attention first
@@ -167,7 +165,7 @@ Last activity: [date] - [what happened]
     Resume with: Task tool (resume parameter with agent ID)
 
 [If pending todos exist:]
-📋 [N] pending todos — /gsd:capture --list to review
+📋 [N] pending todos — /capture --list to review
 
 [If blockers exist:]
 ⚠️  Carried concerns:
@@ -236,11 +234,11 @@ What would you like to do?
 [Primary action based on state - e.g.:]
 1. Resume interrupted agent [if interrupted agent found]
    OR
-1. Execute phase (/gsd:execute-phase {phase} ${GSD_WS})
+1. Execute phase (/execute-phase {phase} )
    OR
-1. Discuss Phase 3 context (/gsd:discuss-phase 3 ${GSD_WS}) [if CONTEXT.md missing]
+1. Discuss Phase 3 context (/discuss-phase 3 ) [if CONTEXT.md missing]
    OR
-1. Plan Phase 3 (/gsd:plan-phase 3 ${GSD_WS}) [if CONTEXT.md exists or discuss option declined]
+1. Plan Phase 3 (/plan-phase 3 ) [if CONTEXT.md exists or discuss option declined]
 
 [Secondary options:]
 2. Review current phase status
@@ -273,7 +271,7 @@ Resume-specific exception: do **not** emit `/clear then:` here. Resume is alread
 
   **{phase}-{plan}: [Plan Name]** — [objective from PLAN.md]
 
-  `/gsd:execute-phase {phase} ${GSD_WS}`
+  `/execute-phase {phase} `
 
   ---
   ```
@@ -285,17 +283,17 @@ Resume-specific exception: do **not** emit `/clear then:` here. Resume is alread
 
   **Phase [N]: [Name]** — [Goal from ROADMAP.md]
 
-  `/gsd:plan-phase [phase-number] ${GSD_WS}`
+  `/plan-phase [phase-number] `
 
   ---
 
   **Also available:**
-  - `/gsd:discuss-phase [N] ${GSD_WS}` — gather context first
-  - `/gsd:plan-phase --research-phase [N] ${GSD_WS}` — investigate unknowns
+  - `/discuss-phase [N] ` — gather context first
+  - `/plan-phase [N] --research` — investigate unknowns
 
   ---
   ```
-- **Advance to next phase** → ./transition.md (internal workflow, invoked inline — NOT a user command)
+- **Advance to next phase** → the completion path in `engineer/workflows/verify-work.md` (internal workflow)
 - **Check todos** → Read .planning/todos/pending/, present summary
 - **Review alignment** → Read PROJECT.md, compare to current state
 - **Something else** → Ask what they need

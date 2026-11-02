@@ -2,7 +2,7 @@
 
 Before execution, check for project-defined skills and apply their rules.
 
-**Discovery steps (shared across all GSD agents):**
+**Discovery steps (shared across all Engineer agents):**
 
 1. Check `.claude/skills/` or `.agents/skills/` directory — if neither exists, skip.
 2. List available skills (subdirectories).

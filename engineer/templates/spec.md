@@ -8,8 +8,8 @@ Template for `.planning/phases/XX-name/{phase_num}-SPEC.md` — locks requiremen
 
 **Downstream consumers:**
 - `discuss-phase` — reads SPEC.md at startup; treats Requirements, Boundaries, and Acceptance Criteria as locked; skips "what/why" questions
-- `gsd-planner` — reads locked requirements to constrain plan scope
-- `gsd-verifier` — uses acceptance criteria as explicit pass/fail checks
+- `planner` — reads locked requirements to constrain plan scope
+- `verifier` — uses acceptance criteria as explicit pass/fail checks
 
 ---
 
@@ -122,7 +122,7 @@ Status: ✓ = met minimum, ⚠ = below minimum (planner treats as assumption)
 
 *Phase: [XX-name]*
 *Spec created: [date]*
-*Next step: /gsd:discuss-phase [X] — implementation decisions (how to build what's specified above)*
+*Next step: /discuss-phase [X] — implementation decisions (how to build what's specified above)*
 ```
 
 <good_examples>
@@ -218,7 +218,7 @@ The database has a `posts` table and `follows` table. No feed query or feed UI e
 
 *Phase: 03-post-feed*
 *Spec created: 2025-01-20*
-*Next step: /gsd:discuss-phase 3 — implementation decisions (card layout, loading skeleton, etc.)*
+*Next step: /discuss-phase 3 — implementation decisions (card layout, loading skeleton, etc.)*
 ```
 
 **Example 2: CLI tool (Database backup)**
@@ -232,7 +232,7 @@ The database has a `posts` table and `follows` table. No feed query or feed UI e
 
 ## Goal
 
-A `gsd backup` CLI command creates a reproducible database snapshot that can be restored by `gsd restore` (a separate phase).
+A `engineer backup` CLI command creates a reproducible database snapshot that can be restored by `engineer restore` (a separate phase).
 
 ## Background
 
@@ -242,8 +242,8 @@ No backup tooling exists. The project uses PostgreSQL. Developers currently use 
 
 1. **Backup creation**: CLI command executes a full database backup.
    - Current: No `backup` subcommand exists in the CLI
-   - Target: `gsd backup` connects to the database (via `DATABASE_URL` env or `--db` flag), runs pg_dump, writes output to `./backups/YYYY-MM-DD_HH-MM-SS.dump`
-   - Acceptance: Running `gsd backup` on a test database creates a `.dump` file; running `pg_restore` on that file recreates the database without error
+   - Target: `engineer backup` connects to the database (via `DATABASE_URL` env or `--db` flag), runs pg_dump, writes output to `./backups/YYYY-MM-DD_HH-MM-SS.dump`
+   - Acceptance: Running `engineer backup` on a test database creates a `.dump` file; running `pg_restore` on that file recreates the database without error
 
 2. **Network retry**: Transient network failures are retried automatically.
    - Current: pg_dump fails immediately on network error
@@ -258,13 +258,13 @@ No backup tooling exists. The project uses PostgreSQL. Developers currently use 
 ## Boundaries
 
 **In scope:**
-- `gsd backup` subcommand (full dump only)
+- `engineer backup` subcommand (full dump only)
 - Output to `./backups/` directory (created if missing)
 - Network retry (3 attempts)
 - Partial file cleanup on failure
 
 **Out of scope:**
-- `gsd restore` — that is Phase 3
+- `engineer restore` — that is Phase 3
 - Incremental backups — separate backlog item (full dump only for now)
 - S3 or remote storage — separate backlog item
 - Encryption — separate backlog item
@@ -277,8 +277,8 @@ No backup tooling exists. The project uses PostgreSQL. Developers currently use 
 
 ## Acceptance Criteria
 
-- [ ] `gsd backup` creates a `.dump` file in `./backups/YYYY-MM-DD_HH-MM-SS.dump` format
-- [ ] `gsd backup` uses `DATABASE_URL` env var or `--db` flag for connection
+- [ ] `engineer backup` creates a `.dump` file in `./backups/YYYY-MM-DD_HH-MM-SS.dump` format
+- [ ] `engineer backup` uses `DATABASE_URL` env var or `--db` flag for connection
 - [ ] 3 retries on network failure, then exit code 1 with stderr message
 - [ ] `--no-retry` flag skips retries and fails immediately on first error
 - [ ] No partial `.dump` file left after a failed backup
@@ -306,7 +306,7 @@ No backup tooling exists. The project uses PostgreSQL. Developers currently use 
 
 *Phase: 02-backup-command*
 *Spec created: 2025-01-20*
-*Next step: /gsd:discuss-phase 2 — implementation decisions (progress reporting, flag design, etc.)*
+*Next step: /discuss-phase 2 — implementation decisions (progress reporting, flag design, etc.)*
 ```
 
 </good_examples>

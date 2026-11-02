@@ -1,7 +1,7 @@
 # Verifier wiring and data-flow patterns
 
-Full pattern bodies for `agents/gsd-verifier.md`, extracted per
-`DEFECT.AGENT-FILE-SIZE-CAP-BREACH` (issue #2995, epic #1671 Phase 6.4). The agent
+Full pattern bodies for `agents/verifier.md`, extracted per
+`DEFECT.AGENT-FILE-SIZE-CAP-BREACH` (epic Phase 6.4). The agent
 keeps the step and its checklist; the per-pattern detail and shell recipes live here.
 
 Artifacts that pass Levels 1-3 (exist, substantive, wired) can still be hollow if their data source produces empty or hardcoded values. Level 4 traces upstream from the artifact to verify real data flows through the wiring.
@@ -40,9 +40,9 @@ grep -n -E "return.*json\(\s*\[\]|return.*json\(\s*\{\}" "$source_file" 2>/dev/n
 grep -r -A 3 "<${COMPONENT_NAME}" "${search_path:-src/}" --include="*.tsx" 2>/dev/null | grep -E "=\{(\[\]|\{\}|null|''|\"\")\}"
 ```
 
-> These two status tables are intentionally mirrored in `agents/gsd-verifier.md`.
+> These two status tables are intentionally mirrored in `agents/verifier.md`.
 > The status vocabulary is load-bearing verifier output and must remain in the
-> agent body (#2995); this copy is here so the procedure below reads standalone.
+> agent body; this copy is here so the procedure below reads standalone.
 
 **Data-flow status:**
 

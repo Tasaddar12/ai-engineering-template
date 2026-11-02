@@ -1,17 +1,17 @@
 <purpose>
-Generate a UI design contract (UI-SPEC.md) for frontend phases. Orchestrates gsd-ui-researcher and gsd-ui-checker with a revision loop. Inserts between discuss-phase and plan-phase in the lifecycle.
+Generate a UI design contract (UI-SPEC.md) for frontend phases. Orchestrates ui-researcher and ui-checker with a revision loop. Inserts between discuss-phase and plan-phase in the lifecycle.
 
 UI-SPEC.md locks spacing, typography, color, copywriting, and design system decisions before the planner creates tasks. This prevents design debt caused by ad-hoc styling decisions during execution.
 </purpose>
 
 <required_reading>
-@~/.claude/gsd-core/references/ui-brand.md
+@~/.claude/engineer/references/ui-brand.md
 </required_reading>
 
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd-ui-researcher — Researches UI/UX approaches
-- gsd-ui-checker — Reviews UI implementation quality
+Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
+- ui-researcher — Researches UI/UX approaches
+- ui-checker — Reviews UI implementation quality
 </available_agent_types>
 
 <process>
@@ -19,16 +19,55 @@ Valid GSD subagent types (use exact names — do not fall back to 'general-purpo
 ## 1. Initialize
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving gsd_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok gsd_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(gsd_run query init.plan-phase ${GSD_WS:+--ws=${GSD_WS##* }} "$PHASE")
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_UI=$(gsd_run query agent-skills gsd-ui-researcher ${GSD_WS:+--ws=${GSD_WS##* }})
-AGENT_SKILLS_UI_CHECKER=$(gsd_run query agent-skills gsd-ui-checker ${GSD_WS:+--ws=${GSD_WS##* }})
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
+_engineer_identity_ok() {
+  [ -f "$1" ] || return 1
+  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
+}
+_engineer_select() {
+  for _engineer_candidate do
+    if _engineer_identity_ok "$_engineer_candidate"; then
+      ENGINEER_RUN="$_engineer_candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+if [ -n "${ENGINEER_RUN:-}" ]; then
+  _engineer_identity_ok "$ENGINEER_RUN" || {
+    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
+    exit 1
+  }
+else
+  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
+  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
+  _engineer_select \
+    "$_engineer_root/engineer/bin/engineer_run" \
+    "$_engineer_runtime_root/engineer/bin/engineer_run" \
+    "$_engineer_root/.claude/engineer/bin/engineer_run" \
+    "$_engineer_root/.codex/engineer/bin/engineer_run" \
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
+    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
+    "$_engineer_path_candidate" || {
+    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
+    exit 1
+  }
+fi
+export ENGINEER_RUN
+engineer_run() {
+  sh "$ENGINEER_RUN" "$@"
+}
+if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
+  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
+fi
+INIT=$(engineer_run query init.plan-phase  "$PHASE")
+AGENT_SKILLS_UI=$(engineer_run query agent-skills ui-researcher )
+AGENT_SKILLS_UI_CHECKER=$(engineer_run query agent-skills ui-checker )
 ```
 
 Parse JSON for: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `has_context`, `has_research`, `commit_docs`, `response_language`.
@@ -45,30 +84,30 @@ SKETCH_FINDINGS_PATH=$(ls ./.claude/skills/sketch-findings-*/SKILL.md 2>/dev/nul
 Resolve UI agent models:
 
 ```bash
-UI_RESEARCHER_MODEL=$(gsd_run query resolve-model gsd-ui-researcher --raw)
-UI_CHECKER_MODEL=$(gsd_run query resolve-model gsd-ui-checker --raw)
+UI_RESEARCHER_MODEL=$(engineer_run query resolve-model ui-researcher --raw)
+UI_CHECKER_MODEL=$(engineer_run query resolve-model ui-checker --raw)
 ```
 
 Check config:
 
 ```bash
-UI_ENABLED=$(gsd_run query config-get workflow.ui_phase --raw 2>/dev/null || echo "true")
+UI_ENABLED=$(engineer_run query config-get workflow.ui_phase --raw 2>/dev/null || echo "true")
 ```
 
 **If `UI_ENABLED` is `false`:**
 ```
-UI phase is disabled in config. Enable via /gsd:settings.
+UI phase is disabled in config. Enable via /settings.
 ```
 Exit workflow.
 
-**If `planning_exists` is false:** Error — run `/gsd:new-project` first.
+**If `planning_exists` is false:** Error — run `/new-project` first.
 
 ## 2. Parse and Validate Phase
 
 Extract phase number from $ARGUMENTS. If not provided, detect next unplanned phase.
 
 ```bash
-PHASE_INFO=$(gsd_run query roadmap.get-phase "${PHASE}")
+PHASE_INFO=$(engineer_run query roadmap.get-phase "${PHASE}")
 ```
 
 **If `found` is false:** Error with available phases.
@@ -78,7 +117,7 @@ PHASE_INFO=$(gsd_run query roadmap.get-phase "${PHASE}")
 **If `has_context` is false:**
 ```
 No CONTEXT.md found for Phase {N}.
-Recommended: run /gsd:discuss-phase {N} first to capture design preferences.
+Recommended: run /discuss-phase {N} first to capture design preferences.
 Continuing without user decisions — UI researcher will ask all questions.
 ```
 Continue (non-blocking).
@@ -93,7 +132,7 @@ Continue (non-blocking).
 **If `SKETCH_FINDINGS_PATH` is not empty:**
 ```
 ⚡ Sketch findings detected: {SKETCH_FINDINGS_PATH}
-   Validated design decisions from /gsd:sketch will be loaded into the UI researcher.
+   Validated design decisions from /sketch will be loaded into the UI researcher.
    Pre-validated decisions (layout, palette, typography, spacing) should be treated as locked — not re-asked.
 ```
 
@@ -125,11 +164,11 @@ If "View": display file contents, exit.
 If "Skip": proceed to step 7 (checker).
 If "Update": continue to step 5.
 
-## 5. Spawn gsd-ui-researcher
+## 5. Spawn ui-researcher
 
 Display:
 ```
-### GSD ► UI DESIGN CONTRACT — PHASE {N}
+### Engineer ► UI DESIGN CONTRACT — PHASE {N}
 
 ◆ Spawning UI researcher... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
@@ -137,7 +176,7 @@ Display:
 Build prompt:
 
 ```markdown
-Read ~/.claude/agents/gsd-ui-researcher.md for instructions.
+Read ~/.claude/agents/ui-researcher.md for instructions.
 
 <objective>
 Create UI design contract for Phase {phase_number}: {phase_name}
@@ -148,16 +187,16 @@ Answer: "What visual and interaction contracts does this phase need?"
 - {state_path} (Project State)
 - {roadmap_path} (Roadmap)
 - {requirements_path} (Requirements)
-- {context_path} (USER DECISIONS from /gsd:discuss-phase)
+- {context_path} (USER DECISIONS from /discuss-phase)
 - {research_path} (Technical Research — stack decisions)
-- {SKETCH_FINDINGS_PATH} (Sketch Findings — validated design decisions, CSS patterns, visual direction from /gsd:sketch, if exists)
+- {SKETCH_FINDINGS_PATH} (Sketch Findings — validated design decisions, CSS patterns, visual direction from /sketch, if exists)
 </required_reading>
 
 ${AGENT_SKILLS_UI}
 
 <output>
 Write to: {phase_dir}/{padded_phase}-UI-SPEC.md
-Template: ~/.claude/gsd-core/templates/UI-SPEC.md
+Template: engineer/templates/UI-SPEC.md
 </output>
 
 <config>
@@ -169,14 +208,14 @@ padded_phase: {padded_phase}
 
 Omit null file paths from `<required_reading>`.
 
-<!-- #2517 model-omit-on-inherit -->
+<!-- model-omit-on-inherit -->
 
-> **Model omission (#2517).** Omit the `model` parameter entirely when the value it would carry (`UI_RESEARCHER_MODEL`, `UI_CHECKER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @gsd-core/references/model-profile-resolution.md.
+> **Model omission.** Omit the `model` parameter entirely when the value it would carry (`UI_RESEARCHER_MODEL`, `UI_CHECKER_MODEL`) is `"inherit"` or empty. An empty value 404s on runtimes without native tier aliases — the default on non-Claude runtimes. Omitting it inherits the orchestrator's model. See @~/.claude/engineer/references/model-profile-resolution.md.
 
 ```
 Agent(
   prompt=ui_research_prompt,
-  subagent_type="gsd-ui-researcher",
+  subagent_type="ui-researcher",
   model="{UI_RESEARCHER_MODEL}",
   description="UI Design Contract Phase {N}"
 )
@@ -192,11 +231,11 @@ Display confirmation. Continue to step 7.
 **If `## UI-SPEC BLOCKED`:**
 Display blocker details and options. Exit workflow.
 
-## 7. Spawn gsd-ui-checker
+## 7. Spawn ui-checker
 
 Display:
 ```
-### GSD ► VERIFYING UI-SPEC
+### Engineer ► VERIFYING UI-SPEC
 
 ◆ Spawning UI checker... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
@@ -204,7 +243,7 @@ Display:
 Build prompt:
 
 ```markdown
-Read ~/.claude/agents/gsd-ui-checker.md for instructions.
+Read ~/.claude/agents/ui-checker.md for instructions.
 
 <objective>
 Validate UI design contract for Phase {phase_number}: {phase_name}
@@ -227,7 +266,7 @@ ui_safety_gate: {ui_safety_gate config value}
 ```
 Agent(
   prompt=ui_checker_prompt,
-  subagent_type="gsd-ui-checker",
+  subagent_type="ui-checker",
   model="{UI_CHECKER_MODEL}",
   description="Verify UI-SPEC Phase {N}"
 )
@@ -248,7 +287,7 @@ Display blocking issues. Proceed to step 9.
 Track `revision_count` (starts at 0).
 
 **If `revision_count` < 2:**
-- Re-spawn gsd-ui-researcher with revision context. `revision_count` is incremented on the
+- Re-spawn ui-researcher with revision context. `revision_count` is incremented on the
   researcher's RETURN, not here — a return of `## REVISION_CONFLICT` must not spend an
   iteration, and an increment made before dispatch cannot be withheld afterwards:
 
@@ -294,7 +333,7 @@ Max revision iterations reached. Remaining issues:
 
 Options:
 1. Force approve — proceed with current UI-SPEC (FLAGs become accepted)
-2. Edit manually — open UI-SPEC.md in editor, re-run /gsd:ui-phase
+2. Edit manually — open UI-SPEC.md in editor, re-run /ui-phase
 3. Abandon — exit without approving
 ```
 
@@ -308,7 +347,7 @@ Run AFTER the checker approves the UI-SPEC (VERIFIED, or force-approved at step 
 during authoring, so a revision-loop researcher rewrite (step 9) cannot clobber the section and the
 `## UI Considerations` block is committed with the FINAL UI-SPEC. This is the visual analog of
 spec-phase Step 5.5's edge probe, retargeted to the UI element/state axis. Reference:
-@~/.claude/gsd-core/references/ui-consideration-probe.md.
+@~/.claude/engineer/references/ui-consideration-probe.md.
 
 **Skip conditions:** if `--auto` and the UI-SPEC already carries a resolved `## UI Considerations`
 section (re-run), the write-back is idempotent (it REPLACES that section, never appends). If the
@@ -318,7 +357,7 @@ never silently no-ops (a silent skip would drop the whole state-coverage axis).
 **Non-English projects — `text_en` carries the classifier-facing translation; the UI-SPEC is
 not.** The element cues the classifier matches are **English** word-boundary patterns, so
 element prose written in another language matches nothing, classifies to zero kinds, and lands
-every element in `unclassified` (#1110) — the taxonomy contributes nothing and `--auto` leaves
+every element in `unclassified` — the taxonomy contributes nothing and `--auto` leaves
 it all `unresolved`. When this project has `response_language` set, add an optional `text_en`
 key to each `$ELEMENTS_JSON` entry: a faithful **English** translation of that element's
 `text`. `text_en` is **engine input, never user-facing output**, so the `response_language`
@@ -327,53 +366,19 @@ write it as the element's own wording, exactly as it appears in the UI-SPEC. The
 the original language — only `text_en` is translated, and element `id`s are never translated
 or renumbered (coverage rows join back on `id`). Populate `text_en` for **every** element, not
 only the ones that look UI-relevant: the zero-applicable guard below fires when `$APPLICABLE`
-is `0` and again on the all-unclassified case (`$UNCLASSIFIED = $APPLICABLE`, #4656), so a
+is `0` and again on the all-unclassified case (`$UNCLASSIFIED = $APPLICABLE`), so a
 partly-classified surface slips through both arms with no signal at all. When
 `response_language` is unset (an English-language project), omit `text_en` —
 `text` is already English and the engine falls back to it automatically (`text_en ?? text`).
 If an element still classifies to zero kinds with `text_en` populated, it carries no cue in
-any language (the recorded recall gap — ADR-857 §98 / ADR-550 D7b, not a translation failure);
+any language (the recorded recall gap, not a translation failure);
 author an explicit `elements` array on that element instead of relying on the prose classifier.
-(#4657)
 
-**Runtime coverage compute — resolve and invoke ui-consideration-probe.cjs:**
+
+**Runtime coverage compute — invoke spec.ui-probe:**
 
 ```bash
-# Resolve the compiled ui-consideration-probe.cjs against the GSD install dir via RUNTIME_DIR
-# (#448) — NOT the consuming project's git root — falling back to git toplevel / $HOME/.claude.
-# Mirrors spec-phase.md Step 5.5's edge-probe resolution idiom verbatim (same candidate paths).
-_GSD_RT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-UI_PROBE_JS=$(for _c in \
-  "$_GSD_RT/gsd-core/bin/lib/ui-consideration-probe.cjs" \
-  "$_GSD_RT/bin/lib/ui-consideration-probe.cjs" \
-  "$_GSD_RT/.claude/bin/lib/ui-consideration-probe.cjs" \
-  "$HOME/.claude/gsd-core/bin/lib/ui-consideration-probe.cjs" \
-  "$HOME/.claude/bin/lib/ui-consideration-probe.cjs"; do
-  [ -f "$_c" ] && { echo "$_c"; break; }
-done)
-
-# Graceful degradation — never a silent skip. Build ONLY when $_GSD_RT is a verified GSD source
-# checkout (has tsconfig.build.json + src/ui-consideration-probe.cts), pinned with --prefix so we
-# never trigger the CONSUMING project's own build during a ui-phase. Real installs ship the
-# compiled .cjs via prepublishOnly, so this path only matters in a GSD dev checkout.
-if [ -z "$UI_PROBE_JS" ]; then
-  if [ -f "$_GSD_RT/tsconfig.build.json" ] && [ -f "$_GSD_RT/src/ui-consideration-probe.cts" ]; then
-    npm --prefix "$_GSD_RT" run build:lib 2>/dev/null || true
-    UI_PROBE_JS=$(for _c in \
-      "$_GSD_RT/gsd-core/bin/lib/ui-consideration-probe.cjs" \
-      "$_GSD_RT/bin/lib/ui-consideration-probe.cjs" \
-      "$_GSD_RT/.claude/bin/lib/ui-consideration-probe.cjs" \
-      "$HOME/.claude/gsd-core/bin/lib/ui-consideration-probe.cjs" \
-      "$HOME/.claude/bin/lib/ui-consideration-probe.cjs"; do
-      [ -f "$_c" ] && { echo "$_c"; break; }
-    done)
-  fi
-  if [ -z "$UI_PROBE_JS" ]; then
-    echo "ERROR: ui-consideration-probe.cjs not found — reinstall GSD or run \`npm run build:lib\` in your GSD checkout." >&2
-    exit 1
-  fi
-fi
-
+# The Python runtime owns probe loading; no build step is needed.
 # Element extraction (MANUAL BY DESIGN — not an oversight): the agent reads the researcher-authored
 # UI-SPEC prose (the described surfaces — the Design System / Copywriting rows and any element the
 # researcher named) and writes ONE object per UI element/surface: {"id","text","text_en"?} where
@@ -397,42 +402,42 @@ cat > "$ELEMENTS_JSON" <<'JSON'
   { "id": "E1", "text": "<replace: element/surface description from the UI-SPEC prose>" }
 ]
 JSON
-if ! node -e 'const a=require(process.argv[1]);if(!Array.isArray(a)||a.length===0)process.exit(1);if(a.some(e=>typeof e.text!=="string"||!e.text.trim()||e.text.includes("<replace:")))process.exit(1)' "$ELEMENTS_JSON" 2>/dev/null; then
+if ! engineer_run query json.validate --schema elements --input "$ELEMENTS_JSON" 2>/dev/null; then
   rm -f "$ELEMENTS_JSON"
   echo "ERROR: ui-probe elements JSON is empty/invalid or still holds the <replace: …> placeholder — populate \$ELEMENTS_JSON from the UI-SPEC's described surfaces before this step runs." >&2
   exit 1
 fi
 # Invoke the compiled engine and CAPTURE its report. FATAL-INVOKE GUARD: use `if ! COVERAGE=$(…)`,
-# NEVER a bare `COVERAGE=$(node …)` — a bare capture swallows the engine's exit 2 (invalid shape /
+# NEVER an unchecked coverage command substitution — a bare capture swallows the engine's exit 2 (invalid shape /
 # bad input) and falls through to prose re-derivation: fail-OPEN at the exact boundary the engine
 # validation protects.
-if ! COVERAGE=$(node "$UI_PROBE_JS" "$ELEMENTS_JSON"); then
+if ! COVERAGE=$(engineer_run query spec.ui-probe "$ELEMENTS_JSON"); then
   rm -f "$ELEMENTS_JSON"
   echo "ERROR: ui-consideration-probe engine failed (invalid shapes or bad input) — fix the element(s) and re-run; never proceed with empty coverage." >&2
   exit 1
 fi
 rm -f "$ELEMENTS_JSON"
 # Malformed-report guard: exit 0 but garbage. The report must parse as { items[], coverage{} }.
-if ! printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let r;try{r=JSON.parse(s)}catch{process.exit(1)}if(!r||!Array.isArray(r.items)||typeof r.coverage!=="object"||r.coverage===null)process.exit(1)})'; then
+if ! printf '%s' "$COVERAGE" | engineer_run query json.validate --schema coverage >/dev/null; then
   echo "ERROR: ui-consideration-probe produced an unparseable or malformed coverage report — refusing to proceed with the resolution loop." >&2
   exit 1
 fi
 # Zero-applicable guard: a report where NO category applied across ANY element is far more likely a
 # classification miss (or malformed elements) than a genuinely state-free UI. Surface it loudly.
-APPLICABLE=$(printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let n=0;try{n=JSON.parse(s).coverage.applicable}catch{n=0}process.stdout.write(String(n))})')
-UNCLASSIFIED=$(printf '%s' "$COVERAGE" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{let n=0;try{n=JSON.parse(s).coverage.unclassified}catch{n=0}process.stdout.write(String(n))})')
-# #4656: all-unclassified reads as a non-zero applicable — widen the guard to fire there too.
+APPLICABLE=$(printf '%s' "$COVERAGE" | engineer_run query json.get --field coverage.applicable --default 0 --raw)
+UNCLASSIFIED=$(printf '%s' "$COVERAGE" | engineer_run query json.get --field coverage.unclassified --default 0 --raw)
+# All-unclassified reads as a non-zero applicable — widen the guard to fire there too.
 if [ "$APPLICABLE" = "0" ] || [ "$UNCLASSIFIED" = "$APPLICABLE" ]; then
   echo "WARNING: ui-consideration-probe proposed ZERO applicable categories across all elements — likely a classification miss or malformed elements, not a genuinely state-free UI. Do NOT silently write an empty UI Considerations section." >&2
 fi
 ```
 
-If the guard above fired (`$APPLICABLE` is `0`, or every element is unclassified — `$UNCLASSIFIED = $APPLICABLE`, #4656), do NOT proceed silently: ask via AskUserQuestion ("The UI probe found no
+If the guard above fired (`$APPLICABLE` is `0`, or every element is unclassified — `$UNCLASSIFIED = $APPLICABLE`), do NOT proceed silently: ask via AskUserQuestion ("The UI probe found no
 applicable state considerations — is this genuinely a state-free surface, or should we revisit the
 element descriptions?"). Only write an empty section after explicit confirmation.
 
 **Propose-then-confirm (the partial-cue mitigation — load-bearing).** For each element, the engine
-reports the DETECTED element kinds (`classifyElement` over the built `.cjs`). The prose classifier
+reports the DETECTED element kinds (`classifyElement` in the Python runtime). The prose classifier
 is heuristic and LOSSY: a surface that is genuinely both a form and a list, but whose prose trips
 only the form cue, under-covers — and because SOMETHING classified, no `unclassified` signal fires.
 So SURFACE the detected kinds to the user (AskUserQuestion) and ask whether any real element kind
@@ -458,11 +463,11 @@ resolution runs.
 **`--auto` mode (two layers).** The adapter's `autoResolve` is the CODE floor: every applicable
 consideration auto-resolves with `verification: backstop` (carrying the taxonomy question as its
 resolution) and an `unclassified` candidate stays `unresolved` — it NEVER auto-`dismiss`es and never
-auto-resolves an unclassified item with backstop (#1110). On top of that floor the workflow MAY
+auto-resolves an unclassified item with backstop. On top of that floor the workflow MAY
 upgrade an item to `resolved` (verification: explicit) when a
 defensible acceptance criterion can be written (the same judgment spec-phase 5.5 applies in prose).
 An auto `--auto` run therefore leaves un-upgraded items as `resolved` (verification: backstop): at verify time each one
-with no wired evidence routes to `insufficient_spec → human_needed` — never a silent pass (#1154).
+with no wired evidence routes to `insufficient_spec → human_needed` — never a silent pass.
 That surfacing is the intended honest-verifier behavior, not over-flagging.
 
 **Write-back.** Populate a `## UI Considerations` section in the UI-SPEC from the resolved
@@ -477,7 +482,7 @@ STATE coverage and REFERENCES those rows rather than restating the copy (de-dup)
 
 Display:
 ```
-### GSD ► UI-SPEC READY ✓
+### Engineer ► UI-SPEC READY ✓
 
 **Phase {N}: {Name}** — UI design contract approved
 
@@ -491,14 +496,14 @@ Dimensions: 7/7 passed
 {If CONTEXT.md exists for this phase:}
 **Plan Phase {N}** — planner will use UI-SPEC.md as design context
 
-`/clear` then: `/gsd:plan-phase {N}`
+`/clear` then: `/plan-phase {N}`
 
 {If CONTEXT.md does NOT exist:}
 **Discuss Phase {N}** — gather implementation context before planning
 
-`/clear` then: `/gsd:discuss-phase {N}`
+`/clear` then: `/discuss-phase {N}`
 
-(or `/gsd:plan-phase {N}` to skip discussion)
+(or `/plan-phase {N}` to skip discussion)
 
 ---
 ```
@@ -506,13 +511,13 @@ Dimensions: 7/7 passed
 ## 11. Commit (if configured)
 
 ```bash
-gsd_run query commit "docs(${padded_phase}): UI design contract" --files "${PHASE_DIR}/${PADDED_PHASE}-UI-SPEC.md"
+engineer_run query commit "docs(${padded_phase}): UI design contract" --files "${PHASE_DIR}/${PADDED_PHASE}-UI-SPEC.md"
 ```
 
 ## 12. Update State
 
 ```bash
-gsd_run query state.record-session \
+engineer_run query state.record-session \
   --stopped-at "Phase ${PHASE} UI-SPEC approved" \
   --resume-file "${PHASE_DIR}/${PADDED_PHASE}-UI-SPEC.md"
 ```
@@ -524,9 +529,9 @@ gsd_run query state.record-session \
 - [ ] Phase validated against roadmap
 - [ ] Prerequisites checked (CONTEXT.md, RESEARCH.md — non-blocking warnings)
 - [ ] Existing UI-SPEC handled (update/view/skip)
-- [ ] gsd-ui-researcher spawned with correct context and file paths
+- [ ] ui-researcher spawned with correct context and file paths
 - [ ] UI-SPEC.md created in correct location
-- [ ] gsd-ui-checker spawned with UI-SPEC.md
+- [ ] ui-checker spawned with UI-SPEC.md
 - [ ] All 7 dimensions evaluated
 - [ ] Revision loop if BLOCKED (max 2 iterations)
 - [ ] Final status displayed with next steps

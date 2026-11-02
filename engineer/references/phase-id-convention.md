@@ -6,13 +6,13 @@ that module, not this block.
 
 <!-- PHASE-ID-CARD:START -->
 ```text
-[GSD.02] 05.03-01
+[Engineer.02] 05.03-01
  │   │   │  │   │
  │   │   │  │   └── plan        01
  │   │   │  └────── subphase    03
  │   │   └───────── phase       05
  │   └───────────── milestone   02
- └───────────────── project     GSD
+ └───────────────── project     Engineer
 
 milestone = bracket integer; dots = phase-levels; one hyphen = plan; no 'Phase' word, no vX.Y
 ```

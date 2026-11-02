@@ -1,25 +1,22 @@
 # Model Profiles
 
-Model profiles control which Claude model each GSD agent uses. This allows balancing quality vs token spend, or inheriting the currently selected session model.
+Model profiles control which Claude model each Engineer agent uses. This allows balancing quality vs token spend, or inheriting the currently selected session model.
 
 ## Profile Definitions
 
 | Agent | `quality` | `balanced` | `budget` | `adaptive` | `inherit` |
 |-------|-----------|------------|----------|------------|-----------|
-| gsd-planner | opus | opus | sonnet | opus | inherit |
-| gsd-roadmapper | opus | sonnet | sonnet | sonnet | inherit |
-| gsd-executor | opus | sonnet | sonnet | sonnet | inherit |
-| gsd-phase-researcher | opus | sonnet | haiku | sonnet | inherit |
-| gsd-project-researcher | opus | sonnet | haiku | sonnet | inherit |
-| gsd-research-synthesizer | sonnet | sonnet | haiku | haiku | inherit |
-| gsd-debugger | opus | sonnet | sonnet | opus | inherit |
-| gsd-codebase-mapper | sonnet | haiku | haiku | haiku | inherit |
-| gsd-verifier | sonnet | sonnet | haiku | sonnet | inherit |
-| gsd-plan-checker | sonnet | sonnet | haiku | haiku | inherit |
-| gsd-integration-checker | sonnet | sonnet | haiku | haiku | inherit |
-| gsd-nyquist-auditor | sonnet | sonnet | haiku | haiku | inherit |
+| planner | opus | opus | sonnet | opus | inherit |
+| executor | opus | sonnet | sonnet | sonnet | inherit |
+| phase-researcher | opus | sonnet | haiku | sonnet | inherit |
+| debugger | opus | sonnet | sonnet | opus | inherit |
+| codebase-mapper | sonnet | haiku | haiku | haiku | inherit |
+| verifier | sonnet | sonnet | haiku | sonnet | inherit |
+| plan-checker | sonnet | sonnet | haiku | haiku | inherit |
+| integration-checker | sonnet | sonnet | haiku | haiku | inherit |
+| nyquist-auditor | sonnet | sonnet | haiku | haiku | inherit |
 
-## Per-Phase-Type Model Map (#3023)
+## Per-Phase-Type Model Map 
 
 `.planning/config.json` accepts a coarse per-**phase-type** map under the `models` key. Use this when you want tuning at the phase level ("Opus for planning and execution, Sonnet for the rest") without learning the agent taxonomy.
 
@@ -35,7 +32,7 @@ Model profiles control which Claude model each GSD agent uses. This allows balan
     "completion": "sonnet"
   },
   "model_overrides": {
-    "gsd-codebase-mapper": "haiku"
+    "codebase-mapper": "haiku"
   }
 }
 ```
@@ -44,11 +41,11 @@ Model profiles control which Claude model each GSD agent uses. This allows balan
 
 | Phase type | Agents |
 |---|---|
-| `planning` | gsd-planner, gsd-roadmapper, gsd-pattern-mapper |
-| `discuss` | `gsd-assumptions-analyzer` |
-| `research` | gsd-phase-researcher, gsd-project-researcher, gsd-research-synthesizer, gsd-codebase-mapper, gsd-ui-researcher |
-| `execution` | gsd-executor, gsd-debugger, gsd-doc-writer |
-| `verification` | gsd-verifier, gsd-plan-checker, gsd-integration-checker, gsd-nyquist-auditor, gsd-ui-checker, gsd-ui-auditor, gsd-doc-verifier, gsd-code-reviewer |
+| `planning` | planner, pattern-mapper |
+| `discuss` | (no subagent) |
+| `research` | phase-researcher, codebase-mapper, ui-researcher |
+| `execution` | executor, debugger, doc-writer |
+| `verification` | verifier, plan-checker, integration-checker, nyquist-auditor, ui-checker, ui-auditor, doc-verifier, code-reviewer |
 | `completion` | (reserved — no subagent today) |
 
 ### Resolution precedence (highest to lowest)
@@ -59,14 +56,14 @@ Model profiles control which Claude model each GSD agent uses. This allows balan
 4. **Runtime default** — when nothing else applies
 
 Steps 2–4 select the *tier*; a `model_profile_overrides.<runtime>.<tier>` entry then
-maps that tier to a concrete model (#4192 — honored on the claude runtime as well, so
+maps that tier to a concrete model (honored on the claude runtime as well, so
 pinning composes with tiering instead of replacing it).
 
 ### Why two layers above the profile?
 
 - **Profile** is a global tier strategy (everyone runs balanced).
 - **`models`** is coarse phase-level tuning without learning agent names.
-- **`model_overrides`** is per-agent precision (e.g. force `haiku` on `gsd-codebase-mapper` for a fan-out).
+- **`model_overrides`** is per-agent precision (e.g. force `haiku` on `codebase-mapper` for a fan-out).
 
 The three layers compose: `models` defaults a phase, `model_overrides` carves an exception out of it.
 
@@ -97,11 +94,11 @@ The three layers compose: `models` defaults a phase, `model_overrides` carves an
 **inherit** - Follow the current session model
 - All agents resolve to `inherit`
 - Best when you switch models interactively
-- Use when: you want GSD to follow your currently selected runtime model
+- Use when: you want Engineer to follow your currently selected runtime model
 
 ## Using Non-Claude Runtimes (Codex)
 
-When installed for a non-Claude runtime, the GSD installer sets `resolve_model_ids: "omit"` in `~/.gsd/defaults.json`. This returns an empty model parameter for all agents, so each agent uses the runtime's default model. No manual setup is needed.
+When installed for a non-Claude runtime, the Engineer installer sets `resolve_model_ids: "omit"` in `~/.engineer/defaults.json`. This returns an empty model parameter for all agents, so each agent uses the runtime's default model. No manual setup is needed.
 
 To assign different models to different agents, add `model_overrides` with model IDs your runtime recognizes:
 
@@ -109,10 +106,10 @@ To assign different models to different agents, add `model_overrides` with model
 {
   "resolve_model_ids": "omit",
   "model_overrides": {
-    "gsd-planner": "o3",
-    "gsd-executor": "o4-mini",
-    "gsd-debugger": "o3",
-    "gsd-codebase-mapper": "o4-mini"
+    "planner": "o3",
+    "executor": "o4-mini",
+    "debugger": "o3",
+    "codebase-mapper": "o4-mini"
   }
 }
 ```
@@ -121,13 +118,13 @@ The same tiering logic applies: stronger models for planning and debugging, chea
 
 ## Advisor Tool (Claude Code)
 
-Claude Code (v2.1.98+) can pair the session's executor model with a stronger **advisor** model that it consults mid-generation for strategy and course-correction (Anthropic's [advisor tool](https://platform.claude.com/docs/en/agents-and-tools/tool-use/advisor-tool)). This is a host-runtime feature, not a GSD setting — GSD selects each agent's *executor* model through the profile/tier system above; Claude Code supplies the advisor.
+Claude Code (v2.1.98+) can pair the session's executor model with a stronger **advisor** model that it consults mid-generation for strategy and course-correction (Anthropic's [advisor tool](https://platform.claude.com/docs/en/agents-and-tools/tool-use/advisor-tool)). This is a host-runtime feature, not an Engineer setting — Engineer selects each agent's *executor* model through the profile/tier system above; Claude Code supplies the advisor.
 
-Set it once at the session level with `/advisor <model>` (or the `advisorModel` setting / `--advisor` flag). **Subagents inherit the session advisor automatically**, so every GSD subagent an orchestrator spawns gets the same advisor with no per-agent configuration. It composes cleanly with GSD's tiering: the profile keeps executors cheap where the work is mechanical, and the advisor adds a stronger reviewer inline on the turns that benefit.
+Set it once at the session level with `/advisor <model>` (or the `advisorModel` setting / `--advisor` flag). **Subagents inherit the session advisor automatically**, so every Engineer subagent an orchestrator spawns gets the same advisor with no per-agent configuration. It composes cleanly with Engineer's tiering: the profile keeps executors cheap where the work is mechanical, and the advisor adds a stronger reviewer inline on the turns that benefit.
 
 ### Candidate pairings
 
-Per Anthropic's advisor-tool docs the advisor must be at least as capable as the executor. Candidate pairings by profile — evaluate on your own workload; the quality/cost characterizations below are Anthropic-reported, not GSD guarantees:
+Per Anthropic's advisor-tool docs the advisor must be at least as capable as the executor. Candidate pairings by profile — evaluate on your own workload; the quality/cost characterizations below are Anthropic-reported, not Engineer guarantees:
 
 | Profile | Typical executors | Candidate advisor | Rationale (per Anthropic docs) |
 |---|---|---|---|
@@ -144,9 +141,9 @@ Fable 5 is a valid advisor for Haiku 4.5, Sonnet 4.6/5, and Opus 4.8 executors, 
 
 ### Constraint: session-level only (today)
 
-The advisor is a single session-wide setting inherited by all subagents; there is **no per-agent advisor selection**, so GSD cannot vary the advisor by role the way it varies the executor model (e.g. "no advisor on the Haiku mapper, a Fable 5 advisor on the Sonnet executor"). Per-agent advisor control is tracked upstream at [anthropics/claude-code#73072](https://github.com/anthropics/claude-code/issues/73072); until it lands, pick one session advisor that fits the most valuable agents in your run.
+The advisor is a single session-wide setting inherited by all subagents; there is **no per-agent advisor selection**, so Engineer cannot vary the advisor by role the way it varies the executor model (e.g. "no advisor on the Haiku mapper, a Fable 5 advisor on the Sonnet executor"). Pick one session advisor that fits the most valuable agents in your run.
 
-## Dynamic Routing with Failure-Tier Escalation (#3024)
+## Dynamic Routing with Failure-Tier Escalation 
 
 When `dynamic_routing.enabled = true` in `.planning/config.json`, the resolver picks a model from a tier-mapped table based on the agent's *default tier* (light / standard / heavy) and escalates to the next tier up on orchestrator-detected soft failure.
 
@@ -169,9 +166,9 @@ When `dynamic_routing.enabled = true` in `.planning/config.json`, the resolver p
 
 | Tier | Agents | Use case |
 |---|---|---|
-| `light` | gsd-codebase-mapper, gsd-pattern-mapper, gsd-research-synthesizer, gsd-plan-checker, gsd-integration-checker, gsd-nyquist-auditor, gsd-ui-checker, gsd-ui-auditor, gsd-doc-verifier | Cheap/fast — pure mappers, scanners, low-stakes audits |
-| `standard` | gsd-executor, gsd-phase-researcher, gsd-project-researcher, gsd-verifier, gsd-doc-writer, gsd-ui-researcher | Default workhorse — research, writing, primary verification |
-| `heavy` | gsd-planner, gsd-roadmapper, gsd-debugger | Deep reasoning — already at top, can't escalate further |
+| `light` | codebase-mapper, pattern-mapper, plan-checker, integration-checker, nyquist-auditor, ui-checker, ui-auditor, doc-verifier | Cheap/fast — pure mappers, scanners, low-stakes audits |
+| `standard` | executor, phase-researcher, verifier, doc-writer, ui-researcher | Default workhorse — research, writing, primary verification |
+| `heavy` | planner, debugger | Deep reasoning — already at top, can't escalate further |
 
 **Escalation flow** (orchestrator-driven):
 
@@ -184,7 +181,7 @@ When `dynamic_routing.enabled = true` in `.planning/config.json`, the resolver p
 
 1. `model_overrides[<agent>]` — full ID, always wins
 2. `dynamic_routing.tier_models[escalated_tier]` — when `enabled: true`
-3. `models[<phase_type>]` — coarse phase-level (#3023)
+3. `models[<phase_type>]` — coarse phase-level 
 4. `model_profile` — global tier strategy
 
 When `dynamic_routing.enabled = false` (default), behavior is identical to today.
@@ -202,7 +199,7 @@ is (highest → lowest):
 4. If no dynamic_routing match, check models[phase_type] for a phase-type tier
    (see §Per-Phase-Type Model Map for the agent → phase-type mapping)
 5. Check model_profile_overrides.<runtime>.<tier> for a per-tier model override
-   (honored on the claude runtime too — #4192; verbatim unless it maps to the
+   (honored on the claude runtime too; verbatim unless it maps to the
    current tier alias)
 6. If no phase-type slot, look up agent in profile table
 7. Pass model parameter to Task call
@@ -215,9 +212,9 @@ the next spawn. `effort` (claude runtime) has its own cascade
 (`agent_overrides` → `routing_tier_defaults` → `default`; see
 `docs/CONFIGURATION.md` § "Where effort actually reaches") and is baked at
 install time into the `effort:` frontmatter key of
-`~/.claude/agents/gsd-*.md` — Claude Code's Agent tool has no per-spawn
+`~/.claude/agents/*.md` — Claude Code's Agent tool has no per-spawn
 effort parameter, so per-agent frontmatter is the only channel. An effort
-config change has no effect until `gsd_run effort sync --apply`
+config change has no effect until `engineer_run effort sync --apply`
 re-syncs the agent files. Codex agents instead pin
 `model_reasoning_effort` in `~/.codex/agents/*.toml` at install time.
 
@@ -229,19 +226,19 @@ Override specific agents without changing the entire profile:
 {
   "model_profile": "balanced",
   "model_overrides": {
-    "gsd-executor": "opus",
-    "gsd-planner": "haiku"
+    "executor": "opus",
+    "planner": "haiku"
   }
 }
 ```
 
-Overrides take precedence over the profile. Valid values: `opus`, `sonnet`, `haiku`, `fable`, `inherit`, or any fully-qualified model ID (e.g., `"o3"`, `"openai/o3"`). `fable` is a Claude Code Agent-tool alias, not a GSD profile tier — it has no column in the profile table above.
+Overrides take precedence over the profile. Valid values: `opus`, `sonnet`, `haiku`, `fable`, `inherit`, or any fully-qualified model ID (e.g., `"o3"`, `"openai/o3"`). `fable` is a Claude Code Agent-tool alias, not an Engineer profile tier — it has no column in the profile table above.
 
-On the Claude runtime, fully-qualified Claude model IDs are honored as explicit generation pins (#4192): an ID that names the current tier default (e.g. `"claude-sonnet-5"`) resolves to its tier alias — the same model in the form the Agent tool always accepts — while any other ID (e.g. `"claude-opus-4-7"`) resolves verbatim, with a warn-once stderr note that setups accepting only tier aliases will not honor a full ID. To pin a generation for a whole tier rather than one agent, set `model_profile_overrides.claude.<tier>` (see docs/CONFIGURATION.md — Runtime-Aware Profiles).
+On the Claude runtime, fully-qualified Claude model IDs are honored as explicit generation pins: an ID that names the current tier default (e.g. `"claude-sonnet-5"`) resolves to its tier alias — the same model in the form the Agent tool always accepts — while any other ID (e.g. `"claude-opus-4-7"`) resolves verbatim, with a warn-once stderr note that setups accepting only tier aliases will not honor a full ID. To pin a generation for a whole tier rather than one agent, set `model_profile_overrides.claude.<tier>` (see docs/CONFIGURATION.md — Runtime-Aware Profiles).
 
 ## Switching Profiles
 
-Runtime: `/gsd-set-profile <profile>`
+Runtime: `/set-profile <profile>`
 
 Per-project default: Set in `.planning/config.json`:
 ```json
@@ -252,20 +249,20 @@ Per-project default: Set in `.planning/config.json`:
 
 ## Design Rationale
 
-**Why Opus for gsd-planner?**
+**Why Opus for planner?**
 Planning involves architecture decisions, goal decomposition, and task design. This is where model quality has the highest impact.
 
-**Why Sonnet for gsd-executor?**
+**Why Sonnet for executor?**
 Executors follow explicit PLAN.md instructions. The plan already contains the reasoning; execution is implementation.
 
 **Why Sonnet (not Haiku) for verifiers in balanced?**
 Verification requires goal-backward reasoning - checking if code *delivers* what the phase promised, not just pattern matching. Sonnet handles this well; Haiku may miss subtle gaps.
 
-**Why Haiku for gsd-codebase-mapper?**
+**Why Haiku for codebase-mapper?**
 Read-only exploration and pattern extraction. No reasoning required, just structured output from file contents.
 
 **Why `inherit` instead of passing `opus` directly?**
-Claude Code's `"opus"` alias maps to a specific model version. Organizations may block older opus versions while allowing newer ones. GSD returns `"inherit"` for opus-tier agents, causing them to use whatever opus version the user has configured in their session. This avoids version conflicts and silent fallbacks to Sonnet.
+Claude Code's `"opus"` alias maps to a specific model version. Organizations may block older opus versions while allowing newer ones. Engineer returns `"inherit"` for opus-tier agents, causing them to use whatever opus version the user has configured in their session. This avoids version conflicts and silent fallbacks to Sonnet.
 
 **Why `inherit` profile?**
-Some runtimes let users switch models at runtime (`/model`). The `inherit` profile keeps all GSD subagents aligned to that live selection.
+Some runtimes let users switch models at runtime (`/model`). The `inherit` profile keeps all Engineer subagents aligned to that live selection.

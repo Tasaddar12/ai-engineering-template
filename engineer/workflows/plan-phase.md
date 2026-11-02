@@ -1,4 +1,4 @@
-<!-- gsd:loop-host
+<!-- engineer:loop-host
 step: plan
 points: plan:pre, plan:post
 agent-roles: researcher, planner, checker
@@ -6,33 +6,32 @@ produces: PLAN.md
 consumes: CONTEXT.md
 -->
 <purpose>
-Create executable phase prompts (PLAN.md files) for a roadmap phase with integrated research and verification. Default flow: Research (if needed) -> Plan -> Verify -> Done. Orchestrates gsd-phase-researcher, gsd-planner, and gsd-plan-checker agents with a revision loop (max 3 iterations).
+Create executable phase prompts (PLAN.md files) for a roadmap phase with integrated research and verification. Default flow: Research (if needed) -> Plan -> Verify -> Done. Orchestrates phase-researcher, planner, and plan-checker agents with a revision loop (max 3 iterations).
 </purpose>
 
 <required_reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
 
-@~/.claude/gsd-core/references/ui-brand.md
-@~/.claude/gsd-core/references/revision-loop.md
-@~/.claude/gsd-core/references/gate-prompts.md
-@~/.claude/gsd-core/references/agent-contracts.md
-@~/.claude/gsd-core/references/gates.md
+@~/.claude/engineer/references/ui-brand.md
+@~/.claude/engineer/references/revision-loop.md
+@~/.claude/engineer/references/gate-prompts.md
+@~/.claude/engineer/references/agent-contracts.md
+@~/.claude/engineer/references/gates.md
 </required_reading>
 
 <available_agent_types>
-Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
-- gsd-phase-researcher — Researches technical approaches for a phase
-- gsd-pattern-mapper — Analyzes codebase for existing patterns, produces PATTERNS.md
-- gsd-planner — Creates detailed plans from phase scope
-- gsd-plan-checker — Reviews plan quality before execution
+Valid Engineer subagent types (use exact names — do not fall back to 'general-purpose'):
+- phase-researcher — Researches technical approaches for a phase
+- pattern-mapper — Analyzes codebase for existing patterns, produces PATTERNS.md
+- planner — Creates detailed plans from phase scope
+- plan-checker — Reviews plan quality before execution
 </available_agent_types>
 
 <runtime_compatibility>
 **Subagent spawning — top-level Claude Code:**
 The Agent tool IS available in a top-level Claude Code session. Always spawn
-gsd-phase-researcher, gsd-planner, and gsd-plan-checker as separate Agent() calls.
-Never absorb these roles inline. Role separation is required regardless of `--chain`
-or `--auto` — those options suppress interactive prompts only; they NEVER authorize
+phase-researcher, planner, and plan-checker as separate Agent() calls.
+Never absorb these roles inline. Role separation is required regardless of automatic routing — those options suppress interactive prompts only; they NEVER authorize
 collapsing plan roles into the orchestrator context.
 
 **Backgrounded Claude Code (via manager/autonomous):**
@@ -40,14 +39,14 @@ The calling workflow (manager.md / autonomous.md) already runs plan-phase inline
 Skill() on Claude Code so that the plan-checker subagent can still spawn. plan-phase
 itself does not need to detect this case.
 
-**#1009 caveat (discuss-phase early-exit):**
+** caveat (discuss-phase early-exit):**
 The "display the command and exit" instruction near `## 4` applies only to the
 discuss-phase early-exit path. It does NOT authorize inline role performance for any
 plan-phase agents.
 
 **Other runtimes:**
 Do not pre-judge Agent availability by introspection. Always attempt the actual
-Agent() call for gsd-phase-researcher, gsd-planner, and gsd-plan-checker. Only
+Agent() call for phase-researcher, planner, and plan-checker. Only
 a real tool-unavailable error returned by Agent() is a reliable absence signal —
 never stop based on a self-assessed "I think Agent is unavailable." If the call
 fails with a tool-unavailable error, log the gap and stop — do NOT collapse
@@ -61,140 +60,116 @@ for the plan-checker gate to be meaningful.
 
 **Do not create, rename, or switch git branches during plan-phase.** Branch identity is established at discuss-phase and is owned by the user's git workflow. A phase rename in ROADMAP.md is a plan-level change only — it does not mutate git branch names. If `phase_slug` in the init JSON differs from the current branch name, that is expected and correct; leave the branch unchanged.
 
-## 0.5. Compact Content Gate
-
-Read and follow `gsd-core/references/compact-content-gate.md` now — it states the `workflow.compact_content` check and the resolution rule this spine defers to. When it directs a Read, read `gsd-core/workflows/plan-phase/detail/elaboration.md` in full before continuing past this point; its content elaborates on several steps below.
 
 ## 1. Initialize
 
 Load all context in one call (paths only to minimize orchestrator context):
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
+IFS= read -rd '' ENGINEER_ARGS <<'ENGINEER_ARGS_END' || true
 $ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-_GSD_SHIM_NAME="gsd-tools.cjs"; _GSD_RUNTIME_ROOT="${RUNTIME_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"; GSD_TOOLS="${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}"; _gsd_at() { for _p; do if [ -f "$_p" ]; then GSD_TOOLS="$_p"; return 0; fi; done; return 1; }; _gsd_id_ok() { case "$("$1" runtime-identity --raw 2>/dev/null || true)" in '{"packageName":"@opengsd/gsd-core"'*'}') return 0;; *) return 1;; esac; }; _gsd_homes() { set -- "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" "${CODEX_HOME:-$HOME/.codex}"; for _h; do _gsd_at "$_h/gsd-core/bin/${_GSD_SHIM_NAME}" && return 0; done; return 1; }; if _gsd_at "${_GSD_RUNTIME_ROOT}/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.claude/gsd-core/bin/${_GSD_SHIM_NAME}" "${_GSD_RUNTIME_ROOT}/.codex/gsd-core/bin/${_GSD_SHIM_NAME}"; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif _gsd_homes; then gsd_run() { node "$GSD_TOOLS" "$@"; }; elif unset -f gsd_run; _G="$(command -v gsd_run)"; [ -n "$_G" ] && _gsd_id_ok "$_G"; then GSD_TOOLS="$_G"; gsd_run() { "$GSD_TOOLS" "$@"; }; else echo "ERROR: gsd-tools.cjs not found at $GSD_TOOLS and no identity-proving gsd_run is on PATH. Run: npx -y @opengsd/gsd-core@latest --claude --local" >&2; exit 1; fi; GSD_IDENTITY_STATUS=unverified; _gsd_id_ok gsd_run && GSD_IDENTITY_STATUS=ok; export GSD_IDENTITY_STATUS; [ "$GSD_IDENTITY_STATUS" = ok ] || echo "WARNING: \"$GSD_TOOLS\" did not prove it is @opengsd/gsd-core - it is either a different package or an @opengsd/gsd-core older than the runtime-identity verb. See docs/how-to/diagnose-a-foreign-gsd-tools.md" >&2; if [ -n "${CLAUDE_ENV_FILE:-}" ] && [ -n "${GSD_TOOLS:-}" ]; then printf "export PATH='%s':\"\$PATH\"\n" "${GSD_TOOLS%/*}" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true; fi
-GRAN_PARAM=""; if [[ "$GSD_ARGS" =~ (^|[[:space:]])--granularity[[:space:]]+([^[:space:]-][^[:space:]]*) ]]; then GRAN_PARAM="--granularity ${BASH_REMATCH[2]}"; fi
-PRD_PARAM=""; if [[ "$GSD_ARGS" =~ (^|[[:space:]])--prd[[:space:]]+([^[:space:]-][^[:space:]]*) ]]; then PRD_PARAM="--prd ${BASH_REMATCH[2]}"; fi
-INGEST_PARAM=""; if [[ "$GSD_ARGS" =~ (^|[[:space:]])--ingest[[:space:]]+([^[:space:]-][^[:space:]]*) ]]; then INGEST_PARAM="--ingest ${BASH_REMATCH[2]}"; fi
-RESEARCH_PHASE_PARAM=""; if [[ "$GSD_ARGS" =~ (^|[[:space:]])--research-phase[[:space:]]+([^[:space:]-][^[:space:]]*) ]]; then RESEARCH_PHASE_PARAM="--research-phase ${BASH_REMATCH[2]}"; fi
-REVIEWS_PARAM=""; if [[ "$GSD_ARGS" =~ (^|[[:space:]])--reviews([[:space:]]|$) ]]; then REVIEWS_PARAM="--reviews"; fi
-CHUNKED_PARAM=""; if [[ "$GSD_ARGS" =~ (^|[[:space:]])--chunked([[:space:]]|$) ]]; then CHUNKED_PARAM="--chunked"; fi
-# Project the just-completed planning mode onto the execute-phase follow-up (#3297):
+ENGINEER_ARGS_END
+ENGINEER_ARGS=${ENGINEER_ARGS%$'\n'}
+_engineer_identity_ok() {
+  [ -f "$1" ] || return 1
+  [ "$(sh "$1" query runtime-identity --pick packageName --raw 2>/dev/null)" = "engineer-runtime" ]
+}
+_engineer_select() {
+  for _engineer_candidate do
+    if _engineer_identity_ok "$_engineer_candidate"; then
+      ENGINEER_RUN="$_engineer_candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+if [ -n "${ENGINEER_RUN:-}" ]; then
+  _engineer_identity_ok "$ENGINEER_RUN" || {
+    printf '%s\n' "ERROR: ENGINEER_RUN does not identify engineer-runtime: $ENGINEER_RUN" >&2
+    exit 1
+  }
+else
+  _engineer_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  _engineer_runtime_root=${RUNTIME_DIR:-$_engineer_root}
+  _engineer_path_candidate=$(command -v engineer_run 2>/dev/null || true)
+  _engineer_select \
+    "$_engineer_root/engineer/bin/engineer_run" \
+    "$_engineer_runtime_root/engineer/bin/engineer_run" \
+    "$_engineer_root/.claude/engineer/bin/engineer_run" \
+    "$_engineer_root/.codex/engineer/bin/engineer_run" \
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/engineer/bin/engineer_run" \
+    "${CODEX_HOME:-$HOME/.codex}/engineer/bin/engineer_run" \
+    "$_engineer_path_candidate" || {
+    printf '%s\n' 'ERROR: No engineer-runtime launcher was found. Install the Claude or Codex workflow runtime or set ENGINEER_RUN.' >&2
+    exit 1
+  }
+fi
+export ENGINEER_RUN
+engineer_run() {
+  sh "$ENGINEER_RUN" "$@"
+}
+if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
+  _engineer_path_escaped=$(printf '%s' "${ENGINEER_RUN%/*}" | sed 's/[\\`"$]/\\&/g')
+  printf 'export PATH="%s:$PATH"\n' "$_engineer_path_escaped" >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
+fi
+GRAN_PARAM=""; if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--granularity[[:space:]]+([^[:space:]-][^[:space:]]*) ]]; then GRAN_PARAM="--granularity ${BASH_REMATCH[2]}"; fi
+# Project the just-completed planning mode onto the execute-phase follow-up:
 # a --gaps run creates gap_closure plans, so the Next Up handoff must point at
 # execute-phase's matching --gaps-only scope rather than the whole-phase run.
-# Standard and --reviews runs leave GAPS_EXEC_FLAG empty → their Next Up is unchanged.
 GAPS_MODE=false
-if [[ "$GSD_ARGS" =~ (^|[[:space:]])--gaps([[:space:]]|$) ]]; then GAPS_MODE=true; fi
+if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--gaps([[:space:]]|$) ]]; then GAPS_MODE=true; fi
 GAPS_EXEC_FLAG=""
 if [ "$GAPS_MODE" = "true" ]; then GAPS_EXEC_FLAG="--gaps-only"; fi
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-INIT=$(gsd_run query init.plan-phase ${GSD_WS:+--ws=${GSD_WS##* }} "$PHASE" $GRAN_PARAM $PRD_PARAM $INGEST_PARAM $RESEARCH_PHASE_PARAM $REVIEWS_PARAM $CHUNKED_PARAM)
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_RESEARCHER=$(gsd_run query agent-skills gsd-phase-researcher ${GSD_WS:+--ws=${GSD_WS##* }})
-AGENT_SKILLS_PLANNER=$(gsd_run query agent-skills gsd-planner ${GSD_WS:+--ws=${GSD_WS##* }})
-AGENT_SKILLS_CHECKER=$(gsd_run query agent-skills gsd-plan-checker ${GSD_WS:+--ws=${GSD_WS##* }})
-CONTEXT_WINDOW=$(gsd_run query config-get context_window --raw 2>/dev/null || echo "200000")
-MVP_MODE_CFG=$(gsd_run query config-get workflow.mvp_mode --raw 2>/dev/null || echo "false")
+INIT=$(engineer_run query init.plan-phase  "$PHASE" $GRAN_PARAM )
+AGENT_SKILLS_RESEARCHER=$(engineer_run query agent-skills phase-researcher )
+AGENT_SKILLS_PLANNER=$(engineer_run query agent-skills planner )
+AGENT_SKILLS_CHECKER=$(engineer_run query agent-skills plan-checker )
+CONTEXT_WINDOW=$(engineer_run query config-get context_window --raw 2>/dev/null || echo "200000")
 ```
 
-When the tdd capability's `workflow.tdd_mode` is active (resolved via the plan:pre render-hooks), the planner agent is instructed to apply `type: tdd` to eligible tasks using heuristics from `gsd-core/references/tdd.md`. The TDD guidance is injected via the tdd capability's contribution hook at §5.6; no inline config-get is needed.
+When `workflow.tdd_mode` is true, instruct the planner to apply native TDD task heuristics from `engineer/references/tdd.md`.
 
 When `CONTEXT_WINDOW >= 500000`, the planner prompt includes the 3 most recent prior-phase CONTEXT.md/SUMMARY.md files plus any phases in the current phase's `Depends on:` field (explicit deps load regardless of recency).
 
-**#2401 — `prior_verify_commands` is NOT part of that enrichment and is never gated on `CONTEXT_WINDOW`.** It is a handful of one-line `<automated>` commands harvested from the nearest prior phase that had any; the payload is tiny and its absence at 200k is exactly what made the planner re-invent a verify command and author an unrunnable path. Surface it at every context window.
+** — `prior_verify_commands` is NOT part of that enrichment and is never gated on `CONTEXT_WINDOW`.** It is a handful of one-line `<automated>` commands harvested from the nearest prior phase that had any; the payload is tiny and its absence at 200k is exactly what made the planner re-invent a verify command and author an unrunnable path. Surface it at every context window.
 
-Parse JSON for: `researcher_model`, `planner_model`, `checker_model`, `research_enabled`, `plan_checker_enabled`, `nyquist_validation_enabled`, `commit_docs`, `text_mode`, `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `has_research`, `has_context`, `has_reviews`, `has_plans`, `plan_count`, `phase_status` (#3569), `planning_exists`, `roadmap_exists`, `phase_req_ids`, `response_language`, `granularity`, `prior_verify_commands` (#2401 — array of `{phase, plan, task, command}`, possibly empty; emitted at every context window), `threat_id_duplicates` + `threat_id_duplicate_count` (#4683 — cross-plan threat-ID collisions; consumed at step 5.55).
+Parse JSON for: `researcher_model`, `planner_model`, `checker_model`, `research_enabled`, `plan_checker_enabled`, `nyquist_validation_enabled`, `commit_docs`, `text_mode`, `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `has_research`, `has_context`, `has_plans`, `plan_count`, `phase_status`, `planning_exists`, `roadmap_exists`, `phase_req_ids`, `response_language`, `granularity`, `prior_verify_commands` (array of `{phase, plan, task, command}`, possibly empty; emitted at every context window), `threat_id_duplicates` + `threat_id_duplicate_count` (cross-plan threat-ID collisions; consumed at step 5.55).
 
-**#2517:** omit the `model=` param from an `Agent()` call when its `researcher`/`planner`/`checker`_model is `"inherit"` or empty — passing `model=""` 404s on non-Claude runtimes; omitting inherits the orchestrator model (mirrors execute-phase).
+Omit the `model=` param from an `Agent()` call when its `researcher`/`planner`/`checker`_model is `"inherit"` or empty — passing `model=""` 404s on non-Claude runtimes; omitting inherits the orchestrator model (mirrors execute-phase).
 
 **If `response_language` is set:** All user-facing orchestrator output — narration between tool calls, status updates, progress notes, findings, questions, prompts, and explanations — MUST be in `{response_language}`; technical terms, code, paths, and subagent prompts stay in English. Pass `response_language: {value}` into every spawned subagent prompt.
 
-**File paths (for <required_reading> blocks):** `state_path`, `roadmap_path`, `requirements_path`, `context_path`, `research_path`, `verification_path`, `uat_path`, `reviews_path`. These are null if files don't exist.
+**File paths (for <required_reading> blocks):** `state_path`, `roadmap_path`, `requirements_path`, `context_path`, `research_path`, `verification_path`, `uat_path`. These are null if files don't exist.
 
-**If `planning_exists` is false:** Error — run `/gsd:new-project` first.
+**If `planning_exists` is false:** Error — run `/new-project` first.
 
-## 1.5. Closed-Phase Gate (#3569)
+## 1.5. Closed-Phase Gate
 
-Read and execute `gsd-core/workflows/plan-phase/steps/closed-phase-gate.md` — it parses `phase_status` from the init JSON, sets `FORCE_REPLAN` from `$ARGUMENTS`, and hard-stops replanning a `Complete` phase: `--reviews` on a closed phase is never overridable (exit 1), and replanning otherwise requires `--force` (else exit 1, pointing at `${verification_path}`); under `--force` it continues but emits a WARNING banner. Only `Complete` is gated — `Executed` / `Needs Review` are legitimate replans.
+Read and execute `engineer/workflows/plan-phase/steps/closed-phase-gate.md` — it parses `phase_status` from the init JSON, sets `FORCE_REPLAN` from `$ARGUMENTS`, and hard-stops replanning a `Complete` phase: `--reviews` on a closed phase is never overridable (exit 1), and replanning otherwise requires `--force` (else exit 1, pointing at `${verification_path}`); under `--force` it continues but emits a WARNING banner. Only `Complete` is gated — `Executed` / `Needs Review` are legitimate replans.
 
 ## 2. Parse and Normalize Arguments
 
-Extract from $ARGUMENTS: phase number (integer or decimal like `2.1`), flags (`--research`, `--skip-research`, `--research-phase <N>`, `--gaps`, `--skip-verify`, `--skip-ui`, `--prd <filepath>`, `--ingest <path-or-glob>`, `--ingest-format <auto|nygard|madr|narrative>`, `--reviews`, `--text`, `--bounce`, `--skip-bounce`, `--chunked`, `--mvp`, `--no-tracer`, `--no-reversibility-gates`, `--tdd`, `--granularity <coarse|standard|fine>`, `--force` (override closed-phase gate, see §1.5)).
+Extract from $ARGUMENTS: phase number (integer or decimal like `2.1`), flags (`--research`, `--skip-research`, `--gaps`, `--skip-verify`, `--skip-ui`, `--reviews`, `--text`, `--no-reversibility-gates`, `--tdd`, `--granularity <coarse|standard|fine>`, `--force` (override closed-phase gate, see §1.5)).
 
-**`--research-phase <N>` — research-only mode (#3042 + #3044).** When this flag is present, parse `<N>` as the phase number (overrides any positional phase argument), set `RESEARCH_ONLY=true`, and treat the rest of this workflow as a research-dispatch only — the planner spawn (step 8), plan-checker, verification, gaps, bounce, and post-planning-gaps blocks all skip on `RESEARCH_ONLY`. Use this for cross-phase research, doc review before committing to a planning approach, and correction-without-replanning loops. Replaces the deleted `/gsd-research-phase` command.
 
-In research-only mode, two modifiers control behavior when `RESEARCH.md` already exists:
+**Baseline-discipline flags.** `REVERSIBILITY_GATES` defaults to `true`; it is not persisted per-phase or read from config.
 
-- **`--research`** — force-refresh re-research without prompting. Re-spawns the researcher unconditionally and overwrites the existing RESEARCH.md. (This is the existing `--research` flag's standard "force re-research" semantics, reused here.)
-- **`--view`** — view-only: print existing `RESEARCH.md` to stdout, do **not** spawn the researcher. Sets `VIEW_ONLY=true`. Cheapest mode for the correction-without-replanning loop. If `RESEARCH.md` does not exist, error with a hint to drop `--view`.
+Initialize the retained flags before any context-gate prompt, planning gate or planner spawn. The explicit TDD flag updates the same direct setting used by every TDD consumer in this invocation; do not restore retired planning detours.
 
 ```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
-$ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-RESEARCH_ONLY=false
-VIEW_ONLY=false
-if [[ "$GSD_ARGS" =~ --research-phase[[:space:]]+([0-9]+[A-Z]?(\.[0-9]+)*) ]]; then
-  RESEARCH_ONLY=true
-  PHASE="${BASH_REMATCH[1]}"
-fi
-if $RESEARCH_ONLY && [[ "$GSD_ARGS" =~ (^|[[:space:]])--view([[:space:]]|$) ]]; then
-  VIEW_ONLY=true
-fi
-```
-
-**`--granularity <coarse|standard|fine>` — CLI override (#703).** When present, this value is the resolved granularity passed to the planner — it wins over any per-phase `granularities.<type>` config, top-level `granularity` config, or project defaults. The init JSON always includes a `granularity` field reflecting the resolved value; read it from there. Invalid values (anything other than `coarse`, `standard`, `fine`) cause an error at the CLI boundary.
-
-Set `TEXT_MODE=true` if `--text` is present in $ARGUMENTS OR `text_mode` from init JSON is `true`. When `TEXT_MODE` is active, replace every `AskUserQuestion` call with a plain-text numbered list and ask the user to type their choice number. This is required for Claude Code remote sessions (`/rc` mode) where TUI menus don't work through the Claude App.
-
-**MVP_MODE resolution.** Resolve `MVP_MODE` once via the centralized `phase.mvp-mode` query verb. Precedence (first hit wins): CLI flag → ROADMAP.md `**Mode:** mvp` → `workflow.mvp_mode` config → false. The verb is the single source of truth — do not re-implement the chain.
-
-```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
-$ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-MVP_FLAG_ARG=""
-if [[ "$GSD_ARGS" =~ (^|[[:space:]])--mvp([[:space:]]|$) ]]; then MVP_FLAG_ARG="--cli-flag"; fi
-if [[ "$GSD_ARGS" =~ (^|[[:space:]])--tdd([[:space:]]|$) ]]; then
-  gsd_run query config-set workflow.tdd_mode true 2>/dev/null || true
-fi
-# Tracer-first is the default; --no-tracer opts back into the legacy horizontal-layer shape.
-TRACER_MODE=true
-if [[ "$GSD_ARGS" =~ (^|[[:space:]])--no-tracer([[:space:]]|$) ]]; then TRACER_MODE=false; fi
 REVERSIBILITY_GATES=true
-if [[ "$GSD_ARGS" =~ (^|[[:space:]])--no-reversibility-gates([[:space:]]|$) ]]; then REVERSIBILITY_GATES=false; fi
-```
-
-**Baseline-discipline flags.** `TRACER_MODE` and `REVERSIBILITY_GATES` default to `true`; neither is persisted per-phase nor read from config.
-
-Defer the `phase.mvp-mode` query until `PHASE` is finalized (after explicit argument parsing/fallback phase detection + validation). The verb returns `true|false`; full result also exposes `source` (`cli_flag` | `roadmap` | `config` | `none`) for diagnostics. Mode is **all-or-nothing per phase** (PRD decision Q1).
-
-**Walking Skeleton gate.** When `MVP_MODE=true` AND `phase_number == "01"` AND there are zero prior phase summaries (new project), the planner runs in **Walking Skeleton mode** (per PRD decision Q2 — new projects only). Detect with:
-
-```bash
-WALKING_SKELETON=false
-if [ "$MVP_MODE" = "true" ] && [ "$padded_phase" = "01" ]; then
-  PRIOR_SUMMARIES=$(gsd_run query phases.list --type summaries --pick count 2>/dev/null)
-  if [ "$PRIOR_SUMMARIES" = "0" ]; then WALKING_SKELETON=true; fi
+if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--no-reversibility-gates([[:space:]]|$) ]]; then REVERSIBILITY_GATES=false; fi
+TEXT_MODE=$(engineer_run query json.get --payload "$INIT" --field text_mode --raw) || exit $?
+if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--text([[:space:]]|$) ]]; then TEXT_MODE=true; fi
+if [[ "$ENGINEER_ARGS" =~ (^|[[:space:]])--tdd([[:space:]]|$) ]]; then
+  engineer_run query config-set workflow.tdd_mode true || exit $?
 fi
+TDD_MODE=$(engineer_run query config-get workflow.tdd_mode --raw) || exit $?
 ```
 
-When `WALKING_SKELETON=true`:
-- Planner is instructed to produce `SKELETON.md` in the phase directory alongside `PLAN.md`. The template lives at `~/.claude/gsd-core/references/skeleton-template.md` — the planner reads it when producing SKELETON.md (lazy; not loaded on non-skeleton runs).
-- The plan must scaffold project + routing + one real DB read/write + one real UI interaction + dev deployment — the thinnest possible end-to-end working slice.
+Keep these resolved values in the coordinator's invocation state between fenced calls; use the same `TDD_MODE`, `TEXT_MODE` and `REVERSIBILITY_GATES` in initial and revision planner prompts.
 
-**Interaction with `--prd <filepath>`.** `--mvp` and `--prd` compose. The PRD express path (Step 3.5) creates `CONTEXT.md` from the PRD file and continues to research; the Walking Skeleton gate fires independently from the conditions above. When both are active on Phase 1 of a new project, the planner receives `WALKING_SKELETON=true` and PRD-derived context simultaneously — the PRD informs *what the skeleton should prove*. No precedence is needed; the two signals are orthogonal. See [`gsd-core/references/mvp-concepts.md`](../references/mvp-concepts.md) for the broader interaction map.
-
-Extract express-path args from $ARGUMENTS: `PRD_FILE` (`--prd <filepath>`), `INGEST_PATH` (`--ingest <path-or-glob>`), and optional `INGEST_FORMAT` (`--ingest-format <auto|nygard|madr|narrative>`, default `auto`).
-
-`--prd` and `--ingest` are mutually exclusive. If both are present, error and exit:
-`Invalid arguments: cannot combine \`--prd\` with \`--ingest\`.`
-
-**If no phase number:** Auto-detect it — `query init.plan-phase` and `query roadmap.get-phase` require an explicit number, so this is an orchestrator step. Run `gsd_run query roadmap.analyze` and read `next_phase` (first phase with `disk_status` of `no_directory`, `empty`, `discussed`, or `researched`). If `next_phase` is `null`, read ROADMAP.md's `### Phase N:` headers and ask the user which phase to plan. Set `PHASE` to the result before step 1's `query init.plan-phase "$PHASE"` call.
+**If no phase number:** Auto-detect it — `query init.plan-phase` and `query roadmap.get-phase` require an explicit number, so this is an orchestrator step. Run `engineer_run query roadmap.analyze` and read `next_phase` (first phase with `disk_status` of `no_directory`, `empty`, `discussed`, or `researched`). If `next_phase` is `null`, read ROADMAP.md's `### Phase N:` headers and ask the user which phase to plan. Set `PHASE` to the result before step 1's `query init.plan-phase "$PHASE"` call.
 
 **If `phase_found` is false:** Validate phase exists in ROADMAP.md. If valid, create the directory using `expected_phase_dir` from init (includes `project_code` prefix when set):
 ```bash
@@ -205,43 +180,17 @@ Set `phase_dir="${expected_phase_dir}"` after creation.
 
 **Existing artifacts from init:** `has_research`, `has_plans`, `plan_count`.
 
-Set `CHUNKED_MODE` from flag or config:
-```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
-$ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-CHUNKED_CFG=$(gsd_run query config-get workflow.plan_chunked --raw 2>/dev/null || echo "false")
-CHUNKED_MODE=false
-if [[ "$GSD_ARGS" =~ --chunked ]] || [[ "$CHUNKED_CFG" == "true" ]]; then
-  CHUNKED_MODE=true
-fi
-```
 
-<!-- gsd:section id="reviews-prerequisite" when="flag:--reviews" -->
-If `section_manifest` is `null` or `"reviews-prerequisite"` is in its `included` list: read and execute `gsd-core/workflows/plan-phase/steps/reviews-prerequisite.md`. Otherwise skip — do not read the file.
-<!-- /gsd:section -->
+**Reviews mode:** When `--reviews` is present, require the phase's existing `REVIEWS.md` snapshot and set `reviews_path`/`REVIEWS_PATH` to its actual path. If it is missing, stop with an actionable missing-review error. Pass the snapshot to planner and checker; load `engineer/references/planner-reviews.md` and preserve its review-disposition ledger and revision-conflict handling. Skip research and the ordinary existing-plan menu for this mode. Do not silently fall back to standard planning.
 
 ## 3. Validate Phase
 
 ```bash
-PHASE_INFO=$(gsd_run query roadmap.get-phase "${PHASE}")
+PHASE_INFO=$(engineer_run query roadmap.get-phase "${PHASE}")
 ```
 
 **If `found` is false:** Error with available phases. **If `found` is true:** Extract `phase_number`, `phase_name`, `goal` from JSON.
 
-Now that `PHASE` is finalized, resolve MVP mode:
-```bash
-MVP_MODE=$(gsd_run query phase.mvp-mode "${PHASE}" $MVP_FLAG_ARG --pick active)
-```
-
-<!-- gsd:section id="prd-express-gate" when="flag:--prd" -->
-If `section_manifest` is `null` or `"prd-express-gate"` is in its `included` list: read and execute `gsd-core/workflows/plan-phase/steps/prd-express-gate.md`. Otherwise skip — do not read the file.
-<!-- /gsd:section -->
-
-<!-- gsd:section id="adr-ingest-express-path" when="flag:--ingest" -->
-If `section_manifest` is `null` or `"adr-ingest-express-path"` is in its `included` list: read and execute `gsd-core/workflows/plan-phase/steps/adr-ingest-express-path.md`. Otherwise skip — do not read the file.
-<!-- /gsd:section -->
 
 ## 4. Load CONTEXT.md
 
@@ -255,7 +204,7 @@ If `context_path` is not null, display: `Using phase context from: ${context_pat
 
 Read discuss mode for context gate label:
 ```bash
-DISCUSS_MODE=$(gsd_run query config-get workflow.discuss_mode --raw 2>/dev/null || echo "discuss")
+DISCUSS_MODE=$(engineer_run query config-get workflow.discuss_mode --raw 2>/dev/null || echo "discuss")
 ```
 
 If `TEXT_MODE` is true, present as a plain-text numbered list:
@@ -284,87 +233,51 @@ Otherwise use AskUserQuestion:
 If "Continue without context": Proceed to step 5.
 If "Run discuss-phase first":
   **IMPORTANT:** Do NOT invoke discuss-phase as a nested Skill/Task call — AskUserQuestion
-  does not work correctly in nested subcontexts (#1009). Instead, display the command
+  does not work correctly in nested subcontexts. Instead, display the command
   and exit so the user runs it as a top-level command:
   ```
-  Run this command first, then re-run /gsd:plan-phase {X} ${GSD_WS}:
+  Run this command first, then re-run /plan-phase {X} :
 
-  /gsd:discuss-phase {X} ${GSD_WS}
+  /discuss-phase {X}
   ```
   **Exit the plan-phase workflow. Do not continue.**
 
-## 4.5. Resolve AI-SPEC Artifact
 
-AI integration activation is owned by the `ai-integration` capability's `plan:pre` step hook. The plan-phase host only discovers existing artifacts here so the planner can consume them; it must not read the capability's config key directly.
+## 4.6. Context Drift Pre-Check
+
+Before reusing existing research or pattern artifacts, check whether their recorded inputs have changed. This check runs before the reuse decision in Step 5 and before pattern-mapper reuse.
 
 ```bash
-AI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-AI-SPEC.md 2>/dev/null | head -1)
-AI_SPEC_PATH="${AI_SPEC_FILE}"
-FRAMEWORK_LINE=""
-if [ -n "$AI_SPEC_FILE" ]; then
-  FRAMEWORK_LINE=$(grep "Selected Framework:" "${AI_SPEC_FILE}" | head -1)
+DRIFT_ACTION=$(engineer_run query config-get workflow.context_drift_action --raw 2>/dev/null || echo "warn")
+DRIFT=$(engineer_run verify context-drift "${PHASE}" --raw 2>/dev/null) || {
+  DRIFT_EXIT=$?
+  echo "Warning: context-drift check could not look (exit ${DRIFT_EXIT}); continuing without a drift verdict." >&2
+  DRIFT='{"status":"unresolvable","available":false,"stale_artifacts":[],"block":false}'
+}
+DRIFT_STATUS=$(printf '%s' "$DRIFT" | jq -r '.status // "unknown"')
+DRIFT_AVAILABLE=$(printf '%s' "$DRIFT" | jq -r '.available // true')
+DRIFT_BLOCK=$(printf '%s' "$DRIFT" | jq -r '.block // false')
+STALE_ARTIFACTS=$(printf '%s' "$DRIFT" | jq -c '.stale_artifacts // []')
+DRIFT_MESSAGE=$(printf '%s' "$DRIFT" | jq -r '.message // empty')
+if [ -n "$DRIFT_MESSAGE" ]; then echo "$DRIFT_MESSAGE"; fi
+if [ "$DRIFT_BLOCK" = "true" ] && [ "$DRIFT_ACTION" = "block" ]; then
+  echo "Planning stopped: regenerate or reconcile the listed artifacts, then rerun /plan-phase ${PHASE}." >&2
+  exit 1
 fi
 ```
 
-If `AI_SPEC_FILE` is non-empty, pass `AI_SPEC_PATH` and `FRAMEWORK_LINE` to the planner in step 8 so it can reference the AI design contract. If it is empty, the active `ai-integration` capability hook in step 5.6 handles any AI-system nudge or `/gsd:ai-integration-phase` dispatch.
-
-## 4.6. Context Drift Pre-Check (drift plan:pre gate)
-
-Capability-driven dispatch, same lazy-init pattern already used elsewhere in this file for
-`PLAN_PRE_HOOKS_JSON`:
-
-```bash
-if [ -z "${PLAN_PRE_HOOKS_JSON:-}" ]; then
-  PLAN_PRE_HOOKS_JSON=$(gsd_run loop render-hooks plan:pre --raw)
-fi
-```
-
-If `activeHooks` (from `PLAN_PRE_HOOKS_JSON`) has a `kind == "gate"`, `capId == "drift"`,
-`check.query == "verify.context-drift"` entry (`workflow.context_drift_precheck` on), run the
-check before either the research-reuse decision (§5.1) or the pattern-mapper reuse decision
-(§7.8) can fire — both would otherwise silently reuse a stale artifact with zero signal.
-Otherwise skip to §5.
-
-```bash
-DRIFT=$(gsd_run verify context-drift "${PHASE}" 2>/dev/null) || { echo "Warning: context-drift check could not look (exit $?)" >&2; DRIFT='{"skipped":true}'; }
-```
-
-If `skipped` is true, continue silently to §5 — nothing to compare (no CONTEXT.md yet, no
-upstream artifacts yet). A non-zero exit (`69` `UNAVAILABLE`, #5170: the phase directory did not
-resolve or an artifact could not be read) is a check that could not look, not "nothing to compare":
-the warning above is its signal, and planning continues (the check is advisory).
-
-If `stale_artifacts` is a non-empty array, print `message` verbatim (it names each stale
-artifact and the command to regenerate it). Then:
-
-- If `DRIFT.block` is `false` (the default, `workflow.context_drift_action: warn`): continue to
-  §5 — this is advisory only, exactly like the codebase-drift pre-check at §5.65.
-- If `DRIFT.block` is `true` (opt-in `workflow.context_drift_action: block`): **exit the
-  plan-phase workflow** rather than continuing. Do not spawn the researcher, the planner, or the
-  pattern mapper against a premise the user has not yet reconciled. Point the user at re-running
-  `/gsd:plan-phase {X}` once the named artifacts are regenerated, or at disabling the check with
-  `gsd_run query config-set workflow.context_drift_action warn` if the flag was a false positive.
-
-If `stale_artifacts` is empty, continue silently to §5 — nothing to report.
-
+When `workflow.context_drift_action` is `warn` (default), report stale artifacts and continue. Carry `DRIFT_STATUS`, `DRIFT_AVAILABLE`, and `STALE_ARTIFACTS` through planning. A `skipped` result with reason `no-context-source-baseline` is not freshness proof; existing research/pattern artifacts without a baseline remain unverified until regenerated or explicitly reconciled. For each path in `STALE_ARTIFACTS`, regenerate or explicitly reconcile it before treating it as current; reusing it alone does not resolve drift. When `block`, stop only when the check returns `block: true`; a check that could not look is reported and does not claim a pass.
 ## 5. Handle Research
 
 **Skip if:** `--gaps` flag or `--skip-research` flag or `--reviews` flag.
 
-<!-- gsd:section id="research-only-modifiers" when="flag:--research-phase" -->
-If `section_manifest` is `null` or `"research-only-modifiers"` is in its `included` list: read and execute `gsd-core/workflows/plan-phase/steps/research-only-modifiers.md`. Otherwise skip — do not read the file.
-<!-- /gsd:section -->
 
-### 5.1. Standard Research Decision
+**If `has_research` is true (from init), no `--research` flag was provided, and the RESEARCH.md path is not stale or unverified:** Use existing research and skip to step 6.
 
-**Skip if** `RESEARCH_ONLY=true` (the research-only mode in 5.0 already determined the path: spawn or exit). Without this guard, an LLM following the workflow could fall through into "use existing, skip to step 6" → planner spawn, violating the research-only contract. **CR #3045 finding: this gate makes the early-exit unreachable from any non-research-only branch.**
+**If RESEARCH.md is missing, stale/unverified, or `--research` was provided:** Refresh the research against current context and source files, even when `--research` was not explicitly requested. A stale or unverified file cannot be treated as current. Continue through the research dispatch below.
 
-**If `has_research` is true (from init) AND no `--research` flag:** Use existing, skip to step 6.
-
-**If RESEARCH.md missing OR `--research` flag:**
-
-**If no explicit flag (`--research` or `--skip-research`) and not `--auto`:**
-Ask the user whether to research, with a contextual recommendation based on the phase:
+**If no explicit flag (`--research` or `--skip-research`), no stale or unverified RESEARCH.md is present, and not `--auto`:**
+Ask the user whether to research, with a contextual recommendation based on the phase. When existing research is stale or unverified, refresh it without offering the skip-research choice; a later baseline must not mark reused stale research as current.
 
 If `TEXT_MODE` is true, present as a plain-text numbered list:
 ```
@@ -397,52 +310,28 @@ If user selects "Skip research": skip to step 6.
 
 Display banner:
 ```
-### GSD ► RESEARCHING PHASE {X}
+### Engineer ► RESEARCHING PHASE {X}
 
 ◆ Spawning researcher... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
 
-### Spawn gsd-phase-researcher
+### Spawn phase-researcher
+
 
 ```bash
-if gsd_run query teams-status --active >/dev/null 2>&1; then
-  echo "⚠️  CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS detected. GSD's multi-agent orchestration is not validated under claude-code agent-teams and may stall (a subagent's completion can fail to route to the orchestrator). Recommend disabling agent-teams for GSD workflows. See https://github.com/open-gsd/gsd-core/issues/1355" >&2
-fi
+PHASE_DESC=$(engineer_run query roadmap.get-phase "${PHASE}" --pick section)
 ```
 
-```bash
-PHASE_DESC=$(gsd_run query roadmap.get-phase "${PHASE}" --pick section)
-if [ -z "${PLAN_PRE_HOOKS_JSON:-}" ]; then
-  PLAN_PRE_HOOKS_JSON=$(gsd_run loop render-hooks plan:pre --raw)
-fi
-```
+Dispatch the native `phase-researcher` with the phase description, CONTEXT.md, PROJECT.md, REQUIREMENTS.md, applicable project instructions and skills. Resolve its model and effort inline. Its task is the complete evidence-based research method, writing `${PHASE_DIR}/${PADDED_PHASE}-RESEARCH.md` and returning findings or blockers. Wait for its terminal result before continuing.
 
-Find the active `research` step hook in `PLAN_PRE_HOOKS_JSON`. Use the hook's `fragment.inline` as the prompt template and substitute the phase fields below before spawning its declared `ref.agent`.
-
-```markdown
-{research_hook.fragment.inline}
-```
-
-```
-Agent(
-  prompt=filled_research_hook_fragment,
-  subagent_type=research_hook.ref.agent,
-  model="{researcher_model}",
-  description="Research Phase {phase}"
-)
-```
-
-<!-- gsd:protected -->
-> **ORCHESTRATOR RULE — ALL RUNTIMES**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available. Never call `ScheduleWakeup` or any host wake/sleep-scheduling tool to literalize this wait (#4079) — the Agent() call returns on its own; a partial-args wake call surfaces a red validation error.
+<!-- engineer:protected -->
+> **ORCHESTRATOR RULE — ALL RUNTIMES**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available. Never call `ScheduleWakeup` or any host wake/sleep-scheduling tool to literalize this wait — the Agent() call returns on its own; a partial-args wake call surfaces a red validation error.
 
 ### Handle Researcher Return
 
 - **`## RESEARCH COMPLETE`:** Display confirmation, continue to step 6
 - **`## RESEARCH BLOCKED`:** Display blocker, offer: 1) Provide context, 2) Skip research, 3) Abort
 
-<!-- gsd:section id="research-only-early-exit" when="flag:--research-phase" -->
-If `section_manifest` is `null` or `"research-only-early-exit"` is in its `included` list: read and execute `gsd-core/workflows/plan-phase/steps/research-only-early-exit.md`. Otherwise skip — do not read the file.
-<!-- /gsd:section -->
 
 ## 5.5. Create Validation Strategy
 
@@ -462,7 +351,7 @@ grep -l "## Validation Architecture" "${PHASE_DIR}"/*-RESEARCH.md 2>/dev/null ||
 ```
 
 **If found:**
-1. Read template: `~/.claude/gsd-core/templates/VALIDATION.md`
+1. Read template: `engineer/templates/VALIDATION.md`
 2. Write to `${PHASE_DIR}/${PADDED_PHASE}-VALIDATION.md` (use Write tool)
 3. Fill frontmatter: `{N}` → phase number, `{phase-slug}` → slug, `{date}` → current date
 4. Verify:
@@ -474,135 +363,14 @@ test -f "${PHASE_DIR}/${PADDED_PHASE}-VALIDATION.md" && echo "VALIDATION_CREATED
 
 **If not found:** Warn and continue — plans may fail Dimension 8.
 
-## 5.55. Security Threat Model Gate
+## 5.55. Direct planning gates
 
-> Capability-driven dispatch. Resolves active `plan:pre` hooks via the capability registry; the security hook's `when` condition is evaluated by the registry.
+Read `workflow.tdd_mode`, `workflow.security_enforcement`, `workflow.security_asvs_level`, `workflow.security_block_on` and `workflow.ui_safety_gate` directly with `config-get`. Pass the TDD flag and full `engineer/references/tdd.md` heuristics to the planner whenever TDD mode is true. When security enforcement is true, require the planner's full `<threat_model>` with the configured ASVS level and blocking severity.
 
-```bash
-PLAN_PRE_HOOKS_JSON=$(gsd_run loop render-hooks plan:pre --raw)
-```
+When the UI safety gate is enabled, run `engineer_run check ui-plan-gate "${PHASE}" --raw`. A failed command or unreadable result stops planning; it cannot establish absence of frontend work. When `block` is true, produce the phase UI-SPEC through `/ui-phase` before planning. Preserve an existing UI-SPEC as planner input.
 
-**Contribution dispatch (#3606):** inject every `kind == "contribution"` fragment from `PLAN_PRE_HOOKS_JSON` per @gsd-core/references/loop-hook-dispatch.md, in array order, into the role each entry's `into` names — planner-targeted ones land in the prompt block below, orchestrator-targeted ones in your working context. The security specialization below is one such contribution, not a replacement for the generic dispatch.
+**Threat-ID uniqueness (always applies):** if the init payload's `threat_id_duplicate_count` is non-zero, init reports `threat_id_duplicates` — each `T-{phase}-NN` ID claimed by more than one live PLAN file in this phase. Surface the list to the planner spawn prompt in step 8 — "these threat IDs are already claimed by earlier plans in this phase: {list}; number new registers continuing after the phase's highest in-use `T-{phase}-NN`". Regardless of the count, include the numbering rule in the planner spawn prompt whenever this phase already has PLAN files: threat IDs are unique within a phase, and new registers continue after the highest in-use `T-{phase}-NN` — the count only reports an EXISTING collision, it cannot prevent the first one. The reserved `T-{phase}-SC` row is never listed. execute-phase hard-stops on a non-empty list regardless of what happened here.
 
-Resolve active contribution hooks from `PLAN_PRE_HOOKS_JSON` where `kind == "contribution"` and `capId == "security"`.
-
-**Threat-ID uniqueness (#4683 — applies whether or not the security hook is active):** if the init payload's `threat_id_duplicate_count` is non-zero, init reports `threat_id_duplicates` — each `T-{phase}-NN` ID claimed by more than one live PLAN file in this phase. Surface the list to the planner spawn prompt in step 8 — "these threat IDs are already claimed by earlier plans in this phase: {list}; number new registers continuing after the phase's highest in-use `T-{phase}-NN`". Regardless of the count, include the numbering rule in the planner spawn prompt whenever this phase already has PLAN files: threat IDs are unique within a phase, and new registers continue after the highest in-use `T-{phase}-NN` — the count only reports an EXISTING collision, it cannot prevent the first one. The reserved `T-{phase}-SC` row is never listed. execute-phase hard-stops on a non-empty list regardless of what happened here.
-
-**If no active security contribution hook exists:** Skip to step 5.6.
-
-If an active security contribution hook exists, read `SECURITY_ASVS` from the hook's `configValues.security_asvs_level` (default: `1`) and `SECURITY_BLOCK` from `configValues.security_block_on` (default: `"high"`). These values are resolved by the capability registry from user config using the same four-level precedence as hook activation — no inline `config-get` is needed.
-
-Display banner:
-
-```
-### GSD ► SECURITY THREAT MODEL REQUIRED (ASVS L{SECURITY_ASVS})
-
-Each PLAN.md must include a <threat_model> block.
-Block on: {SECURITY_BLOCK} severity threats.
-Opt out: set security_enforcement: false in .planning/config.json
-```
-
-Continue to step 5.6. Security config is passed to the planner in step 8.
-
-## 5.6. Plan:Pre Capability Dispatch and UI Design Contract Gate
-
-> Capability-driven dispatch. Resolves active `plan:pre` hooks via the capability registry; each hook's `when` condition is evaluated by the registry — no inline config-get needed. This section handles skill-based planning preflights such as `ai-integration`, agent-backed hooks through `ref.agent`, and the UI gate whose deterministic check comes from `check.query`.
->
-> **Config semantics (cutover fix):** `workflow.ui_phase` gates UI-SPEC *generation* (step); `workflow.ui_safety_gate` gates the *planning block* (gate). Both-on = identical to OLD §5.6. Intended change: `{ui_phase:true, ui_safety_gate:false}` now auto-generates in pipelines but does NOT block manual planning (each key controls exactly what its description says).
-
-```bash
-PLAN_PRE_HOOKS_JSON=${PLAN_PRE_HOOKS_JSON:-$(gsd_run loop render-hooks plan:pre --raw)}
-HOOKS_JSON="$PLAN_PRE_HOOKS_JSON"
-```
-
-Read the `activeHooks` array directly from `PLAN_PRE_HOOKS_JSON` / `HOOKS_JSON` (in-context — do NOT invoke a shell pipeline).
-
-**Branch 1 — all plan:pre hooks inactive (`activeHooks` is empty or absent):** Skip to step 6.
-
-**Generic step hook dispatch contract:** For each active entry where `kind == "step"`:
-- If `ref.skill` is set, dispatch with `Skill(skill="gsd-${ref.skill}", args="${PHASE} --auto ${GSD_WS}")` when pipeline mode allows auto-chaining. Prepend `gsd-` to `ref.skill` — `ui-phase` → `gsd-ui-phase`.
-- If `ref.agent` is set, dispatch with `Agent(prompt=filled_hook_fragment, subagent_type=ref.agent, model="{researcher_model}")`. Use the hook's `fragment.inline` as the prompt body and fill phase fields before spawning.
-- The `research` hook is handled by §5.1's research decision. The `pattern-mapper` hook is handled by §7.8 after `RESEARCH_PATH` is known. Future plan:pre agent hooks use the same `ref.agent` fragment contract.
-
-**AI integration capability:** If the active `ai-integration` step hook is present, `AI_SPEC_PATH` is empty, and the phase goal contains AI keywords (`agent`, `llm`, `rag`, `chatbot`, `embedding`, `langchain`, `llamaindex`, `crewai`, `langgraph`, `openai`, `anthropic`, `vector`, `llm eval`), then:
-- In pipeline / `--auto` mode, invoke the hook's `ref.skill` via `Skill(skill="gsd-${ref.skill}", args="${PHASE} --auto ${GSD_WS}")`.
-- In manual mode, display the existing non-blocking `/gsd:ai-integration-phase {N}` recommendation and let the user continue planning without AI-SPEC or stop to run the capability workflow first.
-
-Run the UI deterministic gate whenever **any** `plan:pre` UI hook is active — including the step-only case (`workflow.ui_safety_gate` off). (`check.query` = `"ui.plan-gate"`, dot-normalized to `ui-plan-gate` per `loop-hook-dispatch.md` § `gate`.)
-
-```bash
-GATE=$(gsd_run check ui-plan-gate "${PHASE}" --raw) && GATE_EXIT=0 || GATE_EXIT=$?
-```
-
-A non-zero `GATE_EXIT` is a command failure, including `69` (`UNAVAILABLE`: the gate could not read its evidence, so its `frontend: false` is not an answer): surface it and stop; never fall through to Branch 2. Otherwise read `frontend`, `hasUiSpec`, and `block` from `GATE`.
-
-**Branch 2 — no frontend indicators (`frontend` is `false`):** Skip silently to step 6.
-
-**Branch 3 — UI-SPEC already exists (`hasUiSpec` is `true`):**
-
-```bash
-UI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-UI-SPEC.md 2>/dev/null | head -1)
-UI_SPEC_PATH="${UI_SPEC_FILE}"
-```
-
-Display: `Using UI design contract: ${UI_SPEC_PATH}`. Continue to step 6.
-
-**Branch 4 — `--skip-ui` in `$ARGUMENTS`:** Skip silently to step 6.
-
-**Branches 5 & 6 — frontend detected, UI-SPEC missing, no `--skip-ui`.**
-
-Read the ephemeral auto-chain flag:
-
-```bash
-AUTO_CHAIN=$(gsd_run query check auto-mode --pick auto_chain_active 2>/dev/null)
-AUTO_CHAIN="${AUTO_CHAIN:-false}"
-```
-
-**Branch 5 — `AUTO_CHAIN` is `true` (pipeline / `--auto`):** Fire each active UI **step** hook — runs independently of whether a gate is active (covers `{ui_phase:true,ui_safety_gate:false}`). For each entry in `activeHooks` (in array order) where `kind == "step"` and `ref.skill` is set:
-
-```
-Skill(skill="gsd-${ref.skill}", args="${PHASE} --auto ${GSD_WS}")
-```
-
-After all UI step hooks return, re-read:
-
-```bash
-UI_SPEC_FILE=$(ls "${PHASE_DIR}"/*-UI-SPEC.md 2>/dev/null | head -1)
-UI_SPEC_PATH="${UI_SPEC_FILE}"
-```
-
-Continue to step 6.
-
-**Branch 6 — `AUTO_CHAIN` is `false` (manual): generic gate handling.** For each entry in `activeHooks` where `kind == "gate"` and `blocking` is `true`: if `block:true` (from `GATE`), output the block below and **EXIT the plan-phase workflow**. If no active blocking gate (e.g. `workflow.ui_safety_gate` is off), continue to step 6 — no block.
-
-Output this markdown directly (not as a code block):
-
-```
-## ⚠ UI-SPEC.md missing for Phase {N}
-▶ Recommended next step:
-`/gsd:ui-phase {N} ${GSD_WS}` — generate UI design contract before planning
-
----
-Also available:
-- `/gsd:plan-phase {N} --skip-ui ${GSD_WS}` — plan without UI-SPEC (not recommended for frontend phases)
-```
-
-**Exit the plan-phase workflow. Do not continue.**
-
-## 5.65. Codebase Map Freshness Pre-Check (drift plan:pre gate)
-
-If `activeHooks` (from `PLAN_PRE_HOOKS_JSON`, §5.6) has a `kind == "gate"`, `capId == "drift"`,
-`check.query == "verify.codebase-drift"` entry (`workflow.plan_drift_precheck` on), run the same check the
-execute gate uses; otherwise skip to step 6:
-
-```bash
-DRIFT=$(gsd_run verify codebase-drift 2>/dev/null) || { echo "Warning: codebase-drift check could not look (exit $?)" >&2; DRIFT='{"skipped":true}'; }
-```
-
-This gate is **non-blocking** and **never blocks, never spawns** the mapper at plan time. If `skipped` or
-`action_required` is false, continue silently to step 6. If `action_required` is true, print `message`
-verbatim (it ends with a `/gsd:map-codebase` pointer) and continue — planning proceeds whether or not the
-map is refreshed first. (`drift_action: auto-remap` stays at `execute:wave:post`.)
 
 ## 6. Check Existing Plans
 
@@ -617,38 +385,28 @@ ls "${PHASE_DIR}"/*-PLAN.md 2>/dev/null || true
 Extract from INIT JSON:
 
 ```bash
-_gsd_field() { node -e "const o=JSON.parse(process.argv[1]); const v=o[process.argv[2]]; process.stdout.write(v==null?'':String(v))" "$1" "$2"; }
-STATE_PATH=$(_gsd_field "$INIT" state_path)
-ROADMAP_PATH=$(_gsd_field "$INIT" roadmap_path)
-REQUIREMENTS_PATH=$(_gsd_field "$INIT" requirements_path)
-RESEARCH_PATH=$(_gsd_field "$INIT" research_path)
-VERIFICATION_PATH=$(_gsd_field "$INIT" verification_path)
-UAT_PATH=$(_gsd_field "$INIT" uat_path)
-CONTEXT_PATH=$(_gsd_field "$INIT" context_path)
-REVIEWS_PATH=$(_gsd_field "$INIT" reviews_path)
-PATTERNS_PATH=$(_gsd_field "$INIT" patterns_path)
-
-# Detect spike/sketch findings skills (project-local)
-SPIKE_FINDINGS_PATH=$(ls ./.claude/skills/spike-findings-*/SKILL.md 2>/dev/null | head -1 || true)
-SKETCH_FINDINGS_PATH=$(ls ./.claude/skills/sketch-findings-*/SKILL.md 2>/dev/null | head -1 || true)
+_engineer_field() { value=$(printf '%s' "$1" | engineer_run query json.get --field "$2" --default '""' --raw) || return $?; [ "$value" = null ] && value=""; printf '%s' "$value"; }
+STATE_PATH=$(_engineer_field "$INIT" state_path)
+ROADMAP_PATH=$(_engineer_field "$INIT" roadmap_path)
+REQUIREMENTS_PATH=$(_engineer_field "$INIT" requirements_path)
+RESEARCH_PATH=$(_engineer_field "$INIT" research_path)
+VERIFICATION_PATH=$(_engineer_field "$INIT" verification_path)
+UAT_PATH=$(_engineer_field "$INIT" uat_path)
+CONTEXT_PATH=$(_engineer_field "$INIT" context_path)
+PATTERNS_PATH=$(_engineer_field "$INIT" patterns_path)
 
 # Resolve the phase SPEC (carries the ## Edge Coverage section the planner lifts resolved
 # edges from). UNCONDITIONAL — must NOT live in §4.5 Check AI-SPEC, which is skipped
-# on non-AI phases; gating it there silently starves the planner of the SPEC (#550 review).
-# init resolves the plain phase SPEC (never the -AI-SPEC.md / -UI-SPEC.md variants) through the one shared predicate.
-PHASE_DIR_FOR_SPEC=$(_gsd_field "$INIT" phase_dir)
-SPEC_PATH=$(_gsd_field "$INIT" spec_path)
+# on non-AI phases; gating it there silently starves the planner of the SPEC ( review).
+# init resolves the plain phase SPEC (never the -UI-SPEC.md variants) through the one shared predicate.
+PHASE_DIR_FOR_SPEC=$(_engineer_field "$INIT" phase_dir)
+SPEC_PATH=$(_engineer_field "$INIT" spec_path)
 SPEC_FILE="${SPEC_PATH}"
 # Resolve the phase UI-SPEC separately (the glob above excludes -UI-SPEC.md); it carries the
-# ## UI Considerations section the planner lifts by the same rule as ## Edge Coverage (#1867).
+# ## UI Considerations section the planner lifts by the same rule as ## Edge Coverage.
 UI_SPEC_FILE=$(ls "${PHASE_DIR_FOR_SPEC}"/*-UI-SPEC.md 2>/dev/null | head -1)
 UI_SPEC_PATH="${UI_SPEC_FILE}"
 ```
-
-**If plans exist AND the `--reviews` flag is set:** Before replanning from `--reviews`, scan
-`REVIEWS_PATH` for open plan-revision conflicts inside the writer-owned delimiter pair. Go
-straight to replanning with those records included, and flip the matching line to `- [x]` once
-the chosen resolution is applied, using the SAME close gate as step 12 below.
 
 ## 7.5. Verify Nyquist Artifacts
 
@@ -666,43 +424,32 @@ VALIDATION_EXISTS=$(ls "${PHASE_DIR}"/*-VALIDATION.md 2>/dev/null | head -1)
 ```
 
 If missing and Nyquist is still enabled/applicable — ask user:
-1. Re-run: `/gsd:plan-phase {PHASE} --research ${GSD_WS}`
+1. Re-run: `/plan-phase {PHASE} --research `
 2. Disable Nyquist with the exact command:
-   `gsd_run query config-set workflow.nyquist_validation false`
+   `engineer_run query config-set workflow.nyquist_validation false`
 3. Continue anyway (plans fail Dimension 8)
 
 Proceed to Step 7.8 (or Step 8 if pattern mapper is disabled) only if user selects 2 or 3.
 
-## 7.8. Spawn gsd-pattern-mapper Agent (Optional)
 
-Pattern mapper activation is owned by the `pattern-mapper` capability's `plan:pre` step hook. Read `PLAN_PRE_HOOKS_JSON` and skip if no active step hook has `capId == "pattern-mapper"` and `ref.agent == "gsd-pattern-mapper"`. Also skip if no CONTEXT.md and no RESEARCH.md exist for this phase (nothing to extract file lists from).
 
-**If PATTERNS.md already exists** (`PATTERNS_PATH` is non-empty from step 7): Skip to step 8 (use existing).
+## 7.8. Spawn pattern-mapper Agent (Optional)
+
+Read `workflow.pattern_mapping` directly with `config-get`; skip when false. Also skip if neither CONTEXT.md nor RESEARCH.md exists.
+
+**If PATTERNS.md already exists** (`PATTERNS_PATH` is non-empty from step 7) and is not stale or unverified: Skip to step 8 (use existing). If it is stale or unverified, rerun pattern mapping and reconcile it with current context and source files before recording a new baseline.
 
 Display banner:
 ```
-### GSD ► PATTERN MAPPING PHASE {X}
+### Engineer ► PATTERN MAPPING PHASE {X}
 
 ◆ Spawning pattern mapper... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
 
-Use the active `pattern-mapper` hook's `fragment.inline` as the prompt template and substitute the phase fields below before spawning its declared `ref.agent`.
+Dispatch the native `pattern-mapper` with the phase goal, CONTEXT.md and RESEARCH.md. Extract relevant analog files and code excerpts into `${PHASE_DIR}/${PADDED_PHASE}-PATTERNS.md`; resolve model and effort inline.
 
-```markdown
-{pattern_mapper_hook.fragment.inline}
-```
-
-Spawn with:
-```
-Agent(
-  prompt=filled_pattern_mapper_hook_fragment,
-  subagent_type=pattern_mapper_hook.ref.agent,
-  model="{researcher_model}",
-)
-```
-
-<!-- gsd:protected -->
-> **ORCHESTRATOR RULE — ALL RUNTIMES**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available. Never call `ScheduleWakeup` or any host wake/sleep-scheduling tool to literalize this wait (#4079) — the Agent() call returns on its own; a partial-args wake call surfaces a red validation error.
+<!-- engineer:protected -->
+> **ORCHESTRATOR RULE — ALL RUNTIMES**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available. Never call `ScheduleWakeup` or any host wake/sleep-scheduling tool to literalize this wait — the Agent() call returns on its own; a partial-args wake call surfaces a red validation error.
 
 **Handle return:**
 - **`## PATTERN MAPPING COMPLETE`:** Update `PATTERNS_PATH` to the created file path, continue to step 8.
@@ -713,46 +460,29 @@ After pattern mapper completes, update the path variable:
 PATTERNS_PATH="${PHASE_DIR}/${PADDED_PHASE}-PATTERNS.md"
 ```
 
-## 7.9. Regenerate API-SURFACE.md (intel gate)
-
-> Capability-driven dispatch. Resolves active `plan:pre` step hooks via the capability registry; the intel hook's `when: intel.enabled` condition is evaluated by the registry — no inline config-get needed.
-
-Read the active intel step hook from `PLAN_PRE_HOOKS_JSON` where `kind == "step"` and `capId == "intel"`.
-
-**If no active intel step hook exists:** `API_SURFACE_PATH` stays empty; skip to step 8. The step-8 planner entry for API Surface is omitted when `API_SURFACE_PATH` is empty.
-
-**If an active intel step hook exists:**
-```bash
-gsd_run intel api-surface
-API_SURFACE_PATH="$(dirname "$STATE_PATH")/intel/API-SURFACE.md"
-echo "✓ API surface regenerated: ${API_SURFACE_PATH}"  # injected into step 8 as HINT
-```
-
-Continue to step 8.
-
 ## 7.95. Spec-less Probe Fallback (gate)
 
 When the SPEC did not supply `## Edge Coverage` / `## Prohibitions`, plan-phase runs the probe protocol
-and authors the predicates into PLAN.md `must_haves` (ADR-857 Phase 6 — the *else branch* of the
-`<downstream_consumer>` lift below). Core workflow-body substrate, not a capability rail (D-03). Runs
-after `$SPEC_FILE` (Step 7), before the gsd-planner spawn (Step 8).
+and authors the predicates into PLAN.md `must_haves` (the *else branch* of the
+`<downstream_consumer>` lift below). Core workflow-body substrate, not a capability rail. Runs
+after `$SPEC_FILE` (Step 7), before the planner spawn (Step 8).
 
-**Read and run** the gate + edge probe in `~/.claude/gsd-core/references/specless-probe-fallback.md`
+**Read and run** the gate + edge probe in `engineer/references/specless-probe-fallback.md`
 (§0 default-ON toggle + per-section absence via the `spec-section` helper, visibly skipping when
 disabled or no requirement IDs; §A deterministic edge probe → `$COVERAGE` when `EDGE_ABSENT`; §B
 prohibition recall in the planner). Pass `$COVERAGE` and `$SPECLESS_FALLBACK_DISABLED` into Step 8.
 
-## 7.99. Bounded Stall-Detection Helpers (#2650)
+## 7.99. Bounded Stall-Detection Helpers
 
-Read+execute `gsd-core/workflows/plan-phase/steps/stall-detection-helpers.md` (defines
-`gsd_stall_should_recover`/`gsd_stall_watch`, and how `{outputFile}` below is bound;
-independent of the teams-status guard above, AC2).
+Read+execute `engineer/workflows/plan-phase/steps/stall-detection-helpers.md` (defines
+`engineer_stall_should_recover`/`engineer_stall_watch`, and how `{outputFile}` below is bound;
+using the retained planner wait policy).
 
-## 8. Spawn gsd-planner Agent
+## 8. Spawn planner Agent
 
 Display banner:
 ```
-### GSD ► PLANNING PHASE {X}
+### Engineer ► PLANNING PHASE {X}
 
 ◆ Spawning planner... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
@@ -762,24 +492,20 @@ Planner prompt:
 ```markdown
 <planning_context>
 **Phase:** {phase_number}
-**Mode:** {standard | gap_closure | reviews}
+**Mode:** {standard | gap_closure}
 
 <required_reading>
 - {state_path} (Project State)
 - {roadmap_path} (Roadmap)
 - {requirements_path} (Requirements)
-- {context_path} (USER DECISIONS from /gsd:discuss-phase)
+- {context_path} (USER DECISIONS from /discuss-phase)
 - {research_path} (Technical Research)
 - {PATTERNS_PATH} (Pattern Map — analog files and code excerpts, if exists)
 - {verification_path} (Verification Gaps - if --gaps)
 - {uat_path} (UAT Gaps - if --gaps)
-- {reviews_path} (Cross-AI Review Feedback - if --reviews; actionable findings must be incorporated or explicitly deferred/rejected in PLAN.md)
-- {AI_SPEC_PATH} (AI Design Contract — framework and evaluation strategy, if exists)
+- {reviews_path} (Review Feedback - if --reviews; disposition every actionable finding)
 - {UI_SPEC_PATH} (UI Design Contract — visual/interaction specs, if exists)
 - {SPEC_PATH} (Phase SPEC — carries the ## Edge Coverage section to lift resolved edges from, if exists)
-- {SPIKE_FINDINGS_PATH} (Spike Findings — validated patterns, constraints, landmines from experiments, if exists)
-- {SKETCH_FINDINGS_PATH} (Sketch Findings — validated design decisions, CSS patterns, visual direction, if exists)
-- {API_SURFACE_PATH} (API Surface — HINT ONLY, when intel capability is active; see <intel_surface_hint> below)
 ${CONTEXT_WINDOW >= 500000 ? `
 **Cross-phase context (1M model enrichment):**
 - CONTEXT.md files from the 3 most recent completed phases (locked decisions — maintain consistency)
@@ -791,7 +517,7 @@ ${CONTEXT_WINDOW >= 500000 ? `
 </required_reading>
 ${prior_verify_commands.length > 0 ? `
 <proven_verify_commands>
-**Verify commands the previous phase actually ran (#2401) — reuse before re-deriving.** These
+**Verify commands the previous phase actually ran  — reuse before re-deriving.** These
 are the `<automated>` commands from the nearest prior phase that had any. They resolved from
 the executor's cwd in a real run, so a path here is grounded evidence, not a guess. When this
 phase's build/test story is the same, **copy the command verbatim**; do not re-derive a
@@ -800,19 +526,14 @@ directory. Surfaced at every context window — not part of the 1M enrichment ab
 {For each entry in \`prior_verify_commands\`: \`- Phase {phase} · {task}: \\\`{command}\\\`\`}
 </proven_verify_commands>
 ` : ''}
-${API_SURFACE_PATH ? `
-<intel_surface_hint>
-**API Surface (HINT — may be incomplete):** When \`intel.enabled\` is true, \`${API_SURFACE_PATH}\` lists symbols extracted from the codebase by regex/JS analysis. Prefer symbols listed there when referencing existing code. This surface is regex/JS-derived and MAY BE INCOMPLETE — a symbol's absence means *unknown*, not *nonexistent*. Never treat the surface as exhaustive. If you reference a symbol that is not in the surface and this phase creates it, list it under "Artifacts this phase produces".
-</intel_surface_hint>
-` : ''}
 ${AGENT_SKILLS_PLANNER}
 
 <review_incorporation_contract>
-**If Mode is reviews:** REVIEWS.md is feedback input, not a hidden execution contract. /gsd:execute-phase primarily consumes PLAN.md plus the normal phase context, so every current actionable review finding must become visible in the relevant PLAN.md before planning can pass.
+**If Mode is reviews:** REVIEWS.md is feedback input, not a hidden execution contract. /execute-phase primarily consumes PLAN.md plus the normal phase context, so every current actionable review finding must become visible in the relevant PLAN.md before planning can pass.
 
 For each current actionable finding in REVIEWS.md, the planner MUST either:
 - incorporate it into a PLAN.md task, `<action>`, `<acceptance_criteria>`, `<verify>`, `must_haves`, threat model, or artifact list; or
-- explicitly document a deferral/rejection rationale in the relevant PLAN.md, using the Review Dispositions Ledger in `gsd-core/references/planner-reviews.md`.
+- explicitly document a deferral/rejection rationale in the relevant PLAN.md, using the Review Dispositions Ledger in `engineer/references/planner-reviews.md`.
 
 Historical findings already incorporated, explicitly deferred/rejected in PLAN.md, or marked fully resolved do not require new plan changes.
 </review_incorporation_contract>
@@ -820,22 +541,23 @@ Historical findings already incorporated, explicitly deferred/rejected in PLAN.m
 **Phase requirement IDs (every ID MUST appear in a plan's `requirements` field):** {phase_req_ids}
 
 <tracked_source_paths>
-**Tracked-source paths (#3645):** Every path you write into PLAN.md —
+**Tracked-source paths :** Every path you write into PLAN.md —
 `files_modified`, `must_haves.artifacts`, action paths, and paths inherited
 from `{PATTERNS_PATH}` or prior-phase plans — must name git-tracked source,
-never a gitignored install/runtime mirror (e.g. `<root>/.gsd/capabilities/<id>/...`
-synced from a plugin's tracked tree; executor edits to a mirror die on the
-next capability sync). Verify existing-file paths with `git ls-files -- <path>`
-(non-empty = tracked); resolve a gitignored hit to its tracked origin
-(`plugins/*/.gsd/capabilities/<id>/...`, root `capabilities/<id>/...`). A
-not-yet-existing path is a new file — keep the intended path. Re-verify
-inherited paths: fix a mirror path, never inherit. Submodule files: check
+never a gitignored build or install output (e.g. `dist/<module>.js`,
+`build/generated/...`, `.venv/lib/python3.*/site-packages/<pkg>/...`; executor
+edits to an output die on the next build or install). Verify existing-file
+paths with `git ls-files -- <path>` (non-empty = tracked); resolve a gitignored
+hit to the tracked source it is built or installed from (`src/<module>.ts`, the
+generator's `.proto`/schema file, `src/<pkg>/...`). A not-yet-existing path is
+a new file — keep the intended path. Re-verify inherited paths: fix an output
+path, never inherit. Submodule files: check
 from within the submodule.
 </tracked_source_paths>
 
-<!-- gsd:protected:start -->
+<!-- engineer:protected:start -->
 <failing_direction_contract>
-**Stated failing direction (#3172):** Every runnable `<automated>` verify command
+**Stated failing direction :** Every runnable `<automated>` verify command
 you write MUST be followed by a `<fails_when>` sibling naming what output
 constitutes failure — an exit code, a string in the output, a missing line. A
 command with no expressible failure mode is not an acceptance test.
@@ -856,31 +578,21 @@ whole values. The `MISSING — Wave 0 …` sentinel is exempt: it is not runnabl
 it has no failure mode to state. Ask yourself: if this command were silently
 doing nothing, what in its output would tell me? If you cannot answer, fix the
 command — do not invent a statement for it.
-Rules + worked examples: @gsd-core/references/planner-failing-direction.md
+Rules + worked examples: @~/.claude/engineer/references/planner-failing-direction.md
 </failing_direction_contract>
-<!-- gsd:protected:end -->
+<!-- engineer:protected:end -->
 
 **Project instructions:** Read ./CLAUDE.md or ./.claude/CLAUDE.md if either exists — follow project-specific guidelines
 **Project skills:** Check .claude/skills/ or .agents/skills/ directory (if either exists) — read SKILL.md files, plans should account for project skill rules
 
-{For each active entry in `PLAN_PRE_HOOKS_JSON` where `kind == "contribution"` and `into == "planner"` (in array order): inject the entry's `fragment.inline` verbatim here. This delivers all planner-targeted contributions — including tdd's `<tdd_mode_active>` block (type:tdd heuristics), schema-gate's schema-push detection guidance (if active at plan:pre), and security's threat-model guidance. For the security contribution, also surface the resolved `configValues`: `security_asvs_level` (ASVS enforcement level) and `security_block_on` (severity threshold) so the planner uses the configured values when generating `<threat_model>` blocks. If no active planner contributions exist, omit this block entirely.}
 
-**TRACER_MODE:** ${TRACER_MODE} (false = horizontal layers instead of a leading `type="tracer"` slice; see `planner-mvp-mode.md`.)
 **REVERSIBILITY_GATES:** ${REVERSIBILITY_GATES} (false = rate but do not gate; see `planner-reversibility.md`.)
-**MVP_MODE:** ${MVP_MODE} (when true, follow vertical-slice rules from `~/.claude/gsd-core/references/planner-mvp-mode.md`; when false, ignore MVP guidance entirely.)
-**WALKING_SKELETON:** ${WALKING_SKELETON} (when true, the first deliverable must be a Walking Skeleton — Read the template at `~/.claude/gsd-core/references/skeleton-template.md` and produce SKELETON.md alongside PLAN.md.)
 **Granularity:** {granularity}
-
-${MVP_MODE === 'true' ? `
-<mvp_mode_active>
-**MVP Mode is ENABLED.** Read `~/.claude/gsd-core/references/planner-mvp-mode.md` now and follow its vertical-slice planning rules. Each plan must deliver a complete vertical slice — thin end-to-end functionality rather than horizontal layers.
-</mvp_mode_active>
-` : ''}
 
 <specless_probe_fallback>
 **Spec-less probe fallback** (only when step 7.95 set `EDGE_ABSENT` and/or `PROHIB_ABSENT`). The SPEC
 omitted that section — author its predicates into `must_haves` via the `<downstream_consumer>`
-else-branch below, per §A/§B/§C of `~/.claude/gsd-core/references/specless-probe-fallback.md`
+else-branch below, per §A/§B/§C of `engineer/references/specless-probe-fallback.md`
 (descriptor-less prohibitions, never auto-dismiss, no silent drops).
 
 Edge coverage report (`$COVERAGE`, present when `EDGE_ABSENT`):
@@ -894,19 +606,18 @@ ${SPECLESS_FALLBACK_DISABLED ? `
 
 </planning_context>
 
-<!-- gsd:protected:start -->
+<!-- engineer:protected:start -->
 <downstream_consumer>
-Output consumed by /gsd:execute-phase. Plans need:
+Output consumed by /execute-phase. Plans need:
 - Frontmatter (wave, depends_on, files_modified, autonomous)
 - Tasks in XML format with read_first and acceptance_criteria fields (MANDATORY on every task)
 - Verification criteria
 - must_haves for goal-backward verification
-- If the SPEC has an `## Edge Coverage` section, lift every resolved (verification: explicit) edge's acceptance criterion into `must_haves.truths` as a plain string, and every resolved (verification: backstop) edge **as a structured flat-scalar marker** — an object item `{ statement: <the check>, verification: backstop }`, NOT a prose note (the verifier branches deterministically on the `verification: backstop` field; a parenthetical is unparseable — the #1110 fragility). Use a flat scalar `verification:` continuation key, never a nested object (ADR-550 #1278). At verify time a `backstop` truth the verifier cannot confirm with explicit evidence abstains → `human_needed` (reason `insufficient_spec`), never a silent pass (#1154; see `gsd-core/references/honest-verifier.md`). `unresolved` edges are explicit assumptions — surface them in the plan, do not silently drop them. **Otherwise** (`EDGE_ABSENT`): apply the SAME lift to the fallback report `{COVERAGE}` (per §C of `gsd-core/references/specless-probe-fallback.md`); a SPEC-supplied section is never re-run.
-- If the SPEC has a `## Prohibitions` section, lift every resolved prohibition into the `must_haves.prohibitions:` sibling block (NOT `truths` — ADR-550 D3) with `statement`+`status`+`verification`, via the single `projectProhibitions` serializer (Hyrum — no second serializer); unresolved -> flagged assumptions, don't drop; never put a must-NOT under `truths`. **Otherwise** (`PROHIB_ABSENT`), author the recalled prohibitions into the SAME block via the SAME `projectProhibitions` contract but **descriptor-less** (no `check_*`) so each disposes flagged-unverified; never auto-dismiss. Section-level precedence + no-silent-drop equality apply (§C).
-- If a `-UI-SPEC.md` exists (resolved above as `UI_SPEC_PATH`) with a `## UI Considerations` section, lift it by the **identical rule** as `## Edge Coverage` above — resolved (explicit) → `must_haves.truths` string, resolved (backstop) → flat scalar `{ statement, verification: backstop }`, `unresolved` → explicit planner assumption (no new verb — ADR-550 #1278/#1154; #1867). Read it from `UI_SPEC_PATH` (the SPEC glob excludes `-UI-SPEC.md`).
-- **"Artifacts this phase produces" section (MANDATORY)** — list every symbol this phase creates: decorators, classes, functions, CLI flags, struct/dataclass fields, new file paths. The plan-review-convergence source-grounding pass reads this section to exclude newly-created symbols from drift verification; omitting it causes new symbols to be flagged for acknowledgement.
+- If the SPEC has an `## Edge Coverage` section, lift every resolved (verification: explicit) edge's acceptance criterion into `must_haves.truths` as a plain string, and every resolved (verification: backstop) edge **as a structured flat-scalar marker** — an object item `{ statement: <the check>, verification: backstop }`, NOT a prose note (the verifier branches deterministically on the `verification: backstop` field; a parenthetical is unparseable — the  fragility). Use a flat scalar `verification:` continuation key, never a nested object. At verify time a `backstop` truth the verifier cannot confirm with explicit evidence abstains → `human_needed` (reason `insufficient_spec`), never a silent pass (see `engineer/references/honest-verifier.md`). `unresolved` edges are explicit assumptions — surface them in the plan, do not silently drop them. **Otherwise** (`EDGE_ABSENT`): apply the SAME lift to the fallback report `{COVERAGE}` (per §C of `engineer/references/specless-probe-fallback.md`); a SPEC-supplied section is never re-run.
+- If the SPEC has a `## Prohibitions` section, lift every resolved prohibition into the `must_haves.prohibitions:` sibling block (NOT `truths`) with `statement`+`status`+`verification`, via the single `projectProhibitions` serializer (Hyrum — no second serializer); unresolved -> flagged assumptions, don't drop; never put a must-NOT under `truths`. **Otherwise** (`PROHIB_ABSENT`), author the recalled prohibitions into the SAME block via the SAME `projectProhibitions` contract but **descriptor-less** (no `check_*`) so each disposes flagged-unverified; never auto-dismiss. Section-level precedence + no-silent-drop equality apply (§C).
+- If a `-UI-SPEC.md` exists (resolved above as `UI_SPEC_PATH`) with a `## UI Considerations` section, lift it by the **identical rule** as `## Edge Coverage` above — resolved (explicit) → `must_haves.truths` string, resolved (backstop) → flat scalar `{ statement, verification: backstop }`, `unresolved` → explicit planner assumption (no new verb). Read it from `UI_SPEC_PATH` (the SPEC glob excludes `-UI-SPEC.md`).
 </downstream_consumer>
-<!-- gsd:protected:end -->
+<!-- engineer:protected:end -->
 
 <deep_work_rules>
 ## Anti-Shallow Execution Rules (MANDATORY)
@@ -939,7 +650,7 @@ Every task MUST include these fields — they are NOT optional:
 **Why this matters:** Executor agents work from the plan text. Vague instructions like "update the config to match production" produce shallow one-line changes. Concrete instructions like "add DATABASE_URL, set POOL_SIZE=20, add REDIS_URL, and read config/runtime.ts before editing" produce complete work without turning the planner into the executor.
 </deep_work_rules>
 
-<!-- gsd:protected:start -->
+<!-- engineer:protected:start -->
 <quality_gate>
 - [ ] PLAN.md files created in phase directory
 - [ ] Each plan has valid frontmatter
@@ -955,33 +666,27 @@ Every task MUST include these fields — they are NOT optional:
 - [ ] Every UI-SPEC ## UI Considerations resolved consideration is represented in a plan's must_haves (no silent drops)
 - [ ] Every SPEC ## Prohibitions resolved item is represented in a plan's must_haves.prohibitions (no silent drops)
 </quality_gate>
-<!-- gsd:protected:end -->
+<!-- engineer:protected:end -->
 ```
 
-**If `CHUNKED_MODE` is `false` (default):** Spawn the planner as a single long-lived Agent:
+Spawn the planner as a single long-lived Agent:
 
 **Dispatch/wait gate — `PLANNER_STALL_DETECTION_ENABLED` (config key `planner.stall_detection_enabled`, resolved in `plan-phase/steps/stall-detection-helpers.md`):**
-- **`true` (default):** use `run_in_background=true` in the Agent() call shown below, then use `gsd_stall_watch` as specified after it.
+- **`true` (default):** use `run_in_background=true` in the Agent() call shown below, then use `engineer_stall_watch` as specified after it.
 
 ```text
 Agent(
   prompt=filled_prompt,
-  subagent_type="gsd-planner",
+  subagent_type="planner",
   model="{planner_model}",
   description="Plan Phase {phase}",
   run_in_background=true
 )
 ```
 
-**ORCHESTRATOR RULE — ALL RUNTIMES (when `PLANNER_STALL_DETECTION_ENABLED` is `true`):** `TS=$(date +%s)`; repeat `PLANNER_STALL_RESULT=$(gsd_stall_watch "$TS" "{outputFile}" "${PHASE_DIR}"'/*-PLAN.md' "## PLANNING COMPLETE" "## PHASE SPLIT RECOMMENDED" "## ⚠ Source Audit" "## CHECKPOINT REACHED" "## PLANNING INCONCLUSIVE")` while waiting/active — `marker_received` -> step 9; `stalled` -> 9a.
+**ORCHESTRATOR RULE — ALL RUNTIMES (when `PLANNER_STALL_DETECTION_ENABLED` is `true`):** `TS=$(date +%s)`; repeat `PLANNER_STALL_RESULT=$(engineer_stall_watch "$TS" "{outputFile}" "${PHASE_DIR}"'/*-PLAN.md' "## PLANNING COMPLETE" "## PHASE SPLIT RECOMMENDED" "## ⚠ Source Audit" "## CHECKPOINT REACHED" "## PLANNING INCONCLUSIVE")` while waiting/active — `marker_received` -> step 9; `stalled` -> 9a.
 
-- **`false`:** issue the same Agent() call but omit `run_in_background`; await its ordinary runtime-native completion and pass the real returned result to step 9. Skip `gsd_stall_watch` entirely. This is not fire-and-forget; empty, truncated, or unrecognized returns still use step 9a.
-
-**If `CHUNKED_MODE` is `true`:** Skip the Agent() call above — proceed to step 8.5 instead.
-
-<!-- gsd:section id="chunked-planning-mode" when="state:chunked-mode" -->
-If `section_manifest` is `null` or `"chunked-planning-mode"` is in its `included` list: read and execute `gsd-core/workflows/plan-phase/steps/chunked-planning-mode.md`. Otherwise skip — do not read the file.
-<!-- /gsd:section -->
+- **`false`:** issue the same Agent() call but omit `run_in_background`; await its ordinary runtime-native completion and pass the real returned result to step 9. Skip `engineer_stall_watch` entirely. This is not fire-and-forget; empty, truncated, or unrecognized returns still use step 9a.
 
 ## 9. Handle Planner Return
 
@@ -997,29 +702,29 @@ If `section_manifest` is `null` or `"chunked-planning-mode"` is in its `included
 **Triggered when:** Agent() returns but the return contains no recognized marker (`## PLANNING COMPLETE`, `## PHASE SPLIT RECOMMENDED`, `## ⚠ Source Audit`, `## CHECKPOINT REACHED`, `## PLANNING INCONCLUSIVE`).
 
 ```bash
-DISK_PLANS=$(gsd_run query find-phase "${PHASE_NUMBER}" | jq -r '.plan_count_all // 0')
+DISK_PLANS=$(engineer_run query find-phase "${PHASE_NUMBER}" | jq -r '.plan_count_all // 0')
 ```
 
-If `DISK_PLANS` is greater than 0 (a known Windows stdio hang pattern — the planner wrote plans to disk but the return never arrived), offer: 1) Accept plans (treat as `## PLANNING COMPLETE`), 2) Retry planner (return to step 8), 3) Stop. If it is 0 and no marker, treat as `## PLANNING INCONCLUSIVE`. Full banner text: `gsd-core/workflows/plan-phase/detail/elaboration.md` § 9a.
+If `DISK_PLANS` is greater than 0 (a known Windows stdio hang pattern — the planner wrote plans to disk but the return never arrived), offer: 1) Accept plans (treat as `## PLANNING COMPLETE`), 2) Retry planner (return to step 8), 3) Stop. If it is 0 and no marker, treat as `## PLANNING INCONCLUSIVE`.
 
 ## 9b. Handle Phase Split Recommendation
 
-When the planner returns `## PHASE SPLIT RECOMMENDED`, the phase's source items exceed the context budget for full-fidelity implementation. Extract the planner's proposed sub-phase groupings and present the user three options via AskUserQuestion: Split into sub-phases (use `/gsd:phase --insert`, then replan each), Proceed anyway (return to planner accepting degraded quality), or Prioritize (AskUserQuestion multiSelect to choose now vs. later, create CONTEXT.md per sub-phase). Full banner text: `gsd-core/workflows/plan-phase/detail/elaboration.md` § 9b.
+When the planner returns `## PHASE SPLIT RECOMMENDED`, the phase's source items exceed the context budget for full-fidelity implementation. Extract the planner's proposed sub-phase groupings and present the user three options via AskUserQuestion: Split into sub-phases (use `/phase --insert`, then replan each), Proceed anyway (return to planner accepting degraded quality), or Prioritize (AskUserQuestion multiSelect to choose now vs. later, create CONTEXT.md per sub-phase).
 
 ## 9c. Handle Source Audit Gaps
 
-When the planner returns `## ⚠ Source Audit: Unplanned Items Found`, items from REQUIREMENTS.md, RESEARCH.md, ROADMAP goal, or CONTEXT.md decisions have no corresponding plan. Present each gap to the user with three options: Add a plan (return to planner, step 8), Split phase (`/gsd:phase --insert`, then replan), or Defer (record in CONTEXT.md `## Deferred Ideas` with developer confirmation, proceed to step 10). Full banner text: `gsd-core/workflows/plan-phase/detail/elaboration.md` § 9c.
+When the planner returns `## ⚠ Source Audit: Unplanned Items Found`, items from REQUIREMENTS.md, RESEARCH.md, ROADMAP goal, or CONTEXT.md decisions have no corresponding plan. Present each gap to the user with three options: Add a plan (return to planner, step 8), Split phase (`/phase --insert`, then replan), or Defer (record in CONTEXT.md `## Deferred Ideas` with developer confirmation, proceed to step 10).
 
-## 10. Spawn gsd-plan-checker Agent
+## 10. Spawn plan-checker Agent
 
 Display banner:
 ```
-### GSD ► VERIFYING PLANS
+### Engineer ► VERIFYING PLANS
 
 ◆ Spawning plan checker... (runs in a subagent — no output until it returns, ~1–5 min; expected, not a freeze)
 ```
 
-**Verify-command probes (#2401, #3172).** Before spawning, run both deterministic probes and
+**Verify-command probes.** Before spawning, run both deterministic probes and
 hand their JSON to the checker. The first resolves each `<automated>` command's target; the
 second reports which runnable commands carry a `<fails_when>` statement naming their failure
 signal. Neither executes command text, and neither prescribes a replacement — the first reports
@@ -1028,11 +733,11 @@ reports which commands state a failure signal and never authors one. Handing bot
 stops the checker hand-reasoning the filesystem or the plans.
 
 ```bash
-VERIFY_PATHS=$(gsd_run check verify-command-paths "${PHASE}" --raw) && VERIFY_PATHS_EXIT=0 || VERIFY_PATHS_EXIT=$?
-FAILING_DIRECTIONS=$(gsd_run check verify-failure-directions "${PHASE}" --raw) && FAILING_DIRECTIONS_EXIT=0 || FAILING_DIRECTIONS_EXIT=$?
+VERIFY_PATHS=$(engineer_run check verify-command-paths "${PHASE}" --raw) && VERIFY_PATHS_EXIT=0 || VERIFY_PATHS_EXIT=$?
+FAILING_DIRECTIONS=$(engineer_run check verify-failure-directions "${PHASE}" --raw) && FAILING_DIRECTIONS_EXIT=0 || FAILING_DIRECTIONS_EXIT=$?
 ```
 
-Branch on each `*_EXIT` (#5170): `0` — the probe looked; use the JSON. `69` (`UNAVAILABLE`) — the
+Branch on each `*_EXIT`: `0` — the probe looked; use the JSON. `69` (`UNAVAILABLE`) — the
 probe **could not look**: the JSON is still printed and carries `status: 'unresolvable'`, so hand it
 to the checker unchanged, and never read it as "every path resolved". Any other non-zero is a command
 failure: stop and surface it, and do not hand the checker an empty value.
@@ -1043,21 +748,21 @@ Checker prompt:
 <verification_context>
 **Phase:** {phase_number}
 **Phase Goal:** {goal from ROADMAP}
-**Mode:** {standard | gap_closure | reviews}
+**Mode:** {standard | gap_closure}
 
 <required_reading>
 - {PHASE_DIR}/*-PLAN.md (Plans to verify)
 - {roadmap_path} (Roadmap)
 - {requirements_path} (Requirements)
-- {context_path} (USER DECISIONS from /gsd:discuss-phase)
+- {context_path} (USER DECISIONS from /discuss-phase)
 - {research_path} (Technical Research — includes Validation Architecture)
-- {reviews_path} (Cross-AI Review Feedback - if --reviews; verify actionable findings are represented in PLAN.md)
+- {reviews_path} (Review Feedback - if --reviews; check the disposition ledger)
 </required_reading>
 
 ${AGENT_SKILLS_CHECKER}
 
 <verify_command_path_probe>
-**Deterministic verify-command path probe (#2401)** — already run; do NOT re-derive these
+**Deterministic verify-command path probe ** — already run; do NOT re-derive these
 verdicts by reading the filesystem yourself. Act on `severity` per the "Verify Command Path
 Resolvability" dimension: `blocker` → BLOCKER, `warning` → WARNING, `none` → silent.
 `status: pending_creation` is not a finding. A non-empty `readError` means the probe could not
@@ -1070,7 +775,7 @@ replacement path.
 </verify_command_path_probe>
 
 <failing_direction_probe>
-**Deterministic failing-direction probe (#3172)** — already run; do NOT re-derive these verdicts
+**Deterministic failing-direction probe ** — already run; do NOT re-derive these verdicts
 by re-reading the plans yourself. Act on `severity` per check 8f: `blocker` → BLOCKER,
 `warning` → WARNING, `none` → silent. `status: sentinel` is a Wave-0 `MISSING` placeholder and is
 not a finding. A non-empty `readError` means the probe could not look — a WARNING, not a pass.
@@ -1082,9 +787,9 @@ Quote the command that has no stated failure mode; never author the statement fo
 </failing_direction_probe>
 
 <review_incorporation_verification>
-**If Mode is reviews:** Read REVIEWS.md and verify each current actionable review finding is visible in executable PLAN.md content or explicitly deferred/rejected in the relevant PLAN.md. A finding remains actionable if it requires a concrete plan task, `<action>`, `<acceptance_criteria>`, `<verify>`, `must_haves`, threat-model item, stale-path correction, or execution contract change before /gsd:execute-phase runs.
+**If Mode is reviews:** Read REVIEWS.md and verify each current actionable review finding is visible in executable PLAN.md content or explicitly deferred/rejected in the relevant PLAN.md. A finding remains actionable if it requires a concrete plan task, `<action>`, `<acceptance_criteria>`, `<verify>`, `must_haves`, threat-model item, stale-path correction, or execution contract change before /execute-phase runs.
 
-If an actionable finding remains only in REVIEWS.md and would be invisible to /gsd:execute-phase, return `## ISSUES FOUND`. Use WARNING by default; use BLOCKER when the missing incorporation can prevent the phase goal, create unsafe execution, or invalidate verification.
+If an actionable finding remains only in REVIEWS.md and would be invisible to /execute-phase, return `## ISSUES FOUND`. Use WARNING by default; use BLOCKER when the missing incorporation can prevent the phase goal, create unsafe execution, or invalidate verification.
 </review_incorporation_verification>
 
 **Phase requirement IDs (MUST ALL be covered):** {phase_req_ids}
@@ -1102,7 +807,7 @@ If an actionable finding remains only in REVIEWS.md and would be invisible to /g
 ```
 Agent(
   prompt=checker_prompt,
-  subagent_type="gsd-plan-checker",
+  subagent_type="plan-checker",
   model="{checker_model}",
   description="Verify Phase {phase} plans",
   run_in_background=true
@@ -1110,30 +815,30 @@ Agent(
 ```
 
 **Dispatch/wait gate — `PLANNER_STALL_DETECTION_ENABLED` (config key `planner.stall_detection_enabled`, resolved in `plan-phase/steps/stall-detection-helpers.md`):**
-- **`true` (default):** use `run_in_background=true` in the Agent() call above, then use `gsd_stall_watch` below.
+- **`true` (default):** use `run_in_background=true` in the Agent() call above, then use `engineer_stall_watch` below.
 
-**ORCHESTRATOR RULE — ALL RUNTIMES (when `PLANNER_STALL_DETECTION_ENABLED` is `true`):** `TS=$(date +%s)`; repeat `CHECKER_STALL_RESULT=$(gsd_stall_watch "$TS" "{outputFile}" "${PHASE_DIR}"'/*-PLAN.md' "## VERIFICATION PASSED" "## ISSUES FOUND")` while waiting/active.
+**ORCHESTRATOR RULE — ALL RUNTIMES (when `PLANNER_STALL_DETECTION_ENABLED` is `true`):** `TS=$(date +%s)`; repeat `CHECKER_STALL_RESULT=$(engineer_stall_watch "$TS" "{outputFile}" "${PHASE_DIR}"'/*-PLAN.md' "## VERIFICATION PASSED" "## ISSUES FOUND")` while waiting/active.
 
-- **`false`:** issue the same Agent() call but omit `run_in_background`; await its ordinary runtime-native completion and pass the real returned result to step 11. Skip `gsd_stall_watch` entirely. Treat a recognized returned marker exactly like `marker_received`; empty, truncated, or unrecognized returns still use step 11a.
+- **`false`:** issue the same Agent() call but omit `run_in_background`; await its ordinary runtime-native completion and pass the real returned result to step 11. Skip `engineer_stall_watch` entirely. Treat a recognized returned marker exactly like `marker_received`; empty, truncated, or unrecognized returns still use step 11a.
 
 ## 11. Handle Checker Return
 
-- **`marker_received` + `## VERIFICATION PASSED`:** If the return lists an entry whose severity is BLOCKER or WARNING, in the YAML issues block or listed in prose (a mention such as "no warnings" or a zero count is not an entry), treat it as `## ISSUES FOUND` instead: display issues, check iteration count, proceed to step 12, which counts those prose entries as BLOCKER/WARNING entries (the no-YAML-block shortcut there does not apply). The sentinel never decides alone, and an entry with a missing or unrecognized severity counts as a BLOCKER (#5578). Otherwise display confirmation, proceed to step 13.
+- **`marker_received` + `## VERIFICATION PASSED`:** If the return lists an entry whose severity is BLOCKER or WARNING, in the YAML issues block or listed in prose (a mention such as "no warnings" or a zero count is not an entry), treat it as `## ISSUES FOUND` instead: display issues, check iteration count, proceed to step 12, which counts those prose entries as BLOCKER/WARNING entries (the no-YAML-block shortcut there does not apply). The sentinel never decides alone, and an entry with a missing or unrecognized severity counts as a BLOCKER. Otherwise display confirmation, proceed to step 13.
 - **`marker_received` + `## ISSUES FOUND`:** Display issues, check iteration count, proceed to step 12.
 - **`stalled`:** Automatically surface 11a's recovery choice (Accept verification / Retry checker / Stop) — no manual interrupt needed.
 - **Empty / truncated / no recognized marker:** → Filesystem fallback (step 11a).
 
-**Thinking partner for architectural tradeoffs (conditional):** If `features.thinking_partner` is enabled and the checker's issues contain architectural tradeoff keywords ("architecture", "approach", "strategy", "pattern", "vs", "alternative"), present a brief Option A/B analysis with a recommendation and ask "Apply this to the revision? [Yes] / [No, I'll decide]". If disabled, skip. Full prompt template: `gsd-core/workflows/plan-phase/detail/elaboration.md` § 11 thinking-partner.
+**Thinking partner for architectural tradeoffs (conditional):** If `features.thinking_partner` is enabled and the checker's issues contain architectural tradeoff keywords ("architecture", "approach", "strategy", "pattern", "vs", "alternative"), present a brief Option A/B analysis with a recommendation and ask "Apply this to the revision? [Yes] / [No, I'll decide]". If disabled, skip.
 
 ## 11a. Filesystem Fallback (Checker)
 
 **Triggered when:** Checker Agent() returns but the return contains neither `## VERIFICATION PASSED` nor `## ISSUES FOUND`.
 
 ```bash
-DISK_PLANS=$(gsd_run query find-phase "${PHASE_NUMBER}" | jq -r '.plan_count_all // 0')
+DISK_PLANS=$(engineer_run query find-phase "${PHASE_NUMBER}" | jq -r '.plan_count_all // 0')
 ```
 
-If `DISK_PLANS` is greater than 0 (plans exist on disk; a known Windows stdio hang pattern), offer: 1) Accept verification (treat as `## VERIFICATION PASSED`, continue to step 13), 2) Retry checker (return to step 10), 3) Stop. If it is 0, something is seriously wrong — display error and stop. Full banner text: `gsd-core/workflows/plan-phase/detail/elaboration.md` § 11a.
+If `DISK_PLANS` is greater than 0 (plans exist on disk; a known Windows stdio hang pattern), offer: 1) Accept verification (treat as `## VERIFICATION PASSED`, continue to step 13), 2) Retry checker (return to step 10), 3) Stop. If it is 0, something is seriously wrong — display error and stop.
 
 ## 12. Revision Loop (Max 3 Iterations)
 
@@ -1143,7 +848,7 @@ Track `stall_reentry_count` (starts at 0; incremented each time "Adjust approach
 
 **If iteration_count < 3:**
 
-Parse issue count from checker return: count BLOCKER + WARNING entries in the YAML issues block (structured output from gsd-plan-checker); an entry whose severity is missing or unrecognized counts as a BLOCKER (fail closed). Entries a `## VERIFICATION PASSED` return lists in prose count the same way (#5578). If the checker's return contains no YAML issues block and lists no BLOCKER or WARNING entry in prose (i.e., the plan was approved with no issues), treat `issue_count` as 0 and skip the stall check — the plan passed. Proceed to step 13 — likewise when every entry in the block is explicitly INFO (display them as advisories). Advisory format: `ℹ advisory — {dimension}: {description}` per INFO entry, listed once before the step-13 output.
+Parse issue count from checker return: count BLOCKER + WARNING entries in the YAML issues block (structured output from plan-checker); an entry whose severity is missing or unrecognized counts as a BLOCKER (fail closed). Entries a `## VERIFICATION PASSED` return lists in prose count the same way. If the checker's return contains no YAML issues block and lists no BLOCKER or WARNING entry in prose (i.e., the plan was approved with no issues), treat `issue_count` as 0 and skip the stall check — the plan passed. Proceed to step 13 — likewise when every entry in the block is explicitly INFO (display them as advisories). Advisory format: `ℹ advisory — {dimension}: {description}` per INFO entry, listed once before the step-13 output.
 
 Display (only when entering the revision loop — skip if the paragraph above already proceeded to step 13): `Revision iteration {N}/3 -- {blocker_count} blockers, {warning_count} warnings`
 
@@ -1160,7 +865,7 @@ Display (only when entering the revision loop — skip if the paragraph above al
   **If `stall_reentry_count >= 2`:**
     Display: `Stall persists after 2 re-planning attempts. The following issues could not be resolved automatically:`
     List the remaining issues from the checker.
-    Suggest: "Consider resolving these issues manually or running `/gsd:debug` to investigate root causes."
+    Suggest: "Consider resolving these issues manually or running `/debug` to investigate root causes."
     Options: "Proceed anyway" | "Abandon"
     If "Proceed anyway": accept current plans and continue to step 13.
     If "Abandon": stop workflow.
@@ -1176,7 +881,7 @@ Revision prompt:
 
 <required_reading>
 - {PHASE_DIR}/*-PLAN.md (Existing plans)
-- {context_path} (USER DECISIONS from /gsd:discuss-phase)
+- {context_path} (USER DECISIONS from /discuss-phase)
 </required_reading>
 
 ${AGENT_SKILLS_PLANNER}
@@ -1190,7 +895,7 @@ smaller or different mechanism reaching the same property resolves it — say wh
 BEFORE editing; if a hint would contradict one, or the
 property is unreachable without breaking one, return `## REVISION_CONFLICT` with the conflict and
 the alternatives rather than applying or working around it. Full contract:
-`gsd-core/references/planner-revision.md`.
+`engineer/references/planner-revision.md`.
 
 Do NOT replan from scratch unless fundamental. Return what changed.
 </instructions>
@@ -1199,7 +904,7 @@ Do NOT replan from scratch unless fundamental. Return what changed.
 ```
 Agent(
   prompt=revision_prompt,
-  subagent_type="gsd-planner",
+  subagent_type="planner",
   model="{planner_model}",
   description="Revise Phase {phase} plans",
   run_in_background=true
@@ -1207,98 +912,32 @@ Agent(
 ```
 
 **Dispatch/wait gate — `PLANNER_STALL_DETECTION_ENABLED` (config key `planner.stall_detection_enabled`, resolved in `plan-phase/steps/stall-detection-helpers.md`):**
-- **`true` (default):** use `run_in_background=true` in the Agent() call above, then use `gsd_stall_watch` below.
+- **`true` (default):** use `run_in_background=true` in the Agent() call above, then use `engineer_stall_watch` below.
 
-**ORCHESTRATOR RULE — ALL RUNTIMES (when `PLANNER_STALL_DETECTION_ENABLED` is `true`):** (7.99; no marker, mtimes only) `TS=$(date +%s)`; repeat `PLANNER_STALL_RESULT=$(gsd_stall_watch "$TS" "{outputFile}" "${PHASE_DIR}"'/*-PLAN.md')` while waiting/active — `stalled` -> 1) Accept as revised, to step 13, 2) Retry, 3) Stop.
+**ORCHESTRATOR RULE — ALL RUNTIMES (when `PLANNER_STALL_DETECTION_ENABLED` is `true`):** (7.99; no marker, mtimes only) `TS=$(date +%s)`; repeat `PLANNER_STALL_RESULT=$(engineer_stall_watch "$TS" "{outputFile}" "${PHASE_DIR}"'/*-PLAN.md')` while waiting/active — `stalled` -> 1) Accept as revised, to step 13, 2) Retry, 3) Stop.
 
-- **`false`:** issue the same Agent() call but omit `run_in_background`; await its ordinary runtime-native completion and pass the real returned result into the existing revision-return handling. Skip `gsd_stall_watch` entirely; an empty, truncated, or unrecognized result keeps the existing filesystem fallback.
+- **`false`:** issue the same Agent() call but omit `run_in_background`; await its ordinary runtime-native completion and pass the real returned result into the existing revision-return handling. Skip `engineer_stall_watch` entirely; an empty, truncated, or unrecognized result keeps the existing filesystem fallback.
 
 **If the planner returns `## REVISION_CONFLICT`:** follow the shared Conflict Return protocol in
-`gsd-core/references/revision-loop.md`, with this workflow's bindings:
+`engineer/references/revision-loop.md`, with this workflow's bindings:
 
-```bash
-if ! CONVERGENCE_ENABLED=$(gsd_run query config-get workflow.plan_review_convergence --raw 2>/dev/null); then
-  echo "BLOCKED: cannot read workflow.plan_review_convergence." >&2
-  exit 1
-fi
-REVIEWS_FILE="${REVIEWS_PATH}"
-if [ "${CONVERGENCE_ENABLED}" = "true" ] && [ -n "${REVIEWS_FILE}" ] && [ ! -f "${REVIEWS_FILE}" ]; then
-  echo "BLOCKED: cannot persist plan-revision conflict -- REVIEWS_PATH not a regular file: ${REVIEWS_FILE}" >&2
-  exit 1
-fi
-```
 
 - Counter not spent: `iteration_count`.
-- Record channel: `$REVIEWS_FILE`'s `## Plan-Revision Conflicts` section. plan-phase wrote the
-  line, so plan-phase closes it.
+- Record channel: the phase CONTEXT conflict record, maintained by the coordinator; record the conflicting property, evidence, alternatives and actual resolution.
 - After re-spawning, return to this step, not the checker.
 - Escalates via the iteration cap on repeated `required_property`, and on the THIRD conflict
   return of this loop whatever property it names.
-- Sanitize-then-insert is real shell; fields reach `awk` via `ENVIRON`, never `-v` (decodes
-  literal `\n` as a real newline). Export the row's
-  `CONFLICT_DIMENSION/_PLAN/_PROPERTY/_CONSTRAINT/_ALTERNATIVES`, then run:
-
-```bash
-if [ "${CONVERGENCE_ENABLED}" = "true" ] && [ -n "${REVIEWS_FILE}" ]; then
-  san() { printf '%s' "$1" | tr '\r\n\t' '   ' | sed -E 's/^[[:space:]]*[#|`-]+[[:space:]]*//'; }
-  LINE="- [ ] REVISION_CONFLICT $(san "${CONFLICT_DIMENSION}")/$(san "${CONFLICT_PLAN}") — required_property: $(san "${CONFLICT_PROPERTY}") | conflicts with: $(san "${CONFLICT_CONSTRAINT}") | alternatives: $(san "${CONFLICT_ALTERNATIVES}")"
-  END='<!-- gsd:plan-revision-conflicts:end -->'
-  TMP=$(mktemp "${REVIEWS_FILE}.XXXXXX")
-  if ! LINE="$LINE" END="$END" awk '
-    { cur = $0; sub(/\r$/, "", cur) }
-    cur == ENVIRON["LINE"] { seen = 1 }
-    cur == ENVIRON["END"] && !ins { if (!seen) print ENVIRON["LINE"]; ins = 1 }
-    { print }
-    END { if (!ins) exit 2 }
-  ' "${REVIEWS_FILE}" > "${TMP}"; then
-    rm -f "${TMP}"
-    echo "BLOCKED: no end delimiter in '${REVIEWS_FILE}'." >&2
-    exit 1
-  fi
-  mv "${TMP}" "${REVIEWS_FILE}"
-fi
-```
-
-**Otherwise (revised plans, not `## REVISION_CONFLICT`):** if this re-spawn followed a
-resolved conflict, close its record — nothing persists across fences, so export `REVIEWS_FILE`,
-the same `CONFLICT_DIMENSION`/`CONFLICT_PLAN` used to open it, and `CONFLICT_RESOLUTION` (a
-one-line summary). Then run:
-
-```bash
-if [ "${CONVERGENCE_ENABLED}" = "true" ] && [ -n "${REVIEWS_FILE}" ]; then
-  san() { printf '%s' "$1" | tr '\r\n\t' '   ' | sed -E 's/^[[:space:]]*[#|`-]+[[:space:]]*//'; }
-  PREFIX="- [ ] REVISION_CONFLICT $(san "${CONFLICT_DIMENSION}")/$(san "${CONFLICT_PLAN}") — "
-  RES=$(printf '%s' "${CONFLICT_RESOLUTION}" | tr '\r\n\t' '   ')
-  TMP=$(mktemp "${REVIEWS_FILE}.XXXXXX")
-  if ! PREFIX="$PREFIX" RES="$RES" awk '
-    { cur = $0; sub(/\r$/, "", cur) }
-    !d && index(cur, ENVIRON["PREFIX"]) == 1 { print "- [x]" substr(cur, 6) " | resolved: " ENVIRON["RES"]; d = 1; next }
-    { print }
-    END { if (!d) exit 2 }
-  ' "${REVIEWS_FILE}" > "${TMP}"; then
-    rm -f "${TMP}"
-    echo "BLOCKED: no open conflict '${CONFLICT_DIMENSION}/${CONFLICT_PLAN}' in '${REVIEWS_FILE}'." >&2
-    exit 1
-  fi
-  mv "${TMP}" "${REVIEWS_FILE}"
-fi
-```
 
 Spawn checker again (step 10), then increment `iteration_count`.
 
 **If iteration_count >= 3:**
 
-Recount BLOCKER + WARNING by the same rule — an entry whose severity is missing or unrecognized counts as a BLOCKER (fail closed). If `issue_count` is 0 — PASSED with no BLOCKER/WARNING entry in the YAML block or in prose, or every entry in the block is explicitly INFO — display any advisories and proceed to step 13; the gate below fires on everything else (#3724).
+Recount BLOCKER + WARNING by the same rule — an entry whose severity is missing or unrecognized counts as a BLOCKER (fail closed). If `issue_count` is 0 — PASSED with no BLOCKER/WARNING entry in the YAML block or in prose, or every entry in the block is explicitly INFO — display any advisories and proceed to step 13; the gate below fires on everything else.
 
 Display: `Max iterations reached. {N} issues remain:` + issue list
 
 Offer: 1) Force proceed, 2) Provide guidance and retry, 3) Abandon
 
-## 12.5. Plan Bounce (Optional External Refinement)
-
-**Skip if:** `--skip-bounce`, `--gaps`, or bounce not activated (`--bounce` flag or `workflow.plan_bounce` config; `--skip-bounce` always wins). Requires `workflow.plan_bounce_script` set to a valid script path — warn and skip if bounce is activated with no script configured.
-
-For each `*-PLAN.md`: back it up to `*-PLAN.pre-bounce.md`, invoke `${BOUNCE_SCRIPT}` with the plan file and `workflow.plan_bounce_passes` (default 2), validate the result's YAML frontmatter integrity, and restore from backup on either broken frontmatter or a non-zero script exit. After all plans are bounced, re-run the plan checker (step 10) on the modified plans, restoring any that fail. Commit surviving bounced plans if at least one survived (`refactor(${padded_phase}): bounce plans through external refinement`), display a `{survived}/{total}` summary, and remove all `*-PLAN.pre-bounce.md` backups. Exact banner text, messages, and commands: `gsd-core/workflows/plan-phase/detail/elaboration.md` § 12.5.
 
 ## 13. Requirements Coverage Gate
 
@@ -1354,22 +993,22 @@ If `TEXT_MODE` is true, present as a plain-text numbered list (options already s
 ## 13a. Decision Coverage Gate
 
 Verify every trackable decision in CONTEXT.md `<decisions>` is referenced by at
-least one plan. This **translation gate** (#2492) refuses to mark a phase planned
+least one plan. This **translation gate** refuses to mark a phase planned
 when a discuss-phase decision silently dropped.
 
 **Skip if** `workflow.context_coverage_gate` is `false` (absent = enabled), or
 no CONTEXT.md exists for this phase, or its `<decisions>` block is empty.
 
 ```bash
-GATE_CFG=$(gsd_run query config-get workflow.context_coverage_gate --raw 2>/dev/null || echo "true")
+GATE_CFG=$(engineer_run query config-get workflow.context_coverage_gate --raw 2>/dev/null || echo "true")
 if [ "$GATE_CFG" != "false" ]; then
-  # #2770: CONTEXT_PATH from step-1 init doesn't survive into this Bash block;
+  # CONTEXT_PATH from step-1 init doesn't survive into this Bash block;
   # recompute it. Only run when a CONTEXT.md exists (handler fails closed on an
   # empty arg, so an unguarded empty glob would halt a context-less phase).
   CONTEXT_PATH=$(ls "${PHASE_DIR}"/*-CONTEXT.md 2>/dev/null | head -1)
   if [ -n "$CONTEXT_PATH" ]; then
-    GATE_RESULT=$(gsd_run query check.decision-coverage-plan "${PHASE_DIR}" "${CONTEXT_PATH}") && GATE_EXIT=0 || GATE_EXIT=$?
-    # 69 UNAVAILABLE (#5170) = the gate could not look: surface it and stop.
+    GATE_RESULT=$(engineer_run query check.decision-coverage-plan "${PHASE_DIR}" "${CONTEXT_PATH}") && GATE_EXIT=0 || GATE_EXIT=$?
+    # 69 UNAVAILABLE = the gate could not look: surface it and stop.
     [ "$GATE_EXIT" -eq 0 ] || { echo "Decision coverage gate could not run (exit ${GATE_EXIT}): $GATE_RESULT"; exit 1; }
     # BLOCKING: refuse to mark phase planned when a trackable decision is uncovered.
     # `passed: true` covers both real-pass and skipped cases (gate disabled / no CONTEXT.md /
@@ -1419,106 +1058,59 @@ between discuss-phase and execute-phase; if a decision isn't visible in any
 plan, no executor will implement it. Catching that now beats discovering it
 after thousands of dollars of execution.
 
-## 13b. Record Planning Completion in STATE.md
+## 13b. Record Context Drift Baseline
+
+Record a new freshness baseline only after every stale or unverified artifact identified by the pre-check has been regenerated or explicitly reconciled against the current context and source files. Reusing an artifact does not refresh it. Keep `DRIFT_BASELINE_READY=false` unless the check was available and returned no stale artifacts, or every stale/unverified artifact was regenerated or explicitly reconciled during this run. For `no-context-source-baseline`, existing reused artifacts remain unverified. If any stale/unverified artifact remains, do not record a new baseline; preserve the old baseline and report which artifacts need regeneration or reconciliation.
+
+```bash
+# Execute only when DRIFT_BASELINE_READY is true in workflow state.
+DRIFT_BASELINE=$(engineer_run verify context-drift "${PHASE}" --record --raw) && DRIFT_RECORD_EXIT=0 || DRIFT_RECORD_EXIT=$?
+if [ "$DRIFT_RECORD_EXIT" -eq 69 ]; then
+  echo "Warning: context-drift baseline could not be recorded; later freshness checks may be unavailable." >&2
+elif [ "$DRIFT_RECORD_EXIT" -ne 0 ]; then
+  echo "ERROR: context-drift baseline recording failed (exit ${DRIFT_RECORD_EXIT}): ${DRIFT_BASELINE}" >&2
+  exit "$DRIFT_RECORD_EXIT"
+fi
+```
+## 13c. Record Planning Completion in STATE.md
 
 After plans pass all gates, record that planning is complete so STATE.md reflects the new phase status:
 
 ```bash
-gsd_run query state.planned-phase --phase "${PHASE_NUMBER}" --name "${PHASE_NAME}" --plans "${PLAN_COUNT}"
+engineer_run query state.planned-phase --phase "${PHASE_NUMBER}" --name "${PHASE_NAME}" --plans "${PLAN_COUNT}"
 ```
 
 This updates STATUS to "Ready to execute", sets the correct plan count, and timestamps Last Activity.
 
-## 13c. Annotate ROADMAP with Wave Dependencies and Cross-cutting Constraints
 
-After plans are finalized, annotate the ROADMAP.md plan list for this phase with:
-- **Wave dependency notes** — a bold header before each wave group ("Wave 2 *(blocked on Wave 1 completion)*")
-- **Cross-cutting constraints** — a "Cross-cutting constraints:" subsection listing `must_haves.truths` entries that appear in 2 or more plans
+## 13d. Annotate ROADMAP with Cross-Phase Dependencies
 
-This step is derived entirely from existing PLAN frontmatter — no extra LLM pass is required.
+After plans are finalized, update the roadmap phase dependencies from their `depends_on` declarations. The runtime preserves existing dependencies and adds the cross-phase dependencies represented by current plans; it makes no change when no cross-phase dependency exists. Skip when `plan_count` is zero.
 
 ```bash
-gsd_run query roadmap.annotate-dependencies "${PHASE_NUMBER}"
+engineer_run query roadmap.annotate-dependencies "${PHASE_NUMBER}"
 ```
 
-This operation is idempotent: if wave headers or cross-cutting constraints already exist in the ROADMAP phase section, the command returns without modifying the file. Skip this step if `plan_count` is 0.
+This operation uses the runtime's maintained roadmap edit path and is safe to repeat. Include the updated ROADMAP.md with planning artifacts when committing.
+## 13e. Commit Plans if commit_docs is true
 
-## 13d. Commit Plans if commit_docs is true
-
-If `commit_docs` is true (from the init JSON parsed in step 1), commit the generated plan artifacts (including any ROADMAP.md annotations from step 13c):
+If `commit_docs` is true (from the init JSON parsed in step 1), commit the generated plan artifacts (including the current planning records):
 
 ```bash
-gsd_run query commit "docs(${PADDED_PHASE}): create phase plan" --files "${PHASE_DIR}"/*-PLAN.md .planning/STATE.md .planning/ROADMAP.md
+engineer_run query commit "docs(${PADDED_PHASE}): create phase plan" --files "${PHASE_DIR}"/*-PLAN.md .planning/STATE.md .planning/ROADMAP.md
 ```
 
 This commits all PLAN.md files for the phase plus the updated STATE.md and ROADMAP.md to version-control the planning artifacts. Skip this step if `commit_docs` is false.
 
-## 13e. Post-Planning Gap Analysis (plan:post capability gate dispatch)
-
-Proactive, non-blocking coverage report gated on `workflow.post_planning_gaps`
-(default `true`). Dispatched via the `plan:post` capability gate owned by the
-`gap-analysis` capability (ADR-857 §53). Reads REQUIREMENTS.md and CONTEXT.md
-`<decisions>` and cross-references each REQ-ID / D-ID against `${PHASE_DIR}/*-PLAN.md`.
-
-```bash
-IFS= read -rd '' GSD_ARGS <<'GSD_ARGS_END' || true
-$ARGUMENTS
-GSD_ARGS_END
-GSD_ARGS=${GSD_ARGS%$'\n'}
-PLAN_POST_HOOKS_JSON=$(gsd_run loop render-hooks plan:post --raw)
-GSD_WS=$(echo " $GSD_ARGS" | sed -nE 's/.* --ws +([A-Za-z0-9][A-Za-z0-9._-]*).*/--ws \1/p' | head -n 1)
-PHASE_REQ_IDS=$(gsd_run query init.plan-phase ${GSD_WS:+--ws=${GSD_WS##* }} "$PHASE" --pick phase_req_ids 2>/dev/null)
-PHASE_REQ_IDS="${PHASE_REQ_IDS:-TBD}"
-```
-
-Read the `activeHooks` array from `PLAN_POST_HOOKS_JSON` in-context. If
-`activeHooks` is empty or absent, skip this step silently — do NOT key the skip
-on any one capability's gate being absent (#3606: that skip silently dropped
-every other registered hook at this point).
-
-**Step and contribution dispatch:** dispatch every `kind == "step"` hook and inject every `kind == "contribution"` fragment per @gsd-core/references/loop-hook-dispatch.md (skip each kind silently when none), before gate evaluation below.
-
-⚠ **Validate `check` before shell use** (third-party manifest input; wherever `${hook.check.query}` appears, write the dot-normalized query, each `.` as `-`, and validate and pass that same value) — `loop-hook-dispatch.md` § `gate`.
-
-**For each active entry where `kind == "gate"`** (process in array order). **Dispatch by check shape** (the registry validates exactly one of `query`/`predicate`/`agentVerdict`):
-
-```bash
-# named-query gate:
-GATE_RESULT=$(gsd_run check ${hook.check.query} "${PHASE_DIR}" "${PHASE_REQ_IDS}" --raw) && CHECK_EXIT=0 || CHECK_EXIT=$?
-```
-OR, for a generic `predicate` gate (ADR-2008 / #2008), inline the predicate as compact JSON (note the `--phase-dir`/`--phase-number`/`--phase-req-ids` flags feed `${PHASE_DIR}`/`${PHASE_NUMBER}`/`${PHASE_REQ_IDS}` interpolation):
-```bash
-GATE_RESULT=$(gsd_run check predicate --predicate '<hook.check.predicate as JSON>' --phase-dir "${PHASE_DIR}" --phase-number "${PHASE_NUMBER}" --phase-req-ids "${PHASE_REQ_IDS}" --raw) && CHECK_EXIT=0 || CHECK_EXIT=$?
-```
-(Read the hook's `check` object in-context to pick the branch; a gate with neither is a malformed registry entry — skip with a warning.)
-
-**Step 1 — did the CHECK COMMAND itself succeed?**
-If the check command failed (non-zero `CHECK_EXIT`, empty output, or unparseable JSON):
-- `onError == "halt"` → halt and surface command error.
-- `onError == "skip"` → log a warning and continue to the next hook.
-
-**Step 2 — read `GATE_RESULT.block` (boolean).** Only reached when command succeeded.
-
-- If `hook.blocking == true` and `GATE_RESULT.block == true`: halt. (gap-analysis is always `blocking: false` so this branch is informational only.)
-- If `hook.blocking == false` (advisory): if `GATE_RESULT.block == true` or non-empty `table`/`summary`, output the gap table and continue. Advisory gates never block phase completion.
-- If `hook.blocking == true` and `GATE_RESULT.block == false`: continue silently.
-
-## 14. Present Final Status
-
-Route to `<offer_next>` OR `auto_advance` depending on flags/config.
-
-## 15. Auto-Advance Check
-
-Read and execute `gsd-core/workflows/plan-phase/steps/auto-advance-check.md` — it parses `--auto` / `--chain` from `$ARGUMENTS`, syncs the ephemeral `workflow._auto_chain_active` flag with the invocation, and, when auto-advance applies, launches execute-phase through the Skill tool (flat, `--no-transition`) and handles its return. Otherwise route to `<offer_next>`.
 
 </process>
 
 <offer_next>
 Output this markdown directly (not as a code block):
 
-`${GAPS_EXEC_FLAG}` projects the just-completed planning mode onto the follow-up execute command (#3297): it expands to `--gaps-only` for a `--gaps` planning run (so the handoff points at execute-phase's gap-closure scope — only the newly created `gap_closure: true` plans — not the whole phase) and to empty for a standard or `--reviews` run (whole-phase scope, unchanged). Substitute it verbatim; when empty, collapse the extra space.
+`${GAPS_EXEC_FLAG}` projects the just-completed planning mode onto the follow-up execute command: it expands to `--gaps-only` for a `--gaps` planning run (so the handoff points at execute-phase's gap-closure scope — only the newly created `gap_closure: true` plans — not the whole phase) and to empty for a standard or run (whole-phase scope, unchanged). Substitute it verbatim; when empty, collapse the extra space.
 
-### GSD ► PHASE {X} PLANNED ✓
+### Engineer ► PHASE {X} PLANNED ✓
 
 **Phase {X}: {Name}** — {N} plan(s) in {M} wave(s)
 
@@ -1538,37 +1130,36 @@ Verification: {Passed | Passed with override | Skipped}
 
 /clear then:
 
-/gsd:execute-phase {X} ${GAPS_EXEC_FLAG} ${GSD_WS}
+/execute-phase {X} ${GAPS_EXEC_FLAG}
 
 ---
 
 **Also available:**
 - cat .planning/phases/{phase-dir}/*-PLAN.md — review plans
-- /gsd:plan-phase {X} --research — re-research first
-- /gsd:review --phase {X} --all — peer review plans with external AIs
-- /gsd:plan-phase {X} --reviews — replan incorporating review feedback
+- /plan-phase {X} --research — re-research first
+- /review --phase {X} --all — peer review plans with external AIs
 
 ---
 </offer_next>
 
 <windows_troubleshooting>
-Read `gsd-core/workflows/plan-phase/steps/windows-troubleshooting.md` if plan-phase freezes on Windows during agent spawning (stdio deadlocks with MCP servers, anthropics/claude-code#28126) — it covers force-kill, orphaned-node cleanup, stale task-dir cleanup, reducing the MCP server count, and the `--skip-research` fallback.
+Read `engineer/workflows/plan-phase/steps/windows-troubleshooting.md` if plan-phase freezes on Windows during agent spawning (stdio deadlocks with MCP servers) — it covers force-kill, orphaned-node cleanup, stale task-dir cleanup, reducing the MCP server count, and the `--skip-research` fallback.
 </windows_troubleshooting>
 
-<!-- gsd:protected:start -->
+<!-- engineer:protected:start -->
 <success_criteria>
 - [ ] .planning/ directory validated
 - [ ] Phase validated against roadmap
 - [ ] Phase directory created if needed
 - [ ] CONTEXT.md loaded early (step 4) and passed to ALL agents
 - [ ] Research completed (unless --skip-research or --gaps or exists)
-- [ ] gsd-phase-researcher spawned with CONTEXT.md
+- [ ] phase-researcher spawned with CONTEXT.md
 - [ ] Existing plans checked
-- [ ] gsd-planner spawned with CONTEXT.md + RESEARCH.md
+- [ ] planner spawned with CONTEXT.md + RESEARCH.md
 - [ ] Plans created (PLANNING COMPLETE or CHECKPOINT handled)
-- [ ] gsd-plan-checker spawned with CONTEXT.md
+- [ ] plan-checker spawned with CONTEXT.md
 - [ ] Verification passed OR user override OR max iterations with user decision
 - [ ] User sees status between agent spawns
 - [ ] User knows next steps
 </success_criteria>
-<!-- gsd:protected:end -->
+<!-- engineer:protected:end -->

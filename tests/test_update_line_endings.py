@@ -135,7 +135,7 @@ class ReviewedLineEndings(unittest.TestCase):
         return subprocess.run([sys.executable, "-X", "utf8", str(entry), *map(str, arguments)],
                               capture_output=True, text=True, encoding="utf-8")
 
-    def test_installed_review_tracer_is_read_only_and_distinguishes_changes(self):
+    def test_installed_review_preview_is_read_only_and_distinguishes_changes(self):
         entry = self.install()
         self.write(".codex/workflows/newlines.md", b"first\r\nsecond\n")
         before = self.snapshot()

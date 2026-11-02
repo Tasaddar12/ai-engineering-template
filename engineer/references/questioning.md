@@ -96,7 +96,7 @@ User mentions "frustrated with current tools"
 - options: ["Too many clicks", "Missing features", "Unreliable", "Let me explain"]
 
 **Tip for users — modifying an option:**
-Users who want a slightly modified version of an option can select "Other" and reference the option by number: `#1 but for finger joints only` or `#2 with pagination disabled`. This avoids retyping the full option text.
+Users who want a slightly modified version of an option can select "Other" and reference the option by number: ` but for finger joints only` or ` with pagination disabled`. This avoids retyping the full option text.
 
 </using_askuserquestion>
 

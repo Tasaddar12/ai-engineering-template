@@ -1,6 +1,6 @@
 # Model Profile Resolution
 
-Resolve each agent's model through `gsd-tools`, then pass it to the `Agent()` spawn — or
+Resolve each agent's model through `engineer_run`, then pass it to the `Agent()` spawn — or
 omit the parameter entirely when nothing resolved.
 
 ## Resolution Pattern
@@ -18,7 +18,7 @@ When the agent type is only known at runtime — a capability hook naming its ow
 example — resolve it directly instead:
 
 ```bash
-AGENT_MODEL=$(gsd_run query resolve-model "<agent-type>" --raw)
+AGENT_MODEL=$(engineer_run query resolve-model "<agent-type>" --raw)
 ```
 
 Both surfaces return the same thing: a model string for the active runtime, or the **empty
@@ -26,27 +26,27 @@ string** when nothing resolved.
 
 ## Lookup Table
 
-@~/.claude/gsd-core/references/model-profiles.md
+@~/.claude/engineer/references/model-profiles.md
 
 ## Passing the model to a spawn
 
 ```
 Agent(
   prompt="...",
-  subagent_type="gsd-planner",
+  subagent_type="planner",
   model="{planner_model}"
 )
 ```
 
 Substitute the field **this workflow bound** — never a generic placeholder name.
 
-**#2517 — omit, do not emit an empty model.** When the resolved value is `"inherit"` or
+** — omit, do not emit an empty model.** When the resolved value is `"inherit"` or
 empty, **omit the `model=` parameter entirely**:
 
 ```
 Agent(
   prompt="...",
-  subagent_type="gsd-planner"
+  subagent_type="planner"
 )
 ```
 
@@ -61,11 +61,10 @@ runtime has no native tier aliases; an agent type absent from the profile table 
 same empty-string path, because it has no tier for the earlier steps to resolve. Emitting
 either value verbatim fails the spawn on every runtime without native tier aliases.
 
-**#2684 — substitute a field your workflow actually bound.** `model="{…}"` must name a key
+** — substitute a field your workflow actually bound.** `model="{…}"` must name a key
 your own `init.*` payload emits, a shell variable you assigned, or a field on your declared
 parse line. A placeholder that resolves to nothing does not fail loudly — the orchestrator
-silently invents a value, which is the invisible partial application ADR-1411 prohibits.
-`tests/model-omit-when-inherit-guard.test.cjs` enforces both rules.
+silently invents a value. `tests/model-omit-when-inherit-guard.test.cjs` enforces both rules.
 
 ## Profile semantics
 

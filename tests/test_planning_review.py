@@ -535,8 +535,6 @@ class PlanningReviewTests(unittest.TestCase):
         spec.loader.exec_module(installer)
         source = ".ai/commands/clean-planning.md"
         body = (ROOT / source).read_bytes()
-        mirror = (ROOT / ".agents/skills/clean-planning/SKILL.md").read_bytes()
-        self.assertEqual(body, mirror)
         for host in ("codex", "claude"):
             with self.subTest(host=host):
                 rendered = installer.render_asset(source, body, host).decode("utf-8")

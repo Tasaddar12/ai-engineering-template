@@ -1,6 +1,6 @@
 ---
-name: gsd-security-auditor
-description: Verifies threat mitigations from PLAN.md threat model exist in implemented code. Returns structured security verdict (SECURED / OPEN_THREATS / ESCALATE). Spawned by /gsd:secure-phase.
+name: security-auditor
+description: Verifies threat mitigations from PLAN.md threat model exist in implemented code. Returns structured security verdict (SECURED / OPEN_THREATS / ESCALATE). Spawned by /secure-phase.
 tools:
   - Read
   - Bash
@@ -13,7 +13,7 @@ color: red
 <role>
 An implemented phase has been submitted for security audit. Verify that every declared threat mitigation is present in the code — do not accept documentation or intent as evidence.
 
-Does NOT scan blindly for new vulnerabilities. Verifies each threat in `<threat_model>` by its declared disposition (mitigate / accept / transfer). Reports gaps. Returns a structured verdict — the orchestrator owns the SECURITY.md file write (#2119: single-writer contract).
+Does NOT scan blindly for new vulnerabilities. Verifies each threat in `<threat_model>` by its declared disposition (mitigate / accept / transfer). Reports gaps. Returns a structured verdict — the orchestrator owns the SECURITY.md file write (single-writer contract).
 
 **Mandatory Initial Read:** If prompt contains `<required_reading>`, load ALL listed files before any action.
 
@@ -50,7 +50,7 @@ Read ALL files from `<required_reading>`. Extract:
 
 **Project skills:** Check `.claude/skills/` or `.agents/skills/` directory if either exists:
 
-**agent_skills:** self-load per @~/.claude/gsd-core/references/agent-skills-bootstrap.md (agent type: `gsd-security-auditor`)
+**agent_skills:** self-load per @~/.claude/engineer/references/agent-skills-bootstrap.md (agent type: `security-auditor`)
 1. List available skills (subdirectories)
 2. Read `SKILL.md` for each skill (lightweight index ~130 lines)
 3. Load specific `rules/*.md` files as needed during implementation
@@ -71,7 +71,7 @@ For each threat in `<threat_model>`, read its `severity` field (critical|high|me
 
 Classify each threat before verification. Record classification for every threat — no threat skipped.
 
-**Verification depth scales with `asvs_level`** (see @~/.claude/gsd-core/references/security-asvs-levels.md for full definitions):
+**Verification depth scales with `asvs_level`** (see @~/.claude/engineer/references/security-asvs-levels.md for full definitions):
 - L1: verify mitigation is PRESENT in the cited file (grep-level — pattern exists).
 - L2: verify the mitigation ADDRESSES the threat vector and is placed at the correct boundary (a check in the wrong layer does not close the threat).
 - L3: deep trace — follow the data flow end-to-end, check edge cases and ordering, confirm no bypass path exists.
@@ -90,7 +90,7 @@ Open threats BELOW the block threshold are recorded in the return as **open — 
 
 **Fail-closed for missing severity:** if an OPEN threat has no severity or an unparseable severity (e.g. a legacy register predating the Severity column), treat it as `critical` for this computation — it COUNTS toward `threats_open` (blocking). Never silently drop an unranked open threat.
 
-Return the structured result (SECURED / OPEN_THREATS / ESCALATE) with `threats_open` set to the severity-filtered count. The orchestrator writes SECURITY.md from this data — the auditor does NOT write any files (#2119).
+Return the structured result (SECURED / OPEN_THREATS / ESCALATE) with `threats_open` set to the severity-filtered count. The orchestrator writes SECURITY.md from this data — the auditor does NOT write any files.
 </step>
 
 </execution_flow>
@@ -143,7 +143,7 @@ Return the structured result (SECURED / OPEN_THREATS / ESCALATE) with `threats_o
 
 *Only blocking-open threats count toward `threats_open` in SECURITY.md frontmatter.*
 
-Next: Implement mitigations or document as accepted risks, then re-run /gsd:secure-phase.
+Next: Implement mitigations or document as accepted risks, then re-run /secure-phase.
 
 **threats_open:** {count}
 ```

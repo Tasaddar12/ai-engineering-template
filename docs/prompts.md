@@ -95,7 +95,7 @@ do not plan or implement the phase.
 questions; durable decisions may also update `PROJECT.md`.
 
 **Sources:** [discuss-phase command](../.ai/commands/discuss-phase.md),
-[discussion skill](../.agents/skills/discuss-phase/SKILL.md),
+[discussion skill](../skills/discuss-phase/SKILL.md),
 [phase discussion rules](../.ai/RULES.md#phase-authority).
 
 ## Discuss unfinished phases in a milestone
@@ -155,7 +155,7 @@ questions needing human resolution, and provisional dependencies. The report is
 discussion output, not a planning or execution authorization.
 
 **Sources:** [discuss-phase command](../.ai/commands/discuss-phase.md),
-[discussion skill](../.agents/skills/discuss-phase/SKILL.md),
+[discussion skill](../skills/discuss-phase/SKILL.md),
 [discussion workflow](../.ai/workflows/discuss-phase.md),
 [phase authority and decision rules](../.ai/RULES.md#phase-authority),
 [worktree session guidance](../.ai/references/worktree-sessions.md),

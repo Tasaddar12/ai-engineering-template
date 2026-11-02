@@ -1,6 +1,6 @@
 # UI-Consideration Probe — Spec-Completeness Reference
 
-The **third** adapter of the shared `probe-core` resolution model (ADR-550 Decision 7), on
+The **third** adapter of the shared `probe-core` resolution model, on
 the **UI element/state axis**. It surfaces the shape-rooted UI *state* considerations a
 UI-SPEC must resolve before a dimension may PASS — the visual analog of the requirement-side
 [edge-probe](./edge-probe.md), reusing its exact lifecycle, validators, and plan-phase lift
@@ -18,7 +18,7 @@ here. Forcing them into a closed compiled taxonomy is the wrong model.
 A list of UI elements, each a `{ id, text, text_en?, elements? }` record where `text` is the
 researcher-authored description, `elements` is an optional author-supplied override of the
 element classification, and `text_en` is an optional English translation of `text`
-(#4657). The element cues are English word-boundary patterns, so a non-English `text` (a
+. The element cues are English word-boundary patterns, so a non-English `text` (a
 project running with `response_language` set) classifies to zero kinds unless `text_en`
 carries a faithful English rendering — engine input, never user-facing output; `text`
 itself keeps the UI-SPEC's own language and is never translated. The six element kinds are:
@@ -45,7 +45,7 @@ bloating this closed core.
 
 ## Relevance filter + resolution states
 
-The probe reuses the edge-probe rails verbatim (ADR-550 Decision 7 — see
+The probe reuses the edge-probe rails verbatim (see
 [edge-probe.md](./edge-probe.md#relevance-filter--resolution-states) for the full model):
 
 1. **Relevance filter first.** Classify each element's kind(s), then raise only the categories
@@ -53,7 +53,7 @@ The probe reuses the edge-probe rails verbatim (ADR-550 Decision 7 — see
    empty state — that is what makes an unresolved consideration meaningful.
 2. **Dismissal requires a reason string.** Silence is not a resolution; the reason is the audit
    trail.
-3. **Zero-classification surfaces one `unclassified` candidate (#1110).** An element whose prose
+3. **Zero-classification surfaces one `unclassified` candidate.** An element whose prose
    matched no kind cue yields exactly one soft `unclassified — review manually` item
    (`category: "unclassified"`, `status: "unresolved"`) — never a silent drop, never a guessed
    kind. `unclassified` is a review signal, **not** a ninth taxonomy category; an explicit
@@ -64,7 +64,7 @@ Each raised consideration carries the shared two orthogonal axes — `status`
 (`explicit | backstop`). A `backstop` consideration lifts into `must_haves.truths` and, at
 verify time, is confirmed only by explicit evidence (a wired held-out/property test) or routes
 to `insufficient_spec → human_needed` — never a silent pass (the honest-verifier disposition,
-#1154). See [honest-verifier.md](./honest-verifier.md).
+). See [honest-verifier.md](./honest-verifier.md).
 
 ## Closed / open boundary
 
@@ -74,5 +74,5 @@ closed). The **open subset is prose-owned in [domain-probes.md](./domain-probes.
 real-time/offline/optimistic-UI, deep accessibility (WCAG breadth), i18n / RTL depth, and
 emerging interaction paradigms (gesture/voice/reduced-motion/print) are open-ended and
 cue-triggered — they do not belong in this closed taxonomy. This probe **complements** the
-`gsd-ui-checker` seven quality dimensions (it adds a state-coverage axis); it does not change the
+`ui-checker` seven quality dimensions (it adds a state-coverage axis); it does not change the
 BLOCK/FLAG/PASS enum or the dimensions themselves.

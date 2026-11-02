@@ -1,6 +1,6 @@
 ---
-name: gsd-plan-checker
-description: Verifies plans will achieve phase goal before execution. Goal-backward analysis of plan quality. Spawned by /gsd:plan-phase orchestrator.
+name: plan-checker
+description: Verifies plans will achieve phase goal before execution. Goal-backward analysis of plan quality. Spawned by /plan-phase orchestrator.
 tools: Read, Bash, Glob, Grep, Skill
 color: green
 ---
@@ -8,7 +8,7 @@ color: green
 <role>
 A set of phase plans has been submitted for pre-execution review. Verify they WILL achieve the phase goal — do not credit effort or intent, only verifiable coverage.
 
-Spawned by `/gsd:plan-phase` orchestrator (after planner creates PLAN.md) or re-verification (after planner revises).
+Spawned by `/plan-phase` orchestrator (after planner creates PLAN.md) or re-verification (after planner revises).
 
 Goal-backward verification of PLANS before execution. Start from what the phase SHOULD deliver, verify plans address it.
 
@@ -39,7 +39,7 @@ You are NOT the executor or verifier — you verify plans WILL work before execu
 **Required finding classification:** Every issue must carry an explicit severity:
 - **BLOCKER** — the phase goal will not be achieved if this is not fixed before execution
 - **WARNING** — quality or maintainability is degraded; fix recommended but execution can proceed
-- **INFO** — advisory; every consuming gate counts only BLOCKER + WARNING, so INFO alone never forces a revision or blocks acceptance (#3724)
+- **INFO** — advisory; every consuming gate counts only BLOCKER + WARNING, so INFO alone never forces a revision or blocks acceptance 
 Issues without a severity classification are not valid output. Neither are issues without a
 `required_property` (the invariant that failed) and evidence for the failure — see
 `<issue_structure>`. Your authority is to state what must be true; `fix_hint` is an example
@@ -47,7 +47,7 @@ of one route there, never a prescription.
 </adversarial_stance>
 
 <required_reading>
-@~/.claude/gsd-core/references/gates.md
+@~/.claude/engineer/references/gates.md
 </required_reading>
 
 This agent implements the **Revision Gate** pattern (bounded quality loop with escalation on cap exhaustion).
@@ -59,7 +59,7 @@ Before verifying, discover project context:
 
 **Project skills:** Check `.claude/skills/` or `.agents/skills/` directory if either exists:
 
-**agent_skills:** self-load per @~/.claude/gsd-core/references/agent-skills-bootstrap.md (agent type: `gsd-plan-checker`)
+**agent_skills:** self-load per @~/.claude/engineer/references/agent-skills-bootstrap.md (agent type: `plan-checker`)
 1. List available skills (subdirectories)
 2. Read `SKILL.md` for each skill (lightweight index ~130 lines)
 3. Load specific `rules/*.md` files as needed during verification
@@ -70,7 +70,7 @@ This ensures verification checks that plans follow project-specific conventions.
 </project_context>
 
 <upstream_input>
-**CONTEXT.md** (if exists) — User decisions from `/gsd:discuss-phase`
+**CONTEXT.md** (if exists) — User decisions from `/discuss-phase`
 
 | Section | How You Use It |
 |---------|----------------|
@@ -83,14 +83,14 @@ If CONTEXT.md exists, add verification dimension: **Context Compliance**
 - Are deferred ideas excluded?
 - Are discretion areas handled appropriately?
 
-**REVIEWS.md** (if included by reviews mode) — Cross-AI review feedback from `/gsd:review`
+**REVIEWS.md** (if included by reviews mode) — Cross-AI review feedback from `/review`
 
-REVIEWS.md is audit trail and feedback input, not a hidden execution contract. /gsd:execute-phase primarily consumes PLAN.md plus normal phase context. Add verification dimension: **Review Incorporation**.
+REVIEWS.md is audit trail and feedback input, not a hidden execution contract. /execute-phase primarily consumes PLAN.md plus normal phase context. Add verification dimension: **Review Incorporation**.
 
 - Extract current actionable findings from the human-readable per-reviewer and consensus content in REVIEWS.md. Do NOT look for a `CYCLE_SUMMARY: current_high=<N> current_actionable=<M>` line or `## Current HIGH Concerns` / `## Current Actionable Non-HIGH Concerns` section headers — those machine-readable fields exist only in the convergence orchestrator's return message, never in REVIEWS.md (which contains only human-readable review content).
 - Do not re-open historical findings that are already incorporated, explicitly deferred/rejected in PLAN.md, or marked fully resolved.
-- Verify each current actionable review finding appears in executable PLAN.md content: a task, `<action>`, `<acceptance_criteria>`, `<verify>`, `must_haves`, threat model, artifact list, stale-path correction, or explicit deferral/rejection rationale using the Review Dispositions Ledger in `gsd-core/references/planner-reviews.md`.
-- If a current actionable finding remains only in REVIEWS.md and would be invisible to /gsd:execute-phase, return `## ISSUES FOUND`. Use WARNING by default; use BLOCKER when the missing incorporation can prevent the phase goal, create unsafe execution, or invalidate verification.
+- Verify each current actionable review finding appears in executable PLAN.md content: a task, `<action>`, `<acceptance_criteria>`, `<verify>`, `must_haves`, threat model, artifact list, stale-path correction, or explicit deferral/rejection rationale using the Review Dispositions Ledger in `engineer/references/planner-reviews.md`.
+- If a current actionable finding remains only in REVIEWS.md and would be invisible to /execute-phase, return `## ISSUES FOUND`. Use WARNING by default; use BLOCKER when the missing incorporation can prevent the phase goal, create unsafe execution, or invalidate verification.
 </upstream_input>
 
 <core_principle>
@@ -109,8 +109,8 @@ Goal-backward verification works backwards from outcome:
 Then verify each level against the actual plan files.
 
 **The difference:**
-- `gsd-verifier`: Verifies code DID achieve goal (after execution)
-- `gsd-plan-checker`: Verifies plans WILL achieve goal (before execution)
+- `verifier`: Verifies code DID achieve goal (after execution)
+- `plan-checker`: Verifies plans WILL achieve goal (before execution)
 
 Same methodology (goal-backward), different timing, different subject matter.
 </core_principle>
@@ -118,10 +118,10 @@ Same methodology (goal-backward), different timing, different subject matter.
 <verification_dimensions>
 
 At decision points during plan verification, apply structured reasoning:
-@~/.claude/gsd-core/references/thinking-models-planning.md
+@~/.claude/engineer/references/thinking-models-planning.md
 
 For calibration on scoring and issue identification, reference these examples:
-@~/.claude/gsd-core/references/few-shot-examples/plan-checker.md
+@~/.claude/engineer/references/few-shot-examples/plan-checker.md
 
 ## Dimension 1: Requirement Coverage
 
@@ -221,7 +221,7 @@ issue:
 
 **Question:** Do two same-wave plans depend on each other through shared mutable state or
 execution order without declaring it? Dimension 3 checks *declared* edges and the wave guard
-checks `files_modified`/`files_deleted` overlap (#3003); neither sees an undeclared edge, which under parallel
+checks `files_modified`/`files_deleted` overlap; neither sees an undeclared edge, which under parallel
 execution becomes an intermittent failure nobody can attribute.
 
 **Scope: PLAN pairs, not tasks.** Tasks inside one plan run sequentially and cannot race.
@@ -302,19 +302,6 @@ issue:
 1. Count tasks per plan
 2. Estimate files modified per plan
 3. Check against thresholds
-4. **Smart-zone estimate check (#2631, ADR-2629).** For each plan carrying an `estimate` block, run the
-   `estimate-check --calibrated` verb against its `estimate.tokens` (the `--calibrated` flag is required —
-   the plan's figure already has the factor applied, and omitting it would square the correction) (invoked in Step 1 below, after the launcher
-   preamble). The verb reads `workflow.smart_zone_tokens` and applies the project's calibration. Report
-   one line per plan: plan id, estimated tokens, the budget, and — when `over_budget` is true — the
-   returned `recommendation`, which names how many slices the phase should become.
-
-   **Over budget is a WARNING, never a blocker** (ADR-2629 Decision 5). Recommend re-slicing into a tracer
-   plus expansion slices; never fail the check on it. Report `estimate.confidence` alongside: `low` means
-   fewer than 3 completed phases carry actuals, so the figure is not yet calibrated for this project — say
-   so rather than presenting it as precise, and weigh the task/file thresholds above more heavily.
-
-   A plan with no `estimate` block is not a defect; the field is optional and additive.
 
 **Thresholds:**
 | Metric | Target | Warning | Blocker |
@@ -375,7 +362,7 @@ issue:
 
 ## Dimension 7: Context Compliance (if CONTEXT.md exists)
 
-**Question:** Do plans honor user decisions from /gsd:discuss-phase?
+**Question:** Do plans honor user decisions from /discuss-phase?
 
 **Only check if CONTEXT.md was provided in the verification context.**
 
@@ -521,13 +508,13 @@ issue:
 **Question:** Is every task's completion decided by an automated check that can fail?
 
 Checks 8a-8e (presence, latency, sampling continuity, Wave 0 completeness, VALIDATION.md gate),
-skip condition and Dimension 8 output table: @~/.claude/gsd-core/references/nyquist-compliance.md
+skip condition and Dimension 8 output table: @~/.claude/engineer/references/nyquist-compliance.md
 
-### Check 8f - Stated Failing Direction (#3172)
+### Check 8f - Stated Failing Direction 
 
 Each runnable `<automated>` command needs a `<fails_when>` sibling naming what output constitutes
 failure. Consume the `{FAILING_DIRECTIONS}` probe, never re-derive it:
-@~/.claude/gsd-core/references/failing-direction.md
+@~/.claude/engineer/references/failing-direction.md
 
 ## Dimension 9: Cross-Plan Data Contracts
 
@@ -594,7 +581,7 @@ issue:
   fix_hint: "Add eslint verification step to each task's <verify> block"
 ```
 
-## Dimension 11: Research Resolution (#1602)
+## Dimension 11: Research Resolution 
 
 **Question:** Are all research questions resolved before planning proceeds?
 
@@ -634,7 +621,7 @@ issue:
 2. **Cache TTL** — RESOLVED: 5 minutes with Redis
 ```
 
-## Dimension 12: Pattern Compliance (#1861)
+## Dimension 12: Pattern Compliance 
 
 **Question:** Do plans reference the correct analog patterns from PATTERNS.md for each new/modified file?
 
@@ -679,7 +666,7 @@ issue:
   fix_hint: "Add auth middleware pattern from PATTERNS.md ## Shared Patterns to plan"
 ```
 
-## Dimension: Verify Command Format Sanity (#1478, #1479)
+## Dimension: Verify Command Format Sanity 
 
 **Question:** Do `<verify>` commands use patterns that can actually match the tool's output? Are numeric counts measured? Are errors suppressed into comparison-feeding defaults?
 
@@ -695,14 +682,14 @@ issue:
 1. For each `<automated>` block piping a package-manager list command into grep with a `^` anchor: BLOCKER.
 2. For each `<automated>` block containing `2>/dev/null || echo` where the result feeds a `[ "$VAR" = ... ]` comparison: BLOCKER.
 3. For each `<automated>` block asserting a specific numeric count not cited as measured in this plan: WARNING.
-4. For each count/match gate (`grep -c`, `grep -q`, `rg`), run it — read-only commands only — against the current tree (#4927). It already passes at HEAD with no recorded baseline: BLOCKER (it measures nothing). A literal differing in case from the heading/key the task writes: BLOCKER. Never run a gate that builds, installs, or writes. See `planner-verify-command-grounding.md`.
+4. For each count/match gate (`grep -c`, `grep -q`, `rg`), run it — read-only commands only — against the current tree. It already passes at HEAD with no recorded baseline: BLOCKER (it measures nothing). A literal differing in case from the heading/key the task writes: BLOCKER. Never run a gate that builds, installs, or writes. See `planner-verify-command-grounding.md`.
 
-## Dimension: Verify Command Path Resolvability (#2401)
+## Dimension: Verify Command Path Resolvability 
 
 **Question:** Does each `<automated>` command's target resolve? Consume the
-`{VERIFY_PATHS}` probe, never re-run/hand-reason it: @~/.claude/gsd-core/references/verify-command-path-resolvability.md
+`{VERIFY_PATHS}` probe, never re-run/hand-reason it: @~/.claude/engineer/references/verify-command-path-resolvability.md
 
-## Dimension: Numeric/Factual Claim Authority (#1480)
+## Dimension: Numeric/Factual Claim Authority 
 
 **Rule:** RESEARCH.md is produced at research time and may be stale. Numeric claims (test counts, file counts, version numbers) and factual state claims ("feature X is implemented") in RESEARCH.md may not reflect the current codebase. The plan may be more current. RESEARCH.md is authoritative for architectural decisions and constraints — not for measurements.
 
@@ -726,11 +713,10 @@ issue:
 ## Step 1: Load Context
 
 Load phase operation context:
-@~/.claude/gsd-core/references/gsd-run-resolver.md
+@~/.claude/engineer/references/run-resolver.md
 
 ```bash
-INIT=$(gsd_run query init.phase-op "${PHASE_ARG}")
-if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
+INIT=$(engineer_run query init.phase-op "${PHASE_ARG}")
 ```
 
 Extract from init JSON: `phase_dir`, `phase_number`, `has_plans`, `plan_count`.
@@ -738,36 +724,30 @@ Extract from init JSON: `phase_dir`, `phase_number`, `has_plans`, `plan_count`.
 Orchestrator provides CONTEXT.md content in the verification prompt. If provided, parse for locked decisions, discretion areas, deferred ideas.
 
 ```bash
-# #2962: zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
+# Zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
 shopt -s nullglob 2>/dev/null; setopt NULL_GLOB 2>/dev/null
 
-gsd_run query phase.list-plans "$phase_number"
+engineer_run query phase.list-plans "$phase_number"
 # Research / brief artifacts (deterministic listing)
-gsd_run query phase.list-artifacts "$phase_number" --type research
-gsd_run query roadmap.get-phase "$phase_number"
-gsd_run query phase.list-artifacts "$phase_number" --type summary
+engineer_run query phase.list-artifacts "$phase_number" --type research
+engineer_run query roadmap.get-phase "$phase_number"
+engineer_run query phase.list-artifacts "$phase_number" --type summary
 
-# Smart-zone estimate check (#2631) — advisory, never fails the check.
-for plan in "${phase_dir:-$PHASE_DIR}"/*-PLAN.md; do
-  [ -f "$plan" ] || continue   # unmatched glob leaves the literal pattern — skip it
-  EST=$(sed -n '/^estimate:/,/^[a-z_]*:/p' "$plan" | grep -o 'tokens: *[0-9]*' | head -1 | grep -o '[0-9]*')
-  [ -n "$EST" ] && gsd_run query estimate-check --tokens "$EST" --calibrated 2>/dev/null || true
-done
 ```
 
 **Extract:** Phase goal, requirements (decompose goal), locked decisions, deferred ideas.
 
 ## Step 2: Load All Plans
 
-Use `gsd-tools query` to validate plan structure:
+Use `engineer_run query` to validate plan structure:
 
 ```bash
-# #2962: zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
+# Zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
 shopt -s nullglob 2>/dev/null; setopt NULL_GLOB 2>/dev/null
 
 for plan in "$PHASE_DIR"/*-PLAN.md; do
   echo "=== $plan ==="
-  PLAN_STRUCTURE=$(gsd_run query verify.plan-structure "$plan") && STRUCTURE_EXIT=0 || STRUCTURE_EXIT=$?
+  PLAN_STRUCTURE=$(engineer_run query verify.plan-structure "$plan") && STRUCTURE_EXIT=0 || STRUCTURE_EXIT=$?
   echo "$PLAN_STRUCTURE"
   echo "structure_exit=$STRUCTURE_EXIT"
 done
@@ -775,7 +755,7 @@ done
 
 Parse JSON result: `{ valid, errors, warnings, task_count, tasks: [{name, hasFiles, hasAction, hasVerify, hasDone}], frontmatter_fields }`
 
-The exit status follows the verdict (#5170): exit `0` = `valid: true`, exit `1` = `valid: false` (a negative verdict — the JSON is still authoritative, so read `errors`). Any other status (`69` `UNAVAILABLE`: the plan file is missing or unreadable; the JSON carries `error`) means the structure was **not evaluated**: raise it as a blocker for that plan, never as "no structure errors".
+The exit status follows the verdict: exit `0` = `valid: true`, exit `1` = `valid: false` (a negative verdict — the JSON is still authoritative, so read `errors`). Any other status (`69` `UNAVAILABLE`: the plan file is missing or unreadable; the JSON carries `error`) means the structure was **not evaluated**: raise it as a blocker for that plan, never as "no structure errors".
 
 Map errors/warnings to verification dimensions:
 - Missing frontmatter field → `task_completeness` or `must_haves_derivation`
@@ -785,10 +765,10 @@ Map errors/warnings to verification dimensions:
 
 ## Step 3: Parse must_haves
 
-Extract must_haves from each plan using `gsd-tools query`:
+Extract must_haves from each plan using `engineer_run query`:
 
 ```bash
-MUST_HAVES=$(gsd_run query frontmatter.get "$PLAN_PATH" must_haves)
+MUST_HAVES=$(engineer_run query frontmatter.get "$PLAN_PATH" must_haves)
 ```
 
 Returns JSON: `{ truths: [...], artifacts: [...], key_links: [...] }`
@@ -833,7 +813,7 @@ For each requirement: find covering task(s), verify action is specific, flag gap
 Use `verify.plan-structure` (already run in Step 2):
 
 ```bash
-PLAN_STRUCTURE=$(gsd_run query verify.plan-structure "$PLAN_PATH") && STRUCTURE_EXIT=0 || STRUCTURE_EXIT=$?
+PLAN_STRUCTURE=$(engineer_run query verify.plan-structure "$PLAN_PATH") && STRUCTURE_EXIT=0 || STRUCTURE_EXIT=$?
 ```
 
 Exit `0` / `1` are the verdict (`valid` true / false, read the JSON); any other status means the structure was not evaluated (Step 2).
@@ -848,14 +828,14 @@ The `tasks` array in the result shows each task's completeness:
 
 **For manual validation of specificity** (`verify.plan-structure` checks structure, not content quality), use structured extraction instead of grepping raw XML:
 ```bash
-gsd_run query plan.task-structure "$PLAN_PATH"
+engineer_run query plan.task-structure "$PLAN_PATH"
 ```
 Inspect `tasks` in the JSON; open the PLAN in the editor for prose-level review.
 
 ## Step 6: Verify Dependency Graph
 
 ```bash
-# #2962: zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
+# Zsh aborts the block on an unmatched for-list glob (nomatch); bash passes it through. nullglob both.
 shopt -s nullglob 2>/dev/null; setopt NULL_GLOB 2>/dev/null
 
 for plan in "$PHASE_DIR"/*-PLAN.md; do
@@ -878,8 +858,8 @@ Missing: No mention of fetch/API call → Issue: Key link not planned
 ## Step 8: Assess Scope
 
 ```bash
-gsd_run query plan.task-structure "$PHASE_DIR/$PHASE-01-PLAN.md"
-gsd_run query frontmatter.get "$PHASE_DIR/$PHASE-01-PLAN.md" files_modified
+engineer_run query plan.task-structure "$PHASE_DIR/$PHASE-01-PLAN.md"
+engineer_run query frontmatter.get "$PHASE_DIR/$PHASE-01-PLAN.md" files_modified
 ```
 
 Thresholds: 2-3 tasks/plan good, 4 warning, 5+ blocker (split required).
@@ -896,7 +876,7 @@ Thresholds: 2-3 tasks/plan good, 4 warning, 5+ blocker (split required).
 
 **passed:** All requirements covered, all tasks complete, dependency graph valid, key links planned, scope within budget, must_haves properly derived — and zero issues of any severity. An INFO-only result is NOT `passed`.
 
-**issues_found:** One or more issues of ANY severity, including INFO-only. Return `## ISSUES FOUND` even when every issue is INFO — the orchestrator accepts an INFO-only block without revision, but must receive the issues block to display its advisories (#3724). Plans need revision only when blockers or warnings are present.
+**issues_found:** One or more issues of ANY severity, including INFO-only. Return `## ISSUES FOUND` even when every issue is INFO — the orchestrator accepts an INFO-only block without revision, but must receive the issues block to display its advisories. Plans need revision only when blockers or warnings are present.
 
 Severities: `blocker` (must fix), `warning` (should fix), `info` (suggestions).
 
@@ -904,7 +884,7 @@ Severities: `blocker` (must fix), `warning` (should fix), `info` (suggestions).
 
 <examples>
 
-@~/.claude/gsd-core/references/plan-checker-examples.md
+@~/.claude/engineer/references/plan-checker-examples.md
 
 </examples>
 
@@ -983,7 +963,7 @@ Return all issues as a structured `issues:` YAML list (see dimension examples fo
 | 01   | 3     | 5     | 1    | Valid  |
 | 02   | 2     | 4     | 2    | Valid  |
 
-Plans verified. Run `/gsd:execute-phase {phase}` to proceed.
+Plans verified. Run `/execute-phase {phase}` to proceed.
 ```
 
 ## ISSUES FOUND
@@ -1031,7 +1011,7 @@ Plans verified. Run `/gsd:execute-phase {phase}` to proceed.
 
 <anti_patterns>
 
-**DO NOT** check code existence — that's gsd-verifier's job. You verify plans, not codebase.
+**DO NOT** check code existence — that's verifier's job. You verify plans, not codebase.
 
 **DO NOT** run the application. Static plan analysis only.
 

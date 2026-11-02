@@ -159,14 +159,14 @@ overrides:
 Then re-run verification to apply.
 ```
 
-### Override via gsd-tools
+### Override via engineer_run
 
 Overrides can also be managed through the verification workflow:
 
-1. Run `/gsd:verify-work` — verification finds gaps
+1. Run `/verify-work` — verification finds gaps
 2. Review gaps — determine which are intentional deviations
 3. Add override entries to VERIFICATION.md frontmatter
-4. Re-run `/gsd:verify-work` — overrides are applied, remaining gaps shown
+4. Re-run `/verify-work` — overrides are applied, remaining gaps shown
 
 </creating_overrides>
 
@@ -183,7 +183,7 @@ When a phase is re-verified (e.g., after gap closure):
 
 ### At Milestone Completion
 
-During `/gsd:audit-milestone`, overrides are surfaced in the audit report:
+During `/audit-milestone`, overrides are surfaced in the audit report:
 
 ```
 ### Verification Overrides ({count} across {phase_count} phases)

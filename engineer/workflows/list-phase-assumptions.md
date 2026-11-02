@@ -1,4 +1,4 @@
-@~/.claude/gsd-core/references/response-language-directive.md
+@~/.claude/engineer/references/response-language-directive.md
 
 <purpose>
 Surface Claude's assumptions about a phase before planning, enabling users to correct misconceptions early.
@@ -16,8 +16,8 @@ Phase number: $ARGUMENTS (required)
 ```
 Error: Phase number required.
 
-Usage: /gsd:discuss-phase <phase-number> --assumptions
-Example: /gsd:discuss-phase 3 --assumptions
+Usage: /discuss-phase <phase-number> --assumptions
+Example: /discuss-phase 3 --assumptions
 ```
 
 Exit workflow.
@@ -85,9 +85,9 @@ What does Claude assume exists or needs to be in place?
 - "This will be consumed by..."
 
 Be honest about uncertainty. Mark assumptions with confidence levels:
-- "Fairly confident: ..." (clear from roadmap)
-- "Assuming: ..." (reasonable inference)
-- "Unclear: ..." (could go multiple ways)
+- "Fairly confident:..." (clear from roadmap)
+- "Assuming:..." (reasonable inference)
+- "Unclear:..." (could go multiple ways)
 </step>
 
 <step name="present_assumptions">
@@ -155,8 +155,8 @@ Present next steps:
 
 ```
 What's next?
-1. Discuss context (/gsd:discuss-phase ${PHASE}) - Let me ask you questions to build comprehensive context
-2. Plan this phase (/gsd:plan-phase ${PHASE}) - Create detailed execution plans
+1. Discuss context (/discuss-phase ${PHASE}) - Let me ask you questions to build comprehensive context
+2. Plan this phase (/plan-phase ${PHASE}) - Create detailed execution plans
 3. Re-examine assumptions - I'll analyze again with your corrections
 4. Done for now
 ```

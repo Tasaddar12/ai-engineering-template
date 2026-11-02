@@ -1,10 +1,9 @@
 """Preview the complete workflow file inventory; --apply writes it."""
 import hashlib
 from pathlib import Path
-import re
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import BASELINE, TREE_ROOTS, files, git, main_guard, manifest, parser, read_text, safe_path
+from common import BASELINE, TREE_ROOTS, files, git, historical_path, main_guard, manifest, parser, read_text, safe_path
 
 INVENTORY_ROOTS = TREE_ROOTS + ("scripts", "docs")
 UPSTREAM_COPY = "1eb6c97"
@@ -22,7 +21,7 @@ def render_inventory(root):
         baseline[path] = metadata.split()[2]
     source_names = {destination: source for source, destination in manifest()["renames"].items()}
     source_names["engineer/templates/TEMPLATE.md"] = "engineer/templates/README.md"
-    lines = ["# Workflow file inventory", "", f"Anchor baseline: `{BASELINE}`. Origins compare Git blob content with the downloaded upstream copy at `{UPSTREAM_COPY}` after structural path mapping.", "", "Regenerate with `python -I scripts/inventory.py --apply`; compare with `--check`.", "", "| File | Origin | Lines | Remaining gsd references |", "|---|---|---:|---:|"]
+    lines = ["# Workflow file inventory", "", f"Anchor baseline: `{BASELINE}`. Origins compare Git blob content with the downloaded upstream copy at `{UPSTREAM_COPY}` after structural path mapping.", "", "Regenerate with `python -I scripts/inventory.py --apply`; compare with `--check`.", "", "| File | Origin | Lines |", "|---|---|---:|"]
     paths = sorted(files(root, INVENTORY_ROOTS), key=lambda path: path.relative_to(root).as_posix())
     entries = []
     for path in paths:
@@ -31,17 +30,15 @@ def render_inventory(root):
             continue
         data = path.read_bytes()
         text = read_text(path)
-        original = baseline.get(source_names.get(name, name))
+        original = baseline.get(historical_path(baseline, source_names.get(name, name)))
         normalized = data.replace(b"\r\n", b"\n")
         origin = "local-only" if original is None else "upstream" if original in {blob_id(data), blob_id(normalized)} else "reconciled"
         count = len(text.splitlines()) if text is not None else "binary"
-        refs = len(re.findall("gsd", text, re.IGNORECASE)) if text is not None else 0
-        entries.append((name, f"| `{name}` | {origin} | {count} | {refs} |"))
-    entries.append(("docs/INVENTORY.md", "| `docs/INVENTORY.md` | local-only | INVENTORY_LINES | INVENTORY_REFS |"))
+        entries.append((name, f"| `{name}` | {origin} | {count} |"))
+    entries.append(("docs/INVENTORY.md", "| `docs/INVENTORY.md` | local-only | INVENTORY_LINES |"))
     lines.extend(entry for _, entry in sorted(entries))
     body = "\n".join(lines)
-    refs = len(re.findall("gsd", body, re.IGNORECASE))
-    lines = [line.replace("INVENTORY_LINES", str(len(lines))).replace("INVENTORY_REFS", str(refs)) for line in lines]
+    lines = [line.replace("INVENTORY_LINES", str(len(lines))) for line in lines]
     return "\n".join(lines) + "\n"
 
 
