@@ -135,9 +135,8 @@ class MarkdownScan(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             subprocess.run(["git", "init", "-q", directory], check=True)
-            excluded = [".ai/agents/verifier.md", ".planning/STATE.md",
-                        "docs/maintenance/existing-SUMMARY.md", "PLANNED-UPDATES.md"]
-            active = [".hidden/NOTES.MD", "engineer/workflows/example.md"]
+            excluded = [".ai/agents/verifier.md", ".planning/STATE.md", "PLANNED-UPDATES.md"]
+            active = [".hidden/NOTES.MD", "docs/guide.md", "engineer/workflows/example.md"]
             for name in excluded + active:
                 path = root/name
                 path.parent.mkdir(parents=True, exist_ok=True)
