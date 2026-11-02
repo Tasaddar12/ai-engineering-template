@@ -3,6 +3,8 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import re
+import shlex
 try:
     from .test_engineer_runtime import RuntimeCase, RUNTIME, SOURCE
 except ImportError:
@@ -10,6 +12,21 @@ except ImportError:
 
 
 class CliContract(RuntimeCase):
+    def test_onboarding_commits_the_configuration_it_creates(self):
+        created = self.cli("config-new-project", "{}")
+        config = self.root / ".planning/config.yaml"
+        self.assertEqual(str(config), created["path"])
+        workflow = (SOURCE / "engineer/workflows/new-project.md").read_text(encoding="utf-8")
+        line = re.search(r'^engineer_run query commit "chore: add project config".*$', workflow, re.M)
+        self.assertIsNotNone(line)
+        args = shlex.split(line[0])[2:]
+        committed = self.cli(*args)
+        self.assertTrue(committed["committed"])
+        self.assertEqual([".planning/config.yaml"], committed["files"])
+        self.assertEqual(config.read_text(encoding="utf-8").strip(), self.git("show", "HEAD:.planning/config.yaml"))
+        self.assertFalse(self.cli("config-new-project", "{} ")["created"])
+        self.assertFalse(self.cli(*args)["committed"])
+
     def test_identity_host_and_pick(self):
         self.assertEqual("engineer-runtime", self.cli("runtime-identity", "--pick", "packageName", raw=True))
         self.assertEqual("codex", self.cli("runtime-identity")["host"])
