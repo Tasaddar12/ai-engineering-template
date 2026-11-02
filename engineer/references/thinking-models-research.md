@@ -2,7 +2,7 @@
 
 Structured reasoning models for the **researcher** and **synthesizer** agents. Apply these at decision points during research and synthesis, not continuously. Each model counters a specific documented failure mode.
 
-Source: Curated from [thinking-partner](https://github.com/mattnowdev/thinking-partner) model catalog (150+ models). Selected for direct applicability to GSD research workflow.
+Source: Curated from [thinking-partner](https://github.com/mattnowdev/thinking-partner) model catalog (150+ models). Selected for direct applicability to Engineer research workflow.
 
 ## Conflict Resolution
 

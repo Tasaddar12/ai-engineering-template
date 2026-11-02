@@ -1,7 +1,7 @@
 # Edge-Probe — Spec-Completeness Reference
 
 Shared reference for the spec/requirements phase. Companion to
-`@~/.claude/gsd-core/references/domain-probes.md`: `domain-probes` covers the
+`@~/.claude/engineer/references/domain-probes.md`: `domain-probes` covers the
 **technology axis** (auth, search, caching, deployment); this covers the
 **data/behavior-shape axis** (boundaries, adjacency, encoding, ordering…). Walk each
 requirement against the closed taxonomy below, propose a concrete candidate edge for each
@@ -55,7 +55,7 @@ zero shapes unless `text_en` supplies a faithful English translation. A project 
 `response_language` set should populate `text_en` for every requirement; `text` keeps its own
 meaning — the requirement's own text, in whatever language the SPEC uses — and is never
 translated or overwritten. `text_en` is engine input, not part of the SPEC. `id` is never
-translated. Prose that matches no cue in either field surfaces as `unclassified` (#1110) — the
+translated. Prose that matches no cue in either field surfaces as `unclassified` — the
 probe contributes nothing for that requirement. Where a requirement carries no cue even in
 English, author `shapes` explicitly rather than leaning on the classifier.
 
@@ -89,7 +89,7 @@ Two rules keep the probe honest and prevent an "everything is N/A" failure mode:
 2. **Dismissal requires a reason string.** "N/A — input is a bounded enum, no boundary
    exists" is valid; silence is not. The reason string is the audit trail.
 
-**Zero-classification surfaces an `unclassified` candidate (#1110).** The relevance filter is
+**Zero-classification surfaces an `unclassified` candidate.** The relevance filter is
 a heuristic over prose cues, so a requirement whose wording *is* edge-relevant but matches no
 shape cue would otherwise classify to zero shapes → zero edges and vanish from coverage with
 no signal — the same silent blind spot the probe exists to catch. Instead, a requirement with
@@ -101,7 +101,7 @@ ninth taxonomy category: the closed eight above are unchanged, and an explicit `
 opt-out stays silent (the author's deliberate "no edge surface").
 
 Each raised edge carries two orthogonal axes — a resolution **lifecycle** and, when
-resolved, a **verification** tier (ADR-550 Decision 7, the shared probe-core model):
+resolved, a **verification** tier (the shared probe-core model):
 
 - **status** — `resolved | dismissed | unresolved`:
   - **resolved** — the edge is addressed; *how* it is addressed is the verification tier.
@@ -144,13 +144,13 @@ implementation and any third-party port emit.
 
 | Host structure | "requirement" | a `resolved`/`explicit` edge becomes | a `resolved`/`backstop` edge becomes |
 |----------------|---------------|--------------------------|---------------------------|
-| GSD SPEC | a SPEC Requirement | an Acceptance Criterion that `plan-phase` lifts into `must_haves.truths` | a non-inferable check in `must_haves.truths` (needs a held-out/PBT test) |
+| Engineer SPEC | a SPEC Requirement | an Acceptance Criterion that `plan-phase` lifts into `must_haves.truths` | a non-inferable check in `must_haves.truths` (needs a held-out/PBT test) |
 | Gherkin feature | a Scenario | an additional `Then` assertion / Scenario Outline row | a tagged scenario routed to a property test |
 | OpenAPI operation | an operation | a response/constraint example + schema rule | a contract/property test on the operation |
 | Docstring contract | a documented behavior | an assertion in the contract test | a property-based test for the function |
 
 The portable invariant: a `resolved`/`explicit` edge produces **the unit your verifier
-iterates over** (GSD: a `must_haves.truth`); a `resolved`/`backstop` edge produces a test
+iterates over** (Engineer: a `must_haves.truth`); a `resolved`/`backstop` edge produces a test
 added to that same set as a non-inferable check. An `unresolved` edge is an explicit
 assumption the downstream planner must surface, not silently drop.
 

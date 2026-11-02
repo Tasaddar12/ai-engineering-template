@@ -1,6 +1,6 @@
 <ui_patterns>
 
-Visual patterns for user-facing GSD output. Orchestrators @-reference this file.
+Visual patterns for user-facing Engineer output. Orchestrators @-reference this file.
 
 ## Separators and Banners
 
@@ -46,7 +46,7 @@ turns up that genuinely needs line-art, add the key then, against that evidence.
 Use for major workflow transitions.
 
 ```
-### GSD ► {STAGE NAME}
+### Engineer ► {STAGE NAME}
 ```
 
 **Stage names (uppercase):**
@@ -158,8 +158,8 @@ Always at end of major completions.
 ---
 
 **Also available:**
-- `/gsd-alternative-1` — description
-- `/gsd-alternative-2` — description
+- `/alternative-1` — description
+- `/alternative-2` — description
 ```
 
 ---
@@ -197,7 +197,7 @@ Table rules use ASCII `-`, never box-drawing characters.
 - A `---` directly under a line of text with no blank line between — that is a setext heading underline, not a break, and it swallows the line above
 - Boxing a heading between two rules — the heading is the separator
 - Mixing banner styles (`===`, `***`)
-- Skipping `GSD ►` prefix in banners
+- Skipping `Engineer ►` prefix in banners
 - Random emoji (`🚀`, `✨`, `💫`)
 - Missing Next Up block after completions
 

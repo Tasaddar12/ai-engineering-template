@@ -1,12 +1,12 @@
-# Verify Command Grounding (#2401)
+# Verify Command Grounding 
 
-> Reference file for gsd-planner agent. Loaded on-demand via `@` reference.
+> Reference file for planner agent. Loaded on-demand via `@` reference.
 
 **Inherit the command that already worked.** The planning context carries
 `prior_verify_commands` — the `<automated>` commands from the most recent prior phase that had
 any, surfaced **at every context window**, not only on 1M-class models. When this phase's build
 or test story is the same one a prior phase already proved, **reuse that command verbatim**
-rather than re-deriving a path. Re-invention is what produced `cd ../../frontend && npm run
+rather than re-deriving a path. Re-invention is what produced `cd../../frontend && npm run
 lint` against a directory that holds no `package.json`, and cost two revision cycles.
 
 Ground every path you do author: a command's `cd` target or `npm --prefix` target must be a
@@ -16,7 +16,7 @@ preferred over `cd <dir> && npm run <script>` — it does not depend on the exec
 `prior_verify_commands` is empty and you cannot ground a path, say so in the plan instead of
 guessing one.
 
-**Run a count/match gate before it ships (#4927).** A gate you author — or one a `RESEARCH.md`
+**Run a count/match gate before it ships.** A gate you author — or one a `RESEARCH.md`
 hands you — that counts or matches text (`grep -c`, `grep -q`, `rg`, `test -n "$(grep …)"`) is a
 claim about the tree, and two defects are invisible to reading and take one command to expose. You
 have a shell when you author the plan, so run each such gate against the **current tree** and write
@@ -34,8 +34,8 @@ A gate that is meant to prove a *negative* is checked the other way: it must pas
 and its baseline must show the thing was there to remove. Only read-only commands are safe to run
 this way — run `grep`/`rg`/`test` gates; do not execute a gate that builds, installs, or writes.
 
-**Root-relative, never absolute (#4767).** The paths in your prompt's `<required_reading>` are
-absolute on purpose — a subagent's cwd may differ from the orchestrator's (#2376). That rule
+**Root-relative, never absolute.** The paths in your prompt's `<required_reading>` are
+absolute on purpose — a subagent's cwd may differ from the orchestrator's. That rule
 covers prompt *inputs* only. Every path in the plan *body* — `<files>`, `<verify>`, `<automated>`,
 task actions — is repo-root-relative, and every `<automated>` command assumes cwd at the checkout
 root. An absolute path copied from the prompt into `<automated>` pins the command to the

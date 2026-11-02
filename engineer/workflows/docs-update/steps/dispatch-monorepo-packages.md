@@ -18,11 +18,11 @@ Determine mode:
 - If `{package_dir}/README.md` exists: mode = `update`, read existing content
 - Else: mode = `create`
 
-Spawn a `gsd-doc-writer` agent with `run_in_background=true`:
+Spawn a `doc-writer` agent with `run_in_background=true`:
 
 ```
 Agent(
-  subagent_type="gsd-doc-writer",
+  subagent_type="doc-writer",
   model="{doc_writer_model}",
   run_in_background=true,
   description="Generate per-package README for {package_dir}",
@@ -45,7 +45,7 @@ Write {package_dir}/README.md directly. Return confirmation only — do not retu
 
 Collect confirmations by reading each package agent's `outputFile` once it reports completion — each `run_in_background=true` Agent call returns an `async_launched` result carrying an `outputFile` path (with `canReadOutputFile: true`). Note failures in the final report.
 
-**Fallback when Task tool is unavailable:** Generate per-package READMEs sequentially inline after the `sequential_generation` step. For each package directory with a `package.json`, construct the equivalent `doc_assignment` block and generate the README following gsd-doc-writer instructions.
+**Fallback when Task tool is unavailable:** Generate per-package READMEs sequentially inline after the `sequential_generation` step. For each package directory with a `package.json`, construct the equivalent `doc_assignment` block and generate the README following doc-writer instructions.
 
 Continue to commit_docs.
 </step>

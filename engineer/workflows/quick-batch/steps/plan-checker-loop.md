@@ -4,15 +4,15 @@ Apply response_language to all user-facing prose — narration between tool call
 
 Runs once per DAG layer, for every item in that layer that produced a
 PLAN.md this round (row 17 of the design's behavior table). Per item, max 2
-iterations — identical cap to `/gsd:quick --validate`'s own loop
-(`gsd-core/workflows/quick/steps/plan-checker-loop.md`), just run per item
+iterations — identical cap to `/quick --validate`'s own loop
+(`engineer/workflows/quick/steps/plan-checker-loop.md`), just run per item
 instead of once for the whole batch.
 
 For each item in the current layer:
 
 Display banner:
 ```
-### GSD ► CHECKING PLAN ${quick_id}
+### Engineer ► CHECKING PLAN ${quick_id}
 ◆ Spawning plan checker... (runs in a subagent — no output until it returns, ~1–5 min)
 ```
 
@@ -60,7 +60,7 @@ that require a ROADMAP phase goal.
 - ## ISSUES FOUND — structured issue list
 </expected_output>
 ",
-  subagent_type="gsd-plan-checker",
+  subagent_type="plan-checker",
   model="{checker_model}",
   description="Check ${quick_id}: ${description}"
 )
@@ -69,12 +69,12 @@ that require a ROADMAP phase goal.
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: after calling Agent() above, wait for it to return before continuing.
 
 **Handle checker return** (same INFO/WARNING/BLOCKER counting rule as
-`/gsd:quick`'s own loop — an entry with a missing/unrecognized severity
+`/quick`'s own loop — an entry with a missing/unrecognized severity
 counts as BLOCKER, fail closed; pure INFO entries are advisory only and never
 enter the revision loop):
 
 - **`## VERIFICATION PASSED`** (with no BLOCKER/WARNING entry) or all-INFO: proceed to the next item.
-- **`## VERIFICATION PASSED` that nevertheless lists an entry whose severity is BLOCKER or WARNING, in the YAML issues block or listed in prose (a mention such as "no warnings" or a zero count is not an entry):** handled as `## ISSUES FOUND`, counting the prose entries as BLOCKER/WARNING entries; the sentinel never decides alone (#5578).
+- **`## VERIFICATION PASSED` that nevertheless lists an entry whose severity is BLOCKER or WARNING, in the YAML issues block or listed in prose (a mention such as "no warnings" or a zero count is not an entry):** handled as `## ISSUES FOUND`, counting the prose entries as BLOCKER/WARNING entries; the sentinel never decides alone.
 - **Any BLOCKER/WARNING:** revision loop, max 2 iterations total for this item.
 
 **Revision (iteration < 2):**
@@ -101,13 +101,13 @@ smaller or different mechanism reaching the same property resolves it — say wh
 capability guidance (CLAUDE.md, project skills) and the constraints this plan already encodes
 BEFORE editing; if a hint would contradict one, or the property is unreachable without breaking
 one, return `## REVISION_CONFLICT` with the conflict and the alternatives rather than applying or
-working around it. Full contract: `gsd-core/references/planner-revision.md`.
+working around it. Full contract: `engineer/references/planner-revision.md`.
 
 Do NOT replan from scratch unless issues are fundamental. Keep `depends_on`/`files_modified`
 frontmatter current with the revised plan. Return what changed.
 </instructions>
 ",
-  subagent_type="gsd-planner",
+  subagent_type="planner",
   model="{planner_model}",
   description="Revise ${quick_id}: ${description}"
 )
@@ -123,8 +123,7 @@ hint / amend the constraint itself. Every option resolves the conflict. Acceptin
 the blocker still open is NOT offered here — the blocking `required_property` still fails, and
 that choice belongs to the iteration-exhaustion escalation below, unchanged.
 
-A quick-batch item has no REVIEWS.md and no phase, so `workflow.plan_review_convergence` has
-nothing to arbitrate over here; the user is the only route. Re-spawn the planner with the chosen
+This quick-batch blocker has no independent review lane; the user is the only route for resolving it. Re-spawn the planner with the chosen
 resolution, then re-evaluate its return from the top of this handler — do not fall through to the
 checker spawn below. A second conflict is still a conflict, not a revised plan.
 

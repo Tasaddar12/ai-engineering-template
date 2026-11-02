@@ -1,5 +1,5 @@
 ---
-name: gsd:execute-phase
+name: execute-phase
 description: SDD phase execution — execute all plans in a phase with dependency-aware wave parallelization
 argument-hint: "<phase-number> [--wave N] [--gaps-only] [--interactive] [--tdd]"
 effort: max
@@ -38,13 +38,9 @@ Context budget: ~15% orchestrator, 100% fresh per subagent.
 </objective>
 
 <execution_context>
-@~/.claude/gsd-core/workflows/execute-phase.md
-@~/.claude/gsd-core/references/ui-brand.md
+@~/.claude/engineer/workflows/execute-phase.md
+@~/.claude/engineer/references/ui-brand.md
 </execution_context>
-
-<runtime_note>
-**Copilot (VS Code):** Use `vscode_askquestions` wherever this workflow calls `AskUserQuestion`. They are equivalent — `vscode_askquestions` is the VS Code Copilot implementation of the same interactive question API.
-</runtime_note>
 
 <context>
 Phase: the `<arguments>` block
@@ -61,7 +57,7 @@ Phase: the `<arguments>` block
 - If none of these tokens appear, run the standard full-phase execution flow with no flag-specific filtering
 - Do not infer that a flag is active just because it is documented in this prompt
 
-Context files are resolved inside the workflow via `gsd-tools query init.execute-phase` and per-subagent `<required_reading>` blocks.
+Context files are resolved inside the workflow via `engineer_run query init.execute-phase` and per-subagent `<required_reading>` blocks.
 </context>
 
 <process>

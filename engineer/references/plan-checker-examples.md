@@ -1,8 +1,8 @@
 # Plan-Checker Examples
 
-> Progressive-disclosure reference for `agents/gsd-plan-checker.md`. The checker
+> Progressive-disclosure reference for `agents/plan-checker.md`. The checker
 > inlines this file from its `<examples>` block via `@`; the calibrated few-shot
-> set lives separately in `gsd-core/references/few-shot-examples/plan-checker.md`.
+> set lives separately in `engineer/references/few-shot-examples/plan-checker.md`.
 
 ## Scope Exceeded (most common miss)
 

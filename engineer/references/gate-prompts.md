@@ -2,7 +2,7 @@
 
 Reusable prompt patterns for structured gate checks in workflows and agents.
 
-**For checkpoint format details, see `gsd-core/references/ui-brand.md`** -- a checkpoint is a `### CHECKPOINT: {Type}` heading followed by its content, then a `---` break and the bolded action prompt. Never a fixed-width drawn border: it wraps in a narrow pane.
+**For checkpoint format details, see `engineer/references/ui-brand.md`** -- a checkpoint is a `### CHECKPOINT: {Type}` heading followed by its content, then a `---` break and the bolded action prompt. Never a fixed-width drawn border: it wraps in a narrow pane.
 
 ## Rules
 
@@ -47,7 +47,7 @@ Simple 2-option confirmation for re-planning, rebuild, replace plans, commit.
 4-option escalation for review escalation (max retries exceeded).
 - question: "Phase {N} has failed verification {attempt} times. How should we proceed?"
 - header: "Escalate"
-- options: Accept gaps | Re-plan (via /gsd:plan-phase) | Debug (via /gsd:debug) | Retry
+- options: Accept gaps | Re-plan (via /plan-phase) | Debug (via /debug) | Retry
 
 ## Pattern: multi-option-gaps
 4-option gap handler for review gaps-found.
@@ -78,7 +78,7 @@ Up to 4 suggested next actions with selection (status, resume workflows).
 3-option confirmation for quick task scope validation.
 - question: "This task looks complex. Proceed as quick task or use full planning?"
 - header: "Scope"
-- options: Quick task | Full plan (via /gsd:plan-phase) | Revise
+- options: Quick task | Full plan (via /plan-phase) | Revise
 
 ## Pattern: depth-select
 3-option depth selection for planning workflow preferences.

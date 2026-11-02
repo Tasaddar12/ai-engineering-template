@@ -1,21 +1,19 @@
-# Verify Command Path Resolvability (#2401)
+# Verify Command Path Resolvability 
 
-> Reference file for gsd-plan-checker agent. Loaded on-demand via `@` reference.
+> Reference file for plan-checker agent. Loaded on-demand via `@` reference.
 
 **Question:** Does each `<automated>` command's target directory actually resolve from the
 executor's cwd (the project root)? Format sanity above asks whether the *pattern* can match;
 this asks whether the command can *run at all*.
 
-**Do not hand-reason the filesystem.** #2401 is precisely the failure of doing so: this
-checker flagged a bad `cd ../../frontend` (correct), then prescribed two successively-wrong
-replacement paths — the second citing a `package.json` that did not exist. Consume the
+**Do not hand-reason the filesystem.** Consume the
 deterministic probe result, never re-derive it yourself.
 
-`gsd-core/workflows/plan-phase.md` — and, since #4767, quick mode's
+`engineer/workflows/plan-phase.md` — and quick mode's
 `quick/steps/plan-checker-loop.md` (via `--dir`) — already runs the probe **before** spawning this
 checker and interpolates the result into the verification prompt as `{VERIFY_PATHS}`, inside a
 `<verify_command_path_probe>` block. This dimension reads that already-supplied JSON — it never
-invokes `gsd_run check verify-command-paths` itself. If `{VERIFY_PATHS}` is absent from the
+invokes `engineer_run check verify-command-paths` itself. If `{VERIFY_PATHS}` is absent from the
 prompt, treat this dimension as silent (nothing to check) rather than trying to run the probe.
 
 The probe never executes command text (PLAN.md is untrusted, LLM-authored). It recognizes two
@@ -39,7 +37,7 @@ Rules:
 - `unresolvable` means the probe could not ground the path (a variable, glob, substitution, or
   `~`). That is a WARNING, never a BLOCKER — and never a licence to guess the literal path.
 - `outside_root` covers two shapes: a bare ancestor climb (`cd ../..`) and an **absolute target
-  outside the project root** (#4767). Both are ambiguous across worktrees; the absolute one is
+  outside the project root**. Both are ambiguous across worktrees; the absolute one is
   pinned to a single checkout, so under worktree isolation it runs against the wrong tree and
   passes. Report it as a WARNING with the target verbatim. Note the probe's root is the
   *orchestrator's*: an absolute path inside it passes here and still misfires under isolation,

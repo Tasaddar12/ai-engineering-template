@@ -1,7 +1,7 @@
 # Debugger technique catalog
 
-Full technique bodies for `agents/gsd-debugger.md`, extracted per
-`DEFECT.AGENT-FILE-SIZE-CAP-BREACH` (issue #2995, epic #1671 Phase 6.4). The agent
+Full technique bodies for `agents/debugger.md`, extracted per
+`DEFECT.AGENT-FILE-SIZE-CAP-BREACH` (epic Phase 6.4). The agent
 keeps each technique's name and routing entry; the step-by-step detail lives here.
 
 ## Binary Search / Divide and Conquer
@@ -83,7 +83,7 @@ Apply first 10: broken → bug in first 10.
 3. Test: Does it still reproduce? YES = keep removed. NO = put back.
 4. Repeat until bare minimum
 5. Bug is now obvious in stripped-down code
-6. **Shrinking (input-space bugs)** — when the bug triggers on a class of inputs, wrap it in a property (fast-check for JS/TS, Hypothesis for Python) and let the shrinker auto-minimize the counterexample; store the **minimized** input as the regression seed. See `gsd-core/references/debugger-repro-hardening.md`.
+6. **Shrinking (input-space bugs)** — when the bug triggers on a class of inputs, wrap it in a property (fast-check for JS/TS, Hypothesis for Python) and let the shrinker auto-minimize the counterexample; store the **minimized** input as the regression seed. See `engineer/references/debugger-repro-hardening.md`.
 
 **Example:**
 ```jsx
@@ -245,8 +245,8 @@ Check code says:  hooksDir = path.join(configDir, 'hooks')
                   → checks ~/.claude/hooks/
 
 Installer says:   hooksDest = path.join(targetDir, 'hooks')
-                  targetDir = ~/.claude/gsd-core
-                  → writes to ~/.claude/gsd-core/hooks/
+                  targetDir = ~/.claude/engineer
+                  → writes to ~/.claude/engineer/hooks/
 
 MISMATCH: Checker looks in wrong directory → hooks "not found" → reported as stale
 ```

@@ -1,6 +1,6 @@
 # Regression-Test Hardening — Shrinking + Oracle + Boundaries
 
-Loaded by `gsd-debugger` via `@-include` from Test-First Debugging (and referenced
+Loaded by `debugger` via `@-include` from Test-First Debugging (and referenced
 from Minimal Reproduction). Extends the regression test from a symptom-check
 into a **root-cause check** — which is exactly what the Phase 1A fix-acceptance
 guardrail needs to bite.

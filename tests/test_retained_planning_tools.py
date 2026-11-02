@@ -1,0 +1,198 @@
+"""End-to-end regressions for retained planning evidence and compatibility helpers."""
+import datetime as dt
+import json
+from pathlib import Path
+try:
+    from .test_engineer_runtime import RuntimeCase
+except ImportError:
+    from test_engineer_runtime import RuntimeCase
+
+
+class RetainedPlanningTools(RuntimeCase):
+    def research_input(self, questions=None):
+        return self.put("research.json", json.dumps({"ecosystem": "python", "config": {"context7": True, "websearch": True, "firecrawl": True},
+                        "questions": questions or [{"text": "Versioned API", "kind": "docs", "version": "1.0"}]}))
+
+    def test_research_cache_citations_freshness_and_reuse(self):
+        source = self.research_input()
+        source = self.put(".planning/tmp/research-plan-input.json", source.read_text(encoding="utf-8"))
+        planned = self.cli("research-plan", "--input", source)["items"][0]
+        self.assertEqual("websearch", planned["fetch"]["provider"])
+        key = planned["key"]
+        self.cli("research-store.put", key, "--content", "Actual documentation", status=2, raw=True)
+        self.cli("research-store", "put", key, "--content", "Actual documentation", "--url", "https://docs.python.org/3/", "--provider", "official")
+        self.assertTrue(self.cli("research-store.get", key)["hit"])
+        self.assertEqual(1, self.cli("research-store.query", "--query", "documentation")["count"])
+        reused = self.cli("research-plan", "--input", source)["items"][0]
+        self.assertFalse(reused["cache"]["stale"])
+        self.assertNotIn("fetch", reused)
+        cache = self.root / ".planning/research-cache" / (key + ".json")
+        entry = json.loads(cache.read_text())
+        entry["recorded"] = (dt.datetime.now(dt.timezone.utc)-dt.timedelta(days=8)).isoformat()
+        cache.write_text(json.dumps(entry), encoding="utf-8")
+        stale = self.cli("research-plan", "--input", source)["items"][0]
+        self.assertTrue(stale["cache"]["stale"])
+        self.assertIn("fetch", stale)
+        entry["recorded"] = dt.datetime.now(dt.timezone.utc).isoformat()
+        entry["sources"] = []
+        cache.write_text(json.dumps(entry), encoding="utf-8")
+        self.assertTrue(self.cli("research-plan", "--input", source)["items"][0]["cache"]["stale"])
+
+    def test_research_routes_sources_and_rejects_invalid_input(self):
+        source = self.research_input([{"text": "News", "kind": "web"}, {"text": "Read page", "kind": "scrape"}])
+        items = self.cli("research-plan", source)["items"]
+        self.assertEqual(["websearch", "webfetch"], [item["fetch"]["provider"] for item in items])
+        for age in ("-1", "nan", "infinity", "bad"):
+            self.cli("research-plan", source, "--max-age-hours", age, status=2, raw=True)
+        key = "a" * 64
+        self.cli("research-store.put", key, "--content", "Citation", "--url", "missing.md", status=2, raw=True)
+        citation = self.put("evidence.md", "Observed source")
+        self.assertTrue(self.cli("research-store.put", key, "--content", "Citation", "--sources", citation)["stored"])
+        source.write_text('{"questions":[{"text":"Unavailable"}]}', encoding="utf-8")
+        self.assertEqual("websearch", self.cli("research-plan", source)["items"][0]["fetch"]["provider"])
+
+    def test_confidence_is_provider_authority_with_bare_verified(self):
+        self.assertEqual("HIGH", self.cli("classify-confidence", "--verified", "--provider", "official"))
+        self.assertEqual("MEDIUM", self.cli("classify-confidence", "--provider", "official"))
+        self.assertEqual("MEDIUM", self.cli("classify-confidence", "--provider", "unknown", "--verified"))
+        self.assertEqual("LOW", self.cli("classify-confidence", "--provider", "unknown", "--verified=false"))
+
+    def context_fixture(self):
+        directory = Path(self.phase())
+        self.put("src/api.py", "version = 1")
+        context = directory / "01-CONTEXT.md"
+        context.write_text('---\nsource_paths: [src/api.py]\n---\n# Decisions\nKeep API.\n', encoding="utf-8")
+        plan = self.plan(directory)
+        return context, plan
+
+    def test_context_drift_warn_block_and_regenerated_artifact(self):
+        context, plan = self.context_fixture()
+        self.assertTrue(self.cli("verify.context-drift", "1", "--record")["recorded"])
+        self.assertEqual([], self.cli("verify.context-drift", "1")["stale_artifacts"])
+        self.put("src/api.py", "version = 2")
+        drift = self.cli("verify.context-drift", "1")
+        self.assertTrue(drift["source_changed"])
+        self.assertEqual([plan.name], drift["stale_artifacts"])
+        self.assertFalse(drift["block"])
+        self.cli("config-set", "workflow.context_drift_action", "block")
+        self.assertTrue(self.cli("verify.context-drift", "1")["block"])
+        plan.write_text(plan.read_text() + "Regenerated.\n", encoding="utf-8")
+        self.assertFalse(self.cli("verify.context-drift", "1")["block"])
+        context.write_text(context.read_text() + "Updated premise.\n", encoding="utf-8")
+        self.assertTrue(self.cli("verify.context-drift", "1")["context_changed"])
+        self.cli("config-set", "workflow.context_drift_action", "ignore", status=2, raw=True)
+        for mode in ("warn", "auto", "off"):
+            self.cli("config-set", "workflow.context_guard_mode", mode)
+
+    def test_context_drift_confines_declared_paths(self):
+        self.context_fixture()
+        result = self.cli("verify.context-drift", "1", "--paths", "../outside", "--record", status=69)
+        self.assertFalse(result["available"])
+        self.assertFalse(list(self.root.glob(".planning/phases/*/.context-freshness.json")))
+
+    def test_quick_append_escapes_and_deduplicates_without_completing_record(self):
+        self.init_records()
+        quick = self.cli("quick.create", "Actual authority")
+        self.cli("quick-tasks-append", "--task", "pipes | and backslash \\ plus\nline", "--quick-id", quick["quick_id"], "--slug", "actual-authority")
+        replay = self.cli("quick-tasks-append", "--task", "replay", "--quick-id", quick["quick_id"], "--slug", "actual-authority")
+        self.assertTrue(replay["duplicate"])
+        self.assertEqual("pending", self.cli("quick.get", quick["quick_id"])["status"])
+        state = (self.root / ".planning/STATE.md").read_text(encoding="utf-8")
+        self.assertIn("pipes \\|", state)
+        self.assertNotIn("replay", state)
+
+    def test_quick_history_migration_reuses_authoritative_directory_identity(self):
+        self.init_records()
+        quick = self.cli("quick.create", "Original authority")
+        slug = Path(quick["directory"]).name.split("-", 1)[1]
+        self.cli("quick-tasks-append", "--task", "History projection", "--quick-id", quick["quick_id"], "--slug", slug)
+        state = self.root / ".planning/STATE.md"
+        before = state.read_bytes()
+        authoritative = Path(quick["path"]).read_bytes()
+        # Legacy # cells may be row counters rather than global quick IDs.
+        state.write_text(state.read_text(encoding="utf-8").replace("| 001 |", "| 7 |"), encoding="utf-8")
+        before = state.read_bytes()
+        migration = self.cli("quick-tasks-migrate")
+        self.assertEqual(0, migration["count"])
+        self.assertEqual([quick["path"]], migration["skipped"])
+        self.assertEqual(1, self.cli("quick.list")["count"])
+        self.assertEqual(before, state.read_bytes())
+        self.assertEqual(authoritative, Path(quick["path"]).read_bytes())
+
+    def test_quick_migration_imports_orphan_canonical_row_once(self):
+        self.init_records()
+        self.cli("quick-tasks-append", "--task", "Orphan legacy task")
+        self.assertEqual(1, self.cli("quick-tasks-migrate")["count"])
+        self.assertEqual(0, self.cli("quick-tasks-migrate")["count"])
+        self.assertEqual(1, self.cli("quick.list")["count"])
+
+    def test_quick_migration_rejects_unsafe_or_mismatched_history_identity(self):
+        self.init_records()
+        quick = self.cli("quick.create", "Authority")
+        self.cli("quick-tasks-append", "--task", "History", "--quick-id", quick["quick_id"], "--slug", "authority")
+        state = self.root / ".planning/STATE.md"
+        original = state.read_text(encoding="utf-8")
+        for target in ("../outside/", "./quick/001-authority/../../outside/"):
+            state.write_text(original.replace("./quick/001-authority/", target), encoding="utf-8")
+            self.cli("quick-tasks-migrate", status=2, raw=True)
+            self.assertEqual(1, self.cli("quick.list")["count"])
+        state.write_text(original, encoding="utf-8")
+        authoritative = Path(quick["path"])
+        metadata = authoritative.read_text(encoding="utf-8")
+        authoritative.write_text(metadata.replace("id: ", "id: 9"), encoding="utf-8")
+        self.cli("quick-tasks-migrate", status=2, raw=True)
+        self.assertEqual(1, self.cli("quick.list")["count"])
+
+    def test_quick_migration_preserves_escaped_source_and_is_idempotent(self):
+        self.init_records()
+        state = self.root / ".planning/STATE.md"
+        with state.open("a", encoding="utf-8") as stream:
+            stream.write("\n### Quick Tasks Completed (legacy)\n\n| Date | Task | Owner |\n| --- | --- | --- |\n| 2026-01-01 | Repair \\| parser | Sam |\n")
+        before = state.read_bytes()
+        self.assertEqual(1, self.cli("quick-tasks-migrate")["count"])
+        self.assertEqual(0, self.cli("quick-tasks-migrate")["count"])
+        task = self.cli("quick.list")["tasks"][0]
+        self.assertIn("Repair | parser", task["description"])
+        self.assertIn("Owner: Sam", task["description"])
+        self.assertEqual("complete", task["status"])
+        self.assertEqual(0, self.cli("quick.list", "--status", "open")["count"])
+        self.assertEqual(before, state.read_bytes())
+
+    def test_quick_history_status_defaults_and_explicit_states(self):
+        self.init_records()
+        statuses = ["", "-", "\u2014", "pending", "planned", "in_progress", "blocked", "complete", "passed", "closed", "Completed"]
+        expected = ["complete"]*3 + statuses[3:-1] + ["complete"]
+        state = self.root / ".planning/STATE.md"
+        with state.open("a", encoding="utf-8") as stream:
+            stream.write("\n### Quick Tasks Completed\n\n| # | Description | Date | Commit | Status | Directory |\n| --- | --- | --- | --- | --- | --- |\n")
+            for index, status in enumerate(statuses):
+                stream.write(f"| {index+1} | task {index} | 2026-01-01 | abc | {status} | - |\n")
+        before = state.read_bytes()
+        self.assertEqual(len(statuses), self.cli("quick-tasks-migrate")["count"])
+        self.assertEqual(expected, [task["status"] for task in self.cli("quick.list")["tasks"]])
+        self.assertEqual(4, self.cli("quick.list", "--status", "open")["count"])
+        self.assertEqual(0, self.cli("quick-tasks-migrate")["count"])
+        self.assertEqual(before, state.read_bytes())
+
+    def test_quick_history_unsupported_status_fails_before_import(self):
+        self.init_records()
+        self.cli("quick-tasks-append", "--task", "Valid history", "--status", "complete")
+        self.cli("quick-tasks-append", "--task", "Ambiguous history", "--status", "Needs Review")
+        state = self.root / ".planning/STATE.md"
+        before = state.read_bytes()
+        self.cli("quick-tasks-migrate", status=2, raw=True)
+        self.assertEqual(0, self.cli("quick.list")["count"])
+        self.assertEqual(before, state.read_bytes())
+
+    def test_roadmap_dependencies_union_plans_and_existing_dependencies(self):
+        first = self.phase("First")
+        second = self.cli("phase.add", "Second")["directory"]
+        self.cli("phase.add", "Third")
+        path = self.plan(second)
+        path.write_text(path.read_text().replace("depends_on: []", 'depends_on: ["01-01"]'), encoding="utf-8")
+        path.rename(path.with_name("02-01-PLAN.md"))
+        self.cli("phase.edit", "2", "--depends-on", "Phase 3")
+        result = self.cli("roadmap.annotate-dependencies", "2")
+        self.assertEqual(["01", "03"], result["dependencies"])
+        self.assertIn("Phase 01", self.cli("roadmap.get-phase", "2")["depends_on"])
+        self.assertFalse(self.cli("roadmap.annotate-dependencies", "1")["updated"])
