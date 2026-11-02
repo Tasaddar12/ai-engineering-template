@@ -304,6 +304,6 @@ A Engineer milestone version names planned work in `.planning/`; it is not any r
 3. `milestone complete <version> --release-map <file>` archives the map by recorded value.
 4. Nothing is pushed by default. Each repository's tag has its own confirmation naming the repository and its remote.
 
-With `git.create_tag: false` the map is still recorded and no tag is created. See [How to tag a multi-repository milestone](../../docs/how-to/tag-a-multi-repo-milestone.md).
+With `git.create_tag: false` the map is still recorded and no tag is created.
 
 </sub_repos_support>

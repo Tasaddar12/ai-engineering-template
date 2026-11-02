@@ -90,7 +90,7 @@ def tables(lines, code):
 def schema(template=None):
     template = template or models.NAMESPACE/"engineer/templates/issue.md"
     if not template.is_file():
-        return fallback_schema()
+        raise Failure("issue-schema", "Installed issue template schema is missing: "+str(template))
     text = read(template)
     catalog = text.split("## File Template", 1)
     if len(catalog) != 2:

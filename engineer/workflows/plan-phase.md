@@ -578,7 +578,7 @@ whole values. The `MISSING — Wave 0 …` sentinel is exempt: it is not runnabl
 it has no failure mode to state. Ask yourself: if this command were silently
 doing nothing, what in its output would tell me? If you cannot answer, fix the
 command — do not invent a statement for it.
-Rules + worked examples: @~/.claude/engineer/references/planner-failing-direction.md
+Rules + worked examples: @~/.claude/engineer/references/failing-direction.md
 </failing_direction_contract>
 <!-- engineer:protected:end -->
 

@@ -436,7 +436,7 @@ Fix mode must correct ONLY the lines listed in the failures array. Do not modify
 
 **Required Sections:**
 - Code of conduct link — A single line pointing to the code of conduct. Discover: Check for
-  `CODE_OF_CONDUCT.md` in the project root. If present: "Please read our [Code of Conduct](CODE_OF_CONDUCT.md)
+  `CODE_OF_CONDUCT.md` in the project root. If present: "Please read our `[Code of Conduct](CODE_OF_CONDUCT.md)`
   before contributing." If absent: omit this section.
 - Development setup — Brief setup instructions for new contributors, referencing DEVELOPMENT.md and
   GETTING-STARTED.md rather than duplicating them. Discover: Confirm those docs exist or are being generated.

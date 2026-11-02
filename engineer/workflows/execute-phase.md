@@ -93,7 +93,7 @@ Parse JSON for: `executor_model`, `verifier_model`, `commit_docs`, `parallelizat
 
 **Model resolution:** If `executor_model` is `"inherit"`, omit the `model=` parameter from all `Agent()` calls — do NOT pass `model="inherit"` to Agent. Omitting the `model=` parameter causes Claude Code to inherit the orchestrator model automatically. Only set `model=` when `executor_model` is an explicit model name (e.g., `"claude-sonnet-5"`, `"claude-opus-4-8"`).
 
-@~/.claude/engineer/references/execute-phase-response-language.md
+@~/.claude/engineer/references/response-language-directive.md
 
 Reset the wave-failure tally. Fenced `bash` blocks are separate shells, so the post-merge gate's cumulative count reaches step 5.8 through a handoff file; a previous run's tally must not leak in:
 
@@ -461,7 +461,6 @@ between a large tool_result and the next assistant turn (seen on Claude Code
 **For each wave:**
 
 Before the wave's other dispatch gates, read and execute `engineer/references/execute-phase-context-guard.md`. It applies the configured `workflow.context_guard_mode` (`warn` by default): warn reports pressure and continues, auto captures a concise handoff before the next wave and continues, and off suppresses only the advisory. Context pressure never skips required work.
-@~/.claude/engineer/references/execute-phase-wave-guard.md
 
 
 
@@ -891,9 +890,7 @@ the next wave builds on a broken foundation.
    **Step 7.3 — `class == "unknown-failure"`:**
    Report failed plan and ask Continue/Stop; continuing may cascade into dependent plan failures.
 
-@~/.claude/engineer/references/execute-phase-quota-recovery.md
 
-@~/.claude/engineer/references/execute-phase-between-wave-reset.md
 
 8. **Execute checkpoint plans between waves** — see `<checkpoint_handling>`.
 9. **Proceed to next wave.**
@@ -1079,7 +1076,6 @@ Verify-work will walk you through each item and mark the phase complete when all
 **If user reports issues now:** Proceed to gap closure.
 
 **If gaps_found:**
-@~/.claude/engineer/references/execute-phase-requirement-revert.md
 
 ```
 ## ⚠ Phase {X}: {Name} — Gaps Found

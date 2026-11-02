@@ -8,7 +8,25 @@ from common import files, main_guard, parser, read_text
 
 MARKDOWN = re.compile(r'!?\[[^\]\n]*\]\(\s*(<[^>]+>|[^\s)]+)(?:\s+["\'][^\n]*?["\'])?\s*\)')
 REFERENCE = re.compile(r'^\s*\[[^\]]+\]:\s*(<[^>]+>|\S+)', re.MULTILINE)
-INCLUDE = re.compile(r'(?<![\w/])@((?:~?/|\.{1,2}/)?[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.*{}$<>:-]+)+)')
+INCLUDE = re.compile(r'(?<![\w/])@((?:~/\.(?:claude|codex)/|(?:\.{1,2}/)?(?:agents|commands|engineer|skills|docs|hooks|bin)/)[A-Za-z0-9_.*{}$<>:/-]+)')
+
+
+def navigation(text):
+    """Exclude fenced and inline examples without changing diagnostic line numbers."""
+    fence = None
+    lines = []
+    for line in text.splitlines(keepends=True):
+        opening = re.match(r'^ {0,3}(`{3,}|~{3,})(.*)', line)
+        if fence:
+            if opening and opening[1][0] == fence[0] and len(opening[1]) >= len(fence) and not opening[2].strip():
+                fence = None
+            lines.append('\n' if line.endswith('\n') else '')
+        elif opening:
+            fence = opening[1]
+            lines.append('\n' if line.endswith('\n') else '')
+        else:
+            lines.append(re.sub(r'(`+)(.*?)\1', lambda m: ' ' * len(m[0]), line))
+    return ''.join(lines)
 
 
 def targets(text):
@@ -25,8 +43,14 @@ def resolve_target(root, source, target, include=False):
     name = unquote(parts.path)
     if any(token in name for token in ("$", "{", "}", "*", "<", ">")):
         return None  # Dynamic include/output patterns are not literal file paths.
+    for prefix in ("~/.claude/", "~/.codex/"):
+        if name.startswith(prefix):
+            name = name[len(prefix):]
+            if name.startswith(("references/", "templates/", "workflows/")):
+                name = "engineer/" + name
+            return (root / name).is_file()  # Canonical source backing an installed import.
     if name.startswith("~"):
-        return False  # Upstream installed-home links must be repointed.
+        return False
     if name.startswith("/"):
         return False
     root = root.resolve()
@@ -41,13 +65,15 @@ def resolve_target(root, source, target, include=False):
 
 
 def broken_links(root):
-    for source in files(root, ("agents", "commands", "engineer", "skills")):
+    sources = list(files(root, ("agents", "commands", "engineer", "skills", "docs")))
+    sources += [root / name for name in ("AGENTS.md", "README.md", "CONTRIBUTING.md") if (root / name).is_file()]
+    for source in sources:
         if source.suffix != ".md":
             continue
         text = read_text(source)
         if text is None:
             continue
-        for target, line, include in targets(text):
+        for target, line, include in targets(navigation(text)):
             if resolve_target(root, source, target, include) is False:
                 yield source.relative_to(root.resolve()).as_posix(), line, target
 
