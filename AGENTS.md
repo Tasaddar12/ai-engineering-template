@@ -1,122 +1,96 @@
+<!-- generated-by: doc-writer -->
 # Agent entry point
 
-This repository is a reusable engineering workflow template. Keep the adopting
-project's identity unfilled until onboarding. Create project-specific records for
-template maintenance only when the user asks.
+This repository authors the reusable Engineer workflow. Its canonical sources
+are `agents/`, `commands/`, `engineer/`, `hooks/`, `bin/`, `scripts/` and `skills/`.
+Read the assigned role in `agents/`, the relevant command in `commands/`, and
+the workflow and references that command names. The
+[runtime guide](engineer/bin/README.md) documents executable operations.
 
-Read [.ai/RULES.md](.ai/RULES.md), [PROJECT](.planning/PROJECT.md),
-[STATE](.planning/STATE.md), the selected phase and your
-[role](.ai/agents/README.md). Load the selected
-[command](.ai/commands/README.md) and the references it names.
-[Truth map](.ai/truth-map.md) locates each fact's owner.
+A checkout supplies source material. Install it through
+[the Python installer](docs/INSTALL.md) to register a host configuration and
+record the pinned revision in an ownership manifest. A role or command file by
+itself does not register an agent or slash command with a host.
 
-## How work flows
+## Project records and authority
 
-A command names a workflow. The workflow is the procedure: it decides what to
-load, which agents to spawn with what context, and which runtime verbs to call.
-The [runtime](.ai/runtime/README.md) performs every planning-record change - phase
-numbering, the roadmap, STATE.md, PROJECT.md's Key Decisions, REQUIREMENTS.md's
-Traceability, todos, quick tasks, milestones. Do not edit those structures by
-hand; `python .ai/runtime/phase.py query <verb>` owns them, and hand edits drift
-from them. The only exception is the exact, guarded Git compensation of a
-coordinator-created bookkeeping-only commit described in
-[verification evidence](.ai/references/verification-evidence.md#compensating-a-failed-final-verification).
+Do not seed this template repository with an adopting project's placeholder
+identity or roadmap. An adopting project establishes its actual intent through
+`/onboard` or `/new-project`; the runtime's `project.init` operation creates its
+`.planning/` records. Template maintenance history and historical requirements
+remain separate from adoption; see [legacy retirement](docs/LEGACY-RETIREMENT.md).
 
-Prose the runtime does not own — a project's narrative sections, a requirement's
-wording, an ADR's argument — is written by hand, and `planning.validate` reports
-where either kind has drifted. It is warn-only, so it never stalls a session.
+In an initialized project, read PROJECT, STATE and the selected phase before
+changing project work. Preserve the project's identity, requirements, decisions,
+history and custom instructions. Discuss each phase with the user before planning
+or implementation. A discussion request grants discussion scope;
+it does not authorize implementation. Phase creation, planning, design approval
+and readiness do not grant implementation permission. Implement only the scope
+the user has authorized, and do not ask again for authorization already supplied.
 
-Retirement has a path, and it is never a strikethrough or an in-place "Closed":
-see [retiring an entry](.ai/RULES.md#retiring-an-entry).
+Commands select workflows; workflows orchestrate; runtime verbs own structural
+planning mutations. Use `python -I engineer/bin/engineer.py query <verb>` in this
+source checkout, or the installed host runtime in an adopting project. Do not
+hand-edit runtime-owned phase numbering, roadmap tables, state counters,
+requirement traceability, task state or lifecycle records. Narrative prose and
+requirement wording remain authored content. Record consequential decisions with
+their evidence as they are made. Run the smallest applicable executable check
+before recommending an execution dependency or integration.
 
-```
-/onboard                   initialize the project    → PROJECT / REQUIREMENTS / ROADMAP
-/phase "<description>"     add a phase to the roadmap
-  → /discuss-phase {N}     capture decisions         → NN-CONTEXT.md
-  → /plan-phase {N}        research and plan         → NN-MM-PLAN.md
-  → /execute-phase {N}     implement                 → NN-MM-SUMMARY.md
-  → /verify-work {N}       confirm the goal is met   → NN-VERIFICATION.md
-  → /ship {N}              publish                   → pull request
-  → /complete-milestone    when the milestone's phases are done
-```
+When evidence and documents disagree, establish which claim is wrong before
+repairing it. Preserve approved outcomes and distinguish delegated implementation
+choices from new human decisions. Use full templates, including their examples,
+counterexamples and consumer instructions; do not replace complete methods with
+compact versions without an assignment calling for that change.
 
-`/progress` reports where things stand and recommends one next step; `/next`
-decides and proceeds. `/quick` handles changes too small for a phase, and
-`/capture` parks an idea without derailing the current work.
+## Dispatch and isolation
 
-Decisions that outlive a phase go in PROJECT.md's Key Decisions table, written by
-`state.add-decision` while deciding rather than while building. A technology
-choice is validated by a check that was actually run before it is recommended.
+Use the exact role names in `agents/`. Resolve model and effort through
+`engineer_run query resolve-model <role>` and
+`engineer_run query resolve-effort <role>`; omit an override resolved as
+`inherit`. A source role definition is not proof that the active host registered
+that role. Load only the skills and references needed for the assignment.
 
-When the user asks to discuss a phase — including "let's discuss phase 01" —
-load [discuss-phase](.ai/commands/discuss-phase.md) directly and follow it. Do not
-require a slash command or an exact procedure name. A discussion request does not
-grant implementation permission.
+The coordinator owns routing, shared records, worker lifecycle, integration and
+publication. Give each source-changing worker an isolated checkout, explicit
+paths, a captured base revision and a result destination. Workers edit only their
+assigned files and their own summary; they do not publish or merge. Never edit
+or integrate paths still owned by an active write-capable worker. A wait timeout
+does not prove exit: confirm that the worker stopped before reassigning ownership.
+Preserve dirty, unmerged and blocked checkouts.
 
-## Authority
+During a frozen verification batch, independent read-only checks may inspect the
+same captured revision. Wait for every result before accepting evidence, making
+repairs or beginning another batch. A source worker completes with owned commits,
+its required summary and actual check results. A read-only reviewer or verifier
+completes with its cited report; it does not need a source commit or summary.
 
-NEVER start implementing a phase unless the user explicitly tells you to implement
-that phase. Phase creation, planning, design approval and readiness do not grant
-implementation permission. Follow
-[phase authority](.ai/RULES.md#phase-authority).
+Fix in-scope defects and verification gaps under the existing authorization.
+Keep unrelated findings separate and preserve exact blockers for work that needs
+unavailable access or a new scope decision. Do not stop already authorized work
+at routine internal stage boundaries. Shared services, databases and resource
+benchmarks remain shared even when Git worktrees are isolated.
 
-Report when asked to report; implement the scope already authorized. Do not ask
-again for an approval already supplied. Record consequential decisions in the
-phase's CONTEXT. When code and documents disagree, establish which side is wrong
-with evidence and preserve approved outcomes.
+## Verification and delivery
 
-## Dispatch
+Source changes require fresh independent code review and applicable independent
+verification before completion. Use a separate doc-writer when a change creates a
+guide or specification, changes an operational sequence, or explains behavior
+across components. Run relevant behavior checks and configured project checks;
+report their exact revision, commands, results, failures and skips. A process exit
+or a file's presence alone does not establish the intended outcome. Material
+changes invalidate earlier evidence for the affected behavior.
 
-The orchestrator routes; it does not do the work it dispatched. After spawning an
-agent, wait before touching its owned files or integrating its changes. During a
-frozen read-only verification batch, configured checks and independent read-only
-specialists may inspect the same captured revision concurrently; wait for every
-result before accepting evidence, repairing files or starting another batch.
+Commit each completed meaningful slice with a descriptive message. Stage only
+owned paths and inspect staged content; preserve unrelated user work. When
+delivery is authorized, push and keep the existing draft PR current, or create
+one on the first push. Use the
+[canonical Git workflow](engineer/references/git-workflow.md) and the current
+[PR](engineer/templates/pull-request.md) and
+[issue](engineer/templates/issue.md) templates for publication.
 
-Spawn agents by their exact name (`researcher`, `phase-preparer`, `phase-checker`,
-`coder`, `verifier`, `code-reviewer`, `doc-writer`, `doc-verifier`,
-`integration-checker`, `codebase-mapper`, `debugger`, `scout`). Resolve the model with
-`phase_run query resolve-model <agent>` and the effort with
-`phase_run query resolve-effort <agent>`, and pass both inline on the dispatch
-call — shared role files carry neither as frontmatter (Claude exports default to
-scout/targeted-fixer `haiku`, coder `sonnet`, and phase-preparer `opus`/`medium`; only preparer exports effort), and a resolved `inherit` means
-omit that argument. Never fall back to a generic agent type.
-
-Use [scout dispatch](.ai/references/scout-dispatch.md) for the authoritative
-task/output routing table. Send one discovery scout when source location is
-unknown; send additional scouts only for separately named questions and distinct
-evidence outputs. The coordinator owns worker lifecycle, integration, shared
-records and publication. Scouts return cited read-only evidence and never
-dispatch children.
-
-Follow the [confirmed-stop rule](.ai/RULES.md#orchestration-and-handoffs) before
-reassigning worker paths; a host wait timeout does not establish worker exit.
-
-A source-changing worker returns `complete` only after committing its owned
-changes and required SUMMARY.md. A read-only scout, reviewer, verifier,
-doc-verifier or integration-checker returns `complete` with its assigned cited
-packet or report; it does not create a commit or SUMMARY.md.
-
-## Skills
-
-The skills under `skills/` mirror `commands/` one-for-one; a host
-that discovers skills and a host that registers slash commands behave
-identically. Load the skills that match the work, plus those named in the plan's
-`read_first` section — do not read every skill body.
-
-## Delivery
-
-Commit each completed meaningful slice immediately with a descriptive message,
-including agent summaries. Push when delivery is authorized, and open a draft PR
-on the first push for tracking. Keep that draft current after every slice rather
-than waiting until the work is finished. Every issue and pull request/merge request
-creation or edit must follow the [canonical Git workflow](.ai/references/git-workflow.md),
-including its templates and validation requirements, regardless of provider.
-
-[ship](.ai/commands/ship.md) publishes verified work and merges only on the
-user's instruction. It has no bypass for a phase whose verification is not `passed`. Explicit user limits
-override these defaults; read-only work needs no commit or publication. Follow
-[delivery rules](.ai/RULES.md#session-and-authorization).
-
-Start at [onboard](.ai/commands/onboard.md) for a new project, or
-[progress](.ai/commands/progress.md) to see where an existing one stands.
+Published, verified and merged are distinct states. Merge only when the user has
+explicitly authorized that merge, current verification and review are satisfied,
+required checks pass and repository protections permit it. Do not bypass required
+checks or reviews. Preserve the branch and report exact blockers when credentials,
+remote checks or required human acceptance are unavailable.
