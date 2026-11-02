@@ -138,6 +138,28 @@ class MergeHeadGuard(RuntimeCase):
         self.assertEqual(2, self.evidence.call_count)
         self.provider.assert_not_called()
 
+    def test_source_movement_during_provider_read_blocks_ordinary_merge(self):
+        self.evidence.side_effect = lambda *args: {"current": not self.git("status", "--porcelain")}
+        def changed_source(_):
+            self.put("README.md", "changed during provider read\n")
+            return self.pull
+        self.views.side_effect = changed_source
+        with self.assertRaises(Failure):
+            self.merge()
+        self.provider.assert_not_called()
+
+    def test_local_movement_during_final_evidence_blocks_provider_merge(self):
+        reads = []
+        def changed_head(*args):
+            reads.append(True)
+            if len(reads) == 2:
+                self.git("commit", "--allow-empty", "-m", "move during final proof")
+            return {"current": True}
+        self.evidence.side_effect = changed_head
+        with self.assertRaises(Failure):
+            self.merge()
+        self.provider.assert_not_called()
+
     def test_dispatch_forwards_expected_head_and_view_requests_provider_identity(self):
         spec = importlib.util.spec_from_file_location("delivery_head_runtime", SOURCE / "engineer/bin/engineer.py")
         runtime = importlib.util.module_from_spec(spec)

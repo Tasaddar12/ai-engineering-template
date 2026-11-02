@@ -118,12 +118,11 @@ def command(args, action):
             ready = gh(["pr", "ready", str(pr["number"])])
             if ready.returncode:
                 raise Failure("ready-refused", ready.stderr.strip() or "Provider refused the ready transition")
+        final_evidence = verification.current_evidence(phase, args) if args.has("evidence-file") else verification.current_evidence(phase)
+        if not final_evidence["current"]:
+            raise Failure("verification-stale", "Verification evidence changed before provider merge", evidence=final_evidence)
         if expected_head is not None and run(["git", "rev-parse", "HEAD"], root()).stdout.strip() != expected_head:
             raise Failure("head-mismatch", "Local HEAD moved before provider merge")
-        if args.has("evidence-file"):
-            final_evidence = verification.current_evidence(phase, args)
-            if not final_evidence["current"]:
-                raise Failure("verification-stale", "Successor evidence changed before provider merge", evidence=final_evidence)
         arguments = ["pr", "merge", str(pr["number"]), "--squash"]
         if expected_head is not None:
             arguments += ["--match-head-commit", expected_head]
