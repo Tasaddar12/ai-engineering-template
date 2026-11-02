@@ -27,6 +27,40 @@ Claude presents what SHOULD happen. User confirms or describes what's different.
 No Pass/Fail buttons. No severity questions. Just: "Here's what should happen. Does it?"
 </philosophy>
 
+<canonical_verification_evidence>
+Keep human UAT and canonical execution-verification evidence separate. The UAT
+file is not an eligible report-only successor path. A passed-status claim from
+`verification.status` exposes metadata; it does not prove that the report still
+describes the source or that configured checks cover current HEAD.
+
+Before reusing an existing execution report or advancing based on it, apply the
+[coordinator currentness check](../references/verification-evidence.md#coordinator-currentness-check):
+require a clean tree, the report's unchanged source fingerprint and a tested
+revision equal to HEAD, or the exact phase-report-only publication history proved
+commit by commit. Preserve the verifier's original tested revision.
+
+Check-receipt qualification is a separate gate. When complete original fresh
+passing evidence at R exists outside the checkout and the supported exact phase
+report is the only intervening changed path, follow
+[successor qualification](../references/verification-evidence.md#qualifying-check-receipts-across-a-report-only-successor).
+Call `verification.qualify-successor` with explicit `--evidence-file`, the exact
+repository-relative `--report-only-paths`, and full current H as `--expected-head`.
+Run any returned `fresh_required` zero-based indices freshly with
+`verification.run-checks --only-checks INDEX ...`, save that JSON externally and
+requalify with `--fresh-evidence-file`. A proper subset has no aggregate pass;
+only complete `qualified: true` accounting covers the checks. Invalid baseline,
+history or protected-input proof requires a complete fresh batch.
+
+Use `verification.current PHASE --evidence-file "$original_evidence"
+--expected-head "$H"` with the explicit fresh file when needed. It requalifies
+against the phase's resolved report while retaining status, fingerprint, history
+and dirty-tree gates. Plain calls retain ordinary current-receipt requirements.
+Do not use a saved JSON claim as proof, change the report's tested R to H, or
+treat qualification as authorization to implement or merge. Any UAT, requirement,
+state or other non-report write after verification requires fresh reconciliation
+under the [final-report lifecycle](../references/verification-evidence.md#final-report-lifecycle).
+</canonical_verification_evidence>
+
 <template>
 @~/.claude/engineer/templates/UAT.md
 </template>
@@ -619,6 +653,13 @@ NEXT_COMMAND=$(printf '%s' "$VERIFICATION_STATUS" | jq -r '.next_command')
 ```
 
 Otherwise, check the shared UAT-plus-verification completion predicate before transition:
+
+Apply the canonical verification-evidence gates above before this transition.
+If this UAT session changed a report, state or other planning artifact, do not
+reuse an earlier `qualified_head`: finish the necessary writes and obtain current
+check/verifier evidence for the actual revision. `verification.status` alone
+does not permit phase advancement. A missing proof blocks only this advancement;
+preserve the UAT results and report the exact remaining evidence requirement.
 
 ```bash
 # Exit 0 and exit 1 are VERDICTS (1 = not passed) — read the JSON either way. Any other status,

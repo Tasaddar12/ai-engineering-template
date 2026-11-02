@@ -84,12 +84,61 @@ verification:
 `verification.run-checks` executes commands without a shell and persists a receipt
 bound to the command/configuration and input digest. When `inputs` is omitted,
 all nonplanning Git-visible files form the input set. A passing receipt is reused
-only when inputs match and its revision is in current history. Revision or input
-drift during a check fails the frozen run. `verification.fingerprint` hashes phase
+only when inputs match and its revision is in current history. With
+`revision: true`, ordinary reuse requires that exact revision; `reuse: false`
+disables ordinary reuse. `--force` requests a fresh complete configured run.
+Revision or input drift during a check fails the frozen run. `verification.fingerprint` hashes phase
 PLAN/SUMMARY records and covered sources while excluding the report itself.
 `verification.current` checks the report fingerprint, frozen revision, clean
 working tree, and current check receipts. `verification.append-audit` suppresses
 an identical last audit block.
+
+### Report-only successor evidence
+
+Current receipts use schema 2. A check may prospectively declare:
+
+```yaml
+successor_independence:
+  schema: 1
+  report_paths:
+    - .planning/phases/01-example/01-VERIFICATION.md
+  protected_inputs: all-other-inputs
+  revision_semantics: provenance-only
+```
+
+The contract's schema 1 is distinct from the receipt schema. Review the actual
+command and dependencies before adding this contract: the report cannot affect
+its result, and HEAD cannot be a result-bearing input. The fresh baseline binds
+the contract, complete ordered checks, effective configuration, runtime/tool and
+environment identities and protected inputs. Adding a contract later does not
+grandfather an old receipt or alter ordinary revision/reuse behavior.
+
+`verification.qualify-successor --evidence-file ORIGINAL --report-only-paths PATH
+--expected-head H [--fresh-evidence-file FRESH]` is a read-only qualification of
+configured-check evidence. ORIGINAL and FRESH are explicit regular JSON files
+outside the checkout. ORIGINAL must authenticate a complete fresh passing baseline
+at R; H is the full captured current commit. The supported PATH is the exact phase
+`NN-VERIFICATION.md` owned by its matching tracked `NN-CONTEXT.md`. Quick reports
+and arbitrary bookkeeping are unsupported. Clean history must prove every
+intervening commit and merge-parent diff changes only that regular report;
+non-report changes later reverted still fail.
+
+The result keeps `tested_revision` R separate from `qualified_revision` H and
+returns ordered qualification and `fresh_required` zero-based indices. Run just
+those checks with `verification.run-checks --only-checks INDEX ...`; this option
+always executes freshly and retains full-order indices and configuration/order
+bindings. A proper subset reports `selected_passed` and aggregate `passed: false`.
+Save that JSON externally and requalify with `--fresh-evidence-file`. Only
+`qualified: true` represents complete mixed accounting. Invalid baseline,
+history or protected-input proof requires a complete fresh baseline; omitted or
+failed original rows cannot be repaired by selecting a passing subset.
+
+`verification.current PHASE --evidence-file ORIGINAL --expected-head H
+[--fresh-evidence-file FRESH]` requalifies checks against that phase's resolved
+report while retaining status, fingerprint, history and dirty-tree gates. A JSON
+claim does not establish currentness. `verification.status` remains metadata only.
+Qualification does not change the report's tested revision. See the complete
+[verification evidence and lifecycle method](../references/verification-evidence.md).
 
 `phase.uat-passed`, `audit-uat`, `audit-open`, and `uat.*` expose acceptance work.
 `spec.edge-probe` reads requirement and resolution JSON files;
@@ -116,6 +165,14 @@ updates its existing PR), and validates provider readback. `--base` supports
 stacked PRs. `pr.ready` and `pr.merge` require current verification evidence;
 merge additionally requires explicit `--confirm` after the human authorizes it.
 `pr.checks` reads provider checks; `--timeout SECONDS` bounds waiting.
+
+For qualified successor evidence, `pr.merge BRANCH --phase PHASE --confirm` takes
+the explicit `--evidence-file ORIGINAL`, optional `--fresh-evidence-file FRESH`
+and `--expected-head H` flags. It rechecks the evidence at the final gate, requires
+local HEAD and the OPEN PR head to equal H, uses the provider's exact-head match,
+and requires matching MERGED/head readback. A later write or moved head requires
+fresh proof. These flags grant no merge authorization and bypass no required
+review, CI or repository protection; plain invocations retain their existing gates.
 
 `cleanup.preview` returns only recorded, clean, integrated resources and an exact
 approval token. `cleanup.apply --approval-token TOKEN --confirm` revalidates every

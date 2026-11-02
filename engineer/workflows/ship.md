@@ -102,7 +102,11 @@ Verify the work is ready to ship:
    # Stderr is kept; a failed read stops shipping — it is never "no status".
    STATUS=$(engineer_run query verification.status "${PHASE_DIR}" --pick status) || { echo "verification.status refused this phase's report — see the error above. Fix it before shipping." >&2; exit 1; }
    ```
-   Only `passed` may ship. If `$STATUS` is `passed`, verification is complete — continue to the next preflight check; do not read any further verification field. A non-zero exit above is a hard error (a report `status` outside `passed | gaps_found | human_needed`): present the error and stop.
+   Only `passed` may ship. If `$STATUS` is `passed`, the report-status gate passes;
+   continue to the currentness and configured-check gates below. Metadata alone
+   does not establish current evidence. A non-zero exit above is a hard error
+   (a report `status` outside `passed | gaps_found | human_needed`): present the
+   error and stop.
 
    Any other value (including `gaps_found`, `human_needed`, `stale`, `missing`, and `phase_dir_not_found`) blocks with `PHASE_VERIFICATION_INCOMPLETE`. Only then, read the two message fields:
    ```bash
@@ -113,7 +117,7 @@ Verify the work is ready to ship:
 
 2. **Clean working tree?**
    ```bash
-   git status --short
+   git status --porcelain --untracked-files=all
    ```
    If uncommitted changes exist: ask user to commit or stash first.
 
@@ -141,6 +145,45 @@ Verify the work is ready to ship:
    which gh && gh auth status 2>&1
    ```
    If `gh` not found or not authenticated: provide setup instructions and exit.
+
+6. **Configured checks and current report evidence?**
+
+   Apply the [coordinator currentness rule](../references/verification-evidence.md#coordinator-currentness-check)
+   and the runtime's `verification.current "${PHASE_DIR}"` gate. Require
+   `current: true`, including the passed report status, source fingerprint,
+   revision/history proof, clean tree and valid configured-check evidence.
+   `verification.status` exposes metadata and does not enforce these gates.
+
+   For ordinary preflight evidence, run `engineer_run query verification.run-checks`.
+   Reuse only valid successful receipts whose captured inputs, environment and
+   configuration match; a check declaring `revision: true` also requires the
+   captured invocation revision. Keep the receipt's original tested revision.
+   Missing, invalid, failed or mismatched evidence requires the affected checks
+   to run again. A failing or ambiguous check blocks and follows the existing
+   diagnosis route; do not infer a pass from an earlier log.
+
+   If a complete fresh passing result exists at R, the report remains current,
+   and every intervening commit publishes only the exact phase report, use the
+   separate [successor qualification procedure](../references/verification-evidence.md#qualifying-check-receipts-across-a-report-only-successor).
+   Keep original joined JSON outside the checkout. Supply its explicit
+   `--evidence-file`, the exact repository-relative phase `--report-only-paths`
+   and captured full HEAD H as `--expected-head`. Only `qualified: true` supplies
+   complete check accounting. Run exactly the returned `fresh_required`
+   zero-based indices with `verification.run-checks --only-checks INDEX ...`,
+   save the JSON externally, and requalify with `--fresh-evidence-file` when
+   required. A proper subset is never a passing aggregate. Invalid baseline,
+   history or protected-input proof requires a complete fresh baseline.
+
+   Then call `verification.current "${PHASE_DIR}" --evidence-file
+   "$original_evidence" --expected-head "$H"`, adding
+   `--fresh-evidence-file "$fresh_evidence"` when applicable. It requalifies
+   against this phase's resolved report and retains every report-currentness
+   gate. A saved JSON claim does not replace requalification. Preserve the
+   report's original tested R; do not retag it as H.
+
+   Initialize `qualified_head` as unset for this invocation. Set it to exact H
+   only after this explicit proof and currentness gate pass. Any later write
+   requires fresh currentness and check evidence before publication or merge.
 
 </step>
 
@@ -289,6 +332,9 @@ Report: "PR #{number} created: {url}"
 
 <step name="optional_review">
 
+These options do not waive the fresh independent code review, required provider
+reviews or other repository protections. Reuse an already satisfied review only
+while its scope and revision remain valid.
 
 ---
 
@@ -321,6 +367,15 @@ Report the PR URL and suggest: "Review the diff at {url}/files"
 
 <step name="track_shipping">
 Update STATE.md to reflect the shipping action. Write the activity line only, with its description; do not write `Status`. At ship time the Current Position block already describes the next phase, and `Status` feeds the frontmatter `status` field, so a free-text value such as "Phase N shipped" does not belong there.
+
+This state mutation is not an eligible phase-report-only publication. If it or a
+later hook changes the checkout, discard the earlier `qualified_head` for delivery.
+Complete the required bookkeeping before final reconciliation, then run a fresh
+complete check/verifier batch at that revision and publish its phase report alone
+as the last workflow write. Follow the full
+[final-report lifecycle](../references/verification-evidence.md#final-report-lifecycle).
+Neither a ship-note nor a CI recovery commit makes old evidence current by
+assertion; recapture H and prove the actual intervening history before delivery.
 
 ```bash
 engineer_run query state.update "Last Activity" "$(date +%Y-%m-%d) -- Phase ${PHASE_NUMBER} shipped as PR #${PR_NUMBER}"
@@ -401,6 +456,37 @@ When the resolved model is `inherit` or empty, omit the `model` argument. Dispat
 </step>
 
 
+<step name="merge_when_authorized">
+Merge only when the user has explicitly authorized this PR's merge. An existing
+authorization remains applicable to its stated scope; do not ask again at this
+internal boundary. Without it, report the open PR and preserve the session.
+
+Require current independent review, configured checks, remote checks and every
+repository protection. Recheck `verification.current` against the final actual
+HEAD after all ship notes and hooks. Report currentness and qualified check
+evidence are separate gates; neither supplies merge authority.
+
+When successor qualification is used, require the captured `qualified_head` H
+to equal local HEAD. Supply the original evidence explicitly to the runtime:
+
+```bash
+MERGE=$(engineer_run query pr.merge "$CURRENT_BRANCH" --phase "$PHASE_DIR" --confirm \
+  --evidence-file "$original_evidence" --expected-head "$qualified_head") || exit $?
+```
+
+If fresh H checks were needed, use the same invocation with
+`--fresh-evidence-file "$fresh_evidence"`. With ordinary current-receipt evidence,
+use `engineer_run query pr.merge "$CURRENT_BRANCH" --phase "$PHASE_DIR" --confirm`.
+
+The runtime requalifies explicit successor evidence at the final gate, requires
+local HEAD H and the same OPEN PR branch/headRefOid H, then passes
+`--match-head-commit H` to the provider. Local or provider head movement blocks.
+Require `merged: true` and matching MERGED/head readback for the same canonical
+PR; command success alone is insufficient. Unknown or mismatched readback keeps
+the PR/session and requires readback of that same PR before retrying. Do not
+bypass review, CI or platform protections, and do not retag the report's tested R.
+</step>
+
 <step name="report">
 ```
 ---
@@ -421,6 +507,9 @@ Next steps:
 
 ---
 ```
+Report observed state precisely: an open PR is published, and only matching
+MERGED/head readback establishes merge. Preserve pending checks, review or
+acceptance as explicit blockers rather than marking delivery complete.
 </step>
 
 </process>
