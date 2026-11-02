@@ -394,8 +394,10 @@ def _run_checks(args):
     inherited = dict(os.environ)
     inputs = successor_evidence.capture_inputs(root(),all_checks,settings,revision,inherited)
     input_by_name = {check['id']:inputs[index] for index,check in enumerate(all_checks)}
-    frozen_sources = successor_evidence.safe_snapshot(root(),guarded=True)
-    source_guards = [successor_evidence.safe_snapshot(root(),check.get('sources'),guarded=True) for check in all_checks]
+    successor_context = subset or any('successor_independence' in check for check in checks)
+    guarded_checks = all_checks if successor_context else checks
+    frozen_sources = successor_evidence.safe_snapshot(root(),guarded=True) if successor_context else None
+    source_guards = [successor_evidence.safe_snapshot(root(),check.get('sources'),guarded=True) for check in guarded_checks]
     bindings = {check['id']:_binding(check,revision,inherited) for check in checks}
     _freeze_unchanged(checks,bindings,revision,settings)
     previous,invalid = _load_receipts()
@@ -476,7 +478,7 @@ def _run_checks(args):
     # rewrite/restore during execution invalidates that execution's evidence.
     if (frozen_sources is not None and successor_evidence.safe_snapshot(root(),guarded=True) != frozen_sources
             or any(guard is not None and successor_evidence.safe_snapshot(root(),check.get('sources'),guarded=True) != guard
-                   for check,guard in zip(all_checks,source_guards))):
+                   for check,guard in zip(guarded_checks,source_guards))):
         raise Failure('verification-input-drift','Source metadata changed during the frozen verification run')
     with planning_lock():
         _freeze_unchanged(checks,bindings,revision,settings)

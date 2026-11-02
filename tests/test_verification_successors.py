@@ -499,6 +499,127 @@ class SuccessorTests(unittest.TestCase):
         self.assertNotIn(secret,json.dumps(receipt))
         self.assertIn('[environment value]',receipt['stdout'])
 
+    def test_named_selection_does_not_guard_an_unselected_ignored_output(self):
+        self.write('build.py',"from pathlib import Path\np=Path('.generated/out');p.parent.mkdir(exist_ok=True);p.write_text('built')\n")
+        self.write('inspect.py',"from pathlib import Path\nassert Path('.generated/out').read_text()=='built'\n")
+        build = dict(id='build',argv=[sys.executable,'build.py'],sources=['build.py'],environment=[])
+        inspect = dict(id='inspect',argv=[sys.executable,'inspect.py'],sources=['.generated/out'],environment=[])
+        for unselected_contract in (False,True):
+            with self.subTest(unselected_contract=unselected_contract):
+                other = dict(inspect)
+                if unselected_contract:
+                    other['successor_independence'] = copy.deepcopy(CONTRACT)
+                output = self.root/'.generated/out'
+                if output.exists():
+                    output.unlink()
+                self.configure([build,other]); self.commit('ordinary named selection configuration')
+                result = self.cli('verification.run-checks','--checks','build','--force')
+                self.assertTrue(result['passed'],result)
+                self.assertEqual(['build'],[row['name'] for row in result['checks']])
+                self.assertEqual('built',output.read_text())
+
+    def directory_fixture(self):
+        (self.root/'.generated/existing/nested').mkdir(parents=True)
+        self.write('check.py',"from pathlib import Path\nassert Path('.generated').is_dir()\nassert not Path('.generated/changed').exists()\n")
+        self.command.update(sources=['check.py','.generated'],environment=[])
+        self.configure([self.command]); self.commit('declared directory contract')
+        self.r = self.git('rev-parse','HEAD')
+        evidence = self.baseline(); self.report()
+        return evidence
+
+    def test_unchanged_declared_empty_directories_qualify(self):
+        evidence = self.directory_fixture()
+        result = self.qualify()
+        self.assertTrue(result['qualified'],result)
+        inputs = json.loads((self.root/evidence['checks'][0]['receipt']).read_text())['inputs']
+        entries = {row[0]:row[1] for row in inputs['directory_inputs']['entries']}
+        for name in ('.generated','.generated/existing','.generated/existing/nested'):
+            self.assertEqual('directory',entries[name])
+
+    def test_declared_directory_add_remove_rename_and_mode_changes_reject(self):
+        self.directory_fixture()
+        changed = self.root/'.generated/changed'
+        nested = self.root/'.generated/existing/nested'
+        renamed = self.root/'.generated/existing/renamed'
+        for mutation in ('add','remove','rename'):
+            with self.subTest(mutation=mutation):
+                if mutation == 'add': changed.mkdir()
+                elif mutation == 'remove': nested.rmdir()
+                else: nested.rename(renamed)
+                result = self.qualify()
+                self.assertFalse(result['qualified'],result)
+                self.assertIn('directory',result['reason'])
+                if mutation == 'add': changed.rmdir()
+                elif mutation == 'remove': nested.mkdir()
+                else: renamed.rename(nested)
+        from types import SimpleNamespace
+        original = Path.lstat
+        target = (self.root/'.generated').resolve()
+        def different_mode(path,*args,**kwargs):
+            info = original(path,*args,**kwargs)
+            if path == target:
+                return SimpleNamespace(st_mode=info.st_mode ^ 0o010,
+                    st_file_attributes=getattr(info,'st_file_attributes',0),st_mtime_ns=info.st_mtime_ns,
+                    st_ctime_ns=info.st_ctime_ns,st_ino=info.st_ino)
+            return info
+        with patch.object(Path,'lstat',different_mode):
+            result = self.direct()
+        self.assertFalse(result['qualified'],result)
+        self.assertIn('directory',result['reason'])
+
+    def test_all_configured_declared_directory_topology_protects_retained_checks(self):
+        (self.root/'.generated').mkdir()
+        self.write('check.py','print("retained")\n')
+        self.command.update(sources=['check.py'],environment=[])
+        cheap = dict(argv=[sys.executable,'-c','print("fresh")'],sources=['.generated'],environment=[],reuse=False)
+        self.configure([self.command,cheap]); self.commit('protected directory belongs to another check')
+        evidence = self.baseline(); self.report()
+        (self.root/'.generated/changed').mkdir()
+        fresh = self.cli('verification.run-checks','--only-checks','1')
+        result = self.direct(evidence,fresh)
+        self.assertFalse(result['qualified'],result)
+        self.assertEqual([0,1],result['fresh_required'])
+        self.assertIn('directory',result['reason'])
+
+    def test_directory_rewrite_restore_during_qualification_rejects(self):
+        self.directory_fixture()
+        original = checks.authentic_result
+        def mutate(root,row):
+            parent = self.root/'.generated'
+            before = parent.stat()
+            child = parent/'temporary'; child.mkdir(); child.rmdir()
+            os.utime(parent,ns=(before.st_atime_ns,before.st_mtime_ns+1000000))
+            return original(root,row)
+        with patch.object(checks,'authentic_result',side_effect=mutate):
+            result = self.direct()
+        self.assertFalse(result['qualified'],result)
+        self.assertIn('moved',result['reason'])
+
+    def test_directory_rewrite_restore_during_execution_rejects(self):
+        (self.root/'.generated').mkdir()
+        self.write('check.py',"from pathlib import Path\nimport os\np=Path('.generated');s=p.stat();q=p/'temporary';q.mkdir();q.rmdir();os.utime(p,ns=(s.st_atime_ns,s.st_mtime_ns+1000000))\n")
+        self.command.update(sources=['check.py','.generated'],environment=[])
+        self.configure([self.command]); self.commit('directory rewrite restore in execution')
+        result = self.cli('verification.run-checks',ok=False)
+        self.assertEqual('verification-input-drift',result['error'])
+
+    def test_report_parent_directory_and_receipt_publication_remain_supported(self):
+        self.command.update(sources=['.planning'],environment=[])
+        self.configure([self.command]); self.commit('declared report parent directory')
+        self.baseline(); self.report()
+        result = self.qualify()
+        self.assertTrue(result['qualified'],result)
+
+    def test_directory_topology_manifest_validation_fails_closed(self):
+        (self.root/'.generated').mkdir()
+        value = checks.directory_inputs(self.root,['.generated'])
+        cases = [None,dict(value,schema=True),dict(value,extra=True),dict(value,entries=[]),
+                 dict(value,sha256='wrong'),dict(value,roots=['../escape'])]
+        for candidate in cases:
+            with self.subTest(candidate=candidate):
+                with self.assertRaises(ValueError):
+                    checks.validate_directory_inputs(candidate)
+
     def test_declared_dependency_rewrite_restore_during_validation_rejects(self):
         self.write('.generated/dependency', 'one')
         self.command['sources'] = ['input.txt', '.generated/dependency']
@@ -516,10 +637,11 @@ class SuccessorTests(unittest.TestCase):
         evidence = self.baseline(); self.report()
         receipt_path = self.root / evidence['checks'][0]['receipt']
         original = json.loads(receipt_path.read_text())
-        for change in ['bundle', 'runtime']:
+        for change in ['bundle', 'runtime', 'directory_inputs', 'protected_directory_inputs']:
             envelope = copy.deepcopy(original)
             if change == 'bundle': envelope['inputs'].pop('successor')
-            else: envelope['inputs']['runtime']['implementation'] = 'old-validator'
+            elif change == 'runtime': envelope['inputs']['runtime']['implementation'] = 'old-validator'
+            else: envelope['inputs'].pop(change)
             # Even a structurally self-consistent rewritten envelope cannot
             # acquire the original prospective inputs or the current runtime.
             key = 'mutated-' + change

@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import platform
 import shutil
+import stat
 import subprocess
 import sys
 
@@ -59,9 +60,113 @@ def file_fingerprint(root, paths, guarded=False):
     return successors.digest(rows)
 
 
+def directory_inputs(root, sources=None, guarded=False):
+    """Bind declared root kinds and all descendant directories, including empty ones.
+
+    File membership/content retains its independent pure-helper manifest. Times
+    and inode identities guard only the current capture/execution/proof window;
+    report publication is allowed to change ancestor-directory timestamps.
+    """
+    roots = sorted(set(sources or []))
+    entries, metadata = {}, {}
+
+    def excluded(name):
+        return '.git' in name.split('/') or name == STORE or name.startswith(STORE + '/')
+
+    def identity(info):
+        return [stat.S_IMODE(info.st_mode), info.st_mtime_ns, info.st_ctime_ns, info.st_ino]
+
+    def visit(name, declared=False):
+        if excluded(name):
+            if declared:
+                raise ValueError('administrative storage is not a declared directory input')
+            return
+        path = successors.safe_path(root, name)
+        try:
+            info = path.lstat()
+        except FileNotFoundError:
+            entries[name] = [name, 'missing']
+            metadata[name] = [name, 'missing']
+            return
+        if stat.S_ISDIR(info.st_mode):
+            entries[name] = [name, 'directory', stat.S_IMODE(info.st_mode)]
+            metadata[name] = [name, *identity(info)]
+            for child in sorted(path.iterdir(), key=lambda value: value.name):
+                relative = child.relative_to(root).as_posix()
+                if excluded(relative):
+                    continue
+                child = successors.safe_path(root, relative)
+                child_info = child.lstat()
+                if stat.S_ISDIR(child_info.st_mode):
+                    visit(relative)
+                elif not stat.S_ISREG(child_info.st_mode):
+                    raise ValueError('unsupported directory member: ' + relative)
+            if identity(path.lstat()) != identity(info):
+                raise ValueError('directory changed while capturing topology: ' + name)
+        elif stat.S_ISREG(info.st_mode):
+            if declared:
+                entries[name] = [name, 'file', stat.S_IMODE(info.st_mode)]
+                metadata[name] = [name, *identity(info)]
+        else:
+            raise ValueError('unsupported declared input kind: ' + name)
+
+    for name in roots:
+        visit(name, declared=True)
+    # Cover overlapping roots and mutation after an earlier subtree was walked.
+    for name, expected in sorted(metadata.items()):
+        path = successors.safe_path(root, name)
+        try:
+            actual = [name, *identity(path.lstat())]
+        except FileNotFoundError:
+            actual = [name, 'missing']
+        if actual != expected:
+            raise ValueError('directory input moved while capturing topology: ' + name)
+    rows = [entries[name] for name in sorted(entries)]
+    result = {'schema': 1, 'roots': roots, 'entries': rows,
+              'sha256': successors.digest([roots, rows])}
+    if guarded:
+        result['metadata'] = [metadata[name] for name in sorted(metadata)]
+    return result
+
+
+def safe_directory_inputs(root, sources=None):
+    try:
+        return directory_inputs(root, sources)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
+
+
+def validate_directory_inputs(value):
+    if (not isinstance(value, dict) or set(value) != {'schema','roots','entries','sha256'}
+            or type(value.get('schema')) is not int or value['schema'] != 1
+            or not isinstance(value.get('roots'), list) or not isinstance(value.get('entries'), list)):
+        raise FreshRequired('no valid prospective directory topology')
+    roots, names = value['roots'], []
+    for name in roots:
+        successors.literal_path(name)
+    if roots != sorted(set(roots)):
+        raise ValueError('unordered directory topology roots')
+    for row in value['entries']:
+        if not isinstance(row, list) or len(row) not in (2,3):
+            raise ValueError('invalid directory topology row')
+        name = successors.literal_path(row[0]); names.append(name)
+        if not any(name == declared or name.startswith(declared + '/') for declared in roots):
+            raise ValueError('directory topology row outside declared roots')
+        if (row[1] == 'missing' and len(row) == 2):
+            continue
+        if (len(row) != 3 or row[1] not in ('file','directory')
+                or type(row[2]) is not int or not 0 <= row[2] <= 0o7777):
+            raise ValueError('invalid directory topology mode or kind')
+    if names != sorted(set(names)) or not set(roots) <= set(names):
+        raise ValueError('incomplete or unordered directory topology')
+    if value['sha256'] != successors.digest([roots,value['entries']]):
+        raise ValueError('directory topology hash mismatch')
+
+
 def safe_snapshot(root, sources=None, guarded=False):
     try:
-        return file_fingerprint(root, source_paths(root, sources), guarded)
+        files = file_fingerprint(root, source_paths(root, sources), guarded)
+        return successors.digest([files,directory_inputs(root,sources,guarded=True)]) if guarded else files
     except (OSError, ValueError, subprocess.SubprocessError):
         return None
 
@@ -82,6 +187,8 @@ def capture_inputs(root, commands, configuration, revision, environment):
     runtime = runtime_identity()
     order = successors.digest(commands)
     protected_paths = None
+    protected_roots = sorted({name for item in commands for name in item.get('sources',[])})
+    protected_directories = safe_directory_inputs(root,protected_roots)
     if any('successor_independence' in item for item in commands):
         try:
             protected_paths = set(inventory(root))
@@ -102,6 +209,7 @@ def capture_inputs(root, commands, configuration, revision, environment):
                   'source': safe_snapshot(root, item.get('sources')), 'environment': env_key['digest'],
                   'runtime': runtime, 'tool': tool_identity(root / item['cwd'], item['argv'], effective),
                   'root': str(root), 'timeout': item['timeout'], 'index': index, 'order': order}
+        inputs['directory_inputs'] = safe_directory_inputs(root,item.get('sources'))
         if item.get('revision'):
             inputs['revision'] = revision
         if 'successor_independence' in item:
@@ -111,6 +219,7 @@ def capture_inputs(root, commands, configuration, revision, environment):
                 inputs['successor'] = successors.capture_bundle(
                     root, revision, item['successor_independence'], protected_paths,
                     source_paths(root, item.get('sources')), successors.digest(configuration), order, index)
+                inputs['protected_directory_inputs'] = protected_directories
             except (OSError, ValueError, subprocess.SubprocessError):
                 inputs['successor'] = None
         result.append(inputs)
@@ -217,7 +326,7 @@ def read_evidence(path):
 
 def equivalent_current_inputs(original, current):
     # Only the explicit dependency contract can subsequently bridge these fields.
-    ignored = {"source", "revision", "successor"}
+    ignored = {"source", "revision", "successor", "directory_inputs", "protected_directory_inputs"}
     return (successors.digest({k: v for k, v in original.items() if k not in ignored})
             == successors.digest({k: v for k, v in current.items() if k not in ignored})
             and original.get("source") is not None and current.get("source") is not None
@@ -233,6 +342,15 @@ def independent_successor(root, tested, original, current, approved):
         raise FreshRequired("no original prospective independence/input contract")
     if not set(approved) <= set(contract["report_paths"]):
         raise FreshRequired("report not covered by this check's original independence contract")
+    for field in ('directory_inputs','protected_directory_inputs'):
+        old, new = original.get(field), current.get(field)
+        validate_directory_inputs(old); validate_directory_inputs(new)
+        # Exact generated report files may appear/change, but their already
+        # existing owner directories retain stable kinds and modes.
+        old_rows = [row for row in old['entries'] if row[0] not in contract['report_paths']]
+        new_rows = [row for row in new['entries'] if row[0] not in contract['report_paths']]
+        if old['roots'] != new['roots'] or old_rows != new_rows:
+            raise ValueError('directory input topology changed: ' + field)
     expected = {"schema", "contract", "source_manifest", "protected_manifest", "reports",
                 "configuration_sha256", "order_sha256", "index", "source_sha256", "protected_sha256"}
     if (set(bundle) != expected or type(bundle["schema"]) is not int or bundle["schema"] != 1
