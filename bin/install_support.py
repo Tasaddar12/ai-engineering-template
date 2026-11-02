@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import re
+import shlex
 import stat
 import subprocess
 import sys
@@ -18,7 +19,9 @@ import tempfile
 import tomllib
 import uuid
 
-PREFIXES = ('agents/', 'commands/', 'engineer/', 'hooks/', 'scripts/', 'skills/', 'bin/')
+# Overhaul scripts/ require the source Git history and PLANNED-UPDATES.md;
+# they are authoring tools, not a runnable part of an installed host namespace.
+PREFIXES = ('agents/', 'commands/', 'engineer/', 'hooks/', 'skills/', 'bin/')
 BEGIN = '# BEGIN ENGINEER MANAGED'
 END = '# END ENGINEER MANAGED'
 MANIFEST = 'engineer-install/manifest.json'
@@ -122,7 +125,8 @@ def snapshot(source, revision):
                 continue
             if not member.isfile():
                 raise Refusal('source-link-refused', name)
-            if name == 'engineer/RULES.md' or '__pycache__' in PurePosixPath(name).parts or name.endswith(('.pyc', '.pyo')):
+            if (name == 'engineer/RULES.md' or name.startswith('skills/SKILL/')
+                    or '__pycache__' in PurePosixPath(name).parts or name.endswith(('.pyc', '.pyo'))):
                 continue
             files[name] = (tree.extractfile(member).read(), 0o755 if member.mode & 0o111 else 0o644)
     if not files.get('engineer/bin/engineer.py', (b'',))[0]:
@@ -157,7 +161,7 @@ def adapt(content, host, ns, source_name, findings):
         return content
     text = content.decode('utf-8')
     # Replace the complete obsolete bootstrap, preserving every surrounding method.
-    launcher = ('ENGINEER_RUN=' + json.dumps(str(ns / 'engineer/bin/engineer_run')) + '\n'
+    launcher = ('ENGINEER_RUN=' + shlex.quote((ns / 'engineer/bin/engineer_run').as_posix()) + '\n'
                 'engineer_run() { sh "$ENGINEER_RUN" "$@"; }\nexport ENGINEER_RUN')
     text = re.sub(r'(?m)^_ENGINEER_SHIM_NAME=.*$', lambda _: launcher, text)
     for directory in ('references', 'templates', 'workflows'):
@@ -166,9 +170,11 @@ def adapt(content, host, ns, source_name, findings):
     text = text.replace('~/.claude/engineer/', str(ns / 'engineer').replace('\\', '/') + '/')
     if host == 'codex':
         text = text.replace('.claude/CLAUDE.md', '.codex/AGENTS.md').replace('CLAUDE.md', 'AGENTS.md')
-    field_function = ('_engineer_field() { python -I ' + json.dumps(str(ns / 'bin/install_support.py'))
+    field_function = ('_engineer_field() { python -I ' + shlex.quote((ns / 'bin/install_support.py').as_posix())
                       + ' json-field "$1" "$2"; }')
     text = re.sub(r'_engineer_field\(\) \{ node -e [^\n]*?; \}', lambda _: field_function, text)
+    text = text.replace('. engineer/workflows/_runtime-launcher.snippet.sh',
+                        '. ' + shlex.quote((ns / 'engineer/workflows/_runtime-launcher.snippet.sh').as_posix()))
     transforms = Path(__file__).with_name('export_transforms.py')
     if transforms.is_file():
         spec = importlib.util.spec_from_file_location('_engineer_export_transforms', transforms)
@@ -198,6 +204,9 @@ def exports(source, pin, target, host, scope, no_hooks=False):
     payload, origins, findings, shared, portable_names = {}, {}, [], set(), {}
     def add(name, data, mode=0o644, origin=None):
         name = relative(name)
+        # Windows chmod implements the writable bit, not POSIX executable bits.
+        # Compare the mode that atomic() can actually produce on this platform.
+        mode = 0o666 if os.name == 'nt' else mode
         folded = name.casefold()
         if folded in portable_names and portable_names[folded] != name:
             raise Refusal('export-case-collision', name, other=portable_names[folded])
@@ -317,7 +326,8 @@ def plan_update(source, ref, target, host, scope='local', no_hooks=False, kind='
               'target': str(target), 'host': host, 'scope': scope, 'no_hooks': no_hooks,
               'manifest_before': current(target, manifest_name), 'entries': entries,
               'retired_preserved': sorted(set(old.get('files', {})) - {e['path'] for e in entries}),
-              'findings': export['findings'], 'complete': not export['findings']}
+              'findings': export['findings'],
+              'complete': not export['findings'] and not any(e['action'] == 'conflict' for e in entries)}
     result['exporter'] = {'install_support_sha256': sha(Path(__file__).read_bytes())}
     transforms = Path(__file__).with_name('export_transforms.py')
     if transforms.is_file():
@@ -375,8 +385,10 @@ def install_lock(root, host):
     path = safe(root, str(directory.relative_to(root) / 'install.lock').replace('\\', '/'))
     directory.mkdir(parents=True, exist_ok=True)
     with path.open('a+b') as handle:
-        handle.write(b'0')
-        handle.flush()
+        handle.seek(0, os.SEEK_END)
+        if handle.tell() == 0:
+            handle.write(b'0')
+            handle.flush()
         handle.seek(0)
         try:
             if os.name == 'nt':
@@ -470,13 +482,26 @@ def apply(plan, selected=None):
         for journal_path in state.glob('backups/*/journal.json'):
             if json.loads(journal_path.read_text())['status'] not in ('committed', 'rolled-back'):
                 raise Refusal('transaction-recovery-required', str(journal_path.parent))
+        manifest_name = namespace(host) + '/' + MANIFEST
+        manifest_path = safe(root, manifest_name)
+        prior_manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else None
+        identity = {key: plan[key] for key in ('source', 'revision', 'host', 'scope', 'exporter')}
+        if (plan['kind'] != 'migrate' and len(entries) == len(plan['entries'])
+                and all(e['action'] == 'unchanged' for e in entries)
+                and prior_manifest and prior_manifest.get('complete')
+                and all(prior_manifest.get(key) == value for key, value in identity.items())
+                and all(prior_manifest.get('files', {}).get(e['path']) == {
+                    'sha256': e['sha256'], 'mode': e['mode'], 'source_path': e['source_path']}
+                    for e in entries)):
+            return {'applied': True, 'no_op': True, 'complete': True, **identity,
+                    'target': str(root), 'files': [], 'backup': None,
+                    'legacy_preserved': True, 'verification': 'not-executed'}
         transaction = state / 'backups' / uuid.uuid4().hex
         safe(root, str((transaction / 'journal.json').relative_to(root)).replace('\\', '/'))
         transaction.mkdir(parents=True)
         json_write(transaction / 'reviewed-plan.json', plan)
         journal = {'schema': 1, 'target': str(root), 'status': 'preparing', 'changes': [], 'legacy_backups': []}
-        manifest_path = safe(root, manifest_name)
-        manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {'files': {}}
+        manifest = prior_manifest if prior_manifest is not None else {'files': {}}
         manifest.update(schema=1, source=plan['source'], revision=plan['revision'], host=host,
                         scope=plan['scope'], exporter=plan['exporter'])
         writes = {}

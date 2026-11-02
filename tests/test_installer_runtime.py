@@ -1,0 +1,288 @@
+"""Exercise the current pinned installer against real disposable repositories."""
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import shlex
+import shutil
+import subprocess
+import sys
+import tempfile
+import tomllib
+import unittest
+
+
+ROOT = Path(__file__).resolve().parents[1]
+CLI = ROOT / "bin/install.py"
+PREFIXES = ("agents", "commands", "engineer", "hooks", "scripts", "skills", "bin")
+
+
+def load(name, path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+installer = load("current_installer", ROOT / "bin/install_support.py")
+transforms = load("current_export_transforms", ROOT / "bin/export_transforms.py")
+posix_shell = load("installer_posix_shell", ROOT / "engineer/bin/lib/posix_shell.py")
+
+
+def git(directory, *args):
+    result = subprocess.run(["git", "-C", str(directory), *args], capture_output=True,
+                            text=True, encoding="utf-8", check=True, timeout=30)
+    return result.stdout.strip()
+
+
+class CurrentInstallerTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.source_temp = tempfile.TemporaryDirectory(prefix="engineer-source-")
+        cls.source = Path(cls.source_temp.name).resolve()
+        for name in PREFIXES:
+            shutil.copytree(ROOT / name, cls.source / name,
+                            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+        git(cls.source, "init", "-b", "main")
+        git(cls.source, "config", "user.name", "Installer Fixture")
+        git(cls.source, "config", "user.email", "fixture@example.invalid")
+        git(cls.source, "config", "core.autocrlf", "false")
+        git(cls.source, "add", *PREFIXES)
+        # Windows does not infer this source executable bit from file permissions.
+        git(cls.source, "update-index", "--chmod=+x", "engineer/bin/engineer_run")
+        git(cls.source, "commit", "-m", "Pinned installer fixture")
+        cls.pin = git(cls.source, "rev-parse", "HEAD")
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.source_temp.cleanup()
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix="engineer-target-")
+        self.addCleanup(self.temp.cleanup)
+        self.base = Path(self.temp.name).resolve()
+        # Dollar signs, apostrophes and whitespace must remain literal shell data.
+        self.target = self.base / "project $literal ' quoted"
+
+    def cli(self, *args, expected=0):
+        result = subprocess.run([sys.executable, "-I", str(CLI), *map(str, args)],
+                                capture_output=True, text=True, encoding="utf-8", timeout=120)
+        self.assertEqual(expected, result.returncode, result.stderr[:8000])
+        return json.loads(result.stdout if expected == 0 else result.stderr)
+
+    def install(self, host="codex", scope="local", *args, ref=None, expected=0):
+        return self.cli("--source", self.source, "--ref", ref or self.pin,
+                        "--target", self.target, "--host", host, "--" + scope,
+                        *args, expected=expected)
+
+    def apply_plan(self, plan, *args, expected=0):
+        path = self.base / "reviewed-plan.json"
+        path.write_text(json.dumps(plan), encoding="utf-8")
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        return self.cli("--apply", path, "--reviewed-plan-sha256", digest,
+                        *args, expected=expected)
+
+    def snapshot(self):
+        if not self.target.exists():
+            return {}
+        return {path.relative_to(self.target).as_posix():
+                (path.read_bytes(), path.stat().st_mtime_ns)
+                for path in self.target.rglob("*") if path.is_file()}
+
+    def test_clean_installs_both_hosts_and_scopes_are_noop_on_rerun(self):
+        for host in ("codex", "claude"):
+            for scope in ("local", "global"):
+                with self.subTest(host=host, scope=scope):
+                    self.target = self.base / (host + "-" + scope + " $literal ' quoted")
+                    preview = self.install(host, scope, "--dry-run")
+                    self.assertEqual([], preview["findings"])
+                    self.assertTrue(preview["complete"])
+                    self.assertFalse(any('/skills/SKILL/' in e['path'] for e in preview['entries']))
+                    self.assertFalse(any('/scripts/' in e['path'] for e in preview['entries']))
+                    self.assertFalse(self.target.exists())
+                    result = self.install(host, scope)
+                    self.assertTrue(result["applied"])
+                    self.assertTrue(result["complete"])
+                    namespace = self.target / ("." + host)
+                    self.assertFalse((namespace / "scripts").exists())
+                    entry_name = "AGENTS.md" if host == "codex" else "CLAUDE.md"
+                    entry = (namespace if scope == "global" else self.target) / entry_name
+                    self.assertIn("ENGINEER MANAGED BEGIN", entry.read_text())
+                    self.assertFalse((self.target / ".ai").exists())
+                    self.assertFalse((self.target / ".planning").exists())
+                    runtime = namespace / "engineer/bin/engineer.py"
+                    env = {**os.environ, "ENGINEER_ROOT": str(self.target), "ENGINEER_HOST": host}
+                    identity = subprocess.run([sys.executable, "-I", str(runtime), "query", "runtime-identity"],
+                                              env=env, capture_output=True, text=True, encoding="utf-8", check=True)
+                    self.assertEqual("engineer-runtime", json.loads(identity.stdout)["packageName"])
+                    self.assertEqual(host, json.loads(identity.stdout)["host"])
+                    if host == "codex":
+                        config = tomllib.loads((namespace / "config.toml").read_text())
+                        self.assertTrue(config["skills"]["config"])
+                        for record in config["skills"]["config"]:
+                            self.assertTrue(Path(record["path"]).is_file(), record)
+                        role = tomllib.loads((namespace / "agents/executor.toml").read_text())
+                        self.assertEqual("executor", role["name"])
+                        self.assertTrue(role["description"])
+                        self.assertIn("<role>", role["developer_instructions"])
+                    else:
+                        settings = json.loads((namespace / "settings.json").read_text())
+                        self.assertEqual(1, len(settings["hooks"]["PreToolUse"]))
+                    before = self.snapshot()
+                    rerun_preview = self.install(host, scope, "--dry-run")
+                    self.assertTrue(all(e["action"] == "unchanged" for e in rerun_preview["entries"]))
+                    rerun = self.install(host, scope)
+                    self.assertTrue(rerun["no_op"])
+                    self.assertEqual([], rerun["files"])
+                    self.assertEqual(before, self.snapshot())
+
+    def test_install_preserves_project_instructions_settings_and_planning(self):
+        for host in ("codex", "claude"):
+            with self.subTest(host=host):
+                self.target = self.base / host
+                namespace = self.target / ("." + host)
+                namespace.mkdir(parents=True)
+                entry = self.target / ("AGENTS.md" if host == "codex" else "CLAUDE.md")
+                entry.write_bytes(b"# Customer instructions\r\nPreserve billing invariants.\r\n")
+                planning = self.target / ".planning/PROJECT.md"
+                planning.parent.mkdir()
+                planning.write_bytes(b"# Approved customer scope\r\n")
+                if host == "codex":
+                    config_path = namespace / "config.toml"
+                    config_path.write_text('model = "keep-model"\n[agents]\nmax_threads = 3\n')
+                else:
+                    config_path = namespace / "settings.json"
+                    config_path.write_text(json.dumps({"env": {"KEEP": "yes"}, "hooks": {"PreToolUse": [
+                        {"matcher": "Read", "hooks": [{"type": "command", "command": "keep-hook"}]}]}}))
+                self.install(host)
+                self.assertTrue(entry.read_bytes().startswith(b"# Customer instructions\r\n"))
+                self.assertEqual(b"# Approved customer scope\r\n", planning.read_bytes())
+                config = (tomllib.loads(config_path.read_text()) if host == "codex"
+                          else json.loads(config_path.read_text()))
+                if host == "codex":
+                    self.assertEqual("keep-model", config["model"])
+                    self.assertEqual(3, config["agents"]["max_threads"])
+                else:
+                    self.assertEqual("yes", config["env"]["KEEP"])
+                    self.assertEqual("keep-hook", config["hooks"]["PreToolUse"][0]["hooks"][0]["command"])
+
+    def test_conflicts_are_incomplete_preserved_and_explicit_replacement_is_backed_up(self):
+        self.install()
+        customized = self.target / ".codex/commands/ship.md"
+        customized.write_bytes(b"# Customer shipping process\n")
+        preview = self.install("codex", "local", "--update", "--dry-run")
+        self.assertFalse(preview["complete"])
+        entry = next(e for e in preview["entries"] if e["path"] == ".codex/commands/ship.md")
+        self.assertEqual("conflict", entry["action"])
+        result = self.apply_plan(preview)
+        self.assertFalse(result["complete"])
+        self.assertEqual(b"# Customer shipping process\n", customized.read_bytes())
+        preview = self.install("codex", "local", "--update", "--dry-run")
+        entry = next(e for e in preview["entries"] if e["path"] == ".codex/commands/ship.md")
+        entry["resolution"] = "backup-and-replace"
+        result = self.apply_plan(preview, "--select", entry["path"])
+        journal = json.loads((Path(result["backup"]) / "journal.json").read_text())
+        change = next(e for e in journal["changes"] if e["path"] == entry["path"])
+        self.assertEqual(b"# Customer shipping process\n", (Path(result["backup"]) / change["backup"]).read_bytes())
+
+    def test_update_pins_revision_and_rollback_restores_previous_bytes(self):
+        self.install()
+        before = (self.target / ".codex/commands/ship.md").read_bytes()
+        updated = self.source / "commands/ship.md"
+        original = updated.read_bytes()
+        try:
+            updated.write_bytes(original + b"\n<!-- fixture update -->\n")
+            git(self.source, "add", "commands/ship.md")
+            git(self.source, "commit", "-m", "New pinned fixture revision")
+            revision = git(self.source, "rev-parse", "HEAD")
+            preview = self.install("codex", "local", "--update", "--dry-run", ref=revision)
+            self.assertEqual(revision, preview["revision"])
+            self.assertTrue(preview["complete"])
+            applied = self.apply_plan(preview)
+            self.assertIn(b"fixture update", (self.target / ".codex/commands/ship.md").read_bytes())
+            self.cli("--target", self.target, "--host", "codex", "--rollback", applied["backup"])
+            self.assertEqual(before, (self.target / ".codex/commands/ship.md").read_bytes())
+            manifest = json.loads((self.target / ".codex/engineer-install/manifest.json").read_text())
+            self.assertEqual(self.pin, manifest["revision"])
+        finally:
+            updated.write_bytes(original)
+
+    def test_unknown_javascript_still_refuses_before_any_install_write(self):
+        content = b'```bash\nnode -e \'require("unknown-runtime").mutate()\'\n```\n'
+        source = self.base / "unsupported-source"
+        (source / "engineer/bin").mkdir(parents=True)
+        (source / "commands").mkdir()
+        (source / "engineer/bin/engineer.py").write_text("# Populated fixture runtime\n")
+        (source / "commands/unknown.md").write_bytes(content)
+        git(source, "init", "-b", "main")
+        git(source, "config", "user.name", "Installer Fixture")
+        git(source, "config", "user.email", "fixture@example.invalid")
+        git(source, "add", "engineer", "commands")
+        git(source, "commit", "-m", "Unsupported JavaScript fixture")
+        failure = self.cli("--source", source, "--ref", "HEAD", "--target", self.target,
+                           "--host", "codex", "--local", expected=2)
+        self.assertEqual("export-blocked", failure["error"])
+        self.assertEqual("unported-runtime-javascript", failure["findings"][0]["code"])
+        self.assertFalse(self.target.exists())
+
+    def test_stale_target_and_review_token_fail_without_overwriting_changes(self):
+        preview = self.install("codex", "local", "--dry-run")
+        custom = self.target / "AGENTS.md"
+        custom.parent.mkdir(parents=True)
+        custom.write_bytes(b"# New instructions since preview\n")
+        failure = self.apply_plan(preview, expected=2)
+        self.assertEqual("plan-drift", failure["error"])
+        self.assertEqual(b"# New instructions since preview\n", custom.read_bytes())
+        path = self.base / "bad-token.json"
+        path.write_text(json.dumps(preview))
+        failure = self.cli("--apply", path, "--reviewed-plan-sha256", "0" * 64, expected=2)
+        self.assertEqual("review-token-mismatch", failure["error"])
+
+    def test_installed_bootstrap_runs_from_another_directory_with_literal_path(self):
+        shell = posix_shell.find_posix_shell("bash")
+        if not shell:
+            self.skipTest("No POSIX shell is installed")
+        self.install()
+        namespace = self.target / ".codex"
+        source = '_ENGINEER_SHIM_NAME="engineer_run"; obsolete bootstrap\nengineer_run query runtime-identity --pick packageName --raw\n'
+        exported = installer.adapt(source.encode(), "codex", namespace,
+                                   "engineer/workflows/smoke.sh", []).decode()
+        env = {**os.environ, "ENGINEER_ROOT": str(self.target), "ENGINEER_HOST": "codex"}
+        result = subprocess.run([shell, "-c", exported], cwd=self.base, env=env,
+                                capture_output=True, text=True, encoding="utf-8", timeout=30)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual("engineer-runtime", result.stdout.strip())
+
+
+class ExportJsonAdapters(unittest.TestCase):
+    def execute(self, script, value=None, env=None, arguments=()):
+        source = "node -e " + shlex.quote(script)
+        converted = transforms._node_calls(source, lambda verb: "unused-runtime " + verb, "workflow.md")
+        self.assertNotIn("node -e", converted)
+        argv = shlex.split(converted)
+        argv[0] = sys.executable
+        return subprocess.run([*argv, *arguments], input=json.dumps(value),
+                              env={**os.environ, **(env or {})}, capture_output=True,
+                              text=True, encoding="utf-8", timeout=10)
+
+    def test_json_adapters_preserve_scope_and_validate_arrays(self):
+        script = ('let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const '
+                  'v=JSON.parse(s).files_deleted||[];if(!Array.isArray(v)||v.some(x=>typeof '
+                  'x!=="string"))process.exit(1);process.stdout.write(JSON.stringify(v))})')
+        for value in ({}, {"files_deleted": None}, {"files_deleted": ["path with spaces", "quote'and$dollar"]}):
+            result = self.execute(script, value)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertEqual(value.get("files_deleted") or [], json.loads(result.stdout))
+        for value in ({"files_deleted": {}}, {"files_deleted": [42]}, {"files_deleted": "src"}):
+            self.assertNotEqual(0, self.execute(script, value).returncode)
+        result = self.execute('process.stdout.write(JSON.stringify(process.argv.slice(1)))',
+                              arguments=("one value", "two'$") )
+        self.assertEqual(["one value", "two'$"], json.loads(result.stdout))
+        result = self.execute('process.stdout.write(JSON.stringify([...new Set([process.env.EXPECTED_BASE,process.env.QUICK_PLAN_PARENT].filter(Boolean))]))',
+                              env={"EXPECTED_BASE": "same", "QUICK_PLAN_PARENT": "same"})
+        self.assertEqual(["same"], json.loads(result.stdout))
+
+
+if __name__ == "__main__":
+    unittest.main()

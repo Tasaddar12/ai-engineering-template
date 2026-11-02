@@ -115,7 +115,35 @@ def _node_calls(text, command, source):
             continue
         script = text[start+1:end-1]
         replacement, consumed = None, end
-        if "parseCodeReviewFlags" in script:
+        # These exact JSON adapters carry worktree scope and must retain their
+        # array validation. Unknown JavaScript still reaches the refusal gate.
+        array_reader = re.fullmatch(
+            r'let s="";process.stdin.on\("data",d=>s\+=d\).on\("end",\(\)=>\{const '
+            r'v=JSON.parse\(s\)\.(files_modified|files_deleted)(\|\|\[\])?;'
+            r'if\(!Array.isArray\(v\)(\|\|v.some\(x=>typeof x!=="string"\))?\)'
+            r'process.exit\(1\);process.stdout.write\(JSON.stringify\(v\)\)\}\)', script)
+        if array_reader:
+            field, default, strings = array_reader.groups()
+            code = 'import json, sys; v=json.load(sys.stdin).get(' + repr(field) + ')'
+            if default:
+                # JavaScript's || defaults null/false/zero/empty text, but not {}.
+                code += '; v=[] if v is None or v is False or v == 0 or v == "" else v'
+            valid = 'isinstance(v, list)'
+            if strings:
+                valid += ' and all(isinstance(x, str) for x in v)'
+            code += '; sys.exit(1) if not (' + valid + ') else print(json.dumps(v))'
+            replacement = 'python -I -c ' + shlex.quote(code)
+        elif script == 'process.stdout.write(JSON.stringify([process.env.EXPECTED_BASE]))':
+            replacement = 'python -I -c ' + shlex.quote(
+                'import json, os; print(json.dumps([os.environ.get("EXPECTED_BASE")]))')
+        elif script == 'process.stdout.write(JSON.stringify([...new Set([process.env.EXPECTED_BASE,process.env.QUICK_PLAN_PARENT].filter(Boolean))]))':
+            replacement = 'python -I -c ' + shlex.quote(
+                'import json, os; print(json.dumps(list(dict.fromkeys(x for x in '
+                '[os.environ.get("EXPECTED_BASE"), os.environ.get("QUICK_PLAN_PARENT")] if x))))')
+        elif script == 'process.stdout.write(JSON.stringify(process.argv.slice(1)))':
+            replacement = 'python -I -c ' + shlex.quote(
+                'import json, sys; print(json.dumps(sys.argv[1:]))')
+        elif "parseCodeReviewFlags" in script:
             replacement = command("review.flags")
         elif "resolveCodeReviewDepth" in script:
             replacement = command("review.depth")+" --stdin"
