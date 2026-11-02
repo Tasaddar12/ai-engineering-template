@@ -268,7 +268,7 @@ dispatch fresh applicable verification for changed or missing evidence.
 
 Material changes to links, body, risk outcomes or source invalidate the affected
 audit. Obtain fresh applicable independent evidence before claiming ready; apply
-[verification currentness](../bin/README.md)
+[verification currentness](verification-evidence.md#coordinator-currentness-check)
 to source evidence and compare the current provider body/link snapshot as well.
 Preflight/body generation may support truthful tracking drafts with pending
 audit findings under the existing delivery policy; they do not establish merge
