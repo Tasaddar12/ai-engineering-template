@@ -9,7 +9,7 @@ import time
 from . import config, gitops, models, verification, repository
 from .core import Args, Failure, read, root, run, safe_path
 
-PR_FIELDS = "number,url,state,isDraft,headRefName,baseRefName,statusCheckRollup,mergeable,title,body"
+PR_FIELDS = "number,url,state,isDraft,headRefName,headRefOid,baseRefName,statusCheckRollup,mergeable,title,body"
 
 
 def gh(args, check=True, timeout=60):
@@ -86,20 +86,53 @@ def command(args, action):
     if action == "merge":
         if not args.has("confirm"):
             raise Failure("merge-not-authorized", "Merging requires explicit --confirm")
+        expected_head = args.get("expected-head")
+        if expected_head is not None:
+            if not isinstance(expected_head, str) or not re.fullmatch(r"(?:[0-9a-f]{40}|[0-9a-f]{64})", expected_head):
+                raise Failure("bad-expected-head", "expected-head must be a full commit object ID", 2)
+            if run(["git", "rev-parse", "HEAD"], root()).stdout.strip() != expected_head:
+                raise Failure("head-mismatch", "Local HEAD differs from the expected qualifying head")
+        elif args.has("evidence-file") or args.has("fresh-evidence-file"):
+            raise Failure("expected-head-required", "Successor evidence requires an exact expected-head", 2)
         phase = args.get("phase")
         if not phase or verification.status(Args([phase]))["status"] != "passed":
             raise Failure("phase-unverified", "Passed phase verification is required")
-        evidence = verification.current_evidence(phase)
+        evidence = verification.current_evidence(phase, args) if args.has("evidence-file") else verification.current_evidence(phase)
         if not evidence["current"]:
             raise Failure("verification-stale", "Current frozen verification evidence is required", evidence=evidence)
         pr = view(branch)
         if not pr:
             raise Failure("pr-not-found", branch)
+        if pr.get("state") != "OPEN":
+            raise Failure("pr-not-open", "The selected pull request is not OPEN")
+        if expected_head is not None and pr.get("headRefOid") != expected_head:
+            raise Failure("head-mismatch", "OPEN PR head differs from the expected qualifying head")
         verdict = classify_checks(pr.get("statusCheckRollup", []))
         if verdict["status"] not in ("passed", "none") or pr.get("mergeable") == "CONFLICTING":
             raise Failure("merge-blocked", "Checks or merge conflicts block merging", checks=verdict)
-        gh(["pr", "merge", str(pr["number"]), "--squash"])
-        return {"merged": True, "url": pr["url"]}
+        if verdict["status"] == "none" and not verification.configured_checks():
+            raise Failure("missing-check-evidence", "Merging without CI requires configured passing local checks")
+        if pr.get("isDraft"):
+            gh(["pr", "ready", str(pr["number"])])
+        if expected_head is not None and run(["git", "rev-parse", "HEAD"], root()).stdout.strip() != expected_head:
+            raise Failure("head-mismatch", "Local HEAD moved before provider merge")
+        if args.has("evidence-file"):
+            final_evidence = verification.current_evidence(phase, args)
+            if not final_evidence["current"]:
+                raise Failure("verification-stale", "Successor evidence changed before provider merge", evidence=final_evidence)
+        arguments = ["pr", "merge", str(pr["number"]), "--squash"]
+        if expected_head is not None:
+            arguments += ["--match-head-commit", expected_head]
+        result = gh(arguments)
+        if result.returncode:
+            raise Failure("merge-refused", result.stderr.strip() or "Provider refused the merge")
+        merged = view(branch)
+        observed = bool(merged and merged.get("state") == "MERGED"
+                        and merged.get("number") == pr["number"] and merged.get("url") == pr["url"]
+                        and merged.get("headRefName") == branch
+                        and (expected_head is None or merged.get("headRefOid") == expected_head))
+        return {"merged": observed, "url": pr["url"], "retryable": not observed,
+                "expected_head": expected_head}, 0 if observed else 1
     if action == "ready":
         phase = args.get("phase")
         if not phase or verification.status(Args([phase]))["status"] != "passed":
