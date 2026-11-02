@@ -1,6 +1,6 @@
 """Reject retired JavaScript runtime helper calls in active Markdown.
 
-Scan tracked Markdown outside archived workflow, planning and maintenance records.
+Scan tracked Markdown outside archived workflow, planning and update records.
 Generic Node commands for adopting projects and JavaScript examples remain valid.
 """
 from pathlib import Path
@@ -224,8 +224,7 @@ def tracked_markdown(root=ROOT):
              if name.lower().endswith((b".md", b".markdown"))]
     return [file for file in files
             if file.parts[0] not in (".ai", ".planning")
-            and file.as_posix() != "PLANNED-UPDATES.md"
-            and file.parts[:2] != ("docs", "maintenance")]
+            and file.as_posix() != "PLANNED-UPDATES.md"]
 
 
 def main(root=ROOT):
