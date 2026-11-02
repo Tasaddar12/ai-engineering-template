@@ -18,7 +18,7 @@ Do not seed this template repository with an adopting project's placeholder
 identity or roadmap. An adopting project establishes its actual intent through
 `/onboard` or `/new-project`; the runtime's `project.init` operation creates its
 `.planning/` records. Template maintenance history and historical requirements
-remain separate from adoption; see [legacy retirement](docs/LEGACY-RETIREMENT.md).
+remain separate from adoption and are preserved in Git history and PLANNED-UPDATES.md.
 
 In an initialized project, read PROJECT, STATE and the selected phase before
 changing project work. Preserve the project's identity, requirements, decisions,

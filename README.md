@@ -78,8 +78,8 @@ user's applicable authorization.
 For maintenance, start with [AGENTS.md](AGENTS.md) and
 [CONTRIBUTING.md](CONTRIBUTING.md). Historical overhaul requirements remain in
 [PLANNED-UPDATES.md](PLANNED-UPDATES.md); they do not assert that every proposed
-feature has been implemented. [Legacy retirement](docs/LEGACY-RETIREMENT.md)
-explains the removed duplicate layout and preserved history.
+feature has been implemented. Git history preserves the removed duplicate layout
+and earlier maintenance records.
 
 ## Update an installation
 

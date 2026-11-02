@@ -136,9 +136,8 @@ needed for the intended migration. Migration preserves original legacy files and
 records original bytes in recoverable backups for selected mappings. It does not
 silently delete the old tree or project history. Cleanup of an adopting project's
 legacy content requires its own scoped authorization and evidence that useful
-customizations were preserved. Removing the obsolete legacy tree from this
-authoring repository is documented separately in
-[legacy retirement](LEGACY-RETIREMENT.md).
+customizations were preserved. The removed authoring layout remains available
+in Git history.
 
 `bin/install.py --migrate-existing` previews the same migration operation;
 `bin/install.py --update` previews an update. Use their explicit plan/application
