@@ -1,7 +1,9 @@
 # PR 125 integration
 
 User authorization: integrate PR 129 into PR 125, remove obsolete .ai/.planning,
-validate the installer and scripts, then merge PR 125 to main after checks/review.
+validate the installer and scripts, then integrate PR 125 into manual-override after checks/review. The later user
+instruction supersedes the earlier main destination: open a separate draft from
+manual-override to main and leave it unmerged.
 
 Repository: Tasaddar12/ai-engineering-template. PR 129 head was
 234c9816d27f2e8612253ece7115c66c4de4347c; integration merge is
@@ -26,3 +28,8 @@ independent review remain pending at this slice.
 Source code-fixer method is unchanged from PR 129. Deferred overhaul branches
 are excluded. Exact upstream revision of the historical downloaded source was
 not recorded; THIRD-PARTY-NOTICES retains that uncertainty explicitly.
+
+Latest user PR125 comments are applied to agents/verifier.md: restore the explicit
+issue/PR/#123/DEF follow-up examples; remove the two stray parenthetical labels.
+Main remains unchanged. Local main-reconciliation previews are preserved separately
+and excluded from this PR integration.

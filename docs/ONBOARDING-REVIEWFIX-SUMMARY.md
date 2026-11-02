@@ -13,6 +13,6 @@ because2 issue-publication fixtures still read the relocated .ai template path.
 Those fixtures now read engineer/templates/issue.md. Both passed (2 tests,3.355s).
 
 Source links and strict runtime verb validation passed. Final full cross-platform
-checks and independent re-review remain pending. Main-conflict resolution is a
-separate, blocked action; these corrections do not change main or legacy
-verification-successor code.
+checks and independent re-review remain pending. The later user instruction keeps this PR targeted at manual-override; a separate
+draft to main will remain unmerged. These corrections do not change main or its
+legacy verification-successor code.
