@@ -168,7 +168,7 @@ class CurrentInstallerTests(unittest.TestCase):
         for host in ("codex", "claude"):
             for scope in ("local", "global"):
                 with self.subTest(host=host, scope=scope):
-                    _, _, payload, origins, _, _ = installer.exports(source, pin, self.target, host, scope)
+                    payload = installer.exports(source, pin, self.target, host, scope)["payload"]
                     self.assertFalse(any({"guides", "maintenance"} & set(Path(name).parts[:-1])
                                          for name in payload))
                     self.assertIn("." + host + "/engineer/bin/engineer.py", payload)
