@@ -126,6 +126,7 @@ def snapshot(source, revision):
             if not member.isfile():
                 raise Refusal('source-link-refused', name)
             if (name == 'engineer/RULES.md' or name.startswith('skills/SKILL/')
+                    or {'guides', 'maintenance'} & set(PurePosixPath(name).parts[:-1])
                     or '__pycache__' in PurePosixPath(name).parts or name.endswith(('.pyc', '.pyo'))):
                 continue
             files[name] = (tree.extractfile(member).read(), 0o755 if member.mode & 0o111 else 0o644)
@@ -241,7 +242,21 @@ def exports(source, pin, target, host, scope, no_hooks=False):
         if host == 'codex' and name.startswith('agents/') and name.endswith('.md') and PurePosixPath(name).name != 'AGENT.md':
             role = PurePosixPath(name).stem
             text = transformed.decode('utf-8')
-            values = {'name': role, 'description': metadata(text, 'description', role), 'developer_instructions': text}
+            # The Markdown export owns the complete method. Keep the native
+            # wrapper small so edits to that method do not leave a stale copy.
+            counterpart = (ns / name).as_posix()
+            values = {
+                'name': role,
+                'description': metadata(text, 'description', role),
+                'model': 'gpt-6.1-sol',
+                'model_reasoning_effort': 'high',
+                'developer_instructions': (
+                    'Before doing any work, read the complete agent instructions at '
+                    + json.dumps(counterpart, ensure_ascii=False)
+                    + ' and follow them for this assignment. '
+                    'If that file cannot be read, stop and report the missing counterpart.'
+                ),
+            }
             native = '\n'.join(k + ' = ' + json.dumps(v, ensure_ascii=False) for k, v in values.items()) + '\n'
             tomllib.loads(native)
             add(nsname + '/agents/' + role + '.toml', native.encode(), origin=name)
