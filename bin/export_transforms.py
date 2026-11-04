@@ -13,6 +13,8 @@ def _quote(value):
         prefix = "${" + variable + ":-$HOME/." + host + "}"
         if value == prefix or value.startswith(prefix + "/"):
             return '"' + prefix + '"' + shlex.quote(value[len(prefix):])
+    if value.startswith((".codex/", ".claude/")):
+        return '"$(git rev-parse --show-toplevel 2>/dev/null || printf \'%s\' "${ENGINEER_ROOT:-.}")"/' + shlex.quote(value)
     return shlex.quote(value)
 
 

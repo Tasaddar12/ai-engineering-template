@@ -105,7 +105,13 @@ def run(argv, cwd=None, check=True, timeout=None, env=None, stdin=None):
 def root():
     override = os.environ.get("ENGINEER_ROOT")
     if override:
-        return Path(override).resolve()
+        selected = Path(override).resolve()
+        namespace = Path(__file__).resolve().parents[3]
+        if (namespace / "engineer-install/manifest.json").is_file():
+            live = run(["git", "rev-parse", "--show-toplevel"], check=False)
+            if live.returncode == 0 and selected != Path(live.stdout.strip()).resolve():
+                raise Failure("root-pin-mismatch", "ENGINEER_ROOT conflicts with the active Git checkout", 2)
+        return selected
     result = run(["git", "rev-parse", "--show-toplevel"], check=False)
     return Path(result.stdout.strip()).resolve() if result.returncode == 0 else Path.cwd().resolve()
 

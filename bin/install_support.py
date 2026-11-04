@@ -25,6 +25,7 @@ PREFIXES = ('agents/', 'commands/', 'engineer/', 'hooks/', 'skills/', 'bin/')
 BEGIN = '# BEGIN ENGINEER MANAGED'
 END = '# END ENGINEER MANAGED'
 MANIFEST = 'engineer-install/manifest.json'
+IDENTITY = 'engineer-install/identity.json'
 
 
 class Refusal(Exception):
@@ -170,6 +171,8 @@ def shell_path(path):
         prefix = reference_namespace(host, 'global').as_posix()
         if value == prefix or value.startswith(prefix + '/'):
             return '"' + prefix + '"' + shlex.quote(value[len(prefix):])
+    if value.startswith(('.codex/', '.claude/')):
+        return "\"$(git rev-parse --show-toplevel 2>/dev/null || printf '%s' \"${ENGINEER_ROOT:-.}\")\"/" + shlex.quote(value)
     return shlex.quote(value)
 
 
@@ -228,6 +231,49 @@ def adapt(content, host, ns, source_name, findings):
             if source_name.startswith(('commands/', 'skills/', 'engineer/workflows/')):
                 findings.append({'path': source_name, 'line': index, 'code': 'unported-runtime-javascript', 'text': line[:400]})
     return text.encode('utf-8')
+
+
+def previous_owned_hook_commands(target, host):
+    """Recover exact old commands only from digest-linked, target-owned exports."""
+    ns = namespace(host)
+    settings_name = ns + '/settings.json'
+    manifest_path = safe(target, ns + '/' + MANIFEST)
+    if not manifest_path.exists():
+        return set()
+    manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+    owned = manifest.get('files', {}).get(settings_name, {}).get('sha256')
+    if manifest.get('host') != host or not owned:
+        return set()
+    commands = set()
+    for candidate in (target / ns / 'engineer-install/backups').glob('*/reviewed-plan.json'):
+        path = safe(target, candidate.relative_to(target).as_posix())
+        plan = json.loads(path.read_text(encoding='utf-8'))
+        old_target = str(plan.get('target', '')).replace('\\', '/')
+        if (plan.get('schema') != 1 or plan.get('host') != host
+                or not (PurePosixPath(old_target).is_absolute() or re.match(r'^[A-Za-z]:/', old_target))):
+            continue
+        for entry in plan.get('entries', []):
+            if entry.get('path') != settings_name or entry.get('sha256') != owned:
+                continue
+            content = base64.b64decode(entry['content'], validate=True)
+            if sha(content) != owned:
+                continue
+            settings = json.loads(content)
+            expected_path = (PurePosixPath(old_target) / ns / 'hooks/worktree-path-guard.py').as_posix()
+            for group in settings.get('hooks', {}).get('PreToolUse', []):
+                if group.get('matcher') != 'Agent|Task|Write|Edit|MultiEdit|NotebookEdit|apply_patch':
+                    continue
+                for hook in group.get('hooks', []):
+                    value = hook.get('command')
+                    try:
+                        argv = shlex.split(value)
+                    except (ValueError, TypeError):
+                        continue
+                    if (hook.get('type') == 'command' and len(argv) == 5 and argv[1] == '-I'
+                            and argv[3:] == ['--host', host]
+                            and argv[2].replace('\\', '/') == expected_path):
+                        commands.add(value)
+    return commands
 
 
 def exports(source, pin, target, host, scope, no_hooks=False):
@@ -309,8 +355,9 @@ def exports(source, pin, target, host, scope, no_hooks=False):
     # Match only our exact hook target/arguments, independent of the old Python.
     # Preserve other commands, including a similarly named hook in another tree.
     old_hook_path = os.path.normcase(str(target / nsname / 'hooks/worktree-path-guard.py'))
+    old_owned_commands = previous_owned_hook_commands(target, host) if host == 'claude' else set()
     def owns_hook(value):
-        if value == registered_hook:
+        if value == registered_hook or value in old_owned_commands:
             return True
         try:
             argv = shlex.split(value)
@@ -344,6 +391,18 @@ def exports(source, pin, target, host, scope, no_hooks=False):
         # exact command entries; retain sibling order and all group metadata.
         preserved = []
         for group in entries:
+            for hook in group.get('hooks', []):
+                value = hook.get('command')
+                try:
+                    argv = shlex.split(value)
+                except (ValueError, TypeError):
+                    continue
+                if (hook.get('type') == 'command' and len(argv) == 5 and argv[1] == '-I'
+                        and argv[3:] == ['--host', host]
+                        and argv[2].replace('\\', '/').endswith('/.claude/hooks/worktree-path-guard.py')
+                        and not owns_hook(value)):
+                    findings.append({'code': 'legacy-hook-ownership-unresolved', 'path': name,
+                                     'message': 'Reconcile the old hook against trusted ownership records before replacement'})
             siblings = [h for h in group.get('hooks', [])
                         if not (h.get('type') == 'command'
                                 and owns_hook(h.get('command')))]
@@ -377,6 +436,13 @@ def inventory(root, mode='installed'):
 def plan_update(source, ref, target, host, scope='local', no_hooks=False, kind='update'):
     target = target_root(target)
     ns = namespace(host)
+    if scope == 'global':
+        variable = 'CODEX_HOME' if host == 'codex' else 'CLAUDE_CONFIG_DIR'
+        configured = os.environ.get(variable)
+        if configured:
+            active = Path(configured).expanduser().resolve()
+            if active.parent == target and active.name != ns:
+                raise Refusal('unsupported-global-namespace', 'Select a supported host namespace; preserve the active custom directory')
     manifest_name = ns + '/' + MANIFEST
     manifest_path = safe(target, manifest_name)
     old = json.loads(manifest_path.read_text(encoding='utf-8')) if manifest_path.exists() else {'files': {}}
@@ -393,10 +459,11 @@ def plan_update(source, ref, target, host, scope='local', no_hooks=False, kind='
                         'resolution': 'preserve' if conflict else 'apply'})
     legacy = (target / '.ai').exists() or (target / ns / 'runtime').exists()
     if kind != 'migrate' and legacy:
-        export['findings'].append({'code': 'migration-required', 'path': str(target), 'message': 'Preview migration before altering a legacy installation'})
-    result = {'schema': 1, 'kind': kind, 'source': export['source'], 'revision': export['revision'],
-              'target': str(target), 'host': host, 'scope': scope, 'no_hooks': no_hooks,
-              'manifest_before': current(target, manifest_name), 'entries': entries,
+        export['findings'].append({'code': 'migration-required', 'path': '.', 'message': 'Preview migration before altering a legacy installation'})
+    result = {'schema': 2, 'kind': kind, 'source': '.', 'revision': export['revision'],
+              'target': '.', 'host': host, 'scope': scope, 'no_hooks': no_hooks,
+              'manifest_before': current(target, manifest_name),
+              'installation_before': current(target, ns + '/' + IDENTITY), 'entries': entries,
               'retired_preserved': sorted(set(old.get('files', {})) - {e['path'] for e in entries}),
               'findings': export['findings'],
               'complete': not export['findings'] and not any(e['action'] == 'conflict' for e in entries)}
@@ -410,7 +477,7 @@ def plan_update(source, ref, target, host, scope='local', no_hooks=False, kind='
 
 def migration_plan(source, ref, target, host, scope='local', no_hooks=False):
     plan = plan_update(source, ref, target, host, scope, no_hooks, 'migrate')
-    root = Path(plan['target'])
+    root = target_root(target)
     ns = namespace(host)
     destinations = {e['path'] for e in plan['entries']}
     mapping = [('.ai/runtime', ns + '/engineer/bin'), (ns + '/runtime', ns + '/engineer/bin'),
@@ -490,8 +557,33 @@ def install_lock(root, host):
                 fcntl.flock(handle, fcntl.LOCK_UN)
 
 
-def rollback(root, transaction):
-    journal = json.loads((transaction / 'journal.json').read_text(encoding='utf-8'))
+def installation_identity(root, host, create=False):
+    path = safe(root, namespace(host) + '/' + IDENTITY)
+    if path.exists():
+        packet = json.loads(path.read_text(encoding='utf-8'))
+        if packet.get('schema') != 1 or not re.fullmatch(r'[0-9a-f]{32}', str(packet.get('id', ''))):
+            raise Refusal('invalid-installation-identity', namespace(host) + '/' + IDENTITY)
+        return packet['id']
+    if create:
+        identifier = uuid.uuid4().hex
+        json_write(path, {'schema': 1, 'id': identifier})
+        return identifier
+    return None
+
+
+def rollback(root, transaction, host):
+    allowed = root / namespace(host) / 'engineer-install/backups'
+    if transaction.parent != allowed or not transaction.is_dir() or transaction.is_symlink():
+        raise Refusal('rollback-path-refused', str(transaction))
+    journal_path = safe(root, transaction.relative_to(root).as_posix() + '/journal.json')
+    journal = json.loads(journal_path.read_text(encoding='utf-8'))
+    if journal.get('schema') == 2:
+        identifier = installation_identity(root, host)
+        if (journal.get('target') != '.' or journal.get('host') != host or not identifier
+                or journal.get('installation_id') != identifier):
+            raise Refusal('rollback-target-mismatch', 'The transaction belongs to another installation')
+    elif journal.get('schema') != 1 or journal.get('target') != str(root):
+        raise Refusal('rollback-target-mismatch', 'The legacy transaction does not identify this target')
     # Validate the whole rollback before restoring its first file.
     for entry in journal['changes']:
         actual = current(root, entry['path'])['sha256']
@@ -520,16 +612,23 @@ def rollback(root, transaction):
     return {'rolled_back': True, 'transaction': str(transaction)}
 
 
-def apply(plan, selected=None):
-    if plan.get('schema') != 1 or plan.get('kind') not in ('install', 'update', 'migrate'):
+def apply(plan, selected=None, *, source=None, target=None):
+    if plan.get('schema') not in (1, 2) or plan.get('kind') not in ('install', 'update', 'migrate'):
         raise Refusal('invalid-plan', 'Unsupported plan schema or kind')
     if plan['kind'] == 'migrate' and not selected:
         raise Refusal('migration-selection-required', 'Migration requires explicit --select paths from the reviewed mapping')
-    root = target_root(plan['target'])
+    if plan['schema'] == 2:
+        if plan.get('source') != '.' or plan.get('target') != '.':
+            raise Refusal('invalid-plan', 'Portable plan roots must be relative dots')
+        if not source or not target:
+            raise Refusal('apply-context-required', 'Supply --source and --target when applying a portable plan')
+    else:
+        source, target = plan['source'], plan['target']
+    root = target_root(target)
     host = plan['host']
     # Re-resolve the captured immutable revision and regenerate complete exports from it.
     fresh = (migration_plan if plan['kind'] == 'migrate' else plan_update)(
-        plan['source'], plan['revision'], root, host, plan['scope'], plan['no_hooks'])
+        source, plan['revision'], root, host, plan['scope'], plan['no_hooks'])
     if fresh['findings']:
         raise Refusal('export-blocked', 'Resolve unsupported runtime exports before applying', findings=fresh['findings'])
     if fresh['exporter'] != plan.get('exporter'):
@@ -541,6 +640,8 @@ def apply(plan, selected=None):
         actual = expected.get((entry['path'], entry.get('legacy_path', '')))
         if not actual or any(entry.get(k) != actual.get(k) for k in ('sha256', 'mode', 'content', 'before', 'legacy_before', 'action')):
             raise Refusal('plan-drift', entry['path'])
+    if plan['schema'] == 2 and fresh['installation_before'] != plan.get('installation_before'):
+        raise Refusal('installation-drift', 'Installation identity changed since preview')
     if fresh['manifest_before'] != plan['manifest_before']:
         raise Refusal('manifest-drift', 'Installed ownership manifest changed')
     requested = set(selected) if selected else {e['path'] for e in plan['entries'] if e['action'] != 'conflict'}
@@ -560,16 +661,23 @@ def apply(plan, selected=None):
         manifest_name = namespace(host) + '/' + MANIFEST
         if current(root, manifest_name) != plan['manifest_before']:
             raise Refusal('manifest-drift', manifest_name)
+        if plan['schema'] == 2 and current(root, namespace(host) + '/' + IDENTITY) != plan.get('installation_before'):
+            raise Refusal('installation-drift', 'Installation identity changed since preview')
         for journal_path in state.glob('backups/*/journal.json'):
             if json.loads(journal_path.read_text())['status'] not in ('committed', 'rolled-back'):
                 raise Refusal('transaction-recovery-required', str(journal_path.parent))
         manifest_name = namespace(host) + '/' + MANIFEST
         manifest_path = safe(root, manifest_name)
         prior_manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else None
-        identity = {key: plan[key] for key in ('source', 'revision', 'host', 'scope', 'exporter')}
+        identity = {key: plan[key] for key in ('revision', 'host', 'scope', 'exporter')}
+        identity.update(source='.', source_kind='git-snapshot')
+        identifier = installation_identity(root, host)
+        if (prior_manifest and prior_manifest.get('schema') == 2
+                and prior_manifest.get('installation_id') != identifier):
+            raise Refusal('installation-identity-mismatch', 'Manifest and installation marker disagree')
         if (plan['kind'] != 'migrate' and len(entries) == len(plan['entries'])
                 and all(e['action'] == 'unchanged' for e in entries)
-                and prior_manifest and prior_manifest.get('complete')
+                and identifier and prior_manifest and prior_manifest.get('complete')
                 and all(prior_manifest.get(key) == value for key, value in identity.items())
                 and all(prior_manifest.get('files', {}).get(e['path']) == {
                     'sha256': e['sha256'], 'mode': e['mode'], 'source_path': e['source_path']}
@@ -577,14 +685,18 @@ def apply(plan, selected=None):
             return {'applied': True, 'no_op': True, 'complete': True, **identity,
                     'target': str(root), 'files': [], 'backup': None,
                     'legacy_preserved': True, 'verification': 'not-executed'}
+        identifier = installation_identity(root, host, create=True)
         transaction = state / 'backups' / uuid.uuid4().hex
         safe(root, str((transaction / 'journal.json').relative_to(root)).replace('\\', '/'))
         transaction.mkdir(parents=True)
-        json_write(transaction / 'reviewed-plan.json', plan)
-        journal = {'schema': 1, 'target': str(root), 'status': 'preparing', 'changes': [], 'legacy_backups': []}
+        receipt = {**plan, 'schema': 2, 'source': '.', 'target': '.'}
+        receipt.pop('plan_file', None)
+        json_write(transaction / 'reviewed-plan.json', receipt)
+        journal = {'schema': 2, 'target': '.', 'host': host, 'installation_id': identifier,
+                   'status': 'preparing', 'changes': [], 'legacy_backups': []}
         manifest = prior_manifest if prior_manifest is not None else {'files': {}}
-        manifest.update(schema=1, source=plan['source'], revision=plan['revision'], host=host,
-                        scope=plan['scope'], exporter=plan['exporter'])
+        manifest.update(schema=2, source='.', source_kind='git-snapshot', installation_id=identifier,
+                        revision=plan['revision'], host=host, scope=plan['scope'], exporter=plan['exporter'])
         writes = {}
         for index, entry in enumerate(entries):
             if entry.get('legacy_path'):
@@ -628,7 +740,7 @@ def apply(plan, selected=None):
             journal['status'] = 'committed'
             json_write(transaction / 'journal.json', journal)
         except BaseException:
-            rollback(root, transaction)
+            rollback(root, transaction, host)
             raise
         return {'applied': True, 'complete': manifest['complete'], 'source': plan['source'], 'revision': plan['revision'],
                 'host': host, 'target': str(root), 'files': list(writes), 'backup': str(transaction), 'legacy_preserved': True,
@@ -668,7 +780,7 @@ def cli(kind, argv=None):
             raw = Path(args.apply).read_bytes()
             if not args.reviewed_plan_sha256 or sha(raw) != args.reviewed_plan_sha256:
                 raise Refusal('review-token-mismatch', 'Supply the SHA-256 of the exact reviewed plan file bytes')
-            result = apply(json.loads(raw), args.select)
+            result = apply(json.loads(raw), args.select, source=args.source, target=args.target)
         elif args.rollback:
             if not args.target or not args.host:
                 raise Refusal('rollback-target-required', 'Specify --target and --host')
@@ -678,10 +790,7 @@ def cli(kind, argv=None):
             if transaction.parent != allowed or not transaction.is_dir() or transaction.is_symlink():
                 raise Refusal('rollback-path-refused', str(transaction))
             with install_lock(target, args.host):
-                journal = json.loads((transaction / 'journal.json').read_text())
-                if journal.get('target') != str(target):
-                    raise Refusal('rollback-target-mismatch', str(transaction))
-                result = rollback(target, transaction)
+                result = rollback(target, transaction, args.host)
         else:
             if not all((args.source, args.ref, args.target, args.host, args.scope)):
                 raise Refusal('explicit-install-context-required', 'Specify --source, --ref, --target, --host and --local or --global')
@@ -696,7 +805,7 @@ def cli(kind, argv=None):
                 result['plan_file'] = str(Path(args.plan).absolute())
                 result['reviewed_plan_sha256'] = sha(Path(args.plan).read_bytes())
             if operation == 'install' and not args.dry_run and not args.plan:
-                result = apply(result, args.select)
+                result = apply(result, args.select, source=args.source, target=args.target)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     except Exception as exc:

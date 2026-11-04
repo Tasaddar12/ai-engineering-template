@@ -77,12 +77,12 @@ class CurrentInstallerTests(unittest.TestCase):
                         "--target", self.target, "--host", host, "--" + scope,
                         *args, expected=expected)
 
-    def apply_plan(self, plan, *args, expected=0):
+    def apply_plan(self, plan, *args, expected=0, source=None):
         path = self.base / "reviewed-plan.json"
         path.write_text(json.dumps(plan), encoding="utf-8")
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         return self.cli("--apply", path, "--reviewed-plan-sha256", digest,
-                        *args, expected=expected)
+                        "--source", source or self.source, "--target", self.target, *args, expected=expected)
 
     def snapshot(self):
         if not self.target.exists():
@@ -117,7 +117,7 @@ class CurrentInstallerTests(unittest.TestCase):
                     runtime = namespace / "engineer/bin/engineer.py"
                     env = {**os.environ, "ENGINEER_ROOT": str(self.target), "ENGINEER_HOST": host}
                     identity = subprocess.run([sys.executable, "-I", str(runtime), "query", "runtime-identity"],
-                                              env=env, capture_output=True, text=True, encoding="utf-8", check=True)
+                                              cwd=self.target, env=env, capture_output=True, text=True, encoding="utf-8", check=True)
                     self.assertEqual("engineer-runtime", json.loads(identity.stdout)["packageName"])
                     self.assertEqual(host, json.loads(identity.stdout)["host"])
                     if host == "codex":
@@ -261,6 +261,260 @@ class CurrentInstallerTests(unittest.TestCase):
                                         encoding="utf-8", timeout=30)
                 self.assertEqual(0, result.returncode, result.stderr)
                 self.assertIn("Write target is outside", json.loads(result.stdout)["hookSpecificOutput"]["additionalContext"])
+
+    def test_all_persisted_install_files_and_saved_plan_are_portable(self):
+        plan_path = self.base / "portable-plan.json"
+        self.install("codex", "local", "--plan", plan_path)
+        plan = json.loads(plan_path.read_text())
+        self.assertEqual(2, plan["schema"])
+        self.assertEqual(".", plan["source"])
+        self.assertEqual(".", plan["target"])
+        self.apply_plan(plan)
+        files = [plan_path, *[p for p in self.target.rglob("*") if p.is_file()]]
+        self.assertTrue(any(p.name == "identity.json" for p in files))
+        self.assertTrue(any(p.name == "journal.json" for p in files))
+        self.assertTrue(any(p.name == "reviewed-plan.json" for p in files))
+        for path in files:
+            data = path.read_bytes()
+            for absolute in (self.target, self.source, Path(sys.executable)):
+                for spelling in (str(absolute), absolute.as_posix()):
+                    self.assertNotIn(spelling.encode(), data, str(path))
+                    self.assertNotIn(json.dumps(spelling)[1:-1].encode(), data, str(path))
+        manifest = json.loads((self.target / ".codex/engineer-install/manifest.json").read_text())
+        self.assertEqual("git-snapshot", manifest["source_kind"])
+        self.assertEqual(".", manifest["source"])
+        runtime = self.target / ".codex/engineer/bin/engineer.py"
+        result = subprocess.run([sys.executable, "-I", str(runtime), "query", "update-context",
+                                 "--config-dir", str(self.target / ".codex"), "--runtime", "codex"],
+                                capture_output=True, text=True, encoding="utf-8", check=True)
+        self.assertEqual("", json.loads(result.stdout)["source_path"])
+        result = subprocess.run([sys.executable, "-I", str(runtime), "query", "update.changes",
+                                 "--config-dir", str(self.target / ".codex"), "--ref", self.pin],
+                                capture_output=True, text=True, encoding="utf-8")
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("pinned-update-required", result.stdout + result.stderr)
+        self.assertFalse(list(self.target.rglob("__pycache__")))
+
+    def test_portable_plan_requires_explicit_roots_and_rechecks_installation_identity(self):
+        plan = self.install("codex", "local", "--dry-run")
+        path = self.base / "without-context.json"
+        path.write_text(json.dumps(plan))
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        failure = self.cli("--apply", path, "--reviewed-plan-sha256", digest, expected=2)
+        self.assertEqual("apply-context-required", failure["error"])
+        self.assertFalse(self.target.exists())
+        identity = self.target / ".codex/engineer-install/identity.json"
+        identity.parent.mkdir(parents=True)
+        identity.write_text(json.dumps({"schema": 1, "id": "0" * 32}))
+        before = self.snapshot()
+        failure = self.apply_plan(plan, expected=2)
+        self.assertEqual("installation-drift", failure["error"])
+        self.assertEqual(before, self.snapshot())
+
+    def test_rollback_uses_relocated_installation_identity(self):
+        self.install()
+        customized = self.target / ".codex/commands/ship.md"
+        customized.write_bytes(b"# Preserve this customized command\n")
+        plan = self.install("codex", "local", "--update", "--dry-run")
+        entry = next(e for e in plan["entries"] if e["path"] == ".codex/commands/ship.md")
+        entry["resolution"] = "backup-and-replace"
+        result = self.apply_plan(plan)
+        relative_backup = Path(result["backup"]).relative_to(self.target)
+        moved = self.base / "moved installation"
+        self.target.rename(moved)
+        self.target = moved
+        result = self.cli("--target", moved, "--host", "codex", "--rollback", moved / relative_backup)
+        self.assertTrue(result["rolled_back"])
+        self.assertEqual(b"# Preserve this customized command\n", (moved / ".codex/commands/ship.md").read_bytes())
+        repeated = self.cli("--target", moved, "--host", "codex", "--rollback", moved / relative_backup)
+        self.assertTrue(repeated["rolled_back"])
+
+    def test_rollback_rejects_a_foreign_backup_before_writing(self):
+        original = self.install()
+        original_backup = Path(original["backup"])
+        self.target = self.base / "different installation"
+        self.install()
+        copied = self.target / ".codex/engineer-install/backups" / original_backup.name
+        shutil.copytree(original_backup, copied)
+        before = self.snapshot()
+        failure = self.cli("--target", self.target, "--host", "codex", "--rollback", copied, expected=2)
+        self.assertEqual("rollback-target-mismatch", failure["error"])
+        self.assertEqual(before, self.snapshot())
+
+    def test_update_workflow_supplies_portable_plan_roots_and_requires_source(self):
+        shell = posix_shell.find_posix_shell("bash")
+        if not shell:
+            self.skipTest("No POSIX shell is installed")
+        self.install()
+        runtime = self.target / ".codex/engineer/bin/engineer.py"
+        context = subprocess.run([sys.executable, "-I", str(runtime), "query", "update-context",
+                                  "--config-dir", str(self.target / ".codex"), "--runtime", "codex"],
+                                 capture_output=True, text=True, encoding="utf-8", check=True).stdout
+        lines = (ROOT / "engineer/workflows/update.md").read_text(encoding="utf-8").splitlines()
+        select_source = next(line for line in lines if line.startswith("UPDATE_SOURCE="))
+        require_source = next(line for line in lines if line.startswith(': "${UPDATE_SOURCE:?'))
+        apply_line = next(line for line in lines if line.startswith("UPDATE_RESULT="))
+        script = ('uc_field() { python -I "$RUNTIME_ENTRY" query json.get --payload "$UC" --field "$1" --raw; }\n'
+                  + select_source + "\n" + require_source + "\n")
+        env = {**os.environ, "RUNTIME_ENTRY": str(runtime), "UC": context}
+        env.pop("UPDATE_SOURCE", None)
+        result = subprocess.run([shell, "-c", script], cwd=self.base, env=env,
+                                capture_output=True, text=True, encoding="utf-8", timeout=30)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("Select the actual local source repository", result.stderr)
+        plan = self.install("codex", "local", "--update", "--dry-run")
+        path = self.base / "workflow-plan.json"
+        path.write_text(json.dumps(plan))
+        env.update(UPDATE_SOURCE=str(self.source), UPDATE_TARGET=str(self.target),
+                   UPDATER=str(ROOT / "bin/update.py"), UPDATE_PLAN=str(path),
+                   REVIEWED_PLAN_SHA256=hashlib.sha256(path.read_bytes()).hexdigest())
+        result = subprocess.run([shell, "-c", script + apply_line + '\nprintf "%s" "$UPDATE_RESULT"'],
+                                cwd=self.base, env=env, capture_output=True, text=True,
+                                encoding="utf-8", timeout=60)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertTrue(json.loads(result.stdout)["no_op"])
+
+    def test_installed_root_pins_cannot_redirect_clone_or_worktree_operations(self):
+        shell = posix_shell.find_posix_shell("bash")
+        if not shell:
+            self.skipTest("No POSIX shell is installed")
+        self.install()
+        original = self.target
+        config = original / ".planning/config.yaml"
+        config.parent.mkdir()
+        config.write_text("mode: yolo\n", newline="\n")
+        git(original, "init", "-b", "main")
+        git(original, "config", "user.name", "Portability Fixture")
+        git(original, "config", "user.email", "fixture@example.invalid")
+        git(original, "config", "core.autocrlf", "false")
+        git(original, "add", ".codex", "AGENTS.md", ".planning/config.yaml")
+        git(original, "commit", "-m", "Portable project fixture")
+        clone, worker = self.base / "cloned project", self.base / "linked worker"
+        git(original, "clone", "--quiet", "--no-hardlinks", "--config", "core.autocrlf=false", str(original), str(clone))
+        git(original, "worktree", "add", "-b", "portability-worker", str(worker), "HEAD")
+        before = config.read_bytes()
+        for live in (clone, worker):
+            with self.subTest(checkout=live.name):
+                live_config = live / ".planning/config.yaml"
+                live_config.write_text("mode: interactive\n", newline="\n")
+                nested = live / "src/nested"
+                nested.mkdir(parents=True)
+                scripts = [
+                    installer.adapt(b'_ENGINEER_SHIM_NAME=obsolete\nengineer_run query config-get mode --raw\n',
+                                    "codex", Path(".codex"), "engineer/workflows/smoke.sh", []).decode(),
+                    "python -I " + transforms._quote(".codex/engineer/bin/engineer.py")
+                    + " query config-get mode --raw",
+                ]
+                stale_env = {**os.environ, "ENGINEER_ROOT": str(original), "ENGINEER_HOST": "claude"}
+                for script in scripts:
+                    for operation in (script, script.replace("config-get mode --raw", "config-set mode interactive")):
+                        result = subprocess.run([shell, "-c", operation], cwd=nested, env=stale_env,
+                                                capture_output=True, text=True, encoding="utf-8", timeout=30)
+                        self.assertNotEqual(0, result.returncode)
+                        self.assertIn("root-pin-mismatch", result.stdout + result.stderr)
+                        self.assertEqual(before, config.read_bytes())
+                        self.assertEqual("mode: interactive\n", live_config.read_text())
+                active_env = {**os.environ}
+                active_env.pop("ENGINEER_ROOT", None)
+                result = subprocess.run([shell, "-c", scripts[0]], cwd=nested, env=active_env,
+                                        capture_output=True, text=True, encoding="utf-8", timeout=30)
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertEqual("interactive", result.stdout.strip())
+                result = subprocess.run([shell, "-c", scripts[1].replace("config-get mode --raw", "config-set mode yolo")],
+                                        cwd=nested, env=active_env, capture_output=True, text=True,
+                                        encoding="utf-8", timeout=30)
+                self.assertEqual(0, result.returncode, result.stderr)
+                confirmed = subprocess.run([shell, "-c", scripts[1]], cwd=nested, env=active_env,
+                                           capture_output=True, text=True, encoding="utf-8", timeout=30)
+                self.assertEqual(0, confirmed.returncode, confirmed.stderr)
+                self.assertEqual("yolo", confirmed.stdout.strip())
+                self.assertEqual(before, config.read_bytes())
+        outside = self.base / "outside checkout"
+        outside.mkdir()
+        script = "python -I " + transforms._quote(".codex/engineer/bin/engineer.py") + " query config-get mode --raw"
+        result = subprocess.run([shell, "-c", script], cwd=outside,
+                                env={**os.environ, "ENGINEER_ROOT": str(original)},
+                                capture_output=True, text=True, encoding="utf-8", timeout=30)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual("yolo", result.stdout.strip())
+
+    def test_relocated_old_claude_hook_requires_digest_linked_ownership(self):
+        self.install("claude")
+        namespace = self.target / ".claude"
+        settings_path = namespace / "settings.json"
+        old_target = "/old-machine/checkout"
+        old_command = shlex.join(["/previous-python/python", "-I",
+                                  old_target + "/.claude/hooks/worktree-path-guard.py", "--host", "claude"])
+        group = {"matcher": "Agent|Task|Write|Edit|MultiEdit|NotebookEdit|apply_patch",
+                 "hooks": [{"type": "command", "command": old_command, "timeout": 10}]}
+        owned = json.dumps({"hooks": {"PreToolUse": [group]}}).encode()
+        digest = hashlib.sha256(owned).hexdigest()
+        manifest_path = namespace / "engineer-install/manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["files"][".claude/settings.json"]["sha256"] = digest
+        manifest_path.write_text(json.dumps(manifest))
+        snapshot = namespace / "engineer-install/backups/legacy-proof/reviewed-plan.json"
+        snapshot.parent.mkdir()
+        snapshot.write_text(json.dumps({"schema": 1, "host": "claude", "target": old_target,
+                                       "entries": [{"path": ".claude/settings.json", "sha256": digest,
+                                                    "content": base64.b64encode(owned).decode()}]}))
+        # The original record proves the old command even after a user adds siblings.
+        settings_path.write_text(json.dumps({"hooks": {"PreToolUse": [
+            {**group, "custom_metadata": "preserve", "hooks": [
+                {"type": "command", "command": "keep-user-hook"}, *group["hooks"]]}]}}))
+        result = self.install("claude")
+        self.assertTrue(result["complete"])
+        settings = json.loads(settings_path.read_text())
+        hooks = [h["command"] for g in settings["hooks"]["PreToolUse"] for h in g["hooks"]]
+        self.assertNotIn(old_command, hooks)
+        self.assertIn("keep-user-hook", hooks)
+        self.assertEqual("preserve", settings["hooks"]["PreToolUse"][0]["custom_metadata"])
+        self.assertEqual(1, hooks.count(installer.hook_command("claude", "local")))
+
+    def test_unproven_absolute_claude_hook_is_preserved_and_blocks_application(self):
+        settings_path = self.target / ".claude/settings.json"
+        settings_path.parent.mkdir(parents=True)
+        command = shlex.join(["/unproven-python", "-I", "/elsewhere/.claude/hooks/worktree-path-guard.py", "--host", "claude"])
+        settings_path.write_text(json.dumps({"hooks": {"PreToolUse": [{"hooks": [{"type": "command", "command": command}]}]}}))
+        before = settings_path.read_bytes()
+        plan = self.install("claude", "local", "--dry-run")
+        self.assertFalse(plan["complete"])
+        self.assertIn("legacy-hook-ownership-unresolved", [f["code"] for f in plan["findings"]])
+        failure = self.apply_plan(plan, expected=2)
+        self.assertEqual("export-blocked", failure["error"])
+        self.assertEqual(before, settings_path.read_bytes())
+
+    def test_custom_named_global_namespace_refuses_update_before_default_creation(self):
+        for host, variable in (("codex", "CODEX_HOME"), ("claude", "CLAUDE_CONFIG_DIR")):
+            with self.subTest(host=host):
+                self.target = self.base / (host + " global home")
+                self.install(host, "global")
+                namespace = self.target / ("." + host)
+                runtime = namespace / "engineer/bin/engineer.py"
+                env = {**os.environ, variable: str(namespace)}
+                result = subprocess.run([sys.executable, "-I", str(runtime), "query", "update-context",
+                                         "--config-dir", str(namespace), "--runtime", host],
+                                        cwd=self.base, env=env, capture_output=True, text=True, encoding="utf-8")
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertEqual(str(self.target), json.loads(result.stdout)["target"])
+                self.assertTrue(self.install(host, "global")["no_op"])
+                custom = self.target / "custom-config"
+                namespace.rename(custom)
+                before = self.snapshot()
+                env[variable] = str(custom)
+                result = subprocess.run([sys.executable, "-I", str(custom / "engineer/bin/engineer.py"),
+                                         "query", "update-context", "--config-dir", str(custom), "--runtime", host],
+                                        cwd=self.base, env=env, capture_output=True, text=True, encoding="utf-8")
+                self.assertNotEqual(0, result.returncode)
+                self.assertIn("unsupported-global-namespace", result.stdout + result.stderr)
+                result = subprocess.run([sys.executable, "-I", str(CLI), "--source", str(self.source),
+                                         "--ref", self.pin, "--target", str(self.target), "--host", host,
+                                         "--global", "--update", "--dry-run"], cwd=self.base, env=env,
+                                        capture_output=True, text=True, encoding="utf-8")
+                self.assertNotEqual(0, result.returncode)
+                self.assertIn("unsupported-global-namespace", result.stdout + result.stderr)
+                self.assertFalse(namespace.exists())
+                self.assertEqual(before, self.snapshot())
 
     def test_retired_directories_are_excluded_even_from_older_sources(self):
         source = self.base / "legacy-source"
@@ -473,7 +727,7 @@ class CurrentInstallerTests(unittest.TestCase):
                            "--host", "codex", "--local", "--no-hooks", "--dry-run")
         self.assertTrue(all(e["action"] == "unchanged" for e in preview["entries"]))
         selected = preview["entries"][0]["path"]
-        applied = self.apply_plan(preview, "--select", selected)
+        applied = self.apply_plan(preview, "--select", selected, source=source)
         self.assertFalse(applied["complete"])
         manifest_path = self.target / ".codex/engineer-install/manifest.json"
         manifest = json.loads(manifest_path.read_text())
@@ -481,7 +735,7 @@ class CurrentInstallerTests(unittest.TestCase):
         self.assertEqual([selected], list(manifest["files"]))
         preview = self.cli("--source", source, "--ref", "HEAD", "--target", self.target,
                            "--host", "codex", "--local", "--no-hooks", "--dry-run")
-        self.assertTrue(self.apply_plan(preview)["complete"])
+        self.assertTrue(self.apply_plan(preview, source=source)["complete"])
         self.assertEqual(5, len(json.loads(manifest_path.read_text())["files"]))
 
 
