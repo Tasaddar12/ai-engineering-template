@@ -122,10 +122,9 @@ class CurrentInstallerTests(unittest.TestCase):
                     self.assertEqual(host, json.loads(identity.stdout)["host"])
                     if host == "codex":
                         config = tomllib.loads((namespace / "config.toml").read_text())
-                        self.assertTrue(config["skills"]["config"])
-                        for record in config["skills"]["config"]:
-                            self.assertFalse(Path(record["path"]).is_absolute(), record)
-                            self.assertTrue((namespace / record["path"]).is_file(), record)
+                        self.assertNotIn("skills", config)
+                        self.assertTrue((self.target / ".agents/skills/onboard/SKILL.md").is_file())
+                        self.assertFalse((namespace / "skills").exists())
                         wrappers = list((namespace / "agents").glob("*.toml"))
                         self.assertEqual(20, len(wrappers))
                         for wrapper in wrappers:
@@ -154,6 +153,8 @@ class CurrentInstallerTests(unittest.TestCase):
                             self.assertIn("<role>", counterpart.read_text(encoding="utf-8"))
                             self.assertLess(len(role["developer_instructions"]), 700)
                     else:
+                        self.assertTrue((namespace / "skills/onboard/SKILL.md").is_file())
+                        self.assertFalse((self.target / ".agents").exists())
                         settings = json.loads((namespace / "settings.json").read_text())
                         self.assertEqual(1, len(settings["hooks"]["PreToolUse"]))
                     before = self.snapshot()
@@ -587,6 +588,107 @@ class CurrentInstallerTests(unittest.TestCase):
         journal = json.loads((Path(result["backup"]) / "journal.json").read_text())
         change = next(e for e in journal["changes"] if e["path"] == entry["path"])
         self.assertEqual(b"# Customer shipping process\n", (Path(result["backup"]) / change["backup"]).read_bytes())
+
+    def legacy_codex_skills(self):
+        self.install()
+        shutil.move(self.target / ".agents/skills", self.target / ".codex/skills")
+        manifest_path = self.target / ".codex/engineer-install/manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["files"] = {name.replace(".agents/skills/", ".codex/skills/", 1): value
+                             for name, value in manifest["files"].items()}
+        manifest_path.write_text(json.dumps(manifest))
+        config_path = self.target / ".codex/config.toml"
+        config = config_path.read_text().replace(installer.END,
+            '[[skills.config]]\npath = "skills/onboard/SKILL.md"\nenabled = true\n' + installer.END)
+        config_path.write_text(config)
+        return manifest_path
+
+    def test_codex_role_skill_query_reads_discoverable_project_skills(self):
+        self.install()
+        role = self.target / ".codex/agents/executor.md"
+        role.write_text(role.read_text().replace("name: executor", "name: executor\nskills: onboard", 1))
+        runtime = self.target / ".codex/engineer/bin/engineer.py"
+        result = subprocess.run([sys.executable, "-I", str(runtime), "query", "agent-skills",
+                                 "executor", "--skills-only"], cwd=self.target,
+                                env={**os.environ, "ENGINEER_ROOT": str(self.target), "ENGINEER_HOST": "codex"},
+                                capture_output=True, text=True, encoding="utf-8", check=True)
+        expected = (self.target / ".agents/skills/onboard/SKILL.md").read_text()
+        self.assertIn(expected, result.stdout)
+
+    def test_codex_skill_upgrade_retires_only_managed_registration_and_rolls_back(self):
+        self.legacy_codex_skills()
+        legacy = self.target / ".codex/skills/onboard/SKILL.md"
+        original = legacy.read_bytes()
+        config_path = self.target / ".codex/config.toml"
+        config_path.write_text('[[skills.config]]\npath = "my-custom/SKILL.md"\nenabled = false\n'
+                               + config_path.read_text())
+        old_config = config_path.read_bytes()
+        preview = self.install("codex", "local", "--update", "--dry-run")
+        self.assertTrue(preview["complete"])
+        self.assertIn(".codex/skills/onboard/SKILL.md", preview["retired_preserved"])
+        result = self.apply_plan(preview)
+        self.assertTrue(result["complete"])
+        self.assertEqual(original, legacy.read_bytes())
+        self.assertTrue((self.target / ".agents/skills/onboard/SKILL.md").is_file())
+        self.assertEqual([{"path": "my-custom/SKILL.md", "enabled": False}],
+                         tomllib.loads(config_path.read_text())["skills"]["config"])
+        self.cli("--target", self.target, "--host", "codex", "--rollback", result["backup"])
+        self.assertEqual(old_config, config_path.read_bytes())
+        self.assertFalse((self.target / ".agents/skills/onboard/SKILL.md").exists())
+        self.assertEqual(original, legacy.read_bytes())
+
+    def test_customized_legacy_skill_requires_review_and_keeps_original_backup(self):
+        self.legacy_codex_skills()
+        legacy = self.target / ".codex/skills/onboard/SKILL.md"
+        custom = b"# Customer onboarding customizations\n"
+        legacy.write_bytes(custom)
+        name = ".agents/skills/onboard/SKILL.md"
+        preview = self.install("codex", "local", "--update", "--dry-run")
+        entry = next(e for e in preview["entries"] if e["path"] == name)
+        self.assertEqual("conflict", entry["action"])
+        result = self.apply_plan(preview)
+        self.assertFalse(result["complete"])
+        self.assertFalse((self.target / name).exists())
+        self.assertEqual(custom, legacy.read_bytes())
+        preview = self.install("codex", "local", "--update", "--dry-run")
+        entry = next(e for e in preview["entries"] if e["path"] == name)
+        entry["resolution"] = "backup-and-replace"
+        result = self.apply_plan(preview, "--select", name)
+        self.assertTrue(result["complete"])
+        journal = json.loads((Path(result["backup"]) / "journal.json").read_text())
+        self.assertEqual(custom, (Path(result["backup"]) / journal["legacy_backups"][0]["backup"]).read_bytes())
+        self.assertEqual(custom, legacy.read_bytes())
+        rerun = self.install("codex", "local", "--update", "--dry-run")
+        self.assertTrue(rerun["complete"])
+        self.assertTrue(all(e["action"] == "unchanged" for e in rerun["entries"]))
+
+    def test_additional_legacy_skill_migrates_with_assets_and_stale_source_refuses(self):
+        self.legacy_codex_skills()
+        extra = self.target / ".codex/skills/customer"
+        extra.mkdir()
+        (extra / "SKILL.md").write_bytes(b"# Customer skill\n")
+        (extra / "asset.txt").write_bytes(b"original bytes\n")
+        update = self.install("codex", "local", "--update", "--dry-run")
+        self.assertIn("codex-skill-migration-required", [f["code"] for f in update["findings"]])
+        self.assertEqual("export-blocked", self.apply_plan(update, expected=2)["error"])
+        migration = self.install("codex", "local", "--migrate-existing", "--dry-run")
+        self.assertTrue(migration["complete"])
+        (extra / "asset.txt").write_bytes(b"changed after preview\n")
+        self.assertEqual("plan-drift", self.apply_plan(migration, "--select", ".agents/skills/customer/asset.txt", expected=2)["error"])
+        migration = self.install("codex", "local", "--migrate-existing", "--dry-run")
+        selections = [arg for name in sorted({e["path"] for e in migration["entries"]})
+                      for arg in ("--select", name)]
+        result = self.apply_plan(migration, *selections)
+        self.assertTrue(result["complete"])
+        for name in ("SKILL.md", "asset.txt"):
+            self.assertEqual((extra / name).read_bytes(),
+                             (self.target / ".agents/skills/customer" / name).read_bytes())
+        update = self.install("codex", "local", "--update", "--dry-run")
+        self.assertTrue(update["complete"])
+        self.assertEqual([], update["findings"])
+        self.cli("--target", self.target, "--host", "codex", "--rollback", result["backup"])
+        self.assertFalse((self.target / ".agents/skills/customer/SKILL.md").exists())
+        self.assertTrue((extra / "SKILL.md").is_file())
 
     def test_update_pins_revision_and_rollback_restores_previous_bytes(self):
         self.install()
