@@ -7,8 +7,8 @@ from .text import split_frontmatter
 from .core import Failure, digest, load_json, now, planning_lock, read, root, run, write, write_json
 
 
-def git(*values, check=True):
-    return run(['git', *values], root(), check=check, timeout=60)
+def git(*values, check=True, base=None):
+    return run(['git', *values], root() if base is None else base, check=check, timeout=60)
 
 
 def unavailable(reason, message=None):
@@ -16,8 +16,9 @@ def unavailable(reason, message=None):
              'action_required': False, 'spawn_mapper': False, 'available': False}, 69)
 
 
-def source_paths(prefixes=()):
-    names = git('ls-files', '-co', '--exclude-standard', '-z').stdout.split('\0')
+def source_paths(prefixes=(), *, base=None):
+    base = (root() if base is None else Path(base)).resolve()
+    names = git('ls-files', '-co', '--exclude-standard', '-z', base=base).stdout.split('\0')
     result = []
     for name in sorted(set(names)):
         if not name or name.startswith(('.planning/', '.git/')):
@@ -25,16 +26,17 @@ def source_paths(prefixes=()):
         if prefixes and not any(name == p or name.startswith(p.rstrip('/')+'/') for p in prefixes):
             continue
         from .planning import safe
-        path = safe(root()/name)
+        path = safe(base/name, base=base)
         if path.is_file():
             result.append(path)
     return result
 
 
 def inputs(prefixes=()):
+    base = root().resolve()
     prefixes = [p for p in prefixes if p != '.']
-    paths = source_paths(prefixes)
-    return {'digest': digest(paths, root()), 'paths': [p.relative_to(root()).as_posix() for p in paths]}
+    paths = source_paths(prefixes, base=base)
+    return {'digest': digest(paths, base), 'paths': [p.relative_to(base).as_posix() for p in paths]}
 
 
 def prefixes(args):

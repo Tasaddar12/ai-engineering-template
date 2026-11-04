@@ -10,8 +10,8 @@ from .core import Args, Failure, now, planning_lock, read, root, run, write, wri
 from .text import split_frontmatter
 
 
-def safe(path):
-    base = root().resolve()
+def safe(path, *, base=None):
+    base = (root() if base is None else Path(base)).resolve()
     path = Path(path)
     path = path if path.is_absolute() else base/path
     try:
