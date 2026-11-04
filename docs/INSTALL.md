@@ -31,10 +31,18 @@ root with `--target` and replace `--local` with `--global`; for example,
 namespace and its instruction entry. Do not choose it when the intended scope is
 one project.
 
+Global runtime execution honors `CODEX_HOME` and `CLAUDE_CONFIG_DIR`. Updating a
+global installation requires `.codex` for Codex or `.claude` for Claude as its
+namespace directory name; a different parent home directory is supported.
+Update discovery and installer previews for custom namespace names stop with
+`unsupported-global-namespace`, preserving that directory.
+
 The installer supports both hosts with explicit scope; there is no implicit
 host, revision or target selection. `--no-hooks` omits the installer's advisory
 hook registration. `--skip-deps` is a compatibility flag: the current runtime
-uses only the Python standard library.
+uses only the Python standard library. Installer and runtime entry points
+suppress Python bytecode caches so execution does not add machine-specific cache
+data to the installation.
 
 ## Apply the exact plan
 
@@ -78,7 +86,9 @@ at invocation time, including when a session starts in a subdirectory, and uses
 
 Local role, workflow, command and managed-entry references start at the project
 root, using `.codex/` or `.claude/` without the install machine's directory or a
-worktree name. Global references resolve the active host home when used through
+worktree name. Generated runtime shell paths resolve the active Git root when
+invoked, including from a nested directory. Global references resolve the active
+host home when used through
 `${CODEX_HOME:-$HOME/.codex}` or `${CLAUDE_CONFIG_DIR:-$HOME/.claude}`. Newly
 written plans, manifests and transaction journals use logical roots and relative
 file entries without recording the source checkout's or target's location.
@@ -126,6 +136,11 @@ shell is available, also exercise the sibling `engineer_run` launcher:
 sh .codex/engineer/bin/engineer_run query runtime-identity --pick packageName --raw
 ```
 
+Inside a Git checkout, an installed runtime rejects an `ENGINEER_ROOT` value
+that conflicts with the active checkout before root-sensitive reads or writes.
+Correct or clear a stale value before continuing. Source-checkout runtimes and
+explicit-root operation outside Git retain their existing behavior.
+
 Return to the source checkout and rerun the preview with the same source,
 revision, target, host and scope; unchanged
 managed exports should be reported as unchanged. Installation does not onboard
@@ -163,6 +178,11 @@ Preserve it or reconcile it explicitly; a selected conflict requires the reviewe
 application to exact target-relative paths. Unselected work can leave an
 installation incomplete. Unmanaged additions, retired owned paths and project
 planning records are preserved. Revalidate after updating.
+
+A relocated Claude hook is retired only when its exact command is proven by a
+digest-linked snapshot of the previously owned settings. Uncertain ownership
+produces `legacy-hook-ownership-unresolved` and blocks application; reconcile the
+ownership evidence before retrying. Other hooks in the same group are preserved.
 
 ## Migrate a legacy installation
 
