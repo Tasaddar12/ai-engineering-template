@@ -14,7 +14,7 @@ From the source checkout, choose an actual target project and host:
 ```sh
 SOURCE="$(pwd)"
 PIN="$(git rev-parse HEAD)"
-TARGET="/absolute/path/to/your/project"
+TARGET="../your-project"
 python -I bin/install.py --source "$SOURCE" --ref "$PIN" \
   --target "$TARGET" --host codex --local --dry-run --plan install-plan.json
 ```
@@ -58,10 +58,20 @@ The ownership manifest is
 revision, host, scope and owned-file digests. Local scope adds a managed block to
 the project's root `AGENTS.md` or `CLAUDE.md`; global scope uses the namespace's
 instruction entry. Existing instructions outside the managed block remain.
-Generated skills are placed under the selected namespace; Codex configuration
-lists those skills, while Claude discovers its native skills directory. Host
-settings add the advisory hook unless `--no-hooks` is selected. Backups and
-transaction journals live under the same `engineer-install/` directory.
+Generated skills are placed under the selected namespace. Codex configuration
+uses paths such as `skills/onboard/SKILL.md`, resolved from `.codex/config.toml`'s
+directory; Claude discovers its native skills directory. Host settings add the
+advisory hook unless `--no-hooks` is selected. The hook locates the active project
+at invocation time, including when a session starts in a subdirectory, and uses
+`python` from `PATH`. Backups and transaction journals live under the same
+`engineer-install/` directory.
+
+Local role, workflow, command and managed-entry references start at the project
+root, using `.codex/` or `.claude/` without the install machine's directory or a
+worktree name. Global references resolve the active host home when used through
+`${CODEX_HOME:-$HOME/.codex}` or `${CLAUDE_CONFIG_DIR:-$HOME/.claude}`. Transaction
+plans and journals retain concrete source and target identities for review,
+drift checks and recovery; those records do not define runtime instruction paths.
 
 Each Codex agent has a small `.codex/agents/<role>.toml` wrapper with its required
 name and description, `model = "gpt-6.1-sol"` and
@@ -70,7 +80,14 @@ read and follow the complete installed `.codex/agents/<role>.md` counterpart
 before working, and to stop and report if that file is unavailable. The full
 method remains in Markdown. This is an instruction to read a file, rather than a
 native TOML include; Codex reads its own counterpart, while Claude retains its
-separate `.claude/agents/` files.
+separate `.claude/agents/` files. For example, a local executor wrapper contains:
+
+```toml
+developer_instructions = "Read and follow the complete role at .codex/agents/executor.md before acting. Read its local workflow and referenced shared rules; the assignment bounds your scope. Phase implementation requires the user's explicit instruction to implement that phase. If that file cannot be read, stop and report the missing counterpart."
+```
+
+The path has no quotation marks inside the instruction text. The outer quotation
+marks delimit the TOML string.
 
 The retired `guides/` and `maintenance/` directories are excluded from exports,
 including their `engineer/` and namespace-root variants, even when selecting an
@@ -83,9 +100,10 @@ legacy leftovers separately within the authorized cleanup scope.
 For a local Codex install, run from the target project's Git checkout:
 
 ```sh
-python -I "$TARGET/.codex/engineer/bin/engineer.py" query runtime-identity --pick packageName --raw
-python -I "$TARGET/.codex/engineer/bin/engineer.py" query update-context --config-dir "$TARGET/.codex" --runtime codex
-python -I "$TARGET/.codex/engineer/bin/engineer.py" query help
+cd "$TARGET"
+python -I .codex/engineer/bin/engineer.py query runtime-identity --pick packageName --raw
+python -I .codex/engineer/bin/engineer.py query update-context --config-dir .codex --runtime codex
+python -I .codex/engineer/bin/engineer.py query help
 ```
 
 The identity must be `engineer-runtime`. Check the context result's resolved
@@ -95,10 +113,11 @@ manifest and generated host configuration. For Claude, use `.claude` and
 shell is available, also exercise the sibling `engineer_run` launcher:
 
 ```sh
-sh "$TARGET/.codex/engineer/bin/engineer_run" query runtime-identity --pick packageName --raw
+sh .codex/engineer/bin/engineer_run query runtime-identity --pick packageName --raw
 ```
 
-Rerun the preview with the same source, revision, target, host and scope; unchanged
+Return to the source checkout and rerun the preview with the same source,
+revision, target, host and scope; unchanged
 managed exports should be reported as unchanged. Installation does not onboard
 the project or run its product checks. Restart or refresh the host as needed to
 load its configuration, then use `/onboard` or `/new-project` with the actual
