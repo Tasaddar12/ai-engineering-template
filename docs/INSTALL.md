@@ -155,9 +155,14 @@ python -I bin/migrate.py --source "$SOURCE" --ref "$PIN" \
   --target "$TARGET" --host codex --local --plan migration-plan.json
 ```
 
-Inspect each old path, destination, conflict and backup-only entry. Review the
-final plan and compute its file SHA-256. Apply only explicitly selected
-target-relative destination paths:
+Inspect each old path, destination, conflict and backup-only entry. Global
+migrations report `global-migration-reference` and refuse application when legacy
+namespace references occur in shell, Python, JSON, TOML or YAML files; reconcile
+those references for each file's consumer before applying. Markdown and text
+references are rewritten to portable host-home references.
+
+Review the final plan and compute its file SHA-256. Apply only explicitly
+selected target-relative destination paths:
 
 ```sh
 python -I bin/migrate.py --apply migration-plan.json \
