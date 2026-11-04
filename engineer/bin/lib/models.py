@@ -129,6 +129,9 @@ def agent_skills(args):
     blocks = []
     for skill in names:
         candidates = [root()/"skills"/skill/"SKILL.md", NAMESPACE/"skills"/skill/"SKILL.md"]
+        if resolve_host() == "codex":
+            candidates = [root()/".agents/skills"/skill/"SKILL.md",
+                          NAMESPACE.parent/".agents/skills"/skill/"SKILL.md", *candidates]
         path = next((p for p in candidates if p.is_file()), None)
         if path:
             blocks.append(read(path))

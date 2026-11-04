@@ -2,8 +2,8 @@
 # Install, update and migrate Engineer
 
 The `bin/` tools export a pinned local Git revision into a selected Claude or
-Codex namespace. They do not fetch a source repository implicitly. Use Git and
-Python 3.11 or newer; no third-party Python packages are required. The POSIX
+Codex installation layout. They do not fetch a source repository implicitly.
+Use Git and Python 3.11 or newer; no third-party Python packages are required. The POSIX
 launcher and shell workflow examples require a POSIX shell. Use Git Bash on
 Windows, or call the Python runtime directly.
 
@@ -28,8 +28,8 @@ transaction to the explicitly named JSON file.
 Use `--host claude` for Claude. For a global installation, select the intended home
 root with `--target` and replace `--local` with `--global`; for example,
 `--target "$HOME" --host codex --global`. Global scope affects the chosen home
-namespace and its instruction entry. Do not choose it when the intended scope is
-one project.
+namespace, instruction entry and skills directory. Do not choose it when the
+intended scope is one project.
 
 Global runtime execution honors `CODEX_HOME` and `CLAUDE_CONFIG_DIR`. Updating a
 global installation requires `.codex` for Codex or `.claude` for Claude as its
@@ -68,7 +68,15 @@ the pinned revision, exporter digests and installation identity checks still
 apply. Direct installation with the initial explicit source and target remains
 available without a saved plan.
 
-The exported assets live under `<target>/.codex/` or `<target>/.claude/`.
+Codex skills are installed under `<target>/.agents/skills/<skill>/SKILL.md`,
+including supporting files in each skill directory. For `--local`, `<target>` is
+the project root; for `--global`, select your home directory so skills live in
+`$HOME/.agents/skills`. This follows the
+[official Codex skill locations](https://developers.openai.com/codex/build-skills).
+Codex runtime, commands, agent definitions and configuration remain under
+`<target>/.codex/`. Claude keeps its exports, including skills, under
+`<target>/.claude/`.
+
 The ownership manifest is
 `<target>/<namespace>/engineer-install/manifest.json`. New schema 2 manifests
 record `source = "."`, `source_kind = "git-snapshot"`, the pinned revision, host,
@@ -76,10 +84,11 @@ scope, owned-file digests and an installation ID. The matching ID is stored in
 `engineer-install/identity.json`. Local scope adds a managed block to
 the project's root `AGENTS.md` or `CLAUDE.md`; global scope uses the namespace's
 instruction entry. Existing instructions outside the managed block remain.
-Generated skills are placed under the selected namespace. Codex configuration
-uses paths such as `skills/onboard/SKILL.md`, resolved from `.codex/config.toml`'s
-directory; Claude discovers its native skills directory. Host settings add the
-advisory hook unless `--no-hooks` is selected. The hook locates the active project
+Codex discovers `.agents/skills` automatically; the installer no longer adds
+`[[skills.config]]` entries for generated skills. Its managed configuration block
+still registers the advisory hook unless `--no-hooks` is selected. Claude
+discovers its native `.claude/skills` directory and retains its host settings,
+including the same optional hook. The hook locates the active project
 at invocation time, including when a session starts in a subdirectory, and uses
 `python` from `PATH`. Backups and transaction journals live under the same
 `engineer-install/` directory.
@@ -179,6 +188,24 @@ application to exact target-relative paths. Unselected work can leave an
 installation incomplete. Unmanaged additions, retired owned paths and project
 planning records are preserved. Revalidate after updating.
 
+For an older Codex installation, unchanged owned files in `.codex/skills` are
+exported to `.agents/skills`; the old files remain preserved. The updated managed
+configuration block removes the installer's old `[[skills.config]]` entries.
+User configuration outside that block remains intact. A legacy counterpart whose
+bytes differ from both its ownership digest and the new export becomes a conflict
+on its `.agents/skills` destination, with `legacy_skill_path` and
+`legacy_skill_before` identifying the original.
+Preserving that conflict leaves the new export unapplied and the installation
+incomplete. Reconcile the customization into the active skill location before
+using it, or explicitly select `backup-and-replace` to install the pinned
+canonical version. That resolution backs up the legacy bytes and keeps the
+original file. Once the new path is owned, later updates use its ownership record
+rather than treating the preserved old copy as a fresh conflict.
+
+Additional legacy skill files, such as custom skills or supporting assets, report
+`codex-skill-migration-required` and block ordinary update application. Preview
+and apply the reviewed migration mapping below to carry them into `.agents/skills`.
+
 A relocated Claude hook is retired only when its exact command is proven by a
 digest-linked snapshot of the previously owned settings. Uncertain ownership
 produces `legacy-hook-ownership-unresolved` and blocks application; reconcile the
@@ -186,17 +213,25 @@ ownership evidence before retrying. Other hooks in the same group are preserved.
 
 ## Migrate a legacy installation
 
-For a project with a legacy separate `.ai` tree or host `runtime/` layout,
-preview the mapping:
+For a project with a legacy separate `.ai` tree, host `runtime/` layout or
+Codex `.codex/skills` directory, preview the mapping:
 
 ```sh
 python -I bin/migrate.py --source "$SOURCE" --ref "$PIN" \
   --target "$TARGET" --host codex --local --plan migration-plan.json
 ```
 
-Inspect each old path, destination, conflict and backup-only entry. Global
-migrations report `global-migration-reference` and refuse application when legacy
-namespace references occur in shell, Python, JSON, TOML or YAML files; reconcile
+Inspect each old path, destination, conflict and backup-only entry. For Codex,
+`.ai/skills` and `.codex/skills` map to `.agents/skills`; Claude's `.ai/skills`
+continues to map to `.claude/skills`. Existing canonical exports receive
+backup-only legacy entries, while additional custom skills and assets receive
+copy entries or conflicts when the destination exists. Customized canonical
+counterparts still require the conflict reconciliation described above; migration
+does not silently activate the stock version. Original files remain in place,
+and selected mappings preserve their original bytes in transaction backups.
+
+Global migrations report `global-migration-reference` and refuse application
+when legacy namespace references occur in shell, Python, JSON, TOML or YAML files; reconcile
 those references for each file's consumer before applying. Markdown and text
 references are rewritten to portable host-home references.
 

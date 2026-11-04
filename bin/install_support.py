@@ -142,6 +142,10 @@ def namespace(host):
     return '.' + host
 
 
+def skills_directory(host):
+    return '.agents/skills' if host == 'codex' else '.claude/skills'
+
+
 def metadata(text, key, fallback):
     match = re.search(r'(?m)^' + re.escape(key) + r':\s*([^\n]+)', text.split('---', 2)[1] if text.startswith('---') else '')
     return match.group(1).strip().strip('\"\'') if match else fallback
@@ -313,10 +317,12 @@ def exports(source, pin, target, host, scope, no_hooks=False):
                 if role == 'planner':
                     header += 'effort: medium\n'
                 transformed = ('---' + header + '---' + pieces[2]).encode('utf-8')
-        add(nsname + '/' + name, transformed, mode, name)
+        destination = (skills_directory(host) + name[len('skills'):]
+                       if name.startswith('skills/') else nsname + '/' + name)
+        add(destination, transformed, mode, name)
         if name.startswith('commands/') and name.endswith('.md') and PurePosixPath(name).name != 'COMMAND.md':
             role = PurePosixPath(name).stem
-            add(nsname + '/skills/' + role + '/SKILL.md', transformed, 0o644, name)
+            add(skills_directory(host) + '/' + role + '/SKILL.md', transformed, 0o644, name)
         if host == 'codex' and name.startswith('agents/') and name.endswith('.md') and PurePosixPath(name).name != 'AGENT.md':
             role = PurePosixPath(name).stem
             text = transformed.decode('utf-8')
@@ -371,8 +377,8 @@ def exports(source, pin, target, host, scope, no_hooks=False):
         original = path.read_bytes() if path.exists() else b''
         tomllib.loads(original.decode('utf-8-sig'))
         lines = [BEGIN]
-        for name_ in sorted(p for p in payload if p.endswith('/SKILL.md')):
-            lines.extend(['[[skills.config]]', 'path = ' + json.dumps(PurePosixPath(name_).relative_to(nsname).as_posix()), 'enabled = true'])
+        # Codex discovers repository and personal .agents/skills automatically.
+        # Replacing our managed block also retires old .codex/skills registrations.
         if not no_hooks:
             lines.extend(['[[hooks.PreToolUse]]', 'matcher = "Agent|Task|Write|Edit|MultiEdit|NotebookEdit|apply_patch"',
                           '[[hooks.PreToolUse.hooks]]', 'type = "command"', 'command = ' + json.dumps(registered_hook), 'timeout = 10'])
@@ -457,6 +463,26 @@ def plan_update(source, ref, target, host, scope='local', no_hooks=False, kind='
                         'content': encoded(data), 'source_path': export['origins'][name],
                         'action': 'unchanged' if before['sha256'] == after and before['mode'] == mode else 'conflict' if conflict else 'write',
                         'resolution': 'preserve' if conflict else 'apply'})
+    if host == 'codex':
+        destinations = {e['path']: e for e in entries}
+        for suffix in inventory(target / '.codex/skills'):
+            legacy_name = '.codex/skills/' + suffix
+            legacy_before = current(target, legacy_name)
+            name = skills_directory(host) + '/' + suffix
+            entry = destinations.get(name)
+            owned = old.get('files', {}).get(legacy_name, {})
+            if entry is None:
+                relocated = old.get('files', {}).get(name, {})
+                if (kind != 'migrate' and not (relocated.get('source_path') == legacy_name
+                                              and current(target, name)['sha256'] is not None)):
+                    export['findings'].append({'code': 'codex-skill-migration-required', 'path': legacy_name,
+                                             'message': 'Preview migration to preserve this additional skill file in .agents/skills'})
+                continue
+            # Never activate a stock replacement for an edited legacy skill silently.
+            if (name not in old.get('files', {})
+                    and legacy_before['sha256'] not in (owned.get('sha256'), entry['sha256'])):
+                entry.update(action='conflict', resolution='preserve',
+                             legacy_skill_path=legacy_name, legacy_skill_before=legacy_before)
     legacy = (target / '.ai').exists() or (target / ns / 'runtime').exists()
     if kind != 'migrate' and legacy:
         export['findings'].append({'code': 'migration-required', 'path': '.', 'message': 'Preview migration before altering a legacy installation'})
@@ -483,7 +509,10 @@ def migration_plan(source, ref, target, host, scope='local', no_hooks=False):
     mapping = [('.ai/runtime', ns + '/engineer/bin'), (ns + '/runtime', ns + '/engineer/bin'),
                ('.ai/templates', ns + '/engineer/templates'), ('.ai/workflows', ns + '/engineer/workflows'),
                ('.ai/references', ns + '/engineer/references'), ('.ai/agents', ns + '/agents'),
-               ('.ai/commands', ns + '/commands'), ('.ai/hooks', ns + '/hooks'), ('.ai/skills', ns + '/skills')]
+               ('.ai/commands', ns + '/commands'), ('.ai/hooks', ns + '/hooks'),
+               ('.ai/skills', skills_directory(host))]
+    if host == 'codex':
+        mapping.append(('.codex/skills', skills_directory(host)))
     for old_root, new_root in mapping:
         directory = root / old_root
         if directory.is_symlink():
@@ -508,18 +537,22 @@ def migration_plan(source, ref, target, host, scope='local', no_hooks=False):
                         plan['findings'].append({'code': 'global-migration-reference', 'path': old_name,
                                                  'message': 'Reconcile global references for this file consumer before migration'})
                         continue
-                    portable_prefix = (reference_namespace(host, scope)
-                                       / PurePosixPath(new_prefix).relative_to(ns)).as_posix()
+                    if new_prefix.startswith('.agents/'):
+                        portable_prefix = new_prefix if scope == 'local' else '$HOME/' + new_prefix
+                    else:
+                        portable_prefix = (reference_namespace(host, scope)
+                                           / PurePosixPath(new_prefix).relative_to(ns)).as_posix()
                     text = text.replace(old_prefix + '/', portable_prefix + '/')
                 text = text.replace('phase_run', 'engineer_run')
                 data = text.encode('utf-8')
             before = current(root, name)
             backup_only = name in destinations or PurePosixPath(name).name == 'RULES.md'
+            unchanged = before == {'sha256': sha(data), 'mode': stat.S_IMODE(path.stat().st_mode)}
             plan['entries'].append({'path': name, 'legacy_path': old_name, 'legacy_before': current(root, old_name),
                                     'before': before, 'sha256': sha(data), 'content': encoded(data),
                                     'mode': stat.S_IMODE(path.stat().st_mode), 'source_path': old_name,
-                                    'action': 'backup-only' if backup_only else 'conflict' if before['sha256'] else 'write',
-                                    'resolution': 'backup' if backup_only else 'preserve' if before['sha256'] else 'apply'})
+                                    'action': 'backup-only' if backup_only else 'unchanged' if unchanged else 'conflict' if before['sha256'] else 'write',
+                                    'resolution': 'backup' if backup_only else 'preserve' if before['sha256'] and not unchanged else 'apply'})
             destinations.add(name)
     plan['complete'] = not plan['findings'] and not any(e['action'] == 'conflict' for e in plan['entries'])
     plan.pop('snapshot_token', None)
@@ -638,7 +671,9 @@ def apply(plan, selected=None, *, source=None, target=None):
         raise Refusal('plan-drift', 'Entry set changed')
     for entry in plan['entries']:
         actual = expected.get((entry['path'], entry.get('legacy_path', '')))
-        if not actual or any(entry.get(k) != actual.get(k) for k in ('sha256', 'mode', 'content', 'before', 'legacy_before', 'action')):
+        if not actual or any(entry.get(k) != actual.get(k) for k in (
+                'sha256', 'mode', 'content', 'before', 'legacy_before', 'action',
+                'legacy_skill_path', 'legacy_skill_before')):
             raise Refusal('plan-drift', entry['path'])
     if plan['schema'] == 2 and fresh['installation_before'] != plan.get('installation_before'):
         raise Refusal('installation-drift', 'Installation identity changed since preview')
@@ -658,6 +693,8 @@ def apply(plan, selected=None, *, source=None, target=None):
                 raise Refusal('target-drift', entry['path'])
             if entry.get('legacy_path') and current(root, entry['legacy_path']) != entry['legacy_before']:
                 raise Refusal('legacy-drift', entry['legacy_path'])
+            if entry.get('legacy_skill_path') and current(root, entry['legacy_skill_path']) != entry['legacy_skill_before']:
+                raise Refusal('legacy-drift', entry['legacy_skill_path'])
         manifest_name = namespace(host) + '/' + MANIFEST
         if current(root, manifest_name) != plan['manifest_before']:
             raise Refusal('manifest-drift', manifest_name)
@@ -699,11 +736,13 @@ def apply(plan, selected=None, *, source=None, target=None):
                         revision=plan['revision'], host=host, scope=plan['scope'], exporter=plan['exporter'])
         writes = {}
         for index, entry in enumerate(entries):
-            if entry.get('legacy_path'):
-                original = safe(root, entry['legacy_path']).read_bytes()
-                atomic(transaction / ('legacy-' + str(index)), original, entry['legacy_before']['mode'])
-                journal['legacy_backups'].append({'path': entry['legacy_path'], 'backup': 'legacy-' + str(index),
-                                                  'before': entry['legacy_before'], 'destination': entry['path']})
+            legacy_path = entry.get('legacy_path') or entry.get('legacy_skill_path')
+            if legacy_path:
+                legacy_before = entry.get('legacy_before') or entry['legacy_skill_before']
+                original = safe(root, legacy_path).read_bytes()
+                atomic(transaction / ('legacy-' + str(index)), original, legacy_before['mode'])
+                journal['legacy_backups'].append({'path': legacy_path, 'backup': 'legacy-' + str(index),
+                                                  'before': legacy_before, 'destination': entry['path']})
             if entry['action'] == 'backup-only' or entry.get('resolution') == 'preserve':
                 continue
             content = base64.b64decode(entry['content'], validate=True)
@@ -714,7 +753,7 @@ def apply(plan, selected=None, *, source=None, target=None):
         # Identical pre-existing bytes do not establish ownership when --select
         # applies only part of a plan. Every current export must have both the
         # expected ownership record and the expected installed bytes/mode.
-        current_exports = [e for e in fresh['entries'] if not e.get('legacy_path')]
+        current_exports = [e for e in fresh['entries'] if e['action'] != 'backup-only']
         manifest['complete'] = all(
             manifest['files'].get(e['path']) == {
                 'sha256': e['sha256'], 'mode': e['mode'], 'source_path': e['source_path']}
