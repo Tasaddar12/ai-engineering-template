@@ -251,9 +251,11 @@ def exports(source, pin, target, host, scope, no_hooks=False):
                 'model': 'gpt-6.1-sol',
                 'model_reasoning_effort': 'high',
                 'developer_instructions': (
-                    'Before doing any work, read the complete agent instructions at '
-                    + json.dumps(counterpart, ensure_ascii=False)
-                    + ' and follow them for this assignment. '
+                    'Read and follow the complete role at '
+                    + counterpart
+                    + ' before acting. '
+                    'Read its local workflow and referenced shared rules; the assignment bounds your scope. '
+                    "Phase implementation requires the user's explicit instruction to implement that phase. "
                     'If that file cannot be read, stop and report the missing counterpart.'
                 ),
             }

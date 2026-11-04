@@ -133,9 +133,18 @@ class CurrentInstallerTests(unittest.TestCase):
                             self.assertEqual("gpt-6.1-sol", role["model"])
                             self.assertEqual("high", role["model_reasoning_effort"])
                             counterpart = wrapper.with_suffix(".md")
-                            self.assertIn(json.dumps(counterpart.as_posix(), ensure_ascii=False),
-                                          role["developer_instructions"])
-                            self.assertIn("read the complete agent instructions", role["developer_instructions"])
+                            instructions = role["developer_instructions"]
+                            self.assertEqual(
+                                "Read and follow the complete role at " + counterpart.as_posix()
+                                + " before acting. Read its local workflow and referenced shared rules; "
+                                "the assignment bounds your scope. Phase implementation requires the user's "
+                                "explicit instruction to implement that phase. "
+                                "If that file cannot be read, stop and report the missing counterpart.",
+                                instructions)
+                            self.assertNotIn('"', instructions)
+                            instruction_line = next(line for line in wrapper.read_text(encoding="utf-8").splitlines()
+                                                    if line.startswith("developer_instructions = "))
+                            self.assertNotIn('\\"', instruction_line)
                             self.assertIn("stop and report", role["developer_instructions"])
                             self.assertNotIn("<role>", role["developer_instructions"])
                             self.assertIn("<role>", counterpart.read_text(encoding="utf-8"))
