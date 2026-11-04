@@ -14,14 +14,14 @@ From the source checkout, choose an actual target project and host:
 ```sh
 SOURCE="$(pwd)"
 PIN="$(git rev-parse HEAD)"
-TARGET="/absolute/path/to/your/project"
+TARGET="../your-project"
 python -I bin/install.py --source "$SOURCE" --ref "$PIN" \
   --target "$TARGET" --host codex --local --dry-run --plan install-plan.json
 ```
 
 `--ref` is resolved to an immutable commit. Only committed source at that revision
 is exported; uncommitted source edits are not part of the installation. Review
-the plan's target, host, revision, findings, file actions and conflict resolutions.
+the chosen target, host, revision, findings, file actions and conflict resolutions.
 `--dry-run` previews without applying the export. `--plan` writes the complete
 transaction to the explicitly named JSON file.
 
@@ -31,10 +31,18 @@ root with `--target` and replace `--local` with `--global`; for example,
 namespace and its instruction entry. Do not choose it when the intended scope is
 one project.
 
+Global runtime execution honors `CODEX_HOME` and `CLAUDE_CONFIG_DIR`. Updating a
+global installation requires `.codex` for Codex or `.claude` for Claude as its
+namespace directory name; a different parent home directory is supported.
+Update discovery and installer previews for custom namespace names stop with
+`unsupported-global-namespace`, preserving that directory.
+
 The installer supports both hosts with explicit scope; there is no implicit
 host, revision or target selection. `--no-hooks` omits the installer's advisory
 hook registration. `--skip-deps` is a compatibility flag: the current runtime
-uses only the Python standard library.
+uses only the Python standard library. Installer and runtime entry points
+suppress Python bytecode caches so execution does not add machine-specific cache
+data to the installation.
 
 ## Apply the exact plan
 
@@ -43,7 +51,7 @@ After reviewing `install-plan.json`, compute its current file hash and apply it:
 ```sh
 PLAN_HASH="$(python -I -c 'import hashlib,pathlib,sys; print(hashlib.sha256(pathlib.Path(sys.argv[1]).read_bytes()).hexdigest())' install-plan.json)"
 python -I bin/install.py --apply install-plan.json \
-  --reviewed-plan-sha256 "$PLAN_HASH"
+  --source "$SOURCE" --target "$TARGET" --reviewed-plan-sha256 "$PLAN_HASH"
 ```
 
 The hash identifies the exact plan file bytes; it is not the plan's internal
@@ -52,16 +60,38 @@ and compute the hash from the final file. Application regenerates the export
 from the captured revision and rejects source-exporter drift, stale target
 content or changed ownership metadata.
 
+New schema 2 plans store `source` and `target` as `.` logical roots, including
+plans written with `--plan`. Supply the actual source checkout and target again
+with `--source` and `--target` when applying. A fresh-install plan can be applied
+to a different explicitly chosen empty target when its recorded contents match;
+the pinned revision, exporter digests and installation identity checks still
+apply. Direct installation with the initial explicit source and target remains
+available without a saved plan.
+
 The exported assets live under `<target>/.codex/` or `<target>/.claude/`.
 The ownership manifest is
-`<target>/<namespace>/engineer-install/manifest.json`, with the source, pinned
-revision, host, scope and owned-file digests. Local scope adds a managed block to
+`<target>/<namespace>/engineer-install/manifest.json`. New schema 2 manifests
+record `source = "."`, `source_kind = "git-snapshot"`, the pinned revision, host,
+scope, owned-file digests and an installation ID. The matching ID is stored in
+`engineer-install/identity.json`. Local scope adds a managed block to
 the project's root `AGENTS.md` or `CLAUDE.md`; global scope uses the namespace's
 instruction entry. Existing instructions outside the managed block remain.
-Generated skills are placed under the selected namespace; Codex configuration
-lists those skills, while Claude discovers its native skills directory. Host
-settings add the advisory hook unless `--no-hooks` is selected. Backups and
-transaction journals live under the same `engineer-install/` directory.
+Generated skills are placed under the selected namespace. Codex configuration
+uses paths such as `skills/onboard/SKILL.md`, resolved from `.codex/config.toml`'s
+directory; Claude discovers its native skills directory. Host settings add the
+advisory hook unless `--no-hooks` is selected. The hook locates the active project
+at invocation time, including when a session starts in a subdirectory, and uses
+`python` from `PATH`. Backups and transaction journals live under the same
+`engineer-install/` directory.
+
+Local role, workflow, command and managed-entry references start at the project
+root, using `.codex/` or `.claude/` without the install machine's directory or a
+worktree name. Generated runtime shell paths resolve the active Git root when
+invoked, including from a nested directory. Global references resolve the active
+host home when used through
+`${CODEX_HOME:-$HOME/.codex}` or `${CLAUDE_CONFIG_DIR:-$HOME/.claude}`. Newly
+written plans, manifests and transaction journals use logical roots and relative
+file entries without recording the source checkout's or target's location.
 
 Each Codex agent has a small `.codex/agents/<role>.toml` wrapper with its required
 name and description, `model = "gpt-6.1-sol"` and
@@ -70,7 +100,14 @@ read and follow the complete installed `.codex/agents/<role>.md` counterpart
 before working, and to stop and report if that file is unavailable. The full
 method remains in Markdown. This is an instruction to read a file, rather than a
 native TOML include; Codex reads its own counterpart, while Claude retains its
-separate `.claude/agents/` files.
+separate `.claude/agents/` files. For example, a local executor wrapper contains:
+
+```toml
+developer_instructions = "Read and follow the complete role at .codex/agents/executor.md before acting. Read its local workflow and referenced shared rules; the assignment bounds your scope. Phase implementation requires the user's explicit instruction to implement that phase. If that file cannot be read, stop and report the missing counterpart."
+```
+
+The path has no quotation marks inside the instruction text. The outer quotation
+marks delimit the TOML string.
 
 The retired `guides/` and `maintenance/` directories are excluded from exports,
 including their `engineer/` and namespace-root variants, even when selecting an
@@ -83,9 +120,10 @@ legacy leftovers separately within the authorized cleanup scope.
 For a local Codex install, run from the target project's Git checkout:
 
 ```sh
-python -I "$TARGET/.codex/engineer/bin/engineer.py" query runtime-identity --pick packageName --raw
-python -I "$TARGET/.codex/engineer/bin/engineer.py" query update-context --config-dir "$TARGET/.codex" --runtime codex
-python -I "$TARGET/.codex/engineer/bin/engineer.py" query help
+cd "$TARGET"
+python -I .codex/engineer/bin/engineer.py query runtime-identity --pick packageName --raw
+python -I .codex/engineer/bin/engineer.py query update-context --config-dir .codex --runtime codex
+python -I .codex/engineer/bin/engineer.py query help
 ```
 
 The identity must be `engineer-runtime`. Check the context result's resolved
@@ -95,10 +133,16 @@ manifest and generated host configuration. For Claude, use `.claude` and
 shell is available, also exercise the sibling `engineer_run` launcher:
 
 ```sh
-sh "$TARGET/.codex/engineer/bin/engineer_run" query runtime-identity --pick packageName --raw
+sh .codex/engineer/bin/engineer_run query runtime-identity --pick packageName --raw
 ```
 
-Rerun the preview with the same source, revision, target, host and scope; unchanged
+Inside a Git checkout, an installed runtime rejects an `ENGINEER_ROOT` value
+that conflicts with the active checkout before root-sensitive reads or writes.
+Correct or clear a stale value before continuing. Source-checkout runtimes and
+explicit-root operation outside Git retain their existing behavior.
+
+Return to the source checkout and rerun the preview with the same source,
+revision, target, host and scope; unchanged
 managed exports should be reported as unchanged. Installation does not onboard
 the project or run its product checks. Restart or refresh the host as needed to
 load its configuration, then use `/onboard` or `/new-project` with the actual
@@ -115,9 +159,18 @@ python -I bin/update.py --source "$SOURCE" --ref "$PIN" \
   --target "$TARGET" --host codex --local --plan update-plan.json
 ```
 
-Review the complete plan, compute its file SHA-256 as above, and run
-`python -I bin/update.py --apply update-plan.json --reviewed-plan-sha256 "$PLAN_HASH"`.
-Update previews are not applied merely by generating them.
+Review the complete plan, compute its file SHA-256 as above, and apply it with
+the explicit source and target:
+
+```sh
+python -I bin/update.py --apply update-plan.json \
+  --source "$SOURCE" --target "$TARGET" --reviewed-plan-sha256 "$PLAN_HASH"
+```
+
+Update previews are not applied merely by generating them. For schema 2
+installations, the runtime's `query update.changes` also requires an explicit
+`--source` checkout and `--ref`; `update-context` provides no remembered
+executable source checkout path.
 
 An owned file modified locally is a conflict rather than an automatic overwrite.
 Preserve it or reconcile it explicitly; a selected conflict requires the reviewed
@@ -125,6 +178,11 @@ Preserve it or reconcile it explicitly; a selected conflict requires the reviewe
 application to exact target-relative paths. Unselected work can leave an
 installation incomplete. Unmanaged additions, retired owned paths and project
 planning records are preserved. Revalidate after updating.
+
+A relocated Claude hook is retired only when its exact command is proven by a
+digest-linked snapshot of the previously owned settings. Uncertain ownership
+produces `legacy-hook-ownership-unresolved` and blocks application; reconcile the
+ownership evidence before retrying. Other hooks in the same group are preserved.
 
 ## Migrate a legacy installation
 
@@ -136,13 +194,18 @@ python -I bin/migrate.py --source "$SOURCE" --ref "$PIN" \
   --target "$TARGET" --host codex --local --plan migration-plan.json
 ```
 
-Inspect each old path, destination, conflict and backup-only entry. Review the
-final plan and compute its file SHA-256. Apply only explicitly selected
-target-relative destination paths:
+Inspect each old path, destination, conflict and backup-only entry. Global
+migrations report `global-migration-reference` and refuse application when legacy
+namespace references occur in shell, Python, JSON, TOML or YAML files; reconcile
+those references for each file's consumer before applying. Markdown and text
+references are rewritten to portable host-home references.
+
+Review the final plan and compute its file SHA-256. Apply only explicitly
+selected target-relative destination paths:
 
 ```sh
 python -I bin/migrate.py --apply migration-plan.json \
-  --reviewed-plan-sha256 "$PLAN_HASH" \
+  --source "$SOURCE" --target "$TARGET" --reviewed-plan-sha256 "$PLAN_HASH" \
   --select .codex/engineer/bin/engineer.py
 ```
 
@@ -167,7 +230,15 @@ python -I bin/update.py --target "$TARGET" --host codex \
   --rollback "$TARGET/.codex/engineer-install/backups/TRANSACTION_ID"
 ```
 
-Replace `TRANSACTION_ID` with the actual returned directory. Rollback validates
-the target, journal, backup digests and current file state before restoring
-files. If files have changed since application, preserve the evidence and
-reconcile the reported drift rather than overwriting later work.
+Replace `TRANSACTION_ID` with the actual returned directory. Keep
+`engineer-install/identity.json` with the installation when moving the complete
+project. Schema 2 journals use `target = "."`; rollback checks their host and
+installation ID against that marker, then validates backup digests and current
+file state before restoring files. This permits rollback after relocation and
+refuses a backup copied from another installation. If files have changed since
+application, preserve the evidence and reconcile the reported drift rather than
+overwriting later work.
+
+Legacy schema 1 journals retain their original target binding. Existing backup
+bytes are preserved, including historical path data; the portable metadata
+format applies to newly written records.

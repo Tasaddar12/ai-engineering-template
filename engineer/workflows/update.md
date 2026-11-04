@@ -187,7 +187,7 @@ Apply only the exact reviewed plan once the existing update authorization or exp
 ```bash
 : "${UPDATE_PLAN:?The complete pinned preview must exist before apply}"
 : "${REVIEWED_PLAN_SHA256:?The SHA256 of the exact reviewed plan bytes is required}"
-UPDATE_RESULT=$(python -I "$UPDATER" --apply "$UPDATE_PLAN" --reviewed-plan-sha256 "$REVIEWED_PLAN_SHA256") || exit $?
+UPDATE_RESULT=$(python -I "$UPDATER" --apply "$UPDATE_PLAN" --source "$UPDATE_SOURCE" --target "$UPDATE_TARGET" --reviewed-plan-sha256 "$REVIEWED_PLAN_SHA256") || exit $?
 printf '%s\n' "$UPDATE_RESULT"
 UPDATE_BACKUP=$(engineer_run query json.get --payload "$UPDATE_RESULT" --field backup --raw) || exit $?
 ```

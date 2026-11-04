@@ -8,7 +8,14 @@ import shlex
 
 
 def _quote(value):
-    return shlex.quote(str(value).replace("\\", "/"))
+    value = str(value).replace("\\", "/")
+    for variable, host in (("CODEX_HOME", "codex"), ("CLAUDE_CONFIG_DIR", "claude")):
+        prefix = "${" + variable + ":-$HOME/." + host + "}"
+        if value == prefix or value.startswith(prefix + "/"):
+            return '"' + prefix + '"' + shlex.quote(value[len(prefix):])
+    if value.startswith((".codex/", ".claude/")):
+        return '"$(git rev-parse --show-toplevel 2>/dev/null || printf \'%s\' "${ENGINEER_ROOT:-.}")"/' + shlex.quote(value)
+    return shlex.quote(value)
 
 
 def _quoted_end(text, start):

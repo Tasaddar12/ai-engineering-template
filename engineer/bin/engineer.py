@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+sys.dont_write_bytecode = True
 from pathlib import Path
 
 # Pipes are UTF-8 protocol boundaries even under Windows legacy code pages and
