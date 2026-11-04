@@ -123,7 +123,8 @@ class CurrentInstallerTests(unittest.TestCase):
                         config = tomllib.loads((namespace / "config.toml").read_text())
                         self.assertTrue(config["skills"]["config"])
                         for record in config["skills"]["config"]:
-                            self.assertTrue(Path(record["path"]).is_file(), record)
+                            self.assertEqual({"name", "enabled"}, set(record))
+                            self.assertTrue((self.target / ".agents/skills" / record["name"] / "SKILL.md").is_file(), record)
                         wrappers = list((namespace / "agents").glob("*.toml"))
                         self.assertEqual(20, len(wrappers))
                         for wrapper in wrappers:
@@ -135,7 +136,8 @@ class CurrentInstallerTests(unittest.TestCase):
                             counterpart = wrapper.with_suffix(".md")
                             instructions = role["developer_instructions"]
                             self.assertEqual(
-                                "Read and follow the complete role at " + counterpart.as_posix()
+                                "Read and follow the complete role at " + installer.reference_root(host, scope)
+                                + "/agents/" + wrapper.stem + ".md"
                                 + " before acting. Read its local workflow and referenced shared rules; "
                                 "the assignment bounds your scope. Phase implementation requires the user's "
                                 "explicit instruction to implement that phase. "
@@ -339,7 +341,9 @@ class CurrentInstallerTests(unittest.TestCase):
                 registered = settings["hooks"]["PreToolUse"][0]["hooks"][0]["command"]
                 payload = {"tool_name": "Write", "cwd": str(self.target),
                            "tool_input": {"file_path": str(self.base / "outside-checkout.txt")}}
-                result = subprocess.run([shell, "-c", registered], cwd=self.base, input=json.dumps(payload),
+                nested = self.target / "nested directory"
+                nested.mkdir()
+                result = subprocess.run([shell, "-c", registered], cwd=nested, input=json.dumps(payload),
                                         env={**os.environ, "ENGINEER_REVIEW_LITERAL": "expanded"},
                                         capture_output=True, text=True, encoding="utf-8", timeout=30)
                 self.assertEqual(0, result.returncode, result.stderr)
@@ -358,7 +362,7 @@ class CurrentInstallerTests(unittest.TestCase):
         git(source, "add", "engineer", "commands")
         git(source, "commit", "-m", "Minimal source ownership fixture")
         exported = installer.exports(source, "HEAD", self.target, "codex", "local", no_hooks=True)
-        self.assertEqual(5, len(exported["payload"]))
+        self.assertEqual(6, len(exported["payload"]))
         for name, (data, mode) in exported["payload"].items():
             installer.atomic(self.target / name, data, mode)
         preview = self.cli("--source", source, "--ref", "HEAD", "--target", self.target,
@@ -374,7 +378,7 @@ class CurrentInstallerTests(unittest.TestCase):
         preview = self.cli("--source", source, "--ref", "HEAD", "--target", self.target,
                            "--host", "codex", "--local", "--no-hooks", "--dry-run")
         self.assertTrue(self.apply_plan(preview)["complete"])
-        self.assertEqual(5, len(json.loads(manifest_path.read_text())["files"]))
+        self.assertEqual(6, len(json.loads(manifest_path.read_text())["files"]))
 
 
 class ExportJsonAdapters(unittest.TestCase):

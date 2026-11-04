@@ -224,7 +224,7 @@ def _node_calls(text, command, source):
     return text
 
 
-def _shell(body, command, source, runtime_path):
+def _shell(body, command, source, runtime_path, runtime_file_shell=None):
     if source.endswith("code-review-disposition.md"):
         # This exact operation has a dedicated fresh ledger implementation;
         # generic JSON projection cannot preserve identity/history semantics.
@@ -238,7 +238,7 @@ def _shell(body, command, source, runtime_path):
     if source.endswith(("spec-phase.md", "ui-phase.md", "specless-probe-fallback.md")):
         variable = "UI_PROBE_JS" if source.endswith("ui-phase.md") else "EDGE_PROBE_JS"
         pattern = r'(?ms)^_ENGINEER_RT=[^\n]*\n'+variable+r'=\$\(for .*?^fi\n(?=\n# (?:Write the Requirements|Element extraction|THE ONE DIVERGENCE))'
-        replacement = ('[ -f '+_quote(runtime_path)+' ] || { printf \'%s\\n\' \'ERROR: installed Python workflow runtime is missing; restore the pinned installation before probing.\' >&2; exit 1; }\n')
+        replacement = ('[ -f '+(runtime_file_shell or _quote(runtime_path))+' ] || { printf \'%s\\n\' \'ERROR: installed Python workflow runtime is missing; restore the pinned installation before probing.\' >&2; exit 1; }\n')
         body = re.sub(pattern, lambda _: replacement, body)
         if source.endswith("specless-probe-fallback.md"):
             body = re.sub(r'(?ms)^_ENGINEER_RT=[^\n]*\n_engineer_lib(?:\(\))? \{.*?^\[ -n "\$SPEC_SECTION_JS" \][^\n]*\n', lambda _: replacement, body)
@@ -268,7 +268,7 @@ def _shell(body, command, source, runtime_path):
     return _node_calls(body, command, source)
 
 
-def transform(text, source_name, runtime_path):
+def transform(text, source_name, runtime_path, runtime_command=None, runtime_file_shell=None):
     """Return full text with recognized retained shell adapters translated."""
     source = source_name.replace("\\", "/")
     runtime_path = runtime_path.replace("\\", "/")
@@ -277,7 +277,7 @@ def transform(text, source_name, runtime_path):
     crlf = "\r\n" in text and text.count("\r\n") == text.count("\n")
     if crlf:
         text = text.replace("\r\n", "\n")
-    command = lambda verb: "python -I "+_quote(runtime_path)+" query "+verb
+    command = lambda verb: (runtime_command or "python -I "+_quote(runtime_path))+" query "+verb
     # Operative examples in commands/skills share these exact source contracts.
     if source.endswith("engineer/workflows/execute-phase.md"):
         text = text.replace('worktree.record-agent --manifest "$WAVE_WORKTREE_MANIFEST" --agent-id',
@@ -293,10 +293,10 @@ def transform(text, source_name, runtime_path):
                             'QB_CREATE_JSON=$(engineer_run quick-batch create --file "$TASK_FILE" --base-revision "$(git rev-parse HEAD)" $VALIDATE_PARAM $RESEARCH_PARAM --raw)\nQB_CREATE_RC=$?')
         text = text.replace('```bash\nQB_CREATE_RC=$?\n', '```bash\n')
     if source.endswith(".sh"):
-        result = _shell(text, command, source, runtime_path)
+        result = _shell(text, command, source, runtime_path, runtime_file_shell)
         return result.replace("\n", "\r\n") if crlf else result
     fence = re.compile(r"(?ms)^([ \t]*)```(bash|sh|shell|zsh)[ \t]*\n(.*?)^\1```[ \t]*$")
     def block(match):
-        return match[1]+"```"+match[2]+"\n"+_shell(match[3], command, source, runtime_path)+match[1]+"```"
+        return match[1]+"```"+match[2]+"\n"+_shell(match[3], command, source, runtime_path, runtime_file_shell)+match[1]+"```"
     result = fence.sub(block, text)
     return result.replace("\n", "\r\n") if crlf else result

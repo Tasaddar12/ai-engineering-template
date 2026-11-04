@@ -25,6 +25,7 @@ PREFIXES = ('agents/', 'commands/', 'engineer/', 'hooks/', 'skills/', 'bin/')
 BEGIN = '# BEGIN ENGINEER MANAGED'
 END = '# END ENGINEER MANAGED'
 MANIFEST = 'engineer-install/manifest.json'
+PORTABLE_SOURCE = 'git:explicit-source-required'
 
 
 class Refusal(Exception):
@@ -157,12 +158,32 @@ def managed_block(original, block, begin=BEGIN, end=END):
     return original + (b'\n' if original and not original.endswith(b'\n') else b'') + block + b'\n'
 
 
-def adapt(content, host, ns, source_name, findings):
+def reference_root(host, scope):
+    if scope == 'local':
+        return namespace(host)
+    variable = 'CODEX_HOME' if host == 'codex' else 'CLAUDE_CONFIG_DIR'
+    return '${' + variable + ':-$HOME/' + namespace(host) + '}'
+
+
+def shell_root(host, scope):
+    """A shell expression, never an installation-time pathname."""
+    if scope == 'global':
+        return reference_root(host, scope)
+    return ('$(git rev-parse --show-toplevel 2>/dev/null || '
+            'printf \'%s\' "${ENGINEER_ROOT:-$PWD}")/' + namespace(host))
+
+
+def shell_path(host, scope, suffix):
+    return '"' + shell_root(host, scope) + '/' + suffix + '"'
+
+
+def adapt(content, host, ns, source_name, findings, scope='local'):
     if not source_name.endswith(('.md', '.sh', '.txt', '.yaml', '.yml', '.toml')):
         return content
     text = content.decode('utf-8')
     # Replace the complete obsolete bootstrap, preserving every surrounding method.
-    launcher = ('ENGINEER_RUN=' + shlex.quote((ns / 'engineer/bin/engineer_run').as_posix()) + '\n'
+    ns = Path(reference_root(host, scope))
+    launcher = ('ENGINEER_RUN=' + shell_path(host, scope, 'engineer/bin/engineer_run') + '\n'
                 'engineer_run() { sh "$ENGINEER_RUN" "$@"; }\nexport ENGINEER_RUN')
     text = re.sub(r'(?m)^_ENGINEER_SHIM_NAME=.*$', lambda _: launcher, text)
     for directory in ('references', 'templates', 'workflows'):
@@ -171,18 +192,20 @@ def adapt(content, host, ns, source_name, findings):
     text = text.replace('~/.claude/engineer/', str(ns / 'engineer').replace('\\', '/') + '/')
     if host == 'codex':
         text = text.replace('.claude/CLAUDE.md', '.codex/AGENTS.md').replace('CLAUDE.md', 'AGENTS.md')
-    field_function = ('_engineer_field() { python -I ' + shlex.quote((ns / 'bin/install_support.py').as_posix())
+    field_function = ('_engineer_field() { python -I ' + shell_path(host, scope, 'bin/install_support.py')
                       + ' json-field "$1" "$2"; }')
     text = re.sub(r'_engineer_field\(\) \{ node -e [^\n]*?; \}', lambda _: field_function, text)
     text = text.replace('. engineer/workflows/_runtime-launcher.snippet.sh',
-                        '. ' + shlex.quote((ns / 'engineer/workflows/_runtime-launcher.snippet.sh').as_posix()))
+                        '. ' + shell_path(host, scope, 'engineer/workflows/_runtime-launcher.snippet.sh'))
     transforms = Path(__file__).with_name('export_transforms.py')
     if transforms.is_file():
         spec = importlib.util.spec_from_file_location('_engineer_export_transforms', transforms)
         module = importlib.util.module_from_spec(spec)
         sys.modules[spec.name] = module
         spec.loader.exec_module(module)
-        text = module.transform(text, source_name, str(ns / 'engineer/bin/engineer.py'))
+        text = module.transform(text, source_name, str(ns / 'engineer/bin/engineer.py'),
+                                runtime_command='sh ' + shell_path(host, scope, 'engineer/bin/engineer_run'),
+                                runtime_file_shell=shell_path(host, scope, 'engineer/bin/engineer.py'))
     # Dynamic JavaScript and .cjs helpers have no safe general mechanical translation.
     # Keep their complete methods and report exact locations, never fabricate an equivalent.
     shell = False
@@ -201,7 +224,7 @@ def adapt(content, host, ns, source_name, findings):
 def exports(source, pin, target, host, scope, no_hooks=False):
     repo, resolved, files = snapshot(source, pin)
     nsname = namespace(host)
-    ns = target / nsname
+    ns = Path(reference_root(host, scope))
     payload, origins, findings, shared, portable_names = {}, {}, [], set(), {}
     def add(name, data, mode=0o644, origin=None):
         name = relative(name)
@@ -222,7 +245,7 @@ def exports(source, pin, target, host, scope, no_hooks=False):
             role = PurePosixPath(name).parts[1]
             if 'commands/' + role + '.md' in files:
                 continue
-        transformed = adapt(data, host, ns, name, findings)
+        transformed = adapt(data, host, ns, name, findings, scope)
         if host == 'claude' and name.startswith('agents/') and name.endswith('.md') and PurePosixPath(name).name != 'AGENT.md':
             text = transformed.decode('utf-8')
             if text.startswith('---'):
@@ -236,9 +259,13 @@ def exports(source, pin, target, host, scope, no_hooks=False):
                     header += 'effort: medium\n'
                 transformed = ('---' + header + '---' + pieces[2]).encode('utf-8')
         add(nsname + '/' + name, transformed, mode, name)
+        if host == 'codex' and name.startswith('skills/'):
+            add('.agents/' + name, transformed, mode, name)
         if name.startswith('commands/') and name.endswith('.md') and PurePosixPath(name).name != 'COMMAND.md':
             role = PurePosixPath(name).stem
             add(nsname + '/skills/' + role + '/SKILL.md', transformed, 0o644, name)
+            if host == 'codex':
+                add('.agents/skills/' + role + '/SKILL.md', transformed, 0o644, name)
         if host == 'codex' and name.startswith('agents/') and name.endswith('.md') and PurePosixPath(name).name != 'AGENT.md':
             role = PurePosixPath(name).stem
             text = transformed.decode('utf-8')
@@ -266,24 +293,26 @@ def exports(source, pin, target, host, scope, no_hooks=False):
     entry_path = safe(target, entry)
     prior = entry_path.read_bytes() if entry_path.exists() else b''
     block = ('<!-- ENGINEER MANAGED BEGIN -->\nRead the complete installed command catalog at '
-             + str(ns / 'commands/COMMAND.md') + ', workflow catalog at ' + str(ns / 'engineer/workflows/WORKFLOW.md')
-             + ', and role catalog at ' + str(ns / 'agents/AGENT.md') + '.\nRuntime: '
-             + str(ns / 'engineer/bin/engineer_run') + '. Preserve project instructions and explicit phase authority.\n'
+             + (ns / 'commands/COMMAND.md').as_posix() + ', workflow catalog at ' + (ns / 'engineer/workflows/WORKFLOW.md').as_posix()
+             + ', and role catalog at ' + (ns / 'agents/AGENT.md').as_posix() + '.\nRuntime: '
+             + (ns / 'engineer/bin/engineer_run').as_posix() + '. Preserve project instructions and explicit phase authority.\n'
              '<!-- ENGINEER MANAGED END -->').encode()
     add(entry, managed_block(prior, block, '<!-- ENGINEER MANAGED BEGIN -->', '<!-- ENGINEER MANAGED END -->'), origin='generated:entry')
     shared.add(entry)
-    hook_command = shlex.join([Path(sys.executable).as_posix(), '-I',
-                               (ns / 'hooks/worktree-path-guard.py').as_posix(), '--host', host])
+    hook_command = 'sh ' + shell_path(host, scope, 'hooks/engineer-invoke.sh') + ' --host ' + host
     # Retire the exact command generated before paths were shell-quoted as data.
-    legacy_hook_command = '"' + sys.executable + '" -I "' + str(ns / 'hooks/worktree-path-guard.py') + '" --host ' + host
+    legacy_hook_command = '"' + sys.executable + '" -I "' + str(target / nsname / 'hooks/worktree-path-guard.py') + '" --host ' + host
+    previous_hook_command = shlex.join([Path(sys.executable).as_posix(), '-I',
+                                       (target / nsname / 'hooks/worktree-path-guard.py').as_posix(), '--host', host])
     if host == 'codex':
         name = nsname + '/config.toml'
         path = safe(target, name)
         original = path.read_bytes() if path.exists() else b''
         tomllib.loads(original.decode('utf-8-sig'))
         lines = [BEGIN]
-        for name_ in sorted(p for p in payload if p.endswith('/SKILL.md')):
-            lines.extend(['[[skills.config]]', 'path = ' + json.dumps(str(target / name_)), 'enabled = true'])
+        for name_ in sorted(p for p in payload if p.startswith('.agents/skills/') and p.endswith('/SKILL.md')):
+            skill_name = metadata(payload[name_][0].decode('utf-8'), 'name', PurePosixPath(name_).parent.name)
+            lines.extend(['[[skills.config]]', 'name = ' + json.dumps(skill_name), 'enabled = true'])
         if not no_hooks:
             lines.extend(['[[hooks.PreToolUse]]', 'matcher = "Agent|Task|Write|Edit|MultiEdit|NotebookEdit|apply_patch"',
                           '[[hooks.PreToolUse.hooks]]', 'type = "command"', 'command = ' + json.dumps(hook_command), 'timeout = 10'])
@@ -304,7 +333,7 @@ def exports(source, pin, target, host, scope, no_hooks=False):
         for group in entries:
             siblings = [h for h in group.get('hooks', [])
                         if not (h.get('type') == 'command'
-                                and h.get('command') in (hook_command, legacy_hook_command))]
+                                and h.get('command') in (hook_command, legacy_hook_command, previous_hook_command))]
             if len(siblings) == len(group.get('hooks', [])):
                 preserved.append(group)
             elif siblings:
@@ -393,7 +422,7 @@ def migration_plan(source, ref, target, host, scope='local', no_hooks=False):
             if path.suffix in ('.md', '.sh', '.py', '.yaml', '.toml', '.json', '.txt'):
                 text = data.decode('utf-8')
                 for old_prefix, new_prefix in sorted(mapping, key=lambda pair: -len(pair[0])):
-                    text = text.replace(old_prefix + '/', str(root / new_prefix).replace('\\', '/') + '/')
+                    text = text.replace(old_prefix + '/', new_prefix + '/')
                 text = text.replace('phase_run', 'engineer_run')
                 data = text.encode('utf-8')
             before = current(root, name)
@@ -409,11 +438,19 @@ def migration_plan(source, ref, target, host, scope='local', no_hooks=False):
     return plan
 
 
+def transaction_state(root, host):
+    """Machine-local safety evidence is deliberately outside deployable exports."""
+    identity = {'target': str(root), 'host': host}
+    key = sha(canonical(identity))
+    directory = target_root(Path(tempfile.gettempdir()) / 'engineer-install-transactions' / key)
+    return directory, identity
+
+
 @contextlib.contextmanager
 def install_lock(root, host):
-    directory = root / namespace(host) / 'engineer-install'
-    path = safe(root, str(directory.relative_to(root) / 'install.lock').replace('\\', '/'))
-    directory.mkdir(parents=True, exist_ok=True)
+    directory, identity = transaction_state(root, host)
+    directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+    path = safe(directory, 'install.lock')
     with path.open('a+b') as handle:
         handle.seek(0, os.SEEK_END)
         if handle.tell() == 0:
@@ -430,6 +467,12 @@ def install_lock(root, host):
         except OSError as exc:
             raise Refusal('install-locked', str(directory)) from exc
         try:
+            binding = safe(directory, 'binding.json')
+            if binding.exists():
+                if json.loads(binding.read_text(encoding='utf-8')) != identity:
+                    raise Refusal('transaction-target-mismatch', str(directory))
+            else:
+                json_write(binding, identity)
             yield directory
         finally:
             handle.seek(0)
@@ -440,14 +483,16 @@ def install_lock(root, host):
 
 
 def rollback(root, transaction):
-    journal = json.loads((transaction / 'journal.json').read_text(encoding='utf-8'))
+    journal = json.loads(safe(transaction, 'journal.json').read_text(encoding='utf-8'))
+    if journal.get('target') != str(root):
+        raise Refusal('rollback-target-mismatch', str(transaction))
     # Validate the whole rollback before restoring its first file.
     for entry in journal['changes']:
         actual = current(root, entry['path'])['sha256']
         if actual not in (entry['after'], entry['before']['sha256']):
             raise Refusal('rollback-drift', entry['path'], transaction=str(transaction))
         if entry['before']['sha256'] is not None:
-            if sha((transaction / entry['backup']).read_bytes()) != entry['before']['sha256']:
+            if sha(safe(transaction, entry['backup']).read_bytes()) != entry['before']['sha256']:
                 raise Refusal('backup-corrupt', entry['path'])
     for entry in reversed(journal['changes']):
         path = safe(root, entry['path'])
@@ -459,7 +504,7 @@ def rollback(root, transaction):
         if entry['before']['sha256'] is None:
             path.unlink(missing_ok=True)
         else:
-            backup = transaction / entry['backup']
+            backup = safe(transaction, entry['backup'])
             content = backup.read_bytes()
             if sha(content) != entry['before']['sha256']:
                 raise Refusal('backup-corrupt', str(backup))
@@ -509,13 +554,16 @@ def apply(plan, selected=None):
         manifest_name = namespace(host) + '/' + MANIFEST
         if current(root, manifest_name) != plan['manifest_before']:
             raise Refusal('manifest-drift', manifest_name)
-        for journal_path in state.glob('backups/*/journal.json'):
-            if json.loads(journal_path.read_text())['status'] not in ('committed', 'rolled-back'):
-                raise Refusal('transaction-recovery-required', str(journal_path.parent))
+        for store in (state, root / namespace(host) / 'engineer-install'):
+            for journal_path in store.glob('backups/*/journal.json'):
+                checked = safe(store, journal_path.relative_to(store).as_posix())
+                if json.loads(checked.read_text())['status'] not in ('committed', 'rolled-back'):
+                    raise Refusal('transaction-recovery-required', str(journal_path.parent))
         manifest_name = namespace(host) + '/' + MANIFEST
         manifest_path = safe(root, manifest_name)
         prior_manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else None
-        identity = {key: plan[key] for key in ('source', 'revision', 'host', 'scope', 'exporter')}
+        identity = {key: plan[key] for key in ('revision', 'host', 'scope', 'exporter')}
+        identity['source'] = PORTABLE_SOURCE
         if (plan['kind'] != 'migrate' and len(entries) == len(plan['entries'])
                 and all(e['action'] == 'unchanged' for e in entries)
                 and prior_manifest and prior_manifest.get('complete')
@@ -527,12 +575,12 @@ def apply(plan, selected=None):
                     'target': str(root), 'files': [], 'backup': None,
                     'legacy_preserved': True, 'verification': 'not-executed'}
         transaction = state / 'backups' / uuid.uuid4().hex
-        safe(root, str((transaction / 'journal.json').relative_to(root)).replace('\\', '/'))
+        safe(state, str((transaction / 'journal.json').relative_to(state)).replace('\\', '/'))
         transaction.mkdir(parents=True)
         json_write(transaction / 'reviewed-plan.json', plan)
         journal = {'schema': 1, 'target': str(root), 'status': 'preparing', 'changes': [], 'legacy_backups': []}
         manifest = prior_manifest if prior_manifest is not None else {'files': {}}
-        manifest.update(schema=1, source=plan['source'], revision=plan['revision'], host=host,
+        manifest.update(schema=1, source=PORTABLE_SOURCE, revision=plan['revision'], host=host,
                         scope=plan['scope'], exporter=plan['exporter'])
         writes = {}
         for index, entry in enumerate(entries):
@@ -622,9 +670,10 @@ def cli(kind, argv=None):
             if not args.target or not args.host:
                 raise Refusal('rollback-target-required', 'Specify --target and --host')
             target = target_root(args.target)
-            transaction = Path(args.rollback).resolve()
-            allowed = target / namespace(args.host) / 'engineer-install/backups'
-            if transaction.parent != allowed or not transaction.is_dir() or transaction.is_symlink():
+            transaction = target_root(args.rollback)
+            state, _ = transaction_state(target, args.host)
+            allowed = (state / 'backups', target / namespace(args.host) / 'engineer-install/backups')
+            if transaction.parent not in allowed or not transaction.is_dir():
                 raise Refusal('rollback-path-refused', str(transaction))
             with install_lock(target, args.host):
                 journal = json.loads((transaction / 'journal.json').read_text())
