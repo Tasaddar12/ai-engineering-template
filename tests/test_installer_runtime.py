@@ -606,14 +606,15 @@ class CurrentInstallerTests(unittest.TestCase):
     def test_codex_role_skill_query_reads_discoverable_project_skills(self):
         self.install()
         role = self.target / ".codex/agents/executor.md"
-        role.write_text(role.read_text().replace("name: executor", "name: executor\nskills: onboard", 1))
+        role.write_text(role.read_text(encoding="utf-8").replace(
+            "name: executor", "name: executor\nskills: onboard", 1), encoding="utf-8")
         runtime = self.target / ".codex/engineer/bin/engineer.py"
         result = subprocess.run([sys.executable, "-I", str(runtime), "query", "agent-skills",
                                  "executor", "--skills-only"], cwd=self.target,
                                 env={**os.environ, "ENGINEER_ROOT": str(self.target), "ENGINEER_HOST": "codex"},
                                 capture_output=True, text=True, encoding="utf-8", check=True)
-        expected = (self.target / ".agents/skills/onboard/SKILL.md").read_text()
-        self.assertIn(expected, result.stdout)
+        expected = (self.target / ".agents/skills/onboard/SKILL.md").read_text(encoding="utf-8")
+        self.assertIn(expected, json.loads(result.stdout))
 
     def test_codex_skill_upgrade_retires_only_managed_registration_and_rolls_back(self):
         self.legacy_codex_skills()
