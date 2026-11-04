@@ -21,7 +21,7 @@ python -I bin/install.py --source "$SOURCE" --ref "$PIN" \
 
 `--ref` is resolved to an immutable commit. Only committed source at that revision
 is exported; uncommitted source edits are not part of the installation. Review
-the plan's target, host, revision, findings, file actions and conflict resolutions.
+the chosen target, host, revision, findings, file actions and conflict resolutions.
 `--dry-run` previews without applying the export. `--plan` writes the complete
 transaction to the explicitly named JSON file.
 
@@ -43,7 +43,7 @@ After reviewing `install-plan.json`, compute its current file hash and apply it:
 ```sh
 PLAN_HASH="$(python -I -c 'import hashlib,pathlib,sys; print(hashlib.sha256(pathlib.Path(sys.argv[1]).read_bytes()).hexdigest())' install-plan.json)"
 python -I bin/install.py --apply install-plan.json \
-  --reviewed-plan-sha256 "$PLAN_HASH"
+  --source "$SOURCE" --target "$TARGET" --reviewed-plan-sha256 "$PLAN_HASH"
 ```
 
 The hash identifies the exact plan file bytes; it is not the plan's internal
@@ -52,10 +52,20 @@ and compute the hash from the final file. Application regenerates the export
 from the captured revision and rejects source-exporter drift, stale target
 content or changed ownership metadata.
 
+New schema 2 plans store `source` and `target` as `.` logical roots, including
+plans written with `--plan`. Supply the actual source checkout and target again
+with `--source` and `--target` when applying. A fresh-install plan can be applied
+to a different explicitly chosen empty target when its recorded contents match;
+the pinned revision, exporter digests and installation identity checks still
+apply. Direct installation with the initial explicit source and target remains
+available without a saved plan.
+
 The exported assets live under `<target>/.codex/` or `<target>/.claude/`.
 The ownership manifest is
-`<target>/<namespace>/engineer-install/manifest.json`, with the source, pinned
-revision, host, scope and owned-file digests. Local scope adds a managed block to
+`<target>/<namespace>/engineer-install/manifest.json`. New schema 2 manifests
+record `source = "."`, `source_kind = "git-snapshot"`, the pinned revision, host,
+scope, owned-file digests and an installation ID. The matching ID is stored in
+`engineer-install/identity.json`. Local scope adds a managed block to
 the project's root `AGENTS.md` or `CLAUDE.md`; global scope uses the namespace's
 instruction entry. Existing instructions outside the managed block remain.
 Generated skills are placed under the selected namespace. Codex configuration
@@ -69,9 +79,9 @@ at invocation time, including when a session starts in a subdirectory, and uses
 Local role, workflow, command and managed-entry references start at the project
 root, using `.codex/` or `.claude/` without the install machine's directory or a
 worktree name. Global references resolve the active host home when used through
-`${CODEX_HOME:-$HOME/.codex}` or `${CLAUDE_CONFIG_DIR:-$HOME/.claude}`. Transaction
-plans and journals retain concrete source and target identities for review,
-drift checks and recovery; those records do not define runtime instruction paths.
+`${CODEX_HOME:-$HOME/.codex}` or `${CLAUDE_CONFIG_DIR:-$HOME/.claude}`. Newly
+written plans, manifests and transaction journals use logical roots and relative
+file entries without recording the source checkout's or target's location.
 
 Each Codex agent has a small `.codex/agents/<role>.toml` wrapper with its required
 name and description, `model = "gpt-6.1-sol"` and
@@ -134,9 +144,18 @@ python -I bin/update.py --source "$SOURCE" --ref "$PIN" \
   --target "$TARGET" --host codex --local --plan update-plan.json
 ```
 
-Review the complete plan, compute its file SHA-256 as above, and run
-`python -I bin/update.py --apply update-plan.json --reviewed-plan-sha256 "$PLAN_HASH"`.
-Update previews are not applied merely by generating them.
+Review the complete plan, compute its file SHA-256 as above, and apply it with
+the explicit source and target:
+
+```sh
+python -I bin/update.py --apply update-plan.json \
+  --source "$SOURCE" --target "$TARGET" --reviewed-plan-sha256 "$PLAN_HASH"
+```
+
+Update previews are not applied merely by generating them. For schema 2
+installations, the runtime's `query update.changes` also requires an explicit
+`--source` checkout and `--ref`; `update-context` reports `source_path` as null
+instead of remembering a checkout location.
 
 An owned file modified locally is a conflict rather than an automatic overwrite.
 Preserve it or reconcile it explicitly; a selected conflict requires the reviewed
@@ -166,7 +185,7 @@ selected target-relative destination paths:
 
 ```sh
 python -I bin/migrate.py --apply migration-plan.json \
-  --reviewed-plan-sha256 "$PLAN_HASH" \
+  --source "$SOURCE" --target "$TARGET" --reviewed-plan-sha256 "$PLAN_HASH" \
   --select .codex/engineer/bin/engineer.py
 ```
 
@@ -191,7 +210,15 @@ python -I bin/update.py --target "$TARGET" --host codex \
   --rollback "$TARGET/.codex/engineer-install/backups/TRANSACTION_ID"
 ```
 
-Replace `TRANSACTION_ID` with the actual returned directory. Rollback validates
-the target, journal, backup digests and current file state before restoring
-files. If files have changed since application, preserve the evidence and
-reconcile the reported drift rather than overwriting later work.
+Replace `TRANSACTION_ID` with the actual returned directory. Keep
+`engineer-install/identity.json` with the installation when moving the complete
+project. Schema 2 journals use `target = "."`; rollback checks their host and
+installation ID against that marker, then validates backup digests and current
+file state before restoring files. This permits rollback after relocation and
+refuses a backup copied from another installation. If files have changed since
+application, preserve the evidence and reconcile the reported drift rather than
+overwriting later work.
+
+Legacy schema 1 journals retain their original target binding. Existing backup
+bytes are preserved, including historical path data; the portable metadata
+format applies to newly written records.
