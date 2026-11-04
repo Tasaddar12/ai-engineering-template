@@ -154,8 +154,8 @@ python -I bin/update.py --apply update-plan.json \
 
 Update previews are not applied merely by generating them. For schema 2
 installations, the runtime's `query update.changes` also requires an explicit
-`--source` checkout and `--ref`; `update-context` reports `source_path` as null
-instead of remembering a checkout location.
+`--source` checkout and `--ref`; `update-context` provides no remembered
+executable source checkout path.
 
 An owned file modified locally is a conflict rather than an automatic overwrite.
 Preserve it or reconcile it explicitly; a selected conflict requires the reviewed
