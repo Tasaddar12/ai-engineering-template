@@ -1,4 +1,5 @@
 """Exercise the current pinned installer against real disposable repositories."""
+import base64
 import hashlib
 import importlib.util
 import json
@@ -123,7 +124,8 @@ class CurrentInstallerTests(unittest.TestCase):
                         config = tomllib.loads((namespace / "config.toml").read_text())
                         self.assertTrue(config["skills"]["config"])
                         for record in config["skills"]["config"]:
-                            self.assertTrue(Path(record["path"]).is_file(), record)
+                            self.assertFalse(Path(record["path"]).is_absolute(), record)
+                            self.assertTrue((namespace / record["path"]).is_file(), record)
                         wrappers = list((namespace / "agents").glob("*.toml"))
                         self.assertEqual(20, len(wrappers))
                         for wrapper in wrappers:
@@ -134,8 +136,10 @@ class CurrentInstallerTests(unittest.TestCase):
                             self.assertEqual("high", role["model_reasoning_effort"])
                             counterpart = wrapper.with_suffix(".md")
                             instructions = role["developer_instructions"]
+                            role_reference = (counterpart.relative_to(self.target).as_posix()
+                                              if scope == "local" else "${CODEX_HOME:-$HOME/.codex}/agents/" + counterpart.name)
                             self.assertEqual(
-                                "Read and follow the complete role at " + counterpart.as_posix()
+                                "Read and follow the complete role at " + role_reference
                                 + " before acting. Read its local workflow and referenced shared rules; "
                                 "the assignment bounds your scope. Phase implementation requires the user's "
                                 "explicit instruction to implement that phase. "
@@ -159,6 +163,103 @@ class CurrentInstallerTests(unittest.TestCase):
                     self.assertTrue(rerun["no_op"])
                     self.assertEqual([], rerun["files"])
                     self.assertEqual(before, self.snapshot())
+
+    def test_local_codex_role_references_survive_project_relocation(self):
+        self.install()
+        original_target = self.target
+        relocated = self.base / "relocated checkout with spaces"
+        original_target.rename(relocated)
+        self.assertFalse(original_target.exists())
+        wrappers = list((relocated / ".codex/agents").glob("*.toml"))
+        self.assertEqual(20, len(wrappers))
+        for wrapper in wrappers:
+            with self.subTest(role=wrapper.stem):
+                raw = wrapper.read_text(encoding="utf-8")
+                instructions = tomllib.loads(raw)["developer_instructions"]
+                prefix = "Read and follow the complete role at "
+                reference = instructions.removeprefix(prefix).split(" before acting.", 1)[0]
+                self.assertEqual(f".codex/agents/{wrapper.stem}.md", reference)
+                self.assertNotIn('\\"', raw)
+                self.assertNotIn(str(original_target), instructions)
+                self.assertFalse(Path(reference).is_absolute())
+                self.assertEqual(wrapper.with_suffix(".md"), relocated / reference)
+                self.assertIn("<role>", (relocated / reference).read_text(encoding="utf-8"))
+
+    def test_exported_references_do_not_depend_on_install_target(self):
+        for host in ("codex", "claude"):
+            for scope in ("local", "global"):
+                with self.subTest(host=host, scope=scope):
+                    first = installer.exports(self.source, self.pin, self.target, host, scope)["payload"]
+                    other = self.base / ".worktrees/unrelated checkout"
+                    second = installer.exports(self.source, self.pin, other, host, scope)["payload"]
+                    self.assertEqual(first, second)
+                    for name, (data, _) in first.items():
+                        for absolute in (self.target, other, Path(sys.executable)):
+                            for spelling in (str(absolute), absolute.as_posix()):
+                                self.assertNotIn(spelling.encode(), data, name)
+
+    def test_migration_references_remain_portable(self):
+        legacy = self.target / ".ai/commands/custom.md"
+        legacy.parent.mkdir(parents=True)
+        legacy.write_text("Read .ai/references/custom.md and .ai/runtime/engineer.py.\n", newline="\n")
+        for scope in ("local", "global"):
+            with self.subTest(scope=scope):
+                plan = installer.migration_plan(self.source, self.pin, self.target, "codex", scope)
+                entry = next(e for e in plan["entries"] if e.get("legacy_path") == ".ai/commands/custom.md")
+                content = base64.b64decode(entry["content"]).decode()
+                prefix = ".codex" if scope == "local" else "${CODEX_HOME:-$HOME/.codex}"
+                self.assertEqual(f"Read {prefix}/engineer/references/custom.md and "
+                                 f"{prefix}/engineer/bin/engineer.py.\n", content)
+                self.assertNotIn(str(self.target), content)
+
+    def test_global_migration_refuses_unknown_path_consumers(self):
+        legacy = self.target / ".ai/commands/custom.py"
+        legacy.parent.mkdir(parents=True)
+        legacy.write_text("open('.ai/references/custom.md')\n", newline="\n")
+        plan = installer.migration_plan(self.source, self.pin, self.target, "codex", "global")
+        self.assertIn("global-migration-reference", [f["code"] for f in plan["findings"]])
+        failure = self.apply_plan(plan, "--select", ".codex/commands/custom.py", expected=2)
+        self.assertEqual("export-blocked", failure["error"])
+        self.assertFalse((self.target / ".codex/commands/custom.py").exists())
+        self.assertEqual("open('.ai/references/custom.md')\n", legacy.read_text())
+
+    def test_unprefixed_role_references_use_the_installed_host(self):
+        source = b"Read ~/.claude/agents/security-auditor.md and @~/.claude/references/rules.md."
+        for host in ("codex", "claude"):
+            for scope in ("local", "global"):
+                ns = installer.reference_namespace(host, scope)
+                actual = installer.adapt(source, host, ns, "engineer/workflows/secure-phase.md", []).decode()
+                self.assertEqual(f"Read {ns}/agents/security-auditor.md and @{ns}/engineer/references/rules.md.", actual)
+
+    def test_global_bootstrap_and_hook_use_active_host_home(self):
+        shell = posix_shell.find_posix_shell("bash")
+        if not shell:
+            self.skipTest("No POSIX shell is installed")
+        for host, variable in (("codex", "CODEX_HOME"), ("claude", "CLAUDE_CONFIG_DIR")):
+            with self.subTest(host=host):
+                self.target = self.base / (host + " custom home $literal ' quoted")
+                self.target.mkdir()
+                git(self.target, "init", "-b", "main")
+                self.install(host, "global")
+                ns = self.target / ("." + host)
+                env = {**os.environ, variable: str(ns), "ENGINEER_ROOT": str(self.target), "ENGINEER_HOST": host}
+                source = b'_ENGINEER_SHIM_NAME=obsolete\nengineer_run query runtime-identity --pick packageName --raw\n'
+                exported = installer.adapt(source, host, installer.reference_namespace(host, "global"),
+                                           "engineer/workflows/smoke.sh", []).decode()
+                result = subprocess.run([shell, "-c", exported], cwd=self.base, env=env,
+                                        capture_output=True, text=True, encoding="utf-8", timeout=30)
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertEqual("engineer-runtime", result.stdout.strip())
+                settings = (tomllib.loads((ns / "config.toml").read_text()) if host == "codex"
+                            else json.loads((ns / "settings.json").read_text()))
+                registered = settings["hooks"]["PreToolUse"][0]["hooks"][0]["command"]
+                event = {"tool_name": "Write", "cwd": str(self.target),
+                         "tool_input": {"file_path": str(self.base / "outside.txt")}}
+                result = subprocess.run([shell, "-c", registered], cwd=self.base, env=env,
+                                        input=json.dumps(event), capture_output=True, text=True,
+                                        encoding="utf-8", timeout=30)
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertIn("Write target is outside", json.loads(result.stdout)["hookSpecificOutput"]["additionalContext"])
 
     def test_retired_directories_are_excluded_even_from_older_sources(self):
         source = self.base / "legacy-source"
@@ -285,17 +386,17 @@ class CurrentInstallerTests(unittest.TestCase):
         failure = self.cli("--apply", path, "--reviewed-plan-sha256", "0" * 64, expected=2)
         self.assertEqual("review-token-mismatch", failure["error"])
 
-    def test_installed_bootstrap_runs_from_another_directory_with_literal_path(self):
+    def test_installed_bootstrap_runs_from_project_root_with_relative_path(self):
         shell = posix_shell.find_posix_shell("bash")
         if not shell:
             self.skipTest("No POSIX shell is installed")
         self.install()
-        namespace = self.target / ".codex"
+        namespace = Path(".codex")
         source = '_ENGINEER_SHIM_NAME="engineer_run"; obsolete bootstrap\nengineer_run query runtime-identity --pick packageName --raw\n'
         exported = installer.adapt(source.encode(), "codex", namespace,
                                    "engineer/workflows/smoke.sh", []).decode()
         env = {**os.environ, "ENGINEER_ROOT": str(self.target), "ENGINEER_HOST": "codex"}
-        result = subprocess.run([shell, "-c", exported], cwd=self.base, env=env,
+        result = subprocess.run([shell, "-c", exported], cwd=self.target, env=env,
                                 capture_output=True, text=True, encoding="utf-8", timeout=30)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual("engineer-runtime", result.stdout.strip())
@@ -309,8 +410,12 @@ class CurrentInstallerTests(unittest.TestCase):
                   + '" --host claude')
         siblings = [{"type": "command", "command": "keep-first", "timeout": 7},
                     {"type": "command", "command": "keep-last", "timeout": 19}]
+        previous = shlex.join(["previous-python-install/python", "-I",
+                               (self.target / ".claude/hooks/worktree-path-guard.py").as_posix(),
+                               "--host", "claude"])
         original = {"matcher": "Write|Edit", "timeout": 23, "custom_metadata": {"keep": True},
-                    "hooks": [siblings[0], own, {**own, "command": legacy}, siblings[1]]}
+                    "hooks": [siblings[0], own, {**own, "command": legacy},
+                              {**own, "command": previous}, siblings[1]]}
         settings["hooks"]["PreToolUse"] = [original]
         settings_path.write_text(json.dumps(settings))
         self.install("claude")
@@ -339,7 +444,9 @@ class CurrentInstallerTests(unittest.TestCase):
                 registered = settings["hooks"]["PreToolUse"][0]["hooks"][0]["command"]
                 payload = {"tool_name": "Write", "cwd": str(self.target),
                            "tool_input": {"file_path": str(self.base / "outside-checkout.txt")}}
-                result = subprocess.run([shell, "-c", registered], cwd=self.base, input=json.dumps(payload),
+                subdirectory = self.target / "src/nested"
+                subdirectory.mkdir(parents=True)
+                result = subprocess.run([shell, "-c", registered], cwd=subdirectory, input=json.dumps(payload),
                                         env={**os.environ, "ENGINEER_REVIEW_LITERAL": "expanded"},
                                         capture_output=True, text=True, encoding="utf-8", timeout=30)
                 self.assertEqual(0, result.returncode, result.stderr)

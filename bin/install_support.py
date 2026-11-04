@@ -157,25 +157,57 @@ def managed_block(original, block, begin=BEGIN, end=END):
     return original + (b'\n' if original and not original.endswith(b'\n') else b'') + block + b'\n'
 
 
+def reference_namespace(host, scope):
+    ns = namespace(host)
+    variable = 'CODEX_HOME' if host == 'codex' else 'CLAUDE_CONFIG_DIR'
+    return PurePosixPath(ns if scope == 'local' else '${' + variable + ':-$HOME/' + ns + '}')
+
+
+def shell_path(path):
+    """Quote paths as data while expanding only the generated host-home prefix."""
+    value = path.as_posix()
+    for host in ('codex', 'claude'):
+        prefix = reference_namespace(host, 'global').as_posix()
+        if value == prefix or value.startswith(prefix + '/'):
+            return '"' + prefix + '"' + shlex.quote(value[len(prefix):])
+    return shlex.quote(value)
+
+
+def hook_command(host, scope):
+    """Locate the installed hook at invocation time, never pin the installer machine."""
+    if scope == 'local':
+        locate = ("import subprocess; result = subprocess.run(['git', 'rev-parse', '--show-toplevel'], "
+                  "capture_output=True, text=True); root = Path(result.stdout.strip()) if result.returncode == 0 else Path.cwd(); "
+                  "hook = root / " + repr(namespace(host) + '/hooks/worktree-path-guard.py') + '; ')
+    else:
+        variable = 'CODEX_HOME' if host == 'codex' else 'CLAUDE_CONFIG_DIR'
+        locate = ("import os; hook = Path(os.environ.get(" + repr(variable) + ") or Path.home() / "
+                  + repr(namespace(host)) + ") / 'hooks/worktree-path-guard.py'; ")
+    code = ("from pathlib import Path; import runpy, sys; " + locate
+            + "sys.argv = [str(hook), '--host', " + repr(host) + "]; runpy.run_path(str(hook), run_name='__main__')")
+    return shlex.join(['python', '-I', '-c', code])
+
+
 def adapt(content, host, ns, source_name, findings):
     if not source_name.endswith(('.md', '.sh', '.txt', '.yaml', '.yml', '.toml')):
         return content
     text = content.decode('utf-8')
     # Replace the complete obsolete bootstrap, preserving every surrounding method.
-    launcher = ('ENGINEER_RUN=' + shlex.quote((ns / 'engineer/bin/engineer_run').as_posix()) + '\n'
+    launcher = ('ENGINEER_RUN=' + shell_path(ns / 'engineer/bin/engineer_run') + '\n'
                 'engineer_run() { sh "$ENGINEER_RUN" "$@"; }\nexport ENGINEER_RUN')
     text = re.sub(r'(?m)^_ENGINEER_SHIM_NAME=.*$', lambda _: launcher, text)
     for directory in ('references', 'templates', 'workflows'):
         text = text.replace('@~/.claude/' + directory + '/', '@' + str(ns / 'engineer' / directory).replace('\\', '/') + '/')
     text = text.replace('@~/.claude/', '@' + str(ns).replace('\\', '/') + '/')
     text = text.replace('~/.claude/engineer/', str(ns / 'engineer').replace('\\', '/') + '/')
+    text = text.replace('~/.claude/', ns.as_posix() + '/')
     if host == 'codex':
         text = text.replace('.claude/CLAUDE.md', '.codex/AGENTS.md').replace('CLAUDE.md', 'AGENTS.md')
-    field_function = ('_engineer_field() { python -I ' + shlex.quote((ns / 'bin/install_support.py').as_posix())
+    field_function = ('_engineer_field() { python -I ' + shell_path(ns / 'bin/install_support.py')
                       + ' json-field "$1" "$2"; }')
     text = re.sub(r'_engineer_field\(\) \{ node -e [^\n]*?; \}', lambda _: field_function, text)
     text = text.replace('. engineer/workflows/_runtime-launcher.snippet.sh',
-                        '. ' + shlex.quote((ns / 'engineer/workflows/_runtime-launcher.snippet.sh').as_posix()))
+                        '. ' + shell_path(ns / 'engineer/workflows/_runtime-launcher.snippet.sh'))
     transforms = Path(__file__).with_name('export_transforms.py')
     if transforms.is_file():
         spec = importlib.util.spec_from_file_location('_engineer_export_transforms', transforms)
@@ -201,7 +233,7 @@ def adapt(content, host, ns, source_name, findings):
 def exports(source, pin, target, host, scope, no_hooks=False):
     repo, resolved, files = snapshot(source, pin)
     nsname = namespace(host)
-    ns = target / nsname
+    ns = reference_namespace(host, scope)
     payload, origins, findings, shared, portable_names = {}, {}, [], set(), {}
     def add(name, data, mode=0o644, origin=None):
         name = relative(name)
@@ -244,6 +276,7 @@ def exports(source, pin, target, host, scope, no_hooks=False):
             text = transformed.decode('utf-8')
             # The Markdown export owns the complete method. Keep the native
             # wrapper small so edits to that method do not leave a stale copy.
+            # These are instruction references, not native TOML include paths.
             counterpart = (ns / name).as_posix()
             values = {
                 'name': role,
@@ -266,16 +299,25 @@ def exports(source, pin, target, host, scope, no_hooks=False):
     entry_path = safe(target, entry)
     prior = entry_path.read_bytes() if entry_path.exists() else b''
     block = ('<!-- ENGINEER MANAGED BEGIN -->\nRead the complete installed command catalog at '
-             + str(ns / 'commands/COMMAND.md') + ', workflow catalog at ' + str(ns / 'engineer/workflows/WORKFLOW.md')
-             + ', and role catalog at ' + str(ns / 'agents/AGENT.md') + '.\nRuntime: '
-             + str(ns / 'engineer/bin/engineer_run') + '. Preserve project instructions and explicit phase authority.\n'
+             + (ns / 'commands/COMMAND.md').as_posix() + ', workflow catalog at ' + (ns / 'engineer/workflows/WORKFLOW.md').as_posix()
+             + ', and role catalog at ' + (ns / 'agents/AGENT.md').as_posix() + '.\nRuntime: '
+             + (ns / 'engineer/bin/engineer_run').as_posix() + '. Preserve project instructions and explicit phase authority.\n'
              '<!-- ENGINEER MANAGED END -->').encode()
     add(entry, managed_block(prior, block, '<!-- ENGINEER MANAGED BEGIN -->', '<!-- ENGINEER MANAGED END -->'), origin='generated:entry')
     shared.add(entry)
-    hook_command = shlex.join([Path(sys.executable).as_posix(), '-I',
-                               (ns / 'hooks/worktree-path-guard.py').as_posix(), '--host', host])
-    # Retire the exact command generated before paths were shell-quoted as data.
-    legacy_hook_command = '"' + sys.executable + '" -I "' + str(ns / 'hooks/worktree-path-guard.py') + '" --host ' + host
+    registered_hook = hook_command(host, scope)
+    # Match only our exact hook target/arguments, independent of the old Python.
+    # Preserve other commands, including a similarly named hook in another tree.
+    old_hook_path = os.path.normcase(str(target / nsname / 'hooks/worktree-path-guard.py'))
+    def owns_hook(value):
+        if value == registered_hook:
+            return True
+        try:
+            argv = shlex.split(value)
+        except (ValueError, TypeError):
+            return False
+        return (len(argv) == 5 and argv[1] == '-I' and argv[3:] == ['--host', host]
+                and os.path.normcase(str(Path(argv[2]))) == old_hook_path)
     if host == 'codex':
         name = nsname + '/config.toml'
         path = safe(target, name)
@@ -283,10 +325,10 @@ def exports(source, pin, target, host, scope, no_hooks=False):
         tomllib.loads(original.decode('utf-8-sig'))
         lines = [BEGIN]
         for name_ in sorted(p for p in payload if p.endswith('/SKILL.md')):
-            lines.extend(['[[skills.config]]', 'path = ' + json.dumps(str(target / name_)), 'enabled = true'])
+            lines.extend(['[[skills.config]]', 'path = ' + json.dumps(PurePosixPath(name_).relative_to(nsname).as_posix()), 'enabled = true'])
         if not no_hooks:
             lines.extend(['[[hooks.PreToolUse]]', 'matcher = "Agent|Task|Write|Edit|MultiEdit|NotebookEdit|apply_patch"',
-                          '[[hooks.PreToolUse.hooks]]', 'type = "command"', 'command = ' + json.dumps(hook_command), 'timeout = 10'])
+                          '[[hooks.PreToolUse.hooks]]', 'type = "command"', 'command = ' + json.dumps(registered_hook), 'timeout = 10'])
         lines.append(END)
         result = managed_block(original, '\n'.join(lines).encode())
         tomllib.loads(result.decode('utf-8-sig'))
@@ -304,14 +346,14 @@ def exports(source, pin, target, host, scope, no_hooks=False):
         for group in entries:
             siblings = [h for h in group.get('hooks', [])
                         if not (h.get('type') == 'command'
-                                and h.get('command') in (hook_command, legacy_hook_command))]
+                                and owns_hook(h.get('command')))]
             if len(siblings) == len(group.get('hooks', [])):
                 preserved.append(group)
             elif siblings:
                 preserved.append({**group, 'hooks': siblings})
         entries[:] = preserved
         entries.append({'matcher': 'Agent|Task|Write|Edit|MultiEdit|NotebookEdit|apply_patch',
-                        'hooks': [{'type': 'command', 'command': hook_command, 'timeout': 10}]})
+                        'hooks': [{'type': 'command', 'command': registered_hook, 'timeout': 10}]})
         add(name, json.dumps(settings, indent=2, ensure_ascii=False).encode() + b'\n', origin='generated:claude-settings')
         shared.add(name)
     return {'source': str(repo), 'revision': resolved, 'payload': payload, 'origins': origins,
@@ -393,7 +435,15 @@ def migration_plan(source, ref, target, host, scope='local', no_hooks=False):
             if path.suffix in ('.md', '.sh', '.py', '.yaml', '.toml', '.json', '.txt'):
                 text = data.decode('utf-8')
                 for old_prefix, new_prefix in sorted(mapping, key=lambda pair: -len(pair[0])):
-                    text = text.replace(old_prefix + '/', str(root / new_prefix).replace('\\', '/') + '/')
+                    if old_prefix + '/' not in text:
+                        continue
+                    if scope == 'global' and path.suffix not in ('.md', '.txt'):
+                        plan['findings'].append({'code': 'global-migration-reference', 'path': old_name,
+                                                 'message': 'Reconcile global references for this file consumer before migration'})
+                        continue
+                    portable_prefix = (reference_namespace(host, scope)
+                                       / PurePosixPath(new_prefix).relative_to(ns)).as_posix()
+                    text = text.replace(old_prefix + '/', portable_prefix + '/')
                 text = text.replace('phase_run', 'engineer_run')
                 data = text.encode('utf-8')
             before = current(root, name)
