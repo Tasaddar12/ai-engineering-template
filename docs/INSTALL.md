@@ -63,6 +63,21 @@ lists those skills, while Claude discovers its native skills directory. Host
 settings add the advisory hook unless `--no-hooks` is selected. Backups and
 transaction journals live under the same `engineer-install/` directory.
 
+Each Codex agent has a small `.codex/agents/<role>.toml` wrapper with its required
+name and description, `model = "gpt-6.1-sol"` and
+`model_reasoning_effort = "high"`. Its `developer_instructions` tells the agent to
+read and follow the complete installed `.codex/agents/<role>.md` counterpart
+before working, and to stop and report if that file is unavailable. The full
+method remains in Markdown. This is an instruction to read a file, rather than a
+native TOML include; Codex reads its own counterpart, while Claude retains its
+separate `.claude/agents/` files.
+
+The retired `guides/` and `maintenance/` directories are excluded from exports,
+including their `engineer/` and namespace-root variants, even when selecting an
+older source pin. They are absent from the current template. Existing retired
+files or user additions are preserved by the update transaction; remove confirmed
+legacy leftovers separately within the authorized cleanup scope.
+
 ## Validate the installation
 
 For a local Codex install, run from the target project's Git checkout:

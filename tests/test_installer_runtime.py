@@ -106,6 +106,8 @@ class CurrentInstallerTests(unittest.TestCase):
                     self.assertTrue(result["complete"])
                     namespace = self.target / ("." + host)
                     self.assertFalse((namespace / "scripts").exists())
+                    self.assertFalse(any(path.is_dir() and path.name in {"guides", "maintenance"}
+                                         for path in namespace.rglob("*")))
                     entry_name = "AGENTS.md" if host == "codex" else "CLAUDE.md"
                     entry = (namespace if scope == "global" else self.target) / entry_name
                     self.assertIn("ENGINEER MANAGED BEGIN", entry.read_text())
@@ -122,10 +124,31 @@ class CurrentInstallerTests(unittest.TestCase):
                         self.assertTrue(config["skills"]["config"])
                         for record in config["skills"]["config"]:
                             self.assertTrue(Path(record["path"]).is_file(), record)
-                        role = tomllib.loads((namespace / "agents/executor.toml").read_text())
-                        self.assertEqual("executor", role["name"])
-                        self.assertTrue(role["description"])
-                        self.assertIn("<role>", role["developer_instructions"])
+                        wrappers = list((namespace / "agents").glob("*.toml"))
+                        self.assertEqual(20, len(wrappers))
+                        for wrapper in wrappers:
+                            role = tomllib.loads(wrapper.read_text(encoding="utf-8"))
+                            self.assertEqual(wrapper.stem, role["name"])
+                            self.assertTrue(role["description"])
+                            self.assertEqual("gpt-6.1-sol", role["model"])
+                            self.assertEqual("high", role["model_reasoning_effort"])
+                            counterpart = wrapper.with_suffix(".md")
+                            instructions = role["developer_instructions"]
+                            self.assertEqual(
+                                "Read and follow the complete role at " + counterpart.as_posix()
+                                + " before acting. Read its local workflow and referenced shared rules; "
+                                "the assignment bounds your scope. Phase implementation requires the user's "
+                                "explicit instruction to implement that phase. "
+                                "If that file cannot be read, stop and report the missing counterpart.",
+                                instructions)
+                            self.assertNotIn('"', instructions)
+                            instruction_line = next(line for line in wrapper.read_text(encoding="utf-8").splitlines()
+                                                    if line.startswith("developer_instructions = "))
+                            self.assertNotIn('\\"', instruction_line)
+                            self.assertIn("stop and report", role["developer_instructions"])
+                            self.assertNotIn("<role>", role["developer_instructions"])
+                            self.assertIn("<role>", counterpart.read_text(encoding="utf-8"))
+                            self.assertLess(len(role["developer_instructions"]), 700)
                     else:
                         settings = json.loads((namespace / "settings.json").read_text())
                         self.assertEqual(1, len(settings["hooks"]["PreToolUse"]))
@@ -136,6 +159,28 @@ class CurrentInstallerTests(unittest.TestCase):
                     self.assertTrue(rerun["no_op"])
                     self.assertEqual([], rerun["files"])
                     self.assertEqual(before, self.snapshot())
+
+    def test_retired_directories_are_excluded_even_from_older_sources(self):
+        source = self.base / "legacy-source"
+        git(self.source, "clone", "--quiet", "--no-hardlinks", str(self.source), str(source))
+        git(source, "config", "user.name", "Installer Fixture")
+        git(source, "config", "user.email", "fixture@example.invalid")
+        retired = ("guides", "maintenance", "engineer/guides", "engineer/maintenance",
+                   "bin/guides", "bin/maintenance")
+        for directory in retired:
+            path = source / directory / "legacy.md"
+            path.parent.mkdir(parents=True)
+            path.write_text("Retired authoring material must never be installed.\n", encoding="utf-8")
+        git(source, "add", *retired)
+        git(source, "commit", "-m", "Legacy source with retired folders")
+        pin = git(source, "rev-parse", "HEAD")
+        for host in ("codex", "claude"):
+            for scope in ("local", "global"):
+                with self.subTest(host=host, scope=scope):
+                    payload = installer.exports(source, pin, self.target, host, scope)["payload"]
+                    self.assertFalse(any({"guides", "maintenance"} & set(Path(name).parts[:-1])
+                                         for name in payload))
+                    self.assertIn("." + host + "/engineer/bin/engineer.py", payload)
 
     def test_install_preserves_project_instructions_settings_and_planning(self):
         for host in ("codex", "claude"):
