@@ -454,6 +454,7 @@ def migration_plan(source, ref, target, host, scope='local', no_hooks=False):
                                     'action': 'backup-only' if backup_only else 'conflict' if before['sha256'] else 'write',
                                     'resolution': 'backup' if backup_only else 'preserve' if before['sha256'] else 'apply'})
             destinations.add(name)
+    plan['complete'] = not plan['findings'] and not any(e['action'] == 'conflict' for e in plan['entries'])
     plan.pop('snapshot_token', None)
     plan['snapshot_token'] = sha(canonical(plan))
     return plan

@@ -218,6 +218,7 @@ class CurrentInstallerTests(unittest.TestCase):
         legacy.write_text("open('.ai/references/custom.md')\n", newline="\n")
         plan = installer.migration_plan(self.source, self.pin, self.target, "codex", "global")
         self.assertIn("global-migration-reference", [f["code"] for f in plan["findings"]])
+        self.assertFalse(plan["complete"])
         failure = self.apply_plan(plan, "--select", ".codex/commands/custom.py", expected=2)
         self.assertEqual("export-blocked", failure["error"])
         self.assertFalse((self.target / ".codex/commands/custom.py").exists())
