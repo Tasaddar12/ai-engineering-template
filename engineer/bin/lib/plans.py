@@ -62,38 +62,42 @@ def check(args, kind):
         raise Failure("plans-not-found", "No PLAN files found")
     for path in paths:
         for index, task in enumerate(tasks(read(path)), 1):
-            command = task["verify"]
             created = set(re.split(r"[,\s]+", task["files"].strip())) - {""}
-            if kind == "failure-directions":
-                reasons = []
-                if re.search(r"\|\|\s*(?:true|:)(?:\s|$)", command):
-                    reasons.append("failure is swallowed")
-                if re.match(r"^\s*(?:echo|printf)\b", command):
-                    reasons.append("command only prints text")
-                if re.search(r"(?:^|[;\n])\s*grep\b", command) and not re.search(r"\bgrep\s+(?:-[^\s]*q\b|--quiet\b)", command):
-                    reasons.append("grep must use a quiet assertion with explicit failure direction")
-                if reasons:
-                    findings.append({"plan": str(path), "task": index, "command": command, "reasons": reasons})
-            else:
-                try:
-                    tokens = shlex.split(command)
-                except ValueError as exc:
-                    findings.append({"plan": str(path), "task": index, "error": str(exc)})
-                    tokens = []
-                for token in tokens:
-                    token = token.rstrip(";,")
-                    if token.startswith(("-", "$", "http:", "https:")) or re.search(r"[|><*?]", token):
-                        continue
-                    if not re.search(r"[/\\]|\.(?:py|sh|js|ts|json|ya?ml|toml|md|go|rs|xml)$", token):
-                        continue
-                    normalized = token.removeprefix("./")
-                    if normalized in known or normalized in created:
-                        continue
+            commands = re.findall(r"<automated\b[^>]*>(.*?)</automated>", task["verify"], re.S)
+            if len(re.findall(r"<automated\b", task["verify"])) != len(commands) or any(not c.strip() for c in commands):
+                raise Failure("invalid-automated-verification", "Every automated element must contain a complete command")
+            for command in commands or [task["verify"]]:
+                command = command.strip()
+                if kind == "failure-directions":
+                    reasons = []
+                    if re.search(r"\|\|\s*(?:true|:)(?:\s|$)", command):
+                        reasons.append("failure is swallowed")
+                    if re.match(r"^\s*(?:echo|printf)\b", command):
+                        reasons.append("command only prints text")
+                    if re.search(r"(?:^|[;\n])\s*grep\b", command) and not re.search(r"\bgrep\s+(?:-[^\s]*q\b|--quiet\b)", command):
+                        reasons.append("grep must use a quiet assertion with explicit failure direction")
+                    if reasons:
+                        findings.append({"plan": str(path), "task": index, "command": command, "reasons": reasons})
+                else:
                     try:
-                        exists = safe_path(normalized).exists()
-                    except Failure:
-                        exists = False
-                    if not exists:
-                        findings.append({"plan": str(path), "task": index, "path": token, "error": "unresolvable-path"})
+                        tokens = shlex.split(command)
+                    except ValueError as exc:
+                        findings.append({"plan": str(path), "task": index, "error": str(exc)})
+                        tokens = []
+                    for token in tokens:
+                        token = token.rstrip(";,")
+                        if token.startswith(("-", "$", "http:", "https:")) or re.search(r"[|><*?]", token):
+                            continue
+                        if not re.search(r"[/\\]|\.(?:py|sh|js|ts|json|ya?ml|toml|md|go|rs|xml)$", token):
+                            continue
+                        normalized = token.removeprefix("./")
+                        if normalized in known or normalized in created:
+                            continue
+                        try:
+                            exists = safe_path(normalized).exists()
+                        except Failure:
+                            exists = False
+                        if not exists:
+                            findings.append({"plan": str(path), "task": index, "path": token, "error": "unresolvable-path"})
             known.update(created)
     return {"valid": not findings, "findings": findings}, int(bool(findings))

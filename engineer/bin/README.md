@@ -427,10 +427,16 @@ fixed Codex `gpt-6-luna`/`high` and Claude `haiku`/`inherit` policies.
 | `context_path`, `research_path`, `verification_path`, `validation_path`, `ui_spec_path`, `security_path`, `review_path`, `reviews_path`, `uat_path` | absolute existing path or null |
 | `prior_context` | prior phase SUMMARY path/content packets |
 | `prior_verify_commands` | nearest prior phase's verify commands, each with phase/plan/task/command; independent of context window |
-| `threat_id_duplicates`, `threat_id_duplicate_count` | declared threat IDs appearing in multiple plans and their plan IDs |
+| `threat_id_duplicates`, `threat_id_duplicate_count` | blocking duplicate owned threat IDs and their owning plan IDs; exact reserved phase SC may appear once per distinct PLAN |
 | `granularity` | configured planning granularity, default standard |
 | `code_review`, `code_review_depth`, `code_review_depth_overrides` | configured review policy |
 | `last_review_commit` | last commit touching the phase REVIEW file, or null |
+
+Threat ownership comes only from six-column register rows inside each PLAN's
+`<threat_model>` block. Ignore aliases, cross-references and fenced examples.
+The exact `T-{phase}-SC` for the canonical padded phase is allowed once per
+distinct PLAN; repetition in the same PLAN still blocks. Ordinary duplicate
+IDs and other SC spellings receive no exception. Keep every owned register row.
 
 When the requested phase is absent, initialization returns `phase_found:false`,
 `phase_dir:null`, the requested `phase_number`, empty plan/requirement arrays, and
