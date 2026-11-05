@@ -56,9 +56,8 @@ engineer_run query validate.context \
   --context-window "$CONTEXT_WINDOW"
 ```
 
-The query returns JSON containing `message`, `recommendation`, `state`,
-`utilization`, `tokensUsed` and `contextWindow`. Display its `message` and
-non-empty `recommendation`, then end the workflow - do **not** mix in `.planning/`
+The query returns JSON containing `message`, `state`, `utilization`, `tokensUsed`
+and `contextWindow`. Display its `message`, then end the workflow - do **not** mix in `.planning/`
 health output, the two modes are independent diagnostics.
 </step>
 
