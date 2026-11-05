@@ -178,7 +178,7 @@ Handle return:
 ```bash
 engineer_run query verification.append-audit "${PHASE_DIR}/${PADDED_PHASE}-VALIDATION.md" \
   --heading "Validation Audit" \
-  --rows "{\"Gaps found\": {N}, \"Resolved\": {M}, \"Escalated\": {K}}"
+  --body "{\"Gaps found\": {N}, \"Resolved\": {M}, \"Escalated\": {K}}"
 ```
 
 ## 7. Commit

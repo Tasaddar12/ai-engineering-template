@@ -47,6 +47,32 @@ class PlanProgressProducers(RuntimeCase):
         self.check_producer("agents/executor.md")
 
 
+class AuditTrailProducers(RuntimeCase):
+    def check_audit_call(self, workflow, artifact, heading, metrics):
+        target = self.put("audit fixtures/04-" + artifact + ".md", "# Existing report\n")
+        fences = re.findall(r"```bash\n(.*?)\n```", text(workflow), re.S)
+        call = next(block for block in fences if "engineer_run query verification.append-audit " in block)
+        call = call.replace("\\\n", "")
+        call = call.replace("${PHASE_DIR}", str(target.parent)).replace("${PADDED_PHASE}", "04")
+        for name, value in (("N", 3), ("M", 2), ("K", 1)):
+            call = call.replace("{" + name + "}", str(value))
+        arguments = shlex.split(call)[2:]
+        self.assertTrue(self.cli(*arguments)["appended"])
+        content = target.read_text(encoding="utf-8")
+        self.assertEqual("# Existing report\n\n## " + heading + "\n\n" + json.dumps(metrics) + "\n", content)
+        self.assertFalse(self.cli(*arguments)["appended"])
+        self.assertEqual(content, target.read_text(encoding="utf-8"))
+        self.assertEqual(1, content.count("## " + heading))
+
+    def test_validation_audit_call_preserves_metrics_and_is_idempotent(self):
+        self.check_audit_call("engineer/workflows/validate-phase.md", "VALIDATION", "Validation Audit",
+                              {"Gaps found": 3, "Resolved": 2, "Escalated": 1})
+
+    def test_security_audit_call_preserves_metrics_and_is_idempotent(self):
+        self.check_audit_call("engineer/workflows/secure-phase.md", "SECURITY", "Security Audit",
+                              {"Threats found": 3, "Closed": 2, "Open": 1})
+
+
 class ExecutionReferences(unittest.TestCase):
     def test_planner_and_template_execution_contexts_resolve_for_both_hosts(self):
         spec = importlib.util.spec_from_file_location("_gate_contract_installer", SOURCE / "bin/install_support.py")

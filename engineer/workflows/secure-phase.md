@@ -193,7 +193,7 @@ each PLAN's six-column register and threat IDs unchanged.
 ```bash
 engineer_run query verification.append-audit "${PHASE_DIR}/${PADDED_PHASE}-SECURITY.md" \
   --heading "Security Audit" \
-  --rows "{\"Threats found\": {N}, \"Closed\": {M}, \"Open\": {K}}"
+  --body "{\"Threats found\": {N}, \"Closed\": {M}, \"Open\": {K}}"
 ```
 
 **ENFORCING GATE:** If `threats_open > 0` after all options exhausted (user did not accept, not all verified closed):
