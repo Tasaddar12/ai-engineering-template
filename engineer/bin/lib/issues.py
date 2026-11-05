@@ -239,7 +239,7 @@ def publication(args, action, family="todo"):
     else:
         with tempfile.TemporaryDirectory(prefix="engineer-issue-") as directory:
             path = Path(directory)/"body.md"
-            path.write_text(published_body, encoding="utf-8")
+            path.write_bytes(published_body.encode("utf-8"))
             argv = (["issue", "create", "--title", title] if action == "publish" else
                     ["issue", "edit", str(existing), "--title", title]) + ["--body-file", str(path)]
             for label in snapshot["labels"]:

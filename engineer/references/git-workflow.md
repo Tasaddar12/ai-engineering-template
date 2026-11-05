@@ -91,6 +91,8 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
   ID plus `Pending: <dependency>`.
 - Reuse the same issue for duplicate findings in different PLANs. Do not relocate
   or collapse PLAN content into a combined registry.
+  Reserved `T-{phase}-SC` keeps one canonical key/target across PLANs while
+  retaining each owning PLAN/ID occurrence.
 - Workers return safe requests/SUMMARY. Coordinators update each owning PLAN's
   links before preparation/execution completion; add discoveries to that PLAN.
   Do not add an ordinary approval gate.

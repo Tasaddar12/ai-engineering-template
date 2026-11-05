@@ -730,8 +730,8 @@ engineer_run query state.record-session \
 ```
 
 ```bash
-# Update ROADMAP.md progress for this phase (plan counts, status)
-engineer_run query roadmap.update-plan-progress "${PHASE_NUMBER}"
+# Use the assigned NN-MM plan ID, preserving its padding.
+engineer_run query roadmap.update-plan-progress "${PHASE}-${PLAN}"
 
 # Mark completed requirements from PLAN.md frontmatter
 # Extract the `requirements` array from the plan's frontmatter, then mark each complete

@@ -212,12 +212,8 @@ def init(args, kind):
         if commands:
             packet["prior_verify_commands"] = commands
             break
-    packet["threat_id_duplicates"] = []
-    seen = {}
-    for plan in index["plans"]:
-        for identifier in set(re.findall(r"\bT-[A-Za-z0-9.]+-(?:\d+|SC)\b", read(Path(plan["path"])))):
-            seen.setdefault(identifier, []).append(plan["id"])
-    packet["threat_id_duplicates"] = [{"id": identifier, "plans": plans} for identifier, plans in seen.items() if len(plans) > 1]
+    from .security_tracking import threat_id_duplicates
+    packet["threat_id_duplicates"] = threat_id_duplicates(directory)
     packet["threat_id_duplicate_count"] = len(packet["threat_id_duplicates"])
     packet["last_review_commit"] = run(["git", "log", "-1", "--format=%H", "--", packet["review_path"]], root(), check=False).stdout.strip() if packet["review_path"] else None
     if kind == "code-review":

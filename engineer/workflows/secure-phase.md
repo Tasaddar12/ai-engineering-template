@@ -100,6 +100,8 @@ Read SUMMARY.md — extract `## Threat Flags` entries.
 
 Per threat: `{ threat_id, category, component, severity, disposition, mitigation_pattern, files_to_check }`
 
+For shared reserved `T-{phase}-SC`, retain the owning `plan` through dispatch and results.
+
 Also set `register_authored_at_plan_time: true` if **at least one** PLAN file contained a parseable `<threat_model>` block; `false` if no PLAN files had any `<threat_model>` block (legacy phase authored before formal threat modelling was standard).
 
 ## 3. Threat Classification
@@ -164,6 +166,10 @@ Handle return:
 - `## ESCALATE` → present to user → Step 6
 
 ## 6. Write/Update SECURITY.md
+
+For repeated reserved SC, write one row per owner with `PLAN`, and one `threat_evidence`
+entry per `(id, plan)` with owner-specific current `citations` (commit and repository path).
+Do not collapse owners or reuse another PLAN's evidence; ordinary unique IDs are unchanged.
 
 **State B (create):**
 1. Read template from `engineer/templates/SECURITY.md`
