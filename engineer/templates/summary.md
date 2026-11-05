@@ -181,7 +181,7 @@ _Completed: [date]_
 
 **Population:** Frontmatter is populated during summary creation in execute-plan.md. See `<step name="create_summary">` for field-by-field guidance.
 
-**Status:** `status: complete` is the default — the plan finished. Use `status: halted` instead when the plan reached a designed stop (a gate failure, a spike concluding without expanding into the full build, or any other intentional non-completion) and intentionally left tasks unfinished. `halted` is machine-read: any plan whose `depends_on` (directly or transitively) names a halted plan is reported as blocked, not offered to the executor, until the halt is resolved and re-summarized as `complete`.
+**Status:** Use `status: complete` only when the plan finished. Use `status: blocked` for work stopped by a blocker, or `status: partial` for unfinished work, and describe the remaining tasks and reason in the summary. Both remain incomplete; dependants are ready only when their `depends_on` plans are complete. Integration and handoff still require a complete summary.
 </frontmatter_guidance>
 
 <coverage_guidance>

@@ -168,6 +168,26 @@ Handle return:
 - `## OPEN_THREATS` → record closed + open, present user with accept/block choice → Step 6
 - `## ESCALATE` → present to user → Step 6
 
+For a previously published planned checklist whose consumed preview lacks
+rendered targets, use the [bounded reconciliation procedure](../bin/README.md#consumed-checklist-anchor-reconciliation).
+Preserve the exact original entries, raw receipts and current worktree. Only a
+complete original intent with a known published OPEN container, unchanged
+captured source bytes and an ancestor original revision is eligible. Set `PHASE`,
+`ORIGINAL_ENTRIES` and `ORIGINAL_TOKEN` to the preserved original values. Preview
+first, inspect the new body/token, then publish that same reviewed edit:
+
+```bash
+engineer_run query security.threat-preview "${PHASE}" --entries-file "${ORIGINAL_ENTRIES}" --reconcile-token "${ORIGINAL_TOKEN}"
+engineer_run query security.threat-publish "${PHASE}" --entries-file "${ORIGINAL_ENTRIES}" --reconcile-token "${ORIGINAL_TOKEN}" --preview-token "${NEW_TOKEN}" --publish
+```
+
+Set `NEW_TOKEN` from the preview result only after review. This adds addresses to
+the existing issue; actual provider HTML must still prove each target. Pending
+proof preserves original reservations. A consumed repair-token retry is provider
+readback only, even after an unknown response; never reset ownership or repeat
+an uncertain edit. Source drift refuses the operation; preserve the paused branch
+and follow the runtime guide's conditional isolated-checkout remedy.
+
 ## 6. Write/Update SECURITY.md
 
 For exact reserved `T-{phase}-SC` owned by multiple distinct PLANs, preserve one

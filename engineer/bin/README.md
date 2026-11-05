@@ -212,6 +212,69 @@ contract, strongest matching tier, and large-scope downgrade. These adapters
 preserve the exported workflow contracts; `review.flags` and `review.depth`
 retain their existing project-runtime contracts.
 
+### Consumed checklist anchor reconciliation
+
+Use this bounded route only for missing rendered addresses in one existing OPEN
+planned security checklist container after its original publication completed.
+It adds anchors to that same issue; it cannot create or close an issue, publish
+standalone risks, adopt an unpublished issue or bypass a denied publication.
+Calls without `--reconcile-token` retain their existing contracts; the option is
+accepted only by `security.threat-preview` and `security.threat-publish`.
+
+Preserve the original entries file, raw preview, intent and current worktree.
+The original preview must be consumed and authenticate its published result;
+`complete: false` is allowed when rendered targets are pending. Its original
+intent must be `state: complete` with the matching known issue result. Missing,
+attempting, denied or known-not-executed originals are refused. Every original
+authored entry and its order must remain unchanged, including ownership and
+extra fields. The original revision must be an ancestor of current HEAD and
+every captured source file must still match its original bytes. Changed
+SECURITY/REVIEW evidence is source drift, not permission to refresh the receipt.
+
+From an eligible checkout using the supported updated runtime, set `PHASE`,
+`ORIGINAL_ENTRIES` and `ORIGINAL_TOKEN` to the exact preserved original values:
+
+```bash
+engineer_run query security.threat-preview "${PHASE}" --entries-file "${ORIGINAL_ENTRIES}" --reconcile-token "${ORIGINAL_TOKEN}"
+```
+
+Inspect the returned new preview and full proposed body before publication.
+It binds current HEAD/source, the original raw receipt hashes and publication
+identity, and the exact provider before-image including OPEN state and labels.
+The body comes from the exact original intent body: only named anchors are
+inserted before its uniquely matched risk headings, with a separate repair
+marker added on publication. Authored narrative, entries and original intent
+marker remain intact; the runtime does not rebuild the checklist. Set
+`NEW_TOKEN` to this new preview's `preview_token`, then publish the reviewed edit:
+
+```bash
+engineer_run query security.threat-publish "${PHASE}" --entries-file "${ORIGINAL_ENTRIES}" --reconcile-token "${ORIGINAL_TOKEN}" --preview-token "${NEW_TOKEN}" --publish
+```
+
+`published: true` does not imply `ready: true`. Actual provider HTML must prove
+each canonical target belongs to the exact heading and canonical key. Never
+infer a URL from the proposed anchor hash, a `user-content-` prefix or a slug.
+Missing or partial proof stays pending; unresolved reservations remain owned by
+the original token. Registration releases only proved reservations and appends
+reconciliation evidence while preserving established canonical identities.
+
+After the new token is consumed, retry only the identical publish command with
+both tokens and unchanged current source/HEAD. Every such retry is read-only at
+the provider, including pending targets, crashes and unknown responses; it never
+repeats the edit. Exact repaired-body readback and rendered proof may complete
+registration. Otherwise preserve pending/error evidence and investigate; do not
+reset receipts, transfer reservations, or generate another edit to force recovery.
+`security-reconciliation-source-drift` refuses changed original bytes or ancestry;
+`security-recovery-source-drift` refuses changed recovery HEAD/source. Invalid
+original provenance, provider drift or readback mismatch must be reconciled
+without overwriting the original evidence.
+
+If a paused branch changed captured sources, preserve that branch and its
+SECURITY bytes. A separate isolated checkout retaining the original frozen
+sources and exact original untracked entries, with the supported new runtime,
+is only a conditional owner remedy: prove every eligibility check first. Do
+not reset the paused branch or claim readiness from ancestry alone.
+
 ## Exact argv reference
 
 Run each entry as `engineer_run query VERB ARGS`. Long-option values follow the
