@@ -51,12 +51,12 @@ def validate_body(body):
     template = read(models.NAMESPACE/"engineer/templates/pull-request.md")
     # Source checkouts can run before authoring templates are installed. These
     # are publication fields, not the headings of the template's instructions.
-    required = ["Goal", "Changes", "Verification", "Known gaps", "Risks or rollback", "Stack"]
+    required = ["Goal", "Changes", "Verification", "Known gaps", "Risks or rollback"]
     if template:
         section = re.search(r"(?ms)^## File Template\s*\n+```(?:markdown)?\s*\n(.*?)^```", template)
         if section:
             required = [heading for heading in re.findall(r"(?m)^##\s+(.+)$", section[1])
-                        if heading != "Requirements or Issues"]
+                        if heading not in ("Requirements or Issues", "Stack")]
     missing = [heading for heading in required if not re.search(r"(?m)^##\s+"+re.escape(heading)+r"\s*$", body)]
     if missing:
         raise Failure("invalid-pr-body", "Missing template sections", missing=missing)
