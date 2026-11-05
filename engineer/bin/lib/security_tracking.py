@@ -83,17 +83,63 @@ def table_rows(body, required):
 
 
 def plan_threats(directory):
+    from .markdown_table import parse_markdown_table, split_table_row
     result = []
+    required = {'threat_id', 'category', 'component', 'severity', 'disposition', 'mitigation_plan'}
     for path in sorted(directory.glob('*-PLAN.md')):
         text = '\n'.join(issue_format.visible_lines(read(path)))
         blocks = re.findall(r'<threat_model\b[^>]*>([\s\S]*?)</threat_model>', text)
+        if len(re.findall(r'<threat_model\b', text)) != len(blocks):
+            raise Failure('invalid-plan-threat-register', 'Unclosed threat_model block', plan=path.name)
         for block in blocks:
-            for row in table_rows(block, ('threat_id', 'category', 'component', 'severity', 'disposition', 'mitigation_plan')):
-                identifier = row['threat_id'].strip('` ')
-                if not identifier or any(c in identifier for c in '{}<>'):
-                    raise Failure('invalid-plan-threat', str(path), row=row)
-                result.append({**row, 'threat_id': identifier, 'plan': path.name})
+            tables, current = [], []
+            for line in block.splitlines() + ['']:
+                if line.lstrip().startswith('|'):
+                    current.append(line)
+                else:
+                    if current:
+                        if '|' in line and len(split_table_row(line)) >= 5:
+                            raise Failure('invalid-plan-threat-register', 'Unparsed owning table row', plan=path.name, row=line)
+                        tables.append(current)
+                        current = []
+                    if re.match(r'^\s*(?:`?T-\d|\[`?T-\d).*\|', line):
+                        raise Failure('invalid-plan-threat-register', 'Unparsed owning threat row', plan=path.name, row=line)
+            for lines in tables:
+                headers = split_table_row(lines[0])
+                columns = [re.sub(r'[^a-z0-9]+', '_', h.replace('**', '').lower()).strip('_') for h in headers]
+                columns = ['mitigation_plan' if h == 'mitigation' else h for h in columns]
+                owning = (len(set(columns) & required) >= 2
+                          or 'threat_id' in columns and len(columns) >= 5
+                          or bool(re.match(r'^(?:`?T-\d|\[`?T-\d)', headers[0])))
+                if not owning:
+                    continue  # Trust-boundary and assessment tables do not declare ownership.
+                if len(columns) != len(required) or set(columns) != required:
+                    raise Failure('invalid-plan-threat-register', 'Owning register requires six unique supported headers', plan=path.name, headers=headers)
+                parsed = parse_markdown_table('\n'.join(lines))
+                if not parsed['ok'] or not parsed['value']['rows']:
+                    raise Failure('invalid-plan-threat-register', parsed.get('reason', 'Owning register has no declared rows'), plan=path.name)
+                for source in parsed['value']['rows']:
+                    row = {column: source[header] for column, header in zip(columns, headers)}
+                    if any(not value.strip() for value in row.values()):
+                        raise Failure('invalid-plan-threat-register', 'Owning register cells cannot be empty', plan=path.name, row=row)
+                    cell = row['threat_id']
+                    identifier, target = _threat_identity(cell)
+                    result.append({**row, 'threat_id': identifier, 'threat_id_cell': cell,
+                                   'threat_url': target, 'plan': path.name})
     return result
+
+
+def _threat_identity(cell):
+    """Normalize only a complete local ID label, preserving authored link data."""
+    label, target = cell.strip(), None
+    linked = re.fullmatch(r'\[([^\[\]]+)\]\(([^\s()]+)\)', label)
+    if linked:
+        label, target = linked.groups()
+    if label.startswith('`') and label.endswith('`'):
+        label = label[1:-1]
+    if not re.fullmatch(r'T-\d+(?:\.\d+)?-(?:\d+|SC)', label):
+        raise Failure('invalid-plan-threat', 'Use one plain, backticked or linked local threat ID', cell=cell)
+    return label, target
 
 
 def threat_id_duplicates(directory, threats=None):
@@ -309,24 +355,38 @@ class _Anchors(HTMLParser):
         self.section = None
         self.adjacent = []
         self.items = {}
-        self.addresses = {}
+        self.declarations = {}
+        self.permalinks = {}
+    def _declare(self, address, node):
+        self.declarations.setdefault(address, []).append(node)
     def handle_starttag(self, tag, attributes):
         attrs = dict(attributes)
-        for address in {attrs.get('id'), attrs.get('name')} - {None, ''}:
-            self.addresses[address] = self.addresses.get(address, 0) + 1
+        node = {'owner': self.heading}
+        addresses = {attrs.get('id'), attrs.get('name') if tag == 'a' else None} - {None, ''}
+        for address in addresses:
+            self._declare(address, node)
         if re.fullmatch(r'h[1-6]', tag):
             self.section = None
         if tag == 'h3':
-            self.heading = {'text': [], 'anchors': [], 'named': self.adjacent, 'body': []}
+            self.heading = {'text': [], 'addresses': set(), 'body': []}
+            node['owner'] = self.heading
+            for adjacent in self.adjacent:
+                adjacent['owner'] = self.heading
+                self.heading['addresses'].update(adjacent['addresses'])
             self.adjacent = []
         if self.heading is not None:
-            if attrs.get('href', '').startswith('#'):
-                self.heading['anchors'].append(attrs['href'][1:])
-            elif attrs.get('id'):
-                self.heading['anchors'].append(attrs['id'])
-        elif tag == 'a' and (attrs.get('name') or attrs.get('id')):
-            # Read the provider's actual address; never derive a slug or prefix.
-            self.adjacent.append(attrs.get('id') or attrs['name'])
+            self.heading['addresses'].update(addresses)
+            # Provider-native heading permalinks are proof of their supplied href;
+            # an ordinary hyperlink is never an address declaration.
+            if (tag == 'a' and 'anchor' in attrs.get('class', '').split()
+                    and attrs.get('aria-hidden') == 'true' and attrs.get('href', '').startswith('#')
+                    and len(attrs['href']) > 1):
+                address = attrs['href'][1:]
+                self.heading['addresses'].add(address)
+                self.permalinks.setdefault(address, []).append(node)
+        elif tag == 'a' and addresses:
+            node['addresses'] = addresses
+            self.adjacent.append(node)
         else:
             self.adjacent = []
         if self.section is not None and tag in ('p', 'br', 'div', 'li'):
@@ -347,6 +407,15 @@ class _Anchors(HTMLParser):
             self.heading = None
         if self.section is not None and tag in ('p', 'div', 'li'):
             self.section['body'].append('\n')
+    def owned_addresses(self, section):
+        result = set()
+        for address in section.get('addresses', set()):
+            declarations = self.declarations.get(address, [])
+            proof = declarations + self.permalinks.get(address, [])
+            if len(declarations) > 1 or not proof or any(node['owner'] is not section for node in proof):
+                return set()  # Conflicting ownership must not be rescued by another alias.
+            result.add(address)
+        return result
 
 
 def rendered_targets(issue_url, entries, origin):
@@ -361,17 +430,16 @@ def rendered_targets(issue_url, entries, origin):
     for entry in entries:
         sections = parser.items.get(entry['heading'], [])
         section = sections[0] if len(sections) == 1 else {}
-        anchors = section.get('named') or section.get('anchors', [])
+        anchors = parser.owned_addresses(section)
         established = entry.get('canonical_url')
         if isinstance(established, str) and established.startswith(issue_url + '#'):
-            actual = section.get('named', []) + section.get('anchors', [])
             fragment = established[len(issue_url) + 1:]
-            anchors = [fragment] if len(set(anchors)) == 1 and fragment in actual else []
+            anchors = {fragment} if fragment in anchors else set()
         keys = re.findall(r'(?m)^\s*Canonical risk key:\s*([^\n]+?)\s*$', ''.join(section.get('body', [])))
-        if len(set(anchors)) != 1 or keys != [entry['key']] or parser.addresses.get(anchors[0], 0) > 1:
+        if len(anchors) != 1 or keys != [entry['key']]:
             pending.append(entry['id'] + ': actual rendered heading anchor unavailable or ambiguous')
         else:
-            targets[entry['key']] = issue_url + '#' + anchors[0]
+            targets[entry['key']] = issue_url + '#' + next(iter(anchors))
     return targets, pending
 
 
@@ -552,6 +620,9 @@ def threat_audit(ctx):
             continue
         key, entry = matches[0]
         target = entry['target']
+        if threat.get('threat_url') is not None and threat['threat_url'] != target:
+            errors.append({'id': threat['threat_id'], 'plan': threat['plan'],
+                           'reason': 'Linked Threat ID must use its exact canonical occurrence target'})
         if threat['threat_id'] == reserved:
             identity = (key, target)
             if shared is not None and identity != shared:
@@ -748,7 +819,11 @@ def command(args, action):
             if not _enabled(args, 'apply'):
                 return {'path': str(path), 'snapshotDigest': snapshot, 'proposed': proposed, 'applied': False}
             existing_metadata, _ = split_frontmatter(read(path))
-            from .frontmatter import errors
+            from .frontmatter import errors, SCHEMAS
+            missing = {'Missing field: ' + field for field in SCHEMAS['security'] if field not in proposed}
+            supplied_errors = set(errors(proposed, 'security')) - missing
+            if supplied_errors:
+                raise Failure('security-resolution-invalid', 'Supplied metadata violates the security report schema', errors=sorted(supplied_errors))
             introduced = set(errors({**existing_metadata, **proposed}, 'security')) - set(errors(existing_metadata, 'security'))
             if introduced:
                 raise Failure('security-resolution-invalid', 'Proposed metadata violates the security report schema', errors=sorted(introduced))

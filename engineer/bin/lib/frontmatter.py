@@ -88,11 +88,29 @@ def errors(metadata, schema):
                 result.append(field+" must contain text values")
         must = metadata.get("must_haves")
         if isinstance(must, dict):
-            if set(must)-{"truths", "artifacts", "key_links"}:
+            if set(must)-{"truths", "artifacts", "key_links", "prohibitions"}:
                 result.append("Unknown must_haves field")
             for key in ("truths", "artifacts", "key_links"):
                 if key not in must or not isinstance(must[key], list):
                     result.append("must_haves."+key+" must be an array")
+            if "prohibitions" in must:
+                prohibitions = must["prohibitions"]
+                fields = {"statement", "status", "verification", "reason", "check_kind", "check_target",
+                          "check_rule", "check_violation_fixture", "check_clean_fixture"}
+                if not isinstance(prohibitions, list):
+                    result.append("must_haves.prohibitions must be an array")
+                else:
+                    for index, item in enumerate(prohibitions):
+                        if (not isinstance(item, dict) or not {"statement", "status"} <= set(item)
+                                or set(item) - fields or any(not isinstance(value, str) for value in item.values())):
+                            result.append("Invalid prohibition entry: " + str(index))
+                            continue
+                        if item["status"] not in {"resolved", "dismissed", "unresolved"}:
+                            result.append("Invalid prohibition status: " + str(index))
+                        if "verification" in item and item["verification"] not in {"test", "judgment"}:
+                            result.append("Invalid prohibition verification: " + str(index))
+                        if "check_kind" in item and item["check_kind"] not in {"node-test", "lint-rule"}:
+                            result.append("Invalid prohibition check kind: " + str(index))
     if schema == "summary" and isinstance(metadata.get("coverage"), list):
         seen = set()
         for index, item in enumerate(metadata["coverage"]):

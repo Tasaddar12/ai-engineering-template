@@ -183,7 +183,7 @@ class CanonicalTargetContracts(RuntimeCase):
 
     def test_existing_verified_native_anchor_is_preserved_with_named_alias(self):
         key = "acme/project|shared-results|incompatible-reuse"
-        html = ('<a name="user-content-risk"></a><h3><a href="#t-32-03">T-32-03</a></h3>'
+        html = ('<a name="user-content-risk"></a><h3><a class="anchor" aria-hidden="true" href="#t-32-03">T-32-03</a></h3>'
                 '<p>Canonical risk key: ' + key + '</p>')
         established = "https://github.com/acme/project/issues/497#t-32-03"
         targets, pending = self.rendered(html, canonical_url=established)
@@ -206,13 +206,13 @@ class CanonicalTargetContracts(RuntimeCase):
         html = ('<a id="user-content-risk-t02-sc" name="risk-t02-sc"></a>\n'
                 '<h3><a href="#t02-sc">T02-SC</a></h3>\n'
                 '<p><strong>Canonical risk key:</strong> ' + key + '</p>')
-        targets, pending = self.rendered(html, heading="T02-SC")
+        targets, pending = self.rendered(html, heading="T02-SC", canonical_url="https://github.com/acme/project/issues/497#user-content-risk-t02-sc")
         self.assertEqual([], pending)
         self.assertEqual("https://github.com/acme/project/issues/497#user-content-risk-t02-sc", targets[key])
 
     def test_anchor_missing_duplicate_heading_wrong_key_and_unrelated_names_fail_closed(self):
         key = "acme/project|shared-results|incompatible-reuse"
-        section = '<h3><a href="#t-32-03">T-32-03</a></h3><p>Canonical risk key: ' + key + '</p>'
+        section = '<h3><a class="anchor" aria-hidden="true" href="#t-32-03">T-32-03</a></h3><p>Canonical risk key: ' + key + '</p>'
         cases = ["<h3>T-32-03</h3>", section + section,
                  section.replace(key, "acme/project|different|risk"),
                  '<a name="user-content-t-32-03"></a><p>Unrelated text</p><h3>T-32-03</h3>',
