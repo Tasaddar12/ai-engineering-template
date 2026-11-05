@@ -58,10 +58,24 @@ def instruction_file(args):
     project = read(records.planning()/"PROJECT.md")
     if not project:
         raise Failure("project-not-found", "Initialize PROJECT.md first")
+    namespace = models.NAMESPACE
+    manifest = json.loads(read(namespace/"engineer-install/manifest.json", "{}"))
+    if manifest.get("scope") == "global":
+        host = manifest["host"]
+        variable = "CODEX_HOME" if host == "codex" else "CLAUDE_CONFIG_DIR"
+        prefix = "${"+variable+":-$HOME/."+host+"}"
+    else:
+        try:
+            prefix = namespace.relative_to(root()).as_posix()
+        except ValueError:
+            prefix = namespace.as_posix()
+    prefix = prefix.rstrip("/")+"/" if prefix != "." else ""
     template = read(models.NAMESPACE/"bin/install-assets/agent-entry.txt")
     if not template:
         template = "Read agents/AGENT.md, the selected commands/<command>.md entry, and .planning/PROJECT.md and STATE.md before working."
     template = template.replace("engineer/RULES.md", "agents/AGENT.md")
+    template = re.sub(r"(?<![\w./{}~:-])(?:agents/AGENT\.md|commands/<command>\.md)",
+                      lambda match: prefix+match[0], template)
     name = next((line.lstrip("# ") for line in project.splitlines() if line.startswith("# ")), "Project")
     block = "<!-- engineer:managed:start -->\n# "+name+"\n\n"+template.strip()+"\n<!-- engineer:managed:end -->"
     with planning_lock():
