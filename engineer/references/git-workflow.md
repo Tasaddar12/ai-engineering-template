@@ -155,10 +155,10 @@ PLAN and keep SUMMARY/PR linked outcomes separate. Each entry must have:
 | Stable ### entry heading | Stable repository/surface/failure-mode key | Every source occurrence | Owning PLAN/ID link | Responsible owner | Bounded scope and observable acceptance | Link to owning PLAN assessment and uncertainty | Observed status and outcome | Concrete next action | Matching revision/check/result or Pending dependency | Verified heading-anchor URL or existing matching issue URL |
 
 **Entry identity:** every risk entry is a stable `###` heading in the checklist
-issue BODY, including entries that link an existing canonical issue. Use a proved
-provider heading or adjacent named anchor tied to the exact key, PLAN/ID and content;
-preserve an existing canonical target while still proved. Never fabricate anchor slugs.
-Reuse the matching heading
+issue BODY, including entries that link an existing canonical issue. Entry URLs
+are provider heading anchors. Inspect the saved body/rendered heading and verify
+that its provider-supplied anchor URL reaches the exact key, PLAN/ID and content
+before using the link; never fabricate anchor slugs. Reuse the matching heading
 on reruns and keep it immutable: renaming a heading breaks the link. A necessary
 rename requires readback and repair of all affected references before readiness.
 Use descriptive link labels without a "(comment)" suffix. An existing issue

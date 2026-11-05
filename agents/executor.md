@@ -747,7 +747,7 @@ engineer_run query requirements.mark-complete ${REQ_IDS}
 - `state record-metric`: Appends to Performance Metrics table
 - `state add-decision`: Adds to Decisions section, removes placeholders
 - `state record-session`: Updates Last session timestamp and Stopped At fields
-- `roadmap update-plan-progress`: Checks the specified plan's checkbox and synchronizes roadmap progress
+- `roadmap update-plan-progress`: Updates ROADMAP.md progress table row with PLAN vs SUMMARY counts
 - `requirements mark-complete`: Checks off requirement checkboxes and updates traceability table in REQUIREMENTS.md
 
 **Extract decisions from SUMMARY.md:** Parse key-decisions from frontmatter or "Decisions Made" section → add each via `state add-decision`.

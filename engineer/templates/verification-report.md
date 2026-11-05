@@ -16,7 +16,7 @@ covered_files: #  — see agents/verifier.md's "Create VERIFICATION.md" step for
   - .planning/phases/XX-name/{phase_num}-{plan}-PLAN.md
   - .planning/phases/XX-name/{phase_num}-{plan}-SUMMARY.md
   - src/{changed-file}.cts
-revision: "{actual current full Git commit SHA}"
+covered_digest: "v4:sha256:{digest from verification.fingerprint}"
 behavior_unverified: 0 # Count of ⚠️ PRESENT_BEHAVIOR_UNVERIFIED truths (present + wired, behavior not exercised)
 behavior_unverified_items: # Only if behavior_unverified > 0 — the truths above as structured items; emitted regardless of overall status
   - truth: "Observable truth whose state transition or cancellation/cleanup/ordering invariant no test exercises"
@@ -177,10 +177,6 @@ None — all verifiable items checked programmatically.
 ---
 
 ## Guidelines
-
-Write truthful status, evidence and covered paths before fingerprinting; omit `fingerprint`
-until generated. Follow [the verifier's procedure](../../agents/verifier.md#fingerprint-the-written-report)
-after the structural decision check and retain its runtime-written metadata.
 
 **Status values (overall, frontmatter `status:`):**
 - `passed` — All must-haves verified, no blockers

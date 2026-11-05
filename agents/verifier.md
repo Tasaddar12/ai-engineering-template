@@ -655,9 +655,7 @@ Deferred items are informational only — they do not require closure plans.
 
 **ALWAYS use the Write tool to create files** — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
 
-Write the report with its truthful status and evidence first. A `passed` report needs
-actual nonempty `covered_files` and the current full Git `revision`; omit `fingerprint`
-until generated. Run the structural decision check before fingerprinting below.
+The fingerprint command adds the phase's own PLAN/SUMMARY files automatically (+superseded, nested `plans/`) and never counts the report itself — list only the changed implementation files (and any other evidence), ROOT-relative; planning-root docs are inert. `engineer_run query verification.fingerprint {phaseDir} {file}...`, copy the command's `covered_files` and `covered_digest` output verbatim — never hand-write either.
 
 Create `.planning/phases/{phase_dir}/{phase_num}-VERIFICATION.md`:
 
@@ -668,7 +666,7 @@ verified: YYYY-MM-DDTHH:MM:SSZ
 status: passed | gaps_found | human_needed
 score: N/M must-haves verified
 covered_files: [...]
-revision: "{actual current full Git commit SHA}"
+covered_digest: "v4:sha256:..."
 behavior_unverified: 0 # Count of ⚠️ PRESENT_BEHAVIOR_UNVERIFIED truths (present + wired, behavior not exercised); each is detailed in behavior_unverified_items below (and in human_verification when status is human_needed)
 overrides_applied: 0 # Count of PASSED (override) items included in score
 overrides: # Only if overrides exist — carried forward or newly added
@@ -803,23 +801,6 @@ not blocking. Include this section (even "None") whenever re-verification ran.
 _Verified: {timestamp}_
 _Verifier: Claude (verifier)_
 ```
-
-## Fingerprint the written report
-
-Set `PHASE_DIR` to the phase directory and `COVERED_FILES` to the actual
-repository-relative implementation/evidence paths, passing each through `--files`:
-
-```bash
-FINGERPRINT_ARGS=()
-for file in "${COVERED_FILES[@]}"; do
-  FINGERPRINT_ARGS+=(--files "$file")
-done
-engineer_run query verification.fingerprint "${PHASE_DIR}" "${FINGERPRINT_ARGS[@]}"
-```
-
-The runtime includes phase PLAN/SUMMARY/CONTEXT inputs and excludes the report itself.
-It writes `fingerprint`, `covered_files` and `revision`, preserving status and observations;
-its result contains only `fingerprint` and `path`. Read back and retain the written metadata.
 
 ## Self-check the written status 
 
