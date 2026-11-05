@@ -246,7 +246,7 @@ def _entry_block(entry, canonical_url=None):
               ('Assessment/uncertainty', entry['assessment_uncertainty']), ('Lifecycle/outcome', entry['lifecycle_outcome']),
               ('Next action', entry['next_action']), ('Revision/check evidence', entry['revision_check_evidence']),
               ('Canonical reference', canonical_url or 'This reviewed checklist entry; actual provider-rendered target is pending readback.')]
-    return '<!-- engineer-risk:' + marker + ':begin -->\n### ' + entry['heading'] + '\n\n' + '\n'.join(
+    return '<!-- engineer-risk:' + marker + ':begin -->\n<a name="engineer-risk-' + marker + '"></a>\n### ' + entry['heading'] + '\n\n' + '\n'.join(
         '**' + name + ':** ' + _text(value) for name, value in fields) + '\n<!-- engineer-risk:' + marker + ':end -->'
 
 
@@ -478,7 +478,7 @@ def _mutate(operation, ctx, preview_path, preview):
                 raise Failure('security-provider-drift', operation['url'])
         with tempfile.TemporaryDirectory(prefix='engineer-security-') as directory:
             path = Path(directory) / 'body.md'
-            path.write_text(body, encoding='utf-8')
+            path.write_bytes(body.encode('utf-8'))
             argv = (['issue', 'edit', operation['url']] if operation.get('url') else ['issue', 'create'])
             argv += ['--title', operation['title'], '--body-file', str(path)]
             for label in operation['labels']:
