@@ -3,7 +3,7 @@ from contextlib import ExitStack, nullcontext
 import copy
 import io
 import json
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import subprocess
 import tempfile
 import unittest
@@ -536,13 +536,17 @@ class AnchorReconciliation(PublicationBoundaries):
         fired = []
 
         def crash_before_complete(path, value):
-            if '/intents/' in str(path) and value.get('state') == 'complete' and not fired:
-                fired.append(True)
+            if path.parent.name == 'intents' and value.get('state') == 'complete' and not fired:
+                fired.append(path)
                 raise OSError('Crash after exact readback, before intent completion')
             return original_write(path, value)
 
         with patch.object(security, 'write_json', side_effect=crash_before_complete), self.assertRaises(OSError):
             self.repair_publish(old_token, token)
+        self.assertEqual(1, len(fired))
+        self.assertEqual('intents', fired[0].parent.name)
+        self.assertEqual('attempting', security.load_json(fired[0])['state'])
+        self.assertEqual(1, len(self.writes))
         self.assertFalse(self.repair_publish(old_token, token)['ready'])
         self.assertEqual(1, len(self.writes))
         actual = {entry()['key']: self.url + '#actual-proof'}
@@ -565,6 +569,33 @@ class AnchorReconciliation(PublicationBoundaries):
                 self.assertTrue(self.repair_publish(old_token, token)['ready'])
             self.assertEqual(1, len(self.writes))
         self.assertEqual(2, len(security.load_json(state_path)['reconciliations']))
+
+    def test_actual_crash_hook_handles_windows_spelling_and_excludes_other_directories(self):
+        native_str = str
+        native_write = security.write_json
+        negatives = []
+
+        def windows_spelling(value, *args, **kwargs):
+            # Only this test module's display conversion changes. Real I/O paths
+            # and all production-module conversions remain native.
+            return native_str(PureWindowsPath(value)) if isinstance(value, Path) else native_str(value, *args, **kwargs)
+
+        def observe_write(path, value):
+            if path.parent.name == 'intents' and value.get('state') == 'attempting' and not negatives:
+                other = self.directory / 'not-intents' / 'complete.json'
+                negatives.append(other)
+                self.assertIn('\\', windows_spelling(path))
+                self.assertNotIn('/intents/', windows_spelling(path))
+                # This call enters the real locally installed crash hook with
+                # complete state at the wrong directory and must return normally.
+                security.write_json(other, {'state': 'complete'})
+            return native_write(path, value)
+
+        with patch.dict(globals(), {'str': windows_spelling}), \
+                patch.object(security, 'write_json', side_effect=observe_write):
+            self.test_crashes_at_journal_and_registration_boundaries_never_repeat_effect()
+        self.assertEqual(1, len(negatives))
+        self.assertEqual({'state': 'complete'}, security.load_json(negatives[0]))
 
     def test_journal_exists_before_consumption_failure_and_empty_intent_never_authorizes_retry(self):
         old_token, _, _, _ = self.repair_fixture()
