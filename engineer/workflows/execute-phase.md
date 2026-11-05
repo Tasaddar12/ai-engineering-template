@@ -733,18 +733,10 @@ engineer_run query worktree.merge-wave --phase "${PHASE_NUMBER}" --manifest "$WA
 Read the result rather than assuming it worked:
 
 - `wave_clean: true` — every branch merged. Continue.
-- `blocked` non-empty — **stop the wave here.** Each entry says why:
-
-| `status` | Means | What to do |
-|---|---|---|
-| `blocked` | deleted a path the plan never declared | Do not merge the branch or re-run the merge. Mark the plan blocked, list it with its `undeclared_deletions` in the closing report, and continue the wave. A rename's source path counts as a removal |
-| `conflict` | two plans changed the same lines | The merge was aborted and the worktree preserved. This is a wave-grouping defect: plans with overlapping `files_modified` should not have shared a wave |
-| `missing` | the branch does not exist | The executor never committed. Treat the plan as blocked |
-| `empty` | the branch has no commits | Same: nothing was produced |
-
-A merged entry may also carry `out_of_scope` — paths the plan changed outside
-what it declared. That is **advisory**: record it in the phase summary and let
-the reviewer weigh it. It never blocks a merge.
+- `wave_clean: false` - exit 1; stop and inspect each `status: preserved` entry's
+  `error`. Undeclared paths/deletions block as `worker-scope-violation`;
+  merge conflicts retain their actual Git state. Preserve rejected work and use
+  the [isolated recovery policy](execute-phase/steps/worktree-recovery-policy.md).
 
 Once the wave is clean, release its checkouts:
 
@@ -786,7 +778,7 @@ not be marked as complete when integration tests are failing or inconclusive.
 if [ "${TEST_EXIT}" -eq 0 ]; then
   # Update ROADMAP plan progress for each completed plan in this wave
   for plan_id in {completed_plan_ids}; do
-    engineer_run query roadmap.update-plan-progress "${PHASE_NUMBER}" "${plan_id}" "complete"
+    engineer_run query roadmap.update-plan-progress "${plan_id}"
   done
 
   # Only commit tracking files if they actually changed

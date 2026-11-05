@@ -730,8 +730,8 @@ engineer_run query state.record-session \
 ```
 
 ```bash
-# Update ROADMAP.md progress for this phase (plan counts, status)
-engineer_run query roadmap.update-plan-progress "${PHASE_NUMBER}"
+# Use the assigned NN-MM plan ID, preserving its padding.
+engineer_run query roadmap.update-plan-progress "${PHASE}-${PLAN}"
 
 # Mark completed requirements from PLAN.md frontmatter
 # Extract the `requirements` array from the plan's frontmatter, then mark each complete
@@ -747,7 +747,7 @@ engineer_run query requirements.mark-complete ${REQ_IDS}
 - `state record-metric`: Appends to Performance Metrics table
 - `state add-decision`: Adds to Decisions section, removes placeholders
 - `state record-session`: Updates Last session timestamp and Stopped At fields
-- `roadmap update-plan-progress`: Updates ROADMAP.md progress table row with PLAN vs SUMMARY counts
+- `roadmap update-plan-progress`: Checks the specified plan's checkbox and synchronizes roadmap progress
 - `requirements mark-complete`: Checks off requirement checkboxes and updates traceability table in REQUIREMENTS.md
 
 **Extract decisions from SUMMARY.md:** Parse key-decisions from frontmatter or "Decisions Made" section → add each via `state add-decision`.

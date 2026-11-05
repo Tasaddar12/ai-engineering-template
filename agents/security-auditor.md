@@ -71,6 +71,11 @@ For each threat in `<threat_model>`, read its `severity` field (critical|high|me
 
 Classify each threat before verification. Record classification for every threat — no threat skipped.
 
+For reserved `T-{phase}-SC` shared across PLANs, retain `(id, plan)` and return one
+row per owner with a `PLAN` column. Supply each owner's `threat_evidence` entry
+with `id`, `plan` and current owner-specific `citations` (commit and repository path).
+Ordinary unique IDs keep their existing report shape.
+
 **Verification depth scales with `asvs_level`** (see @~/.claude/engineer/references/security-asvs-levels.md for full definitions):
 - L1: verify mitigation is PRESENT in the cited file (grep-level — pattern exists).
 - L2: verify the mitigation ADDRESSES the threat vector and is placed at the correct boundary (a check in the wrong layer does not close the threat).

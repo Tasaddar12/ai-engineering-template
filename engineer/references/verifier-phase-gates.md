@@ -7,60 +7,26 @@
 > reporting contract. Run each gate at its named
 > agent step; `engineer_run` is the launcher shim defined in the agent's own Step 1 block.
 
-## verify_decisions — Decision Coverage Gate (run after Step 6, requirements coverage)
+## verify_decisions - Decision Coverage Gate (after writing the report, before fingerprinting)
 
 <step name="verify_decisions">
 **Decision coverage validation gate.**
 
-After requirements coverage, also check that each trackable CONTEXT.md
-`<decisions>` entry shows up somewhere in the shipped artifacts (plans,
-SUMMARY.md, files modified by the phase, or recent commit subjects on the
-phase branch).
-
-This gate is **non-blocking / warning only** by deliberate asymmetry with
-the plan-phase translation gate. The plan-phase gate already blocked at
-translation time, so by the time verification runs every decision has
-either been translated or explicitly deferred. This gate's job is to
-surface decisions that *were* translated but vanished during execution —
-that's a soft signal because "honors a decision" is a fuzzy substring
-heuristic, and we don't want a paraphrase miss to fail an otherwise good
-phase.
-
-**Skip if** `workflow.context_coverage_gate` is explicitly set to `false`
-(absent key = enabled). Also skip cleanly when CONTEXT.md is missing or has
-no `<decisions>` block.
+The native gate matches explicit `D-<digits>` identifiers from the phase's
+`*-CONTEXT.md` files against its written `*-VERIFICATION.md` files. It does
+not inspect implementation, plans, summaries or commit subjects to infer intent.
+Write the truthful report first, run this check, resolve coverage gaps, then fingerprint.
 
 ```bash
-GATE_CFG=$(engineer_run query config-get workflow.context_coverage_gate 2>/dev/null || echo "true")
-if [ "$GATE_CFG" != "false" ]; then
-  CONTEXT_PATH=$(ls "${PHASE_DIR}"/*-CONTEXT.md 2>/dev/null | head -1)  # : not a for-glob (zsh aborts)
-  DECISION_RESULT=$(engineer_run query check.decision-coverage-verify "${PHASE_DIR}" "${CONTEXT_PATH}") && DECISION_EXIT=0 || DECISION_EXIT=$?
-fi
+DECISION_RESULT=$(engineer_run query check.decision-coverage-verify "${PHASE_DIR}") && DECISION_EXIT=0 || DECISION_EXIT=$?
 ```
 
-The handler returns JSON `{ skipped, blocking: false, total, honored,
-not_honored: [...], message }`, plus `reason` on a skip or a caller error. On a
-caller error about the phase directory (`reason` is `'phase directory not found'`,
-`'phase path is not a directory'`, `'phase directory unreadable'` or
-`'phase directory holds no plans'`), `total` and `honored` are `null` and
-`not_honored` is `[]`; nothing was checked, so there is no count to report.
-A non-zero `DECISION_EXIT` (`69` `UNAVAILABLE`: the gate
-could not read CONTEXT.md or the phase artifacts) is **not** "no decisions": record
-`Decision coverage: not evaluated (the gate could not read its evidence)` in VERIFICATION.md
-and do not report counts.
-
-**Reporting:** Append the handler's `message` (a `### Decision Coverage`
-section) to VERIFICATION.md regardless of outcome — even when all
-decisions are honored, recording the count helps reviewers spot drift over
-time. Set `decision_coverage` in the verification result to
-`{honored, total, not_honored: [...]}` so downstream tooling can read it.
-On a caller error that is `{honored: null, total: null, not_honored: []}`;
-pass the nulls through rather than coercing them to `0`.
-
-**Status impact:** none. The decision gate does NOT influence the
-`gaps_found` / `human_needed` / `passed` decision tree in Step 9. Its
-findings are warnings the user reviews and may act on by re-opening the
-phase or by acknowledging the decision was abandoned intentionally.
+The gate skips only when `workflow.context_coverage_gate` is disabled.
+Otherwise missing context, a missing verification report or uncovered IDs block
+with exit 1. With context and a report but no IDs, it passes an empty decision set.
+Retain the actual result and diagnostic; nonzero exit or unreadable evidence cannot
+establish coverage. Resolve the reported gaps before claiming `passed`.
+`structuralOnly: true` means matching IDs is not proof that the decisions were implemented.
 </step>
 
 ## audit_test_quality (run after Step 7b, alongside anti-patterns)

@@ -161,14 +161,9 @@ ${VERIFIER_SKILLS}",
 
 > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Agent() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available. If the session ends abnormally (`turn_aborted`), reconcile via the `verification.status` query below — the session's terminal state is not evidence of failure.
 
-**Regeneration.** The verifier — not the orchestrator — recomputes the covered-input fingerprint
-through the CLI over the report's covered set and copies the command's `covered_files` /
-`covered_digest` output verbatim into the new report (`agents/verifier.md` `<output>`):
-
-```bash
-# Run by verifier over the files the report covers — never computed by hand.
-engineer_run query verification.fingerprint "${PHASE_DIR}" "${COVERED_FILES[@]}"
-```
+**Regeneration.** The verifier writes the report first, then follows
+[its fingerprint procedure](../../../../agents/verifier.md#fingerprint-the-written-report)
+with the actual covered paths; retain the runtime-written metadata and truthful status.
 
 **Read the regenerated verdict** through the owner, keeping stderr:
 

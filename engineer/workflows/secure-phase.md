@@ -100,6 +100,8 @@ Read SUMMARY.md — extract `## Threat Flags` entries.
 
 Per threat: `{ threat_id, category, component, severity, disposition, mitigation_pattern, files_to_check }`
 
+For shared reserved `T-{phase}-SC`, retain the owning `plan` through dispatch and results.
+
 Also set `register_authored_at_plan_time: true` if **at least one** PLAN file contained a parseable `<threat_model>` block; `false` if no PLAN files had any `<threat_model>` block (legacy phase authored before formal threat modelling was standard).
 
 ## 3. Threat Classification
@@ -165,6 +167,10 @@ Handle return:
 
 ## 6. Write/Update SECURITY.md
 
+For repeated reserved SC, write one row per owner with `PLAN`, and one `threat_evidence`
+entry per `(id, plan)` with owner-specific current `citations` (commit and repository path).
+Do not collapse owners or reuse another PLAN's evidence; ordinary unique IDs are unchanged.
+
 **State B (create):**
 1. Read template from `engineer/templates/SECURITY.md`
 2. Fill: frontmatter, threat register, accepted risks, audit trail
@@ -177,7 +183,7 @@ Handle return:
 ```bash
 engineer_run query verification.append-audit "${PHASE_DIR}/${PADDED_PHASE}-SECURITY.md" \
   --heading "Security Audit" \
-  --rows "{\"Threats found\": {N}, \"Closed\": {M}, \"Open\": {K}}"
+  --body "{\"Threats found\": {N}, \"Closed\": {M}, \"Open\": {K}}"
 ```
 
 **ENFORCING GATE:** If `threats_open > 0` after all options exhausted (user did not accept, not all verified closed):
