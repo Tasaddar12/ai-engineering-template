@@ -570,12 +570,20 @@ def _original_publication(args, ctx, proof=None, repair_token=None):
     return original, body, actual
 
 
+def _current_reconciliation(args, ctx, review):
+    """Qualify the complete current inputs against the NEW reviewed snapshot."""
+    entries, sources, _ = _inputs(args, ctx)
+    if (entries != review['entries']
+            or {p.resolve() for p in sources} != {safe_path(p).resolve() for p in review['source_files']}
+            or digest(sources) != review['source_digest'] or _head() != review['revision']):
+        raise Failure('security-reconciliation-source-drift', 'Retain the entire reviewed entry set, source files, bytes and exact revision')
+    return entries
+
+
 def _anchor_reconciliation(args, ctx):
     original, body, proof = _original_publication(args, ctx)
-    entries, sources, _ = _inputs(args, ctx)
-    if (entries != original['entries']
-            or {p.resolve() for p in sources} != {safe_path(p).resolve() for p in original['source_files']}):
-        raise Failure('security-reconciliation-source-drift', 'Retain the entire original authored entry set and source files')
+    snapshot = {**original, 'revision': _head()}
+    entries = _current_reconciliation(args, ctx, snapshot)
     issue = issues.issue_get(proof['url'], ctx['origin'])
     operation = original['operations'][0]
     if (issue.get('body') != body or issue.get('title') != operation['title']
@@ -608,7 +616,7 @@ def _anchor_reconciliation(args, ctx):
                 'action': 'edit', 'url': proof['url'], 'before': _issue_digest(issue), 'body': body}
     return {**{k: original[k] for k in ('entries', 'source_files', 'title', 'label')},
             'scope': {k: str(v) if isinstance(v, Path) else v for k, v in ctx.items()},
-            'operations': [repaired], 'revision': _head(), 'source_digest': digest(sources),
+            'operations': [repaired], 'revision': snapshot['revision'], 'source_digest': snapshot['source_digest'],
             'ready': True, 'pending': [], 'reconciliation': proof}
 
 
@@ -699,6 +707,7 @@ def _tracking(args, action):
         state = load_json(state_path, {'schema': 1, 'risks': {}, 'scopes': {}})
         if 'reconciliation' in review:
             _original_publication(args, ctx, review['reconciliation'], token)
+            _current_reconciliation(args, ctx, review)
         reservations = state.setdefault('risk_intents', {})
         for entry in review['entries']:
             known = state['risks'].get(entry['key'], {}).get('canonical_url')
@@ -735,6 +744,7 @@ def _tracking(args, action):
         state = load_json(state_path, {'schema': 1, 'risks': {}, 'scopes': {}})
         if 'reconciliation' in review:
             _original_publication(args, ctx, review['reconciliation'], token)
+            _current_reconciliation(args, ctx, review)
             evidence = {'token': token, **review['reconciliation'],
                 'revision': review['revision'], 'source_digest': review['source_digest'],
                 'provider_before_digest': review['operations'][0]['before'],
