@@ -7,60 +7,65 @@
 > reporting contract. Run each gate at its named
 > agent step; `engineer_run` is the launcher shim defined in the agent's own Step 1 block.
 
-## verify_decisions — Decision Coverage Gate (run after Step 6, requirements coverage)
+## verify_decisions — Decision Coverage Gate (run after writing report evidence, before fingerprinting and delivery)
 
 <step name="verify_decisions">
 **Decision coverage validation gate.**
 
-After requirements coverage, also check that each trackable CONTEXT.md
-`<decisions>` entry shows up somewhere in the shipped artifacts (plans,
-SUMMARY.md, files modified by the phase, or recent commit subjects on the
-phase branch).
+Independently assess implementation compliance with each trackable decision
+while collecting verification evidence. Write those actual findings, including
+decision IDs and supporting evidence or gaps, into VERIFICATION.md with the
+truthful Step 9 status. Then run this structural check on the written report,
+before the final fingerprint and delivery. Do not invent citations to make the
+check pass.
 
-This gate is **non-blocking / warning only** by deliberate asymmetry with
-the plan-phase translation gate. The plan-phase gate already blocked at
-translation time, so by the time verification runs every decision has
-either been translated or explicitly deferred. This gate's job is to
-surface decisions that *were* translated but vanished during execution —
-that's a soft signal because "honors a decision" is a fuzzy substring
-heuristic, and we don't want a paraphrase miss to fail an otherwise good
-phase.
+The handler collects explicit `D-<digits>` IDs anywhere in the phase's
+`*-CONTEXT.md` files and checks their presence in `*-VERIFICATION.md` text.
+It does not inspect plans, SUMMARY.md, source files or commit subjects for
+verification evidence, and it does not judge whether implementation honors a
+decision. An ID cited alongside a failed or unverified finding still satisfies
+structural presence; that finding remains a separate verification gap.
 
 **Skip if** `workflow.context_coverage_gate` is explicitly set to `false`
-(absent key = enabled). Also skip cleanly when CONTEXT.md is missing or has
-no `<decisions>` block.
+(absent key = enabled). The handler performs this skip itself. Missing context
+is blocking. Context with no tracked IDs still requires a verification report;
+absence of a `<decisions>` block is not a skip condition.
 
 ```bash
-GATE_CFG=$(engineer_run query config-get workflow.context_coverage_gate 2>/dev/null || echo "true")
-if [ "$GATE_CFG" != "false" ]; then
-  CONTEXT_PATH=$(ls "${PHASE_DIR}"/*-CONTEXT.md 2>/dev/null | head -1)  # : not a for-glob (zsh aborts)
-  DECISION_RESULT=$(engineer_run query check.decision-coverage-verify "${PHASE_DIR}" "${CONTEXT_PATH}") && DECISION_EXIT=0 || DECISION_EXIT=$?
-fi
+DECISION_RESULT=$(engineer_run query check.decision-coverage-verify "${PHASE_NUM}" --dir "${PHASE_DIR}") && DECISION_EXIT=0 || DECISION_EXIT=$?
 ```
 
-The handler returns JSON `{ skipped, blocking: false, total, honored,
-not_honored: [...], message }`, plus `reason` on a skip or a caller error. On a
-caller error about the phase directory (`reason` is `'phase directory not found'`,
-`'phase path is not a directory'`, `'phase directory unreadable'` or
-`'phase directory holds no plans'`), `total` and `honored` are `null` and
-`not_honored` is `[]`; nothing was checked, so there is no count to report.
-A non-zero `DECISION_EXIT` (`69` `UNAVAILABLE`: the gate
-could not read CONTEXT.md or the phase artifacts) is **not** "no decisions": record
-`Decision coverage: not evaluated (the gate could not read its evidence)` in VERIFICATION.md
-and do not report counts.
+For a report citing both tracked IDs, the native result is:
 
-**Reporting:** Append the handler's `message` (a `### Decision Coverage`
-section) to VERIFICATION.md regardless of outcome — even when all
-decisions are honored, recording the count helps reviewers spot drift over
-time. Set `decision_coverage` in the verification result to
-`{honored, total, not_honored: [...]}` so downstream tooling can read it.
-On a caller error that is `{honored: null, total: null, not_honored: []}`;
-pass the nulls through rather than coercing them to `0`.
+```json
+{"passed": true, "block": false, "structuralOnly": true, "decisions": ["D-01", "D-02"], "uncovered": [], "files": ["${PHASE_DIR}/${PHASE_NUM}-VERIFICATION.md"]}
+```
 
-**Status impact:** none. The decision gate does NOT influence the
-`gaps_found` / `human_needed` / `passed` decision tree in Step 9. Its
-findings are warnings the user reviews and may act on by re-opening the
-phase or by acknowledging the decision was abandoned intentionally.
+`decisions` and `uncovered` contain sorted unique IDs; `files` lists the
+verification reports examined. A missing report yields `files: []`,
+`passed: false`, `block: true` and all tracked IDs in `uncovered`. Any uncovered
+ID also yields `passed: false` and `block: true`. Missing context returns
+`{"passed": false, "block": true, "uncovered": [], "reason": "Decision context is missing", "structuralOnly": true}`.
+The disabled gate returns only
+`{"passed": true, "skipped": true, "uncovered": []}`.
+
+Passes and skips exit `0`; blocking coverage results exit `1`. Runtime/caller
+errors can emit an error diagnostic on stderr without coverage JSON. Preserve
+the actual diagnostic and nonzero exit status; record coverage as not evaluated
+when no coverage result was produced. Do not reinterpret an error or missing
+evidence as zero decisions or successful verification.
+
+**Reporting:** Add a narrative `### Decision Coverage` section recording the
+actual structural result, tracked/uncovered IDs and examined report paths, or
+the skip/error diagnostic. Keep the independently assessed implementation
+findings and their evidence. The handler does not return a Markdown message or
+honored/total counts; do not add unsupported `decision_coverage` frontmatter.
+
+**Status impact:** Respect `block: true` as an unresolved verification gap and
+retain the nonzero result for remediation before reporting overall `passed`.
+A structural pass alone does not establish implementation compliance or
+override `gaps_found` / `human_needed` findings from the other checks. After any
+report correction, rerun the gate before the final fingerprint and delivery.
 </step>
 
 ## audit_test_quality (run after Step 7b, alongside anti-patterns)
