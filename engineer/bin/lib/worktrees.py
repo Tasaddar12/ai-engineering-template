@@ -475,10 +475,7 @@ def _create_or_record(args, action):
             raise Failure('manifest-owner-drift', str(path))
         plan = str(args.arg(0, args.get('plan', args.get('agent-id', ''))))
         agent = str(args.get('agent-id', plan))
-        # Host identities are opaque: accept rooted hierarchies without rewriting
-        # them into the slugs used only for generated branches and paths below.
-        segment = r'[A-Za-z0-9][A-Za-z0-9_.-]*'
-        if len(agent) > 160 or not (re.fullmatch(segment, agent) or re.fullmatch(rf'/{segment}(?:/{segment})*', agent)):
+        if not agent or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,159}', agent):
             raise Failure('worker-agent-id-required', 'Supply the actual bounded agent ID or plan ID')
         prefix = config.lookup(config.load(), 'worktree.branch_prefix', 'codex/')
         branch = str(args.get('branch', prefix + slug(str(args.get('phase', 'session')) + '-' + agent)))

@@ -91,9 +91,6 @@ For numbered phases, use the phase-plan identifier. For quick work or maintenanc
   ID plus `Pending: <dependency>`.
 - Reuse the same issue for duplicate findings in different PLANs. Do not relocate
   or collapse PLAN content into a combined registry.
-- For exact reserved `T-{phase}-SC` repeated across distinct PLANs, use the same
-  canonical risk key and verified canonical target for every owned occurrence.
-  Preserve each PLAN's six-column register and IDs, and reconcile every occurrence.
 - Workers return safe requests/SUMMARY. Coordinators update each owning PLAN's
   links before preparation/execution completion; add discoveries to that PLAN.
   Do not add an ordinary approval gate.
@@ -157,13 +154,9 @@ PLAN and keep SUMMARY/PR linked outcomes separate. Each entry must have:
 
 **Entry identity:** every risk entry is a stable `###` heading in the checklist
 issue BODY, including entries that link an existing canonical issue. Entry URLs
-are actual provider-rendered heading addresses. An adjacent named anchor is
-usable only when provider readback binds it to the exact stable heading and
-canonical key. Inspect the saved body/rendered heading and verify that the actual
-URL reaches the exact key, PLAN/ID and content before using the link; never compute
-or invent anchor slugs. Preserve an existing canonical target while it remains
-among the verified addresses; a newly observed alias does not replace it. A
-missing established fragment remains a blocker. Reuse the matching heading
+are provider heading anchors. Inspect the saved body/rendered heading and verify
+that its provider-supplied anchor URL reaches the exact key, PLAN/ID and content
+before using the link; never fabricate anchor slugs. Reuse the matching heading
 on reruns and keep it immutable: renaming a heading breaks the link. A necessary
 rename requires readback and repair of all affected references before readiness.
 Use descriptive link labels without a "(comment)" suffix. An existing issue

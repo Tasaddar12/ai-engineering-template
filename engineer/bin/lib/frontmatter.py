@@ -21,21 +21,17 @@ OPTIONAL = {
                 "actuals": dict, "estimate": dict, "tech-stack": dict, "key-files": dict, "key-decisions": list,
                 "patterns-established": list, "requirements-completed": list, "coverage": list, "duration": (str, int, float),
                 "completed": str, "decisions": list, "metrics": dict, "one_liner": str, "acceptance": list,
-                "documentation": list, "plan_head_before": str, "plan_head_after": str, "base_revision": str,
-                "issue_refs": list},
+                "documentation": list, "plan_head_before": str, "plan_head_after": str, "base_revision": str},
     "verification": {"verified": str, "score": str, "covered_files": list, "covered_digest": str, "fingerprint": str, "revision": str,
                      "behavior_unverified": int, "behavior_unverified_items": list, "coincidental_reliance_items": list,
                      "human_verification": list, "gaps": list, "deferred": list, "advisory": list, "overrides": list,
-                     "overrides_applied": (list, int), "re_verification": dict, "issue_refs": list},
-    "review": {"reviewed": str, "revision": str, "depth": str, "files_reviewed": int, "files_reviewed_list": list, "findings": dict, "issue_refs": list},
+                     "overrides_applied": (list, int), "re_verification": dict},
+    "review": {"reviewed": str, "revision": str, "depth": str, "files_reviewed": int, "files_reviewed_list": list, "findings": dict},
     "context": {"created": str, "updated": str, "status": str, "source": (str, list), "decisions": list},
     "research": {"created": str, "researched": str, "status": str, "domain": str, "confidence": str, "coverage": str},
-    "validation": {"slug": str, "status": str, "nyquist_compliant": bool, "wave_0_complete": bool, "created": str, "updated": str, "issue_refs": list},
-    "uat": {"source": list, "started": str, "updated": str, "completed": str, "issue_refs": list},
-    "security": {"audited": str, "threats_total": int, "threats_open": int, "threats_closed": int, "revision": str,
-                 "issue_refs": list, "slug": str, "asvs_level": int, "created": str, "audit_revision": str,
-                 "audit_completed": bool, "auditor": str, "threat_evidence": list, "fingerprint": str,
-                 "covered_files": list, "no_applicable_threats": bool, "coverage_rationale": str},
+    "validation": {"slug": str, "status": str, "nyquist_compliant": bool, "wave_0_complete": bool, "created": str, "updated": str},
+    "uat": {"source": list, "started": str, "updated": str, "completed": str},
+    "security": {"audited": str, "threats_total": int, "threats_open": int, "threats_closed": int, "revision": str},
     "quick": {"created": str, "updated": str, "commit": str, "verification": str, "issue": str, "pr": str,
               "migration_source": str, "source": str, "legacy_row": str},
 }
@@ -88,29 +84,11 @@ def errors(metadata, schema):
                 result.append(field+" must contain text values")
         must = metadata.get("must_haves")
         if isinstance(must, dict):
-            if set(must)-{"truths", "artifacts", "key_links", "prohibitions"}:
+            if set(must)-{"truths", "artifacts", "key_links"}:
                 result.append("Unknown must_haves field")
             for key in ("truths", "artifacts", "key_links"):
                 if key not in must or not isinstance(must[key], list):
                     result.append("must_haves."+key+" must be an array")
-            if "prohibitions" in must:
-                prohibitions = must["prohibitions"]
-                fields = {"statement", "status", "verification", "reason", "check_kind", "check_target",
-                          "check_rule", "check_violation_fixture", "check_clean_fixture"}
-                if not isinstance(prohibitions, list):
-                    result.append("must_haves.prohibitions must be an array")
-                else:
-                    for index, item in enumerate(prohibitions):
-                        if (not isinstance(item, dict) or not {"statement", "status"} <= set(item)
-                                or set(item) - fields or any(not isinstance(value, str) for value in item.values())):
-                            result.append("Invalid prohibition entry: " + str(index))
-                            continue
-                        if item["status"] not in {"resolved", "dismissed", "unresolved"}:
-                            result.append("Invalid prohibition status: " + str(index))
-                        if "verification" in item and item["verification"] not in {"test", "judgment"}:
-                            result.append("Invalid prohibition verification: " + str(index))
-                        if "check_kind" in item and item["check_kind"] not in {"node-test", "lint-rule"}:
-                            result.append("Invalid prohibition check kind: " + str(index))
     if schema == "summary" and isinstance(metadata.get("coverage"), list):
         seen = set()
         for index, item in enumerate(metadata["coverage"]):

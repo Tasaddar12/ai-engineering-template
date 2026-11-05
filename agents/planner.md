@@ -306,7 +306,7 @@ Output: [Artifacts created]
 </objective>
 
 <execution_context>
-@~/.claude/agents/executor.md
+@~/.claude/engineer/workflows/execute-plan.md
 @~/.claude/engineer/templates/summary.md
 </execution_context>
 

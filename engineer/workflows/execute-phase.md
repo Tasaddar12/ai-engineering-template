@@ -733,22 +733,18 @@ engineer_run query worktree.merge-wave --phase "${PHASE_NUMBER}" --manifest "$WA
 Read the result rather than assuming it worked:
 
 - `wave_clean: true` — every branch merged. Continue.
-- `preserved` non-empty (`wave_clean: false`, exit 1) — **stop the wave here.** Each entry has `status: preserved` and an `error` identifying the failed gate:
+- `blocked` non-empty — **stop the wave here.** Each entry says why:
 
-| `error` | Means | What to do |
+| `status` | Means | What to do |
 |---|---|---|
-| `worker-scope-violation` | changed a path outside exact declared file ownership or deleted an undeclared path; coordinator-owned shared records also fail | Preserve the branch and checkout, mark the plan blocked, and report the scope violation. A rename's source path counts as a removal |
-| `worker-merge-conflict` | Git could not merge the worker | Preserve the real merge state for coordinator recovery; inspect overlapping plan ownership before retrying |
-| `worker-no-commits` | the branch has no commits beyond its captured base | Preserve the checkout and treat the plan as blocked |
-| other error | ownership, identity, lifecycle, SUMMARY or integration validation failed | Preserve the checkout and report the exact error; reconcile the failed gate before retrying |
+| `blocked` | deleted a path the plan never declared | Do not merge the branch or re-run the merge. Mark the plan blocked, list it with its `undeclared_deletions` in the closing report, and continue the wave. A rename's source path counts as a removal |
+| `conflict` | two plans changed the same lines | The merge was aborted and the worktree preserved. This is a wave-grouping defect: plans with overlapping `files_modified` should not have shared a wave |
+| `missing` | the branch does not exist | The executor never committed. Treat the plan as blocked |
+| `empty` | the branch has no commits | Same: nothing was produced |
 
-Unexpected paths block integration through `worker-scope-violation`. The
-coordinator must reconcile the authorized exact files/deletions and isolation
-before merging. Follow `execute-phase/steps/worktree-recovery-policy.md`:
-preserve the rejected checkout and, when a corrected attempt is authorized,
-use the existing isolation dispatch route (`worktree.create` with explicit
-files/deletions) for a fresh narrowly scoped checkout. Do not broaden an existing
-ownership record or bypass the failed gate to merge rejected work.
+A merged entry may also carry `out_of_scope` — paths the plan changed outside
+what it declared. That is **advisory**: record it in the phase summary and let
+the reviewer weigh it. It never blocks a merge.
 
 Once the wave is clean, release its checkouts:
 
@@ -790,7 +786,7 @@ not be marked as complete when integration tests are failing or inconclusive.
 if [ "${TEST_EXIT}" -eq 0 ]; then
   # Update ROADMAP plan progress for each completed plan in this wave
   for plan_id in {completed_plan_ids}; do
-    engineer_run query roadmap.update-plan-progress "${plan_id}"
+    engineer_run query roadmap.update-plan-progress "${PHASE_NUMBER}" "${plan_id}" "complete"
   done
 
   # Only commit tracking files if they actually changed

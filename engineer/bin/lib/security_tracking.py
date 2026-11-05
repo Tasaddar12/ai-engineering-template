@@ -83,73 +83,17 @@ def table_rows(body, required):
 
 
 def plan_threats(directory):
-    from .markdown_table import parse_markdown_table, split_table_row
     result = []
-    required = {'threat_id', 'category', 'component', 'severity', 'disposition', 'mitigation_plan'}
     for path in sorted(directory.glob('*-PLAN.md')):
-        text = '\n'.join(issue_format.visible_lines(read(path)))
+        text = read(path)
         blocks = re.findall(r'<threat_model\b[^>]*>([\s\S]*?)</threat_model>', text)
-        if len(re.findall(r'<threat_model\b', text)) != len(blocks):
-            raise Failure('invalid-plan-threat-register', 'Unclosed threat_model block', plan=path.name)
         for block in blocks:
-            tables, current = [], []
-            for line in block.splitlines() + ['']:
-                if line.lstrip().startswith('|'):
-                    current.append(line)
-                else:
-                    if current:
-                        if '|' in line and len(split_table_row(line)) >= 5:
-                            raise Failure('invalid-plan-threat-register', 'Unparsed owning table row', plan=path.name, row=line)
-                        tables.append(current)
-                        current = []
-                    if re.match(r'^\s*(?:`?T-\d|\[`?T-\d).*\|', line):
-                        raise Failure('invalid-plan-threat-register', 'Unparsed owning threat row', plan=path.name, row=line)
-            for lines in tables:
-                headers = split_table_row(lines[0])
-                columns = [re.sub(r'[^a-z0-9]+', '_', h.replace('**', '').lower()).strip('_') for h in headers]
-                columns = ['mitigation_plan' if h == 'mitigation' else h for h in columns]
-                owning = (len(set(columns) & required) >= 2
-                          or 'threat_id' in columns and len(columns) >= 5
-                          or bool(re.match(r'^(?:`?T-\d|\[`?T-\d)', headers[0])))
-                if not owning:
-                    continue  # Trust-boundary and assessment tables do not declare ownership.
-                if len(columns) != len(required) or set(columns) != required:
-                    raise Failure('invalid-plan-threat-register', 'Owning register requires six unique supported headers', plan=path.name, headers=headers)
-                parsed = parse_markdown_table('\n'.join(lines))
-                if not parsed['ok'] or not parsed['value']['rows']:
-                    raise Failure('invalid-plan-threat-register', parsed.get('reason', 'Owning register has no declared rows'), plan=path.name)
-                for source in parsed['value']['rows']:
-                    row = {column: source[header] for column, header in zip(columns, headers)}
-                    if any(not value.strip() for value in row.values()):
-                        raise Failure('invalid-plan-threat-register', 'Owning register cells cannot be empty', plan=path.name, row=row)
-                    cell = row['threat_id']
-                    identifier, target = _threat_identity(cell)
-                    result.append({**row, 'threat_id': identifier, 'threat_id_cell': cell,
-                                   'threat_url': target, 'plan': path.name})
+            for row in table_rows(block, ('threat_id', 'category', 'component', 'severity', 'disposition')):
+                identifier = row['threat_id'].strip('` ')
+                if not identifier or any(c in identifier for c in '{}<>'):
+                    raise Failure('invalid-plan-threat', str(path), row=row)
+                result.append({**row, 'threat_id': identifier, 'plan': path.name})
     return result
-
-
-def _threat_identity(cell):
-    """Normalize only a complete local ID label, preserving authored link data."""
-    label, target = cell.strip(), None
-    linked = re.fullmatch(r'\[([^\[\]]+)\]\(([^\s()]+)\)', label)
-    if linked:
-        label, target = linked.groups()
-    if label.startswith('`') and label.endswith('`'):
-        label = label[1:-1]
-    if not re.fullmatch(r'T-\d+(?:\.\d+)?-(?:\d+|SC)', label):
-        raise Failure('invalid-plan-threat', 'Use one plain, backticked or linked local threat ID', cell=cell)
-    return label, target
-
-
-def threat_id_duplicates(directory, threats=None):
-    """Count register ownership, retaining illegal repetitions within one PLAN."""
-    reserved = 'T-' + directory.name.split('-', 1)[0] + '-SC'
-    owners = {}
-    for threat in plan_threats(directory) if threats is None else threats:
-        owners.setdefault(threat['threat_id'], []).append(threat['plan'].removesuffix('-PLAN.md'))
-    return [{'id': identifier, 'plans': plans} for identifier, plans in owners.items()
-            if len(plans) > 1 and (identifier != reserved or len(plans) != len(set(plans)))]
 
 
 def _text(value):
@@ -246,7 +190,7 @@ def _entry_block(entry, canonical_url=None):
               ('Assessment/uncertainty', entry['assessment_uncertainty']), ('Lifecycle/outcome', entry['lifecycle_outcome']),
               ('Next action', entry['next_action']), ('Revision/check evidence', entry['revision_check_evidence']),
               ('Canonical reference', canonical_url or 'This reviewed checklist entry; actual provider-rendered target is pending readback.')]
-    return '<!-- engineer-risk:' + marker + ':begin -->\n<a name="engineer-risk-' + marker + '"></a>\n### ' + entry['heading'] + '\n\n' + '\n'.join(
+    return '<!-- engineer-risk:' + marker + ':begin -->\n### ' + entry['heading'] + '\n\n' + '\n'.join(
         '**' + name + ':** ' + _text(value) for name, value in fields) + '\n<!-- engineer-risk:' + marker + ':end -->'
 
 
@@ -352,96 +296,24 @@ class _Anchors(HTMLParser):
     def __init__(self):
         super().__init__()
         self.heading = None
-        self.section = None
-        self.adjacent = []
-        self.anchor_paragraph = None
         self.items = {}
-        self.declarations = {}
-        self.permalinks = {}
-    def _declare(self, address, node):
-        self.declarations.setdefault(address, []).append(node)
     def handle_starttag(self, tag, attributes):
         attrs = dict(attributes)
-        node = {'owner': self.heading}
-        addresses = {attrs.get('id'), attrs.get('name') if tag == 'a' else None} - {None, ''}
-        for address in addresses:
-            self._declare(address, node)
-        if self.heading is None:
-            if tag == 'p':
-                valid = self.anchor_paragraph is None and not addresses
-                self.anchor_paragraph = {'valid': valid, 'has_anchor': False}
-                if not valid:
-                    self.adjacent = []
-            elif self.anchor_paragraph is not None and not (tag == 'a' and addresses):
-                self.anchor_paragraph['valid'] = False
-                self.adjacent = []
-        if re.fullmatch(r'h[1-6]', tag):
-            self.section = None
         if tag == 'h3':
-            self.heading = {'text': [], 'addresses': set(), 'canonical': set(), 'body': []}
-            node['owner'] = self.heading
-            for adjacent in self.adjacent:
-                adjacent['owner'] = self.heading
-                self.heading['addresses'].update(adjacent['addresses'])
-            self.adjacent = []
+            self.heading = {'text': [], 'anchors': []}
         if self.heading is not None:
-            self.heading['addresses'].update(addresses)
-            # Provider-native heading permalinks are proof of their supplied href;
-            # an ordinary hyperlink is never an address declaration.
-            if (tag == 'a' and 'anchor' in attrs.get('class', '').split()
-                    and attrs.get('aria-hidden') == 'true' and attrs.get('href', '').startswith('#')
-                    and len(attrs['href']) > 1):
-                address = attrs['href'][1:]
-                self.heading['addresses'].add(address)
-                self.heading['canonical'].add(address)
-                self.permalinks.setdefault(address, []).append(node)
-        elif tag == 'a' and addresses and (self.anchor_paragraph is None or self.anchor_paragraph['valid']):
-            node['addresses'] = addresses
-            self.adjacent.append(node)
-            if self.anchor_paragraph is not None:
-                self.anchor_paragraph['has_anchor'] = True
-        elif tag == 'p' and self.anchor_paragraph['valid']:
-            pass  # Empty named-anchor paragraphs are transparent until their closing tag.
-        else:
-            self.adjacent = []
-        if self.section is not None and tag in ('p', 'br', 'div', 'li'):
-            self.section['body'].append('\n')
+            if attrs.get('href', '').startswith('#'):
+                self.heading['anchors'].append(attrs['href'][1:])
+            elif attrs.get('id'):
+                self.heading['anchors'].append(attrs['id'])
     def handle_data(self, data):
         if self.heading is not None:
             self.heading['text'].append(data)
-        else:
-            if data.strip():
-                self.adjacent = []
-                if self.anchor_paragraph is not None:
-                    self.anchor_paragraph['valid'] = False
-            if self.section is not None:
-                self.section['body'].append(data)
     def handle_endtag(self, tag):
         if tag == 'h3' and self.heading is not None:
             text = ''.join(self.heading['text']).strip()
-            self.items.setdefault(text, []).append(self.heading)
-            self.section = self.heading
+            self.items[text] = self.heading['anchors']
             self.heading = None
-        if self.heading is None:
-            if tag == 'p':
-                if not self.anchor_paragraph or not all(self.anchor_paragraph.values()):
-                    self.adjacent = []
-                self.anchor_paragraph = None
-            elif tag != 'a':
-                self.adjacent = []
-                if self.anchor_paragraph is not None:
-                    self.anchor_paragraph['valid'] = False
-        if self.section is not None and tag in ('p', 'div', 'li'):
-            self.section['body'].append('\n')
-    def owned_addresses(self, section):
-        result = set()
-        for address in section.get('addresses', set()):
-            declarations = self.declarations.get(address, [])
-            proof = declarations + self.permalinks.get(address, [])
-            if len(declarations) > 1 or not proof or any(node['owner'] is not section for node in proof):
-                return set()  # Conflicting ownership must not be rescued by another alias.
-            result.add(address)
-        return result
 
 
 def rendered_targets(issue_url, entries, origin):
@@ -454,20 +326,11 @@ def rendered_targets(issue_url, entries, origin):
     parser.feed(packet.get('body_html', ''))
     targets, pending = {}, []
     for entry in entries:
-        sections = parser.items.get(entry['heading'], [])
-        section = sections[0] if len(sections) == 1 else {}
-        owned = parser.owned_addresses(section)
-        canonical = section.get('canonical', set())
-        anchors = canonical & owned if canonical else owned
-        established = entry.get('canonical_url')
-        if isinstance(established, str) and established.startswith(issue_url + '#'):
-            fragment = established[len(issue_url) + 1:]
-            anchors = {fragment} if fragment in owned else set()
-        keys = re.findall(r'(?m)^\s*Canonical risk key:\s*([^\n]+?)\s*$', ''.join(section.get('body', [])))
-        if len(anchors) != 1 or keys != [entry['key']]:
+        anchors = parser.items.get(entry['heading'], [])
+        if len(set(anchors)) != 1:
             pending.append(entry['id'] + ': actual rendered heading anchor unavailable or ambiguous')
         else:
-            targets[entry['key']] = issue_url + '#' + next(iter(anchors))
+            targets[entry['key']] = issue_url + '#' + anchors[0]
     return targets, pending
 
 
@@ -503,7 +366,7 @@ def _mutate(operation, ctx, preview_path, preview):
                 raise Failure('security-provider-drift', operation['url'])
         with tempfile.TemporaryDirectory(prefix='engineer-security-') as directory:
             path = Path(directory) / 'body.md'
-            path.write_bytes(body.encode('utf-8'))
+            path.write_text(body, encoding='utf-8')
             argv = (['issue', 'edit', operation['url']] if operation.get('url') else ['issue', 'create'])
             argv += ['--title', operation['title'], '--body-file', str(path)]
             for label in operation['labels']:
@@ -525,178 +388,8 @@ def _mutate(operation, ctx, preview_path, preview):
     return result
 
 
-def _preview_identity(review):
-    identity = {k: review[k] for k in ('scope', 'entries', 'operations', 'source_digest', 'revision')}
-    if 'reconciliation' in review:
-        identity['reconciliation'] = review['reconciliation']
-    return identity
-
-
-def _original_publication(args, ctx, proof=None, repair_token=None):
-    """Authenticate immutable provenance; never adopt or rewrite an old intent."""
-    token = str(args.get('reconcile-token', ''))
-    if not re.fullmatch(r'[a-f0-9]{64}', token):
-        raise Failure('security-reconciliation-invalid', 'Supply the original consumed preview token')
-    path = _runtime_dir() / 'previews' / (token + '.json')
-    if not path.is_file():
-        raise Failure('security-reconciliation-invalid', 'Original publication preview is unavailable')
-    original = load_json(path)
-    if (not isinstance(original, dict) or not all(k in original for k in ('scope', 'entries', 'operations', 'source_digest', 'source_files', 'revision'))
-            or original.get('token') != token or original.get('consumed') is not True or original.get('ready') is not True
-            or 'reconciliation' in original or _hash(_preview_identity(original)) != token
-            or original.get('scope', {}).get('key') != ctx['key']
-            or original.get('scope', {}).get('origin') != ctx['origin']):
-        raise Failure('security-reconciliation-invalid', 'Original consumed publication identity does not match')
-    operations, entries, results = original.get('operations', []), original.get('entries', []), original.get('results', [])
-    if (len(operations) != 1 or operations[0].get('key') != 'container:' + ctx['key']
-            or operations[0].get('action') not in ('create', 'edit') or not entries
-            or not all(e.get('planned') is True for e in entries)
-            or len(results) != 1 or results[0].get('key') != operations[0]['key']):
-        raise Failure('security-reconciliation-invalid', 'Repair supports only one known planned checklist container')
-    operation, url = operations[0], results[0].get('url')
-    repository.require_url(url, 'issues')
-    if operation.get('url') and operation['url'] != url:
-        raise Failure('security-reconciliation-invalid', 'Original edit result must retain its reviewed issue URL')
-    intent_key = _hash({'origin': ctx['origin'], 'key': operation['key']})
-    intent_path = _runtime_dir() / 'intents' / (intent_key + '.json')
-    intent = load_json(intent_path)
-    marker = '<!-- engineer-security-intent:' + intent_key + ' -->'
-    body = operation['body'] if marker in operation['body'] else operation['body'].rstrip() + '\n\n' + marker + '\n'
-    if (not intent or intent.get('state') != 'complete' or intent.get('origin') != ctx['origin']
-            or intent.get('url') != url or intent.get('operation') != {**operation, 'body': body}
-            or intent.get('source_digest') != original['source_digest']):
-        raise Failure('security-reconciliation-invalid', 'Complete exact original intent and known issue readback are required')
-    actual = {'original_token': token, 'original_preview_sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
-              'original_intent_sha256': hashlib.sha256(intent_path.read_bytes()).hexdigest(), 'url': url,
-              'original_revision': original['revision']}
-    if proof is not None and proof != actual:
-        raise Failure('security-reconciliation-drift', 'Original publication receipt bytes changed')
-    revision = original.get('revision', '')
-    if (not re.fullmatch(r'[a-f0-9]{40,64}', revision)
-            or run(['git', 'merge-base', '--is-ancestor', revision, _head()], root(), check=False, timeout=30).returncode
-            or digest([safe_path(p) for p in original['source_files']]) != original['source_digest']):
-        raise Failure('security-reconciliation-source-drift', 'Original captured source bytes and ancestor revision are required')
-    _, state = _state(ctx)
-    if state.get('scopes', {}).get(ctx['key'], {}).get('url', url) != url:
-        raise Failure('security-reconciliation-drift', 'Established checklist identity changed')
-    for entry in entries:
-        reservation = state.get('risk_intents', {}).get(entry['key'])
-        known = state['risks'].get(entry['key'], {})
-        expected = {'scope': ctx['key'], 'entry_id': entry['id'], 'heading': entry['heading'],
-                    'plan': entry['plan'], 'threat_id': entry['threat_id'], 'container_url': url}
-        if any(field in known and known[field] != value for field, value in expected.items()):
-            raise Failure('security-reconciliation-owned', 'Original risk occurrence identity changed', key=entry['key'])
-        registered = (repair_token and known.get('canonical_url') and known.get('container_url') == url
-                      and any(r.get('token') == repair_token and r.get('targets', {}).get(entry['key']) == known['canonical_url']
-                              for r in state.get('reconciliations', [])))
-        if (reservation != {'scope': ctx['key'], 'token': token} and not (reservation is None and registered)
-                or known.get('canonical_url') and not registered):
-            raise Failure('security-reconciliation-owned', 'Preserve original risk ownership and established canonical identities', key=entry['key'])
-    return original, body, actual
-
-
-def _current_reconciliation(args, ctx, review):
-    """Qualify the complete current inputs against the NEW reviewed snapshot."""
-    entries, sources, _ = _inputs(args, ctx)
-    if (entries != review['entries']
-            or {p.resolve() for p in sources} != {safe_path(p).resolve() for p in review['source_files']}
-            or digest(sources) != review['source_digest'] or _head() != review['revision']):
-        raise Failure('security-reconciliation-source-drift', 'Retain the entire reviewed entry set, source files, bytes and exact revision')
-    return entries
-
-
-def _anchor_reconciliation(args, ctx):
-    original, body, proof = _original_publication(args, ctx)
-    snapshot = {**original, 'revision': _head()}
-    entries = _current_reconciliation(args, ctx, snapshot)
-    issue = issues.issue_get(proof['url'], ctx['origin'])
-    operation = original['operations'][0]
-    if (issue.get('body') != body or issue.get('title') != operation['title']
-            or issue.get('state', '').upper() != 'OPEN'
-            or not set(operation['labels']) <= {x['name'] if isinstance(x, dict) else x for x in issue.get('labels', [])}):
-        raise Failure('security-reconciliation-provider-drift', 'Read back the exact complete original issue before an additive repair')
-    markers = re.findall(r'<!-- engineer-risk:([a-f0-9]{64}):begin -->', body)
-    if sorted(markers) != sorted(_hash(e['key']) for e in entries):
-        raise Failure('security-reconciliation-entry-drift', 'Retain the complete original container entry set')
-    for entry in entries:
-        marker = _hash(entry['key'])
-        start, stop = '<!-- engineer-risk:' + marker + ':begin -->', '<!-- engineer-risk:' + marker + ':end -->'
-        pattern = re.escape(start) + r'(\r?\n)(### ' + re.escape(entry['heading']) + r')(\r?\n)'
-        matches = list(re.finditer(pattern, body))
-        anchor = '<a name="engineer-risk-' + marker + '"></a>'
-        if body.count(start) != 1 or body.count(stop) != 1 or len(matches) != 1 or 'engineer-risk-' + marker in body:
-            raise Failure('security-reconciliation-entry-drift', 'Unique unchanged anchorless entry markers/headings are required', key=entry['key'])
-        match = matches[0]
-        if body.index(stop) < match.end():
-            raise Failure('security-reconciliation-entry-drift', 'Entry marker order changed', key=entry['key'])
-        block = body[body.index(start) + len(start):body.index(stop)]
-        if (re.findall(r'(?m)^### ([^\r\n]+)', block) != [entry['heading']]
-                or re.findall(r'(?m)^\*\*Canonical risk key:\*\* ([^\r\n]+)', block) != [entry['key']]
-                or '<!-- engineer-risk:' in block):
-            raise Failure('security-reconciliation-entry-drift', 'Exact heading/key and non-overlapping entry blocks are required', key=entry['key'])
-        position = match.start(2)
-        body = body[:position] + anchor + match.group(1) + body[position:]
-    repaired = {**operation, 'key': operation['key'] + ':anchor-reconcile:' + proof['original_token'],
-                'labels': sorted(x['name'] if isinstance(x, dict) else x for x in issue['labels']),
-                'action': 'edit', 'url': proof['url'], 'before': _issue_digest(issue), 'body': body}
-    return {**{k: original[k] for k in ('entries', 'source_files', 'title', 'label')},
-            'scope': {k: str(v) if isinstance(v, Path) else v for k, v in ctx.items()},
-            'operations': [repaired], 'revision': snapshot['revision'], 'source_digest': snapshot['source_digest'],
-            'ready': True, 'pending': [], 'reconciliation': proof}
-
-
-def _qualify_reconciliation(args, ctx, preview):
-    _original_publication(args, ctx, preview['reconciliation'], preview['token'])
-    _current_reconciliation(args, ctx, preview)
-
-
-def _mutate_reconciliation(operation, ctx, preview_path, preview, args):
-    """One edit attempt only; every retry is readback, even after a crash."""
-    key = _hash({'origin': ctx['origin'], 'key': operation['key']})
-    path = _runtime_dir() / 'intents' / (key + '.json')
-    marker = '<!-- engineer-security-intent:' + key + ' -->'
-    body = operation['body'] + '\n\n' + marker + '\n'
-    reviewed = {**operation, 'body': body}
-    with planning_lock():
-        intent = load_json(path)
-        retry = path.exists()
-        if retry and (not isinstance(intent, dict) or intent.get('operation') != reviewed or intent.get('origin') != ctx['origin']):
-            raise Failure('security-publication-uncertain', 'Preserve the exact separate reconciliation intent')
-        if not retry:
-            current = issues.issue_get(operation['url'], ctx['origin'])
-            if _issue_digest(current) != operation['before'] or current.get('state', '').upper() != 'OPEN':
-                raise Failure('security-provider-drift', operation['url'])
-            _qualify_reconciliation(args, ctx, preview)
-            intent = {'origin': ctx['origin'], 'marker': marker, 'operation': reviewed, 'url': operation['url'],
-                      'state': 'attempting', 'attempted': now(), 'source_digest': preview['source_digest'],
-                      'reconciliation': preview['reconciliation']}
-            write_json(path, intent)
-        preview['consumed'] = True
-        write_json(preview_path, preview)
-    if not retry:
-        with tempfile.TemporaryDirectory(prefix='engineer-security-reconcile-') as directory:
-            body_path = Path(directory) / 'body.md'
-            body_path.write_bytes(body.encode('utf-8'))
-            _qualify_reconciliation(args, ctx, preview)
-            issues.provider(['issue', 'edit', operation['url'], '--title', operation['title'],
-                             '--body-file', str(body_path)], ctx['origin'])
-    result = issues.issue_get(operation['url'], ctx['origin'])
-    if (result.get('url') != operation['url'] or result.get('title') != operation['title']
-            or result.get('body') != body or result.get('state', '').upper() != 'OPEN'):
-        raise Failure('security-readback-mismatch', 'Reconciliation readback differs; never repeat an uncertain edit', url=operation['url'])
-    if set(operation['labels']) != {x['name'] if isinstance(x, dict) else x for x in result.get('labels', [])}:
-        raise Failure('security-label-readback-mismatch', operation['url'])
-    if intent.get('state') != 'complete':
-        with planning_lock():
-            intent.update(state='complete', completed=now())
-            write_json(path, intent)
-    return result
-
-
 def _tracking(args, action):
     ctx = scope(args)
-    if args.has('reconcile-token') and action not in ('threat-preview', 'threat-publish'):
-        raise Failure('security-reconciliation-invalid', 'Reconciliation requires an explicit new preview and publication')
     if action == 'threat-audit':
         return threat_audit(ctx)
     resume = None
@@ -704,20 +397,16 @@ def _tracking(args, action):
     if action == 'threat-publish' and re.fullmatch(r'[a-f0-9]{64}', supplied):
         resume = load_json(_runtime_dir() / 'previews' / (supplied + '.json'))
     if resume and resume.get('consumed'):
-        if args.has('reconcile-token') and 'reconciliation' not in resume:
-            raise Failure('security-reconciliation-invalid', 'Use a separately reviewed new reconciliation preview')
         if (resume.get('scope', {}).get('key') != ctx['key'] or resume.get('scope', {}).get('origin') != ctx['origin']
                 or resume.get('revision') != _head()
                 or digest([safe_path(p) for p in resume['source_files']]) != resume['source_digest']):
             raise Failure('security-recovery-source-drift', 'Preserve prior published URLs and reconcile changed source before any new mutation')
         review = resume  # Own provider writes must not invalidate their recovery token.
-        if 'reconciliation' in review:
-            _original_publication(args, ctx, review['reconciliation'], supplied)
     else:
-        review = _anchor_reconciliation(args, ctx) if args.has('reconcile-token') else _review(args, ctx)
+        review = _review(args, ctx)
     if action == 'threat-review':
         return review
-    identity = _preview_identity(review)
+    identity = {k: review[k] for k in ('scope', 'entries', 'operations', 'source_digest', 'revision')}
     token = _hash(identity)
     path = _runtime_dir() / 'previews' / (token + '.json')
     if action == 'threat-preview':
@@ -737,9 +426,6 @@ def _tracking(args, action):
     state_path, state = _state(ctx)
     with acquire(_runtime_dir() / 'risk-index.lock', 10):
         state = load_json(state_path, {'schema': 1, 'risks': {}, 'scopes': {}})
-        if 'reconciliation' in review:
-            _original_publication(args, ctx, review['reconciliation'], token)
-            _current_reconciliation(args, ctx, review)
         reservations = state.setdefault('risk_intents', {})
         for entry in review['entries']:
             known = state['risks'].get(entry['key'], {}).get('canonical_url')
@@ -747,10 +433,9 @@ def _tracking(args, action):
             if known and entry.get('canonical_url') != known and not own_readback:
                 raise Failure('security-canonical-match-arrived', 'Refresh match review against the established canonical identity', key=entry['key'], url=known)
             prior = reservations.get(entry['key'])
-            owner_token = review.get('reconciliation', {}).get('original_token', token)
-            if prior and prior != {'scope': ctx['key'], 'token': owner_token}:
+            if prior and prior != {'scope': ctx['key'], 'token': token}:
                 raise Failure('security-risk-publication-owned', 'Reconcile the existing risk publication before another source creates a tracker', key=entry['key'], intent=prior)
-            if not known and 'reconciliation' not in review:
+            if not known:
                 reservations[entry['key']] = {'scope': ctx['key'], 'token': token}
         write_json(state_path, state)
     results = list(saved.get('results', []))
@@ -758,10 +443,7 @@ def _tracking(args, action):
         prior = next((r for r in results if r['key'] == operation['key']), None)
         if digest([safe_path(p) for p in review['source_files']]) != review['source_digest'] or _head() != review['revision']:
             raise Failure('security-source-drift', 'Source changed during publication', published=results)
-        if 'reconciliation' in review:
-            _original_publication(args, ctx, review['reconciliation'], token)
-        result = (_mutate_reconciliation(operation, ctx, path, saved, args) if 'reconciliation' in review
-                  else _mutate(operation, ctx, path, saved))
+        result = _mutate(operation, ctx, path, saved)
         if not prior:
             results.append({'key': operation['key'], 'url': result['url']})
         with planning_lock():
@@ -774,16 +456,6 @@ def _tracking(args, action):
     state_path, state = _state(ctx)
     with acquire(_runtime_dir() / 'risk-index.lock', 10):
         state = load_json(state_path, {'schema': 1, 'risks': {}, 'scopes': {}})
-        if 'reconciliation' in review:
-            _original_publication(args, ctx, review['reconciliation'], token)
-            _current_reconciliation(args, ctx, review)
-            evidence = {'token': token, **review['reconciliation'],
-                'revision': review['revision'], 'source_digest': review['source_digest'],
-                'provider_before_digest': review['operations'][0]['before'],
-                'provider_after_digest': _issue_digest(result), 'ready': not pending, 'targets': targets}
-            history = state.setdefault('reconciliations', [])
-            if not any(all(item.get(k) == v for k, v in evidence.items()) for item in history):
-                history.append({**evidence, 'observed': now()})
         if container:
             state['scopes'][ctx['key']] = {'url': container, 'title': review['title'], 'label': review['label'], 'identity': ctx['stable_identity']}
         for entry in review['entries']:
@@ -827,11 +499,11 @@ def threat_audit(ctx):
     _, state = _state(ctx)
     errors, findings = [], []
     threats = plan_threats(ctx['directory'])
-    errors.extend({'id': item['id'], 'plans': item['plans'], 'reason': 'Duplicate phase threat ID'}
-                  for item in threat_id_duplicates(ctx['directory'], threats))
-    reserved = 'T-' + ctx['id'] + '-SC'
-    shared = None
+    seen = set()
     for threat in threats:
+        if threat['threat_id'] in seen:
+            errors.append({'id': threat['threat_id'], 'reason': 'Duplicate phase threat ID'})
+        seen.add(threat['threat_id'])
         matches = [(key, {**r, **occurrence}) for key, r in state['risks'].items() for occurrence in r.get('occurrences', [r])
                    if occurrence.get('scope') == ctx['key'] and occurrence.get('threat_id') == threat['threat_id'] and occurrence.get('plan') == threat['plan']]
         if len(matches) != 1 or not matches[0][1].get('target'):
@@ -839,19 +511,9 @@ def threat_audit(ctx):
             continue
         key, entry = matches[0]
         target = entry['target']
-        if threat.get('threat_url') is not None and threat['threat_url'] != target:
-            errors.append({'id': threat['threat_id'], 'plan': threat['plan'],
-                           'reason': 'Linked Threat ID must use its exact canonical occurrence target'})
-        if threat['threat_id'] == reserved:
-            identity = (key, target)
-            if shared is not None and identity != shared:
-                errors.append({'id': threat['threat_id'], 'plan': threat['plan'],
-                               'reason': 'Reserved supply-chain occurrences must share one canonical key and target'})
-            shared = identity if shared is None else shared
         issue = issues.issue_get(target.split('#')[0], ctx['origin'])
         if '#' in target:
-            anchors, pending = rendered_targets(issue['url'], [{'id': entry['entry_id'], 'key': key, 'heading': entry['heading'],
-                                                               'canonical_url': target}], ctx['origin'])
+            anchors, pending = rendered_targets(issue['url'], [{'id': entry['entry_id'], 'key': key, 'heading': entry['heading']}], ctx['origin'])
             if pending or target not in anchors.values():
                 errors.append({'id': threat['threat_id'], 'reason': 'Actual provider heading target drifted'})
         if target not in read(ctx['directory'] / threat['plan']):
@@ -893,10 +555,10 @@ def security_status(args, proposed=None):
     revision = _head()
     reasons = []
     from .worktrees import dirty
-    if dirty(root(), [path.relative_to(root()).as_posix()]):
+    if dirty(root(), [str(path.relative_to(root()))]):
         reasons.append('Working source changed during the frozen audit')
     if proposed is None:
-        committed = run(['git', 'show', revision + ':' + path.relative_to(root()).as_posix()], root(), check=False, timeout=30)
+        committed = run(['git', 'show', revision + ':' + str(path.relative_to(root()))], root(), check=False, timeout=30)
         if committed.returncode or committed.stdout != read(path):
             reasons.append('Actual complete security report must be committed before readiness')
     frozen = metadata.get('revision', metadata.get('audit_revision'))
@@ -905,8 +567,8 @@ def security_status(args, proposed=None):
         reasons.append('Security evidence is not bound to an actual current-history frozen revision')
     elif frozen != revision:
         changed = run(['git', 'log', '--format=', '--name-only', '--full-history', '-m', frozen + '..' + revision], root(), timeout=30).stdout.splitlines()
-        allowed = {path.relative_to(root()).as_posix(), '.planning/STATE.md', '.planning/ROADMAP.md', '.planning/REQUIREMENTS.md'}
-        allowed.update(p.relative_to(root()).as_posix() for p in ctx['directory'].glob('*-VERIFICATION.md'))
+        allowed = {str(path.relative_to(root())), '.planning/STATE.md', '.planning/ROADMAP.md', '.planning/REQUIREMENTS.md'}
+        allowed.update(str(p.relative_to(root())) for p in ctx['directory'].glob('*-VERIFICATION.md'))
         if any(p.strip() and p not in allowed for p in changed):
             reasons.append('Source changed after the frozen security audit')
     covered = metadata.get('covered_files', [])
@@ -933,41 +595,23 @@ def security_status(args, proposed=None):
     if not isinstance(declared, list):
         declared = []
     plans = plan_threats(ctx['directory'])
-    reserved = 'T-' + ctx['id'] + '-SC'
-    reserved_plans = {p['plan'] for p in plans if p['threat_id'] == reserved}
-    per_plan = len(reserved_plans) > 1
     if not rows and not (metadata.get('no_applicable_threats') is True and metadata.get('coverage_rationale') and declared):
         reasons.append('Empty or missing threat observations cannot prove security')
     if not rows:
         coverage = [c for e in declared if isinstance(e, dict) for c in e.get('citations', [])]
         if not valid_revision or not coverage or not all(_citation(c, frozen) for c in coverage):
             reasons.append('No-applicable-threat conclusion lacks actual current cited coverage evidence')
-    row_identity = lambda row: (row['threat_id'].strip('` '), row.get('plan', '').strip('` ')
-                                if per_plan and row['threat_id'].strip('` ') == reserved else '')
-    ids = [row_identity(r) for r in rows]
+    ids = [r['threat_id'].strip('` ') for r in rows]
     if len(ids) != len(set(ids)):
         reasons.append('Duplicate security threat rows')
-    if any((t['threat_id'], t['plan'] if per_plan and t['threat_id'] == reserved else '') not in ids for t in plans):
+    if any(t['threat_id'] not in ids for t in plans):
         reasons.append('Report omits a planned threat')
-    if threat_id_duplicates(ctx['directory'], plans):
-        reasons.append('Duplicate planned threat ownership')
-    if per_plan and any(e.get('plan') not in reserved_plans for e in declared
-                        if isinstance(e, dict) and e.get('id', e.get('threat_id')) == reserved):
-        reasons.append('Reserved supply-chain evidence has no matching owning PLAN')
     policy = str(config.lookup(config.load(), 'workflow.security_block_on', 'high')).lower()
     threshold = 5 if policy == 'none' else RANK.get(policy, 3)
     blocking = 0
     for row in rows:
         identifier = row['threat_id'].strip('` ')
         planned = [item for item in plans if item['threat_id'] == identifier]
-        occurrence = per_plan and identifier == reserved
-        plan = row.get('plan', '').strip('` ')
-        if occurrence:
-            planned = [item for item in planned if item['plan'] == plan]
-            if len(planned) != 1:
-                reasons.append(identifier + ': report requires an exact owning PLAN')
-        elif plan and planned and all(item['plan'] != plan for item in planned):
-            reasons.append(identifier + ': report PLAN does not own the declared threat')
         if len(planned) > 1:
             reasons.append(identifier + ': planned threat identity is ambiguous')
         elif planned:
@@ -976,12 +620,9 @@ def security_status(args, proposed=None):
                 reasons.append(identifier + ': audit severity differs from the declared PLAN threat')
             if disposition(row['disposition']) != disposition(planned[0]['disposition']):
                 reasons.append(identifier + ': audit disposition differs from the declared PLAN threat')
-        evidence = [e for e in declared if isinstance(e, dict) and e.get('id', e.get('threat_id')) == identifier
-                    and (not occurrence or e.get('plan') == plan)]
+        evidence = [e for e in declared if isinstance(e, dict) and e.get('id', e.get('threat_id')) == identifier]
         citations = evidence[0].get('citations', []) if len(evidence) == 1 else []
         supported = valid_revision and bool(citations) and all(_citation(c, frozen) for c in citations)
-        if occurrence and not supported:
-            reasons.append(identifier + ': every owning PLAN requires current cited audit evidence')
         closed = row['status'].strip().lower() in ('closed', 'resolved', 'mitigated')
         if row['severity'].lower() not in RANK:
             reasons.append(identifier + ': unknown severity cannot be silently downgraded')
@@ -1010,8 +651,6 @@ def security_status(args, proposed=None):
 
 
 def command(args, action):
-    if args.has('reconcile-token') and action not in ('threat-preview', 'threat-publish'):
-        raise Failure('security-reconciliation-invalid', 'Reconciliation requires an explicit new preview and publication')
     if args.has('variant') and args.get('variant') != 'Security risk':
         raise Failure('security-variant-invalid', 'Security publication retains the canonical Security risk variant')
     with issues.budget(min(300, max(1, float(args.get('budget-seconds', 120))))):
@@ -1039,16 +678,8 @@ def command(args, action):
             snapshot = digest([path])
             if not _enabled(args, 'apply'):
                 return {'path': str(path), 'snapshotDigest': snapshot, 'proposed': proposed, 'applied': False}
-            existing_metadata, _ = split_frontmatter(read(path))
-            from .frontmatter import errors, SCHEMAS
-            missing = {'Missing field: ' + field for field in SCHEMAS['security'] if field not in proposed}
-            supplied_errors = set(errors(proposed, 'security')) - missing
-            if supplied_errors:
-                raise Failure('security-resolution-invalid', 'Supplied metadata violates the security report schema', errors=sorted(supplied_errors))
-            introduced = set(errors({**existing_metadata, **proposed}, 'security')) - set(errors(existing_metadata, 'security'))
-            if introduced:
-                raise Failure('security-resolution-invalid', 'Proposed metadata violates the security report schema', errors=sorted(introduced))
             evaluated = security_status(args, proposed)
+            existing_metadata, _ = split_frontmatter(read(path))
             if proposed.get('status', existing_metadata.get('status')) == 'verified' and not evaluated['ready']:
                 raise Failure('security-resolution-unproved', 'Real audit evidence is required before setting verified', reasons=evaluated.get('reasons'))
             with planning_lock():

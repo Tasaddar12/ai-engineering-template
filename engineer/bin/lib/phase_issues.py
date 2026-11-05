@@ -90,7 +90,7 @@ def _handoff(args):
         if not summary.exists() or metadata.get('status') != 'complete':
             errors.append({'file': str(summary), 'reason': 'Actual complete SUMMARY is required'})
             continue
-        committed = run(['git', 'show', revision + ':' + summary.relative_to(root()).as_posix()], root(), check=False, timeout=30)
+        committed = run(['git', 'show', revision + ':' + str(summary.relative_to(root()))], root(), check=False, timeout=30)
         if committed.returncode or committed.stdout != read(summary):
             errors.append({'file': str(summary), 'reason': 'Complete SUMMARY must match committed evidence at captured HEAD'})
     provider_cache = {}
