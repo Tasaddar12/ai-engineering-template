@@ -54,6 +54,26 @@ class RenderedAddressOwnership(unittest.TestCase):
                 self.assertEqual({KEY: URL + '#' + fragment}, targets)
                 self.assertEqual([], pending)
 
+    def test_single_native_permalink_is_initial_choice_and_preserves_owned_aliases(self):
+        native = '<a id="user-content-native" class="anchor" aria-hidden="true" href="#native"></a>Requested risk'
+        html = risk_section(native)
+        self.assertEqual(({KEY: URL + '#native'}, []), self.render(html))
+        for address in ('native', 'user-content-native'):
+            with self.subTest(address=address):
+                self.assertEqual(({KEY: URL + '#' + address}, []), self.render(html, URL + '#' + address))
+
+    def test_initial_native_choice_requires_marker_unique_choice_and_ownership(self):
+        marked = '<a class="anchor" aria-hidden="true" href="#native"></a>Requested risk'
+        cases = [risk_section('<a href="#native">Requested risk</a>'),
+                 risk_section(marked) + risk_section('<a class="anchor" aria-hidden="true" href="#native"></a>Other risk', 'other-key'),
+                 risk_section(marked + '<a class="anchor" aria-hidden="true" href="#different"></a>'),
+                 risk_section(marked) + risk_section('Other risk', 'other-key', 'id="native"')]
+        for html in cases:
+            with self.subTest(html=html):
+                self.assertEqual({}, self.render(html)[0])
+        no_marker = risk_section('<a id="user-content-native" href="#native"></a>Requested risk')
+        self.assertEqual({}, self.render(no_marker, URL + '#native')[0])
+
     def test_native_permalink_cannot_claim_address_declared_elsewhere(self):
         native = '<a class="anchor" aria-hidden="true" href="#other"></a>Requested risk'
         html = risk_section(native) + risk_section('Other risk', 'different-key', 'id="other"')

@@ -368,7 +368,7 @@ class _Anchors(HTMLParser):
         if re.fullmatch(r'h[1-6]', tag):
             self.section = None
         if tag == 'h3':
-            self.heading = {'text': [], 'addresses': set(), 'body': []}
+            self.heading = {'text': [], 'addresses': set(), 'canonical': set(), 'body': []}
             node['owner'] = self.heading
             for adjacent in self.adjacent:
                 adjacent['owner'] = self.heading
@@ -383,6 +383,7 @@ class _Anchors(HTMLParser):
                     and len(attrs['href']) > 1):
                 address = attrs['href'][1:]
                 self.heading['addresses'].add(address)
+                self.heading['canonical'].add(address)
                 self.permalinks.setdefault(address, []).append(node)
         elif tag == 'a' and addresses:
             node['addresses'] = addresses
@@ -430,11 +431,13 @@ def rendered_targets(issue_url, entries, origin):
     for entry in entries:
         sections = parser.items.get(entry['heading'], [])
         section = sections[0] if len(sections) == 1 else {}
-        anchors = parser.owned_addresses(section)
+        owned = parser.owned_addresses(section)
+        canonical = section.get('canonical', set())
+        anchors = canonical & owned if canonical else owned
         established = entry.get('canonical_url')
         if isinstance(established, str) and established.startswith(issue_url + '#'):
             fragment = established[len(issue_url) + 1:]
-            anchors = {fragment} if fragment in anchors else set()
+            anchors = {fragment} if fragment in owned else set()
         keys = re.findall(r'(?m)^\s*Canonical risk key:\s*([^\n]+?)\s*$', ''.join(section.get('body', [])))
         if len(anchors) != 1 or keys != [entry['key']]:
             pending.append(entry['id'] + ': actual rendered heading anchor unavailable or ambiguous')
