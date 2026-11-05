@@ -354,6 +354,7 @@ class _Anchors(HTMLParser):
         self.heading = None
         self.section = None
         self.adjacent = []
+        self.anchor_paragraph = None
         self.items = {}
         self.declarations = {}
         self.permalinks = {}
@@ -365,6 +366,15 @@ class _Anchors(HTMLParser):
         addresses = {attrs.get('id'), attrs.get('name') if tag == 'a' else None} - {None, ''}
         for address in addresses:
             self._declare(address, node)
+        if self.heading is None:
+            if tag == 'p':
+                valid = self.anchor_paragraph is None and not addresses
+                self.anchor_paragraph = {'valid': valid, 'has_anchor': False}
+                if not valid:
+                    self.adjacent = []
+            elif self.anchor_paragraph is not None and not (tag == 'a' and addresses):
+                self.anchor_paragraph['valid'] = False
+                self.adjacent = []
         if re.fullmatch(r'h[1-6]', tag):
             self.section = None
         if tag == 'h3':
@@ -385,9 +395,13 @@ class _Anchors(HTMLParser):
                 self.heading['addresses'].add(address)
                 self.heading['canonical'].add(address)
                 self.permalinks.setdefault(address, []).append(node)
-        elif tag == 'a' and addresses:
+        elif tag == 'a' and addresses and (self.anchor_paragraph is None or self.anchor_paragraph['valid']):
             node['addresses'] = addresses
             self.adjacent.append(node)
+            if self.anchor_paragraph is not None:
+                self.anchor_paragraph['has_anchor'] = True
+        elif tag == 'p' and self.anchor_paragraph['valid']:
+            pass  # Empty named-anchor paragraphs are transparent until their closing tag.
         else:
             self.adjacent = []
         if self.section is not None and tag in ('p', 'br', 'div', 'li'):
@@ -398,6 +412,8 @@ class _Anchors(HTMLParser):
         else:
             if data.strip():
                 self.adjacent = []
+                if self.anchor_paragraph is not None:
+                    self.anchor_paragraph['valid'] = False
             if self.section is not None:
                 self.section['body'].append(data)
     def handle_endtag(self, tag):
@@ -406,6 +422,15 @@ class _Anchors(HTMLParser):
             self.items.setdefault(text, []).append(self.heading)
             self.section = self.heading
             self.heading = None
+        if self.heading is None:
+            if tag == 'p':
+                if not self.anchor_paragraph or not all(self.anchor_paragraph.values()):
+                    self.adjacent = []
+                self.anchor_paragraph = None
+            elif tag != 'a':
+                self.adjacent = []
+                if self.anchor_paragraph is not None:
+                    self.anchor_paragraph['valid'] = False
         if self.section is not None and tag in ('p', 'div', 'li'):
             self.section['body'].append('\n')
     def owned_addresses(self, section):
