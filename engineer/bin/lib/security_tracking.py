@@ -620,7 +620,12 @@ def _anchor_reconciliation(args, ctx):
             'ready': True, 'pending': [], 'reconciliation': proof}
 
 
-def _mutate_reconciliation(operation, ctx, preview_path, preview):
+def _qualify_reconciliation(args, ctx, preview):
+    _original_publication(args, ctx, preview['reconciliation'], preview['token'])
+    _current_reconciliation(args, ctx, preview)
+
+
+def _mutate_reconciliation(operation, ctx, preview_path, preview, args):
     """One edit attempt only; every retry is readback, even after a crash."""
     key = _hash({'origin': ctx['origin'], 'key': operation['key']})
     path = _runtime_dir() / 'intents' / (key + '.json')
@@ -636,6 +641,7 @@ def _mutate_reconciliation(operation, ctx, preview_path, preview):
             current = issues.issue_get(operation['url'], ctx['origin'])
             if _issue_digest(current) != operation['before'] or current.get('state', '').upper() != 'OPEN':
                 raise Failure('security-provider-drift', operation['url'])
+            _qualify_reconciliation(args, ctx, preview)
             intent = {'origin': ctx['origin'], 'marker': marker, 'operation': reviewed, 'url': operation['url'],
                       'state': 'attempting', 'attempted': now(), 'source_digest': preview['source_digest'],
                       'reconciliation': preview['reconciliation']}
@@ -646,6 +652,7 @@ def _mutate_reconciliation(operation, ctx, preview_path, preview):
         with tempfile.TemporaryDirectory(prefix='engineer-security-reconcile-') as directory:
             body_path = Path(directory) / 'body.md'
             body_path.write_bytes(body.encode('utf-8'))
+            _qualify_reconciliation(args, ctx, preview)
             issues.provider(['issue', 'edit', operation['url'], '--title', operation['title'],
                              '--body-file', str(body_path)], ctx['origin'])
     result = issues.issue_get(operation['url'], ctx['origin'])
@@ -728,8 +735,8 @@ def _tracking(args, action):
             raise Failure('security-source-drift', 'Source changed during publication', published=results)
         if 'reconciliation' in review:
             _original_publication(args, ctx, review['reconciliation'], token)
-        mutate = _mutate_reconciliation if 'reconciliation' in review else _mutate
-        result = mutate(operation, ctx, path, saved)
+        result = (_mutate_reconciliation(operation, ctx, path, saved, args) if 'reconciliation' in review
+                  else _mutate(operation, ctx, path, saved))
         if not prior:
             results.append({'key': operation['key'], 'url': result['url']})
         with planning_lock():
