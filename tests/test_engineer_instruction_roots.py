@@ -136,6 +136,61 @@ class InstalledInstructionRoots(unittest.TestCase):
                             query("generate-claude-md", "--output", entry.name)
                             self.assertEqual(original, entry.read_bytes())
 
+    def test_catalog_token_boundaries_preserve_custom_targets(self):
+        for host in ("claude", "codex"):
+            for scope in ("local", "global"):
+                with self.subTest(host=host, scope=scope):
+                    namespace, project, query = self.install(host, scope)
+                    template = namespace / "bin/install-assets/agent-entry.txt"
+                    template.parent.mkdir(parents=True, exist_ok=True)
+                    prefix = fixtures.installer.reference_namespace(host, scope).as_posix()
+                    bare = ("agents/AGENT.md", "commands/<command>.md")
+                    custom = [token + suffix for token in bare for suffix in
+                              (".example", "extra", "_custom", "-custom", "/notes.md",
+                               ".directory/notes.md", "+custom", "~backup")]
+                    # Instantiate command placeholders as for the catalog oracle;
+                    # literal angle brackets are not portable Windows filenames.
+                    targets = [project / link.replace("<command>", "debug") for link in custom]
+                    for target in targets:
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        target.write_text("Custom project target\n", encoding="utf-8")
+                    custom_links = "\n".join(f"[custom]({link})" for link in custom)
+                    sources, expected = [], []
+                    for token in bare:
+                        qualified = prefix + "/" + token
+                        sources.extend((f"Read {token} before working.",
+                                        f"Read {token}. Next sentence.", f"Read {token}.",
+                                        f"[catalog]({token}) and `{token}`",
+                                        f"Already {qualified}."))
+                        expected.extend((f"Read {qualified} before working.",
+                                         f"Read {qualified}. Next sentence.", f"Read {qualified}.",
+                                         f"[catalog]({qualified}) and `{qualified}`",
+                                         f"Already {qualified}."))
+                    # A catalog token at the end of a template has no delimiter.
+                    sources.append(bare[-1])
+                    expected.append(prefix + "/" + bare[-1])
+                    template.write_text(custom_links + "\n" + "\n".join(sources), encoding="utf-8")
+                    query("generate-claude-md", "--output", "boundary-entry.md")
+                    entry = project / "boundary-entry.md"
+                    content = entry.read_text(encoding="utf-8")
+                    # Derived oracle: exact custom links remain project-relative
+                    # and resolve to the same real files after regeneration.
+                    for link, target in zip(custom, targets):
+                        with self.subTest(custom=link):
+                            self.assertIn(f"[custom]({link})", content)
+                            self.assertTrue(target.is_file(), link)
+                    expected_block = (START + "\n# Fixture\n\n" + custom_links + "\n" +
+                                      "\n".join(expected) + "\n" + END + "\n")
+                    self.assertEqual(expected_block, content)
+                    query("generate-claude-md", "--output", entry.name)
+                    self.assertEqual(content, entry.read_text(encoding="utf-8"))
+                    for token in bare:
+                        # A final period is sentence punctuation even at EOF.
+                        template.write_text(token + ".", encoding="utf-8")
+                        query("generate-claude-md", "--output", entry.name)
+                        self.assertEqual(START + "\n# Fixture\n\n" + prefix + "/" + token +
+                                         ".\n" + END + "\n", entry.read_text(encoding="utf-8"))
+
     def test_external_local_runtime_uses_its_actual_namespace(self):
         for host in ("claude", "codex"):
             with self.subTest(host=host):

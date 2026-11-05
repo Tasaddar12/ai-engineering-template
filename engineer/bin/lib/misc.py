@@ -74,7 +74,8 @@ def instruction_file(args):
     if not template:
         template = "Read agents/AGENT.md, the selected commands/<command>.md entry, and .planning/PROJECT.md and STATE.md before working."
     template = template.replace("engineer/RULES.md", "agents/AGENT.md")
-    template = re.sub(r"(?<![\w./{}~:-])(?:agents/AGENT\.md|commands/<command>\.md)",
+    template = re.sub(r"(?<![\w./{}~:-])(?:agents/AGENT\.md|commands/<command>\.md)"
+                      r"(?=$|[\s`'\"\])}>]|[.,;:!?](?=\s|$))",
                       lambda match: prefix+match[0], template)
     name = next((line.lstrip("# ") for line in project.splitlines() if line.startswith("# ")), "Project")
     block = "<!-- engineer:managed:start -->\n# "+name+"\n\n"+template.strip()+"\n<!-- engineer:managed:end -->"
