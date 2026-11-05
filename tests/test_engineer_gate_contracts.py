@@ -284,14 +284,16 @@ class SecurityOccurrenceContracts(RuntimeCase):
         directory = Path(self.phase())
         report = directory / '01-SECURITY.md'
         original = '---\nphase: "01"\nstatus: draft\n---\nAudit pending\n'
-        for proposed in ({'audit_completed': 'true'}, {'covered_files': {}}):
-            with self.subTest(proposed=proposed):
-                report.write_text(original)
-                source = self.put('resolution.json', json.dumps(proposed))
-                preview = self.cli('security.resolve', '1', '--entries-file', source)
-                self.cli('security.resolve', '1', '--entries-file', source, '--apply',
-                         '--expect-digest', preview['snapshotDigest'], status=1, raw=True)
-                self.assertEqual(original.encode(), report.read_bytes())
+        for newline in ('\n', '\r\n'):
+            for proposed in ({'audit_completed': 'true'}, {'covered_files': {}}):
+                with self.subTest(newline=repr(newline), proposed=proposed):
+                    report.write_bytes(original.replace('\n', newline).encode('utf-8'))
+                    before = report.read_bytes()
+                    source = self.put('resolution.json', json.dumps(proposed))
+                    preview = self.cli('security.resolve', '1', '--entries-file', source)
+                    self.cli('security.resolve', '1', '--entries-file', source, '--apply',
+                             '--expect-digest', preview['snapshotDigest'], status=1, raw=True)
+                    self.assertEqual(before, report.read_bytes())
 
     def test_filled_canonical_security_template_is_schema_valid_without_verified_claim(self):
         template = Path(__file__).resolve().parents[1] / 'engineer/templates/SECURITY.md'
