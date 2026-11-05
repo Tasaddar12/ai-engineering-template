@@ -16,7 +16,8 @@ covered_files: #  — see agents/verifier.md's "Create VERIFICATION.md" step for
   - .planning/phases/XX-name/{phase_num}-{plan}-PLAN.md
   - .planning/phases/XX-name/{phase_num}-{plan}-SUMMARY.md
   - src/{changed-file}.cts
-covered_digest: "v4:sha256:{digest from verification.fingerprint}"
+revision: "{actual current full Git commit SHA}"
+fingerprint: "{written by verification.fingerprint; omit until generated}"
 behavior_unverified: 0 # Count of ⚠️ PRESENT_BEHAVIOR_UNVERIFIED truths (present + wired, behavior not exercised)
 behavior_unverified_items: # Only if behavior_unverified > 0 — the truths above as structured items; emitted regardless of overall status
   - truth: "Observable truth whose state transition or cancellation/cleanup/ordering invariant no test exercises"
@@ -177,6 +178,29 @@ None — all verifiable items checked programmatically.
 ---
 
 ## Guidelines
+
+**Native fingerprint and revision:** First write a valid report with the truthful
+`passed`, `gaps_found` or `human_needed` status and actual observations. For
+`passed`, include the actual nonempty `covered_files` and current full Git
+`revision`. Omit the example `fingerprint` field until the runtime generates it;
+do not invent a digest. After the report evidence and structural decision check
+are complete, populate `COVERED_FILES` with the actual covered paths described in
+`agents/verifier.md` and fingerprint the existing report:
+
+```bash
+FINGERPRINT_ARGS=()
+for file in "${COVERED_FILES[@]}"; do
+  FINGERPRINT_ARGS+=(--files "$file")
+done
+engineer_run query verification.fingerprint "${PHASE_DIR}" "${FINGERPRINT_ARGS[@]}"
+```
+
+Repeated `--files` arguments preserve paths containing spaces. The native command
+writes `fingerprint` (a SHA-256 hex string), `covered_files` (the explicit file
+arguments) and `revision` (the captured Git HEAD) into the existing report while
+preserving its status and observations. It returns only `fingerprint` and `path`;
+read back and retain the written metadata. Do not substitute `covered_digest`
+or a manually computed digest, and do not change unresolved findings to `passed`.
 
 **Status values (overall, frontmatter `status:`):**
 - `passed` — All must-haves verified, no blockers
