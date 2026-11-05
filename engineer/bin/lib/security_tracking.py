@@ -463,6 +463,15 @@ def rendered_targets(issue_url, entries, origin):
         if isinstance(established, str) and established.startswith(issue_url + '#'):
             fragment = established[len(issue_url) + 1:]
             anchors = {fragment} if fragment in owned else set()
+        elif (isinstance(established, str) and established and not canonical
+              and established.split('#', 1)[0] != issue_url):
+            # An external risk identity does not pin this checklist's evidence.
+            # Match the native producer's key anchor only when the provider
+            # actually declares exactly one owned form; never infer an address.
+            marker = 'engineer-risk-' + _hash(entry['key'])
+            native = owned & {marker, 'user-content-' + marker}
+            if native:
+                anchors = native
         keys = re.findall(r'(?m)^\s*Canonical risk key:\s*([^\n]+?)\s*$', ''.join(section.get('body', [])))
         if len(anchors) != 1 or keys != [entry['key']]:
             pending.append(entry['id'] + ': actual rendered heading anchor unavailable or ambiguous')
