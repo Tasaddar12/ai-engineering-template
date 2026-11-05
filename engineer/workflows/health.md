@@ -1,5 +1,5 @@
 <purpose>
-Validate `.planning/` directory integrity and report actionable issues. Checks for missing files, invalid configurations, inconsistent state, and orphaned plans. Optionally repairs auto-fixable issues.
+Validate `.planning/` directory structure and report actionable findings without changing records. Structural health does not establish product readiness.
 </purpose>
 
 <required_reading>
@@ -17,18 +17,14 @@ RESPONSE_LANGUAGE=$(engineer_run query config-get response_language --raw --defa
 <step name="parse_args">
 **Parse arguments:**
 
-Check if `--repair`, `--backfill`, or `--context` flags are present in the command arguments.
+Check if `--context` is present in the command arguments. If `--repair` or
+`--backfill` was requested, explain that `validate.health` rejects those flags
+with `health-repair-requires-planning-review`; use the guarded planning review
+route described below for any separately authorized repair. Do not pass either
+flag, change planning records or clean host task directories in this workflow.
 
 ```
-REPAIR_FLAG=""
-BACKFILL_FLAG=""
 CONTEXT_MODE=""
-if arguments contain "--repair"; then
-  REPAIR_FLAG="--repair"
-fi
-if arguments contain "--backfill"; then
-  BACKFILL_FLAG="--backfill"
-fi
 if arguments contain "--context"; then
   CONTEXT_MODE="true"
 fi
@@ -60,9 +56,9 @@ engineer_run query validate.context \
   --context-window "$CONTEXT_WINDOW"
 ```
 
-The query prints a one-line status (`Context utilization: NN% (state)`) plus
-a recommendation line for the warning and critical states. Print the SDK
-output verbatim and end the workflow — do **not** mix in `.planning/`
+The query returns JSON containing `message`, `recommendation`, `state`,
+`utilization`, `tokensUsed` and `contextWindow`. Display its `message` and
+non-empty `recommendation`, then end the workflow - do **not** mix in `.planning/`
 health output, the two modes are independent diagnostics.
 </step>
 
@@ -70,16 +66,21 @@ health output, the two modes are independent diagnostics.
 **Run health validation:**
 
 ```bash
-engineer_run query validate.health $REPAIR_FLAG $BACKFILL_FLAG
+engineer_run query validate.health
 ```
 
 Parse JSON output:
 - `status`: "healthy" | "degraded" | "broken"
-- `errors[]`: Critical issues (code, message, fix, repairable)
-- `warnings[]`: Non-critical issues
-- `info[]`: Informational notes
-- `repairable_count`: Number of auto-fixable issues
-- `repairs_performed[]`: Actions taken if --repair was used
+- `errors[]`: Missing records (`code`, `path`) or configuration failures (`code`, `message`)
+- `warnings[]`: Phase naming or unmatched SUMMARY findings (`code`, `path`)
+- `info[]`: PLAN files without a matching SUMMARY (`code`, `path`, `meaning`)
+- `counts`: Error, warning and information counts
+- `structuralOnly`: `true`; no product behavior, acceptance or readiness is verified
+
+Required records are `PROJECT.md`, `REQUIREMENTS.md`, `ROADMAP.md`, `STATE.md`
+and `config.yaml` under `.planning/`. Report `missing-record`, `phase-name`,
+`orphan-summary`, `plan-without-summary` and any actual configuration failure
+codes as returned; do not translate them to the legacy library codes below.
 
 **Isolation compatibility check:** use the read-only inspection verb to report whether either supported worktree mode is available. Unknown or missing capability blocks write-capable dispatch; there is no opt-out.
 
@@ -120,76 +121,61 @@ Status: HEALTHY | DEGRADED | BROKEN
 Errors: N | Warnings: N | Info: N
 ```
 
-**If repairs were performed:**
-```
-## Repairs Performed
+Use `counts` for the runtime totals and include any workflow-layer W025 warning
+in the displayed total. Render each actual diagnostic's code, path or message;
+do not invent `fix` or `repairable` fields.
 
-- ✓ config.json: Created with defaults
-- ✓ STATE.md: Regenerated from roadmap
-```
-
-**If errors exist:**
+**Example error:**
 ```
 ## Errors
 
-- [E001] config.json: JSON parse error at line 5
-  Fix: Run /health --repair to reset to defaults
-
-- [E002] PROJECT.md not found
-  Fix: Run /new-project to create
+- [missing-record] .planning/PROJECT.md
+  Next: Locate the existing project record before proposing a repair.
 ```
 
-**If warnings exist:**
+**Example warning:**
 ```
 ## Warnings
 
-- [W002] STATE.md references phase 5, but only phases 1-3 exist
-  Fix: Review STATE.md manually before changing it; repair will not overwrite an existing STATE.md
-
-- [W005] Phase directory "1-setup" doesn't follow NN-name format
-  Fix: Rename to match pattern (e.g., 01-setup)
+- [orphan-summary] .planning/phases/01-setup/01-01-SUMMARY.md
+  Next: Check the summary's provenance and plan filename before concluding work is missing.
 ```
 
-**If info exists:**
+**Example information:**
 ```
 ## Info
 
-- [I001] 02-implementation/02-01-PLAN.md has no SUMMARY.md
-  Note: May be in progress
+- [plan-without-summary] .planning/phases/02-implementation/02-01-PLAN.md
+  Note: May be unexecuted or in progress.
 ```
 
-**Footer (if repairable issues exist and --repair was NOT used):**
-```
----
-N issues can be auto-repaired. Run: /health --repair
-```
+Conclude with `Structural check only; no records changed.` Do not infer a
+repair count, performed repairs or product readiness from this diagnostic.
 </step>
 
-<step name="offer_repair">
-**If repairable issues exist and --repair was NOT used:**
-
-Ask user if they want to run repairs:
-
-```
-Would you like to run /health --repair to fix N issues automatically?
-```
-
-If yes, re-run with --repair flag and display results.
-</step>
-
-<step name="verify_repairs">
-**If repairs were performed:**
-
-Re-run health check without --repair to confirm issues are resolved:
+<step name="repair_guidance">
+Report findings without repairing them. For authorized follow-up, the existing
+guarded route begins with a read-only review:
 
 ```bash
-engineer_run query validate.health
+engineer_run query planning.review
 ```
 
-Report final status.
+Only the repairs actually proposed by that review are supported by
+`planning.repair --apply --expect <snapshotDigest>`. Preserve identity,
+acceptance and history; do not describe this as a general health auto-fix.
+After a separately authorized repair, rerun `validate.health` and report its
+actual remaining findings.
 </step>
 
 </process>
+
+## Legacy diagnostic library reference
+
+The generated tables below describe the retained `health_diagnostic` library,
+not the current `validate.health` command. They are not an execution checklist
+or available `/health` repair actions. Current output and the guarded follow-up
+route are defined above; do not invoke `--repair` or `--backfill` from this appendix.
 
 <error_codes>
 | Code | Severity | Description | Repairable |
@@ -251,25 +237,3 @@ Note: this table is **generated** — do not hand-edit it. It is produced by `py
 - Orphaned plan cleanup
 
 </repair_actions>
-
-<stale_task_cleanup>
-**Windows-specific:** Check for stale Claude Code task directories that accumulate on crash/freeze.
-These are left behind when subagents are force-killed and consume disk space.
-
-When `--repair` is active, detect and clean up:
-
-```bash
-# Check for stale task directories (older than 24 hours)
-TASKS_DIR="$HOME/.claude/tasks"
-if [ -d "$TASKS_DIR" ]; then
-  STALE_COUNT=$( (find "$TASKS_DIR" -maxdepth 1 -type d -mtime +1 2>/dev/null || true) | wc -l )
-  if [ "$STALE_COUNT" -gt 0 ]; then
-    echo "⚠️  Found $STALE_COUNT stale task directories in ~/.claude/tasks/"
-    echo "   These are leftover from crashed subagent sessions."
-    echo "   Run: rm -rf ~/.claude/tasks/*  (safe — only affects dead sessions)"
-  fi
-fi
-```
-
-Report as info diagnostic: `I002 | info | Stale subagent task directories found | Yes (--repair removes them)`
-</stale_task_cleanup>

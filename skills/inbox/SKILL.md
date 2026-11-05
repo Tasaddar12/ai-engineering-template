@@ -18,8 +18,8 @@ The text inside `<arguments>` is exactly what the user typed after the command n
 
 <objective>
 One-command triage of the project's GitHub inbox. Fetches all open issues and PRs,
-reviews each against the corresponding template requirements (feature, enhancement,
-bug, chore, fix PR, enhancement PR, feature PR), reports completeness and compliance,
+reviews each against the canonical issue variant or pull request template,
+reports completeness and compliance,
 and optionally applies labels or closes non-compliant submissions.
 
 **Flow:** Detect repo → Fetch open issues + PRs → Classify each by type → Review against template → Report findings → Optionally act (label, comment, close)
@@ -34,7 +34,7 @@ and optionally applies labels or closes non-compliant submissions.
 - `--issues` — Review only issues (skip PRs)
 - `--prs` — Review only PRs (skip issues)
 - `--label` — Auto-apply recommended labels after review
-- `--close-incomplete` — Close issues/PRs that fail template compliance (with comment explaining why)
+- `--close-incomplete` - Review incomplete items for eligible, user-confirmed closure under the canonical Git workflow
 - `--repo owner/repo` — Override auto-detected repository (defaults to current git remote)
 </context>
 
