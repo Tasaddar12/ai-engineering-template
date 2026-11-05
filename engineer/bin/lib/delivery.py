@@ -51,12 +51,12 @@ def validate_body(body):
     template = read(models.NAMESPACE/"engineer/templates/pull-request.md")
     # Source checkouts can run before authoring templates are installed. These
     # are publication fields, not the headings of the template's instructions.
-    required = ["Goal", "Changes", "Verification", "Known gaps", "Risks or rollback", "Stack"]
+    required = ["Goal", "Changes", "Verification", "Known gaps", "Risks or rollback"]
     if template:
         section = re.search(r"(?ms)^## File Template\s*\n+```(?:markdown)?\s*\n(.*?)^```", template)
         if section:
             required = [heading for heading in re.findall(r"(?m)^##\s+(.+)$", section[1])
-                        if heading != "Requirements or Issues"]
+                        if heading not in ("Requirements or Issues", "Stack")]
     missing = [heading for heading in required if not re.search(r"(?m)^##\s+"+re.escape(heading)+r"\s*$", body)]
     if missing:
         raise Failure("invalid-pr-body", "Missing template sections", missing=missing)
@@ -161,7 +161,7 @@ def command(args, action):
         audit_pr(args.get("phase"), body)
     with tempfile.TemporaryDirectory(prefix="engineer-pr-") as temporary:
         body_path = Path(temporary)/"body.md"
-        body_path.write_text(body, encoding="utf-8")
+        body_path.write_bytes(body.encode("utf-8"))
         run(["git", "push", "--set-upstream", "origin", branch], root(), timeout=60,
             env={**os.environ, "GIT_TERMINAL_PROMPT": "0"}, stdin=subprocess.DEVNULL)
         if existing:
