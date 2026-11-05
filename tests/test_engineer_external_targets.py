@@ -28,18 +28,18 @@ def section(addresses=None, heading=HEADING, key=KEY):
 # Only the provider subprocess is replaced. The installed CLI, origin checks,
 # source digests, consumed intent checks, selector, registration and audit run.
 DRIVER = r'''import json, os, pathlib, runpy, subprocess, sys
-runtime = pathlib.Path(os.environ['EXTERNAL_TARGET_RUNTIME'])
+runtime = pathlib.Path(os.environ['EXTERNAL_TARGET_RUNTIME']).resolve()
 sys.path.insert(0, str(runtime.parent))
 from lib import security_tracking as security
-store = pathlib.Path(os.environ['EXTERNAL_TARGET_STORE'])
-packet = json.loads(store.read_text()) if store.exists() else {'calls': []}
+store = pathlib.Path(os.environ['EXTERNAL_TARGET_STORE']).resolve()
+packet = json.loads(store.read_text(encoding='utf-8')) if store.exists() else {'calls': []}
 original = subprocess.run
 def offline(command, **options):
     if not command or command[0] != 'gh':
         return original(command, **options)
     argv = command[1:]
     packet['calls'].append(argv)
-    store.write_text(json.dumps(packet))
+    store.write_text(json.dumps(packet), encoding='utf-8')
     if argv[:2] == ['issue', 'view']:
         target = next(value for value in argv if value.startswith('https://'))
         result = packet['issues'][target]
@@ -51,7 +51,7 @@ def offline(command, **options):
 subprocess.run = offline
 if sys.argv[1] == 'seed':
     ctx = security.scope(security.Args(['1']))
-    root = pathlib.Path(os.environ['ENGINEER_ROOT'])
+    root = pathlib.Path(os.environ['ENGINEER_ROOT']).resolve()
     tokens = []
     for index, risk in enumerate(packet['entries']):
         entries_file = root / ('entry-' + str(index) + '.json')
@@ -84,7 +84,7 @@ if sys.argv[1] == 'seed':
     security.write_json(state_path, state)
     packet.update(tokens=tokens, state_path=str(state_path), scope_key=ctx['key'],
                   runtime_dir=str(security._runtime_dir()))
-    store.write_text(json.dumps(packet))
+    store.write_text(json.dumps(packet), encoding='utf-8')
     print(json.dumps({'tokens': tokens}))
 elif sys.argv[1] == 'select':
     targets, pending = security.rendered_targets(packet['container'], packet['selection_entries'], security.repository.identity())
@@ -100,37 +100,38 @@ class InstalledExternalTargets(unittest.TestCase):
     def setUpClass(cls):
         cls.temporary = tempfile.TemporaryDirectory(prefix='engineer-external-hosts-')
         cls.addClassCleanup(cls.temporary.cleanup)
-        cls.base = Path(cls.temporary.name)
-        cls.source = Path(os.environ.get('ENGINEER_EXTERNAL_TARGET_SOURCE', SOURCE))
+        cls.base = Path(cls.temporary.name).resolve()
+        cls.source = Path(os.environ.get('ENGINEER_EXTERNAL_TARGET_SOURCE', SOURCE)).resolve()
         cls.pin = os.environ.get('ENGINEER_EXTERNAL_TARGET_REF', 'HEAD')
         cls.installs = {}
         for host in ('codex', 'claude'):
             target = cls.base / host
             process = subprocess.run([sys.executable, '-I', str(cls.source / 'bin/install.py'),
                 '--source', str(cls.source), '--ref', cls.pin, '--target', str(target),
-                '--host', host, '--local', '--no-hooks'], text=True, capture_output=True, timeout=60)
+                '--host', host, '--local', '--no-hooks'], text=True, encoding='utf-8', capture_output=True, timeout=60)
             if process.returncode:
                 raise AssertionError(process.stderr or process.stdout)
             cls.installs[host] = target / ('.codex' if host == 'codex' else '.claude') / 'engineer/bin/engineer.py'
 
-    def fixture(self, host, canonical=EXTERNAL, shared=False):
+    def fixture(self, host, canonical=EXTERNAL, shared=False, lexical_root=False):
         temporary = tempfile.TemporaryDirectory(prefix='engineer-external-project-')
         self.addCleanup(temporary.cleanup)
-        project = Path(temporary.name)
+        project = Path(temporary.name).resolve()
         self.project = project
-        self.env = {**os.environ, 'ENGINEER_ROOT': str(project), 'ENGINEER_HOST': host,
+        supplied_root = project / '..' / project.name if lexical_root else project
+        self.env = {**os.environ, 'ENGINEER_ROOT': str(supplied_root), 'ENGINEER_HOST': host,
                     'EXTERNAL_TARGET_RUNTIME': str(self.installs[host]),
                     'EXTERNAL_TARGET_STORE': str(project / 'provider.json')}
         self.git('init', '-b', 'main')
         self.git('config', 'user.name', 'Offline fixture')
         self.git('config', 'user.email', 'offline@example.invalid')
         self.git('remote', 'add', 'origin', 'https://github.com/acme/project.git')
-        (project / 'README.md').write_text('Inert synthetic project\n')
+        (project / 'README.md').write_text('Inert synthetic project\n', encoding='utf-8')
         self.git('add', 'README.md')
         self.git('commit', '-m', 'fixture')
         self.cli('project.init', '--name', 'Fixture', '--description', 'Offline source fixture',
                  '--core-value', 'Preserve canonical identities')
-        directory = Path(self.cli('phase.add', 'Evidence selection')['directory'])
+        directory = Path(self.cli('phase.add', 'Evidence selection')['directory']).resolve()
         identifier = 'T-01-SC' if shared else 'T-01-01'
         selected = canonical if canonical.startswith(URL + '#') else URL + '#user-content-' + machine()
         entries = []
@@ -139,7 +140,7 @@ class InstalledExternalTargets(unittest.TestCase):
             (directory / name).write_text('<threat_model>\n'
                 '| Threat ID | Category | Component | Severity | Disposition | Mitigation Plan |\n'
                 '|---|---|---|---|---|---|\n| [' + identifier + '](' + selected +
-                ') | T | stored read | high | mitigate | Verify owner before read |\n</threat_model>\n')
+                ') | T | stored read | high | mitigate | Verify owner before read |\n</threat_model>\n', encoding='utf-8')
             risk = {'key': KEY, 'id': identifier, 'heading': HEADING, 'plan': name, 'threat_id': identifier,
                     'planned': True, 'owner': 'Fixture owner', 'scope_acceptance': 'Refuse foreign owner',
                     'assessment_uncertainty': 'Source fixture only', 'lifecycle_outcome': 'open',
@@ -150,7 +151,7 @@ class InstalledExternalTargets(unittest.TestCase):
                         'evidence': 'Synthetic established identity', 'reviewed_issue_urls': [canonical.split('#')[0]],
                         'reviewed_pr_urls': []}}
             entries.append(risk)
-            (project / ('entry-' + str(index) + '.json')).write_text(json.dumps([risk]))
+            (project / ('entry-' + str(index) + '.json')).write_text(json.dumps([risk]), encoding='utf-8')
         self.git('add', '.planning', *('entry-' + str(index) + '.json' for index in range(len(entries))))
         self.git('commit', '-m', 'captured source and entries')
         self.store = project / 'provider.json'
@@ -163,26 +164,51 @@ class InstalledExternalTargets(unittest.TestCase):
         return self.packet()
 
     def git(self, *args):
-        return subprocess.run(['git', *args], cwd=self.project, text=True, capture_output=True,
+        return subprocess.run(['git', *args], cwd=self.project, text=True, encoding='utf-8', capture_output=True,
                               check=True, timeout=30).stdout.strip()
 
     def cli(self, *args, success=True):
         process = subprocess.run([sys.executable, '-I', '-B', '-c', DRIVER, *args],
-            cwd=self.project, env=self.env, text=True, capture_output=True, timeout=30)
+            cwd=self.project, env=self.env, text=True, encoding='utf-8', capture_output=True, timeout=30)
         self.assertEqual(success, process.returncode == 0, process.stderr or process.stdout)
         return json.loads(process.stdout if success else process.stderr)
 
     def packet(self):
-        return json.loads(self.store.read_text())
+        return json.loads(self.store.read_text(encoding='utf-8'))
 
     def save(self, packet):
-        self.store.write_text(json.dumps(packet))
+        self.store.write_text(json.dumps(packet), encoding='utf-8')
 
     def publish(self, token):
         return self.cli('security.threat-publish', '1', '--preview-token', token, '--publish')
 
     def no_writes(self):
         self.assertTrue(all(call[0] == 'api' or call[:2] == ['issue', 'view'] for call in self.packet()['calls']))
+
+    def test_equivalent_lexical_root_keeps_native_source_binding_and_consumed_readback(self):
+        for host in self.installs:
+            with self.subTest(host=host):
+                packet = self.fixture(host, lexical_root=True)
+                supplied = Path(self.env['ENGINEER_ROOT'])
+                self.assertNotEqual(supplied, supplied.resolve())
+                self.assertEqual(self.project.resolve(), supplied.resolve())
+                preview_path = Path(packet['runtime_dir']) / 'previews' / (packet['tokens'][0] + '.json')
+                preview = json.loads(preview_path.read_text(encoding='utf-8'))
+                self.assertEqual({str(Path('.planning/phases/01-evidence-selection/01-01-PLAN.md')),
+                                  'entry-0.json'}, set(preview['source_files']))
+                self.assertEqual((self.project / '.git/engineer/security-tracking').resolve(),
+                                 Path(packet['runtime_dir']).resolve())
+                self.assertEqual(self.project / '.planning/phases/01-evidence-selection',
+                                 Path(preview['scope']['directory']))
+                for _ in range(2):
+                    result = self.publish(packet['tokens'][0])
+                    self.assertTrue(result['ready'], result['pending'])
+                    self.assertEqual({KEY: URL + '#user-content-' + machine()}, result['targets'])
+                completed = json.loads(preview_path.read_text(encoding='utf-8'))
+                for field in ('source_files', 'source_digest', 'scope'):
+                    self.assertEqual(preview[field], completed[field])
+                self.assertTrue(self.cli('security.threat-audit', '1')['ready'])
+                self.no_writes()
 
     def test_external_identity_selects_unique_native_evidence_and_consumed_readback_is_idempotent(self):
         for host in self.installs:
@@ -196,7 +222,7 @@ class InstalledExternalTargets(unittest.TestCase):
                     result = self.publish(packet['tokens'][0])
                     self.assertTrue(result['ready'], result['pending'])
                     self.assertEqual({KEY: target}, result['targets'])
-                    state = json.loads(Path(packet['state_path']).read_text())
+                    state = json.loads(Path(packet['state_path']).read_text(encoding='utf-8'))
                     self.assertEqual(EXTERNAL, state['risks'][KEY]['canonical_url'])
                     self.assertEqual([target], [v['target'] for v in state['risks'][KEY]['occurrences']])
                     self.assertIn('Earlier preserved occurrence', state['risks'][KEY]['aliases_history'])
@@ -204,7 +230,7 @@ class InstalledExternalTargets(unittest.TestCase):
                     self.assertEqual(exact, self.packet()['issues'][URL]['body'])
                 # Native completion may add completion metadata; immutable original operation stays exact.
                 for path in (runtime / 'intents').glob('*.json'):
-                    self.assertEqual(json.loads(intent_before[path.name])['operation'], json.loads(path.read_text())['operation'])
+                    self.assertEqual(json.loads(intent_before[path.name])['operation'], json.loads(path.read_text(encoding='utf-8'))['operation'])
                 self.assertTrue(self.cli('security.threat-audit', '1')['ready'])
                 self.no_writes()
 
@@ -218,7 +244,7 @@ class InstalledExternalTargets(unittest.TestCase):
                         result = self.publish(token)
                         self.assertTrue(result['ready'], result['pending'])
                         self.assertEqual({KEY: canonical}, result['targets'])
-                state = json.loads(Path(packet['state_path']).read_text())
+                state = json.loads(Path(packet['state_path']).read_text(encoding='utf-8'))
                 self.assertEqual([KEY], list(state['risks']))
                 self.assertEqual(canonical, state['risks'][KEY]['canonical_url'])
                 self.assertEqual({'01-01-PLAN.md', '01-02-PLAN.md'},
@@ -279,9 +305,9 @@ class InstalledExternalTargets(unittest.TestCase):
                 altered['issues'][URL]['body'] = packet['issues'][URL]['body']
                 self.save(altered)
                 state_path = Path(packet['state_path'])
-                state = json.loads(state_path.read_text())
+                state = json.loads(state_path.read_text(encoding='utf-8'))
                 state['risk_intents'] = {KEY: {'scope': 'another-owner', 'token': 'different-token'}}
-                state_path.write_text(json.dumps(state))
+                state_path.write_text(json.dumps(state), encoding='utf-8')
                 self.assertEqual('security-risk-publication-owned', self.cli(*args, success=False)['error'])
                 self.no_writes()
 
