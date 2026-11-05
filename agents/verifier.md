@@ -43,6 +43,7 @@ Every truth must resolve to VERIFIED, FAILED (BLOCKER), or UNCERTAIN (WARNING wi
 @~/.claude/engineer/references/gates.md
 @~/.claude/engineer/references/verifier-phase-gates.md
 @~/.claude/engineer/references/verifier-evidence-gate.md
+@~/.claude/engineer/references/prohibition-probe.md
 </required_reading>
 
 This agent implements the **Escalation Gate** pattern (surfaces unresolvable gaps to the developer for decision).
@@ -158,10 +159,10 @@ must_haves:
 
 **Also extract `must_haves.prohibitions`** when present (the must-NOT sibling block, distinct from `truths`). Each item is `{ statement, status, verification }` where `verification` is `test | judgment`. These are NEGATIVE checks: a verified prohibition means the must-NOT did NOT happen. Route them by verification tier in the verdict assembly:
 
-- **judgment-tier prohibitions → mode-dependent soft-gate.** Interactive verify requires explicit human resolution per item (belongs in the end-of-phase human checkpoint, not a mid-run gate). Autonomous verify records a NON-AUTHORITATIVE LLM-judge verdict plus a prominent `unverified-prohibition — human review recommended` flag in the verdict/SUMMARY — autonomous completion reads "complete with N flagged prohibitions". NEVER a silent pass; NEVER a hard halt of an AFK run.
-- **test-tier prohibitions → FAIL CLOSED (accept-and-flag, not reject-at-parse).** Accept the `verification: test` value (the SPEC↔must_haves.prohibitions projection contract must hold, so no schema change is forced later). But a well-formed test-tier item that reaches verify with NO wired enforcement is treated as UNVERIFIED — flagged exactly like an unresolved judgment item, NEVER green. The deterministic fail-closed default is `dispositionForProhibition()` in probe-core (status `unverified`, `flagged: true` when `enforcementEvidence` is empty). Do NOT wire a real fail-first negative-test hard gate here — that enforcement MECHANISM defers to a follow-up PR (it needs a real test-tier consumer to `regression-must-fail-first` against; 's corpus is entirely judgment-tier).
+- **judgment-tier prohibitions → qualified mode-dependent soft gate.** Apply the shared reference's **Invocation authority and judgment reporting** rules, in initial and re-verification modes. Inspect sourced intent, goal/requirements, locked/trusted decisions and PLAN checkpoints/evidence obligations; absence of a manual-test sentence alone is insufficient. Only a resolved judgment item with explicit invocation authority, current source-scoped independent evidence/limits and no actual outstanding human/evidence obligation can enter the existing `advisory:` list. Retain a NON-AUTHORITATIVE assessment and prominent `unverified-prohibition — human review recommended` flag. Interactive/default-only, unknown provenance/intent, ambiguous authority/required-human acceptance and genuine human checkpoints stay human items; actual defects stay gaps. Judgment itself NEVER becomes green, VERIFIED or human-accepted.
+- **test-tier prohibitions → FAIL CLOSED.** Accept `verification: test` without changing the projection contract. Use the registered native `engineer_run query check.prohibition-enforcement` producer with the actual projected descriptor and preserve its returned disposition/evidence. It runs real `node --test` or lint-rule checks, machine-proves violation RED and a non-vacuous clean GREEN (node-test requires its clean control). Missing/partial/unsupported descriptor, nonexistent target/fixture, unproven RED, vacuous pass or failed enforcement stays flagged/unverified and produces `gaps_found` in BOTH modes. The outer query advisory envelope or exit success is not a green disposition. Never fabricate a check path, Python-as-node descriptor or evidence.
 
-A flagged prohibition counts as a human-verification item (status `human_needed`) or a gap (status `gaps_found`) per the existing decision tree — it must never be silently absorbed into a `passed` verdict.
+Preserve every original PLAN path/zero-based array position, exact literal, lifecycle/tier and projection; reconcile original/projected/dropped counts. Descriptor-less fallback judgments stay descriptor-less and flagged, never auto-dismissed or silently dropped. Record eligible advisories using the shared reference's existing mapping/text fields and a dedicated **Unverified Prohibitions** section/count. Eligible advisories alone do not create Step 8 human items or Step 9 gaps; they can coexist with `passed` only when the actual source goal and all real obligations pass. All other flags route to human verification or gaps as above. VERIFICATION, SUMMARY and delivery disclosure must retain the per-item flags and literally say "complete with N flagged prohibitions" when completion is justified. No bare complete/Verified headline may hide them.
 
 **Step 2c: Merge must-haves**
 
@@ -520,6 +521,12 @@ done
 
 ## Step 8: Identify Human Verification Needs
 
+Retain actual required present human acceptance, human-action/auth/blocking-human checkpoints
+and unresolved required-human ambiguity. The Step 2b prohibition advisory exception applies
+only after the shared eligibility assessment; it does not waive these obligations or the
+positive-truth evidence requirements below. Recommended review of an eligible advisory is
+listed in **Unverified Prohibitions**, separate from this required-human list.
+
 **Always needs human:** Visual appearance, user flow completion, real-time behavior, external service integration, performance feel, error message clarity.
 
 **Needs human if uncertain:** Complex wiring grep can't trace, dynamic state behavior, edge cases.
@@ -554,7 +561,7 @@ Merge those harvested items into the same human verification list as your own an
 
 Classify status using this decision tree IN ORDER (most restrictive first):
 
-1. IF any truth FAILED, artifact MISSING/STUB, key link NOT_WIRED, or blocker anti-pattern found:
+1. IF any truth FAILED, artifact MISSING/STUB, key link NOT_WIRED, blocker anti-pattern/security/test-quality finding, blocking evidence gap, or missing/failing/unprovable test-tier prohibition enforcement found:
    → **status: gaps_found**
 
 2. IF Step 8 produced ANY human verification items (section is non-empty) — this includes every ⚠️ PRESENT_BEHAVIOR_UNVERIFIED truth from Step 3:
@@ -563,6 +570,13 @@ Classify status using this decision tree IN ORDER (most restrictive first):
 
 3. IF all truths VERIFIED, all artifacts pass, all links WIRED, no blockers, AND no human verification items:
    → **status: passed**
+
+Eligible Step 2b judgment advisories may coexist with rule 3, remaining flagged/unverified
+and NON-AUTHORITATIVE. They certify neither the broad prohibition nor human/UAT acceptance,
+production qualification or future operations. Keep their visible count and completion
+disclosure; mixed advisory plus any genuine human item is `human_needed`, or `gaps_found`
+when rule 1 fires. Do not manually relabel a prior report; preserve history and assemble
+fresh evidence. Delivery/currentness/review/check/merge-authority gates remain unchanged.
 
 **passed is ONLY valid when the human verification section is empty.** If Step 8 produced any items — including any truth left ⚠️ PRESENT_BEHAVIOR_UNVERIFIED — the status is not `passed`: it is `human_needed`, or `gaps_found` when rule 1 also fires (the ordered tree keeps gaps_found's precedence).
 
@@ -694,11 +708,15 @@ deferred: # Only if deferred items exist (Step 9b)
   - truth: "Observable truth addressed in a later phase"
     addressed_in: "Phase N"
     evidence: "Matching goal or success criteria text"
-advisory: # Only if unevidenced new-scope findings exist (Step 7, re-verification only)
+advisory: # Only when present: Step 7 convergence findings, eligible Step 2b judgment prohibitions, or both
   - finding: "Short description of the new-scope concern"
     category: architectural | security | other
     reason: "Why raised; what would resolve it"
     evidence_status: "none provided"
+  - finding: "unverified-prohibition — human review recommended"
+    category: other
+    reason: "{original PLAN path}#must_haves.prohibitions[{zero-based index}]; exact literal: {statement}; lifecycle: resolved; tier: judgment; disposition: flagged/unverified/NON-AUTHORITATIVE; intent: {trusted source}; invocation authority: {instruction provenance and scope}; recommended human review: {review}"
+    evidence_status: "{actual current source revision, independent review/evidence references and limits; no human acceptance claimed}"
 behavior_unverified_items: # Only if behavior_unverified > 0 — emitted regardless of overall status, so these survive a gaps_found phase
   - truth: "Observable truth whose state transition or cancellation/cleanup/ordering invariant no test exercises"
     test: "What to trigger"
@@ -719,7 +737,16 @@ human_verification: # Only if status: human_needed
 **Phase Goal:** {goal from ROADMAP.md}
 **Verified:** {timestamp}
 **Status:** {status}
+**Completion disclosure:** {If completion justified and flags remain: complete with N flagged prohibitions; otherwise blocking status and flagged count}
 **Re-verification:** {Yes — after gap closure | No — initial verification}
+
+## Unverified Prohibitions
+
+**Flagged prohibitions:** {N; state 0 if none}. **Accounting:** {original = projected + dropped; account for each original item}.
+For each flagged item retain its original PLAN path/array position, exact literal,
+lifecycle/tier, flagged/unverified/NON-AUTHORITATIVE disposition, source/review evidence
+and limits, run-authority provenance/scope, and recommended human review. Identify whether
+it is an eligible advisory, required human item or gap. Never mark judgment VERIFIED/green.
 
 ## Goal Achievement
 
@@ -842,14 +869,19 @@ not an error — never edit `status` to match it.
 Return with:
 
 ```markdown
-## Verification Complete
+## Verification {complete with N flagged prohibitions | complete (zero flags) | blocked}
 
 **Status:** {passed | gaps_found | human_needed}
 **Score:** {N}/{M} must-haves verified
 **Report:** .planning/phases/{phase_dir}/{phase_num}-VERIFICATION.md
+**Flagged prohibitions:** {N; per-item report references and evidence limits}
 
 {If passed:}
-All must-haves verified. Phase goal achieved. Ready to proceed.
+Actual source/phase goal verified; no genuine human/evidence gap remains.
+{If flags remain: complete with N flagged prohibitions — judgment remains unverified,
+NON-AUTHORITATIVE; human review recommended. Preserve this literal disclosure and item
+references in SUMMARY and delivery. Source-passed does not certify production or future operations.}
+{If zero flags: All must-haves verified. Phase goal achieved.}
 
 {If gaps_found:}
 ### Gaps Found
@@ -954,6 +986,9 @@ return <div>No messages</div>  // Always shows "no messages"
 - [ ] Anti-patterns scanned and categorized
 - [ ] Behavioral spot-checks run on runnable code (or skipped with reason)
 - [ ] Human verification items identified
+- [ ] Every prohibition accounted by original PLAN path/array position/literal/tier; current authority and independent evidence checked
+- [ ] Judgment flags/dispositions/count retained in advisory and dedicated section when eligible; genuine human/evidence/test-tier gaps still block
+- [ ] Report, SUMMARY handoff and delivery disclosure say "complete with N flagged prohibitions" when completing with flags
 - [ ] Overall status determined
 - [ ] Deferred items filtered against later milestone phases (Step 9b)
 - [ ] Gaps structured in YAML frontmatter (if gaps_found)

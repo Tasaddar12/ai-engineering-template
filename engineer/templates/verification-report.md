@@ -2,6 +2,10 @@
 
 Template for `.planning/phases/XX-name/{phase_num}-VERIFICATION.md` — phase goal verification results.
 
+Load @~/.claude/engineer/references/prohibition-probe.md and apply its **Invocation authority
+and judgment reporting** rules with verifier Step 2b. That shared section owns invocation
+authority/default precedence, eligibility, evidence limits and per-item accounting.
+
 ---
 
 ## File Template
@@ -19,6 +23,11 @@ covered_files: #  — see agents/verifier.md's "Create VERIFICATION.md" step for
 revision: "{actual current full Git commit SHA}"
 fingerprint: "{written by verification.fingerprint; omit until generated}"
 behavior_unverified: 0 # Count of ⚠️ PRESENT_BEHAVIOR_UNVERIFIED truths (present + wired, behavior not exercised)
+advisory: # Only when present: Step 7 convergence findings, eligible Step 2b judgment prohibitions, or both
+  - finding: "unverified-prohibition — human review recommended"
+    category: other
+    reason: "{original PLAN path}#must_haves.prohibitions[{zero-based index}]; exact literal: {statement}; lifecycle: resolved; tier: judgment; disposition: flagged/unverified/NON-AUTHORITATIVE; intent: {trusted source}; invocation authority: {instruction provenance and scope}; recommended human review: {review}"
+    evidence_status: "{actual current source revision, independent review/evidence references and limits; no human acceptance claimed}"
 behavior_unverified_items: # Only if behavior_unverified > 0 — the truths above as structured items; emitted regardless of overall status
   - truth: "Observable truth whose state transition or cancellation/cleanup/ordering invariant no test exercises"
     test: "What to trigger"
@@ -35,6 +44,16 @@ coincidental_reliance_items: # Only if a ✓ VERIFIED truth holds incidentally �
 **Phase Goal:** {goal from ROADMAP.md}
 **Verified:** {timestamp}
 **Status:** {passed | gaps_found | human_needed}
+**Completion disclosure:** {If completion justified and flags remain: complete with N flagged prohibitions; otherwise blocking status and flagged count}
+
+## Unverified Prohibitions
+
+**Flagged prohibitions:** {N; state 0 if none}. **Accounting:** {original = projected + dropped; account for each original item}.
+For each flagged item retain its original PLAN path/zero-based array position, exact
+literal, lifecycle/tier, flagged/unverified/NON-AUTHORITATIVE disposition, sourced intent,
+current source/review evidence and limits, invocation-authority provenance/scope, and
+recommended human review. Identify eligible advisory, required human item or gap routing.
+Judgment remains unverified, never green/VERIFIED or completed human acceptance.
 
 ## Goal Achievement
 
@@ -93,7 +112,8 @@ coincidental_reliance_items: # Only if a ✓ VERIFIED truth holds incidentally �
 ## Human Verification Required
 
 {If no human verification needed:}
-None — all verifiable items checked programmatically.
+No required human verification identified. Any eligible judgment advisories remain
+explicitly unverified in Unverified Prohibitions; automated gaps are reported separately.
 
 {If human verification needed:}
 
@@ -110,7 +130,9 @@ None — all verifiable items checked programmatically.
 ## Gaps Summary
 
 {If no gaps:}
-**No gaps found.** Phase goal achieved. Ready to proceed.
+**No gaps found.** {If no required human items: actual source/phase goal achieved. If flags
+remain: complete with N flagged prohibitions — see Unverified Prohibitions. If required
+human items remain: human_needed; source completion is not yet established.}
 
 {If gaps found:}
 
@@ -168,6 +190,7 @@ None — all verifiable items checked programmatically.
 **Must-haves source:** {PLAN.md frontmatter | derived from ROADMAP.md goal}
 **Automated checks:** {N} passed, {M} failed
 **Human checks required:** {N}
+**Flagged prohibitions:** {N; separate from verified truths and required human checks}
 **Total verification time:** {duration}
 
 ---
@@ -203,9 +226,32 @@ read back and retain the written metadata. Do not substitute `covered_digest`
 or a manually computed digest, and do not change unresolved findings to `passed`.
 
 **Status values (overall, frontmatter `status:`):**
-- `passed` — All must-haves verified, no blockers
+- `passed` — Actual source/phase goal verified, no blockers or genuine outstanding human/evidence obligations; eligible judgment advisories remain individually flagged/unverified
 - `gaps_found` — One or more critical gaps found
 - `human_needed` — Automated checks pass but human verification required
+
+**Prohibition routing and disclosure:** Only the shared reference's eligible resolved
+judgment items may use the existing `advisory:` mapping/text fields shown above. No new
+top-level key, PLAN provenance field or status value is needed. Emit each item and its
+count prominently in **Unverified Prohibitions** even alongside `passed`; do not score it
+as VERIFIED, green or human-accepted. Preserve original literals, positions, tiers and
+descriptor-less fallback projections with no auto-dismissal or silent drop. Read current
+goal/requirements, locked/trusted decisions and checkpoints; missing manual-test wording
+alone is insufficient. Unknown provenance/intent/authority, required-human ambiguity or
+actual present human obligations cannot be advisory-routed. Behavior-unverified and
+unconfirmed backstop/`insufficient_spec` remain human items, including infrastructure.
+Failed truth/artifact/link/security/test-quality/evidence checks remain gaps. Test-tier
+missing/failing/unprovable enforcement is `gaps_found` in both modes, never advisory.
+
+Step 7 convergence findings keep their distinct re-verification-only scope/evidence rules;
+use their existing mapping and **Advisory (New Scope, Unevidenced)** section separately.
+Whenever completion with flags is justified, the report headline/return, SUMMARY and
+delivery disclosure must literally include **“complete with N flagged prohibitions”**
+with actual count and per-item references. A bare “complete” or “Verified” headline must
+not hide flags. For blocked results report status/count without claiming completion.
+Source-passed does not qualify production, complete pending UAT or approve future scans
+or operations. Preserve old reports/history and obtain fresh evidence/fingerprint rather
+than relabeling status. Existing review, currentness, checks, CI and merge authority apply.
 
 **Per-truth states (Observable Truths `Status` column):**
 - `✓ VERIFIED` — supporting artifacts pass all checks; for a behavior-dependent truth, a behavioral test exercised the asserted behavior
@@ -236,6 +282,27 @@ or a manually computed digest, and do not change unresolved findings to `passed`
 ---
 
 ## Example
+
+The chat example below illustrates `gaps_found`. For prohibition routing, apply these
+additional cases (illustrative outcomes, not evidence about any current project):
+
+- **Eligible advisory:** a resolved judgment against manipulative reminder framing has a
+  sourced intent, explicit unattended invocation authority, current independent source/copy
+  review and no required present human acceptance. Store its original PLAN position/literal,
+  scope and evidence limits in the shown advisory fields. With all actual truths/checks
+  verified and no real human/evidence gap, overall `passed` may coexist with
+  **complete with 1 flagged prohibitions**; the judgment is still NON-AUTHORITATIVE/unverified.
+- **Human hold:** the same item with only saved interactive defaults, ambiguous provenance,
+  or a locked decision requiring present owner copy acceptance yields `human_needed`.
+  One eligible advisory plus one required human item also yields `human_needed`.
+- **Evidence hold:** either case plus a failed truth, security/test-quality blocker or
+  unresolved evidence gap yields `gaps_found`. A test-tier prohibition with absent descriptor,
+  unproven violation RED or vacuous clean GREEN remains `gaps_found` even with unattended
+  authority. Behavior-unverified/backstop abstention stays a human item, never this advisory.
+- **Accounting failure:** dropping/rewording the literal or losing its original PLAN
+  association/flag/count is not an eligible completion. A fixture pass never proves a broad
+  judgment or human acceptance. See the shared reference's exact two-prohibition dashboard
+  example for `2 original = 2 projected + 0 dropped` and the separate future scan guard.
 
 ```markdown
 ---

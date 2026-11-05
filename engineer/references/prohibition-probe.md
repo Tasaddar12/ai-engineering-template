@@ -144,12 +144,110 @@ lifecycle is identical to the edge-probe, the verification tiers differ):
     > temp fixtures in the tests, and the real dogfood remains the LINT-rule `local/no-source-grep`.
     > They are therefore **open to maintainer adjustment (rename, or replacing the env var with an
     > argv) at PR review with zero migration cost.**
-  - A **judgment**-tier prohibition routes to a never-silent / never-hard-halt soft gate
-    (autonomous emits an `unverified-prohibition — human review recommended` flag).
+  - A **judgment**-tier prohibition stays flagged/unverified, never green. Route it using
+    **Invocation authority and judgment reporting** below: interactive review requires
+    human resolution; an eligible autonomous advisory retains the prominent
+    `unverified-prohibition — human review recommended` flag without inventing acceptance.
 
 Splitting these axes keeps the lifecycle enum free of a verification fact and lets the
 prohibition adapter declare `test | judgment` without forking the shared lifecycle enum that
 the edge-probe's `explicit | backstop` also uses.
+
+## Invocation authority and judgment reporting
+
+This is the shared authority/default rule for verifier Step 2b and the verification report
+template. Read it in initial verification and re-verification; recheck eligibility against
+current sources rather than carrying an earlier advisory forward on trust.
+
+Saved interaction settings (including `mode: interactive`, `workflow.auto_advance: false`
+and end-of-phase human verification) remain defaults. A specific, trusted user instruction
+to perform the current invocation unattended can select autonomous **judgment handling for
+that invocation**, within its authorized scope, without changing those settings. Record the
+actual instruction's provenance and scope in each advisory. Missing or ambiguous authority
+uses interactive handling. Being AFK, silence, or “no questions” alone does not establish
+permission to implement, deliver, waive a checkpoint or pass verification. Explicit unattended
+implementation/merge instructions subject to non-scan checks can supply invocation authority;
+they do not supply present human inspection, production acceptance or separate scan approval.
+Neither Git author identity nor an agent's claim of human authorship proves acceptance.
+
+Assess each original item separately. Only a `resolved` / `judgment` prohibition qualifies
+for the autonomous advisory route when **all** of these are established:
+
+1. Its intent and provenance are sourced. Inspect the actual goal, requirements, locked
+   decisions, trusted user decisions and PLAN checkpoints/evidence obligations. Absence of
+   an explicit manual-test sentence alone is insufficient.
+2. The current invocation has the explicit unattended authority above for this work.
+3. A current, source-scoped independent assessment supports the implementation facts relevant
+   to the intent, with exact source/review references and limits. An old review, SUMMARY claim
+   or finite fixture pass alone does not establish this.
+4. No actual outstanding present human acceptance/action/authentication/blocking-human
+   checkpoint, unresolved intent, evidence obligation or defect binds the item. Unknown
+   provenance or ambiguity about required human acceptance cannot take this route.
+
+For an eligible item, record the NON-AUTHORITATIVE LLM assessment in the **existing
+`advisory:` list** and a dedicated **Unverified Prohibitions** report section. It remains
+`status: unverified`, `flagged: true` in the probe disposition; `resolved` describes its
+lifecycle, never human acceptance. Do not count the prohibition as a VERIFIED truth, green
+check or completed human review. Its recommended human review is an advisory, not an
+outstanding required Step 8 human item solely because the judgment is irreducible.
+
+Use the existing advisory mapping/text representation: `finding` identifies an
+`unverified-prohibition`, `category: other`, `reason` records the exact original PLAN path
+and zero-based array position, exact literal, lifecycle/tier, disposition
+`flagged/unverified/NON-AUTHORITATIVE`, sourced intent, run-authority provenance/scope,
+and recommended human review; `evidence_status` records actual source/review evidence,
+revision/currentness and limits. Repeat these associations in the dedicated section with
+a visible flagged count. These are authored text in existing fields, not new PLAN fields,
+top-level report keys, an approval registry or a runtime enforcement helper.
+
+Keep all original literals, array associations, tiers and projections current and accounted
+for. The spec-less fallback's never-auto-dismiss, descriptor-less and no-silent-drop rules
+still apply: advisory reporting retains the original item, it does not dismiss, drop,
+reword or reclassify it. Reconcile original/projected/dropped counts explicitly. If that
+accounting cannot be established, retain the gap rather than manufacturing eligibility.
+
+Interactive/default-only judgment, unresolved/unknown items, unclear provenance/intent or
+required-human ambiguity stay in human verification (or `gaps_found` for an actual defect).
+Explicit present human acceptance and human-action/auth/blocking-human checkpoints still
+require their actual resolution. Behavior-unverified truths and unconfirmed
+backstop/`insufficient_spec` truths stay human items, including infrastructure phases.
+Failed truths/artifacts/links, security/test-quality blockers and unresolved evidence gaps
+stay gaps. A test-tier prohibition with absent, partial, unsupported, failing or unprovable
+enforcement is `gaps_found` in **both modes**; it cannot use the judgment advisory route.
+
+Overall `passed` requires the actual source/phase goal verified and no genuine human or
+evidence gap. Eligible judgment advisories may coexist with it while remaining individually
+unverified. Existing Step 7 convergence advisories retain their separate re-verification-only
+scope/evidence rules; they do not authorize this route or soften any other blocker.
+
+When flags remain, VERIFICATION, SUMMARY and delivery disclosure must prominently say
+**“complete with N flagged prohibitions”** with the actual count and per-item references;
+never use a bare “complete” or “Verified” headline that hides them. For blocked results,
+report the blocking status and count without claiming completion. Source delivery does not
+certify production qualification, change pending UAT, approve future operations or satisfy
+a separately held scan approval. Preserve prior reports/history; assemble fresh verification
+from current evidence instead of manually relabeling an old report. Fingerprint, revision,
+configured-check receipts, independent review, CI and merge-authority gates still apply.
+
+### Boundary example: prepared dashboard UAT
+
+These exact case literals illustrate accounting; they are not new product scope or a passed
+dashboard verdict:
+
+- P1: `The dashboard MUST NOT execute real or test scans before the owner separately approves coordinated scan UAT.`
+- P2: `The dashboard MUST NOT present passive discovery candidates, absent scanner evidence, fixture passes or a disabled bridge as successful scanned or production-qualified results.`
+
+Retain `2 original = 2 projected + 0 dropped`, both original PLAN positions and both
+`resolved`/`judgment` descriptor-less entries. P1 binds work execution and future scan
+approval; it does not require inventing a product approval registry. P2 is a broad
+presentation judgment: source/UI/docs evidence can support bounded implementation facts,
+but its universal judgment stays unverified. If trusted decisions authorize unattended
+implementation/merge after non-scan checks, the goal requires preparing UAT, and independent
+current review establishes no present human obligation, both may be visible advisories.
+Neither becomes green, accepted by a human or scan-authorized. If a locked decision instead
+requires present human acceptance, or that intent/provenance is unclear, keep the human hold.
+If a truth/check fails, keep `gaps_found` even with both advisories. A clean finite test of
+P2 never proves the universal literal or turns fixture results into scan/production results.
 
 ## Optional wired-check descriptor (deterministic locate + machine-proof, + )
 
@@ -165,9 +263,11 @@ object:
 - `check_rule` — the `ruleId` to filter on, **lint-rule only** (absent for `node-test`).
 - `check_violation_fixture` — path to a KNOWN-BAD subject the prover runs the check against to
   machine-prove fail-first (rides BOTH kinds; for `node-test` it is injected via `ENGINEER_PROHIB_SUBJECT`).
-- `check_clean_fixture` — **optional** path to a KNOWN-CLEAN control subject. When present the
-  node-test prover also runs the check against it and requires GREEN, proving the violation's RED is
-  caused by the subject's *content* (not merely by `ENGINEER_PROHIB_SUBJECT` being set). Absent → no control.
+- `check_clean_fixture` — path to a KNOWN-CLEAN control subject, **required for node-test
+  fail-first proof** by the current native producer. The prover requires non-vacuous GREEN,
+  proving the violation's RED is caused by content rather than subject injection alone.
+  Missing/nonexistent control fails closed; lint-rule proof uses its rule-specific violation
+  report and clean target instead.
 
 The flat-scalar shape is load-bearing: the shared `parseMustHavesBlock` is a flat parser and a
 nested object would flatten/mangle the round-trip. `projectProhibitions` emits these keys **only for a well-formed descriptor**
@@ -184,11 +284,10 @@ falls through to the producer's fail-closed paths (`located: false`, or located-
 never a silent green. A prohibition with no descriptor parses and disposes byte-identically to today.
 `failFirst` is **not** sourced from the descriptor and is **demoted** (machine-proven fail-first
 DELIVERED in — no path greens on attestation alone, FF-08); the `dispositionForProhibition`
-policy is unchanged. Causation (****): the node-test proof confirms the fixture exists and the
-check goes RED; supplying `check_clean_fixture` adds an opt-in control that *also* requires GREEN on a
-known-clean subject, proving the red is content-caused. With no clean fixture the control cannot run,
-so that one residual case (a deceptive test reding merely because the env var is set) stays a
-documented constraint — an author opts into the stronger proof by wiring a clean control subject.
+policy is unchanged. The current native `check.prohibition-enforcement` query requires a
+non-vacuous node-test RED on the known violation, non-vacuous GREEN on the mandatory clean
+control, and a genuine passing wired target. Missing proof/control never greens. Read its
+disposition and evidence, not merely the query exit code or outer advisory envelope.
 
 ## Output schema
 
