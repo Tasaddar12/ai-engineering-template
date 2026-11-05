@@ -183,7 +183,7 @@ class InstalledAdvisoryContracts(unittest.TestCase):
             git(target, "config", "user.name", "Synthetic Fixture Agent")
             git(target, "config", "user.email", "agent@example.invalid")
             git(target, "config", "core.autocrlf", "false")
-            (target / ".gitignore").write_text(".claude/\n.codex/\n.agents/\n.planning/verification-receipts/\n")
+            (target / ".gitignore").write_text(".claude/\n.codex/\n.agents/\n.planning/verification-receipts/\n", encoding="utf-8")
             prior = Path.cwd()
             with patch.dict(os.environ, {"ENGINEER_ROOT": str(target), "ENGINEER_HOST": host}):
                 os.chdir(target)
@@ -210,10 +210,10 @@ class InstalledAdvisoryContracts(unittest.TestCase):
                            "sources": ["subject.txt", "fixture_check.py"], "environment": [], "timeout": 15}]}}
         }
         self.cli(target, host, "project.init", "--fields", json.dumps(fields))
-        (target / "subject.txt").write_text("clean\n")
+        (target / "subject.txt").write_text("clean\n", encoding="utf-8")
         (target / "fixture_check.py").write_text(
-            "from pathlib import Path\nassert Path('subject.txt').read_text() == 'clean\\n'\nprint('actual clean marker checked')\n")
-        (target / "fixture-decisions.md").write_text(AUTHORITY + "\nNo present human acceptance is stipulated in this synthetic contract.\n")
+            "from pathlib import Path\nassert Path('subject.txt').read_text(encoding='utf-8') == 'clean\\n'\nprint('actual clean marker checked')\n", encoding="utf-8")
+        (target / "fixture-decisions.md").write_text(AUTHORITY + "\nNo present human acceptance is stipulated in this synthetic contract.\n", encoding="utf-8")
         phase = target / Path(PLAN).parent
         phase.mkdir(parents=True, exist_ok=True)
         metadata = {"phase": "01-fixture", "plan": "01", "type": "execute", "wave": 1,
@@ -222,11 +222,11 @@ class InstalledAdvisoryContracts(unittest.TestCase):
                                    "artifacts": [{"path": "fixture_check.py", "contains": "Path"}],
                                    "key_links": [{"from": "fixture_check.py", "to": "subject.txt", "via": "subject.txt"}],
                                    "prohibitions": modules["probe_core"].project_prohibitions(ITEMS)}}
-        (target / PLAN).write_text(modules["text"].join_frontmatter(metadata, "# Synthetic contract\n"))
+        (target / PLAN).write_text(modules["text"].join_frontmatter(metadata, "# Synthetic contract\n"), encoding="utf-8")
         (target / SUMMARY).write_text(modules["text"].join_frontmatter(
             {"phase": "01-fixture", "plan": "01", "status": "complete"},
-            "# Fixture source: complete with 2 flagged prohibitions\n\n" + self.disclosure() + "\n"))
-        (target / CONTEXT).write_text("---\nphase: 01-fixture\n---\n# Decisions\n\nD-01: Read the file; future operations remain held.\n")
+            "# Fixture source: complete with 2 flagged prohibitions\n\n" + self.disclosure() + "\n"), encoding="utf-8")
+        (target / CONTEXT).write_text("---\nphase: 01-fixture\n---\n# Decisions\n\nD-01: Read the file; future operations remain held.\n", encoding="utf-8")
         git(target, "add", ".")
         git(target, "commit", "-m", "Initialize disposable fixture evidence")
         return metadata
@@ -241,7 +241,7 @@ class InstalledAdvisoryContracts(unittest.TestCase):
         Routing is supplied by the test author; this is NOT an eligibility engine.
         All illustrative sample rows are replaced, never asserted as observations.
         """
-        template = (target / ("." + host) / "engineer/templates/verification-report.md").read_text()
+        template = (target / ("." + host) / "engineer/templates/verification-report.md").read_text(encoding="utf-8")
         example = re.search(r"## File Template\s+```markdown\n(.*?)\n```", template, re.S)
         self.assertIsNotNone(example)
         _, skeleton = modules["text"].split_frontmatter(example[1])
@@ -279,7 +279,7 @@ class InstalledAdvisoryContracts(unittest.TestCase):
             title = match[2]
             if title in blocks:
                 body += match[0] + "\n\n" + blocks[title] + "\n\n"
-        (target / REPORT).write_text(modules["text"].join_frontmatter(metadata, body))
+        (target / REPORT).write_text(modules["text"].join_frontmatter(metadata, body), encoding="utf-8")
         return metadata
 
     def freeze(self, target, host):
@@ -302,8 +302,8 @@ class InstalledAdvisoryContracts(unittest.TestCase):
         for host in HOSTS:
             with self.subTest(host=host), self.project(host) as (target, modules):
                 namespace = target / ("." + host)
-                manifest = json.loads((namespace / "engineer-install/manifest.json").read_text())
-                identity = json.loads((namespace / "engineer-install/identity.json").read_text())
+                manifest = json.loads((namespace / "engineer-install/manifest.json").read_text(encoding="utf-8"))
+                identity = json.loads((namespace / "engineer-install/identity.json").read_text(encoding="utf-8"))
                 self.assertEqual(host, manifest["host"])
                 self.assertEqual("local", manifest["scope"])
                 self.assertEqual(self.pin, manifest["revision"])
@@ -335,7 +335,7 @@ class InstalledAdvisoryContracts(unittest.TestCase):
                     self.assertIn("flagged/unverified/NON-AUTHORITATIVE", metadata["advisory"][index]["reason"])
                     self.assertIn(AUTHORITY, metadata["advisory"][index]["reason"])
                 for path in (REPORT, SUMMARY):
-                    disclosure = (target / path).read_text()
+                    disclosure = (target / path).read_text(encoding="utf-8")
                     self.assertIn("complete with 2 flagged prohibitions", disclosure)
                     self.assertIn("2 original = 2 projected + 0 dropped", disclosure)
                     self.assertIn(self.disclosure(), disclosure)
@@ -392,7 +392,7 @@ class InstalledAdvisoryContracts(unittest.TestCase):
                                 provider.assert_not_called()
                                 view.assert_not_called()
                                 currentness.assert_not_called()
-                            bad, body = modules["text"].split_frontmatter((target / REPORT).read_text())
+                            bad, body = modules["text"].split_frontmatter((target / REPORT).read_text(encoding="utf-8"))
                             bad["status"] = "passed"
                             self.assertIn("Passed verification cannot contain unresolved gaps or human observations", modules["frontmatter"].errors(bad, "verification"))
 
@@ -400,15 +400,15 @@ class InstalledAdvisoryContracts(unittest.TestCase):
         self.assertIsNotNone(shutil.which("node"), "Node is required: this test cannot relabel Python as node-test")
         for host in HOSTS:
             with self.subTest(host=host), self.project(host) as (target, modules):
-                (target / "clean.txt").write_text("clean\n")
-                (target / "bad.txt").write_text("violation\n")
+                (target / "clean.txt").write_text("clean\n", encoding="utf-8")
+                (target / "bad.txt").write_text("violation\n", encoding="utf-8")
                 (target / "negative.test.cjs").write_text(
                     "const test=require('node:test'); const assert=require('node:assert/strict'); const fs=require('node:fs');\n"
-                    "test('subject excludes violation',()=>assert.equal(fs.readFileSync(process.env.ENGINEER_PROHIB_SUBJECT || 'clean.txt','utf8'),'clean\\n'));\n")
-                (target / "vacuous.test.cjs").write_text("// Deliberately no tests.\n")
-                (target / "always-green.test.cjs").write_text("require('node:test')('does not inspect subject',()=>{});\n")
-                (target / "always-red.test.cjs").write_text("require('node:test')('always fails',()=>{throw Error('bad check')});\n")
-                (target / "load-error.test.cjs").write_text("throw Error('load error is not meaningful RED');\n")
+                    "test('subject excludes violation',()=>assert.equal(fs.readFileSync(process.env.ENGINEER_PROHIB_SUBJECT || 'clean.txt','utf8'),'clean\\n'));\n", encoding="utf-8")
+                (target / "vacuous.test.cjs").write_text("// Deliberately no tests.\n", encoding="utf-8")
+                (target / "always-green.test.cjs").write_text("require('node:test')('does not inspect subject',()=>{});\n", encoding="utf-8")
+                (target / "always-red.test.cjs").write_text("require('node:test')('always fails',()=>{throw Error('bad check')});\n", encoding="utf-8")
+                (target / "load-error.test.cjs").write_text("throw Error('load error is not meaningful RED');\n", encoding="utf-8")
                 prohibition = {"statement": "The generic fixture MUST NOT contain violation.", "status": "resolved", "verification": "test"}
                 descriptor = {"kind": "node-test", "target": "negative.test.cjs", "violationFixture": "bad.txt", "cleanFixture": "clean.txt"}
                 for mode in ("interactive", "autonomous"):
@@ -452,7 +452,7 @@ class InstalledAdvisoryContracts(unittest.TestCase):
                 original_report = (target / REPORT).read_bytes()
                 metadata, body = modules["text"].split_frontmatter(original_report.decode())
                 metadata.update(status="human_needed", human_verification=[{"test": "Required fixture checkpoint", "expected": "Actual resolution", "why_human": "Unresolved synthetic human obligation"}])
-                (target / REPORT).write_text(modules["text"].join_frontmatter(metadata, body))
+                (target / REPORT).write_text(modules["text"].join_frontmatter(metadata, body), encoding="utf-8")
                 git(target, "add", REPORT)
                 git(target, "commit", "-m", "Synthetic unresolved human report observation")
                 self.assertEqual(["verification has not passed"], self.cli(target, host, "verification.current", "01")["reasons"])
@@ -497,10 +497,10 @@ class InstalledAdvisoryContracts(unittest.TestCase):
                         metadata.pop(field)
                     else:
                         metadata[field] = value
-                    report_path.write_text(modules["text"].join_frontmatter(metadata, body))
+                    report_path.write_text(modules["text"].join_frontmatter(metadata, body), encoding="utf-8")
                     self.assert_stale(target, host, modules, reason)
                     report_path.write_bytes(original)
-                (target / "untracked.txt").write_text("dirty\n")
+                (target / "untracked.txt").write_text("dirty\n", encoding="utf-8")
                 self.assert_stale(target, host, modules, "working tree is dirty")
                 (target / "untracked.txt").unlink()
                 receipts = target / ".planning/verification-receipts"
@@ -511,11 +511,11 @@ class InstalledAdvisoryContracts(unittest.TestCase):
                 index_path.write_bytes(index_bytes)
                 receipt_path = receipts / (checks["checks"][0]["receipt_id"] + ".json")
                 receipt_bytes = receipt_path.read_bytes()
-                receipt_path.write_text("{}")
+                receipt_path.write_text("{}", encoding="utf-8")
                 self.assert_stale(target, host, modules, "configured checks lack passing receipts at current HEAD")
                 receipt_path.write_bytes(receipt_bytes)
                 self.assertTrue(self.cli(target, host, "verification.current", "01")["current"])
-                (target / "subject.txt").write_text("changed\n")
+                (target / "subject.txt").write_text("changed\n", encoding="utf-8")
                 git(target, "add", "subject.txt")
                 git(target, "commit", "-m", "Synthetic source drift")
                 self.assert_stale(target, host, modules, "source changed since the frozen verification revision")
