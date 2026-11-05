@@ -278,15 +278,28 @@ class InstalledProviderBodyBytes(unittest.TestCase):
 
     def test_body_file_retains_existing_reviewed_text_read_contract(self):
         for target in self.targets.values():
-            reviewed = body(PR_HEADINGS, "crlf")
-            path = target / "reviewed-body.md"
-            path.write_bytes(reviewed.encode())
-            with path.open(encoding="utf-8-sig") as stream:
-                accepted = stream.read()
-            self.state(target)
-            self.cli(target, "windows-fidelity", "pr.open", "reviewed", "--title", TITLE,
-                     "--body-file", str(path), "--base", "main")
-            self.assert_effect(target, accepted, "pr", "create")
+            for family, headings in (("pr", PR_HEADINGS), ("issue", ISSUE_HEADINGS)):
+                with self.subTest(host=target.name, family=family):
+                    path = target / "reviewed-body.md"
+                    path.write_bytes(body(headings, "crlf").encode())
+                    with path.open(encoding="utf-8-sig") as stream:
+                        accepted = stream.read()
+                    self.state(target)
+                    if family == "pr":
+                        self.cli(target, "windows-fidelity", "pr.open", "reviewed", "--title", TITLE,
+                                 "--body-file", str(path), "--base", "main")
+                        expected = accepted
+                    else:
+                        name = "body-file.md"
+                        self.todo(target, name)
+                        args = [name, "--title", TITLE, "--body-file", str(path),
+                                "--variant", "Enhancement", "--labels", "bug", "triaged"]
+                        preview = self.cli(target, "windows-fidelity", "todo.issue-preview", *args)
+                        self.assertEqual(accepted, preview["body"])
+                        self.cli(target, "windows-fidelity", "todo.issue-publish", *args,
+                                 "--preview-token", preview["previewToken"])
+                        expected = self.expected_publication(name, accepted)
+                    self.assert_effect(target, expected, family, "create")
 
     def test_pr_readback_and_exception_refusals_never_repeat_provider_write(self):
         for target in self.targets.values():
@@ -342,18 +355,39 @@ class InstalledProviderBodyBytes(unittest.TestCase):
                     self.assertTrue(result["reconciled"])
                     self.assert_effect(target, self.expected_publication(name, args[4]), "issue", "create")
 
+    def test_issue_update_refusals_never_repeat_provider_write(self):
+        for target in self.targets.values():
+            for fault in ("body", "newlines", "title", "labels", "readback-error", "exception-after-write"):
+                with self.subTest(host=target.name, fault=fault):
+                    name = "update-" + fault + ".md"
+                    self.todo(target, name, linked=True)
+                    self.state(target, fault=fault)
+                    args = self.issue_args(name, body(ISSUE_HEADINGS, "lf"))
+                    token = self.preview(target, "native", args)
+                    result = self.cli(target, "windows-fidelity", "todo.issue-update", *args,
+                                      "--preview-token", token,
+                                      status=124 if fault == "exception-after-write" else 1)
+                    expected = ("command-timeout" if fault == "exception-after-write" else
+                                "command-failed" if fault == "readback-error" else "issue-readback-mismatch")
+                    self.assertEqual(expected, result["error"])
+                    self.assertEqual(1, len(self.observed(target)["effects"]))
+                    preview = json.loads((target / ".planning/issue-previews" / (token + ".json")).read_bytes())
+                    self.assertEqual("publishing", preview["used"])
+
     def test_stale_issue_preview_refuses_before_any_effect(self):
         for target in self.targets.values():
-            name = "stale.md"
-            source = self.todo(target, name)
-            self.state(target)
-            args = self.issue_args(name, body(ISSUE_HEADINGS, "lf"))
-            token = self.preview(target, "native", args)
-            source.write_bytes(source.read_bytes() + b"Source changed after review.\n")
-            result = self.cli(target, "windows-fidelity", "todo.issue-publish", *args,
-                              "--preview-token", token, status=1)
-            self.assertEqual("stale-issue-preview", result["error"])
-            self.assertEqual([], self.observed(target)["effects"])
+            for action in ("publish", "update"):
+                with self.subTest(host=target.name, action=action):
+                    name = "stale-" + action + ".md"
+                    source = self.todo(target, name, linked=action == "update")
+                    self.state(target)
+                    args = self.issue_args(name, body(ISSUE_HEADINGS, "lf"))
+                    token = self.preview(target, "native", args)
+                    source.write_bytes(source.read_bytes() + b"Source changed after review.\n")
+                    result = self.cli(target, "windows-fidelity", "todo.issue-" + action, *args,
+                                      "--preview-token", token, status=1)
+                    self.assertEqual("stale-issue-preview", result["error"])
+                    self.assertEqual([], self.observed(target)["effects"])
 
     def test_uncertain_missing_issue_and_changed_intent_cannot_authorize_second_create(self):
         for target in self.targets.values():
