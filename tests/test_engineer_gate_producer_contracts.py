@@ -76,6 +76,35 @@ class ExecutionReferences(unittest.TestCase):
             self.assertIn(required, section)
 
 
+class SecurityOccurrenceInstructions(unittest.TestCase):
+    def test_initialization_documents_owned_rows_and_reserved_exception(self):
+        guide = text("engineer/bin/README.md")
+        for required in ("six-column", "<threat_model>", "T-{phase}-SC", "same PLAN",
+                         "aliases", "fenced examples"):
+            self.assertIn(required, guide)
+
+    def test_auditor_and_persistence_keep_per_plan_evidence(self):
+        auditor = text("agents/security-auditor.md")
+        example = re.search(r"```json\n(\{\"threat_evidence\".*?\})\n```", auditor, re.S)
+        self.assertIsNotNone(example, "Auditor must emit an actionable occurrence evidence example")
+        evidence = json.loads(example[1])["threat_evidence"]
+        self.assertEqual([("T-01-SC", "01-01-PLAN.md"), ("T-01-SC", "01-02-PLAN.md")],
+                         [(row["id"], row["plan"]) for row in evidence])
+        self.assertTrue(all(row["citations"] for row in evidence))
+        self.assertIn("| Threat ID | PLAN |", auditor)
+        for path in ("agents/security-auditor.md", "engineer/workflows/secure-phase.md"):
+            with self.subTest(path=path):
+                guide = text(path)
+                for required in ("T-{phase}-SC", "PLAN", "threat_evidence", "citations", "severity", "disposition"):
+                    self.assertIn(required, guide)
+
+    def test_tracking_preserves_canonical_identity_and_verified_anchor(self):
+        guide = " ".join(text("engineer/references/git-workflow.md").split())
+        for required in ("T-{phase}-SC", "same canonical risk key", "adjacent named anchor",
+                         "existing canonical", "never compute"):
+            self.assertIn(required, guide)
+
+
 class ExactScopeRuntime(RuntimeCase):
     def test_unexpected_file_is_preserved_and_never_integrated(self):
         self.put(".gitignore", ".worktrees/\n")

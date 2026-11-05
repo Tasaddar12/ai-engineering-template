@@ -100,6 +100,11 @@ Read SUMMARY.md — extract `## Threat Flags` entries.
 
 Per threat: `{ threat_id, category, component, severity, disposition, mitigation_pattern, files_to_check }`
 
+Preserve every owning PLAN occurrence of exact reserved `T-{phase}-SC`. When
+more than one distinct PLAN owns it, carry each exact PLAN filename through
+classification, auditor dispatch and report persistence; do not collapse by ID.
+Unique IDs retain their existing shape.
+
 Also set `register_authored_at_plan_time: true` if **at least one** PLAN file contained a parseable `<threat_model>` block; `false` if no PLAN files had any `<threat_model>` block (legacy phase authored before formal threat modelling was standard).
 
 ## 3. Threat Classification
@@ -164,6 +169,17 @@ Handle return:
 - `## ESCALATE` → present to user → Step 6
 
 ## 6. Write/Update SECURITY.md
+
+For exact reserved `T-{phase}-SC` owned by multiple distinct PLANs, preserve one
+report row per owner using the report's optional `PLAN` column, required for
+these repeated owners (e.g. `01-01-PLAN.md`), and
+one frontmatter `threat_evidence` entry per owner with `id`, `plan` and current
+`citations`, as returned by the auditor. Check every occurrence's severity,
+disposition and citations against its owning PLAN and frozen audit revision.
+Missing/duplicate rows or evidence, unknown owners, invalid citations and
+severity/disposition mismatches remain pending. A duplicate owned row within one
+PLAN is still invalid. Unique IDs need no `PLAN` column or `plan` field. Keep
+each PLAN's six-column register and threat IDs unchanged.
 
 **State B (create):**
 1. Read template from `engineer/templates/SECURITY.md`
