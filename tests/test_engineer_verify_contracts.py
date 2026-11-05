@@ -1,5 +1,4 @@
 """Parse-only verification contracts; fixture commands are never executed."""
-from pathlib import Path
 try:
     from .test_engineer_runtime import RuntimeCase
 except ImportError:

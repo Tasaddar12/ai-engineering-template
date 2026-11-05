@@ -463,6 +463,15 @@ def rendered_targets(issue_url, entries, origin):
         if isinstance(established, str) and established.startswith(issue_url + '#'):
             fragment = established[len(issue_url) + 1:]
             anchors = {fragment} if fragment in owned else set()
+        elif (isinstance(established, str) and established and not canonical
+              and established.split('#', 1)[0] != issue_url):
+            # An external risk identity does not pin this checklist's evidence.
+            # Match the native producer's key anchor only when the provider
+            # actually declares exactly one owned form; never infer an address.
+            marker = 'engineer-risk-' + _hash(entry['key'])
+            native = owned & {marker, 'user-content-' + marker}
+            if native:
+                anchors = native
         keys = re.findall(r'(?m)^\s*Canonical risk key:\s*([^\n]+?)\s*$', ''.join(section.get('body', [])))
         if len(anchors) != 1 or keys != [entry['key']]:
             pending.append(entry['id'] + ': actual rendered heading anchor unavailable or ambiguous')
@@ -525,178 +534,8 @@ def _mutate(operation, ctx, preview_path, preview):
     return result
 
 
-def _preview_identity(review):
-    identity = {k: review[k] for k in ('scope', 'entries', 'operations', 'source_digest', 'revision')}
-    if 'reconciliation' in review:
-        identity['reconciliation'] = review['reconciliation']
-    return identity
-
-
-def _original_publication(args, ctx, proof=None, repair_token=None):
-    """Authenticate immutable provenance; never adopt or rewrite an old intent."""
-    token = str(args.get('reconcile-token', ''))
-    if not re.fullmatch(r'[a-f0-9]{64}', token):
-        raise Failure('security-reconciliation-invalid', 'Supply the original consumed preview token')
-    path = _runtime_dir() / 'previews' / (token + '.json')
-    if not path.is_file():
-        raise Failure('security-reconciliation-invalid', 'Original publication preview is unavailable')
-    original = load_json(path)
-    if (not isinstance(original, dict) or not all(k in original for k in ('scope', 'entries', 'operations', 'source_digest', 'source_files', 'revision'))
-            or original.get('token') != token or original.get('consumed') is not True or original.get('ready') is not True
-            or 'reconciliation' in original or _hash(_preview_identity(original)) != token
-            or original.get('scope', {}).get('key') != ctx['key']
-            or original.get('scope', {}).get('origin') != ctx['origin']):
-        raise Failure('security-reconciliation-invalid', 'Original consumed publication identity does not match')
-    operations, entries, results = original.get('operations', []), original.get('entries', []), original.get('results', [])
-    if (len(operations) != 1 or operations[0].get('key') != 'container:' + ctx['key']
-            or operations[0].get('action') not in ('create', 'edit') or not entries
-            or not all(e.get('planned') is True for e in entries)
-            or len(results) != 1 or results[0].get('key') != operations[0]['key']):
-        raise Failure('security-reconciliation-invalid', 'Repair supports only one known planned checklist container')
-    operation, url = operations[0], results[0].get('url')
-    repository.require_url(url, 'issues')
-    if operation.get('url') and operation['url'] != url:
-        raise Failure('security-reconciliation-invalid', 'Original edit result must retain its reviewed issue URL')
-    intent_key = _hash({'origin': ctx['origin'], 'key': operation['key']})
-    intent_path = _runtime_dir() / 'intents' / (intent_key + '.json')
-    intent = load_json(intent_path)
-    marker = '<!-- engineer-security-intent:' + intent_key + ' -->'
-    body = operation['body'] if marker in operation['body'] else operation['body'].rstrip() + '\n\n' + marker + '\n'
-    if (not intent or intent.get('state') != 'complete' or intent.get('origin') != ctx['origin']
-            or intent.get('url') != url or intent.get('operation') != {**operation, 'body': body}
-            or intent.get('source_digest') != original['source_digest']):
-        raise Failure('security-reconciliation-invalid', 'Complete exact original intent and known issue readback are required')
-    actual = {'original_token': token, 'original_preview_sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
-              'original_intent_sha256': hashlib.sha256(intent_path.read_bytes()).hexdigest(), 'url': url,
-              'original_revision': original['revision']}
-    if proof is not None and proof != actual:
-        raise Failure('security-reconciliation-drift', 'Original publication receipt bytes changed')
-    revision = original.get('revision', '')
-    if (not re.fullmatch(r'[a-f0-9]{40,64}', revision)
-            or run(['git', 'merge-base', '--is-ancestor', revision, _head()], root(), check=False, timeout=30).returncode
-            or digest([safe_path(p) for p in original['source_files']]) != original['source_digest']):
-        raise Failure('security-reconciliation-source-drift', 'Original captured source bytes and ancestor revision are required')
-    _, state = _state(ctx)
-    if state.get('scopes', {}).get(ctx['key'], {}).get('url', url) != url:
-        raise Failure('security-reconciliation-drift', 'Established checklist identity changed')
-    for entry in entries:
-        reservation = state.get('risk_intents', {}).get(entry['key'])
-        known = state['risks'].get(entry['key'], {})
-        expected = {'scope': ctx['key'], 'entry_id': entry['id'], 'heading': entry['heading'],
-                    'plan': entry['plan'], 'threat_id': entry['threat_id'], 'container_url': url}
-        if any(field in known and known[field] != value for field, value in expected.items()):
-            raise Failure('security-reconciliation-owned', 'Original risk occurrence identity changed', key=entry['key'])
-        registered = (repair_token and known.get('canonical_url') and known.get('container_url') == url
-                      and any(r.get('token') == repair_token and r.get('targets', {}).get(entry['key']) == known['canonical_url']
-                              for r in state.get('reconciliations', [])))
-        if (reservation != {'scope': ctx['key'], 'token': token} and not (reservation is None and registered)
-                or known.get('canonical_url') and not registered):
-            raise Failure('security-reconciliation-owned', 'Preserve original risk ownership and established canonical identities', key=entry['key'])
-    return original, body, actual
-
-
-def _current_reconciliation(args, ctx, review):
-    """Qualify the complete current inputs against the NEW reviewed snapshot."""
-    entries, sources, _ = _inputs(args, ctx)
-    if (entries != review['entries']
-            or {p.resolve() for p in sources} != {safe_path(p).resolve() for p in review['source_files']}
-            or digest(sources) != review['source_digest'] or _head() != review['revision']):
-        raise Failure('security-reconciliation-source-drift', 'Retain the entire reviewed entry set, source files, bytes and exact revision')
-    return entries
-
-
-def _anchor_reconciliation(args, ctx):
-    original, body, proof = _original_publication(args, ctx)
-    snapshot = {**original, 'revision': _head()}
-    entries = _current_reconciliation(args, ctx, snapshot)
-    issue = issues.issue_get(proof['url'], ctx['origin'])
-    operation = original['operations'][0]
-    if (issue.get('body') != body or issue.get('title') != operation['title']
-            or issue.get('state', '').upper() != 'OPEN'
-            or not set(operation['labels']) <= {x['name'] if isinstance(x, dict) else x for x in issue.get('labels', [])}):
-        raise Failure('security-reconciliation-provider-drift', 'Read back the exact complete original issue before an additive repair')
-    markers = re.findall(r'<!-- engineer-risk:([a-f0-9]{64}):begin -->', body)
-    if sorted(markers) != sorted(_hash(e['key']) for e in entries):
-        raise Failure('security-reconciliation-entry-drift', 'Retain the complete original container entry set')
-    for entry in entries:
-        marker = _hash(entry['key'])
-        start, stop = '<!-- engineer-risk:' + marker + ':begin -->', '<!-- engineer-risk:' + marker + ':end -->'
-        pattern = re.escape(start) + r'(\r?\n)(### ' + re.escape(entry['heading']) + r')(\r?\n)'
-        matches = list(re.finditer(pattern, body))
-        anchor = '<a name="engineer-risk-' + marker + '"></a>'
-        if body.count(start) != 1 or body.count(stop) != 1 or len(matches) != 1 or 'engineer-risk-' + marker in body:
-            raise Failure('security-reconciliation-entry-drift', 'Unique unchanged anchorless entry markers/headings are required', key=entry['key'])
-        match = matches[0]
-        if body.index(stop) < match.end():
-            raise Failure('security-reconciliation-entry-drift', 'Entry marker order changed', key=entry['key'])
-        block = body[body.index(start) + len(start):body.index(stop)]
-        if (re.findall(r'(?m)^### ([^\r\n]+)', block) != [entry['heading']]
-                or re.findall(r'(?m)^\*\*Canonical risk key:\*\* ([^\r\n]+)', block) != [entry['key']]
-                or '<!-- engineer-risk:' in block):
-            raise Failure('security-reconciliation-entry-drift', 'Exact heading/key and non-overlapping entry blocks are required', key=entry['key'])
-        position = match.start(2)
-        body = body[:position] + anchor + match.group(1) + body[position:]
-    repaired = {**operation, 'key': operation['key'] + ':anchor-reconcile:' + proof['original_token'],
-                'labels': sorted(x['name'] if isinstance(x, dict) else x for x in issue['labels']),
-                'action': 'edit', 'url': proof['url'], 'before': _issue_digest(issue), 'body': body}
-    return {**{k: original[k] for k in ('entries', 'source_files', 'title', 'label')},
-            'scope': {k: str(v) if isinstance(v, Path) else v for k, v in ctx.items()},
-            'operations': [repaired], 'revision': snapshot['revision'], 'source_digest': snapshot['source_digest'],
-            'ready': True, 'pending': [], 'reconciliation': proof}
-
-
-def _qualify_reconciliation(args, ctx, preview):
-    _original_publication(args, ctx, preview['reconciliation'], preview['token'])
-    _current_reconciliation(args, ctx, preview)
-
-
-def _mutate_reconciliation(operation, ctx, preview_path, preview, args):
-    """One edit attempt only; every retry is readback, even after a crash."""
-    key = _hash({'origin': ctx['origin'], 'key': operation['key']})
-    path = _runtime_dir() / 'intents' / (key + '.json')
-    marker = '<!-- engineer-security-intent:' + key + ' -->'
-    body = operation['body'] + '\n\n' + marker + '\n'
-    reviewed = {**operation, 'body': body}
-    with planning_lock():
-        intent = load_json(path)
-        retry = path.exists()
-        if retry and (not isinstance(intent, dict) or intent.get('operation') != reviewed or intent.get('origin') != ctx['origin']):
-            raise Failure('security-publication-uncertain', 'Preserve the exact separate reconciliation intent')
-        if not retry:
-            current = issues.issue_get(operation['url'], ctx['origin'])
-            if _issue_digest(current) != operation['before'] or current.get('state', '').upper() != 'OPEN':
-                raise Failure('security-provider-drift', operation['url'])
-            _qualify_reconciliation(args, ctx, preview)
-            intent = {'origin': ctx['origin'], 'marker': marker, 'operation': reviewed, 'url': operation['url'],
-                      'state': 'attempting', 'attempted': now(), 'source_digest': preview['source_digest'],
-                      'reconciliation': preview['reconciliation']}
-            write_json(path, intent)
-        preview['consumed'] = True
-        write_json(preview_path, preview)
-    if not retry:
-        with tempfile.TemporaryDirectory(prefix='engineer-security-reconcile-') as directory:
-            body_path = Path(directory) / 'body.md'
-            body_path.write_bytes(body.encode('utf-8'))
-            _qualify_reconciliation(args, ctx, preview)
-            issues.provider(['issue', 'edit', operation['url'], '--title', operation['title'],
-                             '--body-file', str(body_path)], ctx['origin'])
-    result = issues.issue_get(operation['url'], ctx['origin'])
-    if (result.get('url') != operation['url'] or result.get('title') != operation['title']
-            or result.get('body') != body or result.get('state', '').upper() != 'OPEN'):
-        raise Failure('security-readback-mismatch', 'Reconciliation readback differs; never repeat an uncertain edit', url=operation['url'])
-    if set(operation['labels']) != {x['name'] if isinstance(x, dict) else x for x in result.get('labels', [])}:
-        raise Failure('security-label-readback-mismatch', operation['url'])
-    if intent.get('state') != 'complete':
-        with planning_lock():
-            intent.update(state='complete', completed=now())
-            write_json(path, intent)
-    return result
-
-
 def _tracking(args, action):
     ctx = scope(args)
-    if args.has('reconcile-token') and action not in ('threat-preview', 'threat-publish'):
-        raise Failure('security-reconciliation-invalid', 'Reconciliation requires an explicit new preview and publication')
     if action == 'threat-audit':
         return threat_audit(ctx)
     resume = None
@@ -704,20 +543,16 @@ def _tracking(args, action):
     if action == 'threat-publish' and re.fullmatch(r'[a-f0-9]{64}', supplied):
         resume = load_json(_runtime_dir() / 'previews' / (supplied + '.json'))
     if resume and resume.get('consumed'):
-        if args.has('reconcile-token') and 'reconciliation' not in resume:
-            raise Failure('security-reconciliation-invalid', 'Use a separately reviewed new reconciliation preview')
         if (resume.get('scope', {}).get('key') != ctx['key'] or resume.get('scope', {}).get('origin') != ctx['origin']
                 or resume.get('revision') != _head()
                 or digest([safe_path(p) for p in resume['source_files']]) != resume['source_digest']):
             raise Failure('security-recovery-source-drift', 'Preserve prior published URLs and reconcile changed source before any new mutation')
         review = resume  # Own provider writes must not invalidate their recovery token.
-        if 'reconciliation' in review:
-            _original_publication(args, ctx, review['reconciliation'], supplied)
     else:
-        review = _anchor_reconciliation(args, ctx) if args.has('reconcile-token') else _review(args, ctx)
+        review = _review(args, ctx)
     if action == 'threat-review':
         return review
-    identity = _preview_identity(review)
+    identity = {k: review[k] for k in ('scope', 'entries', 'operations', 'source_digest', 'revision')}
     token = _hash(identity)
     path = _runtime_dir() / 'previews' / (token + '.json')
     if action == 'threat-preview':
@@ -737,9 +572,6 @@ def _tracking(args, action):
     state_path, state = _state(ctx)
     with acquire(_runtime_dir() / 'risk-index.lock', 10):
         state = load_json(state_path, {'schema': 1, 'risks': {}, 'scopes': {}})
-        if 'reconciliation' in review:
-            _original_publication(args, ctx, review['reconciliation'], token)
-            _current_reconciliation(args, ctx, review)
         reservations = state.setdefault('risk_intents', {})
         for entry in review['entries']:
             known = state['risks'].get(entry['key'], {}).get('canonical_url')
@@ -747,10 +579,9 @@ def _tracking(args, action):
             if known and entry.get('canonical_url') != known and not own_readback:
                 raise Failure('security-canonical-match-arrived', 'Refresh match review against the established canonical identity', key=entry['key'], url=known)
             prior = reservations.get(entry['key'])
-            owner_token = review.get('reconciliation', {}).get('original_token', token)
-            if prior and prior != {'scope': ctx['key'], 'token': owner_token}:
+            if prior and prior != {'scope': ctx['key'], 'token': token}:
                 raise Failure('security-risk-publication-owned', 'Reconcile the existing risk publication before another source creates a tracker', key=entry['key'], intent=prior)
-            if not known and 'reconciliation' not in review:
+            if not known:
                 reservations[entry['key']] = {'scope': ctx['key'], 'token': token}
         write_json(state_path, state)
     results = list(saved.get('results', []))
@@ -758,10 +589,7 @@ def _tracking(args, action):
         prior = next((r for r in results if r['key'] == operation['key']), None)
         if digest([safe_path(p) for p in review['source_files']]) != review['source_digest'] or _head() != review['revision']:
             raise Failure('security-source-drift', 'Source changed during publication', published=results)
-        if 'reconciliation' in review:
-            _original_publication(args, ctx, review['reconciliation'], token)
-        result = (_mutate_reconciliation(operation, ctx, path, saved, args) if 'reconciliation' in review
-                  else _mutate(operation, ctx, path, saved))
+        result = _mutate(operation, ctx, path, saved)
         if not prior:
             results.append({'key': operation['key'], 'url': result['url']})
         with planning_lock():
@@ -774,16 +602,6 @@ def _tracking(args, action):
     state_path, state = _state(ctx)
     with acquire(_runtime_dir() / 'risk-index.lock', 10):
         state = load_json(state_path, {'schema': 1, 'risks': {}, 'scopes': {}})
-        if 'reconciliation' in review:
-            _original_publication(args, ctx, review['reconciliation'], token)
-            _current_reconciliation(args, ctx, review)
-            evidence = {'token': token, **review['reconciliation'],
-                'revision': review['revision'], 'source_digest': review['source_digest'],
-                'provider_before_digest': review['operations'][0]['before'],
-                'provider_after_digest': _issue_digest(result), 'ready': not pending, 'targets': targets}
-            history = state.setdefault('reconciliations', [])
-            if not any(all(item.get(k) == v for k, v in evidence.items()) for item in history):
-                history.append({**evidence, 'observed': now()})
         if container:
             state['scopes'][ctx['key']] = {'url': container, 'title': review['title'], 'label': review['label'], 'identity': ctx['stable_identity']}
         for entry in review['entries']:
@@ -1010,8 +828,6 @@ def security_status(args, proposed=None):
 
 
 def command(args, action):
-    if args.has('reconcile-token') and action not in ('threat-preview', 'threat-publish'):
-        raise Failure('security-reconciliation-invalid', 'Reconciliation requires an explicit new preview and publication')
     if args.has('variant') and args.get('variant') != 'Security risk':
         raise Failure('security-variant-invalid', 'Security publication retains the canonical Security risk variant')
     with issues.budget(min(300, max(1, float(args.get('budget-seconds', 120))))):

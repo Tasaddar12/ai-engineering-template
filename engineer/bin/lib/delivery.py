@@ -161,7 +161,7 @@ def command(args, action):
         audit_pr(args.get("phase"), body)
     with tempfile.TemporaryDirectory(prefix="engineer-pr-") as temporary:
         body_path = Path(temporary)/"body.md"
-        body_path.write_text(body, encoding="utf-8")
+        body_path.write_bytes(body.encode("utf-8"))
         run(["git", "push", "--set-upstream", "origin", branch], root(), timeout=60,
             env={**os.environ, "GIT_TERMINAL_PROMPT": "0"}, stdin=subprocess.DEVNULL)
         if existing:

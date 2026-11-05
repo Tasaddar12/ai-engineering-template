@@ -71,6 +71,11 @@ For each threat in `<threat_model>`, read its `severity` field (critical|high|me
 
 Classify each threat before verification. Record classification for every threat — no threat skipped.
 
+For reserved `T-{phase}-SC` shared across PLANs, retain `(id, plan)` and return one
+row per owner with a `PLAN` column. Supply each owner's `threat_evidence` entry
+with `id`, `plan` and current owner-specific `citations` (commit and repository path).
+Ordinary unique IDs keep their existing report shape.
+
 **Verification depth scales with `asvs_level`** (see @~/.claude/engineer/references/security-asvs-levels.md for full definitions):
 - L1: verify mitigation is PRESENT in the cited file (grep-level — pattern exists).
 - L2: verify the mitigation ADDRESSES the threat vector and is placed at the correct boundary (a check in the wrong layer does not close the threat).
@@ -78,18 +83,6 @@ Classify each threat before verification. Record classification for every threat
 </step>
 
 <step name="verify_and_return">
-Keep each owning PLAN occurrence of the exact reserved `T-{phase}-SC`.
-When it belongs to more than one distinct PLAN, return one report row per owner
-using the report's optional `PLAN` column, required for these repeated owners,
-containing its exact filename (e.g.
-`01-01-PLAN.md`), and one `threat_evidence` entry per `(id, plan)` with current
-`citations`. Verify each occurrence's severity and disposition against its own
-PLAN and its citations against the frozen audit revision. Missing, repeated or
-unknown owners, duplicate rows/evidence, absent or invalid citations, mismatched
-severity/disposition and duplicate owned rows remain pending. The exception is
-only for exact reserved phase SC repeated across distinct PLANs; unique IDs keep
-their existing report/evidence shape and need no `PLAN` column or `plan` field.
-
 For each `mitigate` threat: grep for declared mitigation pattern in cited files → found = `CLOSED`, not found = `OPEN`. Apply depth per `asvs_level` (see analyze_threats step).
 For `accept` threats: check existing SECURITY.md accepted risks log → entry present = `CLOSED`, absent = `OPEN`.
 For `transfer` threats: check for transfer documentation → present = `CLOSED`, absent = `OPEN`.
@@ -108,27 +101,6 @@ Return the structured result (SECURED / OPEN_THREATS / ESCALATE) with `threats_o
 </execution_flow>
 
 <structured_returns>
-
-For repeated exact reserved phase SC, extend each applicable table below with
-`PLAN` and preserve separate owner rows, including OPEN and ESCALATE results:
-
-| Threat ID | PLAN | Category | Severity | Disposition | Evidence |
-|-----------|------|----------|----------|-------------|----------|
-| T-01-SC | 01-01-PLAN.md | Tampering | high | mitigate | {verified owner-specific evidence} |
-| T-01-SC | 01-02-PLAN.md | Tampering | high | mitigate | {verified owner-specific evidence} |
-
-Return matching machine-readable evidence for the orchestrator to persist in
-SECURITY.md frontmatter. Replace placeholders with actual current citations;
-each citation carries a full commit SHA and repository-relative path, plus an
-optional verified quote. Existing acceptance/transfer evidence requirements apply
-separately to each occurrence.
-
-```json
-{"threat_evidence": [
-  {"id": "T-01-SC", "plan": "01-01-PLAN.md", "citations": [{"commit": "{actual_full_commit_sha}", "path": "{verified_repository_relative_path}"}]},
-  {"id": "T-01-SC", "plan": "01-02-PLAN.md", "citations": [{"commit": "{actual_full_commit_sha}", "path": "{verified_repository_relative_path}"}]}
-]}
-```
 
 ## SECURED
 

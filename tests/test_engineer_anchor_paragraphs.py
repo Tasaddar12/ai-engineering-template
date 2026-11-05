@@ -1,17 +1,15 @@
-"""Synthetic provider paragraphs and ordinary consumed readback regressions."""
+"""Synthetic provider paragraph ownership and refusal regressions."""
 import json
-from pathlib import Path
 import subprocess
 import unittest
 from unittest.mock import patch
 
 try:
-    from . import test_engineer_publication_boundaries as publication
+    from .test_artifacts import _load
 except ImportError:
-    import test_engineer_publication_boundaries as publication
+    from test_artifacts import _load
 
-security = publication.security
-REAL_DIGEST = security.digest
+security = _load("security_tracking")
 ORIGIN = {'owner': 'acme', 'repository': 'project', 'hostname': 'github.com'}
 URL = 'https://github.com/acme/project/issues/7'
 KEY = 'acme/project|supply-chain|unsafe-install'
@@ -87,90 +85,3 @@ class ParagraphOwnership(unittest.TestCase):
                 with self.subTest(html=html, established=established):
                     self.assertEqual({}, self.render(html, established)[0])
         self.assertEqual({}, self.render(section(paragraph('machine-new')))[0])
-
-
-class OrdinaryConsumedParagraphs(unittest.TestCase):
-    def setUp(self):
-        self.f = publication.PublicationBoundaries()
-        self.f.setUp()
-        self.addCleanup(self.f.doCleanups)
-        f = self.f
-        f.url = URL
-        self.risk = {**publication.entry(), 'key': KEY, 'heading': HEADING, 'canonical_url': URL + '#canonical-old'}
-        self.source = f.directory / 'captured-PLAN.md'
-        self.source.write_bytes(b'Inert captured source\r\n')
-        f.stack.enter_context(patch.object(security, 'scope', return_value=f.ctx))
-        f.stack.enter_context(patch.object(security, 'root', return_value=f.directory))
-        f.stack.enter_context(patch.object(security, 'safe_path', side_effect=Path))
-        f.stack.enter_context(patch.object(security, '_head', return_value='a' * 40))
-        f.stack.enter_context(patch.object(security, 'digest', side_effect=lambda paths: REAL_DIGEST(paths, base=f.directory)))
-        f.stack.enter_context(patch.object(security, 'acquire', side_effect=lambda *args: publication.nullcontext()))
-        self.operation = f.operation('Exact reviewed inert entry body', 'edit')
-        review = {'scope': {'origin': f.origin, 'key': f.ctx['key']}, 'entries': [self.risk],
-                  'operations': [self.operation], 'source_files': [str(self.source)],
-                  'source_digest': security.digest([self.source]), 'revision': 'a' * 40,
-                  'ready': True, 'pending': [], 'title': 'Canonical checklist', 'label': 'phase-security-checklist'}
-        self.token = security._hash(security._preview_identity(review))
-        self.preview_path = f.directory / 'previews' / (self.token + '.json')
-        security.write_json(self.preview_path, {**review, 'token': self.token, 'consumed': True,
-            'results': [{'key': self.operation['key'], 'url': URL}], 'complete': False})
-        f.preview['source_digest'] = review['source_digest']
-        self.intent_path, intent = f.intent(self.operation, 'complete')
-        security.write_json(self.intent_path, intent)
-        self.provider_issue = f.issue(intent['operation']['body'])
-        self.exact_body = self.provider_issue['body'].encode('utf-8')
-        self.state_path = f.directory / 'state.json'
-        security.write_json(self.state_path, {'schema': 1, 'risks': {KEY: {'canonical_url': self.risk['canonical_url']}},
-            'scopes': {}, 'risk_intents': {}})
-        f.stack.enter_context(patch.object(security, '_state', side_effect=lambda ctx: (self.state_path, security.load_json(self.state_path))))
-        f.stack.enter_context(patch.object(security.issues, 'issue_get', side_effect=lambda *args: self.provider_issue))
-        f.stack.enter_context(patch.object(security, '_review', side_effect=AssertionError('Never rebuild a consumed operation')))
-        f.stack.enter_context(patch.object(security.repository, 'require_url', return_value=7))
-        self.html = section()
-        self.effects = []
-
-        def provider(argv, origin):
-            if argv[0] != 'api':
-                self.effects.append(argv)
-                raise AssertionError('No new provider mutation is expected')
-            return subprocess.CompletedProcess(argv, 0, json.dumps({'body_html': self.html}), '')
-
-        f.stack.enter_context(patch.object(security.issues, 'provider', side_effect=provider))
-
-    def publish(self):
-        return security.command(security.Args(['04', '--preview-token', self.token, '--publish']), 'threat-publish')
-
-    def test_exact_consumed_readback_registers_preserved_old_target_with_zero_provider_edits(self):
-        for _ in range(2):
-            result = self.publish()
-            self.assertTrue(result['ready'], result['pending'])
-            self.assertEqual({KEY: URL + '#canonical-old'}, result['targets'])
-            self.assertEqual(self.exact_body, self.provider_issue['body'].encode('utf-8'))
-            state = security.load_json(self.state_path)
-            self.assertEqual(URL + '#canonical-old', state['risks'][KEY]['canonical_url'])
-            self.assertEqual(URL + '#canonical-old', state['risks'][KEY]['occurrences'][0]['target'])
-            self.assertEqual(1, len(state['risks'][KEY]['occurrences']))
-        self.assertEqual([], self.effects)
-
-    def test_source_provider_and_ownership_drift_refuse_without_new_provider_effect(self):
-        with patch.object(security, '_head', return_value='b' * 40), self.assertRaises(security.Failure):
-            self.publish()
-        original = self.source.read_bytes()
-        self.source.write_bytes(original + b'Drift\n')
-        with self.assertRaises(security.Failure):
-            self.publish()
-        self.source.write_bytes(original)
-        self.provider_issue['body'] += 'Provider drift'
-        with self.assertRaises(security.Failure):
-            self.publish()
-        self.provider_issue['body'] = self.exact_body.decode('utf-8')
-        state = security.load_json(self.state_path)
-        state['risk_intents'][KEY] = {'scope': 'different-owner', 'token': 'different-token'}
-        security.write_json(self.state_path, state)
-        with self.assertRaises(security.Failure):
-            self.publish()
-        self.assertEqual([], self.effects)
-
-
-if __name__ == '__main__':
-    unittest.main()
