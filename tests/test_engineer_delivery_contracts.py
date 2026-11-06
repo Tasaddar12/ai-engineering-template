@@ -1,5 +1,6 @@
 """Offline PR-body validation against the canonical optional Stack contract."""
 from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import patch
 try:
@@ -18,18 +19,19 @@ def body(headings=CORE):
 
 class PullRequestBodyContracts(unittest.TestCase):
     def test_independent_pr_omits_stack_with_actual_template_and_fallback(self):
-        with patch.object(delivery.models, 'NAMESPACE', SOURCE):
+        with patch.object(delivery.issue_format, 'github_directory', return_value=SOURCE / '.github'):
             delivery.validate_body(body())
-        with patch.object(delivery, 'read', return_value=''):
-            delivery.validate_body(body())
+        with tempfile.TemporaryDirectory() as temporary:
+            with patch.object(delivery.issue_format, 'github_directory', return_value=Path(temporary) / '.github'):
+                delivery.validate_body(body())
 
     def test_stacked_pr_can_include_actual_stack_metadata(self):
-        with patch.object(delivery.models, 'NAMESPACE', SOURCE):
+        with patch.object(delivery.issue_format, 'github_directory', return_value=SOURCE / '.github'):
             delivery.validate_body(body() + '\n\n## Stack\n\n- stackParent: https://github.com/acme/project/pull/1\n')
 
     def test_optional_sections_do_not_make_any_core_section_optional(self):
         for missing in CORE:
-            with self.subTest(missing=missing), patch.object(delivery.models, 'NAMESPACE', SOURCE):
+            with self.subTest(missing=missing), patch.object(delivery.issue_format, 'github_directory', return_value=SOURCE / '.github'):
                 with self.assertRaises(delivery.Failure) as error:
                     delivery.validate_body(body([heading for heading in CORE if heading != missing]) +
                                            '\n\n## Requirements or Issues\n\nActual issue relation.\n\n## Stack\n\nActual parent.\n')

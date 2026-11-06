@@ -18,7 +18,7 @@ import tempfile
 import unittest
 
 SOURCE = Path(__file__).resolve().parents[1]
-PREFIXES = ("agents", "commands", "engineer", "hooks", "scripts", "skills", "bin")
+PREFIXES = (".github", "agents", "commands", "engineer", "hooks", "scripts", "skills", "bin")
 TITLE = "fix(acme): preserve reviewed body Δ"
 ORIGIN = {"hostname": "github.com", "owner": "acme", "repository": "project",
           "slug": "github.com/acme/project"}
@@ -170,8 +170,8 @@ class InstalledProviderBodyBytes(unittest.TestCase):
             manifest = json.loads((target / ("." + host) / "engineer-install/manifest.json").read_bytes())
             if manifest["revision"] != cls.pin or manifest["host"] != host:
                 raise AssertionError(manifest)
-            git(target, "add", "CLAUDE.md" if host == "claude" else "AGENTS.md")
-            git(target, "commit", "-m", "Capture installed host entry")
+            git(target, "add", "CLAUDE.md" if host == "claude" else "AGENTS.md", ".github")
+            git(target, "commit", "-m", "Capture installed host entry and GitHub templates")
             cls.targets[host] = target
 
     def state(self, target, **changes):
