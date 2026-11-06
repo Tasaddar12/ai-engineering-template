@@ -6,7 +6,7 @@ import re
 import subprocess
 import tempfile
 import time
-from . import config, gitops, models, verification, repository
+from . import config, gitops, models, verification, repository, records
 from .core import Args, Failure, read, root, run, safe_path
 
 PR_FIELDS = "number,url,state,isDraft,headRefName,headRefOid,baseRefName,statusCheckRollup,mergeable,title,body"
@@ -64,6 +64,55 @@ def validate_body(body):
         raise Failure("invalid-pr-body", "Replace template placeholders before publication")
 
 
+def verification_selection(args):
+    if args.has("quick") and args.has("phase"):
+        raise Failure("ambiguous-verification-owner", "Select exactly one --phase or --quick directory", 2)
+    if args.has("quick"):
+        directory = verification.verification_dir(args.get("quick"))
+        if directory.parent != records.planning()/"quick":
+            raise Failure("invalid-quick-directory", "--quick requires a canonical quick-task directory", 2)
+        return str(directory)
+    phase = args.get("phase")
+    # Verification supports both owners, but --phase must retain its phase-only meaning.
+    if phase is not None:
+        candidate = Path(str(phase))
+        candidate = candidate if candidate.is_absolute() else root()/candidate
+        if candidate.is_dir():
+            records.phase_dir(candidate)
+    return phase
+
+
+def expected_revision(args):
+    expected = args.get("expected-head")
+    if expected is not None:
+        if not isinstance(expected, str) or not re.fullmatch(r"(?:[0-9a-f]{40}|[0-9a-f]{64})", expected):
+            raise Failure("bad-expected-head", "expected-head must be a full commit object ID", 2)
+        if run(["git", "rev-parse", "HEAD"], root()).stdout.strip() != expected:
+            raise Failure("head-mismatch", "Local HEAD differs from the expected qualifying head")
+    elif args.has("quick") or args.has("evidence-file") or args.has("fresh-evidence-file"):
+        raise Failure("expected-head-required", "Quick delivery and successor evidence require an exact expected-head", 2)
+    return expected
+
+
+def require_open_head(pr, expected):
+    if not pr:
+        raise Failure("pr-not-found", "The selected branch has no pull request")
+    if pr.get("state") != "OPEN":
+        raise Failure("pr-not-open", "The selected pull request is not OPEN")
+    if type(pr.get("number")) is not int or pr["number"] < 1:
+        raise Failure("pr-identity-invalid", "Provider returned an invalid pull-request number")
+    if expected is not None and pr.get("headRefOid") != expected:
+        raise Failure("head-mismatch", "OPEN PR head differs from the expected qualifying head")
+
+
+def require_checks(pr):
+    verdict = classify_checks(pr.get("statusCheckRollup", []))
+    if verdict["status"] not in ("passed", "none") or pr.get("mergeable") == "CONFLICTING":
+        raise Failure("merge-blocked", "Checks or merge conflicts block delivery", checks=verdict)
+    if verdict["status"] == "none" and not verification.configured_checks():
+        raise Failure("missing-check-evidence", "Delivery without CI requires configured passing local checks")
+
+
 def command(args, action):
     branch = args.arg(0) or run(["git", "branch", "--show-current"], root()).stdout.strip()
     if not branch:
@@ -86,39 +135,21 @@ def command(args, action):
     if action == "merge":
         if not args.has("confirm"):
             raise Failure("merge-not-authorized", "Merging requires explicit --confirm")
-        expected_head = args.get("expected-head")
-        if expected_head is not None:
-            if not isinstance(expected_head, str) or not re.fullmatch(r"(?:[0-9a-f]{40}|[0-9a-f]{64})", expected_head):
-                raise Failure("bad-expected-head", "expected-head must be a full commit object ID", 2)
-            if run(["git", "rev-parse", "HEAD"], root()).stdout.strip() != expected_head:
-                raise Failure("head-mismatch", "Local HEAD differs from the expected qualifying head")
-        elif args.has("evidence-file") or args.has("fresh-evidence-file"):
-            raise Failure("expected-head-required", "Successor evidence requires an exact expected-head", 2)
-        phase = args.get("phase")
+        phase = verification_selection(args)
+        expected_head = expected_revision(args)
         if not phase or verification.status(Args([phase]))["status"] != "passed":
             raise Failure("phase-unverified", "Passed phase verification is required")
-        evidence = verification.current_evidence(phase, args) if args.has("evidence-file") else verification.current_evidence(phase)
+        evidence = verification.current_evidence(phase, args) if args.has("quick") or args.has("evidence-file") else verification.current_evidence(phase)
         if not evidence["current"]:
             raise Failure("verification-stale", "Current frozen verification evidence is required", evidence=evidence)
         pr = view(branch)
-        if not pr:
-            raise Failure("pr-not-found", branch)
-        if pr.get("state") != "OPEN":
-            raise Failure("pr-not-open", "The selected pull request is not OPEN")
-        if type(pr.get("number")) is not int or pr["number"] < 1:
-            raise Failure("pr-identity-invalid", "Provider returned an invalid pull-request number")
-        if expected_head is not None and pr.get("headRefOid") != expected_head:
-            raise Failure("head-mismatch", "OPEN PR head differs from the expected qualifying head")
-        verdict = classify_checks(pr.get("statusCheckRollup", []))
-        if verdict["status"] not in ("passed", "none") or pr.get("mergeable") == "CONFLICTING":
-            raise Failure("merge-blocked", "Checks or merge conflicts block merging", checks=verdict)
-        if verdict["status"] == "none" and not verification.configured_checks():
-            raise Failure("missing-check-evidence", "Merging without CI requires configured passing local checks")
+        require_open_head(pr, expected_head)
+        require_checks(pr)
         if pr.get("isDraft"):
             ready = gh(["pr", "ready", str(pr["number"])])
             if ready.returncode:
                 raise Failure("ready-refused", ready.stderr.strip() or "Provider refused the ready transition")
-        final_evidence = verification.current_evidence(phase, args) if args.has("evidence-file") else verification.current_evidence(phase)
+        final_evidence = verification.current_evidence(phase, args) if args.has("quick") or args.has("evidence-file") else verification.current_evidence(phase)
         if not final_evidence["current"]:
             raise Failure("verification-stale", "Verification evidence changed before provider merge", evidence=final_evidence)
         if expected_head is not None and run(["git", "rev-parse", "HEAD"], root()).stdout.strip() != expected_head:
@@ -138,12 +169,34 @@ def command(args, action):
         return {"merged": observed, "url": pr["url"], "retryable": not observed,
                 "expected_head": expected_head}, 0 if observed else 1
     if action == "ready":
-        phase = args.get("phase")
+        phase = verification_selection(args)
+        expected_head = expected_revision(args) if args.has("quick") else None
         if not phase or verification.status(Args([phase]))["status"] != "passed":
             raise Failure("phase-unverified", "Passed phase verification is required")
-        evidence = verification.current_evidence(phase)
+        evidence = verification.current_evidence(phase, args) if args.has("quick") else verification.current_evidence(phase)
         if not evidence["current"]:
             raise Failure("verification-stale", "Current frozen verification evidence is required", evidence=evidence)
+        if args.has("quick"):
+            pr = view(branch)
+            require_open_head(pr, expected_head)
+            require_checks(pr)
+            evidence = verification.current_evidence(phase, args)
+            if not evidence["current"]:
+                raise Failure("verification-stale", "Verification evidence changed before provider ready", evidence=evidence)
+            expected_revision(args)
+            result = gh(["pr", "ready", str(pr["number"])])
+            if result.returncode:
+                raise Failure("ready-refused", result.stderr.strip() or "Provider refused the ready transition")
+            observed = view(branch)
+            require_open_head(observed, expected_head)
+            if (observed.get("number") != pr["number"] or observed.get("url") != pr["url"]
+                    or observed.get("isDraft") is not False):
+                raise Failure("ready-readback-mismatch", "Provider did not confirm the exact ready pull request")
+            expected_revision(args)
+            evidence = verification.current_evidence(phase, args)
+            if not evidence["current"]:
+                raise Failure("verification-stale", "Verification evidence changed during provider ready", evidence=evidence)
+            return {"ready": True, "branch": branch, "url": pr["url"], "expected_head": expected_head}
         gh(["pr", "ready", branch])
         return {"ready": True, "branch": branch}
     if action != "open":
