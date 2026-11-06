@@ -1,6 +1,6 @@
 # Engineer Canonical Artifact Registry
 
-This directory contains the planning artifact templates that Engineer workflows produce. Publication templates live under `.github/`: issue forms and their authoring guide in `.github/ISSUE_TEMPLATE/`, and the PR body in `.github/pull_request_template.md`. The table below is the authoritative planning index: **if a `.planning/` root file is not listed here, `health` will flag it as W019** (unrecognized artifact).
+This directory contains the planning artifact templates that Engineer workflows produce. Publication templates live under `.github/`: issue forms and their authoring guide in `.github/ISSUE_TEMPLATE/`, the default PR body and selection guidance in `.github/pull_request_template.md`, and enhancement, feature and fix PR bodies in `.github/PULL_REQUEST_TEMPLATE/`. The table below is the authoritative planning index: **if a `.planning/` root file is not listed here, `health` will flag it as W019** (unrecognized artifact).
 
 Agents should query this file before treating a `.planning/` file as authoritative. If the file name does not appear below, it is not a canonical Engineer artifact.
 

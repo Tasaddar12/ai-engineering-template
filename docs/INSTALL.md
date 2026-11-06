@@ -78,15 +78,26 @@ Codex runtime, commands, agent definitions and configuration remain under
 `<target>/.claude/`.
 
 Publication templates are authored only under the source repository's `.github/`
-directory. A local installation for either host exports the five issue forms
-from `.github/ISSUE_TEMPLATE/`, their authoring guide, and
-`.github/pull_request_template.md` to the same paths in the target project.
+directory. A local installation for either host exports the eight issue forms
+from `.github/ISSUE_TEMPLATE/` (Bug, Enhancement, Feature request, Docs issue,
+Chore, Decision required, Security risk and UAT), their authoring guide,
+the default `.github/pull_request_template.md`, and the separate
+`.github/PULL_REQUEST_TEMPLATE/enhancement.md`, `feature.md` and `fix.md` bodies
+to the same paths in the target project.
 The repository itself uses these templates too. A global installation keeps
 these assets under `<target>/.codex/.github/` or `<target>/.claude/.github/`
 for its runtime; it does not create a home-level `.github/` directory. Install
 locally in a consumer repository to make its templates available on GitHub.
 Template files participate in the same ownership, customization-conflict,
 backup and rollback handling as other managed exports.
+
+For PR creation on GitHub, select a separate body with the `template` query
+parameter: `template=enhancement.md`, `template=feature.md` or `template=fix.md`.
+These files provide task-specific Goal, Changes and Verification prompts while
+retaining the default body's common required fields. GitHub does not add an
+automatic PR type picker; the default template's authoring guidance explains
+selection. Feature request is the dedicated issue form for a new capability;
+Enhancement retains the existing request shape for improving a capability.
 
 The ownership manifest is
 `<target>/<namespace>/engineer-install/manifest.json`. New schema 2 manifests

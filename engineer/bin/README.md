@@ -18,7 +18,13 @@ Claude host environment variables are present. `ENGINEER_HOST` explicitly select
 `ENGINEER_ROOT` explicitly selects an alternate project root.
 
 Publication validation reads the canonical issue forms in
-`.github/ISSUE_TEMPLATE/` and the PR body in `.github/pull_request_template.md`.
+`.github/ISSUE_TEMPLATE/` and the default PR body in `.github/pull_request_template.md`.
+Issue variants include Docs issue, Chore and Feature request alongside Bug,
+Enhancement, Decision required, Security risk and UAT. Separate enhancement,
+feature and fix PR bodies live in `.github/PULL_REQUEST_TEMPLATE/`; each retains
+the common required fields used by publication validation. Select a separate
+body on GitHub with `template=enhancement.md`, `template=feature.md` or
+`template=fix.md` on the PR creation URL.
 In a source checkout or local installation, these paths belong to the project
 root. A global installation keeps its publication templates inside the selected
 host namespace's `.github/` directory. Local installations make these files

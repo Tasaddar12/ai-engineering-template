@@ -11,6 +11,26 @@ Fill the visible Markdown body in .github/pull_request_template.md.
 Remove prompts, comments, placeholders and guidance examples from the final public body.
 Project instructions and runtime delivery gates own publication authority and procedure.
 
+## Select a PR template
+
+The default body remains .github/pull_request_template.md. Separate bodies in
+.github/PULL_REQUEST_TEMPLATE/ provide task-specific Goal, Changes and
+Verification prompts:
+
+- enhancement.md: improve an existing capability; demonstrate the improvement.
+- feature.md: introduce a new capability; verify its acceptance and regressions.
+- fix.md: correct wrong or broken behavior; verify the reproduction and regression.
+
+All variants retain the common required Goal, Changes, Verification, Known gaps
+and Risks or rollback sections. Requirements or Issues and Stack remain optional
+under the instructions below.
+
+GitHub selects a variant through the template query parameter on the PR creation
+URL: template=enhancement.md, template=feature.md or template=fix.md. Add it with
+? when it is the first parameter or & after existing parameters. GitHub does not
+provide an automatic PR type picker for these files. See:
+https://docs.github.com/en/pull-requests/reference/using-query-parameters-to-create-a-pull-request
+
 ## File Template
 
 

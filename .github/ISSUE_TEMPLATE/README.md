@@ -22,7 +22,10 @@ Publication authority follows the project instructions and runtime delivery gate
 | Variant | Use when | Type-first title example |
 |---|---|---|
 | Bug | Existing behavior is wrong or broken. | `fix(search): return an empty result for a blank query` |
-| Enhancement | A user needs a new or improved capability. | `feat(checkout): allow saving an address before placing an order` |
+| Enhancement | A user needs an improvement to an existing capability. | `feat(search): support filtering existing results by date` |
+| Feature request | A user needs a new capability that is not supported today. | `feat(checkout): allow saving an address before placing an order` |
+| Docs issue | Documentation is missing, incorrect or unclear. | `docs(api): clarify the supported pagination parameters` |
+| Chore | Bounded maintenance or engineering housekeeping is needed. | `chore(deps): update the test tooling dependencies` |
 | Decision required | Work is blocked on choosing among options. | `chore(auth): choose an admin MFA policy` |
 | Security risk | A security concern needs assessment or remediation. | `fix(auth): restrict session reset tokens` |
 | UAT | A human needs to validate a specific build in an environment. | `test(checkout): validate the refund flow in staging` |
@@ -37,6 +40,22 @@ Use [Bug](bug.yml).
 ### Enhancement
 
 Use [Enhancement](enhancement.yml).
+
+This existing form retains its broader capability-change body. Use it for
+improvements to an existing capability; the dedicated Feature request form below
+asks explicitly for a capability that is not supported today.
+
+### Feature request
+
+Use [Feature request](feature_request.yml).
+
+### Docs issue
+
+Use [Docs issue](docs_issue.yml).
+
+### Chore
+
+Use [Chore](chore.yml).
 
 ### Decision required
 
