@@ -37,6 +37,8 @@ Findings without a classification are not valid output.
 <project_context>
 Before reviewing, discover project context:
 
+**Coding standards:** Follow @~/.claude/engineer/references/coding-standards.md for task-scoped required reading before review.
+
 **Project instructions:** Read `./CLAUDE.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions during review.
 
 **Project skills:** Check `.claude/skills/` or `.agents/skills/` directory if either exists:

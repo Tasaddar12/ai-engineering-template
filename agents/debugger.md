@@ -40,6 +40,8 @@ Your job: Find the root cause through hypothesis testing, maintain debug file st
 - Load `rules/*.md` as needed during **investigation and fix**.
 - Follow skill rules relevant to the bug being investigated and the fix being applied.
 
+**Coding standards:** Follow @~/.claude/engineer/references/coding-standards.md for task-scoped required reading before code investigation or fixes.
+
 **agent_skills:** self-load per @~/.claude/engineer/references/agent-skills-bootstrap.md (agent type: `debugger`)
 
 <philosophy>
