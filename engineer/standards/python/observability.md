@@ -1,3 +1,52 @@
+# Observability — Enterprise Standard
+
+**Applies to:** All Python services deployed to production.
+**Stack:** OpenTelemetry (traces + metrics) + structlog (logs). The three pillars.
+
+---
+
+## SECTION 1 — OPENTELEMETRY SETUP
+
+```bash
+pip install opentelemetry-api opentelemetry-sdk \
+    opentelemetry-instrumentation-fastapi \
+    opentelemetry-instrumentation-sqlalchemy \
+    opentelemetry-instrumentation-httpx \
+    opentelemetry-exporter-otlp
+```
+
+```python
+# app/core/telemetry.py
+from opentelemetry import trace, metrics
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
+from opentelemetry.sdk.resources import Resource, SERVICE_NAME, SERVICE_VERSION
+
+
+def configure_telemetry(service_name: str, service_version: str) -> None:
+    """Initialize OpenTelemetry. Call once at startup."""
+    resource = Resource.create({
+        SERVICE_NAME: service_name,
+        SERVICE_VERSION: service_version,
+    })
+
+    # Traces
+    tracer_provider = TracerProvider(resource=resource)
+    tracer_provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter()))
+    trace.set_tracer_provider(tracer_provider)
+
+    # Metrics
+    metric_reader = PeriodicExportingMetricReader(OTLPMetricExporter(), export_interval_millis=30000)
+    meter_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
+    metrics.set_meter_provider(meter_provider)
+```
+
+---
+
 ## SECTION 3 — CUSTOM SPANS
 
 ```python
@@ -49,6 +98,7 @@ active_connections = meter.create_up_down_counter(
 )
 ```
 
+
 ## SECTION 5 — STRUCTURED LOGS + TRACE CORRELATION
 
 ```python
@@ -95,3 +145,13 @@ structlog.configure(
 | **E**rrors | Connection failures, OOM kills | Any occurrence |
 
 ---
+
+## SECTION 7 — RULES
+
+- Every service MUST export traces and metrics to an OTLP collector.
+- Trace IDs MUST appear in log lines for correlation.
+- Custom spans for any operation > 100ms or crossing a service boundary.
+- Never log PII in span attributes (user emails, passwords, tokens).
+- Use semantic conventions for attribute names (`http.method`, `db.system`, `rpc.service`).
+- Set up alerts for SLO breaches, not just threshold crossings.
+- Dashboard per service: request rate, error rate, p95 latency, resource utilization.

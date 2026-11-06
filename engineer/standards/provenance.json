@@ -170,6 +170,20 @@
       "sha256": "66577f38c2cbb363562d243139f160c7ca4bec440c16b5cb7ac4fc96d007bb95"
     },
     {
+      "destination": "python/oop-composition-over-inheritance.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/oop-composition-over-inheritance.md",
+      "fragments": [
+        {
+          "start_line": 8,
+          "end_line": 94,
+          "sha256": "b56481b0fb703025c7b339ce64f924b1693b61f8ecaa2da46bb65b5ce80fdb75"
+        }
+      ],
+      "sha256": "b56481b0fb703025c7b339ce64f924b1693b61f8ecaa2da46bb65b5ce80fdb75"
+    },
+    {
       "destination": "python/perf-dict-get.md",
       "repository": "ludo-technologies/python-best-practices",
       "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
@@ -282,173 +296,856 @@
       "sha256": "efeceefd3144551939465977e40e12435c9d862c387a6889bc2e2ff59b2cd56a"
     },
     {
-      "destination": "python/imports.md",
-      "repository": "rishapgandhi/python-skills",
-      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
-      "path": "skills/common/code-style.md",
+      "destination": "python/design-pure-functions.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/design-pure-functions.md",
       "fragments": [
         {
-          "start_line": 210,
-          "end_line": 280,
-          "sha256": "46736d3b802922d202174e213e4e4befeea2d21d0607217d7738a090bd4c42ce"
-        }
-      ],
-      "sha256": "46736d3b802922d202174e213e4e4befeea2d21d0607217d7738a090bd4c42ce"
-    },
-    {
-      "destination": "python/naming.md",
-      "repository": "rishapgandhi/python-skills",
-      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
-      "path": "skills/common/code-style.md",
-      "fragments": [
-        {
-          "start_line": 683,
-          "end_line": 730,
-          "sha256": "d41c46bd5f261110121df69da82f147cf9998c38f5b67fa8f736e522b214a6fc"
-        }
-      ],
-      "sha256": "d41c46bd5f261110121df69da82f147cf9998c38f5b67fa8f736e522b214a6fc"
-    },
-    {
-      "destination": "python/mutable-defaults.md",
-      "repository": "rishapgandhi/python-skills",
-      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
-      "path": "skills/common/code-style.md",
-      "fragments": [
-        {
-          "start_line": 1203,
-          "end_line": 1233,
-          "sha256": "ab0a0ad5e7f6810fa83b28ca4dc90b9a3ffa6757f95da7d17ba983729682926f"
-        }
-      ],
-      "sha256": "ab0a0ad5e7f6810fa83b28ca4dc90b9a3ffa6757f95da7d17ba983729682926f"
-    },
-    {
-      "destination": "python/structured-logging.md",
-      "repository": "rishapgandhi/python-skills",
-      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
-      "path": "skills/common/logging.md",
-      "fragments": [
-        {
-          "start_line": 182,
-          "end_line": 185,
-          "sha256": "67f014eae5ba020aebad2fdbde6e3e373840f06e14c557f1e1e605d9736a43ff"
+          "start_line": 8,
+          "end_line": 51,
+          "sha256": "aa2961d5abcdb6f693450600d89544cedf3269766489b8e802dc73c108a6ade4"
         },
         {
-          "start_line": 205,
-          "end_line": 237,
-          "sha256": "f73a7f09bdf8b8a3b40408ac301537944bca68f8df69d932938363b76ad8bb94"
+          "start_line": 61,
+          "end_line": 82,
+          "sha256": "edef445ceb7aafb1e7191691f064d82e17fc74a75f311f9f4cb4e3f9e493c4b4"
         }
       ],
-      "sha256": "8db5c925638a7c86c8c9851726edb7c137c6994d935481f307082bd4b760143d"
+      "sha256": "65d7df4135bfc082ef6bf74018f184228ca6ae9535985af53ab99ccfa1add5a5"
     },
     {
-      "destination": "python/logging-sensitive-data.md",
+      "destination": "python/code-style.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/code-style.md",
+      "fragments": [
+        {
+          "start_line": 1,
+          "end_line": 5,
+          "sha256": "2920e631c6a33e1309f029c3e83f5a73dfd68c46bf69ca69291e1b3d823099d7"
+        },
+        {
+          "start_line": 7,
+          "end_line": 281,
+          "sha256": "7e7ccf5d71e927f18a25abf84781e49eef9b8b06ea717f4d103daafa8829f97f"
+        },
+        {
+          "start_line": 303,
+          "end_line": 339,
+          "sha256": "271d06bcf4a90392781c04ac5fc611843175b4e83d862fee09eb6d5c4e854fee"
+        },
+        {
+          "start_line": 342,
+          "end_line": 528,
+          "sha256": "ce676c0f3a547c8f509e4a2d665d2d24d3bdeefa47e176310a050b27cd656b2e"
+        },
+        {
+          "start_line": 530,
+          "end_line": 778,
+          "sha256": "3e183afaf19380319f0df36fd13fcb3a7122fa6ab32a7355d442539676edaba6"
+        },
+        {
+          "start_line": 781,
+          "end_line": 976,
+          "sha256": "b7f6dbae3c237f2d04d05f7a19606f69c4439eea23a0a9a4b81d5b25c12da6e9"
+        },
+        {
+          "start_line": 980,
+          "end_line": 1045,
+          "sha256": "86cde8768bbbd529323130f4f07740bb0c20eb69795231457a2e4fa047cbd6a4"
+        },
+        {
+          "start_line": 1047,
+          "end_line": 1312,
+          "sha256": "442730ca2b6f5f938fd6ad271714a9646e39ff50797fee3a5702d92555403474"
+        },
+        {
+          "start_line": 1318,
+          "end_line": 1620,
+          "sha256": "84160aaddb4aa9dcf0fc57ab035925b62903d786ec2a2eff8d542fca4fecb696"
+        },
+        {
+          "start_line": 1624,
+          "end_line": 1659,
+          "sha256": "61a20634b46737080f829fb7d7df3baed8b1c299e2c39fa413439921904a1807"
+        },
+        {
+          "start_line": 1661,
+          "end_line": 1793,
+          "sha256": "a9ac2e333b182e7dd66f41a054a0a76840bbbd5216facb01ede199d8c7c7811b"
+        }
+      ],
+      "sha256": "03cc60fb2b882c9f208330a3c4a2363bf8e52b6e38debb731ec0c2ffbd680eb4",
+      "source_line_count": 1793,
+      "omissions": [
+        {
+          "start_line": 6,
+          "end_line": 6,
+          "reason": "Skill activation and supersession instruction."
+        },
+        {
+          "start_line": 282,
+          "end_line": 302,
+          "reason": "Deferred local numpy alias cannot resolve the return annotation outside the function."
+        },
+        {
+          "start_line": 340,
+          "end_line": 341,
+          "reason": "The shown opposite-quote f-string also works before Python 3.12."
+        },
+        {
+          "start_line": 529,
+          "end_line": 529,
+          "reason": "The cited RFC section does not establish this redirect-limit recommendation."
+        },
+        {
+          "start_line": 779,
+          "end_line": 780,
+          "reason": "Database index scans do not have this fixed page size; token expiry is not a universal PCI DSS session requirement."
+        },
+        {
+          "start_line": 977,
+          "end_line": 979,
+          "reason": "The if statements have no suites and are not a valid example."
+        },
+        {
+          "start_line": 1046,
+          "end_line": 1046,
+          "reason": "The next example catches Exception, not a bare except."
+        },
+        {
+          "start_line": 1313,
+          "end_line": 1317,
+          "reason": "The unconditional repeated-concatenation complexity claim is implementation-dependent; qualified guidance remains in 12.6."
+        },
+        {
+          "start_line": 1621,
+          "end_line": 1623,
+          "reason": "The purported bare pylint suppression is already a specific rule."
+        },
+        {
+          "start_line": 1660,
+          "end_line": 1660,
+          "reason": "These framework versions do not all require Python 3.10."
+        }
+      ]
+    },
+    {
+      "destination": "python/folder-structure.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/folder-structure.md",
+      "fragments": [
+        {
+          "start_line": 1,
+          "end_line": 302,
+          "sha256": "8854a6ed798cbdc4ac3fa9227d0d557257e231288d632e15b69320082d66ce9d"
+        },
+        {
+          "start_line": 305,
+          "end_line": 384,
+          "sha256": "10705144165543b9b96b0cb65966fe5631c18ed507705eb03ebcde1b6cffb88c"
+        },
+        {
+          "start_line": 386,
+          "end_line": 415,
+          "sha256": "83cec950ebcdcdd9dc3285a665747b565ef965225334f4f8a8330fd83c611fb5"
+        }
+      ],
+      "sha256": "9585bba3d4faa8b8249e63b1d52057cb326fc5206d7e584dee6ab7fd664ff78b",
+      "source_line_count": 415,
+      "omissions": [
+        {
+          "start_line": 303,
+          "end_line": 304,
+          "reason": "Nested package modules do not universally shadow top-level standard-library imports."
+        },
+        {
+          "start_line": 385,
+          "end_line": 385,
+          "reason": "Filesystem reads and writes are not pure functions."
+        }
+      ]
+    },
+    {
+      "destination": "python/logging.md",
       "repository": "rishapgandhi/python-skills",
       "revision": "920360e791bd326d1c2495f1ff11da3272418780",
       "path": "skills/common/logging.md",
       "fragments": [
         {
-          "start_line": 349,
-          "end_line": 362,
-          "sha256": "83e835a7c26a2b85b759e04aeaa50413584045816329ff005eeea519b01aecfe"
+          "start_line": 1,
+          "end_line": 13,
+          "sha256": "222eed2841bbae00d1b952c057af4616852acb1727fd5dbe9aaf0ff99a5edb05"
+        },
+        {
+          "start_line": 15,
+          "end_line": 65,
+          "sha256": "e160a2cd202faeb94817a44aba1ef3f20994ada092681998a3337d81c2904d54"
+        },
+        {
+          "start_line": 67,
+          "end_line": 120,
+          "sha256": "4218faca69afb907f1a41612a0cb1c1602a0cd4fcd490a4668c8cd7315779310"
+        },
+        {
+          "start_line": 122,
+          "end_line": 171,
+          "sha256": "8c6b2b3dd88dfca2c127b3f6fe4b87984b2632f62090c177a65853fd922abe27"
+        },
+        {
+          "start_line": 178,
+          "end_line": 189,
+          "sha256": "6cc6a5f853bbf01a1e4355bb378f39bec0568ff436c83713bc845ec2de9938ef"
+        },
+        {
+          "start_line": 191,
+          "end_line": 319,
+          "sha256": "db554a0dc3f300c74eed2e2698c61c02e8ec08d9e6752d1be4909c1a3cdf8ee1"
+        },
+        {
+          "start_line": 332,
+          "end_line": 367,
+          "sha256": "e2ccefafd01829a3a12d371ddbc95db8c97da5f40186acdb3a8cbe01046246d3"
+        },
+        {
+          "start_line": 371,
+          "end_line": 432,
+          "sha256": "f936aa497b3e65bdd79347afe2c1bc73c0cbd5ed79708ddf43622deb11782698"
+        },
+        {
+          "start_line": 435,
+          "end_line": 437,
+          "sha256": "d716b97880c1de492f226ba21284d68d0a38129cdd3adf2e3be9d7827aea5d56"
         }
       ],
-      "sha256": "83e835a7c26a2b85b759e04aeaa50413584045816329ff005eeea519b01aecfe"
+      "sha256": "c7fbb67729f58c4afb30e47d327b7de14ee5fb8f0637aaec943443f399f2fc87",
+      "source_line_count": 437,
+      "omissions": [
+        {
+          "start_line": 14,
+          "end_line": 14,
+          "reason": "Disabled logging is not literally zero-overhead."
+        },
+        {
+          "start_line": 66,
+          "end_line": 66,
+          "reason": "The selected PrintLoggerFactory does not provide the stdlib logger-name interface in the source-pinned older structlog stack."
+        },
+        {
+          "start_line": 121,
+          "end_line": 121,
+          "reason": "Logging raw email conflicts with the source sensitive-data prohibition."
+        },
+        {
+          "start_line": 172,
+          "end_line": 177,
+          "reason": "Splitting a database URL on @ does not remove credentials from query parameters."
+        },
+        {
+          "start_line": 190,
+          "end_line": 190,
+          "reason": "A request UUID is not necessarily an OpenTelemetry trace ID."
+        },
+        {
+          "start_line": 320,
+          "end_line": 331,
+          "reason": "The retry loop silently returns after exhausted retries."
+        },
+        {
+          "start_line": 368,
+          "end_line": 370,
+          "reason": "Splitting a database URL on @ is not complete credential stripping."
+        },
+        {
+          "start_line": 433,
+          "end_line": 434,
+          "reason": "SQLAlchemy exception strings and tracebacks may include sensitive SQL parameters."
+        }
+      ]
     },
     {
-      "destination": "python/monitoring.md",
+      "destination": "python/async-patterns.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/async-patterns.md",
+      "fragments": [
+        {
+          "start_line": 1,
+          "end_line": 53,
+          "sha256": "7732c3a5d27e264cb2ac900dbb5f84b1eae9d1096c9fb60920babb906019f131"
+        },
+        {
+          "start_line": 66,
+          "end_line": 72,
+          "sha256": "6da7b6eeca3036c92f00f50cecea5be388330455b2df5c937c16881dc6173d65"
+        },
+        {
+          "start_line": 74,
+          "end_line": 82,
+          "sha256": "d7dbb75eb5c04bd29b3797633d39cd81b34a6c720efa295ef6ebb349146dd3f2"
+        },
+        {
+          "start_line": 95,
+          "end_line": 96,
+          "sha256": "a21b066ad487f310313bb60cb71c61248b01b3397a5735b1c0ae48879017352e"
+        },
+        {
+          "start_line": 98,
+          "end_line": 173,
+          "sha256": "eedd4096eb205c98efbde31b247c1939f7ac116a6de20252c6477fb15dff0f5f"
+        },
+        {
+          "start_line": 189,
+          "end_line": 221,
+          "sha256": "7f8275c30644b1a786f997f82ecf65e7d9560ce2c956af6e19df2798b737101d"
+        }
+      ],
+      "sha256": "f28efeb9942b7d82f612914864723c5d0856ea9476ee3b773f81d0bb0a1bd748",
+      "source_line_count": 221,
+      "omissions": [
+        {
+          "start_line": 54,
+          "end_line": 65,
+          "reason": "The shown countdown starts at 1 second, contrary to its docstring."
+        },
+        {
+          "start_line": 73,
+          "end_line": 73,
+          "reason": "Transient 408 and 429 responses are 4xx; the blanket exclusion is incorrect."
+        },
+        {
+          "start_line": 83,
+          "end_line": 94,
+          "reason": "Check-then-charge does not provide idempotency under duplicate delivery or a crash after charge."
+        },
+        {
+          "start_line": 97,
+          "end_line": 97,
+          "reason": "Check-then-act is not an atomic idempotency guarantee."
+        },
+        {
+          "start_line": 174,
+          "end_line": 188,
+          "reason": "Built-in hash(password) is not a secure password hash."
+        }
+      ]
+    },
+    {
+      "destination": "python/performance.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/performance.md",
+      "fragments": [
+        {
+          "start_line": 1,
+          "end_line": 46,
+          "sha256": "1921c556bff1dbf9e5935cb8c54f9de49569176597431cf0dd07ad28ac9a56b0"
+        },
+        {
+          "start_line": 54,
+          "end_line": 74,
+          "sha256": "390399ddb7e5e018a15d05cb701861d3f3f2ea6893c46321fd48d8c61829746c"
+        },
+        {
+          "start_line": 85,
+          "end_line": 157,
+          "sha256": "106d47a19b24ee8e6c6ddea07b15236e11f6eed9ce38618fc752708d79a7f8ad"
+        },
+        {
+          "start_line": 166,
+          "end_line": 217,
+          "sha256": "f59437d2da109f49b7ec2a3ca1e8359979924ca7294470d8da892ae729da2f46"
+        },
+        {
+          "start_line": 246,
+          "end_line": 257,
+          "sha256": "098aeb8b4cbbf4b9eb6d0203d6c5c3191668114d5eeea93d20eb4817ec12176e"
+        },
+        {
+          "start_line": 266,
+          "end_line": 266,
+          "sha256": "47c06c561d5c327343685268a46b3391f3998eee890d2be51f0d21cc4a53ae6d"
+        }
+      ],
+      "sha256": "11ad8f157a133d92c9db3983c0e9de5732ed6fd6e697b00ec492da5a7594b472",
+      "source_line_count": 266,
+      "omissions": [
+        {
+          "start_line": 47,
+          "end_line": 53,
+          "reason": "A ProcessPoolExecutor context manager can synchronously wait for shutdown inside the event loop."
+        },
+        {
+          "start_line": 75,
+          "end_line": 84,
+          "reason": "The gather exception handling ignores CancelledError, and gather does not cancel siblings by default."
+        },
+        {
+          "start_line": 158,
+          "end_line": 165,
+          "reason": "Invalidating only the updated email leaves the old email cache key stale."
+        },
+        {
+          "start_line": 218,
+          "end_line": 245,
+          "reason": "The ORM await/method chaining is invalid; timestamp-only ordering is not stable pagination."
+        },
+        {
+          "start_line": 258,
+          "end_line": 265,
+          "reason": "psutil.cpu_percent(interval=1) blocks inside the async function."
+        }
+      ]
+    },
+    {
+      "destination": "python/observability.md",
       "repository": "rishapgandhi/python-skills",
       "revision": "920360e791bd326d1c2495f1ff11da3272418780",
       "path": "skills/common/observability.md",
       "fragments": [
+        {
+          "start_line": 1,
+          "end_line": 49,
+          "sha256": "b7533c5244d90143ea41d955195dacf18cc72fba0bb2db0ba12e8b9d9ac6f41e"
+        },
         {
           "start_line": 69,
           "end_line": 119,
           "sha256": "01606a3ea2098d8b068fb9f2738722d0ee372ee01e1847a905cad411bf6f5114"
         },
         {
-          "start_line": 140,
-          "end_line": 185,
-          "sha256": "f03f3157de34e7e69be37587ddbe714b8ae2759d18ce637dd49f21b04b831582"
+          "start_line": 139,
+          "end_line": 195,
+          "sha256": "2fa332e12bf06f431604792a755baf9c1d3d25ffbbd9f556c08e52cb3bdcf6be"
         }
       ],
-      "sha256": "7c9a90ad8d38051a9f377c231cc01d689de65fd71f0561a73c59436873248f5f"
+      "sha256": "00970544e7b5339c92e43c85a1584762cb72f3b84e2596608af8940eed1975fc",
+      "source_line_count": 195,
+      "omissions": [
+        {
+          "start_line": 50,
+          "end_line": 68,
+          "reason": "Installing FastAPI middleware from lifespan occurs after startup has begun and is rejected by current Starlette."
+        },
+        {
+          "start_line": 120,
+          "end_line": 138,
+          "reason": "Raw request paths create unbounded metric-label cardinality."
+        }
+      ]
     },
     {
-      "destination": "sql/naming.md",
+      "destination": "python/testing.md",
       "repository": "rishapgandhi/python-skills",
       "revision": "920360e791bd326d1c2495f1ff11da3272418780",
-      "path": "skills/common/db-design.md",
+      "path": "skills/common/testing.md",
       "fragments": [
         {
-          "start_line": 173,
-          "end_line": 189,
-          "sha256": "b8f2b28ec127055d37b5293ac8bb046dc6fb54ff6b5b32342fbc5a262deee3ac"
+          "start_line": 1,
+          "end_line": 56,
+          "sha256": "2bfe360e54a7e661a06297a51e6d4f1e726347421370bc3732e96c8a0f4ac443"
+        },
+        {
+          "start_line": 58,
+          "end_line": 237,
+          "sha256": "e0d10c15f96589b16c05a1a17789874a50b92ca24a7cc66e3e4eec8bed04b466"
+        },
+        {
+          "start_line": 254,
+          "end_line": 337,
+          "sha256": "ebd9f8d6011cbf54e7c37b3b085e751a18713056fc491baf6769b36deafe5604"
+        },
+        {
+          "start_line": 339,
+          "end_line": 363,
+          "sha256": "82135804a510ed454ff7981bb5364a721826cfa1583f73b6582f3c8d5a5bc12b"
+        },
+        {
+          "start_line": 372,
+          "end_line": 397,
+          "sha256": "862811bf20a2198bccaa4fb1faf62e7925170e89661df1a077a597f947ecdc1c"
+        },
+        {
+          "start_line": 468,
+          "end_line": 474,
+          "sha256": "17be306fca682a45f8c9ee4845cf3aea12070cea64fc3bc49cee20f835a4e474"
+        },
+        {
+          "start_line": 476,
+          "end_line": 486,
+          "sha256": "c8c35487be5d3d232e6a1294631672729df7df2e9e6cec001c6a49e209c60252"
+        },
+        {
+          "start_line": 492,
+          "end_line": 530,
+          "sha256": "38502cc819a25fe69673fade2fd660895cf9506da7aeacc4874d84a3adbf07ff"
+        },
+        {
+          "start_line": 563,
+          "end_line": 567,
+          "sha256": "79105fe3feae3e8a4380237692069e6517f2933540aba6744083f0f5b35eb58c"
+        },
+        {
+          "start_line": 587,
+          "end_line": 694,
+          "sha256": "e2baa9398dde66ea9f55fa9d66a5d92334f2ff7b5ca0b5f3339f30c93545f9ce"
+        },
+        {
+          "start_line": 698,
+          "end_line": 712,
+          "sha256": "dd0ba5012a5b375cd29e6311761ed65d2182cb8bf17e42344b8f2c374ff78920"
+        },
+        {
+          "start_line": 715,
+          "end_line": 739,
+          "sha256": "8714585dd2769e8a66d7f4e547c6770900110332b5909aaf504016ce68c1ac99"
+        },
+        {
+          "start_line": 741,
+          "end_line": 926,
+          "sha256": "ae4723b5b7225d6ca943182f6d25edcdc806f02ed2e8fb8a520dffb940493eb9"
+        },
+        {
+          "start_line": 943,
+          "end_line": 1017,
+          "sha256": "fc994faff69cc9d99f2e400941ccde069bc6bd67d366a0e5a3a040d36eec0eff"
         }
       ],
-      "sha256": "b8f2b28ec127055d37b5293ac8bb046dc6fb54ff6b5b32342fbc5a262deee3ac"
+      "sha256": "a67c8a68a6ea00f4af88fb929d4ab0afb5d5dab9ed405022f640ad5e87385a69",
+      "source_line_count": 1018,
+      "omissions": [
+        {
+          "start_line": 57,
+          "end_line": 57,
+          "reason": "HTTPX has no asyncio installation extra."
+        },
+        {
+          "start_line": 238,
+          "end_line": 253,
+          "reason": "The testcontainers default URL is a synchronous driver, and this fixture does not isolate application commits."
+        },
+        {
+          "start_line": 338,
+          "end_line": 338,
+          "reason": "Migrations are production schema changes and are not automatically safe to skip testing."
+        },
+        {
+          "start_line": 364,
+          "end_line": 371,
+          "reason": "Decoded JWT exp is NumericDate, not the asserted datetime object."
+        },
+        {
+          "start_line": 398,
+          "end_line": 467,
+          "reason": "The shown API client never overrides its application DB dependency to the test transaction; ORM __dict__ also contains state."
+        },
+        {
+          "start_line": 475,
+          "end_line": 475,
+          "reason": "Django signals do not inherently require a committed transaction."
+        },
+        {
+          "start_line": 487,
+          "end_line": 491,
+          "reason": "Ordinary model signals do not wait for commit."
+        },
+        {
+          "start_line": 531,
+          "end_line": 562,
+          "reason": "The custom version pragmas are not implemented by the shown coverage configuration."
+        },
+        {
+          "start_line": 568,
+          "end_line": 586,
+          "reason": "The email example passes order_service but calls an undefined user_service."
+        },
+        {
+          "start_line": 695,
+          "end_line": 697,
+          "reason": "assertRaisesMessage is a Django extension, not standard unittest."
+        },
+        {
+          "start_line": 713,
+          "end_line": 714,
+          "reason": "assertWarnsMessage is a Django extension, not standard unittest."
+        },
+        {
+          "start_line": 740,
+          "end_line": 740,
+          "reason": "assertLogs also accepts higher-severity messages."
+        },
+        {
+          "start_line": 927,
+          "end_line": 942,
+          "reason": "The unqualified unittest example uses Django-only assertRaisesMessage."
+        }
+      ]
     },
     {
-      "destination": "sql/parameterized-queries.md",
+      "destination": "python/error-handling.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/error-handling.md",
+      "fragments": [
+        {
+          "start_line": 1,
+          "end_line": 22,
+          "sha256": "3392603ae8bd84bb7208d1238858fa1449501ad1170af5130853949ce49eb460"
+        },
+        {
+          "start_line": 25,
+          "end_line": 268,
+          "sha256": "e5ca15d9ff38a9ac17b8b092a7de93d7eb15c81fee2b4736f5d7a028227f10a8"
+        },
+        {
+          "start_line": 274,
+          "end_line": 275,
+          "sha256": "3b5cd21038973cc1a32a3d49edd4f32edaa7e6830f8a71b0b95575153db87be6"
+        },
+        {
+          "start_line": 304,
+          "end_line": 354,
+          "sha256": "6a8ee75cf948e76c6ecb838f195eba1fd0e15b9a74ce63ec144a4946e9f58969"
+        },
+        {
+          "start_line": 378,
+          "end_line": 438,
+          "sha256": "5741e8c5d530d36b41a3e800c54f7c2b4353843c4ff2708c819d1bb43866c3a4"
+        },
+        {
+          "start_line": 440,
+          "end_line": 545,
+          "sha256": "e7df1ef6335e688538648015a1a7c1c51a6408b51fa081ca02a1b4398cc935e9"
+        }
+      ],
+      "sha256": "9ad5e15ddad6d228aba2e361382e139796eac642c8f98e548a44385098381a06",
+      "source_line_count": 545,
+      "omissions": [
+        {
+          "start_line": 23,
+          "end_line": 24,
+          "reason": "Inheriting from BaseException does not itself swallow KeyboardInterrupt."
+        },
+        {
+          "start_line": 269,
+          "end_line": 273,
+          "reason": "Implicit exception chaining preserves __context__; the original traceback is not lost."
+        },
+        {
+          "start_line": 276,
+          "end_line": 303,
+          "reason": "The repository wrapper exposes raw database errors to the public error handler."
+        },
+        {
+          "start_line": 355,
+          "end_line": 377,
+          "reason": "The file opened by the example is never closed."
+        },
+        {
+          "start_line": 439,
+          "end_line": 439,
+          "reason": "A version conditional cannot protect Python 3.11 syntax from an older parser."
+        }
+      ]
+    },
+    {
+      "destination": "python/dependency-management.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/dependency-management.md",
+      "fragments": [
+        {
+          "start_line": 1,
+          "end_line": 170,
+          "sha256": "8cfb17ccd1a59684e527495c6f2fc6fba8f8a859be2fe17b7dfff5bf4d5ae244"
+        }
+      ],
+      "sha256": "8cfb17ccd1a59684e527495c6f2fc6fba8f8a859be2fe17b7dfff5bf4d5ae244",
+      "source_line_count": 170,
+      "omissions": []
+    },
+    {
+      "destination": "python/security.md",
       "repository": "rishapgandhi/python-skills",
       "revision": "920360e791bd326d1c2495f1ff11da3272418780",
       "path": "skills/common/security.md",
       "fragments": [
         {
-          "start_line": 307,
-          "end_line": 331,
-          "sha256": "8983ce711794a4e01b26fbf1f1ed5f50ed50e44ca6838048e3448dec5560c7b0"
-        }
-      ],
-      "sha256": "8983ce711794a4e01b26fbf1f1ed5f50ed50e44ca6838048e3448dec5560c7b0"
-    },
-    {
-      "destination": "sql/query-loading.md",
-      "repository": "rishapgandhi/python-skills",
-      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
-      "path": "skills/common/performance.md",
-      "fragments": [
+          "start_line": 1,
+          "end_line": 71,
+          "sha256": "5b0c127bd1152d961d3ac43ff46ce60d18e8ad83f1bf67733cd8344b304c1a8a"
+        },
         {
-          "start_line": 170,
-          "end_line": 216,
-          "sha256": "bde8526886c4864bfbdd1a3da775b1cd8089e9736e9c1dfd0bc7026a9de9f3b2"
+          "start_line": 73,
+          "end_line": 369,
+          "sha256": "67e29f014eb16353a0cad06a5432c1d56b379e9be27fb067f6a3f9a5304c839b"
+        },
+        {
+          "start_line": 372,
+          "end_line": 420,
+          "sha256": "dc402980bb7710c1fb972527be7f5b77e28d1214d3706e5a5ff55f1df8f826d6"
+        },
+        {
+          "start_line": 443,
+          "end_line": 491,
+          "sha256": "586aec9f0090f681bf9915f49a259bb8f08f6ffaaf5ad895a1d954e6e13a42da"
         }
       ],
-      "sha256": "bde8526886c4864bfbdd1a3da775b1cd8089e9736e9c1dfd0bc7026a9de9f3b2"
+      "sha256": "a4a819915d66f7611afe5a9e74c0f68185784bcc0b6b0eb2428e3db569aeeff3",
+      "source_line_count": 491,
+      "omissions": [
+        {
+          "start_line": 72,
+          "end_line": 72,
+          "reason": "Pydantic settings expects JSON for a list environment value, not this comma-separated value."
+        },
+        {
+          "start_line": 370,
+          "end_line": 371,
+          "reason": "The wildcard CORS claim about credentialed requests is incorrect and the middleware constructor lacks its app argument."
+        },
+        {
+          "start_line": 421,
+          "end_line": 442,
+          "reason": "Duplicate dependency pinning recipe conflicts with the more complete dependency-management document, and pip-audit has no --fail-on-vuln flag."
+        }
+      ]
     },
     {
-      "destination": "sql/decimal-values.md",
+      "destination": "sql/db-design.md",
       "repository": "rishapgandhi/python-skills",
       "revision": "920360e791bd326d1c2495f1ff11da3272418780",
       "path": "skills/common/db-design.md",
       "fragments": [
+        {
+          "start_line": 1,
+          "end_line": 32,
+          "sha256": "7a96ea8aadc7fc37a559370f6699e58efbd6009193c329cb8348c62c335ea0ce"
+        },
+        {
+          "start_line": 37,
+          "end_line": 124,
+          "sha256": "33fafaa75658ab3b434d317fab7a569adb758dbaa13680a55c554232179f58a7"
+        },
+        {
+          "start_line": 127,
+          "end_line": 130,
+          "sha256": "2b5c7a8e826c34fffe0e1f08f24fcd9b5e19f06f68cc25cd1641f0b883406ee0"
+        },
+        {
+          "start_line": 132,
+          "end_line": 248,
+          "sha256": "fbd240acd1d693cee7cbb4c2e671f9bbe52389347e4f3928a13a136562e67b87"
+        },
+        {
+          "start_line": 270,
+          "end_line": 272,
+          "sha256": "ba95929510431fd3f9333c34388bd57c67022012822535c31f05238f3d07e068"
+        },
+        {
+          "start_line": 277,
+          "end_line": 391,
+          "sha256": "c4d5cb9c266fc7dd82bf12ee8b1f656e8c339c5f43e3694e06409d08410bfd6e"
+        },
         {
           "start_line": 437,
           "end_line": 462,
           "sha256": "52a561be204e1bf47ac73d3abc87dc6a88a0bb9132e781a5d3190aa6acd7dffb"
         }
       ],
-      "sha256": "52a561be204e1bf47ac73d3abc87dc6a88a0bb9132e781a5d3190aa6acd7dffb"
+      "sha256": "85356e47907249e5dd44ccd6e56c9e291f7e42c6c2534efffb6664b44967e227",
+      "source_line_count": 462,
+      "omissions": [
+        {
+          "start_line": 33,
+          "end_line": 36,
+          "reason": "SQLAlchemy onupdate does not install a server-side update trigger, and UTC is not enforced by this mixin."
+        },
+        {
+          "start_line": 125,
+          "end_line": 126,
+          "reason": "The shown ordinary unique constraint is not case-insensitive."
+        },
+        {
+          "start_line": 131,
+          "end_line": 131,
+          "reason": "A composite unique constraint is not universally more efficient than separate indexes."
+        },
+        {
+          "start_line": 249,
+          "end_line": 269,
+          "reason": "Blanket always/never index rules ignore query plans and workload."
+        },
+        {
+          "start_line": 273,
+          "end_line": 276,
+          "reason": "Composite-index claims about column order and non-use are overbroad."
+        },
+        {
+          "start_line": 392,
+          "end_line": 436,
+          "reason": "Timestamp-only ordering is not stable pagination."
+        }
+      ]
     },
     {
-      "destination": "sql/migrations.md",
+      "destination": "sql/data-migrations.md",
       "repository": "rishapgandhi/python-skills",
       "revision": "920360e791bd326d1c2495f1ff11da3272418780",
       "path": "skills/common/data-migrations.md",
       "fragments": [
         {
-          "start_line": 112,
-          "end_line": 120,
-          "sha256": "17537ad9b54f12f539db8954b083e8887c303c5cf5bbacb39cb244320b89a8d8"
+          "start_line": 1,
+          "end_line": 36,
+          "sha256": "02e2eb2ecc881414b3510b29bb25b7aae73f4d641a3630e4284636d4a0c272bc"
         },
         {
-          "start_line": 136,
-          "end_line": 160,
-          "sha256": "f1bc2e9c7f269037f00fc8f300e2f7c6d3eebec6d38ba79ba997438d880b3754"
+          "start_line": 38,
+          "end_line": 40,
+          "sha256": "ffe048561b1d2a93cca7eb6a46df947d4f31a3fdc10176ee30161c38842b5857"
+        },
+        {
+          "start_line": 67,
+          "end_line": 163,
+          "sha256": "10c4551ff1398dd96f6627655d13d1ca8839b86e23eced0b2b250e50507fc238"
+        },
+        {
+          "start_line": 178,
+          "end_line": 180,
+          "sha256": "35f786b43c06ecd2c3dc6f7694e466521d6e32c6d2e9f9f2e61c96bfc5b284c3"
+        },
+        {
+          "start_line": 182,
+          "end_line": 190,
+          "sha256": "74a3fdba64256308c14d672573d6c1ec05d135b1f50734796a028ef47af03232"
         }
       ],
-      "sha256": "a799e64d9499a5c1b5708e021c77eb57f02d2a88ba650a70c1e4f2904caf028f"
+      "sha256": "0b336aa0d8e3a04e8edaa8dbd97b50dcc916a0e6c289b310011bf9fc27a6f161",
+      "source_line_count": 190,
+      "omissions": [
+        {
+          "start_line": 37,
+          "end_line": 37,
+          "reason": "Even adding a nullable column needs a metadata lock."
+        },
+        {
+          "start_line": 41,
+          "end_line": 66,
+          "reason": "PostgreSQL UPDATE has no LIMIT clause; the loop also lacks per-batch commits."
+        },
+        {
+          "start_line": 164,
+          "end_line": 177,
+          "reason": "CREATE INDEX CONCURRENTLY cannot run in the shown atomic Django migration."
+        },
+        {
+          "start_line": 181,
+          "end_line": 181,
+          "reason": "The example does run database_operations DDL, contrary to its comment."
+        }
+      ]
     },
     {
       "destination": "api/design.md",
@@ -458,26 +1155,44 @@
       "fragments": [
         {
           "start_line": 1,
-          "end_line": 22,
-          "sha256": "9b3eb5e2d1bd8628875a3cde3f322c7de12b3964efd3fcfb2ea31fe88cdf8945"
+          "end_line": 29,
+          "sha256": "26d03dd97d4e4413c1c7c80375b321e60138e02ddc27a1cc17bfd5654dd83d6e"
         },
         {
-          "start_line": 37,
-          "end_line": 54,
-          "sha256": "3952950328b0befbb935742b710f6149787837b187d7b1d559a173ead32b49d6"
+          "start_line": 31,
+          "end_line": 91,
+          "sha256": "c56ac14a5c9be79dc9d37a40368f982d52a0e88c706620384c94276a1da0d31e"
         },
         {
-          "start_line": 107,
-          "end_line": 133,
-          "sha256": "d6c470dd1f075d363393de08dafd2a7fc9cf649cc36f3cc267179b68f56865f5"
+          "start_line": 105,
+          "end_line": 139,
+          "sha256": "6b1cecc10683ef5779208958037568564f29b026ea4c322fdd7d5491745d6261"
         },
         {
-          "start_line": 148,
+          "start_line": 145,
           "end_line": 171,
-          "sha256": "572d2b19dc564b83be0b8d62585b968528e93ef520c0a26bcc4b5f165f83e52e"
+          "sha256": "f963f67ff24a9c554381dc023bf783ef80061a5cd70998fc90b507fbcc2acc2a"
         }
       ],
-      "sha256": "7e5eeb3ed087783a0327b8725ea555e58b2f6f547f981c80bb62826a42d75465"
+      "sha256": "bb5d9c0b48abd5de3a941e56edd4df05292ac926ac08f836bdf916f59c453b9a",
+      "source_line_count": 171,
+      "omissions": [
+        {
+          "start_line": 30,
+          "end_line": 30,
+          "reason": "PATCH is not inherently idempotent."
+        },
+        {
+          "start_line": 92,
+          "end_line": 104,
+          "reason": "Duplicate error-envelope example; the fuller error-handling document retains the canonical shape."
+        },
+        {
+          "start_line": 140,
+          "end_line": 144,
+          "reason": "Deprecation header uses the obsolete HTTP-date form rather than a structured date."
+        }
+      ]
     },
     {
       "destination": "api/flask.md",
@@ -486,17 +1201,90 @@
       "path": "skills/flask/SKILL.md",
       "fragments": [
         {
-          "start_line": 50,
-          "end_line": 125,
-          "sha256": "46a5a310e9478a472d563bc1dda28bd635ccb7afdba33bd82aabc5d1c739b00c"
+          "start_line": 7,
+          "end_line": 155,
+          "sha256": "3a5c8e7423ebe29339868b4820b43515e2be88b98eacf0a0c152028a9bc9b452"
         },
         {
-          "start_line": 276,
-          "end_line": 319,
-          "sha256": "c3616e22013d0f6b5195d842ab491cacff620765945839a493ba404163020d03"
+          "start_line": 190,
+          "end_line": 194,
+          "sha256": "ae5a5e82e07c10aae0e574154dfe2242a9d47de9fb98b3838f5241054287a229"
+        },
+        {
+          "start_line": 267,
+          "end_line": 271,
+          "sha256": "0f5f55090c0b37a5d9352b176de5d6148fe83a659bf9969295178538468a9c24"
+        },
+        {
+          "start_line": 273,
+          "end_line": 406,
+          "sha256": "6769e046a7bf74676445c13c6b95dad5883aa951ce7d60f79e2149cb593ebb21"
+        },
+        {
+          "start_line": 411,
+          "end_line": 589,
+          "sha256": "c605c821fd31694da96a605239d41254c570922e69cd645ffad6a018a05d029d"
+        },
+        {
+          "start_line": 591,
+          "end_line": 656,
+          "sha256": "9f2197c01ad136405f8770d5d3e1706a1c617d7e6c7dc6873e6f55a1ebd6b9d4"
+        },
+        {
+          "start_line": 676,
+          "end_line": 688,
+          "sha256": "35d6aff55521e9c9cda4415f77587b564d535a7e9037cbd7edcc2da75f653ec5"
+        },
+        {
+          "start_line": 697,
+          "end_line": 850,
+          "sha256": "4f71ec9f439152ab1dae9b6a5aa6b85d433f27e0c1d40dfc0fad85b2f13a15a1"
         }
       ],
-      "sha256": "abbb914db34ddc8159d61f78c0ebec2a1b70b2dbaa6baa601a2fabd7d1ffc145"
+      "sha256": "4c6500d31ca24278f7d1afc4d16f83ec8eea1a9c6d948769dca16128508b4f9b",
+      "source_line_count": 851,
+      "omissions": [
+        {
+          "start_line": 1,
+          "end_line": 6,
+          "reason": "Skill title and activation instruction; the framework stack and project structure remain."
+        },
+        {
+          "start_line": 156,
+          "end_line": 189,
+          "reason": "Duplicate Flask testing recipe refers to nonexistent TestConfig; fuller testing section remains."
+        },
+        {
+          "start_line": 195,
+          "end_line": 266,
+          "reason": "The class hierarchy eagerly reads production-only secrets on import; removing only ProductionConfig would create an unsafe development fallback."
+        },
+        {
+          "start_line": 272,
+          "end_line": 272,
+          "reason": "Dependent TestingConfig instruction belongs to the omitted unsafe class-hierarchy example."
+        },
+        {
+          "start_line": 407,
+          "end_line": 410,
+          "reason": "Unbounded collection route contradicts the source pagination standard."
+        },
+        {
+          "start_line": 590,
+          "end_line": 590,
+          "reason": "SameSite Lax is a useful mitigation but not a complete CSRF guarantee."
+        },
+        {
+          "start_line": 657,
+          "end_line": 675,
+          "reason": "setdefault does not populate the already-present empty CELERY config and references omitted ProductionConfig."
+        },
+        {
+          "start_line": 689,
+          "end_line": 696,
+          "reason": "The worker commands reference an app:celery_app export that the shown factory never defines."
+        }
+      ]
     },
     {
       "destination": "api/fastapi.md",
@@ -505,31 +1293,229 @@
       "path": "skills/fastapi/SKILL.md",
       "fragments": [
         {
-          "start_line": 148,
-          "end_line": 177,
-          "sha256": "c0f46f3acbc49db70373abbe63c2daeab3706e74f23174ff46ad46827917d1cf"
+          "start_line": 7,
+          "end_line": 70,
+          "sha256": "35fe1481ae59812100b722b4d0559d14eb654d96065406cab1b9282dfb4e1879"
         },
         {
-          "start_line": 259,
-          "end_line": 283,
-          "sha256": "110ca3dccf0d93b679213ea58bf8f9c531f2a40de5e0f7d7a3a2c0c84e0ee3a6"
+          "start_line": 72,
+          "end_line": 81,
+          "sha256": "5fdaad1bb48265510fd9cfe2e9d1ffcfd62cab974fc72c158c6f901479f972f6"
+        },
+        {
+          "start_line": 114,
+          "end_line": 231,
+          "sha256": "ec0550400c801bba742ca63be3f1fb8f44fa2a2db440d96c5ea8fbc9c6fe5590"
+        },
+        {
+          "start_line": 233,
+          "end_line": 252,
+          "sha256": "4c00f0adfc0e03dd3a1aae26e6a212e51f0a0f56da5f6b3973ecac4536f373f6"
+        },
+        {
+          "start_line": 255,
+          "end_line": 287,
+          "sha256": "9f3a84e958b6f96f8c908bf1bc7c9425b53e7757f2ebb03c79e89f64b1ca608c"
+        },
+        {
+          "start_line": 289,
+          "end_line": 301,
+          "sha256": "cdec83cca38fd44034dd548a06e8bb8da97befbc1d8baf586854dc8e29ee3830"
         }
       ],
-      "sha256": "a395994845818e741a34ecfaa15884d71ad28fde6db86fd11f6b05d14ba7d2b9"
+      "sha256": "6e86f3d18e76c4af9a0463f44a83cb7ba7837aaf4021155d27bd4cbbbb299396",
+      "source_line_count": 301,
+      "omissions": [
+        {
+          "start_line": 1,
+          "end_line": 6,
+          "reason": "Skill title and activation instruction; stack and project structure remain."
+        },
+        {
+          "start_line": 71,
+          "end_line": 71,
+          "reason": "Keyword arguments followed by a positional ellipsis is invalid Python syntax."
+        },
+        {
+          "start_line": 82,
+          "end_line": 113,
+          "reason": "The dependency uses an undecorated async generator as an async context manager."
+        },
+        {
+          "start_line": 232,
+          "end_line": 232,
+          "reason": "The claimed startup-event deprecation version is inaccurate."
+        },
+        {
+          "start_line": 253,
+          "end_line": 254,
+          "reason": "Keyword arguments followed by a positional ellipsis is invalid Python syntax."
+        },
+        {
+          "start_line": 288,
+          "end_line": 288,
+          "reason": "Blanket dict prohibition conflicts with health checks and accepted framework response shapes."
+        }
+      ]
     },
     {
-      "destination": "api/authorization.md",
+      "destination": "api/authentication.md",
       "repository": "rishapgandhi/python-skills",
       "revision": "920360e791bd326d1c2495f1ff11da3272418780",
       "path": "skills/common/api-auth.md",
       "fragments": [
         {
-          "start_line": 198,
-          "end_line": 242,
-          "sha256": "e8e796aed90868f29c46078bebc22aba7251dfeccedaa397681b6ce74f5b0f8c"
+          "start_line": 1,
+          "end_line": 72,
+          "sha256": "a704ae7beeaf64436ddf536f3b13b71a1dc31b96e09676f375333a7e1c311b26"
+        },
+        {
+          "start_line": 77,
+          "end_line": 309,
+          "sha256": "10ce049da5f142038b75d5358ebc7d81a1c6044025ed967e4f2579d2dde6867e"
         }
       ],
-      "sha256": "e8e796aed90868f29c46078bebc22aba7251dfeccedaa397681b6ce74f5b0f8c"
+      "sha256": "6533ae8ff21502878cbd9ca5a1259cbe702ad55471b13eb1f6586490a57e1101",
+      "source_line_count": 309,
+      "omissions": [
+        {
+          "start_line": 73,
+          "end_line": 76,
+          "reason": "Verification does not require expiry or verify the token-type claim."
+        }
+      ]
+    },
+    {
+      "destination": "architecture/microservices.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/microservices.md",
+      "fragments": [
+        {
+          "start_line": 1,
+          "end_line": 3,
+          "sha256": "d86a58e99c9916e2f17e75ea9c7f821eb4a7a887203a43a8a81179b5a911e3f1"
+        },
+        {
+          "start_line": 5,
+          "end_line": 96,
+          "sha256": "698c1a79019fac5fec6c7bccb76c8a2d9e2ea569618ed57d3d4122f1eb35a8f5"
+        },
+        {
+          "start_line": 114,
+          "end_line": 114,
+          "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+        },
+        {
+          "start_line": 131,
+          "end_line": 173,
+          "sha256": "2d5391ddefd240737756101ec75a70b8af4b6c9db012175e2915060adc5b55ce"
+        },
+        {
+          "start_line": 239,
+          "end_line": 247,
+          "sha256": "c3877c52b58e3b3d59d1385f95900b522b8c45bfeb0f1ca5ec8c3cc642134366"
+        }
+      ],
+      "sha256": "81947b01e72e165920a9af60970d44b4049133c9ef23a2fb0664f73ee570c6c8",
+      "source_line_count": 247,
+      "omissions": [
+        {
+          "start_line": 4,
+          "end_line": 4,
+          "reason": "Prerequisite-skills activation framing."
+        },
+        {
+          "start_line": 97,
+          "end_line": 113,
+          "reason": "The incomplete OpenAPI path omits required parameter and response-description fields."
+        },
+        {
+          "start_line": 115,
+          "end_line": 130,
+          "reason": "The contract test does not await the async client method."
+        },
+        {
+          "start_line": 174,
+          "end_line": 238,
+          "reason": "The half-open circuit breaker allows concurrent probes, and the fallback indexes None on a 404 response."
+        }
+      ]
+    },
+    {
+      "destination": "architecture/feature-flags.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/feature-flags.md",
+      "fragments": [
+        {
+          "start_line": 1,
+          "end_line": 142,
+          "sha256": "2455689acb330101f001d9779925a3a29854c353f6706687e13b830e4c8e8e7f"
+        },
+        {
+          "start_line": 171,
+          "end_line": 188,
+          "sha256": "b5a7bd4dba602863f28bc80bd3ec634c537388f369711d01cc79fb077af6bc79"
+        }
+      ],
+      "sha256": "b4ee79494e65874d3292e0e29d55f017bc74ae0292bf40c4751d7222444eb574",
+      "source_line_count": 188,
+      "omissions": [
+        {
+          "start_line": 143,
+          "end_line": 170,
+          "reason": "The testing functions use await inside synchronous def functions."
+        }
+      ]
+    },
+    {
+      "destination": "python/ci-cd.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/ci-cd.md",
+      "fragments": [
+        {
+          "start_line": 1,
+          "end_line": 121,
+          "sha256": "88f898d5155b920b4c27fe38dbb36aa3faf13cb350d8f270ca07cb0f6bb70ab3"
+        },
+        {
+          "start_line": 123,
+          "end_line": 141,
+          "sha256": "15331d708e87c7fd8330ff88a55cf4b4c37ea39cd534797ab478325946a9b64a"
+        }
+      ],
+      "sha256": "b2c69abf49485e5cc74718deffeafa5c64322236fd0274cc34e7de8378eebd1c",
+      "source_line_count": 169,
+      "omissions": [
+        {
+          "start_line": 122,
+          "end_line": 122,
+          "reason": "A movable major-version action tag is not an immutable supply-chain pin."
+        },
+        {
+          "start_line": 143,
+          "end_line": 169,
+          "reason": "The release recipe lacks registry login and package/release write permissions and does not itself deploy production."
+        }
+      ]
+    },
+    {
+      "destination": "python/deployment.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/deployment.md",
+      "fragments": [
+        {
+          "start_line": 1,
+          "end_line": 207,
+          "sha256": "3907d02a8b13eec111a526b18416532d93e628a83ab97308f367f7194ae51428"
+        }
+      ],
+      "sha256": "3907d02a8b13eec111a526b18416532d93e628a83ab97308f367f7194ae51428",
+      "source_line_count": 207,
+      "omissions": []
     }
   ]
 }
