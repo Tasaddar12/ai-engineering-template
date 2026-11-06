@@ -1,5 +1,16 @@
 # Third-party notices
 
+## Coding and architecture standards
+
+The references under `engineer/standards/` contain verbatim selections from
+Ludo Technologies LLC's python-best-practices and AurigaiT's python-skills.
+Pinned provenance and selection boundaries are in
+[engineer/standards/SOURCES.md](engineer/standards/SOURCES.md); complete MIT notices
+are in [engineer/standards/LICENSES.md](engineer/standards/LICENSES.md).
+Those notices are stored alongside the standards so host installations retain them.
+
+## Historical workflow notices
+
 The notice below preserves attribution from the retired `.ai` implementation. Its
 paths describe that historical layout; links point to the preserved Git revision.
 The current authoring trees were copied in commit `1eb6c97`. That download did not
