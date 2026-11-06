@@ -1,3 +1,4 @@
+<!-- generated-by: doc-writer -->
 # Engineer runtime
 
 Use Python 3.11 or newer. The runtime uses only the standard library. The POSIX
@@ -93,6 +94,25 @@ PLAN/SUMMARY records and covered sources while excluding the report itself.
 working tree, and current check receipts. `verification.append-audit` suppresses
 an identical last audit block.
 
+For quick tasks, pass the explicit task directory to
+`verification.fingerprint`, `verification.status` and `verification.current`,
+for example `.planning/quick/001-repair-behavior`. The directory must be a
+canonical direct child of `.planning/quick` with matching QUICK/PLAN identity.
+Both installed host runtimes use this context. Its fingerprint binds the task's
+own QUICK/PLAN/CONTEXT/SUMMARY records and covered source without consulting a
+roadmap phase. Currentness still requires passed verification, matching inputs,
+an eligible verified ancestor, a clean checkout and applicable check receipts.
+All `QUICK.md` content is bound, so `quick.update` requires a fresh final
+fingerprint and applicable checks before delivery; bookkeeping has no exemption.
+
+Quick `verification.status` returns `passed`, `gaps_found` or `human_needed`
+only with a matching fingerprint; other outcomes are `missing`, `stale`,
+`unparseable` or `phase_dir_not_found`. Invalid status values or mismatched task
+identities fail. These statuses describe the quick report, so a `passed` status
+still requires `verification.current` before delivery. Quick callers supply
+their own recovery actions; phase route projections do not select a quick
+workflow.
+
 ### Report-only successor evidence
 
 Current receipts use schema 2. A check may prospectively declare:
@@ -126,9 +146,11 @@ a declared `.planning/` tree or another directory from protection.
 configured-check evidence. ORIGINAL and FRESH are explicit regular JSON files
 outside the checkout. ORIGINAL must authenticate a complete fresh passing baseline
 at R; H is the full captured current commit. The supported PATH is the exact phase
-`NN-VERIFICATION.md` owned by its matching tracked `NN-CONTEXT.md`. Quick reports
-and arbitrary bookkeeping are unsupported. Clean history must prove every
-intervening commit and merge-parent diff changes only that regular report;
+`NN-VERIFICATION.md` owned by its matching tracked `NN-CONTEXT.md`, or a canonical
+quick `ID-VERIFICATION.md` owned by matching tracked `QUICK.md` and `ID-PLAN.md`
+records. Those owners remain protected inputs; arbitrary bookkeeping is
+unsupported. Clean history must prove every intervening commit and merge-parent
+diff changes only that regular report;
 non-report changes later reverted still fail.
 
 The result keeps `tested_revision` R separate from `qualified_revision` H and
@@ -141,10 +163,12 @@ Save that JSON externally and requalify with `--fresh-evidence-file`. Only
 history or protected-input proof requires a complete fresh baseline; omitted or
 failed original rows cannot be repaired by selecting a passing subset.
 
-`verification.current PHASE --evidence-file ORIGINAL --expected-head H
-[--fresh-evidence-file FRESH]` requalifies checks against that phase's resolved
-report while retaining status, fingerprint, history and dirty-tree gates. A JSON
-claim does not establish currentness. `verification.status` remains metadata only.
+`verification.current CONTEXT --evidence-file ORIGINAL --expected-head H
+[--fresh-evidence-file FRESH]` requalifies checks against the phase or explicit
+quick directory's resolved report while retaining status, fingerprint, history
+and dirty-tree gates. A JSON claim does not establish currentness. Phase
+`verification.status` remains metadata
+only; quick status additionally checks its content fingerprint.
 Qualification does not change the report's tested revision. See the complete
 [verification evidence and lifecycle method](../references/verification-evidence.md).
 
@@ -174,9 +198,20 @@ stacked PRs. `pr.ready` and `pr.merge` require current verification evidence;
 merge additionally requires explicit `--confirm` after the human authorizes it.
 `pr.checks` reads provider checks; `--timeout SECONDS` bounds waiting.
 
+Select a quick owner with `pr.ready BRANCH --quick QUICK_DIR --expected-head H`
+or `pr.merge BRANCH --quick QUICK_DIR --expected-head H --confirm`. Use exactly
+one of `--quick` or `--phase`; quick selection requires the full captured commit
+H. The runtime checks current quick evidence, the local and OPEN PR heads,
+configured receipts and provider checks. Quick readiness also confirms the same
+PR is no longer draft and rechecks evidence after provider readback. These
+commands preserve the independent review and body/link audit requirements;
+selecting a quick owner grants no merge authority.
+
 For qualified successor evidence, `pr.merge BRANCH --phase PHASE --confirm` takes
 the explicit `--evidence-file ORIGINAL`, optional `--fresh-evidence-file FRESH`
-and `--expected-head H` flags. It rechecks the evidence at the final gate, requires
+and `--expected-head H` flags. Quick ready/merge selections accept the same
+evidence-file flags for their own resolved report. Merge rechecks the evidence
+at the final gate, requires
 local HEAD and the OPEN PR head to equal H, uses the provider's exact-head match,
 and requires matching MERGED/head readback. A later write or moved head requires
 fresh proof. These flags grant no merge authorization and bypass no required
