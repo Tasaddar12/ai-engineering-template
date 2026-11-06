@@ -43,7 +43,8 @@ class InstalledHostContracts:
         self.assertEqual(self.host, identity["host"])
         self.assertEqual(self.root/("."+self.host), Path(identity["namespace"]))
         # Exports are fixture inputs, committed before capturing worker bases.
-        self.git("add", ".")
+        # Staging the full installed export can exceed 30s on Windows runners.
+        self.git("add", ".", timeout=120)
         self.git("commit", "-m", "Install fixture runtime")
 
     def cli(self, *args, status=0, raw=False, stdin=None):
@@ -55,10 +56,10 @@ class InstalledHostContracts:
         output = result.stdout or result.stderr
         return output.strip() if raw else json.loads(output)
 
-    def git(self, *args):
+    def git(self, *args, timeout=30):
         return subprocess.run(["git", *map(str, args)], cwd=self.root, check=True,
                               text=True, encoding="utf-8", capture_output=True,
-                              timeout=30).stdout.strip()
+                              timeout=timeout).stdout.strip()
 
     def prepare(self, agent=CANONICAL):
         self.init_records()
