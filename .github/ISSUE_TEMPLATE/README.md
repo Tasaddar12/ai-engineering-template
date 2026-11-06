@@ -47,13 +47,15 @@ Use [Decision required](decision-required.yml).
 Use [Security risk](security-risk.yml).
 
 Standalone issues require no PLAN: record their assessment, mitigation and secure
-check directly in the fields above. Only checklist containers/entries substitute
+check directly in the linked Security risk form's Report fields. Only checklist
+containers/entries substitute
 `PLAN assessment:` and `PLAN mitigation:` links (including verification) for those
 values rather than repeating severity or mitigation. Keep every required heading.
 
 For new planned risks, including accepted/deferred risks, without an existing
 canonical match, this same Security risk variant is the mandatory default phase
-checklist container; keep every required heading above. Follow the deterministic title/label lookup
+checklist container; keep every required heading in its Report body. Follow the
+deterministic title/label lookup
 before semantic risk search: search open and closed issues and current PR context;
 reuse an actionable full-scope match and verify its URL before publication.
 Under Risk assessment and lifecycle, give every risk a stable `###` heading in
@@ -92,7 +94,8 @@ Use [UAT](uat.yml).
 
 ## How to fill it
 
-- Use the visible field shape and answer size in the selected block. Replace
+- Use the visible field shape and answer size in the selected form's Report body.
+  Replace
   every bracketed value with actual information; remove remaining prompts,
   examples and instructional text before publishing.
 - When formatting an existing issue, preserve its type from the original intent,
@@ -104,7 +107,7 @@ Use [UAT](uat.yml).
 - Preserve the selected variant's headings, order and table/result structure;
   retain UAT's Human acceptance fields. The author and coordinator review this
   shape before publication. `todo.issue-publish --variant "<canonical variant>"`
-  validates headings/order and UAT table/acceptance fields against this template
+  validates headings/order and UAT table/acceptance fields against the selected form
   before supported TODO publication. `issue.validate --variant "<canonical variant>"
   --body-file PATH` provides the same read-only structural check for other drafts.
   Direct `gh`/API creates or edits bypass this runtime gate. Structural success
@@ -128,13 +131,17 @@ Use [UAT](uat.yml).
   Preserve genuine product bugs as FAIL/unresolved; never change instructions
   to hide a failing behavior. An uncertain create still requires the existing
   exact-intent recovery procedure, never a duplicate create.
-- For UAT and user-facing bug reproduction, follow the [canonical UAT authoring
-  contract](../../engineer/templates/UAT.md#authoring-contract): verify the entry point, visible labels,
+- For UAT and user-facing bug reproduction, verify the entry point, visible labels,
   inputs and key behavior against the delivered UI. Mark unavailable functions
   or unverified entry points `BLOCKED` with the missing prerequisite; never
   invent controls or claim a pass. AI/maintainer prepares the build, access,
   fixtures and technical evidence in the separate maintainer record.
-- For security risks, follow the security guidance below.
+  Read the related UAT session template at `engineer/templates/UAT.md` in a
+  source checkout. In an installation, read
+  `.codex/engineer/templates/UAT.md` or `.claude/engineer/templates/UAT.md`,
+  relative to the project root for local scope or the selected home target for
+  global scope.
+- For security risks, follow the Security risk guidance above.
   Keep stable key, aliases, owner, observed status and evidence here. Standalone
   issues carry actionable assessment/mitigation/checks without requiring a PLAN;
   checklist entries link their owning PLAN assessment/mitigation instead.
