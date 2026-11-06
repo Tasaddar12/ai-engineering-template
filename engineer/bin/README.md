@@ -17,6 +17,13 @@ Claude host environment variables are present. `ENGINEER_HOST` explicitly select
 `claude` or `codex`. Commands operate on the current Git checkout;
 `ENGINEER_ROOT` explicitly selects an alternate project root.
 
+Publication validation reads the canonical issue forms in
+`.github/ISSUE_TEMPLATE/` and the PR body in `.github/pull_request_template.md`.
+In a source checkout or local installation, these paths belong to the project
+root. A global installation keeps its publication templates inside the selected
+host namespace's `.github/` directory. Local installations make these files
+available to GitHub in the consumer repository.
+
 Every command accepts `--raw`, `--json`, and `--pick dotted.field`. A picked scalar
 prints without JSON quotes; booleans print `true` / `false`, and collections print
 compact JSON. Missing picked fields fail with `pick-missing`. Output never uses

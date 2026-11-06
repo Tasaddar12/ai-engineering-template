@@ -43,8 +43,9 @@ processes separate from ongoing user services and benchmarks.
 
 Stage only owned paths, inspect the diff and commit each completed meaningful
 slice with its check evidence. Push when delivery is authorized and keep the
-existing draft PR current. Use the
-[Git workflow](engineer/references/git-workflow.md) and its publication templates.
+existing draft PR current. Follow [AGENTS.md](AGENTS.md) and use the
+[PR template](.github/pull_request_template.md) and
+[issue forms and authoring guidance](.github/ISSUE_TEMPLATE/README.md).
 Independent review, current verification and required remote checks precede
 readiness; the user's specific merge authorization and repository protections
 govern the merge.

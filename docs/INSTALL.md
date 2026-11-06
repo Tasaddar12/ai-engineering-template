@@ -77,6 +77,17 @@ Codex runtime, commands, agent definitions and configuration remain under
 `<target>/.codex/`. Claude keeps its exports, including skills, under
 `<target>/.claude/`.
 
+Publication templates are authored only under the source repository's `.github/`
+directory. A local installation for either host exports the five issue forms
+from `.github/ISSUE_TEMPLATE/`, their authoring guide, and
+`.github/pull_request_template.md` to the same paths in the target project.
+The repository itself uses these templates too. A global installation keeps
+these assets under `<target>/.codex/.github/` or `<target>/.claude/.github/`
+for its runtime; it does not create a home-level `.github/` directory. Install
+locally in a consumer repository to make its templates available on GitHub.
+Template files participate in the same ownership, customization-conflict,
+backup and rollback handling as other managed exports.
+
 The ownership manifest is
 `<target>/<namespace>/engineer-install/manifest.json`. New schema 2 manifests
 record `source = "."`, `source_kind = "git-snapshot"`, the pinned revision, host,
@@ -187,6 +198,12 @@ Preserve it or reconcile it explicitly; a selected conflict requires the reviewe
 application to exact target-relative paths. Unselected work can leave an
 installation incomplete. Unmanaged additions, retired owned paths and project
 planning records are preserved. Revalidate after updating.
+
+Updates to this layout preserve previously installed
+`engineer/templates/issue.md`, `engineer/templates/pull-request.md` and
+`engineer/references/git-workflow.md` as retired owned paths. Current publication
+validation reads the `.github/` templates. Remove confirmed legacy leftovers
+separately within the authorized cleanup scope.
 
 For an older Codex installation, unchanged owned files in `.codex/skills` are
 exported to `.agents/skills`; the old files remain preserved. The updated managed
