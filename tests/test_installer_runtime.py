@@ -102,12 +102,12 @@ class CurrentInstallerTests(unittest.TestCase):
                 runtime = self.target / ("." + host) / "engineer/bin/engineer.py"
                 env = {**os.environ, "ENGINEER_ROOT": str(self.target), "ENGINEER_HOST": host}
 
-                def query(*args):
+                def query(*args, expected=0):
                     result = subprocess.run([sys.executable, "-I", str(runtime), "query", *map(str, args)],
                                             cwd=self.target, env=env, capture_output=True,
                                             text=True, encoding="utf-8", timeout=60)
-                    self.assertEqual(0, result.returncode, result.stderr)
-                    return json.loads(result.stdout)
+                    self.assertEqual(expected, result.returncode, result.stderr)
+                    return json.loads(result.stdout if expected == 0 else result.stderr)
 
                 task = query("quick.create", "Repair behavior")
                 directory = Path(task["directory"])
@@ -125,6 +125,52 @@ class CurrentInstallerTests(unittest.TestCase):
                 git(self.target, "commit", "-m", "quick report")
                 self.assertTrue(query("verification.current", directory)["current"])
                 self.assertFalse((self.target / ".planning/ROADMAP.md").exists())
+                # Exercise installed delivery with only the external provider replaced.
+                git(self.target, "remote", "add", "origin", "https://github.com/example/project.git")
+                head = git(self.target, "rev-parse", "HEAD")
+                seam = self.base / (host + "-provider.py")
+                calls = self.base / (host + "-provider-calls.jsonl")
+                seam.write_text('''import json, os, runpy, subprocess, sys
+original = subprocess.run
+pull = json.loads(os.environ["FAKE_GH_PULL"])
+def provider(command, **options):
+    if command and command[0] == "gh":
+        with open(os.environ["FAKE_GH_CALLS"], "a", encoding="utf-8") as output:
+            output.write(json.dumps(command) + "\\n")
+        if command[1:3] == ["pr", "ready"]:
+            pull["isDraft"] = False
+        elif command[1:3] == ["pr", "merge"]:
+            pull["state"] = "MERGED"
+        elif command[1:3] != ["pr", "view"]:
+            raise AssertionError(command)
+        return subprocess.CompletedProcess(command, 0, json.dumps(pull), "")
+    return original(command, **options)
+subprocess.run = provider
+sys.argv = [os.environ["FAKE_RUNTIME"], *sys.argv[1:]]
+runpy.run_path(os.environ["FAKE_RUNTIME"], run_name="__main__")
+''', encoding="utf-8")
+                provider_env = {**env, "FAKE_RUNTIME": str(runtime), "FAKE_GH_CALLS": str(calls),
+                                "FAKE_GH_PULL": json.dumps(dict(number=12, url="https://github.com/example/project/pull/12",
+                                    state="OPEN", isDraft=True, headRefName="main", headRefOid=head,
+                                    statusCheckRollup=[dict(name="validate", conclusion="SUCCESS")], mergeable="MERGEABLE"))}
+                for action in ("ready", "merge"):
+                    result = subprocess.run([sys.executable, "-I", str(seam), "query", "pr."+action,
+                                             "--quick", str(directory), "--expected-head", head,
+                                             *(["--confirm"] if action == "merge" else [])],
+                                            cwd=self.target, env=provider_env, capture_output=True,
+                                            text=True, encoding="utf-8", timeout=60)
+                    self.assertEqual(0, result.returncode, result.stderr)
+                    self.assertTrue(json.loads(result.stdout)["ready" if action == "ready" else "merged"])
+                recorded = [json.loads(line) for line in calls.read_text(encoding="utf-8").splitlines()]
+                merge = next(call for call in recorded if call[1:3] == ["pr", "merge"])
+                self.assertIn("--match-head-commit", merge)
+                self.assertEqual(head, merge[merge.index("--match-head-commit")+1])
+                self.assertFalse(any("--admin" in call for call in recorded))
+                (self.target / "app.py").write_text("value = 2\n", encoding="utf-8")
+                self.assertEqual("stale", query("verification.status", directory)["status"])
+                self.assertFalse(query("verification.current", directory)["current"])
+                report.write_text('---\nstatus: invented\n---\n', encoding="utf-8")
+                self.assertEqual("invalid-verification-status", query("verification.status", directory, expected=2)["error"])
 
     def test_clean_installs_both_hosts_and_scopes_are_noop_on_rerun(self):
         for host in ("codex", "claude"):
