@@ -80,8 +80,7 @@ Codex runtime, commands, agent definitions and configuration remain under
 Publication templates are authored only under the source repository's `.github/`
 directory. A local installation for either host exports the eight issue forms
 from `.github/ISSUE_TEMPLATE/` (Bug, Enhancement, Feature request, Docs issue,
-Chore, Decision required, Security risk and UAT), their authoring guide,
-the default `.github/pull_request_template.md`, and the separate
+Chore, Decision required, Security risk and UAT), their authoring guide, and the
 `.github/PULL_REQUEST_TEMPLATE/enhancement.md`, `feature.md` and `fix.md` bodies
 to the same paths in the target project.
 The repository itself uses these templates too. A global installation keeps
@@ -93,10 +92,14 @@ backup and rollback handling as other managed exports.
 
 For PR creation on GitHub, select a separate body with the `template` query
 parameter: `template=enhancement.md`, `template=feature.md` or `template=fix.md`.
-These files provide task-specific Goal, Changes and Verification prompts while
-retaining the default body's common required fields. GitHub does not add an
-automatic PR type picker; the default template's authoring guidance explains
-selection. Feature request is the dedicated issue form for a new capability;
+These files provide task-specific Goal, Changes and Verification prompts and
+retain the common required fields. Each includes full authoring guidance.
+GitHub does not add an automatic PR type picker. Runtime `pr.open` accepts
+`--template enhancement`, `--template feature` or `--template fix` to validate
+the supplied body against that template; existing invocations select enhancement
+when the option is omitted. The installer exports only these three PR bodies
+and does not create a default PR template. Feature request is the dedicated issue
+form for a new capability;
 Enhancement retains the existing request shape for improving a capability.
 
 The ownership manifest is
@@ -215,6 +218,8 @@ Updates to this layout preserve previously installed
 `engineer/references/git-workflow.md` as retired owned paths. Current publication
 validation reads the `.github/` templates. Remove confirmed legacy leftovers
 separately within the authorized cleanup scope.
+Previously installed default PR templates are likewise preserved as retired
+owned paths; the current installer does not export or recreate them.
 
 For an older Codex installation, unchanged owned files in `.codex/skills` are
 exported to `.agents/skills`; the old files remain preserved. The updated managed

@@ -44,8 +44,10 @@ processes separate from ongoing user services and benchmarks.
 Stage only owned paths, inspect the diff and commit each completed meaningful
 slice with its check evidence. Push when delivery is authorized and keep the
 existing draft PR current. Follow [AGENTS.md](AGENTS.md) and use the
-[default PR template and selection guidance](.github/pull_request_template.md),
-the appropriate [PR variant](.github/PULL_REQUEST_TEMPLATE/) when applicable, and
+[enhancement](.github/PULL_REQUEST_TEMPLATE/enhancement.md),
+[feature](.github/PULL_REQUEST_TEMPLATE/feature.md) or
+[fix](.github/PULL_REQUEST_TEMPLATE/fix.md) PR template and its authoring guidance,
+and the
 [issue forms and authoring guidance](.github/ISSUE_TEMPLATE/README.md).
 Independent review, current verification and required remote checks precede
 readiness; the user's specific merge authorization and repository protections

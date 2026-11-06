@@ -86,8 +86,10 @@ Commit each completed meaningful slice with a descriptive message. Stage only
 owned paths and inspect staged content; preserve unrelated user work. When
 delivery is authorized, push and keep the existing draft PR current, or create
 one on the first push. Use the current
-[default PR template and selection guidance](.github/pull_request_template.md),
-the appropriate [PR variant](.github/PULL_REQUEST_TEMPLATE/) when applicable, and
+[enhancement](.github/PULL_REQUEST_TEMPLATE/enhancement.md),
+[feature](.github/PULL_REQUEST_TEMPLATE/feature.md) or
+[fix](.github/PULL_REQUEST_TEMPLATE/fix.md) PR template and its authoring guidance,
+and the
 [issue forms and authoring guidance](.github/ISSUE_TEMPLATE/README.md)
 for publication.
 

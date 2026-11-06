@@ -18,7 +18,7 @@ Claude host environment variables are present. `ENGINEER_HOST` explicitly select
 `ENGINEER_ROOT` explicitly selects an alternate project root.
 
 Publication validation reads the canonical issue forms in
-`.github/ISSUE_TEMPLATE/` and the default PR body in `.github/pull_request_template.md`.
+`.github/ISSUE_TEMPLATE/` and the selected PR body in `.github/PULL_REQUEST_TEMPLATE/`.
 Issue variants include Docs issue, Chore and Feature request alongside Bug,
 Enhancement, Decision required, Security risk and UAT. Separate enhancement,
 feature and fix PR bodies live in `.github/PULL_REQUEST_TEMPLATE/`; each retains
@@ -181,9 +181,12 @@ the local record. An uncertain provider outcome requires inspection before retry
 `phase.issue-declare` uses an expected digest to protect finding declarations.
 `phase.handoff` checks summaries and issue relationships.
 
-`pr.open` validates the PR template, pushes a clean branch, creates a draft (or
-updates its existing PR), and validates provider readback. `--base` supports
-stacked PRs. `pr.ready` and `pr.merge` require current verification evidence;
+`pr.open` validates the supplied body against the selected PR template, pushes a
+clean branch, creates a draft (or updates its existing PR), and validates provider
+readback. Select `--template enhancement`, `--template feature` or `--template fix`;
+omitting this option selects enhancement. Unknown selections fail, and a missing
+selected template within an installed PR template directory is an error.
+`--base` supports stacked PRs. `pr.ready` and `pr.merge` require current verification evidence;
 merge additionally requires explicit `--confirm` after the human authorizes it.
 `pr.checks` reads provider checks; `--timeout SECONDS` bounds waiting.
 
@@ -362,7 +365,7 @@ passed as one shell argument. `--raw`, `--json`, and `--pick FIELD` are global.
 | `worktree.merge-wave` | `--phase N` | workers/merged/removed/preserved/wave_clean; protected/dirty integration blocks |
 | `worktree.cleanup-wave` | `--phase N` | removes recorded integrated clean workers; preserves unmerged workers |
 | `worktree.reap-orphans` | none | pruned Git administrative records; never removes live checkouts |
-| `pr.open` | `[BRANCH] --title TITLE --body-file FILE [--base REF --phase N]` | read-back draft PR, created boolean; title can default to last subject |
+| `pr.open` | `[BRANCH] --title TITLE --body-file FILE [--base REF --phase N --template enhancement\|feature\|fix]` | read-back draft PR, created boolean; title can default to last subject; template defaults to enhancement |
 | `pr.status` | `[BRANCH]` | provider PR or exists=false |
 | `pr.checks` | `[BRANCH] [--timeout SECONDS]` | check status/count/failed/pending/url; pending/failed exits 1 |
 | `pr.ready` | `[BRANCH] --phase N` | ready boolean after current verification gate |

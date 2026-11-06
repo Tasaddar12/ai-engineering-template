@@ -29,6 +29,11 @@ URL: template=enhancement.md, template=feature.md or template=fix.md. Add it wit
 provide an automatic PR type picker for these files. See:
 https://docs.github.com/en/pull-requests/reference/using-query-parameters-to-create-a-pull-request
 
+For runtime publication, pass the completed body with pr.open --body-file PATH
+and select --template enhancement, --template feature or --template fix.
+Omitting --template selects enhancement for validation. This option selects the
+validation template; compose the body from the chosen file before publication.
+
 ## File Template
 
 
