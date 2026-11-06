@@ -155,7 +155,9 @@ else:
                     self.target = self.base / (host + '-' + scope)
                     self.assertTrue(self.install(host, scope)['complete'])
                     namespace = self.target / ('.' + host)
+                    reference_namespace = installer.reference_namespace(host, scope)
                     guide = namespace / 'engineer/references/coding-standards.md'
+                    guide_reference = (reference_namespace / 'engineer/references/coding-standards.md').as_posix()
                     installed_standards = namespace / 'engineer/standards'
                     self.assertIn('only the files matching', guide.read_text(encoding='utf-8'))
                     self.assertTrue((guide.parent / '../standards/README.md').is_file())
@@ -167,13 +169,14 @@ else:
                         self.assertEqual(source.read_bytes(), installed.read_bytes(), str(installed))
                     for role in roles:
                         method = namespace / 'agents' / (role + '.md')
-                        self.assertIn('@' + guide.as_posix(), method.read_text(encoding='utf-8'))
+                        self.assertIn('@' + guide_reference, method.read_text(encoding='utf-8'))
                         if host == 'codex':
                             native = tomllib.loads(method.with_suffix('.toml').read_text(encoding='utf-8'))
-                            self.assertIn(method.as_posix(), native['developer_instructions'])
+                            method_reference = (reference_namespace / 'agents' / (role + '.md')).as_posix()
+                            self.assertIn(method_reference, native['developer_instructions'])
                     for workflow in ('fast', 'execute-phase'):
                         text = (namespace / 'engineer/workflows' / (workflow + '.md')).read_text(encoding='utf-8')
-                        self.assertIn('@' + guide.as_posix(), text)
+                        self.assertIn('@' + guide_reference, text)
                     # Reference standards do not become callable skills.
                     self.assertFalse(any(installed_standards.rglob('SKILL.md')))
                     skills = self.target / ('.agents/skills' if host == 'codex' else '.claude/skills')
