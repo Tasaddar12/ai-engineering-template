@@ -35,43 +35,6 @@
 }
 ```
 
-### Token Pair Pattern
-
-```python
-# app/core/security.py
-from datetime import datetime, timedelta, timezone
-import jwt
-from app.core.config import settings
-
-ACCESS_TOKEN_EXPIRE = timedelta(minutes=15)
-REFRESH_TOKEN_EXPIRE = timedelta(days=7)
-
-
-def create_access_token(user_id: str, scopes: list[str]) -> str:
-    """Short-lived access token."""
-    payload = {
-        "sub": user_id,
-        "scopes": scopes,
-        "exp": datetime.now(timezone.utc) + ACCESS_TOKEN_EXPIRE,
-        "iat": datetime.now(timezone.utc),
-        "type": "access",
-    }
-    return jwt.encode(payload, settings.secret_key, algorithm="HS256")
-
-
-def create_refresh_token(user_id: str) -> str:
-    """Long-lived refresh token — stored in httpOnly cookie or secure storage."""
-    payload = {
-        "sub": user_id,
-        "exp": datetime.now(timezone.utc) + REFRESH_TOKEN_EXPIRE,
-        "iat": datetime.now(timezone.utc),
-        "type": "refresh",
-    }
-    return jwt.encode(payload, settings.refresh_secret_key, algorithm="HS256")
-
-
-```
-
 ### Token Refresh Flow
 
 ```

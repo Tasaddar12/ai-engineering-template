@@ -60,6 +60,9 @@ the exported standards tree.
 - The API design error-envelope example duplicates the fuller error-handling
   document; its request and success examples remain. Framework-specific examples
   retain their original shapes.
+- The authentication token-pair example lacks the `jti` required by its revocation
+  pattern and can issue identical refresh tokens within one second. Its payload
+  structure, rotation flow, revocation helpers and other authentication sections remain.
 - `skills/common/llm-patterns.md` specializes prompt management, provider clients,
   conversation buffers and token-cost/rate accounting. It is outside this general
   Python, SQL and API/architecture standards collection.

@@ -1366,22 +1366,22 @@
       "fragments": [
         {
           "start_line": 1,
-          "end_line": 72,
-          "sha256": "a704ae7beeaf64436ddf536f3b13b71a1dc31b96e09676f375333a7e1c311b26"
+          "end_line": 37,
+          "sha256": "e1e503de45e6e414ee42ae8eeaf42b8c76413721dd228256f108e09884a2ca5b"
         },
         {
-          "start_line": 77,
+          "start_line": 79,
           "end_line": 309,
-          "sha256": "10ce049da5f142038b75d5358ebc7d81a1c6044025ed967e4f2579d2dde6867e"
+          "sha256": "0174caaede846eb0309d59f8cc2ad7a2635ec58afcdbfa41ecc092d463ab1d61"
         }
       ],
-      "sha256": "6533ae8ff21502878cbd9ca5a1259cbe702ad55471b13eb1f6586490a57e1101",
+      "sha256": "a466aeebd64106f2abd44f85e53f5d1381dbed352ccdb267a1c93fa1768d4096",
       "source_line_count": 309,
       "omissions": [
         {
-          "start_line": 73,
-          "end_line": 76,
-          "reason": "Verification does not require expiry or verify the token-type claim."
+          "start_line": 38,
+          "end_line": 78,
+          "reason": "The token-pair example omits jti required by the retained revocation pattern and can issue identical refresh tokens within one second; its verification also does not require expiry or verify token type."
         }
       ]
     },
