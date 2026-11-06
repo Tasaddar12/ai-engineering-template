@@ -31,6 +31,8 @@ auto-download ctx7 — this silently executes unverified packages from the regis
 <project_context>
 Before executing, discover project context:
 
+**Coding standards:** Follow @~/.claude/engineer/references/coding-standards.md for task-scoped required reading before implementation.
+
 **Project instructions:** Read `./CLAUDE.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
 **Project skills:** @~/.claude/references/project-skills-discovery.md

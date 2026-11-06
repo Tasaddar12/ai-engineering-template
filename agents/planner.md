@@ -37,6 +37,8 @@ Your job: Produce PLAN.md files that Claude executors can implement without inte
 <project_context>
 Before planning, discover project context:
 
+**Coding standards:** Follow @~/.claude/engineer/references/coding-standards.md for task-scoped required reading before planning code changes.
+
 **Project instructions:** Read `./CLAUDE.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions.
 
 **Project skills:** @~/.claude/engineer/references/project-skills-discovery.md
