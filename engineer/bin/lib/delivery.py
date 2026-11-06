@@ -10,6 +10,7 @@ from . import config, gitops, verification, repository, issue_format
 from .core import Args, Failure, read, root, run, safe_path
 
 PR_FIELDS = "number,url,state,isDraft,headRefName,headRefOid,baseRefName,statusCheckRollup,mergeable,title,body"
+PR_TEMPLATE_NAMES = ("enhancement", "feature", "fix")
 
 
 def gh(args, check=True, timeout=60):
@@ -45,10 +46,15 @@ def classify_checks(checks):
             "failed": failed, "pending": pending, "count": len(checks)}
 
 
-def validate_body(body):
+def validate_body(body, template_name="enhancement"):
     if not body.strip():
         raise Failure("invalid-pr-body", "Pull request body cannot be empty")
-    template = read(issue_format.github_directory()/"pull_request_template.md")
+    if template_name not in PR_TEMPLATE_NAMES:
+        raise Failure("invalid-pr-template", "Select enhancement, feature or fix")
+    directory = issue_format.github_directory()/"PULL_REQUEST_TEMPLATE"
+    template = read(directory/(template_name+".md"))
+    if directory.is_dir() and not template:
+        raise Failure("invalid-pr-body", "Selected canonical PR template is missing or empty")
     # Source checkouts can run before authoring templates are installed. These
     # are publication fields, not the headings of the template's instructions.
     required = ["Goal", "Changes", "Verification", "Known gaps", "Risks or rollback"]
@@ -156,7 +162,7 @@ def command(args, action):
     run(["git", "rev-parse", base+"^{commit}"], root())
     title = args.get("title", run(["git", "log", "-1", "--format=%s"], root()).stdout.strip())
     body = read(safe_path(args.get("body-file"))) if args.has("body-file") else str(args.get("body", ""))
-    validate_body(body)
+    validate_body(body, args.get("template", "enhancement"))
     if args.has("phase"):
         from .phase_issues import audit_pr
         audit_pr(args.get("phase"), body)

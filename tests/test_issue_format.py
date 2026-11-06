@@ -259,6 +259,28 @@ class IssueFormat(unittest.TestCase):
 
 
 class PullRequestFormat(unittest.TestCase):
+    def test_selected_variant_reads_its_own_canonical_template(self):
+        directory = issue_format.github_directory() / 'PULL_REQUEST_TEMPLATE'
+        for name in ('enhancement', 'feature', 'fix'):
+            with self.subTest(name=name), patch.object(delivery, 'read', return_value='## Outcome\nPrompt') as reader:
+                delivery.validate_body('## Outcome\nObserved result', name)
+                reader.assert_called_once_with(directory / (name+'.md'))
+
+    def test_unknown_pr_template_is_rejected_before_path_selection(self):
+        for name in ('../fix', 'default', '', True, None):
+            with self.subTest(name=name), self.assertRaises(Failure) as caught:
+                delivery.validate_body('Public facts', name)
+            self.assertEqual('invalid-pr-template', caught.exception.code)
+
+    def test_present_directory_requires_selected_template(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            github = Path(temporary) / '.github'
+            (github / 'PULL_REQUEST_TEMPLATE').mkdir(parents=True)
+            with patch.object(issue_format, 'github_directory', return_value=github):
+                with self.assertRaises(Failure) as caught:
+                    delivery.validate_body('Public facts', 'fix')
+                self.assertEqual('invalid-pr-body', caught.exception.code)
+
     def test_malformed_template_cannot_disable_required_sections(self):
         for template in ('<!-- instructions only -->', '# Incomplete template',
                          '## Requirements or Issues\nOptional\n\n## Stack\nOptional'):

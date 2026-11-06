@@ -107,8 +107,9 @@ class CurrentInstallerTests(unittest.TestCase):
                         self.assertEqual(form.read_bytes(), installed.read_bytes())
                         self.assertEqual('.github/ISSUE_TEMPLATE/' + form.name,
                                          manifest['files'][installed.relative_to(self.target).as_posix()]['source_path'])
-                    pr = github / 'pull_request_template.md'
-                    self.assertEqual((ROOT / '.github/pull_request_template.md').read_bytes(), pr.read_bytes())
+                    self.assertFalse((github / 'pull_request_template.md').exists())
+                    self.assertFalse(any(entry.get('source_path') == '.github/pull_request_template.md'
+                                         for entry in manifest['files'].values()))
                     self.assertEqual({'docs_issue.yml', 'chore.yml', 'feature_request.yml'},
                                      {path.name for path in source_forms.glob('*.yml')}
                                      & {'docs_issue.yml', 'chore.yml', 'feature_request.yml'})
@@ -128,12 +129,12 @@ from lib import issue_format, delivery
 for variant in issue_format.VARIANTS:
     _, body = issue_format.form_body(issue_format.template_path(variant))
     issue_format.validate(body, variant)
-body = (issue_format.github_directory() / 'pull_request_template.md').read_text(encoding='utf-8')
+body = (issue_format.github_directory() / 'PULL_REQUEST_TEMPLATE/enhancement.md').read_text(encoding='utf-8')
 body = re.sub(r'<!--.*?-->', '', body, flags=re.S)
 delivery.validate_body(body)
 for path in (issue_format.github_directory() / 'PULL_REQUEST_TEMPLATE').glob('*.md'):
     variant_body = re.sub(r'<!--.*?-->', '', path.read_text(encoding='utf-8'), flags=re.S)
-    delivery.validate_body(variant_body)
+    delivery.validate_body(variant_body, path.stem)
 try:
     delivery.validate_body(re.sub(r'^## Goal$', '## Removed', body, flags=re.M))
 except Exception as exc:
