@@ -56,6 +56,8 @@ def validate_body(body):
         required = [match[1].strip() for line in issue_format.visible_lines(template)
                     if (match := re.match(r"^##\s+(.+)$", line))
                     and match[1].strip() not in ("Requirements or Issues", "Stack")]
+        if not required:
+            raise Failure("invalid-pr-body", "Canonical PR template has no required sections")
     missing = [heading for heading in required if not re.search(r"(?m)^##\s+"+re.escape(heading)+r"\s*$", body)]
     if missing:
         raise Failure("invalid-pr-body", "Missing template sections", missing=missing)

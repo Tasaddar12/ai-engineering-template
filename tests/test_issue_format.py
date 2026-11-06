@@ -5,11 +5,12 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "engineer/bin"))
-from lib import issue_format
+from lib import issue_format, delivery
 from lib.core import Failure
 
 TEMPLATE = ROOT / ".github/ISSUE_TEMPLATE"
@@ -254,6 +255,23 @@ class IssueFormat(unittest.TestCase):
                 result = subprocess.run(command, cwd=root, capture_output=True, text=True)
                 self.assertEqual(result.returncode, 1)
                 self.assertIn('"issue-schema"', result.stderr)
+
+
+class PullRequestFormat(unittest.TestCase):
+    def test_malformed_template_cannot_disable_required_sections(self):
+        for template in ('<!-- instructions only -->', '# Incomplete template',
+                         '## Requirements or Issues\nOptional\n\n## Stack\nOptional'):
+            with self.subTest(template=template), patch.object(delivery, 'read', return_value=template):
+                with self.assertRaises(Failure) as caught:
+                    delivery.validate_body('Unstructured public body')
+                self.assertEqual('invalid-pr-body', caught.exception.code)
+
+    def test_template_instructions_do_not_become_public_sections(self):
+        template = '<!--\n## Instructions\nOnly authoring guidance\n-->\n\n## Goal\nOutcome\n'
+        with patch.object(delivery, 'read', return_value=template):
+            delivery.validate_body('## Goal\nObserved outcome\n')
+            with self.assertRaises(Failure):
+                delivery.validate_body('## Instructions\nMissing goal\n')
 
 
 if __name__ == "__main__":

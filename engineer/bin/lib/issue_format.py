@@ -94,6 +94,17 @@ def tables(lines, code):
 def github_directory():
     """Global assets belong to the runtime; local forms belong to the project."""
     installed = models.NAMESPACE/".github"
+    manifest = models.NAMESPACE/"engineer-install/manifest.json"
+    if manifest.is_file():
+        try:
+            scope = json.loads(read(manifest))["scope"]
+        except (ValueError, KeyError, TypeError) as exc:
+            raise Failure("issue-schema", "Installed template scope is invalid: "+str(manifest)) from exc
+        if scope == "local":
+            return root()/".github"
+        if scope == "global":
+            return installed
+        raise Failure("issue-schema", "Installed template scope is invalid: "+str(manifest))
     return installed if installed.is_dir() else root()/".github"
 
 

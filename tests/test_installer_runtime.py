@@ -146,6 +146,37 @@ else:
         self.install('claude')
         self.assertEqual('name: Customized project form\n', form.read_text(encoding='utf-8'))
 
+    def test_github_templates_follow_scope_after_global_local_transition(self):
+        for host in ('codex', 'claude'):
+            with self.subTest(host=host):
+                self.target = self.base / host
+                self.assertTrue(self.install(host, 'global')['complete'])
+                self.assertTrue(self.install(host, 'local')['complete'])
+                namespace = self.target / ('.' + host)
+                # Retired global assets remain, but cannot shadow local forms.
+                global_form = namespace / '.github/ISSUE_TEMPLATE/bug.yml'
+                self.assertTrue(global_form.exists())
+                global_form.write_text('name: Damaged retired form\n', encoding='utf-8')
+                driver = '''import sys
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+from lib import issue_format
+assert issue_format.github_directory() == Path.cwd()/'.github'
+issue_format.schema()
+'''
+                checked = subprocess.run([sys.executable, '-I', '-c', driver, str(namespace / 'engineer/bin')],
+                                         cwd=self.target, capture_output=True, text=True, encoding='utf-8')
+                self.assertEqual(0, checked.returncode, checked.stdout + checked.stderr)
+                # Switching back must ignore the retained local project assets.
+                global_form.unlink()
+                self.assertTrue(self.install(host, 'global')['complete'])
+                local_form = self.target / '.github/ISSUE_TEMPLATE/bug.yml'
+                local_form.write_text('name: Damaged retired local form\n', encoding='utf-8')
+                driver = driver.replace("Path.cwd()/'.github'", "Path(sys.argv[1]).parents[1]/'.github'")
+                checked = subprocess.run([sys.executable, '-I', '-c', driver, str(namespace / 'engineer/bin')],
+                                         cwd=self.target, capture_output=True, text=True, encoding='utf-8')
+                self.assertEqual(0, checked.returncode, checked.stdout + checked.stderr)
+
     def test_clean_installs_both_hosts_and_scopes_are_noop_on_rerun(self):
         for host in ("codex", "claude"):
             for scope in ("local", "global"):
