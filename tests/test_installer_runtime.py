@@ -91,6 +91,41 @@ class CurrentInstallerTests(unittest.TestCase):
                 (path.read_bytes(), path.stat().st_mtime_ns)
                 for path in self.target.rglob("*") if path.is_file()}
 
+    def test_installed_quick_verification_for_both_hosts(self):
+        for host in ("codex", "claude"):
+            with self.subTest(host=host):
+                self.target = self.base / (host + "-quick")
+                self.assertTrue(self.install(host)["applied"])
+                git(self.target, "init", "-b", "main")
+                git(self.target, "config", "user.name", "Installer Fixture")
+                git(self.target, "config", "user.email", "fixture@example.invalid")
+                runtime = self.target / ("." + host) / "engineer/bin/engineer.py"
+                env = {**os.environ, "ENGINEER_ROOT": str(self.target), "ENGINEER_HOST": host}
+
+                def query(*args):
+                    result = subprocess.run([sys.executable, "-I", str(runtime), "query", *map(str, args)],
+                                            cwd=self.target, env=env, capture_output=True,
+                                            text=True, encoding="utf-8", timeout=60)
+                    self.assertEqual(0, result.returncode, result.stderr)
+                    return json.loads(result.stdout)
+
+                task = query("quick.create", "Repair behavior")
+                directory = Path(task["directory"])
+                identifier = task["quick_id"]
+                (directory / (identifier + "-PLAN.md")).write_text(
+                    '---\nfiles_modified: [app.py]\nmust_haves: {}\n---\nRepair behavior\n', encoding="utf-8")
+                (self.target / "app.py").write_text("value = 1\n", encoding="utf-8")
+                report = directory / (identifier + "-VERIFICATION.md")
+                report.write_text('---\nstatus: passed\n---\nObserved behavior\n', encoding="utf-8")
+                git(self.target, "add", ".")
+                git(self.target, "commit", "-m", "quick source")
+                self.assertEqual(str(report), query("verification.fingerprint", directory)["path"])
+                self.assertEqual("passed", query("verification.status", directory)["status"])
+                git(self.target, "add", str(report))
+                git(self.target, "commit", "-m", "quick report")
+                self.assertTrue(query("verification.current", directory)["current"])
+                self.assertFalse((self.target / ".planning/ROADMAP.md").exists())
+
     def test_clean_installs_both_hosts_and_scopes_are_noop_on_rerun(self):
         for host in ("codex", "claude"):
             for scope in ("local", "global"):

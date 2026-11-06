@@ -20,18 +20,82 @@ def configured_checks():
     return result
 
 
+def verification_dir(value):
+    """Accept quick owners here without broadening roadmap phase resolution."""
+    candidate = Path(str(value))
+    candidate = candidate if candidate.is_absolute() else root()/candidate
+    if candidate.parent == records.planning()/"quick":
+        candidate = _safe(candidate)
+        if not candidate.is_dir():
+            raise Failure("quick-not-found", str(value))
+        quick_identity(candidate)
+        return candidate
+    return records.phase_dir(value)
+
+
+def unit_id(directory):
+    if directory.parent == records.planning()/"quick":
+        return quick_identity(directory)
+    return directory.name.split("-")[0]
+
+
+def quick_identity(directory):
+    metadata, _ = split_frontmatter(read(_safe(directory/"QUICK.md")))
+    identifier = str(metadata.get("id", ""))
+    if (not re.fullmatch(r"(?:\d{6}-[a-z0-9]{3}|\d+)", identifier)
+            or not re.fullmatch(re.escape(identifier)+r"-[a-z0-9]+(?:-[a-z0-9]+)*", directory.name)
+            or not isinstance(metadata.get("description"), str) or not metadata["description"].strip()):
+        raise Failure("invalid-quick-identity", str(directory), 2)
+    plan = _safe(directory/(identifier+"-PLAN.md"))
+    if not plan.is_file():
+        raise Failure("quick-plan-not-found", str(plan), 2)
+    plan_metadata, _ = split_frontmatter(read(plan))
+    if "phase" in plan_metadata and str(plan_metadata["phase"]) not in (identifier, "quick-"+identifier):
+        raise Failure("quick-plan-identity-mismatch", str(plan), 2)
+    return identifier
+
+
 def resolve_file(value):
-    directory = records.phase_dir(value)
+    directory = verification_dir(value)
     matches = sorted(directory.glob("*-VERIFICATION.md"))
     if len(matches) > 1:
         raise Failure('ambiguous-verification-report',str(directory),2)
-    return _safe(matches[0] if matches else directory/(directory.name.split("-")[0]+"-VERIFICATION.md"))
+    if (matches and directory.parent == records.planning()/"quick"
+            and matches[0].name != unit_id(directory)+"-VERIFICATION.md"):
+        raise Failure('quick-report-identity-mismatch',str(matches[0]),2)
+    return _safe(matches[0] if matches else directory/(unit_id(directory)+"-VERIFICATION.md"))
 
 
 def status(args):
     value = args.arg(0, args.get("phase"))
+    candidate = Path(str(value))
+    candidate = candidate if candidate.is_absolute() else root()/candidate
+    if candidate.parent == records.planning()/"quick":
+        candidate = _safe(candidate)
+        if not candidate.is_dir():
+            return {"status": "phase_dir_not_found", "exists": False, "path": str(candidate)}
     path = resolve_file(value)
-    metadata, body = split_frontmatter(read(path))
+    quick = path.parent.parent == records.planning()/"quick"
+    content = read(path)
+    if quick and content.lstrip('\ufeff').startswith('---\n') and not re.match(r"\A\ufeff?---\r?\n.*?\r?\n---(?:\r?\n|$)", content, re.S):
+        return {"status": "unparseable", "exists": True, "path": str(path)}
+    try:
+        metadata, body = split_frontmatter(content)
+    except Failure:
+        if not quick:
+            raise
+        return {"status": "unparseable", "exists": path.exists(), "path": str(path)}
+    if quick:
+        state = metadata.get("status")
+        if state is not None and state not in ("passed", "gaps_found", "human_needed"):
+            raise Failure("invalid-verification-status", str(state), 2)
+        if "phase" in metadata and str(metadata["phase"]) not in (unit_id(path.parent), "quick-"+unit_id(path.parent)):
+            raise Failure("quick-report-identity-mismatch", str(path), 2)
+        if state is None:
+            state = "missing"
+        elif not metadata.get("fingerprint") or metadata["fingerprint"] != phase_fingerprint(path.parent, metadata.get("covered_files", [])):
+            state = "stale"
+        return {**metadata, "status": state, "path": str(path), "exists": path.exists()}
     state = metadata.get("status", "not_started")
     phase = path.parent.name.split("-")[0]
     routes = {"passed": ("ship", "Publish verified work", f"/ship {phase}"),
@@ -59,6 +123,12 @@ def phase_fingerprint(directory, extra=()):
             if isinstance(artifact, dict) and artifact.get("path"):
                 covered.append(artifact["path"])
     paths.extend(_safe(p) for p in covered)
+    # A quick task's goal is carried by its PLAN/CONTEXT, already in paths.
+    # It must never borrow a similarly numbered roadmap phase's goal or requirements.
+    if directory.parent == records.planning()/"quick":
+        paths.append(_safe(directory/"QUICK.md"))
+        snapshot = _source_snapshot({'sources':[str(p) for p in paths if p != report]},excluded=(report,))
+        return _hash({"quick": directory.name, "inputs": snapshot['digest']})
     phase = records.roadmap_phase(directory.name)
     ids = set(phase.get("requirements", []))
     requirement_lines = [re.sub(r"^\s*[-*]\s+\[[ xX]\]\s*", "", line) for line in read(records.planning()/"REQUIREMENTS.md").splitlines()
@@ -70,9 +140,11 @@ def phase_fingerprint(directory, extra=()):
 
 
 def current_evidence(value,args=None):
-    directory = records.phase_dir(value)
+    directory = verification_dir(value)
     report = resolve_file(directory)
     metadata, body = split_frontmatter(read(report))
+    if directory.parent == records.planning()/"quick" and str(metadata.get("phase", unit_id(directory))) not in (unit_id(directory), "quick-"+unit_id(directory)):
+        raise Failure("quick-report-identity-mismatch", str(report), 2)
     head = run(["git", "rev-parse", "HEAD"], root()).stdout.strip()
     recorded = metadata.get("fingerprint")
     covered = metadata.get("covered_files", [])
@@ -103,7 +175,7 @@ def current_evidence(value,args=None):
     if evidence_flags:
         if (not args.get('evidence-file') or not args.get('expected-head') or args.has('report-only-paths')
                 or not settings):
-            raise Failure('successor-context-required','Currentness requires original evidence, expected HEAD and configured checks; phase owns its report',2)
+            raise Failure('successor-context-required','Currentness requires original evidence, expected HEAD and configured checks; selected unit owns its report',2)
         options = ['--evidence-file',str(args.get('evidence-file')),'--expected-head',str(args.get('expected-head'))]
         if args.has('fresh-evidence-file'):
             options.extend(['--fresh-evidence-file',str(args.get('fresh-evidence-file'))])
@@ -120,25 +192,32 @@ def current(args):
     allowed = {'evidence-file','fresh-evidence-file','expected-head','raw','json','pick'}
     if (set(args.opts)-allowed or len(args.pos) != 1
             or args.has('expected-head') and not args.has('evidence-file')):
-        raise Failure('successor-context-required','Use a phase and complete explicit evidence options',2)
+        raise Failure('successor-context-required','Use a phase or quick directory and complete explicit evidence options',2)
     return current_evidence(args.need(),args)
 
 
 def fingerprint(args):
-    directory = records.phase_dir(args.arg(0, args.get("phase")))
+    directory = verification_dir(args.arg(0, args.get("phase")))
     report = resolve_file(directory)
     covered = args.all("files") + args.all("covered-files")
     with planning_lock():
         revision = _head()
-        value = phase_fingerprint(directory, covered)
         metadata, body = split_frontmatter(read(report))
+        if directory.parent == records.planning()/"quick":
+            if metadata.get("status") not in ("passed", "gaps_found", "human_needed"):
+                raise Failure("invalid-verification-status", "Author a quick verification report before fingerprinting", 2)
+            if "phase" in metadata and str(metadata["phase"]) not in (unit_id(directory), "quick-"+unit_id(directory)):
+                raise Failure("quick-report-identity-mismatch", str(report), 2)
+            if not args.has("files") and not args.has("covered-files"):
+                covered = metadata.get("covered_files", [])
+        value = phase_fingerprint(directory, covered)
         metadata["fingerprint"] = value
         metadata.setdefault("status", "not_started")
         metadata["covered_files"] = covered
         if _head() != revision:
             raise Failure('revision-drift','HEAD changed while capturing phase evidence')
         metadata["revision"] = revision
-        metadata.setdefault("phase", directory.name.split("-")[0])
+        metadata.setdefault("phase", unit_id(directory))
         write(report, join_frontmatter(metadata, body))
     return {"fingerprint": value, "path": str(report)}
 
@@ -523,6 +602,10 @@ def qualify_successor(args,report_path=None):
             or args.has('fresh-evidence-file') and len(args.all('fresh-evidence-file')) != 1):
         raise Failure('successor-context-required','Specify original evidence, exact report paths and expected HEAD',2)
     paths = [report_path] if report_path else args.all('report-only-paths')
+    for path in paths:
+        if isinstance(path, str) and path.startswith('.planning/quick/'):
+            if resolve_file(Path(path).parent).relative_to(root()).as_posix() != path:
+                raise Failure('quick-report-identity-mismatch', path, 2)
     evidence = successor_evidence.read_evidence(args.get('evidence-file'))
     fresh = successor_evidence.read_evidence(args.get('fresh-evidence-file')) if args.get('fresh-evidence-file') else None
     return successor_evidence.validate_successor(evidence,paths,args.get('expected-head'),fresh)

@@ -135,16 +135,40 @@ def report_paths(root, paths, revision=None):
     for name in paths:
         literal_path(name)
         match = re.fullmatch(r'\.planning/phases/([0-9]+(?:\.[0-9]+)*)(?:-[^/]+)?/([0-9]+(?:\.[0-9]+)*)-VERIFICATION\.md', name)
-        if not match or match[1] != match[2]:
-            raise ProofError('unsupported generated report owner: ' + name)
-        # A suffix is not authority: require the actual canonical phase owner.
-        owner = name.rsplit('/', 1)[0] + '/' + match[1] + '-CONTEXT.md'
-        safe_path(root, owner)
-        if revision:
-            if tree_entry(root, revision, owner) is None:
-                raise ProofError('missing tracked phase owner: ' + owner)
-        elif not (Path(root) / owner).is_file():
-            raise ProofError('missing phase owner: ' + owner)
+        if match and match[1] == match[2]:
+            owners = [name.rsplit('/', 1)[0] + '/' + match[1] + '-CONTEXT.md']
+        else:
+            match = re.fullmatch(r'\.planning/quick/((?:[0-9]{6}-[a-z0-9]{3}|[0-9]+))-[a-z0-9]+(?:-[a-z0-9]+)*/((?:[0-9]{6}-[a-z0-9]{3}|[0-9]+))-VERIFICATION\.md', name)
+            if not match or match[1] != match[2]:
+                raise ProofError('unsupported generated report owner: ' + name)
+            directory = name.rsplit('/', 1)[0]
+            owners = [directory + '/QUICK.md', directory + '/' + match[1] + '-PLAN.md']
+            # Phase proofs stay self-contained; quick metadata uses the same
+            # strict YAML reader as the runtime, including duplicate-key refusal.
+            from .text import split_frontmatter
+            from .core import Failure
+            for owner in owners:
+                safe_path(root, owner)
+                try:
+                    content = (git(root, 'cat-file', 'blob', revision+':'+owner).decode('utf-8')
+                               if revision else (Path(root)/owner).read_text(encoding='utf-8'))
+                    metadata, _ = split_frontmatter(content)
+                except (Failure, ValueError, OSError, subprocess.SubprocessError, UnicodeError) as exc:
+                    raise ProofError('unavailable quick owner: ' + owner) from exc
+                if owner.endswith('/QUICK.md'):
+                    if (str(metadata.get('id', '')) != match[1]
+                            or not isinstance(metadata.get('description'), str) or not metadata['description'].strip()):
+                        raise ProofError('mismatched quick owner: ' + owner)
+                elif 'phase' in metadata and str(metadata['phase']) not in (match[1], 'quick-'+match[1]):
+                    raise ProofError('mismatched quick plan: ' + owner)
+        # Owner records are protected inputs, never report-only exemptions.
+        for owner in owners:
+            safe_path(root, owner)
+            if revision:
+                if tree_entry(root, revision, owner) is None:
+                    raise ProofError('missing tracked report owner: ' + owner)
+            elif not (Path(root) / owner).is_file():
+                raise ProofError('missing report owner: ' + owner)
         safe_path(root, name)
     return list(paths)
 
