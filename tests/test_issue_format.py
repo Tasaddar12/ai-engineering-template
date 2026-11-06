@@ -5,19 +5,20 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "engineer/bin"))
-from lib import issue_format
+from lib import issue_format, delivery
 from lib.core import Failure
 
-TEMPLATE = ROOT / "engineer/templates/issue.md"
+TEMPLATE = ROOT / ".github/ISSUE_TEMPLATE"
 
 
 def bodies():
-    text = TEMPLATE.read_text(encoding="utf-8")
-    return dict(re.findall(r"^### ([^\n]+)\n\n```markdown\n(.*?)\n```", text, re.M | re.S))
+    return {variant: issue_format.form_body(issue_format.template_path(variant, TEMPLATE))[1]
+            for variant in issue_format.VARIANTS}
 
 
 class IssueFormat(unittest.TestCase):
@@ -28,7 +29,8 @@ class IssueFormat(unittest.TestCase):
 
     def test_all_canonical_variants(self):
         self.assertEqual(list(issue_format.schema()),
-                         ["Bug", "Enhancement", "Decision required", "Security risk", "UAT"])
+                         ["Bug", "Enhancement", "Decision required", "Security risk", "UAT",
+                          "Docs issue", "Chore", "Feature request"])
         for variant, body in bodies().items():
             with self.subTest(variant=variant):
                 self.assertTrue(issue_format.validate(body, variant)["valid"])
@@ -67,11 +69,12 @@ class IssueFormat(unittest.TestCase):
             root = Path(directory)
             runtime = root / ".codex/engineer/bin"
             shutil.copytree(ROOT / "engineer/bin", runtime)
-            templates = root / ".codex/engineer/templates"
-            templates.mkdir(parents=True)
-            source = TEMPLATE.read_text(encoding="utf-8")
+            templates = root / ".codex/.github/ISSUE_TEMPLATE"
+            shutil.copytree(TEMPLATE, templates)
+            form = templates / "security-risk.yml"
+            source = form.read_text(encoding="utf-8")
             installed = source.replace("## Risk assessment and lifecycle", "## Installed risk assessment")
-            (templates / "issue.md").write_text(installed, encoding="utf-8")
+            form.write_text(installed, encoding="utf-8")
             sibling = root / ".ai/templates"
             sibling.mkdir(parents=True)
             (sibling / "issue.md").write_text(source, encoding="utf-8")
@@ -209,25 +212,28 @@ class IssueFormat(unittest.TestCase):
 
     def test_schema_missing_malformed_and_derived(self):
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "issue.md"
-            malformed = ("", "## Problem\n", TEMPLATE.read_text(encoding="utf-8").replace(
-                "| Step |", "| Step | Added |"),
-                TEMPLATE.read_text(encoding="utf-8").replace("| Step |", "|  |"),
-                TEMPLATE.read_text(encoding="utf-8").replace("### Bug", "### Removed", 1),
-                TEMPLATE.read_text(encoding="utf-8").replace("```markdown", "```text", 1))
+            directory = Path(directory) / "ISSUE_TEMPLATE"
+            shutil.copytree(TEMPLATE, directory)
+            path = directory / "uat.yml"
+            source = path.read_text(encoding="utf-8")
+            malformed = ("", "## Problem\n", source.replace("| Step |", "| Step | Added |"),
+                         source.replace("| Step |", "|  |"), source.replace('name: "UAT"', 'name: "Removed"'),
+                         source.replace("value: |", "value: >"))
             for text in malformed:
                 path.write_text(text, encoding="utf-8")
                 with self.assertRaises(Failure) as caught:
-                    issue_format.validate(bodies()["Bug"], "Bug", path)
+                    issue_format.validate(bodies()["Bug"], "Bug", directory)
                 self.assertEqual(caught.exception.code, "issue-schema")
             path.unlink()
             with self.assertRaises(Failure) as caught:
-                issue_format.validate(bodies()["Bug"], "Bug", path)
+                issue_format.validate(bodies()["Bug"], "Bug", directory)
             self.assertEqual(caught.exception.code, "issue-schema")
-            path.write_text(TEMPLATE.read_text(encoding="utf-8").replace(
+            path.write_text(source, encoding="utf-8")
+            bug = directory / "bug.yml"
+            bug.write_text(bug.read_text(encoding="utf-8").replace(
                 "## Expected behavior", "## Expected result"), encoding="utf-8")
             self.assertTrue(issue_format.validate(bodies()["Bug"].replace(
-                "## Expected behavior", "## Expected result"), "Bug", path)["valid"])
+                "## Expected behavior", "## Expected result"), "Bug", directory)["valid"])
 
     def test_installed_namespace_owns_schema_even_with_sibling_source(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -235,9 +241,8 @@ class IssueFormat(unittest.TestCase):
             for namespace in (".codex", ".claude"):
                 runtime = root / namespace / "engineer/bin"
                 shutil.copytree(ROOT / "engineer/bin", runtime)
-                templates = root / namespace / "engineer/templates"
-                templates.mkdir(parents=True)
-                shutil.copyfile(TEMPLATE, templates / "issue.md")
+                templates = root / namespace / ".github/ISSUE_TEMPLATE"
+                shutil.copytree(TEMPLATE, templates)
                 sibling = root / ".ai/templates"
                 sibling.mkdir(parents=True, exist_ok=True)
                 (sibling / "issue.md").write_text("malformed sibling", encoding="utf-8")
@@ -247,10 +252,49 @@ class IssueFormat(unittest.TestCase):
                            "--variant", "Bug", "--body-file", str(draft)]
                 result = subprocess.run(command, cwd=root, capture_output=True, text=True)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-                (templates / "issue.md").unlink()
+                (templates / "bug.yml").unlink()
                 result = subprocess.run(command, cwd=root, capture_output=True, text=True)
                 self.assertEqual(result.returncode, 1)
                 self.assertIn('"issue-schema"', result.stderr)
+
+
+class PullRequestFormat(unittest.TestCase):
+    def test_selected_variant_reads_its_own_canonical_template(self):
+        directory = issue_format.github_directory() / 'PULL_REQUEST_TEMPLATE'
+        for name in ('enhancement', 'feature', 'fix'):
+            with self.subTest(name=name), patch.object(delivery, 'read', return_value='## Outcome\nPrompt') as reader:
+                delivery.validate_body('## Outcome\nObserved result', name)
+                reader.assert_called_once_with(directory / (name+'.md'))
+
+    def test_unknown_pr_template_is_rejected_before_path_selection(self):
+        for name in ('../fix', 'default', '', True, None):
+            with self.subTest(name=name), self.assertRaises(Failure) as caught:
+                delivery.validate_body('Public facts', name)
+            self.assertEqual('invalid-pr-template', caught.exception.code)
+
+    def test_present_directory_requires_selected_template(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            github = Path(temporary) / '.github'
+            (github / 'PULL_REQUEST_TEMPLATE').mkdir(parents=True)
+            with patch.object(issue_format, 'github_directory', return_value=github):
+                with self.assertRaises(Failure) as caught:
+                    delivery.validate_body('Public facts', 'fix')
+                self.assertEqual('invalid-pr-body', caught.exception.code)
+
+    def test_malformed_template_cannot_disable_required_sections(self):
+        for template in ('<!-- instructions only -->', '# Incomplete template',
+                         '## Requirements or Issues\nOptional\n\n## Stack\nOptional'):
+            with self.subTest(template=template), patch.object(delivery, 'read', return_value=template):
+                with self.assertRaises(Failure) as caught:
+                    delivery.validate_body('Unstructured public body')
+                self.assertEqual('invalid-pr-body', caught.exception.code)
+
+    def test_template_instructions_do_not_become_public_sections(self):
+        template = '<!--\n## Instructions\nOnly authoring guidance\n-->\n\n## Goal\nOutcome\n'
+        with patch.object(delivery, 'read', return_value=template):
+            delivery.validate_body('## Goal\nObserved outcome\n')
+            with self.assertRaises(Failure):
+                delivery.validate_body('## Instructions\nMissing goal\n')
 
 
 if __name__ == "__main__":

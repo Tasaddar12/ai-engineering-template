@@ -22,6 +22,7 @@ import uuid
 # Overhaul scripts/ require the source Git history and PLANNED-UPDATES.md;
 # they are authoring tools, not a runnable part of an installed host namespace.
 PREFIXES = ('agents/', 'commands/', 'engineer/', 'hooks/', 'skills/', 'bin/')
+GITHUB_TEMPLATES = ('.github/ISSUE_TEMPLATE/', '.github/PULL_REQUEST_TEMPLATE/')
 BEGIN = '# BEGIN ENGINEER MANAGED'
 END = '# END ENGINEER MANAGED'
 MANIFEST = 'engineer-install/manifest.json'
@@ -119,7 +120,7 @@ def snapshot(source, revision):
     files = {}
     with tarfile.open(fileobj=io.BytesIO(archive), mode='r:') as tree:
         for member in tree:
-            if not member.name.startswith(PREFIXES):
+            if not member.name.startswith(PREFIXES + GITHUB_TEMPLATES):
                 continue
             name = relative(member.name)
             if member.isdir():
@@ -299,6 +300,12 @@ def exports(source, pin, target, host, scope, no_hooks=False):
         payload[name] = (data, mode)
         origins[name] = origin
     for name, (data, mode) in files.items():
+        if name.startswith(GITHUB_TEMPLATES):
+            # GitHub discovers project templates at the repository root. Global
+            # installations keep runtime assets inside their selected namespace.
+            destination = name if scope == 'local' else nsname + '/' + name
+            add(destination, data, mode, name)
+            continue
         # Canonical skills are rebuilt from the complete matching command when available.
         if name.startswith('skills/') and name.endswith('/SKILL.md'):
             role = PurePosixPath(name).parts[1]

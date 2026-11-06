@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 import tempfile
 import time
-from . import delivery, issue_format, models, records, repository
+from . import delivery, issue_format, records, repository
 from .core import Args, Failure, digest, load_json, now, planning_lock, read, safe_path, slug, write, write_json
 from .text import join_frontmatter, split_frontmatter
 
@@ -44,12 +44,12 @@ def todo_path(value):
 def validate(title, body, variant=None):
     if not title.strip() or not body.strip():
         raise Failure("invalid-issue", "Issue title and body must be nonempty")
-    template = models.NAMESPACE/"engineer/templates/issue.md"
+    directory = issue_format.github_directory()/"ISSUE_TEMPLATE"
     if variant is None:
         matches = []
         for name in issue_format.VARIANTS:
             try:
-                issue_format.validate(body, name, template)
+                issue_format.validate(body, name, directory)
                 matches.append(name)
             except Failure as exc:
                 if exc.code != "issue-format":
@@ -57,7 +57,8 @@ def validate(title, body, variant=None):
         if len(matches) != 1:
             raise Failure("issue-variant", "Supply --variant with the exact canonical variant")
         variant = matches[0]
-    issue_format.validate(body, variant, template)
+    issue_format.validate(body, variant, directory)
+    template = issue_format.template_path(variant, directory)
     lines = issue_format.visible_lines(body)
     section = []
     for line in [*lines, "## END"]:

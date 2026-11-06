@@ -125,8 +125,9 @@ class IssuePublicationSafety(RuntimeCase):
     def setUp(self):
         super().setUp()
         self.git("remote", "add", "origin", "https://github.com/example/project.git")
-        # The installed catalog is the source template; its File Template blocks define every canonical variant.
-        self.put("namespace/engineer/templates/issue.md", (SOURCE/"engineer/templates/issue.md").read_text(encoding="utf-8"))
+        # Installed forms supply the canonical body and validation schema.
+        for form in (SOURCE/".github/ISSUE_TEMPLATE").glob("*.yml"):
+            self.put("namespace/.github/ISSUE_TEMPLATE/"+form.name, form.read_text(encoding="utf-8"))
         self.todo = self.put(".planning/todos/pending/issue.md", "---\ntitle: Private finding\n---\nPrivate implementation evidence\n")
         self.public = self.put("public.md", "\n".join([
             "## User need", "Reviewers need a public statement of the observed behavior.", "",

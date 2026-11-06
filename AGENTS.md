@@ -2,7 +2,8 @@
 # Agent entry point
 
 This repository authors the reusable Engineer workflow. Its canonical sources
-are `agents/`, `commands/`, `engineer/`, `hooks/`, `bin/`, `scripts/` and `skills/`.
+are `agents/`, `commands/`, `engineer/`, `hooks/`, `bin/`, `scripts/`, `skills/`
+and the publication templates under `.github/`.
 Read the assigned role in `agents/`, the relevant command in `commands/`, and
 the workflow and references that command names. The
 [runtime guide](engineer/bin/README.md) documents executable operations.
@@ -84,10 +85,13 @@ changes invalidate earlier evidence for the affected behavior.
 Commit each completed meaningful slice with a descriptive message. Stage only
 owned paths and inspect staged content; preserve unrelated user work. When
 delivery is authorized, push and keep the existing draft PR current, or create
-one on the first push. Use the
-[canonical Git workflow](engineer/references/git-workflow.md) and the current
-[PR](engineer/templates/pull-request.md) and
-[issue](engineer/templates/issue.md) templates for publication.
+one on the first push. Use the current
+[enhancement](.github/PULL_REQUEST_TEMPLATE/enhancement.md),
+[feature](.github/PULL_REQUEST_TEMPLATE/feature.md) or
+[fix](.github/PULL_REQUEST_TEMPLATE/fix.md) PR template and its authoring guidance,
+and the
+[issue forms and authoring guidance](.github/ISSUE_TEMPLATE/README.md)
+for publication.
 
 Published, verified and merged are distinct states. Merge only when the user has
 explicitly authorized that merge, current verification and review are satisfied,

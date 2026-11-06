@@ -1,0 +1,45 @@
+name: "Feature request"
+description: "Request a new user-facing capability."
+body:
+  - type: markdown
+    attributes:
+      value: "Use a type(scope): summary title. Replace every prompt with reviewed facts, keep the section structure, and use Unknown or Pending with a reason for unavailable evidence. Read the authoring guidance in .github/ISSUE_TEMPLATE/README.md. Never include secrets or exploit details."
+  - type: textarea
+    id: report
+    attributes:
+      label: Report
+      description: Complete the selected issue body below; preserve its headings, tables and acceptance fields.
+      value: |
+        ## Feature request
+
+        [One sentence: intended user + new capability + goal that is not supported today.]
+
+        ## Proposed outcome
+
+        [One sentence: requested new user-facing capability and its observable outcome.]
+
+        ## Current limitation and evidence
+
+        [1-2 sentences: limitation. Add build/version, environment, observed commit and 1-3 actual safe evidence URLs.]
+
+        ## Impact
+
+        [One sentence: affected users/systems and practical impact.]
+
+        ## Scope
+
+        - In: [bounded capability]
+        - Out: [adjacent behavior excluded]
+
+        ## Acceptance
+
+        - [Outcome 1: observable user result]
+        - [Outcome 2: observable user result]
+        - [Outcome 3: if needed]
+        - [Outcome 4: if needed]
+
+        ## Related links
+
+        [1-3 actual issue/PR/requirement references or accessible evidence URLs.]
+    validations:
+      required: true

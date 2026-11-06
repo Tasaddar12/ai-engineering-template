@@ -6,10 +6,11 @@ import re
 import subprocess
 import tempfile
 import time
-from . import config, gitops, models, verification, repository
+from . import config, gitops, verification, repository, issue_format
 from .core import Args, Failure, read, root, run, safe_path
 
 PR_FIELDS = "number,url,state,isDraft,headRefName,headRefOid,baseRefName,statusCheckRollup,mergeable,title,body"
+PR_TEMPLATE_NAMES = ("enhancement", "feature", "fix")
 
 
 def gh(args, check=True, timeout=60):
@@ -45,18 +46,24 @@ def classify_checks(checks):
             "failed": failed, "pending": pending, "count": len(checks)}
 
 
-def validate_body(body):
+def validate_body(body, template_name="enhancement"):
     if not body.strip():
         raise Failure("invalid-pr-body", "Pull request body cannot be empty")
-    template = read(models.NAMESPACE/"engineer/templates/pull-request.md")
+    if template_name not in PR_TEMPLATE_NAMES:
+        raise Failure("invalid-pr-template", "Select enhancement, feature or fix")
+    directory = issue_format.github_directory()/"PULL_REQUEST_TEMPLATE"
+    template = read(directory/(template_name+".md"))
+    if directory.is_dir() and not template:
+        raise Failure("invalid-pr-body", "Selected canonical PR template is missing or empty")
     # Source checkouts can run before authoring templates are installed. These
     # are publication fields, not the headings of the template's instructions.
     required = ["Goal", "Changes", "Verification", "Known gaps", "Risks or rollback"]
     if template:
-        section = re.search(r"(?ms)^## File Template\s*\n+```(?:markdown)?\s*\n(.*?)^```", template)
-        if section:
-            required = [heading for heading in re.findall(r"(?m)^##\s+(.+)$", section[1])
-                        if heading not in ("Requirements or Issues", "Stack")]
+        required = [match[1].strip() for line in issue_format.visible_lines(template)
+                    if (match := re.match(r"^##\s+(.+)$", line))
+                    and match[1].strip() not in ("Requirements or Issues", "Stack")]
+        if not required:
+            raise Failure("invalid-pr-body", "Canonical PR template has no required sections")
     missing = [heading for heading in required if not re.search(r"(?m)^##\s+"+re.escape(heading)+r"\s*$", body)]
     if missing:
         raise Failure("invalid-pr-body", "Missing template sections", missing=missing)
@@ -155,7 +162,7 @@ def command(args, action):
     run(["git", "rev-parse", base+"^{commit}"], root())
     title = args.get("title", run(["git", "log", "-1", "--format=%s"], root()).stdout.strip())
     body = read(safe_path(args.get("body-file"))) if args.has("body-file") else str(args.get("body", ""))
-    validate_body(body)
+    validate_body(body, args.get("template", "enhancement"))
     if args.has("phase"):
         from .phase_issues import audit_pr
         audit_pr(args.get("phase"), body)

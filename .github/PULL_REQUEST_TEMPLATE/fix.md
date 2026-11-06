@@ -1,4 +1,5 @@
-# Pull Request Template
+<!--
+# Fix Pull Request Template
 
 **Purpose:** Explain the authorized outcome, owned changes and current verification evidence.
 
@@ -6,63 +7,36 @@
 **Consumers:** PR reviewers and the coordinator responsible for verified delivery.
 **Destination:** A separately composed public PR body file passed to publication.
 
-Read this source, then copy only the fenced **File Template** body into that file.
+Fill the visible Markdown body in .github/PULL_REQUEST_TEMPLATE/fix.md.
 Remove prompts, comments, placeholders and guidance examples from the final public body.
-The [Git workflow](../references/git-workflow.md) owns publication authority and procedure.
+Project instructions and runtime delivery gates own publication authority and procedure.
+
+## Select a PR template
+
+Choose one body under .github/PULL_REQUEST_TEMPLATE/:
+
+- enhancement.md: improve an existing capability; demonstrate the improvement.
+- feature.md: introduce a new capability; verify its acceptance and regressions.
+- fix.md: correct wrong or broken behavior; verify the reproduction and regression.
+
+All variants retain the common required Goal, Changes, Verification, Known gaps
+and Risks or rollback sections. Requirements or Issues and Stack remain optional
+under the instructions below.
+
+GitHub selects a variant through the template query parameter on the PR creation
+URL: template=enhancement.md, template=feature.md or template=fix.md. Add it with
+? when it is the first parameter or & after existing parameters. GitHub does not
+provide an automatic PR type picker for these files. See:
+https://docs.github.com/en/pull-requests/reference/using-query-parameters-to-create-a-pull-request
+
+For runtime publication, pass the completed body with pr.open --body-file PATH
+and select --template enhancement, --template feature or --template fix.
+Omitting --template selects enhancement for validation. This option selects the
+validation template; compose the body from the chosen file before publication.
 
 ## File Template
 
-```markdown
-## Goal
 
-[One sentence: authorized user/system outcome.]
-
-## Changes
-
-- [Change 1 of 2-4: implemented behavior and why]
-- [Change 2 of 2-4: implemented behavior and why]
-- [Change 3: if needed]
-- [Change 4: if needed]
-
-## Requirements or Issues
-
-[1-3 exact requirement IDs and issue URLs; omit this section if none apply.]
-
-## Verification
-
-| Revision status | SHA |
-|---|---|
-| Candidate | [one full current head SHA] |
-| Tested | [one full tested SHA, or Pending until verified] |
-
-| Exact command (one row per check) | Result (one sentence or Pending) | Evidence URL matching tested SHA |
-|---|---|---|
-| [one exact command] | [one sentence with actual result, or Pending (not run)] | [one accessible matching URL, or Pending] |
-
-## Known gaps
-
-- [Gap 1 of 1-3: unfinished work, unverified behavior, pending check or dependency; or None after checking]
-- [Gap 2: if applicable]
-- [Gap 3: if applicable]
-
-## Risks or rollback
-
-- Risks: [one sentence: material risks or none identified]
-- Rollback: [one sentence: practical rollback for this change]
-
-| PLAN / Threat ID | Canonical issue | Outcome | Git state | Evidence |
-|---|---|---|---|---|
-| [Owning PLAN#threat-id] | [Verified issue URL or Pending: dependency] | [Observed outcome] | [open/closed/Pending readback] | [Safe revision/check/result and readback, or Pending: dependency] |
-
-[Use None identified with inspected scope when applicable.]
-
-## Stack
-
-- stackParent: [parent PR number or URL]
-- Target: [current target branch]
-- DependsOn: [prerequisite PR URLs, or None if none]
-- OwnChangeBoundary: [full base SHA..full head SHA]
-```
 
 ## Title format and examples
 
@@ -95,7 +69,7 @@ The [Git workflow](../references/git-workflow.md) owns publication authority and
   truly does not apply.
 - Keep evidence safe: redact secrets, private logs and sensitive data before
   adding evidence to the public body.
-- Follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking); link every finding's
+- Follow the project security tracking instructions; link every finding's
   owning PLAN and issue. Keep still-open, accepted/deferred and mitigated/resolved
   outcomes distinct. List actual closed issues only with readback and evidence.
   Audit closing references; require scope-complete mitigation and existing closure
@@ -124,5 +98,55 @@ unittest discover -s tests -v. Known gap: empty-query acceptance is unverified."
 
 - The copied body states the authorized goal, owned changes, evidence and remaining gaps.
 - Stack fields describe an actual dependency or are omitted from the public body.
-- Hand off the reviewed body file and evidence under the Git workflow; readiness and
+- Hand off the reviewed body file and evidence under project instructions; readiness and
   merge authority require its delivery gates.
+-->
+
+## Goal
+
+[One sentence: affected user/system + reported failure + corrected observable behavior.]
+
+## Changes
+
+- [Observed failure and safe reproduction at the affected revision]
+- [Cause and implemented correction]
+- [Regression coverage demonstrating the failure is fixed]
+
+## Requirements or Issues
+
+[1-3 exact requirement IDs and issue URLs; omit this section if none apply.]
+
+## Verification
+
+| Revision status | SHA |
+|---|---|
+| Candidate | [one full current head SHA] |
+| Tested | [one full tested SHA, or Pending until verified] |
+
+| Exact command (one row per check) | Result (one sentence or Pending) | Evidence URL matching tested SHA |
+|---|---|---|
+| [one exact reproduction or regression command proving the corrected behavior] | [one sentence with actual result, or Pending (not run)] | [one accessible matching URL, or Pending] |
+
+## Known gaps
+
+- [Gap 1 of 1-3: unfinished work, unverified behavior, pending check or dependency; or None after checking]
+- [Gap 2: if applicable]
+- [Gap 3: if applicable]
+
+## Risks or rollback
+
+- Risks: [one sentence: material risks or none identified]
+- Rollback: [one sentence: practical rollback for this change]
+
+| PLAN / Threat ID | Canonical issue | Outcome | Git state | Evidence |
+|---|---|---|---|---|
+| [Owning PLAN#threat-id] | [Verified issue URL or Pending: dependency] | [Observed outcome] | [open/closed/Pending readback] | [Safe revision/check/result and readback, or Pending: dependency] |
+
+[Use None identified with inspected scope when applicable.]
+
+## Stack
+
+- stackParent: [parent PR number or URL]
+- Target: [current target branch]
+- DependsOn: [prerequisite PR URLs, or None if none]
+- OwnChangeBoundary: [full base SHA..full head SHA]

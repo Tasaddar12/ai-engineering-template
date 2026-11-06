@@ -1,9 +1,15 @@
 """Template-owned issue structure, excluding Markdown literal and HTML blocks."""
 import re
+import json
+import textwrap
+from pathlib import Path
 from . import models
-from .core import Failure, read
+from .core import Failure, read, root
 
-VARIANTS = ("Bug", "Enhancement", "Decision required", "Security risk", "UAT")
+FORM_NAMES = {"Bug": "bug", "Enhancement": "enhancement", "Decision required": "decision-required",
+              "Security risk": "security-risk", "UAT": "uat", "Docs issue": "docs_issue",
+              "Chore": "chore", "Feature request": "feature_request"}
+VARIANTS = tuple(FORM_NAMES)
 ACCEPTANCE = ("Status", "Reviewer", "Date", "Decision", "Evidence")
 FALLBACK_HEADINGS = {
     "Bug": ["Problem", "Expected behavior", "Actual behavior", "Reproduction", "Safe evidence", "Impact", "Acceptance", "Scope", "Related links"],
@@ -11,6 +17,9 @@ FALLBACK_HEADINGS = {
     "Decision required": ["Decision question", "Context", "Options", "Evidence", "Recommendation", "Blocking dependency", "Scope", "Acceptance", "Related links"],
     "Security risk": ["Security concern", "Affected surface and behavior", "Impact", "Risk assessment and lifecycle", "Safe evidence", "Requested remediation", "Scope and acceptance", "Related links"],
     "UAT": ["Acceptance checklist", "Context", "Impact and scope", "Build and environment", "Steps and expected outcomes", "Related links", "Human acceptance"],
+    "Docs issue": ["Documentation problem", "Affected documentation", "Proposed correction", "Scope", "Acceptance", "Related links"],
+    "Chore": ["Maintenance need", "Current state and evidence", "Proposed outcome", "Impact", "Scope", "Acceptance", "Related links"],
+    "Feature request": ["Feature request", "Proposed outcome", "Current limitation and evidence", "Impact", "Scope", "Acceptance", "Related links"],
 }
 
 
@@ -87,21 +96,54 @@ def tables(lines, code):
     return result
 
 
+def github_directory():
+    """Global assets belong to the runtime; local forms belong to the project."""
+    installed = models.NAMESPACE/".github"
+    manifest = models.NAMESPACE/"engineer-install/manifest.json"
+    if manifest.is_file():
+        try:
+            scope = json.loads(read(manifest))["scope"]
+        except (ValueError, KeyError, TypeError) as exc:
+            raise Failure("issue-schema", "Installed template scope is invalid: "+str(manifest)) from exc
+        if scope == "local":
+            return root()/".github"
+        if scope == "global":
+            return installed
+        raise Failure("issue-schema", "Installed template scope is invalid: "+str(manifest))
+    return installed if installed.is_dir() else root()/".github"
+
+
+def template_path(variant, directory=None):
+    directory = Path(directory) if directory is not None else github_directory()/"ISSUE_TEMPLATE"
+    return directory/(FORM_NAMES[variant]+".yml")
+
+
+def form_body(path):
+    """Read our literal Report default, not arbitrary YAML or executable tags.
+
+    The forms deliberately retain the full Markdown body in one textarea. This
+    keeps tables, human decisions and exact headings intact in the GitHub UI
+    and lets the standard-library runtime consume the same canonical content.
+    """
+    text = read(path)
+    name = re.search(r'^name: ("[^\n]+")$', text, re.M)
+    report = re.search(r'(?m)^    id: report\n    attributes:\n      label: Report\n      description: [^\n]+\n      value: \|\n((?:(?:        [^\n]*)?\n)+)', text)
+    if not name or not report:
+        raise Failure("issue-schema", "Missing canonical Report default: "+str(path))
+    try:
+        variant = json.loads(name[1])
+    except ValueError as exc:
+        raise Failure("issue-schema", "Invalid canonical form name: "+str(path)) from exc
+    return variant, textwrap.dedent(report[1])
+
+
 def schema(template=None):
-    template = template or models.NAMESPACE/"engineer/templates/issue.md"
-    if not template.is_file():
-        raise Failure("issue-schema", "Installed issue template schema is missing: "+str(template))
-    text = read(template)
-    catalog = text.split("## File Template", 1)
-    if len(catalog) != 2:
-        raise Failure("issue-schema", "Installed issue File Template catalog is absent")
-    blocks = re.findall(r"(?ms)^### ([^\n]+)\n\s*```markdown\n(.*?)^```\s*$", catalog[1])
     result = {}
-    for name, body in blocks:
-        if name not in VARIANTS:
-            continue
-        if name in result:
-            raise Failure("issue-schema", "Duplicate canonical issue variant: "+name)
+    for expected in VARIANTS:
+        path = template_path(expected, template)
+        name, body = form_body(path)
+        if name != expected:
+            raise Failure("issue-schema", "Canonical form name does not match its path: "+str(path))
         lines = visible_lines(body)
         headings = [match[1].strip() for line in lines if (match := re.match(r"^ {0,3}## (.+)$", line))]
         if not headings or len(headings) != len(set(headings)):
