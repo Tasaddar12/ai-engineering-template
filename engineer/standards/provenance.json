@@ -1,0 +1,549 @@
+{
+  "schema": 1,
+  "files": [
+    {
+      "destination": "python/async-context-manager.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/async-context-manager.md",
+      "fragments": [
+        {
+          "start_line": 8,
+          "end_line": 66,
+          "sha256": "33e093a1ceeb7585c7f98bc0055f2f1dfafbe5c3112abe0103d5c806c03e754b"
+        }
+      ],
+      "sha256": "33e093a1ceeb7585c7f98bc0055f2f1dfafbe5c3112abe0103d5c806c03e754b"
+    },
+    {
+      "destination": "python/async-create-task.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/async-create-task.md",
+      "fragments": [
+        {
+          "start_line": 8,
+          "end_line": 81,
+          "sha256": "bb40c4e9bbfcc7d2e56767135d175212dc264413bde1c58e9557a07787752ac5"
+        }
+      ],
+      "sha256": "bb40c4e9bbfcc7d2e56767135d175212dc264413bde1c58e9557a07787752ac5"
+    },
+    {
+      "destination": "python/async-gather.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/async-gather.md",
+      "fragments": [
+        {
+          "start_line": 8,
+          "end_line": 68,
+          "sha256": "befe16d5770d62c1e8d777c2d7305ff1bd7a27f1e379fadba9816964d5e81c9b"
+        }
+      ],
+      "sha256": "befe16d5770d62c1e8d777c2d7305ff1bd7a27f1e379fadba9816964d5e81c9b"
+    },
+    {
+      "destination": "python/async-semaphore.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/async-semaphore.md",
+      "fragments": [
+        {
+          "start_line": 8,
+          "end_line": 72,
+          "sha256": "31cd8f5eff0096bbb303a32801ea49add82f4f7b02817c9a141b8227497f1867"
+        }
+      ],
+      "sha256": "31cd8f5eff0096bbb303a32801ea49add82f4f7b02817c9a141b8227497f1867"
+    },
+    {
+      "destination": "python/design-early-return.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/design-early-return.md",
+      "fragments": [
+        {
+          "start_line": 8,
+          "end_line": 78,
+          "sha256": "530b90c8cd2e8cf8a1dad0d3f76f9935ea81c32ada03e0b1d3f4a9eefb68258d"
+        }
+      ],
+      "sha256": "530b90c8cd2e8cf8a1dad0d3f76f9935ea81c32ada03e0b1d3f4a9eefb68258d"
+    },
+    {
+      "destination": "python/design-philosophy.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/design-philosophy.md",
+      "fragments": [
+        {
+          "start_line": 8,
+          "end_line": 118,
+          "sha256": "838c64c26a664b69e87c5928f84f71acab1c1971899ea64ccf208481809c2df7"
+        }
+      ],
+      "sha256": "838c64c26a664b69e87c5928f84f71acab1c1971899ea64ccf208481809c2df7"
+    },
+    {
+      "destination": "python/design-single-responsibility.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/design-single-responsibility.md",
+      "fragments": [
+        {
+          "start_line": 8,
+          "end_line": 97,
+          "sha256": "7d02f069f49ada8d24f18070382e7bd910a7985c24e7d133dd397f793c311531"
+        }
+      ],
+      "sha256": "7d02f069f49ada8d24f18070382e7bd910a7985c24e7d133dd397f793c311531"
+    },
+    {
+      "destination": "python/doc-docstring.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/doc-docstring.md",
+      "fragments": [
+        {
+          "start_line": 8,
+          "end_line": 89,
+          "sha256": "b8a56499584ed2cbe54b2c4bbd9a9c85dc2d18d563b57be5e438a183e4d6700f"
+        }
+      ],
+      "sha256": "b8a56499584ed2cbe54b2c4bbd9a9c85dc2d18d563b57be5e438a183e4d6700f"
+    },
+    {
+      "destination": "python/doc-type-hints.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/doc-type-hints.md",
+      "fragments": [
+        {
+          "start_line": 8,
+          "end_line": 60,
+          "sha256": "fc3238745b153d834fb575557d86bbe0afac18ff154b965b5d357b2eeb7990fb"
+        }
+      ],
+      "sha256": "fc3238745b153d834fb575557d86bbe0afac18ff154b965b5d357b2eeb7990fb"
+    },
+    {
+      "destination": "python/error-no-silent-exceptions.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/error-no-silent-exceptions.md",
+      "fragments": [
+        {
+          "start_line": 8,
+          "end_line": 56,
+          "sha256": "3bb5499a59e68183e7d8b52cbe2873cd47cb555d9e22451b84bb90505ebb8634"
+        }
+      ],
+      "sha256": "3bb5499a59e68183e7d8b52cbe2873cd47cb555d9e22451b84bb90505ebb8634"
+    },
+    {
+      "destination": "python/oop-dataclass.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/oop-dataclass.md",
+      "fragments": [
+        {
+          "start_line": 8,
+          "end_line": 84,
+          "sha256": "2a6cdbb5f78e8d9f7515ebeab3bd36f0b4e2e899da648cb049b05833e9933dd2"
+        }
+      ],
+      "sha256": "2a6cdbb5f78e8d9f7515ebeab3bd36f0b4e2e899da648cb049b05833e9933dd2"
+    },
+    {
+      "destination": "python/oop-property.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/oop-property.md",
+      "fragments": [
+        {
+          "start_line": 8,
+          "end_line": 108,
+          "sha256": "66577f38c2cbb363562d243139f160c7ca4bec440c16b5cb7ac4fc96d007bb95"
+        }
+      ],
+      "sha256": "66577f38c2cbb363562d243139f160c7ca4bec440c16b5cb7ac4fc96d007bb95"
+    },
+    {
+      "destination": "python/perf-dict-get.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/perf-dict-get.md",
+      "fragments": [
+        {
+          "start_line": 8,
+          "end_line": 49,
+          "sha256": "c8b0f4c694624eefbe6e0a326031857bca51bcd9982e93e22424849798385765"
+        }
+      ],
+      "sha256": "c8b0f4c694624eefbe6e0a326031857bca51bcd9982e93e22424849798385765"
+    },
+    {
+      "destination": "python/perf-generator-expression.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/perf-generator-expression.md",
+      "fragments": [
+        {
+          "start_line": 8,
+          "end_line": 42,
+          "sha256": "18a82cfe274bb8adeaf0778e8ddf202868528080bb149ddfb01502aa39cc8992"
+        }
+      ],
+      "sha256": "18a82cfe274bb8adeaf0778e8ddf202868528080bb149ddfb01502aa39cc8992"
+    },
+    {
+      "destination": "python/perf-list-comprehension.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/perf-list-comprehension.md",
+      "fragments": [
+        {
+          "start_line": 8,
+          "end_line": 44,
+          "sha256": "fd262e11704b9a5db7c23c28a7bcd67d41dd216f9f23f315df81d72a3d03d1c3"
+        }
+      ],
+      "sha256": "fd262e11704b9a5db7c23c28a7bcd67d41dd216f9f23f315df81d72a3d03d1c3"
+    },
+    {
+      "destination": "python/perf-set-lookup.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/perf-set-lookup.md",
+      "fragments": [
+        {
+          "start_line": 8,
+          "end_line": 50,
+          "sha256": "ca5f59174a87ad635ce3a876abe2ea4f555f5f62207c0d36b9e33a8be41cbb96"
+        }
+      ],
+      "sha256": "ca5f59174a87ad635ce3a876abe2ea4f555f5f62207c0d36b9e33a8be41cbb96"
+    },
+    {
+      "destination": "python/solid-isp.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/solid-isp.md",
+      "fragments": [
+        {
+          "start_line": 8,
+          "end_line": 78,
+          "sha256": "401b59c946046ac43dea71fdeb2a2b89fe5112ab866dfb313f0e44d4b5a6f4b7"
+        }
+      ],
+      "sha256": "401b59c946046ac43dea71fdeb2a2b89fe5112ab866dfb313f0e44d4b5a6f4b7"
+    },
+    {
+      "destination": "python/solid-lsp.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/solid-lsp.md",
+      "fragments": [
+        {
+          "start_line": 8,
+          "end_line": 66,
+          "sha256": "dad81c651bccdb9d8ce917b2a885a46c617fdf8593e568af0742fa3ff66d2114"
+        }
+      ],
+      "sha256": "dad81c651bccdb9d8ce917b2a885a46c617fdf8593e568af0742fa3ff66d2114"
+    },
+    {
+      "destination": "python/validation-pydantic.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/validation-pydantic.md",
+      "fragments": [
+        {
+          "start_line": 8,
+          "end_line": 81,
+          "sha256": "062573d29b93dee352936b2fbfafea7dc61015fba3a8a3302299a1924adf5a14"
+        }
+      ],
+      "sha256": "062573d29b93dee352936b2fbfafea7dc61015fba3a8a3302299a1924adf5a14"
+    },
+    {
+      "destination": "python/design-dependency-injection.md",
+      "repository": "ludo-technologies/python-best-practices",
+      "revision": "fa0d3f58afb8bf56c028bb559e0e7bc1538e079a",
+      "path": "skills/coding-standards/rules/design-dependency-injection.md",
+      "fragments": [
+        {
+          "start_line": 8,
+          "end_line": 74,
+          "sha256": "efeceefd3144551939465977e40e12435c9d862c387a6889bc2e2ff59b2cd56a"
+        }
+      ],
+      "sha256": "efeceefd3144551939465977e40e12435c9d862c387a6889bc2e2ff59b2cd56a"
+    },
+    {
+      "destination": "python/imports.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/code-style.md",
+      "fragments": [
+        {
+          "start_line": 210,
+          "end_line": 303,
+          "sha256": "2f9ba290bc64f3c8f96ad16aacf5c6032ec03505ab00e7c21441711cc981ea42"
+        }
+      ],
+      "sha256": "2f9ba290bc64f3c8f96ad16aacf5c6032ec03505ab00e7c21441711cc981ea42"
+    },
+    {
+      "destination": "python/naming.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/code-style.md",
+      "fragments": [
+        {
+          "start_line": 683,
+          "end_line": 730,
+          "sha256": "d41c46bd5f261110121df69da82f147cf9998c38f5b67fa8f736e522b214a6fc"
+        }
+      ],
+      "sha256": "d41c46bd5f261110121df69da82f147cf9998c38f5b67fa8f736e522b214a6fc"
+    },
+    {
+      "destination": "python/mutable-defaults.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/code-style.md",
+      "fragments": [
+        {
+          "start_line": 1203,
+          "end_line": 1233,
+          "sha256": "ab0a0ad5e7f6810fa83b28ca4dc90b9a3ffa6757f95da7d17ba983729682926f"
+        }
+      ],
+      "sha256": "ab0a0ad5e7f6810fa83b28ca4dc90b9a3ffa6757f95da7d17ba983729682926f"
+    },
+    {
+      "destination": "python/structured-logging.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/logging.md",
+      "fragments": [
+        {
+          "start_line": 182,
+          "end_line": 185,
+          "sha256": "67f014eae5ba020aebad2fdbde6e3e373840f06e14c557f1e1e605d9736a43ff"
+        },
+        {
+          "start_line": 205,
+          "end_line": 237,
+          "sha256": "f73a7f09bdf8b8a3b40408ac301537944bca68f8df69d932938363b76ad8bb94"
+        }
+      ],
+      "sha256": "8db5c925638a7c86c8c9851726edb7c137c6994d935481f307082bd4b760143d"
+    },
+    {
+      "destination": "python/logging-sensitive-data.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/logging.md",
+      "fragments": [
+        {
+          "start_line": 349,
+          "end_line": 362,
+          "sha256": "83e835a7c26a2b85b759e04aeaa50413584045816329ff005eeea519b01aecfe"
+        }
+      ],
+      "sha256": "83e835a7c26a2b85b759e04aeaa50413584045816329ff005eeea519b01aecfe"
+    },
+    {
+      "destination": "python/monitoring.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/observability.md",
+      "fragments": [
+        {
+          "start_line": 69,
+          "end_line": 119,
+          "sha256": "01606a3ea2098d8b068fb9f2738722d0ee372ee01e1847a905cad411bf6f5114"
+        },
+        {
+          "start_line": 140,
+          "end_line": 185,
+          "sha256": "f03f3157de34e7e69be37587ddbe714b8ae2759d18ce637dd49f21b04b831582"
+        }
+      ],
+      "sha256": "7c9a90ad8d38051a9f377c231cc01d689de65fd71f0561a73c59436873248f5f"
+    },
+    {
+      "destination": "sql/naming.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/db-design.md",
+      "fragments": [
+        {
+          "start_line": 173,
+          "end_line": 189,
+          "sha256": "b8f2b28ec127055d37b5293ac8bb046dc6fb54ff6b5b32342fbc5a262deee3ac"
+        }
+      ],
+      "sha256": "b8f2b28ec127055d37b5293ac8bb046dc6fb54ff6b5b32342fbc5a262deee3ac"
+    },
+    {
+      "destination": "sql/parameterized-queries.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/security.md",
+      "fragments": [
+        {
+          "start_line": 307,
+          "end_line": 331,
+          "sha256": "8983ce711794a4e01b26fbf1f1ed5f50ed50e44ca6838048e3448dec5560c7b0"
+        }
+      ],
+      "sha256": "8983ce711794a4e01b26fbf1f1ed5f50ed50e44ca6838048e3448dec5560c7b0"
+    },
+    {
+      "destination": "sql/query-loading.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/performance.md",
+      "fragments": [
+        {
+          "start_line": 170,
+          "end_line": 216,
+          "sha256": "bde8526886c4864bfbdd1a3da775b1cd8089e9736e9c1dfd0bc7026a9de9f3b2"
+        }
+      ],
+      "sha256": "bde8526886c4864bfbdd1a3da775b1cd8089e9736e9c1dfd0bc7026a9de9f3b2"
+    },
+    {
+      "destination": "sql/pagination.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/db-design.md",
+      "fragments": [
+        {
+          "start_line": 392,
+          "end_line": 435,
+          "sha256": "1465b69f19da6efdc3d09e6a8ff26b8f0dc3b3524e490b64679efafc580cb711"
+        }
+      ],
+      "sha256": "1465b69f19da6efdc3d09e6a8ff26b8f0dc3b3524e490b64679efafc580cb711"
+    },
+    {
+      "destination": "sql/decimal-values.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/db-design.md",
+      "fragments": [
+        {
+          "start_line": 437,
+          "end_line": 462,
+          "sha256": "52a561be204e1bf47ac73d3abc87dc6a88a0bb9132e781a5d3190aa6acd7dffb"
+        }
+      ],
+      "sha256": "52a561be204e1bf47ac73d3abc87dc6a88a0bb9132e781a5d3190aa6acd7dffb"
+    },
+    {
+      "destination": "sql/migrations.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/data-migrations.md",
+      "fragments": [
+        {
+          "start_line": 112,
+          "end_line": 120,
+          "sha256": "17537ad9b54f12f539db8954b083e8887c303c5cf5bbacb39cb244320b89a8d8"
+        },
+        {
+          "start_line": 136,
+          "end_line": 160,
+          "sha256": "f1bc2e9c7f269037f00fc8f300e2f7c6d3eebec6d38ba79ba997438d880b3754"
+        }
+      ],
+      "sha256": "a799e64d9499a5c1b5708e021c77eb57f02d2a88ba650a70c1e4f2904caf028f"
+    },
+    {
+      "destination": "api/design.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "rules/api-design.md",
+      "fragments": [
+        {
+          "start_line": 1,
+          "end_line": 22,
+          "sha256": "9b3eb5e2d1bd8628875a3cde3f322c7de12b3964efd3fcfb2ea31fe88cdf8945"
+        },
+        {
+          "start_line": 37,
+          "end_line": 54,
+          "sha256": "3952950328b0befbb935742b710f6149787837b187d7b1d559a173ead32b49d6"
+        },
+        {
+          "start_line": 107,
+          "end_line": 133,
+          "sha256": "d6c470dd1f075d363393de08dafd2a7fc9cf649cc36f3cc267179b68f56865f5"
+        },
+        {
+          "start_line": 148,
+          "end_line": 171,
+          "sha256": "572d2b19dc564b83be0b8d62585b968528e93ef520c0a26bcc4b5f165f83e52e"
+        }
+      ],
+      "sha256": "7e5eeb3ed087783a0327b8725ea555e58b2f6f547f981c80bb62826a42d75465"
+    },
+    {
+      "destination": "api/flask.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/flask/SKILL.md",
+      "fragments": [
+        {
+          "start_line": 50,
+          "end_line": 125,
+          "sha256": "46a5a310e9478a472d563bc1dda28bd635ccb7afdba33bd82aabc5d1c739b00c"
+        },
+        {
+          "start_line": 276,
+          "end_line": 319,
+          "sha256": "c3616e22013d0f6b5195d842ab491cacff620765945839a493ba404163020d03"
+        }
+      ],
+      "sha256": "abbb914db34ddc8159d61f78c0ebec2a1b70b2dbaa6baa601a2fabd7d1ffc145"
+    },
+    {
+      "destination": "api/fastapi.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/fastapi/SKILL.md",
+      "fragments": [
+        {
+          "start_line": 148,
+          "end_line": 177,
+          "sha256": "c0f46f3acbc49db70373abbe63c2daeab3706e74f23174ff46ad46827917d1cf"
+        },
+        {
+          "start_line": 259,
+          "end_line": 283,
+          "sha256": "110ca3dccf0d93b679213ea58bf8f9c531f2a40de5e0f7d7a3a2c0c84e0ee3a6"
+        }
+      ],
+      "sha256": "a395994845818e741a34ecfaa15884d71ad28fde6db86fd11f6b05d14ba7d2b9"
+    },
+    {
+      "destination": "api/authorization.md",
+      "repository": "rishapgandhi/python-skills",
+      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
+      "path": "skills/common/api-auth.md",
+      "fragments": [
+        {
+          "start_line": 198,
+          "end_line": 242,
+          "sha256": "e8e796aed90868f29c46078bebc22aba7251dfeccedaa397681b6ce74f5b0f8c"
+        }
+      ],
+      "sha256": "e8e796aed90868f29c46078bebc22aba7251dfeccedaa397681b6ce74f5b0f8c"
+    }
+  ]
+}
