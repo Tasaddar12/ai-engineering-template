@@ -6,8 +6,10 @@ from pathlib import Path
 from . import models
 from .core import Failure, read, root
 
-VARIANTS = ("Bug", "Enhancement", "Decision required", "Security risk", "UAT")
-FORM_NAMES = dict(zip(VARIANTS, ("bug", "enhancement", "decision-required", "security-risk", "uat")))
+FORM_NAMES = {"Bug": "bug", "Enhancement": "enhancement", "Decision required": "decision-required",
+              "Security risk": "security-risk", "UAT": "uat", "Docs issue": "docs_issue",
+              "Chore": "chore", "Feature request": "feature_request"}
+VARIANTS = tuple(FORM_NAMES)
 ACCEPTANCE = ("Status", "Reviewer", "Date", "Decision", "Evidence")
 FALLBACK_HEADINGS = {
     "Bug": ["Problem", "Expected behavior", "Actual behavior", "Reproduction", "Safe evidence", "Impact", "Acceptance", "Scope", "Related links"],
@@ -15,6 +17,9 @@ FALLBACK_HEADINGS = {
     "Decision required": ["Decision question", "Context", "Options", "Evidence", "Recommendation", "Blocking dependency", "Scope", "Acceptance", "Related links"],
     "Security risk": ["Security concern", "Affected surface and behavior", "Impact", "Risk assessment and lifecycle", "Safe evidence", "Requested remediation", "Scope and acceptance", "Related links"],
     "UAT": ["Acceptance checklist", "Context", "Impact and scope", "Build and environment", "Steps and expected outcomes", "Related links", "Human acceptance"],
+    "Docs issue": ["Documentation problem", "Affected documentation", "Proposed correction", "Scope", "Acceptance", "Related links"],
+    "Chore": ["Maintenance need", "Current state and evidence", "Proposed outcome", "Impact", "Scope", "Acceptance", "Related links"],
+    "Feature request": ["Feature request", "Proposed outcome", "Current limitation and evidence", "Impact", "Scope", "Acceptance", "Related links"],
 }
 
 

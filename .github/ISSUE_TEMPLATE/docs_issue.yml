@@ -1,0 +1,41 @@
+name: "Docs issue"
+description: "Report missing, incorrect or unclear documentation."
+body:
+  - type: markdown
+    attributes:
+      value: "Use a type(scope): summary title. Replace every prompt with reviewed facts, keep the section structure, and use Unknown or Pending with a reason for unavailable evidence. Read the authoring guidance in .github/ISSUE_TEMPLATE/README.md. Never include secrets or exploit details."
+  - type: textarea
+    id: report
+    attributes:
+      label: Report
+      description: Complete the selected issue body below; preserve its headings, tables and acceptance fields.
+      value: |
+        ## Documentation problem
+
+        [One sentence: affected reader + incorrect, missing or unclear information.]
+
+        ## Affected documentation
+
+        - Location: [actual documentation URL or repository path and section]
+        - Version: [affected release or observed commit; Unknown with dependency if unavailable]
+        - Current guidance: [short safe excerpt or concrete description of the problem]
+
+        ## Proposed correction
+
+        [One sentence: accurate information, example or instruction the reader needs.]
+
+        ## Scope
+
+        - In: [bounded documentation pages or topics]
+        - Out: [unrelated documentation or product behavior]
+
+        ## Acceptance
+
+        - [Observable reader outcome after correction]
+        - [Documentation links, examples or commands checked against the matching revision]
+
+        ## Related links
+
+        [1-3 actual issue/PR/requirement references or accessible safe evidence URLs.]
+    validations:
+      required: true

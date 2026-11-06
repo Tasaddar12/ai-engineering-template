@@ -1,0 +1,43 @@
+name: "Chore"
+description: "Request bounded maintenance or engineering housekeeping."
+body:
+  - type: markdown
+    attributes:
+      value: "Use a type(scope): summary title. Replace every prompt with reviewed facts, keep the section structure, and use Unknown or Pending with a reason for unavailable evidence. Read the authoring guidance in .github/ISSUE_TEMPLATE/README.md. Never include secrets or exploit details."
+  - type: textarea
+    id: report
+    attributes:
+      label: Report
+      description: Complete the selected issue body below; preserve its headings, tables and acceptance fields.
+      value: |
+        ## Maintenance need
+
+        [One sentence: maintenance task and why it is needed.]
+
+        ## Current state and evidence
+
+        [Observed version/configuration/revision and 1-3 safe evidence references; Unknown with dependency if unverified.]
+
+        ## Proposed outcome
+
+        [One sentence: observable maintenance result.]
+
+        ## Impact
+
+        [Affected maintainers, systems or dependencies and practical effect.]
+
+        ## Scope
+
+        - In: [bounded maintenance work]
+        - Out: [unrelated features, refactors or upgrades]
+
+        ## Acceptance
+
+        - [Observable maintenance outcome]
+        - [Applicable regression, configuration or compatibility check and expected result]
+
+        ## Related links
+
+        [1-3 actual issue/PR/requirement references or accessible safe evidence URLs.]
+    validations:
+      required: true

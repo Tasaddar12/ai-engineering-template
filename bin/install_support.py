@@ -22,7 +22,7 @@ import uuid
 # Overhaul scripts/ require the source Git history and PLANNED-UPDATES.md;
 # they are authoring tools, not a runnable part of an installed host namespace.
 PREFIXES = ('agents/', 'commands/', 'engineer/', 'hooks/', 'skills/', 'bin/')
-GITHUB_TEMPLATES = ('.github/ISSUE_TEMPLATE/', '.github/pull_request_template.md')
+GITHUB_TEMPLATES = ('.github/ISSUE_TEMPLATE/', '.github/pull_request_template.md', '.github/PULL_REQUEST_TEMPLATE/')
 BEGIN = '# BEGIN ENGINEER MANAGED'
 END = '# END ENGINEER MANAGED'
 MANIFEST = 'engineer-install/manifest.json'

@@ -29,7 +29,8 @@ class IssueFormat(unittest.TestCase):
 
     def test_all_canonical_variants(self):
         self.assertEqual(list(issue_format.schema()),
-                         ["Bug", "Enhancement", "Decision required", "Security risk", "UAT"])
+                         ["Bug", "Enhancement", "Decision required", "Security risk", "UAT",
+                          "Docs issue", "Chore", "Feature request"])
         for variant, body in bodies().items():
             with self.subTest(variant=variant):
                 self.assertTrue(issue_format.validate(body, variant)["valid"])
