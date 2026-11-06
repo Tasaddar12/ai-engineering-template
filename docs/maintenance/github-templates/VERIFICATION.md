@@ -1,104 +1,66 @@
 ---
 phase: github-publication-template-maintenance
-verified: 2026-11-06T15:06:23Z
+verified: 2026-11-06T15:26:56Z
 status: passed
 score: 8/8 must-haves verified
-candidate: f12b8234d554d590d1802b989fdb72e496fbf27c
+candidate: c6f8db6a1f598e06ee63d8ffb52f1f26f0bd3b27
 base: 97a2f0dc03b739f4ba0ad89dc5f5298269d8cd46
 behavior_unverified: 0
 overrides_applied: 0
-re_verification:
-  previous_status: gaps_found
-  previous_candidate: b0f7df95f3f96c9b7442f6ecca9b0072ea4fb9f2
-  previous_score: 6/8
-  gaps_closed:
-    - V-01 malformed PR template cannot disable required-section validation.
-    - V-02 local installs select project templates despite retained global assets.
-  warnings_closed:
-    - V-03 UAT guide names the correct source and installed paths.
-  gaps_remaining: []
-  regressions: []
+gaps: []
 human_verification: []
 ---
 
-# GitHub publication template verification
+# GitHub template verification
 
-The final frozen candidate passes this bounded independent verification: **31 repository tests, zero failures, zero skips**, independent YAML/content-preservation checks, the original failure probes, and configured static checks. Both initial runtime blockers and the local-guide warning are resolved with evidence. No remaining in-scope finding was identified.
+**Passed at c6f8db6a1f598e06ee63d8ffb52f1f26f0bd3b27: 34 selected repository tests, zero failures and zero skips.** Independent syntax, preservation, runtime-selection, installed-byte/hash and static checks also passed. No remaining in-scope finding was identified.
 
-This qualifies the source migration and tested installer/runtime behavior. It does not certify live GitHub rendering, full cross-platform CI, PR readiness, consumer adoption, or merge authority.
+The verified scope is eight issue forms and **only three named PR templates**: enhancement, feature and fix. The default .github/pull_request_template.md is removed and is not recreated/exported. Earlier retained-default evidence is superseded by this report.
 
-## Scope and evidence boundary
+## Scope and direct evidence
 
-Original base: 97a2f0dc03b739f4ba0ad89dc5f5298269d8cd46. Initial candidate with reproduced defects: b0f7df95f3f96c9b7442f6ecca9b0072ea4fb9f2. Final tested candidate: f12b8234d554d590d1802b989fdb72e496fbf27c.
-
-Source checkout D:\Codex\2026-11-06\task-6\verify remained at that final revision with a clean tracked tree. Tests used Windows and Python 3.11.9 at D:\Codex\2026-10-16\task-7\python-runtime\python.exe. Independent YAML parsing used PyYAML 6.0.3; installer/runtime code remains standard-library only.
-
-This report states the commands, revisions, observations and limits directly. Supporting raw output, exact argv/exit-code/duration JSON and probe scripts remain **local, uncommitted evidence** under D:\Codex\2026-11-06\task-6\verification-final-logs. Initial failures and report are retained under verification-logs, including VERIFICATION-initial.md. These local paths are not published evidence URLs and are not required to understand the findings below.
-
-Independent commands ran in parallel processes with isolated disposable fixtures; all finished before judgment. No adopting-project identity or planning phase was seeded. No GitHub mutation, push, merge or change to PR #194 was performed by this verifier.
-
-## Goal achievement
-
-| # | Observable truth | Status | Direct evidence |
-|---|---|---|---|
-| 1 | Actual Git workflow and two old authoring files are removed. | VERIFIED | Candidate lacks engineer/references/git-workflow.md, engineer/templates/issue.md and engineer/templates/pull-request.md. The actual requested workflow location was a reference, not workflows/. |
-| 2 | Five GitHub YAML forms preserve original issue bodies. | VERIFIED | Independent PyYAML parsing and comparison with original Git-content fenced blocks passed for Bug, Enhancement, Decision required, Security risk and UAT. |
-| 3 | Supported GitHub PR template preserves original visible body. | VERIFIED | .github/pull_request_template.md visible Markdown equals the original fenced body, ignoring terminal whitespace. Authoring instructions remain HTML comments. |
-| 4 | Clean installs export and use templates for both hosts/scopes. | VERIFIED | Actual installed Codex/Claude runtimes validate every form and PR body in four combinations. Local uses project .github; global uses namespace .github without writing home-root .github. |
-| 5 | Shared local templates preserve customizations and ownership. | VERIFIED | Codex then Claude installation succeeds; customized form causes conflict and survives install. Installed bytes and manifest source paths match canonical source. |
-| 6 | Structural/publication checks and repeat installs work. | VERIFIED | 19 format, 8 misc/publication, 3 GitHub-installer and 1 no-op tests pass, zero skips. No-op covers both hosts/scopes. |
-| 7 | Malformed nonempty PR template cannot disable required sections. | VERIFIED | Original independent comment-only/incomplete-template probes now reject with invalid-pr-body; added tests cover optional-only headings and authoring-comment isolation. |
-| 8 | Scope changes select correct templates despite retained copies. | VERIFIED | Original actual Codex global-to-local probe selects project .github. Real both-host global-to-local-to-global regression damages retired copies and validates the active schema. |
-
-## Independent content and syntax observations
-
-All five YAML documents independently parse with unique canonical names, supported name/description/body top-level structure, Markdown introduction, and a required report textarea with label, description and value. Every decoded default equals its original fenced issue body, ignoring terminal whitespace. Runtime extraction agrees with independent YAML decoding, and GitHub's added Report heading does not break structural validation.
-
-Thus original headings, tables, UAT numbered steps and human-acceptance fields are preserved. PR visible Markdown likewise equals the original fenced body. Expected content comes from original Git history plus an independent parser, not runtime-generated expected values.
-
-The guide no longer links to ../../engineer/templates/UAT.md. It explicitly names engineer/templates/UAT.md for source; .codex/engineer/templates/UAT.md and .claude/engineer/templates/UAT.md for installations; and the project root/local versus selected home/global context. Original UAT authoring instructions remain. No second publication-template copy was introduced outside .github.
-
-No live GitHub issue form was rendered or submitted. Activation on the default branch is outside this draft-source verification.
-
-## Exact repository checks and actual outcomes
-
-PY denotes the exact executable above. All commands ran from the frozen verify checkout. Disposable Git fixture initialization required unsandboxed test execution. This final independent batch had no environment setup failure.
-
-| Exact command | Actual outcome |
+| Requirement | Verified observation |
 |---|---|
-| PY -m unittest discover -s tests -p test_issue_format.py -v | 19 tests passed in 6.468 seconds; zero skips. |
-| PY -m unittest discover -s tests -p test_misc_verbs.py -v | 8 tests passed in 17.855 seconds; zero skips. |
-| PY -m unittest discover -s tests -p test_installer_runtime.py -k github -v | 3 tests passed in 137.446 seconds; zero skips. Covers real both-host scope roundtrips with poisoned retired templates, clean four-combination installation/runtime validation, and customization protection. |
-| PY -m unittest discover -s tests -p test_installer_runtime.py -k clean_installs_both_hosts_and_scopes_are_noop_on_rerun -v | 1 test passed in 80.289 seconds; zero skips; four host/scope combinations and repeat-install no-op. |
-| PY -I scripts/links.py | Passed: 0 broken targets. |
-| PY -I scripts/check_markdown_python.py | Passed: 335 tracked Markdown files scanned; 0 findings. |
-| PY -I scripts/verbs.py --fail-on-unknown | Passed: 324 registered verbs, 598 call sites, 0 unknown. |
-| git diff --check 97a2f0dc03b739f4ba0ad89dc5f5298269d8cd46 HEAD | Passed: no whitespace errors. |
+| Remove obsolete source files. | engineer/references/git-workflow.md, engineer/templates/issue.md, engineer/templates/pull-request.md and .github/pull_request_template.md are absent. |
+| Preserve original issue templates and add the requested types. | Independent PyYAML parsing confirms eight supported form documents. Decoded Report defaults for the original Bug, Enhancement, Decision required, Security risk and UAT equal original base Git content, ignoring terminal whitespace. New docs_issue.yml, chore.yml and feature_request.yml have distinct names, expected sections and acceptance outcomes. All eight agree with runtime extraction and validate with GitHub's Report wrapper. |
+| Provide three separate PR bodies. | .github/PULL_REQUEST_TEMPLATE contains exactly enhancement.md, feature.md and fix.md. Each retains the original PR heading/table structure, complete embedded authoring guidance and distinct Goal/Changes/Verification prompts. Visible typed bodies equal the preceding expanded-scope revision; default deletion did not rewrite them. |
+| Install canonical assets for both hosts/scopes. | Four independent real installs passed: Codex local/global and Claude local/global. Each exports exactly 12 assets: eight issue forms, their guide and three PR bodies. Every installed byte matches an independently read pinned Git archive; source_path and SHA-256 ownership digest match. No default PR file or default export/manifest source exists. Local exports project .github; global exports namespace .github without home-root .github. |
+| Validate selected PRs without a default file. | Actual installed runtimes validate all eight issues and all three selected PRs. Named selection, missing selection-file and invalid/path-like name regressions pass. Independent pr.open probes confirm --template enhancement/feature/fix reaches validation before push/provider mutation; omission remains compatible through enhancement validation. |
+| Preserve installer behavior. | Shared Codex/Claude installation and customization-conflict protection pass. Repeat-install no-op passes for both hosts and both scopes. |
+| Retain fixes for independently discovered defects. | Original malformed-PR probe rejects comment-only/incomplete schemas. Original real global-to-local probe chooses project templates. Both-host global-to-local-to-global regressions deliberately poison retained copies and still validate the active schema. Corrected UAT guide paths remain. |
+| Keep documentation/static wiring valid. | Eight-form catalog, GitHub template query parameters, runtime --template instructions and no-default installation guidance checked. Source links, Markdown/Python, verb registry and whole-diff whitespace checks pass. |
 
-Additional independent probe commands and observed results:
+Git archive on this Windows setup converts LF to configured CRLF. The independent installer probe compares exact archive bytes and separately confirms normalized archive content equals raw Git blobs; it does not mistake that configured conversion for content corruption. Runtime code remains Python standard-library only; PyYAML is a verifier dependency.
 
-| Exact command | Method and actual outcome |
+## Exact commands and outcomes
+
+All commands ran from D:\Codex\2026-11-06\task-6\verify at the frozen candidate above. Its tracked tree was clean afterward. PY means D:\Codex\2026-10-16\task-7\python-runtime\python.exe, Python 3.11.9 on Windows. PyYAML was 6.0.3. Independent processes used isolated disposable fixtures and all completed before judgment. Unsandboxed execution was required for Git fixture creation; this batch had no setup failures.
+
+| Exact command | Actual result |
 |---|---|
-| PY D:\Codex\2026-11-06\task-6\verification-final-logs\check_templates.py | PyYAML decoded all five forms; compared Report defaults with original base's fenced Markdown via git show; compared PR visible body; checked removed files; checked runtime/YAML agreement and repaired guide. All assertions passed. |
-| PY D:\Codex\2026-11-06\task-6\verification-final-logs\check_pr_malformed.py | Supplied comment-only and incomplete nonempty canonical PR template input while validating arbitrary heading-free text. Both cases rejected with invalid-pr-body. Exit 0. |
-| PY D:\Codex\2026-11-06\task-6\verification-final-logs\check_scope_transition.py | Actual pinned Codex global install then local install in the same disposable target both complete; manifest records local; installed runtime selects project .github despite retained global assets. Exit 0. |
+| PY -m unittest discover -s tests -p test_issue_format.py -v | 22 tests passed in 8.507s; zero skips. |
+| PY -m unittest discover -s tests -p test_misc_verbs.py -v | 8 tests passed in 20.684s; zero skips. |
+| PY -m unittest discover -s tests -p test_installer_runtime.py -k github -v | 3 tests passed in 147.114s; zero skips. |
+| PY -m unittest discover -s tests -p test_installer_runtime.py -k clean_installs_both_hosts_and_scopes_are_noop_on_rerun -v | 1 test passed in 84.432s; zero skips. |
+| PY -I scripts/links.py | 0 broken targets. |
+| PY -I scripts/check_markdown_python.py | 339 tracked Markdown files scanned; 0 findings. |
+| PY -I scripts/verbs.py --fail-on-unknown | 324 registered verbs, 598 call sites; 0 unknown. |
+| git diff --check 97a2f0dc03b739f4ba0ad89dc5f5298269d8cd46 HEAD | Passed; no whitespace errors. |
 
-The final probe wrappers reuse original scripts from verification-logs, replacing only the candidate pin where needed. These are the same original failure scenarios, not substitutes. Raw local logs corroborate these observations but are not claimed as published artifacts.
+Independent probes ran with the same PY executable. Each command below exited 0; their methods and outcomes are stated directly so this report does not depend on unpublished files.
 
-## Initial findings and resolution
+| Exact command | Independent observation |
+|---|---|
+| PY D:\Codex\2026-11-06\task-6\verification-no-default-logs\check_templates.py | Independent YAML decoding and original-five parity passed; three added form shapes, three typed PR bodies/common original structure, complete guidance, default absence and selection documentation checked. |
+| PY D:\Codex\2026-11-06\task-6\verification-no-default-logs\check_installer_hashes.py | 12 assets in each of four actual host/scope installs exactly match pinned archive bytes, canonical source paths and actual SHA-256 manifest digests; default absent from archive, files and manifest exports. |
+| PY D:\Codex\2026-11-06\task-6\verification-no-default-logs\check_pr_forwarding.py | All three pr.open --template values reach the selected validator before any push/provider mutation; Git/provider operations were intercepted. |
+| PY D:\Codex\2026-11-06\task-6\verification-no-default-logs\check_pr_malformed.py | Both original malformed-schema cases reject with invalid-pr-body, using the named-template helper without a default file. |
+| PY D:\Codex\2026-11-06\task-6\verification-no-default-logs\check_scope_transition.py | Actual pinned global then local installation completes; manifest says local and installed runtime selects project .github despite retained global assets. |
 
-| Finding at initial candidate | Initial deterministic observation | Final repair and evidence | Disposition |
-|---|---|---|---|
-| V-01 — BLOCKER: malformed PR schema disables requirements. | Comment-only template accepted arbitrary heading-free PR text. | delivery.validate_body rejects an empty parsed required-heading list. Original independent probe and added repository regressions pass. | Resolved at final revision. |
-| V-02 — BLOCKER: local runtime consumes retained global templates. | Real global then local install recorded local scope but selected .codex/.github. | github_directory reads installed manifest scope; invalid scope fails. Original actual-install probe and both-host poisoned-copy roundtrip regression pass. | Resolved at final revision. |
-| V-03 — WARNING: local guide assumes source layout. | Source-relative UAT link was absent in a local consumer layout. | Doc-writer replaced it with explicit source and both-host installed paths plus scope context; independent guide assertion passes. | Resolved at final revision. |
+## Evidence boundary and limits
 
-No override was applied, and no unresolved finding was downgraded. Initial failure provenance remains in local initial logs/report.
+The exact argv/revision/exit-code/duration JSON, scripts and raw output are **local, uncommitted supporting evidence** under D:\Codex\2026-11-06\task-6\verification-no-default-logs. Earlier batches remain in separate local directories. These are not published URLs; the commands and observations needed to assess this result are included above.
 
-## Test quality and limits
+Tests use actual installed Python runtimes. Publication-safety/forwarding probes intentionally intercept provider calls. No live GitHub mutation, push, merge or change to PR #194 was performed by this verifier. No source changes were made.
 
-Selected tests exercise real disposable installs and actual installed Python runtimes. Publication-safety tests intentionally simulate provider calls. No selected case was skipped or disabled. The scope regression poisons retained files before validation, so directory presence alone cannot conceal wrong source selection. Migration parity uses original source content and an independent parser.
-
-The complete historical suite, Linux, live GitHub form rendering, real provider publication/integration and consumer adoption were not run under this bounded assignment. Draft CI skips platform validation. PR readiness, actual human acceptance and merge are not certified by this report.
-
-No phase roadmap/CONTEXT records exist for this maintenance task; phase decision-coverage, fingerprint and roadmap requirement gates are not applicable. No artificial manual installer acceptance step is added. The requested PR review remains the coordinator's separate delivery action.
+The full historical suite, Linux execution, live GitHub form rendering, live publication/provider integration and consumer adoption were not run. Draft CI is configured to skip platform validation. This report certifies neither PR readiness nor merge authority; the user's requested draft PR review remains the coordinator's delivery action. No phase identity or artificial manual installer acceptance step was added for this template-maintenance assignment.
