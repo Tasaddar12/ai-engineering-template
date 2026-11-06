@@ -41,3 +41,20 @@ an empty skill list. No full source verification, installed-host execution,
 consumer update, live readiness transition, push, PR publication or merge is
 claimed by this documentation slice. The coordinator must integrate these docs
 and obtain applicable independent review and runtime verification.
+
+## Canonical-reference correction
+
+Independent review identified remaining phase-only claims in
+`engineer/references/verification-evidence.md`. This follow-up corrects that
+reference against source `a64335392ce8cacb49aa39233e4093257cb77f62` while leaving
+the README slice above unchanged. It documents canonical quick identity and
+fingerprint-bound statuses, protected QUICK/PLAN successor owners, and explicit
+`--quick`/`--expected-head` readiness and authorized merge examples. It preserves
+the customized consumer adapter's separate reviewed-port and fresh-baseline
+requirements and the existing narrow phase-compensation allowlist.
+
+The same three static commands and `git diff --check` passed for this reference
+correction: zero broken targets, 337 tracked Markdown files with zero findings,
+and 324 registered verbs/603 call sites with zero unknown sites. These checks
+do not establish runtime behavior, installed-host acceptance or consumer adoption.
+Owned follow-up paths are the canonical reference and this summary only.
