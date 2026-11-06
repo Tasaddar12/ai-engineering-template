@@ -6,7 +6,7 @@ import re
 import subprocess
 import tempfile
 import time
-from . import config, gitops, models, verification, repository
+from . import config, gitops, verification, repository, issue_format
 from .core import Args, Failure, read, root, run, safe_path
 
 PR_FIELDS = "number,url,state,isDraft,headRefName,headRefOid,baseRefName,statusCheckRollup,mergeable,title,body"
@@ -48,15 +48,14 @@ def classify_checks(checks):
 def validate_body(body):
     if not body.strip():
         raise Failure("invalid-pr-body", "Pull request body cannot be empty")
-    template = read(models.NAMESPACE/"engineer/templates/pull-request.md")
+    template = read(issue_format.github_directory()/"pull_request_template.md")
     # Source checkouts can run before authoring templates are installed. These
     # are publication fields, not the headings of the template's instructions.
     required = ["Goal", "Changes", "Verification", "Known gaps", "Risks or rollback"]
     if template:
-        section = re.search(r"(?ms)^## File Template\s*\n+```(?:markdown)?\s*\n(.*?)^```", template)
-        if section:
-            required = [heading for heading in re.findall(r"(?m)^##\s+(.+)$", section[1])
-                        if heading not in ("Requirements or Issues", "Stack")]
+        required = [match[1].strip() for line in issue_format.visible_lines(template)
+                    if (match := re.match(r"^##\s+(.+)$", line))
+                    and match[1].strip() not in ("Requirements or Issues", "Stack")]
     missing = [heading for heading in required if not re.search(r"(?m)^##\s+"+re.escape(heading)+r"\s*$", body)]
     if missing:
         raise Failure("invalid-pr-body", "Missing template sections", missing=missing)

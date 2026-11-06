@@ -16,7 +16,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 CLI = ROOT / "bin/install.py"
-PREFIXES = ("agents", "commands", "engineer", "hooks", "scripts", "skills", "bin")
+PREFIXES = (".github", "agents", "commands", "engineer", "hooks", "scripts", "skills", "bin")
 
 
 def load(name, path):
@@ -90,6 +90,61 @@ class CurrentInstallerTests(unittest.TestCase):
         return {path.relative_to(self.target).as_posix():
                 (path.read_bytes(), path.stat().st_mtime_ns)
                 for path in self.target.rglob("*") if path.is_file()}
+
+    def test_github_templates_install_and_validate_for_both_hosts(self):
+        source_forms = ROOT / '.github/ISSUE_TEMPLATE'
+        for host in ('codex', 'claude'):
+            for scope in ('local', 'global'):
+                with self.subTest(host=host, scope=scope):
+                    self.target = self.base / (host + '-' + scope)
+                    result = self.install(host, scope)
+                    self.assertTrue(result['complete'])
+                    namespace = self.target / ('.' + host)
+                    github = (self.target if scope == 'local' else namespace) / '.github'
+                    manifest = json.loads((namespace / 'engineer-install/manifest.json').read_text())
+                    for form in source_forms.glob('*.yml'):
+                        installed = github / 'ISSUE_TEMPLATE' / form.name
+                        self.assertEqual(form.read_bytes(), installed.read_bytes())
+                        self.assertEqual('.github/ISSUE_TEMPLATE/' + form.name,
+                                         manifest['files'][installed.relative_to(self.target).as_posix()]['source_path'])
+                    pr = github / 'pull_request_template.md'
+                    self.assertEqual((ROOT / '.github/pull_request_template.md').read_bytes(), pr.read_bytes())
+                    self.assertEqual(scope == 'local', (self.target / '.github').exists())
+                    self.assertFalse((namespace / 'engineer/templates/issue.md').exists())
+                    self.assertFalse((namespace / 'engineer/templates/pull-request.md').exists())
+                    self.assertFalse((namespace / 'engineer/references/git-workflow.md').exists())
+                    # Actual installed runtime consumes the same forms and PR body.
+                    driver = '''import re, sys
+sys.path.insert(0, sys.argv[1])
+from lib import issue_format, delivery
+for variant in issue_format.VARIANTS:
+    _, body = issue_format.form_body(issue_format.template_path(variant))
+    issue_format.validate(body, variant)
+body = (issue_format.github_directory() / 'pull_request_template.md').read_text(encoding='utf-8')
+body = re.sub(r'<!--.*?-->', '', body, flags=re.S)
+delivery.validate_body(body)
+try:
+    delivery.validate_body(re.sub(r'^## Goal$', '## Removed', body, flags=re.M))
+except Exception as exc:
+    assert getattr(exc, 'code', None) == 'invalid-pr-body', exc
+else:
+    raise AssertionError('Missing canonical PR section was accepted')
+'''
+                    checked = subprocess.run([sys.executable, '-I', '-c', driver, str(namespace / 'engineer/bin')],
+                                             cwd=self.target, capture_output=True, text=True, encoding='utf-8')
+                    self.assertEqual(0, checked.returncode, checked.stdout + checked.stderr)
+
+    def test_project_github_templates_preserve_customizations_and_share_hosts(self):
+        self.install('codex')
+        self.assertTrue(self.install('claude')['complete'])
+        form = self.target / '.github/ISSUE_TEMPLATE/bug.yml'
+        form.write_text('name: Customized project form\n', encoding='utf-8')
+        plan = self.install('claude', 'local', '--dry-run')
+        entry = next(e for e in plan['entries'] if e['path'] == '.github/ISSUE_TEMPLATE/bug.yml')
+        self.assertEqual('conflict', entry['action'])
+        self.assertFalse(plan['complete'])
+        self.install('claude')
+        self.assertEqual('name: Customized project form\n', form.read_text(encoding='utf-8'))
 
     def test_clean_installs_both_hosts_and_scopes_are_noop_on_rerun(self):
         for host in ("codex", "claude"):

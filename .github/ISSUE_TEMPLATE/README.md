@@ -6,17 +6,16 @@
 **Consumers:** Issue reviewers and implementers; capture publication reads the separately reviewed body file.
 **Destination:** A separately composed public issue body file, separate from any private TODO.
 
-- For security risks, follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+- For security risks, follow the security guidance below.
   Publish reviewed sanitized tracking without private-channel approval; keep
   sensitive detail in an authorized restricted channel. Retain explicit blockers
   for unavailable detail or unsafe disclosure; respect destination visibility.
 
-Select the appropriate variant below, then copy only its fenced **File Template**
-block into the public body file. Never copy the whole source or all variants.
+Select one GitHub issue form below. Its Report field contains the complete
+body; fill it in without copying this guide or another variant.
 Remove prompts, comments, placeholders and examples from the final public body;
 for UAT, retain `PENDING HUMAN acceptance` until a human records the decision.
-The [Git workflow](../references/git-workflow.md) owns publication authority
-and procedure.
+Publication authority follows the project instructions and runtime delivery gates.
 
 ## File Template
 
@@ -28,178 +27,24 @@ and procedure.
 | Security risk | A security concern needs assessment or remediation. | `fix(auth): restrict session reset tokens` |
 | UAT | A human needs to validate a specific build in an environment. | `test(checkout): validate the refund flow in staging` |
 
-Choose exactly one variant. Copy only its fenced block; do not include this
-table, other variants or surrounding authoring guidance in the public body.
+Choose exactly one form; do not include this table, other variants or
+surrounding authoring guidance in the public body.
 
 ### Bug
 
-```markdown
-## Problem
-[One sentence: affected user/system + failing action or current state.]
-
-## Expected behavior
-[One sentence: observable result the affected user should get.]
-
-## Actual behavior
-[One sentence: observed result, build/version and environment; Unknown if unverified.]
-
-## Reproduction
-
-- Build/version: [exact version or artifact]
-- Environment: [name/configuration]
-- Entry point: [one exact accessible URL including full path/trailing slash, or directly runnable supplied launcher]
-- Prepared setup: [one line: ready test role/session and safe fixture values; maintainer prepares prerequisites]
-
-1. [One action: visible screen/control/object + exact click/key and concrete safe input. Expected: one visible result.]
-2. [Next action with exact control/input. Expected: one visible result. Actual: observed failure or Unknown with reason.]
-
-## Safe evidence
-[1-3 accessible redacted evidence URLs; include the observed revision. No secrets.]
-
-## Impact
-[One sentence: affected users/systems and practical impact or severity.]
-
-## Acceptance
-- [Outcome 1: observable pass/fail result]
-- [Outcome 2: observable pass/fail result]
-- [Outcome 3: if needed]
-- [Outcome 4: if needed]
-
-## Scope
-- In: [bounded behavior]
-- Out: [adjacent behavior excluded]
-
-## Related links
-[1-3 actual issue/PR/requirement references or accessible evidence URLs.]
-```
+Use [Bug](bug.yml).
 
 ### Enhancement
 
-```markdown
-## User need
-
-[One sentence: user + goal + current limitation.]
-
-## Proposed outcome
-
-[One sentence: requested observable user-facing change.]
-
-## Current limitation and evidence
-
-[1-2 sentences: limitation. Add build/version, environment, observed commit and 1-3 actual safe evidence URLs.]
-
-## Impact
-
-[One sentence: affected users/systems and practical impact.]
-
-## Scope
-
-- In: [bounded capability]
-- Out: [adjacent behavior excluded]
-
-## Acceptance
-
-- [Outcome 1: observable user result]
-- [Outcome 2: observable user result]
-- [Outcome 3: if needed]
-- [Outcome 4: if needed]
-
-## Related links
-
-[1-3 actual issue/PR/requirement references or accessible evidence URLs.]
-```
+Use [Enhancement](enhancement.yml).
 
 ### Decision required
 
-```markdown
-## Decision question
-[One answerable sentence: decision and boundary.]
-
-## Context
-[2-3 sentences: current state, affected users/systems and impact.]
-
-## Options
-
-| Option | Choice | Consequence / tradeoff |
-|---|---|---|
-| A | [one-line choice] | [one-line consequence/tradeoff] |
-| B | [one-line choice] | [one-line consequence/tradeoff] |
-| C | [optional; one-line choice] | [optional; one-line consequence/tradeoff] |
-| D | [optional; one-line choice] | [optional; one-line consequence/tradeoff] |
-
-## Evidence
-[1-3 actual safe evidence URLs/references; identify matching build/commit when applicable; no secrets.]
-
-## Recommendation
-[One sentence: preferred option and evidence-based reason.]
-
-## Blocking dependency
-| Blocked work | Decision needed | Observable unblock condition |
-|---|---|---|
-| [blocked work and actual issue/PR ref] | [choice required] | [one-sentence observable condition that allows work to resume] |
-
-## Scope
-- In: [bounded decision]
-- Out: [related choices excluded]
-
-## Acceptance
-- [Outcome 1: record selected option and observable unblock condition]
-- [Outcome 2: measurable decision outcome, if needed]
-- [Outcome 3: if needed]
-
-## Related links
-[1-3 actual issue/PR/requirement references or accessible evidence URLs.]
-```
+Use [Decision required](decision-required.yml).
 
 ### Security risk
 
-```markdown
-## Security concern
-
-[One public-safe sentence: security concern without secrets/exploit details.]
-
-## Affected surface and behavior
-
-- Surface: [component or data]
-- Current: [one sentence: current behavior]
-- Expected: [one sentence: secure behavior]
-
-## Impact
-
-[One sentence: affected users/data/systems and plausible impact.]
-
-## Risk assessment and lifecycle
-
-- Threat ID / risk key: [stable repository + surface/control + failure mode/remediation key]
-- Source aliases: [all source occurrences; PLAN/SUMMARY IDs when present]
-- Severity: [critical|high|medium|low; impact/likelihood rationale and uncertainty]
-- Owner: [responsible party]
-- Status: [unresolved|mitigated|accepted|deferred; observed state, not PLAN disposition]
-- Mitigation or safe next action: [bounded remediation; accepted rationale or deferral reason/next action]
-- Resolution evidence: [matching revision and actual secure check/result, or Pending with dependency]
-
-## Safe evidence
-
-[1-3 actual accessible, redacted, non-sensitive evidence URLs; identify affected build/commit when known. Omit exploit details.]
-
-## Requested remediation
-
-- [Safe remediation outcome]
-- [Observable secure check]
-- [Additional safe criterion, if needed]
-- [Additional safe criterion, if needed]
-
-## Scope and acceptance
-
-- In: [bounded remediation]
-- Out: [related work excluded]
-- [Observable safe resolution criterion]
-- [Safe regression criterion]
-
-## Related links
-
-[1-3 actual public issue/PR/requirement references or non-sensitive evidence URLs.]
-```
+Use [Security risk](security-risk.yml).
 
 Standalone issues require no PLAN: record their assessment, mitigation and secure
 check directly in the fields above. Only checklist containers/entries substitute
@@ -209,8 +54,8 @@ values rather than repeating severity or mitigation. Keep every required heading
 For new planned risks, including accepted/deferred risks, without an existing
 canonical match, this same Security risk variant is the mandatory default phase
 checklist container; keep every required heading above. Follow the deterministic title/label lookup
-before semantic risk search in
-[canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+before semantic risk search: search open and closed issues and current PR context;
+reuse an actionable full-scope match and verify its URL before publication.
 Under Risk assessment and lifecycle, give every risk a stable `###` heading in
 the checklist issue BODY. Use provider-verified heading-anchor URLs for entries;
 never fabricate slugs. Renaming a heading breaks the link: preserve headings on
@@ -227,48 +72,7 @@ checked entries require outcome evidence and do not authorize issue closure.
 
 ### UAT
 
-```markdown
-## Acceptance checklist
-
-- [ ] [One short visible behavior]
-- [ ] [One short visible behavior]
-
-## Context
-[One brief factual sentence: user flow and problem under review.]
-
-## Impact and scope
-Impact: [One short sentence: practical effect on affected users/systems]
-- In: [bounded flow/behavior being validated]
-- Out: [adjacent flow/behavior excluded]
-
-## Build and environment
-
-- Build/version: [exact release or artifact identifier]
-- Commit: [full SHA]
-- Entry point: [one exact accessible URL including full path/trailing slash, or supplied launcher with full path and exact launch keys]
-- Ready environment: [one line: environment name and prepared test role/session]
-- Safe fixtures: [1-3 exact input values or prepared test objects used below; N/A with reason if no inputs]
-- Maintainer record: [one accessible reference to the separate build/provenance/technical evidence record; reference only]
-
-## Steps and expected outcomes
-
-| Step | Action | Expected outcome | Actual outcome / evidence |
-|---|---|---|---|
-| 1 | [Open exact entry point above via verified click/key sequence; include Win+R, paste full path, Enter for a Windows launcher] | [One sentence: actual visible screen and identifying label/object] | [Pending until human runs; then numbered reply and short observation] |
-| 2 | [One action: actual visible button/field/object + exact click/key + safe fixture value if needed] | [One sentence: visible state/output after that action] | [Pending until human runs; then numbered reply and short observation] |
-
-Reply for each numbered step: `N PASS`, `N FAIL <short observation>`, or `N BLOCKED <reason>`.
-
-## Related links
-[1-3 actual issue/PR/requirement references or accessible evidence URLs.]
-
-## Human acceptance
-Status: PENDING HUMAN acceptance
-Reviewer: [Pending until human review; actual reviewer name]
-Date: [Pending until human review; YYYY-MM-DD]
-Decision: [Pending until human review; one sentence stating the actual human decision]
-Evidence: [Pending until human review; actual decision evidence URL/reference]
-```
+Use [UAT](uat.yml).
 
 ## Title format and examples
 
@@ -325,12 +129,12 @@ Evidence: [Pending until human review; actual decision evidence URL/reference]
   to hide a failing behavior. An uncertain create still requires the existing
   exact-intent recovery procedure, never a duplicate create.
 - For UAT and user-facing bug reproduction, follow the [canonical UAT authoring
-  contract](UAT.md#authoring-contract): verify the entry point, visible labels,
+  contract](../../engineer/templates/UAT.md#authoring-contract): verify the entry point, visible labels,
   inputs and key behavior against the delivered UI. Mark unavailable functions
   or unverified entry points `BLOCKED` with the missing prerequisite; never
   invent controls or claim a pass. AI/maintainer prepares the build, access,
   fixtures and technical evidence in the separate maintainer record.
-- For security risks, follow [canonical threat tracking](../references/git-workflow.md#canonical-threat-tracking).
+- For security risks, follow the security guidance below.
   Keep stable key, aliases, owner, observed status and evidence here. Standalone
   issues carry actionable assessment/mitigation/checks without requiring a PLAN;
   checklist entries link their owning PLAN assessment/mitigation instead.
@@ -359,7 +163,7 @@ test instance. Expected: HTTP 200 with no results. Acceptance: that repro return
 
 ## Completion and downstream handoff
 
-- The copied block comes from the selected variant and contains concrete facts,
+- The completed body comes from the selected form and contains concrete facts,
   safe evidence and bounded acceptance as applicable.
-- Duplicate review and publication authority follow the Git workflow.
+- Review duplicates and follow project publication authority before publishing.
 - Hand off the reviewed body file; report the verified issue URL or the publication blocker.
