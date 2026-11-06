@@ -17,7 +17,7 @@ task's language, framework and design concerns; these are not skills.
 | Python collection performance | [Set lookups](python/perf-set-lookup.md), [generators](python/perf-generator-expression.md), [comprehensions](python/perf-list-comprehension.md), [dictionary defaults](python/perf-dict-get.md) |
 | Logging and monitoring | [Structured logging](python/structured-logging.md), [sensitive data](python/logging-sensitive-data.md), [spans, metrics and trace correlation](python/monitoring.md) |
 | SQL parameters and names | [Parameterized queries](sql/parameterized-queries.md), [database naming](sql/naming.md) |
-| Database query performance | [Relationship loading](sql/query-loading.md), [pagination](sql/pagination.md) |
+| Database query performance | [Relationship loading](sql/query-loading.md) |
 | Database values and schema changes | [Decimal values](sql/decimal-values.md), [migrations and backfills](sql/migrations.md) |
 | REST API design | [URLs, status codes, pagination, documentation and sensitive fields](api/design.md) |
 | API authorization | [Attribute-based access policy](api/authorization.md) |
@@ -26,7 +26,7 @@ task's language, framework and design concerns; these are not skills.
 
 SQL coverage is limited to the supplied Python/ORM sources. These references do
 not yet provide a general SQL style guide, query-plan analysis, isolation-level
-guidance or dialect-specific performance standards.
+guidance, stable database pagination or dialect-specific performance standards.
 
 The reference bodies retain selected source text and examples verbatim. See
 [sources and selection boundaries](SOURCES.md), the [fragment manifest](provenance.json)

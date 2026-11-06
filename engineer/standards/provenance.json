@@ -289,11 +289,11 @@
       "fragments": [
         {
           "start_line": 210,
-          "end_line": 303,
-          "sha256": "2f9ba290bc64f3c8f96ad16aacf5c6032ec03505ab00e7c21441711cc981ea42"
+          "end_line": 280,
+          "sha256": "46736d3b802922d202174e213e4e4befeea2d21d0607217d7738a090bd4c42ce"
         }
       ],
-      "sha256": "2f9ba290bc64f3c8f96ad16aacf5c6032ec03505ab00e7c21441711cc981ea42"
+      "sha256": "46736d3b802922d202174e213e4e4befeea2d21d0607217d7738a090bd4c42ce"
     },
     {
       "destination": "python/naming.md",
@@ -416,20 +416,6 @@
         }
       ],
       "sha256": "bde8526886c4864bfbdd1a3da775b1cd8089e9736e9c1dfd0bc7026a9de9f3b2"
-    },
-    {
-      "destination": "sql/pagination.md",
-      "repository": "rishapgandhi/python-skills",
-      "revision": "920360e791bd326d1c2495f1ff11da3272418780",
-      "path": "skills/common/db-design.md",
-      "fragments": [
-        {
-          "start_line": 392,
-          "end_line": 435,
-          "sha256": "1465b69f19da6efdc3d09e6a8ff26b8f0dc3b3524e490b64679efafc580cb711"
-        }
-      ],
-      "sha256": "1465b69f19da6efdc3d09e6a8ff26b8f0dc3b3524e490b64679efafc580cb711"
     },
     {
       "destination": "sql/decimal-values.md",

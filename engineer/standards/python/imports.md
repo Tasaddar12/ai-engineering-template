@@ -69,26 +69,3 @@ from . import sibling_module
 from .sibling_module import SomeClass
 from ..parent_module import ParentClass
 ```
-
-### 3.4 Conditional and Deferred Imports
-
-```python
-# Optional dependency
-try:
-    import ujson as json
-except ImportError:
-    import json
-
-# Platform-specific
-import sys
-if sys.platform == "win32":
-    import winreg
-
-# Expensive optional (deferred)
-def get_numpy_array(data: list) -> "np.ndarray":
-    """Convert data to numpy array. Requires numpy."""
-    import numpy as np  # Deferred: optional heavy dependency
-    return np.array(data)
-```
-
----

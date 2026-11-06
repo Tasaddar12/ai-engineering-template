@@ -18,12 +18,12 @@ excluded. Line ranges, fragment hashes and destination hashes are recorded in
 | `skills/flask/SKILL.md` | App Factory; Extensions; Blueprint + Route; Application Context & g | `api/flask.md` |
 | `skills/fastapi/SKILL.md` | Pydantic Schemas; Annotated Dependencies | `api/fastapi.md` |
 | `skills/common/api-auth.md` | ABAC | `api/authorization.md` |
-| `skills/common/code-style.md` | Imports; Naming 10.1–10.2; Mutable Default Arguments | `python/imports.md`, `python/naming.md`, `python/mutable-defaults.md` |
+| `skills/common/code-style.md` | Imports 3.1–3.3; Naming 10.1–10.2; Mutable Default Arguments | `python/imports.md`, `python/naming.md`, `python/mutable-defaults.md` |
 | `skills/common/logging.md` | Structured event example and event naming; sensitive-data table | `python/structured-logging.md`, `python/logging-sensitive-data.md` |
 | `skills/common/observability.md` | Custom Spans; Metrics Patterns instruments; Trace Correlation; RED + USE | `python/monitoring.md` |
 | `skills/common/security.md` | SQL Injection Prevention | `sql/parameterized-queries.md` |
 | `skills/common/performance.md` | N+1 Query Prevention | `sql/query-loading.md` |
-| `skills/common/db-design.md` | Naming; Pagination; Decimal Handling | `sql/naming.md`, `sql/pagination.md`, `sql/decimal-values.md` |
+| `skills/common/db-design.md` | Naming; Decimal Handling | `sql/naming.md`, `sql/decimal-values.md` |
 | `skills/common/data-migrations.md` | Rules for Backfills; Alembic Best Practices | `sql/migrations.md` |
 
 ## Selection exclusions
@@ -42,7 +42,8 @@ excluded. Line ranges, fragment hashes and destination hashes are recorded in
   commits; concurrent Django index without non-atomic migration; blanket index
   rules and server-onupdate claims; blocking psutil call inside async code;
   unbounded raw-path metric labels; inconsistent pure-function Item fields;
-  interpolated JSON/CSV serializers.
+  interpolated JSON/CSV serializers; timestamp-only database pagination ordering;
+  deferred-import annotation whose `np` alias cannot resolve outside the function.
 - Broader deployment, CI, LLM and product-specific recipes are outside this
   coding/API reference selection. The remaining SQL coverage gap is recorded in
   the [index](README.md).
