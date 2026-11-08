@@ -120,7 +120,7 @@ jobs:
 | Coverage gate at 80% minimum | Enforced via `--cov-fail-under` |
 | Build Docker image only on main | PRs validate; main deploys |
 
-## 4. Pr checks (required status checks)
+## 4. PR checks (required status checks)
 
 Configure in repo settings → Branch protection:
 

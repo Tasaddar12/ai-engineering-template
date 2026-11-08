@@ -2,7 +2,7 @@
 
 > Consistent, predictable, versioned REST APIs.
 
-## 1. Url structure
+## 1. URL structure
 
 ```
 /api/v1/{resource}              ← Collection

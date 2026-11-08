@@ -317,7 +317,7 @@ op.drop_column("users", "old_column")
 
 ## 6. Query patterns
 
-### 6.1 Avoid n+1 queries — always
+### 6.1 Avoid N+1 queries — always
 
 ```python
 # N+1 PROBLEM — do not do this

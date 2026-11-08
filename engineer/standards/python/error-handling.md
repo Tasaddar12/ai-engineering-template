@@ -188,7 +188,7 @@ class OrderService:
             raise HTTPException(status_code=404, detail="Order not found")   # WRONG
 ```
 
-### 2.2 Exception-to-HTTP mapping (FastAPI / Flask / drf)
+### 2.2 Exception-to-HTTP mapping (FastAPI / Flask / DRF)
 
 Map in exactly ONE place — a global exception handler. Never scatter HTTP status codes through service code.
 

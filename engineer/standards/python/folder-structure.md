@@ -21,9 +21,9 @@ There is no universal folder structure — there are structures suited to the pr
 - No business logic in `__init__.py` — only re-exports or empty.
 - No circular imports — enforced architecturally by layer discipline.
 
-## 2. Src layout vs flat layout
+## 2. src layout vs flat layout
 
-### 2.1 Src/ layout — for libraries and installable packages
+### 2.1 src/ layout — for libraries and installable packages
 
 ```
 my-project/

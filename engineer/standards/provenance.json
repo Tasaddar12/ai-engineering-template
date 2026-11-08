@@ -1297,7 +1297,7 @@
           "sha256": "83cec950ebcdcdd9dc3285a665747b565ef965225334f4f8a8330fd83c611fb5"
         }
       ],
-      "sha256": "dcce28576b57abaed6b9b24c5d83abf3c23f06c4045294e8de030576cdd25664",
+      "sha256": "784f4e94b1c3c4970efece693eeb8dc29206de41e9de943966b8766ebbb04fb8",
       "source_line_count": 415,
       "omissions": [
         {
@@ -1324,11 +1324,11 @@
           },
           {
             "before": "## SECTION 2 — SRC LAYOUT vs FLAT LAYOUT",
-            "after": "## 2. Src layout vs flat layout"
+            "after": "## 2. src layout vs flat layout"
           },
           {
             "before": "### 2.1 src/ Layout — for libraries and installable packages",
-            "after": "### 2.1 Src/ layout — for libraries and installable packages"
+            "after": "### 2.1 src/ layout — for libraries and installable packages"
           },
           {
             "before": "### 2.2 Flat Layout — for deployed applications",
@@ -2210,7 +2210,7 @@
           "sha256": "e7df1ef6335e688538648015a1a7c1c51a6408b51fa081ca02a1b4398cc935e9"
         }
       ],
-      "sha256": "cc53a9724f2fe8d6a86ec7d69ef2db9f5484c3ab6b84e3a9bf4c3f98eac2ad73",
+      "sha256": "1425f2fa8d9ed4865f69b30d2bbddc0c412bdb8264e72bd1dca435cc014ee255",
       "source_line_count": 545,
       "omissions": [
         {
@@ -2253,10 +2253,6 @@
           {
             "before": "## SECTION 2 — WHERE EXCEPTIONS ARE RAISED AND CAUGHT",
             "after": "## 2. Where exceptions are raised and caught"
-          },
-          {
-            "before": "### 2.2 Exception-to-HTTP mapping (FastAPI / Flask / DRF)",
-            "after": "### 2.2 Exception-to-HTTP mapping (FastAPI / Flask / drf)"
           },
           {
             "before": "## SECTION 3 — RAISING EXCEPTIONS CORRECTLY",
@@ -2502,7 +2498,7 @@
           "sha256": "52a561be204e1bf47ac73d3abc87dc6a88a0bb9132e781a5d3190aa6acd7dffb"
         }
       ],
-      "sha256": "72d27a55b36080638e41745ff6fea3048611b0885b04428f6fd8a9c5d0aefb21",
+      "sha256": "3441d70dc1444abf6bc6b9c17a0cfa6cf89af86235681bf76f54a05c93969173",
       "source_line_count": 462,
       "omissions": [
         {
@@ -2574,10 +2570,6 @@
           {
             "before": "## SECTION 6 — QUERY PATTERNS",
             "after": "## 6. Query patterns"
-          },
-          {
-            "before": "### 6.1 Avoid N+1 queries — always",
-            "after": "### 6.1 Avoid n+1 queries — always"
           },
           {
             "before": "## SECTION 7 — DECIMAL HANDLING FOR MONETARY VALUES",
@@ -2735,7 +2727,7 @@
           "sha256": "f963f67ff24a9c554381dc023bf783ef80061a5cd70998fc90b507fbcc2acc2a"
         }
       ],
-      "sha256": "fcc9183e7d83b873d6ba8624f1fe528d0c3e9d3d0885e490a6aeb22e15771cfa",
+      "sha256": "b4fcddc3048c316dd28ccced27358272e338d222a9876f1ec74501477a1ec749",
       "source_line_count": 171,
       "omissions": [
         {
@@ -2763,7 +2755,7 @@
           },
           {
             "before": "## 1. URL Structure",
-            "after": "## 1. Url structure"
+            "after": "## 1. URL structure"
           },
           {
             "before": "## 2. HTTP Methods",
@@ -3453,7 +3445,7 @@
           "sha256": "15331d708e87c7fd8330ff88a55cf4b4c37ea39cd534797ab478325946a9b64a"
         }
       ],
-      "sha256": "025e0bd1d3a342ea71f6287ecc837c0c8f46f8e19496961ae17b5d53eb1e4622",
+      "sha256": "3de56a135b853002f9e95d558fbe67a23ee5db1bb08bd5b30b106d1a66f81f8c",
       "source_line_count": 169,
       "omissions": [
         {
@@ -3488,7 +3480,7 @@
           },
           {
             "before": "## SECTION 4 — PR CHECKS (Required Status Checks)",
-            "after": "## 4. Pr checks (required status checks)"
+            "after": "## 4. PR checks (required status checks)"
           }
         ],
         "removed_horizontal_rules": 5,
