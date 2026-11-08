@@ -1,11 +1,9 @@
-# Deployment — Enterprise Standard
+# Deployment
 
 **Applies to:** All Python projects deployed as containers or services.
 **Philosophy:** 12-factor app. Immutable artifacts. Infrastructure as code.
 
----
-
-## SECTION 1 — DOCKERFILE (Multi-Stage)
+## 1. Dockerfile (multi-stage)
 
 ```dockerfile
 # syntax=docker/dockerfile:1
@@ -47,9 +45,7 @@ EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
 ```
 
----
-
-## SECTION 2 — .dockerignore
+## 2. .dockerignore
 
 ```
 .git
@@ -65,9 +61,7 @@ docs/
 .github/
 ```
 
----
-
-## SECTION 3 — HEALTH CHECK ENDPOINT
+## 3. Health check endpoint
 
 ```python
 # app/api/v1/health.py
@@ -102,9 +96,7 @@ async def readiness_check() -> dict:
     return {"status": "ready", "checks": checks}
 ```
 
----
-
-## SECTION 4 — GRACEFUL SHUTDOWN
+## 4. Graceful shutdown
 
 ```python
 # app/main.py
@@ -142,9 +134,7 @@ def handle_sigterm(signum, frame):
 signal.signal(signal.SIGTERM, handle_sigterm)
 ```
 
----
-
-## SECTION 5 — 12-FACTOR COMPLIANCE CHECKLIST
+## 5. 12-Factor compliance checklist
 
 | Factor | Implementation |
 |--------|---------------|
@@ -161,9 +151,7 @@ signal.signal(signal.SIGTERM, handle_sigterm)
 | Logs | Emit to stdout as JSON; collected externally |
 | Admin processes | One-off tasks via `python -m app.scripts.X` |
 
----
-
-## SECTION 6 — ENVIRONMENT CONFIGURATION
+## 6. Environment configuration
 
 ```yaml
 # docker-compose.yml (local development)
@@ -194,9 +182,7 @@ services:
     image: redis:7-alpine
 ```
 
----
-
-## SECTION 7 — RULES
+## 7. Rules
 
 - Never install dev dependencies in production image.
 - Always run as non-root user.

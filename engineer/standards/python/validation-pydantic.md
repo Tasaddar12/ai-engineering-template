@@ -1,9 +1,9 @@
-# Use Pydantic for Boundary Data Validation [HIGH]
+# Use Pydantic for boundary data validation [HIGH]
 
 ## Description
 Data crossing trust boundaries—HTTP requests, CLI arguments, environment variables, config files, and external API payloads—must be validated and coerced before use. Pydantic models centralize that logic with declarative constraints, clear error messages, and type coercion. Use `@dataclass` for internal domain objects; use Pydantic where untrusted input enters the system.
 
-## Bad Example
+## Bad example
 ```python
 def create_user(payload: dict) -> User:
     # Validation scattered, easy to forget fields, no coercion
@@ -25,7 +25,7 @@ def create_user_endpoint(body: dict) -> dict:
     return {"id": user.id}
 ```
 
-## Good Example
+## Good example
 ```python
 from pydantic import BaseModel, EmailStr, Field, field_validator
 

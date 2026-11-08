@@ -1,9 +1,9 @@
-# Prefer List Comprehensions Over Loops [CRITICAL]
+# Prefer list comprehensions over loops [CRITICAL]
 
 ## Description
 Instead of building lists with for loops, use list comprehensions for more concise code and better performance. Comprehensions are optimized at the C level and avoid repeated `append` method calls.
 
-## Bad Example
+## Bad example
 ```python
 # Slow: repeated append calls
 result: list[int] = []
@@ -17,7 +17,7 @@ for item in items:
         filtered.append(item.upper())
 ```
 
-## Good Example
+## Good example
 ```python
 # Fast: list comprehension
 result: list[int] = [i * 2 for i in range(1000)]

@@ -1,10 +1,8 @@
-# REST API Design Standards
+# REST API design
 
 > Consistent, predictable, versioned REST APIs.
 
----
-
-## 1. URL Structure
+## 1. Url structure
 
 ```
 /api/v1/{resource}              ← Collection
@@ -18,9 +16,7 @@
 - **kebab-case** for multi-word resources: `/user-profiles`
 - Always version with `/v1/` — never unversioned URLs in production
 
----
-
-## 2. HTTP Methods
+## 2. HTTP methods
 
 | Method | Use | Idempotent |
 |---|---|---|
@@ -31,9 +27,7 @@
 
 Never use `GET` to modify data. Never use `POST` for search (use query params instead).
 
----
-
-## 3. HTTP Status Codes
+## 3. HTTP status codes
 
 | Code | When |
 |---|---|
@@ -49,9 +43,7 @@ Never use `GET` to modify data. Never use `POST` for search (use query params in
 | `429 Too Many Requests` | Rate limit exceeded |
 | `500 Internal Server Error` | Unexpected server error |
 
----
-
-## 4. Request / Response Shape
+## 4. Request / response shape
 
 ### Request (POST / PUT / PATCH)
 ```json
@@ -62,7 +54,7 @@ Never use `GET` to modify data. Never use `POST` for search (use query params in
 }
 ```
 
-### Success Response (single item)
+### Success response (single item)
 ```json
 {
   "data": {
@@ -75,7 +67,7 @@ Never use `GET` to modify data. Never use `POST` for search (use query params in
 }
 ```
 
-### Success Response (list)
+### Success response (list)
 ```json
 {
   "data": [ ... ],
@@ -87,8 +79,6 @@ Never use `GET` to modify data. Never use `POST` for search (use query params in
   }
 }
 ```
-
----
 
 ## 5. Pagination
 
@@ -103,9 +93,7 @@ GET /api/v1/users?page=2&page_size=20
 | `page` | 1 | — |
 | `page_size` | 20 | 100 |
 
----
-
-## 6. Filtering, Sorting, Search
+## 6. Filtering, sorting, search
 
 ```
 GET /api/v1/users?is_active=true&role=admin          ← filter
@@ -115,18 +103,13 @@ GET /api/v1/users?search=jane                        ← full-text search
 
 Never expose raw DB column names in filters — use a whitelist of allowed filter fields.
 
----
-
 ## 7. Versioning
 
 - All breaking changes require a new version: `/api/v2/`.
 - Old versions deprecated with `Sunset` and `Deprecation` headers before removal.
 - Minimum 3 months deprecation window.
 
-
----
-
-## 8. API Documentation
+## 8. API documentation
 
 Every endpoint must have:
 - Summary (one line)
@@ -137,16 +120,12 @@ Every endpoint must have:
 
 Use **drf-spectacular** (DRF) or **FastAPI's built-in OpenAPI** generation.
 
----
-
-## 9. Datetime Format
+## 9. Datetime format
 
 Always ISO 8601 UTC: `"2026-01-15T10:30:00Z"`
 
 Never return Unix timestamps to API consumers.
 
----
-
-## 10. Sensitive Fields — Never Return
+## 10. Sensitive fields — never return
 
 `password_hash`, `secret_key`, `internal_id`, `ssn`, `raw_token`, `salt`

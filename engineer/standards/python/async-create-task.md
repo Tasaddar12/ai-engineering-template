@@ -1,9 +1,9 @@
-# Proper Background Task Creation [HIGH]
+# Proper background task creation [HIGH]
 
 ## Description
 Tasks created with `asyncio.create_task()` may be garbage collected and cancelled before completion if no reference is held. Additionally, exceptions in "fire-and-forget" tasks are never raised to your code—they only surface as a `Task exception was never retrieved` message logged when the task object is finalized, which is easy to miss.
 
-## Bad Example
+## Bad example
 ```python
 import asyncio
 
@@ -15,7 +15,7 @@ async def main() -> None:
     asyncio.create_task(risky_operation())  # Exceptions not reported
 ```
 
-## Good Example
+## Good example
 ```python
 import asyncio
 import logging

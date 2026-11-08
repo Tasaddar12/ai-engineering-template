@@ -18,8 +18,9 @@ for persistence and architecture for service boundaries or rollout. Select only
 the concerns actually involved. Unrelated domains are not required reading.
 
 Indexes assign stable descriptive routing IDs to retained documents or sections;
-the IDs are reading aliases, not commands. Original rule wording and examples
-remain in their source documents. Attribution and omissions are recorded in
+the IDs are reading aliases, not commands. Instructions and examples remain in
+the rule documents; headings, grouping and spacing are edited for navigation.
+Attribution, source selections and editorial changes are recorded in
 [source selections](SOURCES.md), [provenance](provenance.json) and
 [licenses](LICENSES.md); consult these for standards maintenance. SQL coverage
 limits are recorded in the [SQL index](sql/index.md#coverage-limits).

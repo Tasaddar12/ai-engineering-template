@@ -1,11 +1,9 @@
-# API Authentication & Authorization — Enterprise Standard
+# API authentication & authorization
 
 **Applies to:** All Python APIs serving external or internal consumers.
 **Stack:** PyJWT / python-jose, OAuth2 (authlib), passlib, RBAC/ABAC patterns.
 
----
-
-## SECTION 1 — AUTHENTICATION METHODS
+## 1. Authentication methods
 
 | Method | Use when | Security level |
 |--------|----------|---------------|
@@ -17,11 +15,9 @@
 
 **Rule:** Never use API keys as the sole auth for user-facing endpoints. API keys are for machine clients.
 
----
+## 2. JWT lifecycle
 
-## SECTION 2 — JWT LIFECYCLE
-
-### Token Structure
+### Token structure
 
 ```python
 # Access token payload
@@ -35,7 +31,7 @@
 }
 ```
 
-### Token Refresh Flow
+### Token refresh flow
 
 ```
 1. Client sends expired access token → 401
@@ -44,7 +40,7 @@
 4. Old refresh token is revoked (rotation)
 ```
 
-### Token Revocation
+### Token revocation
 
 ```python
 # Store revoked JTIs in Redis with TTL matching token expiry
@@ -55,11 +51,9 @@ async def is_token_revoked(jti: str) -> bool:
     return await redis.exists(f"revoked:{jti}")
 ```
 
----
+## 3. OAuth2 flows
 
-## SECTION 3 — OAUTH2 FLOWS
-
-### Authorization Code Flow (user-facing apps)
+### Authorization code flow (user-facing apps)
 
 ```python
 # Using authlib
@@ -87,7 +81,7 @@ async def auth_callback(request: Request):
     ...
 ```
 
-### Client Credentials Flow (service-to-service)
+### Client credentials flow (service-to-service)
 
 ```python
 # Service A calling Service B
@@ -109,9 +103,7 @@ async def get_service_token() -> str:
         return response.json()["access_token"]
 ```
 
----
-
-## SECTION 4 — RBAC (Role-Based Access Control)
+## 4. RBAC (role-based access control)
 
 ```python
 # app/core/permissions.py
@@ -152,9 +144,7 @@ async def delete_user(user_id: int, user: User = require_permission("delete_any"
     ...
 ```
 
----
-
-## SECTION 5 — ABAC (Attribute-Based Access Control)
+## 5. ABAC (attribute-based access control)
 
 For complex authorization beyond roles:
 
@@ -198,9 +188,7 @@ def evaluate_policy(ctx: AccessContext) -> bool:
     return False
 ```
 
----
-
-## SECTION 6 — API KEY MANAGEMENT
+## 6. API key management
 
 ```python
 # app/core/api_keys.py
@@ -222,7 +210,7 @@ def verify_api_key(raw_key: str, stored_hash: str) -> bool:
     return secrets.compare_digest(computed, stored_hash)
 ```
 
-### API Key Rules
+### API key rules
 
 - Prefix keys for identification: `sk_live_`, `sk_test_`, `pk_`
 - Hash before storing — never store raw keys in DB.
@@ -231,11 +219,9 @@ def verify_api_key(raw_key: str, stored_hash: str) -> bool:
 - Rate-limit per key, not just per IP.
 - Log key usage for audit trail.
 
----
+## 7. Service-to-service auth
 
-## SECTION 7 — SERVICE-TO-SERVICE AUTH
-
-### Option A: Signed JWTs (lightweight)
+### Option a: signed JWTs (lightweight)
 
 ```python
 # Each service has its own signing key
@@ -246,7 +232,7 @@ SERVICE_KEYS = {
 }
 ```
 
-### Option B: mTLS (zero-trust)
+### Option b: mTLS (zero-trust)
 
 ```yaml
 # In Kubernetes / service mesh (Istio, Linkerd)

@@ -1,9 +1,9 @@
-# Require Type Hints for Public APIs [HIGH]
+# Require type hints for public APIs [HIGH]
 
 ## Description
 Public API parameters and return values should have precise type annotations. Type hints make contracts machine-checkable, improve editor and agent understanding, and catch integration errors before runtime.
 
-## Bad Example
+## Bad example
 ```python
 def find_user(user_id, include_disabled=False):
     row = database.fetch_user(user_id, include_disabled)
@@ -18,7 +18,7 @@ class EmailSender:
             smtp.send_message(recipient, subject, body)
 ```
 
-## Good Example
+## Good example
 ```python
 from collections.abc import Sequence
 

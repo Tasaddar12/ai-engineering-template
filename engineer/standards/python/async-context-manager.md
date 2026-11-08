@@ -1,9 +1,9 @@
-# Resource Management with async with [HIGH]
+# Resource management with async with [HIGH]
 
 ## Description
 Async resources (DB connections, HTTP sessions, files, etc.) should be managed with `async with` to ensure cleanup even when exceptions occur. Manual `close()` calls risk resource leaks on errors.
 
-## Bad Example
+## Bad example
 ```python
 import aiohttp
 
@@ -24,7 +24,7 @@ async def query_db() -> list[dict]:
     return result
 ```
 
-## Good Example
+## Good example
 ```python
 import aiohttp
 

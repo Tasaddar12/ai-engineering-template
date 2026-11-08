@@ -1,9 +1,9 @@
-# Interface Segregation Principle [HIGH]
+# Interface segregation principle [HIGH]
 
 ## Description
 Clients should not be forced to depend on methods they do not use. Prefer several small, purpose-specific `Protocol` definitions over one large interface that bundles unrelated capabilities. This reduces coupling, simplifies testing, and aligns with Python's structural typing—implementations only need the methods they actually provide.
 
-## Bad Example
+## Bad example
 ```python
 from typing import Protocol
 
@@ -27,7 +27,7 @@ def assign_task(worker: Worker) -> None:
     worker.work()
 ```
 
-## Good Example
+## Good example
 ```python
 from typing import Protocol
 

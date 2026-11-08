@@ -1,9 +1,9 @@
-# Liskov Substitution Principle [HIGH]
+# Liskov substitution principle [HIGH]
 
 ## Description
 Objects of a subtype must be substitutable for objects of the base type without breaking program correctness. If code works with an abstraction, every concrete implementation must honor the same behavioral contract—same preconditions, same postconditions, and no surprising exceptions. Violations often appear as subclasses that weaken guarantees or strengthen requirements.
 
-## Bad Example
+## Bad example
 ```python
 class Bird:
     def fly(self) -> None:
@@ -21,7 +21,7 @@ def migrate(birds: list[Bird]) -> None:
 migrate([Sparrow(), Penguin()])  # Runtime error
 ```
 
-## Good Example
+## Good example
 ```python
 from typing import Protocol
 

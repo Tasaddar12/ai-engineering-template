@@ -1,9 +1,9 @@
-# Use Generators for Large Datasets [CRITICAL]
+# Use generators for large datasets [CRITICAL]
 
 ## Description
 When processing large datasets, lists hold all elements in memory while generators produce elements one at a time, dramatically improving memory efficiency. Particularly effective when iterating results only once or when intermediate results aren't needed.
 
-## Bad Example
+## Bad example
 ```python
 # High memory usage: all elements stored in list
 def get_large_data() -> list[dict[str, int]]:
@@ -13,7 +13,7 @@ def get_large_data() -> list[dict[str, int]]:
 total = sum([x * x for x in range(1_000_000)])
 ```
 
-## Good Example
+## Good example
 ```python
 from collections.abc import Iterator
 

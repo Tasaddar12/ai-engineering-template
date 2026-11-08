@@ -1,9 +1,9 @@
-# Document Public APIs with Google Style Docstrings [HIGH]
+# Document public APIs with Google style docstrings [HIGH]
 
 ## Description
 Public modules, classes, functions, methods, and exceptions should include concise Google style docstrings. A docstring is part of the API contract: it explains intent, parameters, return values, raised exceptions, and important side effects that are not obvious from the signature.
 
-## Bad Example
+## Bad example
 ```python
 def charge(customer, amount, currency, capture=True):
     result = gateway.create_charge(customer.id, amount, currency, capture)
@@ -18,7 +18,7 @@ class InvoiceService:
         self.repository.save(invoice)
 ```
 
-## Good Example
+## Good example
 ```python
 from decimal import Decimal
 

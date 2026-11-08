@@ -1,11 +1,9 @@
-# CI/CD — Enterprise Standard
+# CI/CD
 
 **Applies to:** All Python projects using GitHub Actions (adapt for GitLab CI / Azure Pipelines).
 **Pipeline philosophy:** Fail fast, fail cheap. Lint before test, test before build, build before deploy.
 
----
-
-## SECTION 1 — PIPELINE STAGES
+## 1. Pipeline stages
 
 ```
 lint → type-check → test → build → deploy
@@ -13,9 +11,7 @@ lint → type-check → test → build → deploy
 
 Each stage gates the next. If lint fails, nothing else runs.
 
----
-
-## SECTION 2 — GITHUB ACTIONS TEMPLATE
+## 2. GitHub Actions template
 
 ```yaml
 # .github/workflows/ci.yml
@@ -113,9 +109,7 @@ jobs:
           cache-to: type=gha,mode=max
 ```
 
----
-
-## SECTION 3 — RULES
+## 3. Rules
 
 | Rule | Rationale |
 |------|-----------|
@@ -126,9 +120,7 @@ jobs:
 | Coverage gate at 80% minimum | Enforced via `--cov-fail-under` |
 | Build Docker image only on main | PRs validate; main deploys |
 
----
-
-## SECTION 4 — PR CHECKS (Required Status Checks)
+## 4. Pr checks (required status checks)
 
 Configure in repo settings → Branch protection:
 
@@ -136,5 +128,3 @@ Configure in repo settings → Branch protection:
 - `type-check` — must pass
 - `test` — must pass
 - At least 1 approving review
-
----

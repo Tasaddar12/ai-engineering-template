@@ -1,11 +1,9 @@
-# Async Patterns — Enterprise Standard
+# Async patterns
 
 **Applies to:** Python services with background processing, event-driven workflows, or distributed tasks.
 **Stack:** Celery (heavy) / ARQ (lightweight) / asyncio native.
 
----
-
-## SECTION 1 — TASK QUEUE (CELERY)
+## 1. Task queue (Celery)
 
 ### Setup
 
@@ -26,7 +24,7 @@ celery_app.config_from_object({
 })
 ```
 
-### Task Definition
+### Task definition
 
 ```python
 # app/workers/tasks.py
@@ -47,11 +45,9 @@ def send_welcome_email(self, user_id: int) -> None:
         raise self.retry(exc=exc)
 ```
 
----
+## 2. Retry strategies
 
-## SECTION 2 — RETRY STRATEGIES
-
-### Retry Rules
+### Retry rules
 
 | Rule | Rationale |
 |------|-----------|
@@ -61,20 +57,16 @@ def send_welcome_email(self, user_id: int) -> None:
 | Log every retry with attempt number | Observability |
 | Set `task_time_limit` and `task_soft_time_limit` | Kill stuck tasks |
 
----
-
-## SECTION 3 — IDEMPOTENCY
+## 3. Idempotency
 
 Every async task MUST be idempotent — safe to execute multiple times with the same input.
 
-### Idempotency Patterns
+### Idempotency patterns
 
 - **Idempotency key:** Store task ID + result; return cached result on replay.
 - **Database constraints:** Use unique constraints to prevent duplicate inserts.
 
----
-
-## SECTION 4 — DEAD LETTER QUEUE (DLQ)
+## 4. Dead letter queue (DLQ)
 
 Tasks that exhaust retries must not be silently dropped.
 
@@ -92,11 +84,9 @@ def risky_task(self, data: dict) -> None:
         raise self.retry(exc=exc, countdown=2 ** self.request.retries)
 ```
 
----
+## 5. Event-driven architecture
 
-## SECTION 5 — EVENT-DRIVEN ARCHITECTURE
-
-### Domain Events
+### Domain events
 
 ```python
 # app/events/base.py
@@ -124,7 +114,7 @@ class OrderCompleted(DomainEvent):
     total: str = "0"  # Decimal as string for serialization
 ```
 
-### Event Bus (Simple In-Process)
+### Event bus (simple in-process)
 
 ```python
 # app/events/bus.py
@@ -145,8 +135,7 @@ async def publish(event: DomainEvent) -> None:
         await handler(event)
 ```
 
-
-## SECTION 6 — ASYNC TASK PATTERNS (ARQ — Lightweight Alternative)
+## 6. Async task patterns (ARQ — lightweight alternative)
 
 ```python
 # app/workers/arq_tasks.py
@@ -165,9 +154,7 @@ class WorkerSettings:
     job_timeout = 300
 ```
 
----
-
-## SECTION 7 — RULES
+## 7. Rules
 
 | Rule | Rationale |
 |------|-----------|

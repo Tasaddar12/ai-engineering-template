@@ -1,9 +1,9 @@
-# Use asyncio.gather for Independent Tasks [HIGH]
+# Use asyncio.gather for independent tasks [HIGH]
 
 ## Description
 When awaiting multiple independent async operations sequentially, I/O wait times accumulate. Using `asyncio.gather()` runs them concurrently, completing in the time of the slowest operation rather than the sum of all.
 
-## Bad Example
+## Bad example
 ```python
 import asyncio
 
@@ -15,7 +15,7 @@ async def fetch_all_data() -> tuple[dict, dict, dict]:
     return users, orders, products    # Total: 3 seconds
 ```
 
-## Good Example
+## Good example
 ```python
 import asyncio
 

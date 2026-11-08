@@ -1,13 +1,11 @@
-# Performance — Enterprise Standard
+# Performance
 
 **Applies to:** All Python projects. Specific sections tagged by project type.
 **Sources:** RORO pattern, async best practices, caching strategies from awesome-cursorrules community audit.
 
----
+## 1. Async programming
 
-## SECTION 1 — ASYNC PROGRAMMING
-
-### 1.1 async def vs def — the decision rule
+### 1.1 Async def vs def — the decision rule
 
 ```python
 # Use async def for: DB queries, HTTP calls, file I/O, message queues, any waiting
@@ -28,7 +26,7 @@ def format_currency(amount: Decimal, symbol: str = "$") -> str:
     return f"{symbol}{amount:,.2f}"
 ```
 
-### 1.2 Blocking I/O inside async context — always wrap
+### 1.2 Blocking i/o inside async context — always wrap
 
 ```python
 import asyncio
@@ -46,7 +44,7 @@ async def read_config() -> dict:
 
 ```
 
-### 1.3 Concurrent I/O — asyncio.gather()
+### 1.3 Concurrent i/o — asyncio.gather()
 
 ```python
 # WRONG — sequential; total time = sum of all individual times
@@ -67,9 +65,7 @@ async def get_dashboard_data(user_id: int) -> DashboardData:
 
 ```
 
----
-
-## SECTION 2 — CACHING
+## 2. Caching
 
 ### 2.1 Function-level caching with functools
 
@@ -140,9 +136,7 @@ async def get_config(tenant_id: int) -> TenantConfig:
 
 ```
 
----
-
-## SECTION 3 — N+1 QUERY PREVENTION
+## 3. N+1 query prevention
 
 ### 3.1 SQLAlchemy — joinedload vs selectinload
 
@@ -188,9 +182,7 @@ users = User.objects.annotate(order_count=Count("orders")).filter(is_active=True
 # Now user.order_count is available without extra queries
 ```
 
----
-
-## SECTION 5 — RESOURCE MONITORING (production services)
+## 5. Resource monitoring (production services)
 
 ```python
 # Use psutil for resource monitoring in long-running services

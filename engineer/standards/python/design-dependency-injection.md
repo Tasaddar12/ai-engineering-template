@@ -1,9 +1,9 @@
-# Loose Coupling with Dependency Injection [HIGH]
+# Loose coupling with dependency injection [HIGH]
 
 ## Description
 Instead of creating dependencies inside a class, inject them from outside. This decouples components, makes testing easier with mocks, and allows swapping implementations without changing the dependent code.
 
-## Bad Example
+## Bad example
 ```python
 class OrderProcessor:
     def __init__(self) -> None:
@@ -18,7 +18,7 @@ class OrderProcessor:
         self.email.send_confirmation(order.customer_email)
 ```
 
-## Good Example
+## Good example
 ```python
 from typing import Protocol
 

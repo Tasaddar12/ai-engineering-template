@@ -1,9 +1,9 @@
-# Prefer Pure Functions Without Side Effects [HIGH]
+# Prefer pure functions without side effects [HIGH]
 
 ## Description
 Pure functions always return the same output for the same input and have no side effects (no mutation of external state, no I/O). They are easier to test, reason about, and can be safely parallelized or cached.
 
-## Bad Example
+## Bad example
 ```python
 # Impure: modifies external state
 total_processed = 0
@@ -24,7 +24,7 @@ def get_discount(price: float) -> float:
     return 0
 ```
 
-## Good Example
+## Good example
 ```python
 from dataclasses import dataclass
 from datetime import date

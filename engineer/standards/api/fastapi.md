@@ -1,3 +1,5 @@
+# FastAPI
+
 ## Stack
 
 | Layer | Library |
@@ -11,9 +13,7 @@
 | Task Queue | Celery + Redis (or ARQ for lighter workloads) |
 | Settings | pydantic-settings |
 
----
-
-## Project Structure (FastAPI-specific additions)
+## Project structure (FastAPI-specific additions)
 
 ```
 app/
@@ -38,9 +38,7 @@ app/
 └── workers/                  ← Background task definitions
 ```
 
----
-
-## App Factory Pattern
+## App factory pattern
 
 ```python
 # app/main.py
@@ -70,9 +68,7 @@ def create_app() -> FastAPI:
 app = create_app()
 ```
 
----
-
-## Router + Endpoint Pattern
+## Router + endpoint pattern
 
 ```python
 # app/api/v1/users.py
@@ -104,9 +100,7 @@ async def create_user(
     return await service.create_user(data)
 ```
 
----
-
-## Pydantic Schemas
+## Pydantic schemas
 
 ```python
 # app/schemas/user.py
@@ -134,9 +128,9 @@ class UserListResponse(BaseModel):
     page_size: int
 ```
 
----
+## Dependencies
 
-## Database Session
+### Database session
 
 ```python
 # app/core/database.py
@@ -157,64 +151,7 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
             raise
 ```
 
----
-
-## Background Tasks
-
-For CPU-light tasks: use FastAPI `BackgroundTasks`.
-For heavy/reliable tasks: use **Celery**.
-
-```python
-# Lightweight (email sending, audit logging)
-@router.post("/users/")
-async def create_user(data: UserCreateRequest, background_tasks: BackgroundTasks):
-    user = await service.create_user(data)
-    background_tasks.add_task(send_welcome_email, user.email)
-    return user
-```
-
----
-
-## Health Check Endpoint
-
-Every service must expose:
-
-```python
-@router.get("/health", include_in_schema=False)
-async def health_check(session: AsyncSession = Depends(get_db)) -> dict:
-    await session.execute(text("SELECT 1"))
-    return {"status": "ok", "version": settings.app_version}
-```
-
----
-
-## LIFESPAN CONTEXT MANAGER (replaces deprecated @app.on_event)
-
-Always use the `lifespan` context manager:
-
-```python
-from contextlib import asynccontextmanager
-from fastapi import FastAPI
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup — runs once before the app begins accepting requests
-    await db_pool.connect()
-    configure_logging(json_output=not settings.debug)
-    logger.info("app_started", version=settings.app_version)
-
-    yield   # application runs here
-
-    # Shutdown — runs once after the last request is handled
-    await db_pool.disconnect()
-    logger.info("app_stopped")
-
-
-```
-
----
-
-## ANNOTATED DEPENDENCIES (Python 3.9+)
+### Annotated dependencies (Python 3.9+)
 
 Define reusable dependency annotations at module level for cleaner route signatures:
 
@@ -238,9 +175,56 @@ async def list_orders(
     ...
 ```
 
----
+## Background tasks
 
-## RORO IN FASTAPI ROUTES
+For CPU-light tasks: use FastAPI `BackgroundTasks`.
+For heavy/reliable tasks: use **Celery**.
+
+```python
+# Lightweight (email sending, audit logging)
+@router.post("/users/")
+async def create_user(data: UserCreateRequest, background_tasks: BackgroundTasks):
+    user = await service.create_user(data)
+    background_tasks.add_task(send_welcome_email, user.email)
+    return user
+```
+
+## Health check endpoint
+
+Every service must expose:
+
+```python
+@router.get("/health", include_in_schema=False)
+async def health_check(session: AsyncSession = Depends(get_db)) -> dict:
+    await session.execute(text("SELECT 1"))
+    return {"status": "ok", "version": settings.app_version}
+```
+
+## Lifespan context manager (replaces deprecated @app.on_event)
+
+Always use the `lifespan` context manager:
+
+```python
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup — runs once before the app begins accepting requests
+    await db_pool.connect()
+    configure_logging(json_output=not settings.debug)
+    logger.info("app_started", version=settings.app_version)
+
+    yield   # application runs here
+
+    # Shutdown — runs once after the last request is handled
+    await db_pool.disconnect()
+    logger.info("app_stopped")
+
+
+```
+
+## RORO in FastAPI routes
 
 All routes receive a Pydantic request model (or query params for GETs) and return a Pydantic response model.
 

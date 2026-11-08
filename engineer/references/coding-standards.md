@@ -31,9 +31,7 @@ topics are not required reading.
    whole standards into every prompt. Each independent agent reads its own
    applicable sections.
 
-Line offsets are discovered at read time, never maintained in indexes. In the
-legacy Python style guide, 12.11–12.15 are level-two headings, although 12.1–12.10
-are level three: select those later topics individually, not as children of §12.
+Line offsets are discovered at read time, never maintained in indexes.
 Missing or ambiguous headings are routing gaps to report, not reasons to silently
 read an entire unrelated document.
 

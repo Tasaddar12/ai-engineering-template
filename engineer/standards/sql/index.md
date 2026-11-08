@@ -8,16 +8,16 @@ Add [Python](../python/index.md) for language rules and
 
 | ID suffix / concern | Reference and section selectors |
 |---|---|
-| `models.foundation` — ORM model design | [Database §1](db-design.md#section-1--model-foundation); naming §2 or relationships §3 |
+| `models.foundation` — ORM model design | [Database §1](db-design.md#1-model-foundation); naming §2 or relationships §3 |
 | `models.indexes` — partial/GIN indexes | [Database §4.3](db-design.md#43-advanced-indexing) |
-| `models.migrations` — migration discipline | [Database §5](db-design.md#section-5--migration-discipline-alembic) |
+| `models.migrations` — migration discipline | [Database §5](db-design.md#5-migration-discipline-alembic) |
 | `queries.loading` — relationship loading | [Database §6.1](db-design.md#61-avoid-n1-queries--always) |
-| `values.money` — decimal values | [Database §7](db-design.md#section-7--decimal-handling-for-monetary-values) |
-| `migrations.rollout` — safe schema rollout | [Migrations §1](data-migrations.md#section-1--zero-downtime-migration-rules); expand/contract §2 |
-| `migrations.backfills` — committed batch backfills | [Migrations §3](data-migrations.md#section-3--backfill-strategies) |
-| `migrations.hazards` — dangerous operations | [Migrations §4](data-migrations.md#section-4--dangerous-operations-reference) |
-| `migrations.alembic` — Alembic changes | [Migrations §5](data-migrations.md#section-5--alembic-best-practices) |
-| `migrations.django` — state/database separation | [Migrations §6](data-migrations.md#section-6--django-migrations-specifics) |
+| `values.money` — decimal values | [Database §7](db-design.md#7-decimal-handling-for-monetary-values) |
+| `migrations.rollout` — safe schema rollout | [Migrations §1](data-migrations.md#1-zero-downtime-migration-rules); expand/contract §2 |
+| `migrations.backfills` — committed batch backfills | [Migrations §3](data-migrations.md#3-backfill-strategies) |
+| `migrations.hazards` — dangerous operations | [Migrations §4](data-migrations.md#4-dangerous-operations-reference) |
+| `migrations.alembic` — Alembic changes | [Migrations §5](data-migrations.md#5-alembic-best-practices) |
+| `migrations.django` — state/database separation | [Migrations §6](data-migrations.md#6-django-migrations-specifics) |
 
 ## Coverage limits
 
