@@ -1,9 +1,9 @@
-# Limit concurrency with semaphores [HIGH]
+# Limit Concurrency with Semaphores [HIGH]
 
 ## Description
 When processing many async operations concurrently, unbounded concurrency can exhaust resources (connections, file descriptors) or trigger rate limits. `asyncio.Semaphore` limits the number of concurrent operations.
 
-## Bad example
+## Bad Example
 ```python
 import asyncio
 
@@ -13,7 +13,7 @@ async def fetch_all_urls(urls: list[str]) -> list[dict]:
     return await asyncio.gather(*tasks)  # May exhaust connections or hit rate limits
 ```
 
-## Good example
+## Good Example
 ```python
 import asyncio
 from weakref import WeakKeyDictionary

@@ -1,9 +1,9 @@
-# Use dict.get() for efficient default values [CRITICAL]
+# Use dict.get() for Efficient Default Values [CRITICAL]
 
 ## Description
 When retrieving keys from dictionaries, `dict.get(key, default)` provides a concise way to specify default values when keys don't exist. More efficient and readable than `try/except` or `if key in dict`.
 
-## Bad example
+## Bad Example
 ```python
 # Verbose: existence check + retrieval
 config: dict[str, int] = {"timeout": 30}
@@ -20,7 +20,7 @@ except KeyError:
     retries = 3
 ```
 
-## Good example
+## Good Example
 ```python
 config: dict[str, int] = {"timeout": 30}
 

@@ -1,9 +1,9 @@
-# Python code style & conventions
+# Python Code Style & Conventions
 
 > Authority: PEP 8 (active, revised 2025-04-04), PEP 257, PEP 484, PEP 526, PEP 604, PEP 695.
 > Applies to: Python 3.8 through 3.13+. Version deltas called out explicitly.
 
-## Rule precedence
+## PRIME DIRECTIVE
 
 "A Foolish Consistency is the Hobgoblin of Little Minds" — Guido van Rossum, PEP 8.
 
@@ -16,7 +16,7 @@ Rules have priorities:
 Know when to deviate. Document why with a comment when you do.
 Never break backwards compatibility just to comply with a style rule.
 
-## 1. Toolchain
+## 1. TOOLCHAIN
 
 | Tool | Role | Min Version |
 |------|------|-------------|
@@ -28,7 +28,7 @@ Never break backwards compatibility just to comply with a style rule.
 Black was the prior standard. Ruff's formatter is Black-compatible and faster.
 Never use both Ruff formatter AND Black in the same project.
 
-## 2. Code layout
+## 2. CODE LAYOUT
 
 ### 2.1 Indentation
 
@@ -98,7 +98,7 @@ my_list = [
 ]
 ```
 
-### 2.2 Line length
+### 2.2 Line Length
 
 PEP 8 canonical: 79 chars (code), 72 chars (docstrings/comments).
 
@@ -140,7 +140,7 @@ with (
     file_2.write(file_1.read())
 ```
 
-### 2.3 Binary operator line breaks
+### 2.3 Binary Operator Line Breaks
 
 Break BEFORE binary operators (Knuth style — PEP 8 revised 2013):
 
@@ -159,7 +159,7 @@ income = (gross_wages +
           ira_deduction)
 ```
 
-### 2.4 Blank lines
+### 2.4 Blank Lines
 
 | Context | Blank lines |
 |---------|-------------|
@@ -188,7 +188,7 @@ class AnotherClass:
     pass
 ```
 
-### 2.5 Source file encoding
+### 2.5 Source File Encoding
 
 Always UTF-8. Never add encoding declaration in Python 3 — it is redundant.
 
@@ -197,9 +197,9 @@ Always UTF-8. Never add encoding declaration in Python 3 — it is redundant.
 # -*- coding: utf-8 -*-
 ```
 
-## 3. Imports
+## 3. IMPORTS
 
-### 3.1 Grouping and ordering
+### 3.1 Grouping and Ordering
 
 Four groups, blank line between each, in this exact order:
 
@@ -235,7 +235,7 @@ if TYPE_CHECKING:
     from myapp.repositories.user_repository import UserRepository
 ```
 
-### 3.2 Import style rules
+### 3.2 Import Style Rules
 
 ```python
 # Correct — one module per line
@@ -256,7 +256,7 @@ from os.path import *
 # when __all__ is explicitly declared in the source module.
 ```
 
-### 3.3 Absolute vs relative
+### 3.3 Absolute vs Relative
 
 ```python
 # Preferred — absolute imports
@@ -269,7 +269,7 @@ from .sibling_module import SomeClass
 from ..parent_module import ParentClass
 ```
 
-## 4. Module-level dunders
+## 4. MODULE-LEVEL DUNDERS
 
 After module docstring, before regular imports. `from __future__` comes before dunders.
 
@@ -286,7 +286,7 @@ import os
 from typing import Any
 ```
 
-## 5. String quotes
+## 5. STRING QUOTES
 
 PEP 8 has no preference. Projects must pick one and be consistent.
 Ruff/Black default: double quotes.
@@ -304,9 +304,9 @@ full_name = f"Hello, {first_name} {last_name}!"
 
 ```
 
-## 6. Whitespace rules
+## 6. WHITESPACE RULES
 
-### 6.1 Pet peeves (never do these)
+### 6.1 Pet Peeves (Never Do These)
 
 ```python
 # WRONG — space inside delimiters
@@ -338,7 +338,7 @@ dct ['key'] = lst [index]
 dct['key'] = lst[index]
 ```
 
-### 6.2 Operator spacing
+### 6.2 Operator Spacing
 
 ```python
 # WRONG — aligning with spaces
@@ -372,7 +372,7 @@ def munge(input: AnyStr, sep: AnyStr = None, limit=1000): ...
 def munge(input: AnyStr=None): ...
 ```
 
-### 6.3 Compound statements
+### 6.3 Compound Statements
 
 ```python
 # Correct
@@ -391,7 +391,7 @@ try: something()
 finally: cleanup()
 ```
 
-### 6.4 Variable annotations (PEP 526)
+### 6.4 Variable Annotations (PEP 526)
 
 ```python
 # Correct
@@ -408,7 +408,7 @@ code : int         # Space before colon
 result: int=0      # No spaces around = when annotation present
 ```
 
-## 7. Trailing commas
+## 7. TRAILING COMMAS
 
 ```python
 # MANDATORY — single-element tuple
@@ -439,9 +439,9 @@ diffs as 2 lines (comma on prev item + new item). With trailing commas, it's 1 l
 Across hundreds of PRs per day in a large team, this dramatically reduces review noise
 and false blame in git blame.
 
-## 8. Comments
+## 8. COMMENTS
 
-### 8.1 Core rules
+### 8.1 Core Rules
 
 - Comments that contradict code are WORSE than no comments. Keep them updated.
 - Write as complete sentences. Capitalize first word unless it is an identifier.
@@ -456,7 +456,7 @@ x = x + 1  # Compensate for border pixel (designer req, issue #443)
 x = x + 1  # Increment x
 ```
 
-### 8.2 Block comments
+### 8.2 Block Comments
 
 ```python
 def process_payment(order: Order, card: CreditCard) -> Receipt:
@@ -477,7 +477,7 @@ def process_payment(order: Order, card: CreditCard) -> Receipt:
             time.sleep(2 ** attempt)
 ```
 
-### 8.3 Inline comments
+### 8.3 Inline Comments
 
 Separated by at least 2 spaces. Start with `# `.
 
@@ -488,7 +488,7 @@ Separated by at least 2 spaces. Start with `# `.
 counter = 0  # Set counter to zero
 ```
 
-### 8.4 TODO / FIXME convention (team standard)
+### 8.4 TODO / FIXME Convention (Team Standard)
 
 ```python
 # TODO(username): Description. Ticket link.
@@ -502,9 +502,9 @@ counter = 0  # Set counter to zero
 # FIXME(rishap): Race condition in concurrent writes. ENG-5678
 ```
 
-## 9. Docstrings (PEP 257)
+## 9. DOCSTRINGS (PEP 257)
 
-### 9.1 What must have docstrings
+### 9.1 What Must Have Docstrings
 
 | Construct | Required |
 |-----------|----------|
@@ -516,7 +516,7 @@ counter = 0  # Set counter to zero
 | Abstract method | Yes — always (documents the contract subclasses fulfill) |
 | Property | Yes if purpose not obvious from name |
 
-### 9.2 One-line docstrings
+### 9.2 One-Line Docstrings
 
 ```python
 def square(x: float) -> float:
@@ -535,7 +535,7 @@ def fetch_user(user_id: int) -> User:
     """Fetches a user by ID."""
 ```
 
-### 9.3 Multi-line docstrings (Google style — team standard)
+### 9.3 Multi-Line Docstrings (Google Style — Team Standard)
 
 ```python
 def create_order(
@@ -581,7 +581,7 @@ def create_order(
     """
 ```
 
-### 9.4 Class docstrings
+### 9.4 Class Docstrings
 
 ```python
 class PaymentGateway:
@@ -610,7 +610,7 @@ class PaymentGateway:
         """
 ```
 
-### 9.5 Module docstrings
+### 9.5 Module Docstrings
 
 ```python
 """User management service.
@@ -632,9 +632,9 @@ Public API:
 """
 ```
 
-## 10. Naming conventions
+## 10. NAMING CONVENTIONS
 
-### 10.1 Complete reference
+### 10.1 Complete Reference
 
 | Construct | Style | Example | Notes |
 |-----------|-------|---------|-------|
@@ -655,7 +655,7 @@ Public API:
 | TypeAlias (3.10+) | `CapWords` | `UserId: TypeAlias = int` | |
 | type stmt (3.12+) | `CapWords` | `type UserId = int` | |
 
-### 10.2 Names to absolutely avoid
+### 10.2 Names to Absolutely Avoid
 
 ```python
 # Never as single-char variable names:
@@ -681,7 +681,7 @@ type_ = "user"      # Better than typ
 lambda_ = 0.01      # Better than lam
 ```
 
-### 10.3 Naming deep guidelines
+### 10.3 Naming Deep Guidelines
 
 Functions — verb-first, describe what they do:
 
@@ -748,7 +748,7 @@ class OrderStatus(Enum):
 status = "pending"   # No validation, no autocomplete, typo-prone
 ```
 
-### 10.4 Public and internal interfaces
+### 10.4 Public and Internal Interfaces
 
 ```python
 # Public — documented, stable contract
@@ -778,9 +778,9 @@ __all__ = [
 ]
 ```
 
-## 11. Type annotations
+## 11. TYPE ANNOTATIONS
 
-### 11.1 Version compatibility matrix
+### 11.1 Version Compatibility Matrix
 
 | Feature | PEP | Min Python | Notes |
 |---------|-----|------------|-------|
@@ -799,7 +799,7 @@ __all__ = [
 | `@override` decorator | 698 | 3.12 | Explicit override marking |
 | `except*` (ExceptionGroup) | 654 | 3.11 | New exception handling pattern |
 
-### 11.2 Version-specific strategies
+### 11.2 Version-Specific Strategies
 
 Strategy A — from __future__ import annotations (Python 3.7+, RECOMMENDED):
 
@@ -844,7 +844,7 @@ else:
 UserId: TypeAlias = int
 ```
 
-### 11.3 Key annotation patterns
+### 11.3 Key Annotation Patterns
 
 ```python
 from __future__ import annotations
@@ -892,7 +892,7 @@ def count_up(n: int) -> Generator[int, None, None]:
         yield i
 ```
 
-### 11.4 When Any is acceptable
+### 11.4 When Any Is Acceptable
 
 ```python
 # Acceptable — document why
@@ -908,9 +908,9 @@ def process(x: Any) -> Any:  # Defeats type checking
     ...
 ```
 
-## 12. Python language patterns
+## 12. PROGRAMMING RECOMMENDATIONS
 
-### 12.1 Singleton comparisons
+### 12.1 Singleton Comparisons
 
 ```python
 # Correct
@@ -922,7 +922,7 @@ if foo == None: ...
 
 ```
 
-### 12.2 Boolean comparisons
+### 12.2 Boolean Comparisons
 
 ```python
 # Correct — truthiness
@@ -941,7 +941,7 @@ if len(seq) == 0: ...
 if not len(seq): ...
 ```
 
-### 12.3 Return statement consistency
+### 12.3 Return Statement Consistency
 
 ```python
 # Correct — all returns explicit
@@ -963,7 +963,7 @@ def find_user(user_id: int) -> User | None:
     # Implicit return None — mypy catches this, humans miss it
 ```
 
-### 12.4 Exception handling
+### 12.4 Exception Handling
 
 ```python
 # Correct — specific exception, minimum code in try, else for success path
@@ -1021,7 +1021,7 @@ except OSError as exc:
         pass
 ```
 
-### 12.5 Context managers
+### 12.5 Context Managers
 
 ```python
 # Correct
@@ -1049,7 +1049,7 @@ with (
     outfile.write(infile.read())
 ```
 
-### 12.6 String operations
+### 12.6 String Operations
 
 ```python
 # Correct
@@ -1094,7 +1094,7 @@ def user_sort_key(user: User) -> tuple[str, str]:
 sorted_users = sorted(users, key=user_sort_key)
 ```
 
-### 12.8 Rich comparisons
+### 12.8 Rich Comparisons
 
 ```python
 from functools import total_ordering
@@ -1118,7 +1118,7 @@ class Version:
 # total_ordering generates __le__, __gt__, __ge__ automatically
 ```
 
-### 12.9 Never flow control in finally
+### 12.9 Never Flow Control in Finally
 
 ```python
 # WRONG — return in finally silently swallows active exception
@@ -1142,7 +1142,7 @@ def safe_operation() -> None:
             connection.close()
 ```
 
-### 12.10 Mutable default arguments
+### 12.10 Mutable Default Arguments
 
 ```python
 # WRONG — the default list is SHARED across all calls
@@ -1172,7 +1172,7 @@ class Config:
     headers: dict[str, str] = field(default_factory=dict)
 ```
 
-### 12.11 Late binding closures
+### 12.11 Late Binding Closures
 
 Python closures bind variables **by reference at call time**, not at definition time.
 This is a common source of bugs when generating functions in loops:
@@ -1206,9 +1206,9 @@ def make_multipliers():
 always capture the current value via a default argument `i=i` or `functools.partial`.
 This is not specific to `lambda` — regular `def` inside a loop has identical behaviour.
 
-### 12.12 Python idioms reference
+### 12.12 Python Idioms Reference
 
-#### Unpacking & destructuring
+#### Unpacking & Destructuring
 
 ```python
 # Basic tuple/list unpacking
@@ -1226,7 +1226,7 @@ first, *middle, last = [1, 2, 3, 4] # first=1, middle=[2,3], last=4
 basename, __, ext = "archive.tar.gz".rpartition(".")
 ```
 
-#### List / collection construction
+#### List / Collection Construction
 
 ```python
 # WRONG — [[]]*4 creates 4 references to the SAME list
@@ -1243,7 +1243,7 @@ print(four_lists)  # [['x'], [], [], []] ✅
 four_nones = [None] * 4   # safe; None is immutable
 ```
 
-#### String building
+#### String Building
 
 ```python
 parts = ["s", "p", "a", "m"]
@@ -1256,7 +1256,7 @@ result = "".join(parts)
 full_name = first_name + " " + last_name
 ```
 
-#### Membership testing: list vs set
+#### Membership Testing: list vs set
 
 ```python
 # list membership: O(n) — scans every element
@@ -1276,7 +1276,7 @@ def is_valid_status(status: str) -> bool:
     return status in VALID_STATUSES  # O(1) always
 ```
 
-#### Dictionary access
+#### Dictionary Access
 
 ```python
 d = {"host": "localhost", "port": 5432}
@@ -1292,7 +1292,7 @@ if "timeout" in d:
     timeout = d["timeout"]
 ```
 
-#### Enumerate over range+index
+#### Enumerate over Range+Index
 
 ```python
 items = ["alpha", "beta", "gamma"]
@@ -1310,7 +1310,7 @@ for i, item in enumerate(items, start=1):
     print(f"{i}: {item}")
 ```
 
-### 12.13 Function arguments — design rules
+### 12.13 Function Arguments — Design Rules
 
 ```python
 # ✅ Positional: few args, natural order, obvious meaning
@@ -1338,7 +1338,7 @@ def process(*args, **kwargs): ...   # What does this actually take?
 - Use `None` as the sentinel for "not provided", never a mutable default.
 - Rename `*args` / `**kwargs` when clearer names exist: `*events`, `**context`.
 
-### 12.14 Pure functions & minimising side effects
+### 12.14 Pure Functions & Minimising Side Effects
 
 **Pure functions** always produce the same output for the same input and have no side effects.
 They are easier to test, refactor, and reason about.
@@ -1370,7 +1370,7 @@ final_price = calculate_discount_price(product.price, is_weekend)
 - Avoid functions that modify objects they didn't create (hidden coupling).
 - Avoid module-level mutable state — it creates race conditions in multi-process web apps.
 
-### 12.15 Variable naming under dynamic typing
+### 12.15 Variable Naming Under Dynamic Typing
 
 Reassigning a variable to a different type within the same scope destroys readability.
 Type checkers (mypy, pyright) will catch this, but the convention must be proactive:
@@ -1402,11 +1402,11 @@ answer = format_answer(1)
 - When a value must be transformed through multiple types, give each stage a name.
 - Rely on type annotations + mypy to enforce this automatically.
 
-## 13. Anti-patterns
+## 13. ANTI-PATTERNS
 
 Each pattern below has caused a real production incident.
 
-### 13.1 Silent Exception swallowing
+### 13.1 Silent Exception Swallowing
 
 ```python
 # WORST pattern — payment may or may not have succeeded, no one knows
@@ -1423,7 +1423,7 @@ except Exception:
     raise
 ```
 
-### 13.2 Overly broad Exception catching
+### 13.2 Overly Broad Exception Catching
 
 ```python
 # WRONG — masks AttributeError, NameError, all programming errors
@@ -1445,7 +1445,7 @@ def load_config(path: str) -> dict:
         raise ConfigError(f"Invalid JSON in {path}: {exc}") from exc
 ```
 
-### 13.3 Global state
+### 13.3 Global State
 
 ```python
 # WRONG — hidden coupling, thread-unsafe, untestable
@@ -1463,7 +1463,7 @@ from contextvars import ContextVar
 current_user: ContextVar[User | None] = ContextVar("current_user", default=None)
 ```
 
-### 13.4 type() instead of isinstance()
+### 13.4 type() Instead of isinstance()
 
 ```python
 # WRONG — fails for subclasses, ABCs
@@ -1477,7 +1477,7 @@ from collections.abc import Sequence
 if isinstance(value, Sequence): ...
 ```
 
-### 13.5 String formatting
+### 13.5 String Formatting
 
 ```python
 # WRONG — % style
@@ -1528,7 +1528,7 @@ raise ValidationError(f"User {username} not found")
 raise ValidationError(_("User %(username)s not found") % {"username": username})
 ```
 
-### 13.6 Suppression comments (NOQA / type: ignore)
+### 13.6 Suppression Comments (NOQA / type: ignore)
 
 **Always specify the exact error code. Bare suppression is prohibited.**
 
@@ -1555,7 +1555,7 @@ def func(foo, bar):  # pylint: disable=unused-argument
 - If the explanation doesn't fit on the same line, add a comment above prefixed with the tool name: `# MYPY NOTE:`, `# PYLINT NOTE:`, `# RUFF NOTE:`.
 - Suppressions require code review approval — treat them as technical debt.
 
-## 14. Version compatibility matrix
+## 14. VERSION COMPATIBILITY MATRIX
 
 | Feature | 3.6 | 3.7 | 3.8 | 3.9 | 3.10 | 3.11 | 3.12 | 3.13 |
 |---------|-----|-----|-----|-----|------|------|------|------|
@@ -1576,7 +1576,7 @@ def func(foo, bar):  # pylint: disable=unused-argument
 
 Minimum for new projects: Python 3.10.
 
-## 15. Toolchain configuration
+## 15. TOOLCHAIN CONFIGURATION
 
 ### 15.1 Complete pyproject.toml
 
@@ -1643,7 +1643,7 @@ module = ["celery.*", "kombu.*"]
 ignore_missing_imports = true
 ```
 
-### 15.2 Pre-commit configuration
+### 15.2 pre-commit Configuration
 
 ```yaml
 # .pre-commit-config.yaml
@@ -1674,7 +1674,7 @@ repos:
         args: ["--maxkb=500"]
 ```
 
-## Appendix: violations reference
+## APPENDIX: VIOLATIONS QUICK REFERENCE
 
 CRITICAL — block merge immediately:
 - Bare `except:` without log + re-raise

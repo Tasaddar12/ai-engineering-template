@@ -1,9 +1,9 @@
-# Prefer composition over inheritance [MEDIUM]
+# Prefer Composition Over Inheritance [MEDIUM]
 
 ## Description
 Inheritance creates tight coupling between classes and can lead to fragile hierarchies. Composition (having objects contain other objects) provides more flexibility, allows combining behaviors, and makes changes easier without affecting other classes.
 
-## Bad example
+## Bad Example
 ```python
 class Animal:
     def move(self) -> None:
@@ -31,7 +31,7 @@ class TechnicalSeniorManager(SeniorManager):  # Explosion of classes
     def code(self) -> None: ...
 ```
 
-## Good example
+## Good Example
 ```python
 from typing import Protocol
 

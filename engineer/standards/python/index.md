@@ -10,7 +10,7 @@ or boundary details. Do not automatically read overlapping references twice.
 
 ## Style and contracts
 
-For style decisions, also read [rule precedence](code-style.md#rule-precedence).
+For style decisions, also read [rule precedence](code-style.md#prime-directive).
 
 | ID suffix / concern | Reference and section selectors |
 |---|---|
@@ -38,7 +38,7 @@ For style decisions, also read [rule precedence](code-style.md#rule-precedence).
 | ID suffix / concern | Reference and section selectors |
 |---|---|
 | `structure.layout` — package/application layout | [Structure §2](folder-structure.md#2-src-layout-vs-flat-layout); choose archetype §3 web, §4 library, §5 ETL, §6 CLI or §7 ML |
-| `structure.boundaries` — module/layer ownership | [Structure §9](folder-structure.md#9-layer-boundary-prohibitions); naming §8 or module design §10; include core principle §1 |
+| `structure.boundaries` — module/layer ownership | [Structure §9](folder-structure.md#9-what-never-goes-where); naming §8 or module design §10; include core principle §1 |
 | `design.principles` — DRY, YAGNI and KISS | [Design philosophy](design-philosophy.md), **whole** |
 | `design.responsibility` — cohesive components | [Single responsibility](design-single-responsibility.md), **whole** |
 | `design.injection` — explicit dependencies | [Dependency injection](design-dependency-injection.md), **whole** |

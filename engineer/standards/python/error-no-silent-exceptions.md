@@ -1,9 +1,9 @@
-# Never swallow exceptions [CRITICAL]
+# Never Swallow Exceptions [CRITICAL]
 
 ## Description
 Catch an exception only when the current layer can recover, add meaningful context, or handle it at an application boundary. Never hide an unexpected failure with `pass`, `continue`, an unexplained default value, or a log message followed by execution that treats the operation as successful. Silent failures make corrupted or incomplete results look successful and remove the traceback needed to diagnose the cause.
 
-## Bad example
+## Bad Example
 ```python
 def load_settings(path: Path) -> Settings:
     try:
@@ -14,7 +14,7 @@ def load_settings(path: Path) -> Settings:
     return Settings()  # Invalid JSON and I/O failures look like valid defaults
 ```
 
-## Good example
+## Good Example
 ```python
 class SettingsError(Exception):
     """Raised when application settings cannot be loaded."""

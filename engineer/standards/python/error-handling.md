@@ -1,10 +1,10 @@
-# Error handling
+# Error Handling
 
 **Applies to:** All Python projects.
 **Authority:** PEP 8 §Programming Recommendations, PEP 3151, Python 3.3+ exception hierarchy.
 **Python 3.11+:** ExceptionGroup and `except*` noted separately.
 
-## 1. Exception hierarchy design
+## 1. EXCEPTION HIERARCHY DESIGN
 
 ### 1.1 Always derive from Exception, not BaseException
 
@@ -163,7 +163,7 @@ class DataIntegrityError(AppError):
         super().__init__(message=message, code="DATA_INTEGRITY_ERROR")
 ```
 
-## 2. Where exceptions are raised and caught
+## 2. WHERE EXCEPTIONS ARE RAISED AND CAUGHT
 
 ### 2.1 The golden rule: raise domain exceptions; catch in one place
 
@@ -233,7 +233,7 @@ async def app_exception_handler(
 app.add_exception_handler(AppError, app_exception_handler)
 ```
 
-## 3. Raising exceptions correctly
+## 3. RAISING EXCEPTIONS CORRECTLY
 
 ### 3.1 Exception chaining — always preserve context
 
@@ -260,7 +260,7 @@ except KeyError:
 
 ```
 
-## 4. Catching exceptions correctly
+## 4. CATCHING EXCEPTIONS CORRECTLY
 
 ### 4.1 Always catch the most specific exception
 
@@ -331,7 +331,7 @@ except OSError as exc:
         pass
 ```
 
-## 5. Logging and exceptions
+## 5. LOGGING AND EXCEPTIONS
 
 ```python
 # Log BEFORE re-raising — context is preserved, stack trace attached
@@ -361,7 +361,7 @@ except httpx.HTTPStatusError as exc:
     logger.error("failed", error=str(exc))  # error is swallowed — caller gets None
 ```
 
-## 6. Python 3.11+ exception groups
+## 6. PYTHON 3.11+ EXCEPTION GROUPS
 
 Python 3.11 introduced `ExceptionGroup` and `except*` for concurrent error handling. Only use when actually handling concurrent failures.
 
@@ -391,7 +391,7 @@ if sys.version_info >= (3, 11):
             logger.error("service_failed", error=str(exc))
 ```
 
-## 7. Standard error response shape
+## 7. STANDARD ERROR RESPONSE SHAPE
 
 All HTTP APIs must return errors in exactly this shape — no exceptions.
 
@@ -426,7 +426,7 @@ For validation errors with multiple field violations:
 }
 ```
 
-## 8. Anti-patterns reference
+## 8. ANTI-PATTERNS REFERENCE
 
 ```python
 # 1. Silent swallowing — the worst pattern in production code

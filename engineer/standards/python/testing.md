@@ -3,7 +3,7 @@
 **Applies to:** All Python projects.
 **Philosophy:** Tests are not verification — they are specification. Write them first when possible.
 
-## 0. Testing principles (the Hitchhiker's rules)
+## 0. TESTING PRINCIPLES (The Hitchhiker's Rules)
 
 These principles apply regardless of framework (pytest, unittest, Django TestCase).
 They represent the community consensus on what makes a test suite genuinely useful.
@@ -41,7 +41,7 @@ by reading tests. Well-named, readable tests are onboarding documentation.
 **Debug using a test.** In the face of an ambiguous bug: don't add `print()` — write a test
 that isolates the failing case. The test documents the fix permanently.
 
-## 1. Toolchain
+## 1. TOOLCHAIN
 
 | Tool | Role |
 |---|---|
@@ -90,9 +90,9 @@ exclude_lines = [
 ]
 ```
 
-## 2. Test categories and scope
+## 2. TEST CATEGORIES AND SCOPE
 
-### 2.1 Unit tests
+### 2.1 Unit Tests
 
 - Test a **single function or method** in complete isolation.
 - All dependencies replaced with mocks/fakes.
@@ -100,25 +100,25 @@ exclude_lines = [
 - Should run in < 1ms each; entire unit suite in < 5 seconds.
 - Location: `tests/unit/`
 
-### 2.2 Integration tests
+### 2.2 Integration Tests
 
 - Test a **real interaction between two or more components**.
 - Use `testcontainers` for a real PostgreSQL/Redis (not SQLite).
 - May hit real filesystem; no real network (external APIs are mocked).
 - Location: `tests/integration/`
 
-### 2.3 End-to-end tests
+### 2.3 End-to-End Tests
 
 - Test a **complete user-visible flow** against a running service.
 - Only in `tests/e2e/` — never run in unit or integration CI.
 - Location: `tests/e2e/`
 
-### 2.4 Performance / load tests (Locust / k6)
+### 2.4 Performance / Load Tests (Locust / k6)
 
 - Separate from pytest; in `tests/performance/` or dedicated repo.
 - Never mixed with unit or integration tests.
 
-## 3. Test structure and naming
+## 3. TEST STRUCTURE AND NAMING
 
 ### 3.1 File and class naming
 
@@ -134,7 +134,7 @@ Test method:  def test_{method}_{scenario}_{expected_outcome}(self):
               def test_get_orders_for_inactive_user_raises_authorization_error(self):
 ```
 
-### 3.2 AAA pattern — every test is three sections
+### 3.2 AAA Pattern — every test is three sections
 
 ```python
 async def test_create_order_with_valid_data_returns_persisted_order(
@@ -163,7 +163,7 @@ async def test_create_order_with_valid_data_returns_persisted_order(
     assert call_args.user_id == 42
 ```
 
-## 4. Fixtures and conftest
+## 4. FIXTURES AND CONFTEST
 
 ### 4.1 Conftest hierarchy
 
@@ -226,7 +226,7 @@ def postgres_container():
 
 ```
 
-## 5. Factories
+## 5. FACTORIES
 
 Never hardcode test data inline. Always use factory_boy factories.
 
@@ -288,7 +288,7 @@ class ExpensiveProductFactory(ProductFactory):
     price = Decimal("999.99")
 ```
 
-## 6. Required test coverage
+## 6. WHAT MUST BE TESTED
 
 | Must test | Why |
 |---|---|
@@ -308,7 +308,7 @@ class ExpensiveProductFactory(ProductFactory):
 | Trivial property accessors with no logic | No branch to test |
 | `__repr__` and `__str__` | Unless they contain logic |
 
-## 7. Mocking guidelines
+## 7. MOCKING GUIDELINES
 
 ```python
 # Mock at the boundary closest to the test — not at the framework level
@@ -337,7 +337,7 @@ async def test_get_user_unit():  # this is an integration test, not a unit test
     ...
 ```
 
-## 8. Coverage rules
+## 8. COVERAGE RULES
 
 ```
 Minimum overall coverage:              80% (CI fails below this)
@@ -349,7 +349,7 @@ Happy paths only is not enough:        every raise statement needs a test
 
 **Coverage is a floor, not a goal.** 100% coverage with weak assertions is useless. 85% coverage with strong assertions that test real behaviour is far more valuable.
 
-## 10. Django-specific testing
+## 10. DJANGO-SPECIFIC TESTING
 
 ### 10.1 TestCase vs TransactionTestCase
 
@@ -369,7 +369,7 @@ class TestOrderService(TestCase):
 
 ```
 
-### 10.2 Preferred Django assertion methods
+### 10.2 Preferred Django Assertion Methods
 
 Use these over the generic `assertEqual` / `assertTrue` equivalents — they produce
 better failure messages and catch more subtle bugs.
@@ -406,7 +406,7 @@ class TestMyView(TestCase):
 - Use `assertIs(result, True)` / `assertIs(result, False)` over `assertTrue()` / `assertFalse()` to verify the actual bool value, not just truthiness.
 - In test docstrings, state the **expected behaviour**: `"Returns 404 when post is unpublished"` not `"Tests that 404 is returned"`.
 
-## 11. Parametrize for coverage breadth
+## 11. PARAMETRIZE FOR COVERAGE BREADTH
 
 ```python
 @pytest.mark.parametrize("quantity,expected_total", [
@@ -424,12 +424,12 @@ async def test_order_total_calculation(
     assert total == expected_total
 ```
 
-## 12. Assert method selection guide
+## 12. ASSERT METHOD SELECTION GUIDE
 
 Choosing the wrong assert method gives poor failure messages. Always pick the most
 specific method available. This table is the reference used by agents when generating tests.
 
-### 12.1 Equality & identity
+### 12.1 Equality & Identity
 
 | Situation | Use | Not |
 |---|---|---|
@@ -452,7 +452,7 @@ self.assertIs(user.is_verified, True)
 self.assertTrue(user.is_verified)
 ```
 
-### 12.2 Type & membership
+### 12.2 Type & Membership
 
 | Situation | Use |
 |---|---|
@@ -464,7 +464,7 @@ self.assertTrue(user.is_verified)
 | Class is subclass of another | `assertIsSubclass(cls, Base)` *(Python 3.14+)* |
 | Object has an attribute | `assertHasAttr(obj, "name")` *(Python 3.14+)* |
 
-### 12.3 Numeric & approximate
+### 12.3 Numeric & Approximate
 
 ```python
 # Floating point — never assertEqual; always assertAlmostEqual
@@ -493,7 +493,7 @@ self.assertSetEqual(set(result), {"read", "write"})
 self.assertDictEqual(response.json(), {"status": "ok", "count": 3})
 ```
 
-### 12.5 Strings & patterns
+### 12.5 Strings & Patterns
 
 ```python
 # assertMultiLineEqual — best for comparing long strings; shows diff on failure
@@ -508,7 +508,7 @@ self.assertStartsWith(response_body, '{"status"')
 self.assertEndsWith(filename, ".csv")
 ```
 
-### 12.6 Exceptions & warnings
+### 12.6 Exceptions & Warnings
 
 ```python
 # Basic exception — always prefer context manager form
@@ -532,7 +532,7 @@ with self.assertWarns(DeprecationWarning):
 
 ```
 
-### 12.7 Log assertions
+### 12.7 Log Assertions
 
 Test that code emits (or does NOT emit) log messages — essential for monitoring paths:
 
@@ -560,9 +560,9 @@ class TestOrderService(TestCase):
 - `log_ctx.output` is a list of strings in format `"LEVEL:logger_name:message"`.
 - `log_ctx.records` gives raw `LogRecord` objects for deeper inspection.
 
-## 13. Skipping tests & expected failures
+## 13. SKIPPING TESTS & EXPECTED FAILURES
 
-### 13.1 Skip decorators
+### 13.1 Skip Decorators
 
 ```python
 import sys
@@ -609,7 +609,7 @@ class TestOrdersV2(TestCase):
     ...
 ```
 
-### 13.2 Expected failures
+### 13.2 Expected Failures
 
 Mark tests that are **known broken** and tracked — they pass (silently) when broken,
 and fail the suite when they unexpectedly start passing:
@@ -632,9 +632,9 @@ class TestKnownBugs(TestCase):
   flaky tests. Remove the decorator the moment the bug is fixed.
 - Every `skip` call must include a reason string. Never: `@unittest.skip("")`.
 
-## 14. Fixture lifecycle & cleanup
+## 14. FIXTURE LIFECYCLE & CLEANUP
 
-### 14.1 Fixture scope hierarchy
+### 14.1 Fixture Scope Hierarchy
 
 ```
 setUpModule()          ← runs once for the whole module
@@ -649,7 +649,7 @@ tearDownModule()       ← runs once for the whole module
 addModuleCleanup(fn)   ← runs after tearDownModule — LIFO order
 ```
 
-### 14.2 setUp / tearDown — per-test fixtures
+### 14.2 setUp / tearDown — Per-Test Fixtures
 
 ```python
 class TestUserRepository(TestCase):
@@ -667,7 +667,7 @@ class TestUserRepository(TestCase):
 **Important:** `tearDown` is only called when `setUp` succeeded. If `setUp` raises,
 `tearDown` is skipped — use `addCleanup` for guaranteed cleanup.
 
-### 14.3 addCleanup — guaranteed cleanup (prefer over tearDown)
+### 14.3 addCleanup — Guaranteed Cleanup (Prefer Over tearDown)
 
 `addCleanup` runs in **LIFO order** regardless of whether `setUp` or the test itself failed.
 Prefer it over `tearDown` for resource cleanup:
@@ -686,7 +686,7 @@ class TestFileProcessor(TestCase):
         ...
 ```
 
-### 14.4 setUpClass / tearDownClass — expensive shared resources
+### 14.4 setUpClass / tearDownClass — Expensive Shared Resources
 
 Use for resources that are slow to create and safe to share across tests in a class
 (DB connections, test servers, loaded ML models):
@@ -729,7 +729,7 @@ def tearDownModule() -> None:
     pass  # prefer addModuleCleanup above instead
 ```
 
-## 15. Subtest: multiple assertions in one test
+## 15. SUBTEST: MULTIPLE ASSERTIONS IN ONE TEST
 
 `self.subTest()` lets you run multiple related assertions in a single test method while
 still reporting each failure independently. This is the `unittest` equivalent of
@@ -760,7 +760,7 @@ class TestSlugifier(TestCase):
   for code that must use `unittest.TestCase` (Django tests, legacy code).
 - Always pass meaningful keyword args to `subTest` — they appear in failure output.
 
-## 16. Async tests (IsolatedAsyncioTestCase)
+## 16. ASYNC TESTS (IsolatedAsyncioTestCase)
 
 For testing async code without pytest-asyncio:
 

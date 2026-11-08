@@ -1,10 +1,10 @@
-# Data migrations
+# Data Migrations
 
 **Applies to:** All Python projects with relational databases.
 **Tools:** Alembic (SQLAlchemy), Django migrations.
 **Principle:** Every migration must be deployable without downtime.
 
-## 1. Zero-downtime migration rules
+## 1. ZERO-DOWNTIME MIGRATION RULES
 
 | Rule | Rationale |
 |------|-----------|
@@ -15,11 +15,11 @@
 | Separate schema migrations from data migrations | Schema = fast DDL; data = slow backfill |
 | Test migrations against a production-sized dataset | A 2-second migration on dev can be 2-hour lock on prod |
 
-## 2. Expand-contract pattern
+## 2. EXPAND-CONTRACT PATTERN
 
 The safe way to make breaking schema changes:
 
-### Phase 1: expand (deploy with old + new)
+### Phase 1: Expand (deploy with old + new)
 
 ```python
 # alembic/versions/001_add_new_column.py
@@ -33,7 +33,7 @@ def downgrade():
 - Deploy code that writes to BOTH old and new columns.
 - Old code still works — it ignores the new column.
 
-### Phase 3: contract (remove old)
+### Phase 3: Contract (remove old)
 
 ```python
 # alembic/versions/003_drop_old_columns.py
@@ -49,9 +49,9 @@ def downgrade():
 - Deploy ONLY after all code references the new column.
 - Minimum 1 release cycle between expand and contract.
 
-## 3. Backfill strategies
+## 3. BACKFILL STRATEGIES
 
-### Batch processing (preferred)
+### Batch Processing (preferred)
 
 ```python
 BATCH_SIZE = 1000
@@ -76,7 +76,7 @@ def backfill_in_batches(session):
         logger.info("backfill_progress", last_id=last_id)
 ```
 
-### Rules for backfills
+### Rules for Backfills
 
 - Always process in batches (1000–5000 rows).
 - Commit per batch — don't hold a transaction open for millions of rows.
@@ -84,7 +84,7 @@ def backfill_in_batches(session):
 - Run backfills as background tasks (Celery), not inside migration files for large tables.
 - Add a progress column or flag to track completion.
 
-## 4. Dangerous operations reference
+## 4. DANGEROUS OPERATIONS REFERENCE
 
 | Operation | Risk | Safe Alternative |
 |-----------|------|-----------------|
@@ -96,7 +96,7 @@ def backfill_in_batches(session):
 | `CREATE INDEX` | Locks table on large datasets | `CREATE INDEX CONCURRENTLY` (Postgres) |
 | `DROP TABLE` | Data loss | Rename to `_deprecated_X`, drop after 30 days |
 
-## 5. Alembic best practices
+## 5. ALEMBIC BEST PRACTICES
 
 ```python
 # alembic/env.py — always include
@@ -112,7 +112,7 @@ def run_migrations_online():
             context.run_migrations()
 ```
 
-### Migration file rules
+### Migration File Rules
 
 - One logical change per migration file.
 - Descriptive revision message: `add_full_name_to_users`, not `update_schema`.
@@ -120,7 +120,7 @@ def run_migrations_online():
 - Never import application models in migrations — use raw SQL or `op.*` only.
 - Pin the migration to a specific schema state (don't reference `models.py`).
 
-## 6. Django migrations specifics
+## 6. DJANGO MIGRATIONS SPECIFICS
 
 ### Django `SeparateDatabaseAndState`
 

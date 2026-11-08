@@ -3,7 +3,7 @@
 **Applies to:** All Python services deployed to production.
 **Stack:** OpenTelemetry (traces + metrics) + structlog (logs). The three pillars.
 
-## 1. OpenTelemetry setup
+## 1. OPENTELEMETRY SETUP
 
 ```bash
 pip install opentelemetry-api opentelemetry-sdk \
@@ -43,7 +43,7 @@ def configure_telemetry(service_name: str, service_version: str) -> None:
     metrics.set_meter_provider(meter_provider)
 ```
 
-## 3. Custom spans
+## 3. CUSTOM SPANS
 
 ```python
 from opentelemetry import trace
@@ -65,7 +65,7 @@ async def process_order(order_id: int) -> Order:
         return order
 ```
 
-## 4. Metrics patterns
+## 4. METRICS PATTERNS
 
 ```python
 from opentelemetry import metrics
@@ -92,7 +92,7 @@ active_connections = meter.create_up_down_counter(
 )
 ```
 
-## 5. Structured logs + trace correlation
+## 5. STRUCTURED LOGS + TRACE CORRELATION
 
 ```python
 # Inject trace_id into every log line
@@ -117,9 +117,9 @@ structlog.configure(
 )
 ```
 
-## 6. Key metrics to track (RED + USE)
+## 6. KEY METRICS TO TRACK (RED + USE)
 
-### RED method (request-driven services):
+### RED Method (request-driven services):
 
 | Metric | What | Alert when |
 |--------|------|------------|
@@ -127,7 +127,7 @@ structlog.configure(
 | **E**rrors | Error rate (5xx / total) | > 1% sustained |
 | **D**uration | p50, p95, p99 latency | p99 > SLO threshold |
 
-### USE method (resources):
+### USE Method (resources):
 
 | Metric | What | Alert when |
 |--------|------|------------|
@@ -135,7 +135,7 @@ structlog.configure(
 | **S**aturation | Queue depth, thread pool exhaustion | Growing unbounded |
 | **E**rrors | Connection failures, OOM kills | Any occurrence |
 
-## 7. Rules
+## 7. RULES
 
 - Every service MUST export traces and metrics to an OTLP collector.
 - Trace IDs MUST appear in log lines for correlation.

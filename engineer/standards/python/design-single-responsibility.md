@@ -1,9 +1,9 @@
-# Single responsibility principle [HIGH]
+# Single Responsibility Principle [HIGH]
 
 ## Description
 A class or function should have only one reason to change. When a unit of code handles multiple responsibilities, changes to one responsibility may inadvertently affect others, making the code harder to maintain and test.
 
-## Bad example
+## Bad Example
 ```python
 class UserManager:
     def __init__(self, db_connection) -> None:
@@ -30,7 +30,7 @@ class UserManager:
     def _send_welcome_email(self, email: str) -> None: ...
 ```
 
-## Good example
+## Good Example
 ```python
 from dataclasses import dataclass
 

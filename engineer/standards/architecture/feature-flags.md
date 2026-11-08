@@ -1,9 +1,9 @@
-# Feature flags
+# Feature Flags
 
 **Applies to:** All Python services releasing features incrementally.
 **Tools:** LaunchDarkly, Unleash, Flagsmith, or custom implementation.
 
-## 1. Flag types
+## 1. FLAG TYPES
 
 | Type | Purpose | Lifetime | Example |
 |------|---------|----------|---------|
@@ -12,9 +12,9 @@
 | Ops flag | Kill switch for degraded mode | Permanent | `disable_external_payments` |
 | Permission flag | Feature gating per plan/tier | Permanent | `feature_advanced_analytics` |
 
-## 2. Implementation pattern
+## 2. IMPLEMENTATION PATTERN
 
-### Simple flag service
+### Simple Flag Service
 
 ```python
 # app/core/feature_flags.py
@@ -63,7 +63,7 @@ _ROLLOUT_FLAGS: dict[str, int] = {
 feature_flags = FeatureFlags()
 ```
 
-### Usage in code
+### Usage in Code
 
 ```python
 # In service layer
@@ -73,7 +73,7 @@ async def get_pricing(user_id: str, product_id: int) -> PricingResponse:
     return await legacy_pricing.calculate(product_id)
 ```
 
-### Usage in endpoints
+### Usage in Endpoints
 
 ```python
 @router.get("/dashboard")
@@ -86,7 +86,7 @@ async def get_dashboard(user: User = Depends(get_current_user)):
     return data
 ```
 
-## 3. Gradual rollout strategy
+## 3. GRADUAL ROLLOUT STRATEGY
 
 ```
 Day 1:   1% (internal team only)
@@ -97,7 +97,7 @@ Day 10: 100% (full rollout)
 Day 14: Remove flag (cleanup)
 ```
 
-### Rollout rules
+### Rollout Rules
 
 | Rule | Rationale |
 |------|-----------|
@@ -107,7 +107,7 @@ Day 14: Remove flag (cleanup)
 | Log which variant a user received | Debug issues per-variant |
 | Never nest flags (flag inside flag) | Combinatorial explosion |
 
-## 4. Flag lifecycle
+## 4. FLAG LIFECYCLE
 
 ```
 CREATED → ACTIVE → ROLLED_OUT → CLEANUP → REMOVED
@@ -121,7 +121,7 @@ CREATED → ACTIVE → ROLLED_OUT → CLEANUP → REMOVED
 | Cleanup | Remove flag checks from code | Developer (scheduled) |
 | Removed | Flag deleted from config/service | Developer |
 
-### Cleanup rules
+### Cleanup Rules
 
 - **Release flags:** Remove within 2 weeks of 100% rollout.
 - **Experiment flags:** Remove within 1 week of experiment conclusion.
@@ -130,7 +130,7 @@ CREATED → ACTIVE → ROLLED_OUT → CLEANUP → REMOVED
 
 **Anti-pattern:** Flags that live for months. They become tech debt and make code unreadable.
 
-## 6. Flag hygiene tracking
+## 6. FLAG HYGIENE TRACKING
 
 Maintain a flag registry (spreadsheet, Notion, or in-code):
 

@@ -1,9 +1,9 @@
-# Reduce nesting with early returns [HIGH]
+# Reduce Nesting with Early Returns [HIGH]
 
 ## Description
 Deeply nested code increases cognitive load and makes logic harder to follow. Using early returns (guard clauses) handles edge cases upfront, keeping the main logic flat and readable.
 
-## Bad example
+## Bad Example
 ```python
 def process_order(order: Order | None) -> Result:
     if order is not None:
@@ -24,7 +24,7 @@ def process_order(order: Order | None) -> Result:
         return Result(total=0, status="no_order")
 ```
 
-## Good example
+## Good Example
 ```python
 def process_order(order: Order | None) -> Result:
     # Guard clauses handle edge cases first

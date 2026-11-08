@@ -12,7 +12,7 @@
 | Settings | python-decouple / pydantic-settings |
 | CLI | Click (built into Flask) |
 
-## Project structure
+## Project Structure
 
 ```
 myapp/
@@ -39,7 +39,7 @@ myapp/
 └── pyproject.toml
 ```
 
-## App factory
+## App Factory
 
 ```python
 # app/__init__.py
@@ -68,7 +68,7 @@ def create_app(config_class: type = Config) -> Flask:
     return app
 ```
 
-## Extensions (singleton pattern)
+## Extensions (Singleton Pattern)
 
 ```python
 # app/extensions.py
@@ -81,7 +81,7 @@ migrate = Migrate()
 jwt = JWTManager()
 ```
 
-## Blueprint + route
+## Blueprint + Route
 
 ```python
 # app/blueprints/users/routes.py
@@ -109,9 +109,9 @@ def get_user(user_id: int):
     return response_schema.dump(user), 200
 ```
 
-## Error handling
+## Error Handling
 
-### Error handlers
+### Error Handlers
 
 ```python
 # app/errors.py
@@ -139,7 +139,7 @@ def register_error_handlers(app: Flask) -> None:
         return jsonify({"error": {"code": "NOT_FOUND", "message": "Route not found."}}), 404
 ```
 
-### Custom API error classes
+### Custom API Error Classes
 
 ```python
 # app/errors.py
@@ -212,7 +212,7 @@ def register_error_handlers(app: Flask) -> None:
 errors from URLs that don't match any blueprint route are never dispatched to a blueprint-level
 error handler. Always register `404` and `405` handlers at the **application level**.
 
-## Configuration — class hierarchy pattern
+## Configuration — Class Hierarchy Pattern
 
 Never put secrets or environment-specific values directly in code.
 Use a class hierarchy with environment-variable switching:
@@ -222,7 +222,7 @@ Use a class hierarchy with environment-variable switching:
 - Never access `app.config` at module import time — only inside factory functions or `before_request`.
 - Load config **before** calling `extension.init_app(app)` so extensions see config at startup.
 
-## Application context & `g`
+## Application Context & `g`
 
 The `g` object stores **request-scoped** data (resources created and torn down per request).
 It is **not** a cross-request cache — data on `g` dies when the request ends.
@@ -265,7 +265,7 @@ db_conn = LocalProxy(get_db_connection)  # access db_conn like a normal object
 - Use `current_app.extensions["my_ext"]` for app-level shared state.
 - `g` is reset fresh for every request and every CLI command invocation.
 
-## Request lifecycle & hook ordering
+## Request Lifecycle & Hook Ordering
 
 ```
 before_request()           ← runs before every view; returning a value short-circuits the view
@@ -309,7 +309,7 @@ def add_security_headers(response):
 - `teardown_request` receives the exception (or `None`) — use for resource cleanup, NOT for error responses.
 - Blueprint hooks only run for requests that match that blueprint's routes.
 
-## Class-based views (MethodView) — REST APIs
+## Class-Based Views (MethodView) — REST APIs
 
 `MethodView` dispatches HTTP methods to same-named class methods. Best for resource APIs:
 
@@ -371,7 +371,7 @@ def register_user_views(app_or_bp) -> None:
 safe to reuse across requests (e.g. a schema instance). The default creates a new instance
 per request, which is safer but slower.
 
-## View decorators
+## View Decorators
 
 ```python
 # app/decorators.py
@@ -419,7 +419,7 @@ def admin_panel():
 - `@app.route` must be the **outermost** decorator; custom decorators go **inside** it.
 - For `MethodView`, use the `decorators` class attribute instead of stacking on each method.
 
-## Security headers & cookie settings
+## Security Headers & Cookie Settings
 
 Set these in `after_request` or via Flask-Talisman. All production apps must include:
 
@@ -488,7 +488,7 @@ csrf = CSRFProtect()
 csrf.init_app(app)  # protects all POST/PUT/PATCH/DELETE form endpoints
 ```
 
-## Celery integration
+## Celery Integration
 
 ```python
 # app/celery_utils.py
@@ -529,7 +529,7 @@ def send_welcome_email(user_id: int) -> dict:
 **Rule:** `shared_task` works without importing a specific Celery instance — it uses the default
 set by `celery_app.set_default()`. This avoids circular imports between tasks and the factory.
 
-## Async views (Flask 2.0+)
+## Async Views (Flask 2.0+)
 
 Flask supports `async def` views when installed with the `async` extra:
 
@@ -575,9 +575,9 @@ def good_background():
     return "ok"
 ```
 
-## Flask testing — complete patterns
+## Flask Testing — Complete Patterns
 
-### Test client & fixtures
+### Test Client & Fixtures
 
 ```python
 # tests/conftest.py
@@ -606,7 +606,7 @@ def runner(app):
     return app.test_cli_runner()
 ```
 
-### Session access & mutation
+### Session Access & Mutation
 
 ```python
 from flask import session
@@ -631,7 +631,7 @@ def test_pre_seed_session(client):
     assert response.json["id"] == 42
 ```
 
-### Redirect following & context
+### Redirect Following & Context
 
 ```python
 def test_logout_redirects_to_index(client):
@@ -648,7 +648,7 @@ def test_function_using_request(app):
         assert parse_format() == "json"
 ```
 
-### CLI command testing
+### CLI Command Testing
 
 ```python
 @app.cli.command("create-admin")
@@ -664,7 +664,7 @@ def test_create_admin_command(runner):
     assert "Admin admin@example.com created" in result.output
 ```
 
-### App context in tests
+### App Context in Tests
 
 ```python
 def test_db_record_created(app):

@@ -1,9 +1,9 @@
-# Python project structure
+# Python Project Structure
 
 **Applies to:** All Python project types. Each section tagged with project archetype.
 **Version:** Python 3.7+. Version-specific options noted per section.
 
-## 1. The core principle
+## 1. THE CORE PRINCIPLE
 
 There is no universal folder structure — there are structures suited to the problem. This skill defines invariant rules that govern any structure, plus canonical layouts for the five most common Python project archetypes:
 
@@ -21,9 +21,9 @@ There is no universal folder structure — there are structures suited to the pr
 - No business logic in `__init__.py` — only re-exports or empty.
 - No circular imports — enforced architecturally by layer discipline.
 
-## 2. src layout vs flat layout
+## 2. SRC LAYOUT vs FLAT LAYOUT
 
-### 2.1 src/ layout — for libraries and installable packages
+### 2.1 src/ Layout — for libraries and installable packages
 
 ```
 my-project/
@@ -39,7 +39,7 @@ my-project/
 
 **Use when:** Libraries, packages published to PyPI or internal registries.
 
-### 2.2 Flat layout — for deployed applications
+### 2.2 Flat Layout — for deployed applications
 
 ```
 my-app/
@@ -52,7 +52,7 @@ my-app/
 
 **Use when:** Web services, CLIs, data pipelines — deployed rather than installed.
 
-## 3. Web service layout
+## 3. WEB SERVICE LAYOUT
 
 ```
 my-service/
@@ -127,7 +127,7 @@ my-service/
 └── README.md
 ```
 
-### Layer responsibility contract
+### Layer Responsibility Contract
 
 | Layer | Location | Sole Responsibility | May import from | Must NOT import from |
 |---|---|---|---|---|
@@ -155,7 +155,7 @@ class UserRepository:
         ...
 ```
 
-## 4. Library / package layout
+## 4. LIBRARY / PACKAGE LAYOUT
 
 ```
 my-library/
@@ -182,7 +182,7 @@ my-library/
 - `py.typed` required for PEP 561 compliance.
 - Private implementation in `_internal/` — never documented or imported externally.
 
-## 5. Data pipeline / ETL layout
+## 5. DATA PIPELINE / ETL LAYOUT
 
 ```
 my-pipeline/
@@ -209,7 +209,7 @@ my-pipeline/
 └── pyproject.toml
 ```
 
-## 6. CLI tool layout
+## 6. CLI TOOL LAYOUT
 
 ```
 my-cli/
@@ -234,7 +234,7 @@ my-cli/
 mycli = "mycli.cli:main"
 ```
 
-## 7. ML / AI project layout
+## 7. ML / AI PROJECT LAYOUT
 
 ```
 my-ml-project/
@@ -268,7 +268,7 @@ my-ml-project/
 - Model configs are Pydantic models or dataclasses — never bare dicts.
 - Artifacts are gitignored; use DVC or artifact storage (MLflow, W&B).
 
-## 8. File and module naming rules
+## 8. FILE AND MODULE NAMING RULES
 
 ```
 Modules:     short, all_lowercase, underscores if necessary
@@ -286,7 +286,7 @@ __init__.py: re-exports only or empty; never business logic
 
 ```
 
-## 9. Layer boundary prohibitions
+## 9. WHAT NEVER GOES WHERE
 
 | Location | Forbidden |
 |---|---|
@@ -301,9 +301,9 @@ __init__.py: re-exports only or empty; never business logic
 | `tests/` | Any production code path |
 | `scripts/` | Any code imported by the application |
 
-## 10. Module & package design rules (Hitchhiker's guide)
+## 10. MODULE & PACKAGE DESIGN RULES (Hitchhiker's Guide)
 
-### Import style: explicitness over brevity
+### Import Style: Explicitness Over Brevity
 
 ```python
 # WORST — namespace pollution; reader cannot tell where sqrt came from
@@ -323,7 +323,7 @@ x = math.sqrt(4)
 single-file scripts. The verbosity of `math.sqrt(4)` is worthwhile; readability > brevity.
 `from module import *` is prohibited everywhere except `__init__.py` re-exports.
 
-### `__init__.py` — keep it lean
+### `__init__.py` — Keep It Lean
 
 ```
 # CORRECT __init__.py patterns:
@@ -346,7 +346,7 @@ __all__ = ["User", "Order"]
 - The bigger the project, the leaner the `__init__.py`. Deep packages should have
   empty `__init__.py` files; only the top-level package exposes a public API.
 
-### Project pitfalls to avoid
+### Project Pitfalls to Avoid
 
 | Anti-pattern | Symptom | Fix |
 |---|---|---|
@@ -356,7 +356,7 @@ __all__ = ["User", "Order"]
 | **Spaghetti code** | Pages of nested `if/for` with copy-pasted logic | Extract named functions; apply SRP |
 | **Ravioli code** | Can't remember which of 8 "User" classes to use | Collect unrelated utilities in `utils.py`; name things unambiguously |
 
-### Pure functions vs classes — when to use each
+### Pure Functions vs Classes — When to Use Each
 
 Use **pure functions** (no external state, no side effects, deterministic) when:
 - Transforming data: parsing, formatting, calculating

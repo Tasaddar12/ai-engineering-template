@@ -1,8 +1,8 @@
-# REST API design
+# REST API Design Standards
 
 > Consistent, predictable, versioned REST APIs.
 
-## 1. URL structure
+## 1. URL Structure
 
 ```
 /api/v1/{resource}              ← Collection
@@ -16,7 +16,7 @@
 - **kebab-case** for multi-word resources: `/user-profiles`
 - Always version with `/v1/` — never unversioned URLs in production
 
-## 2. HTTP methods
+## 2. HTTP Methods
 
 | Method | Use | Idempotent |
 |---|---|---|
@@ -27,7 +27,7 @@
 
 Never use `GET` to modify data. Never use `POST` for search (use query params instead).
 
-## 3. HTTP status codes
+## 3. HTTP Status Codes
 
 | Code | When |
 |---|---|
@@ -43,7 +43,7 @@ Never use `GET` to modify data. Never use `POST` for search (use query params in
 | `429 Too Many Requests` | Rate limit exceeded |
 | `500 Internal Server Error` | Unexpected server error |
 
-## 4. Request / response shape
+## 4. Request / Response Shape
 
 ### Request (POST / PUT / PATCH)
 ```json
@@ -54,7 +54,7 @@ Never use `GET` to modify data. Never use `POST` for search (use query params in
 }
 ```
 
-### Success response (single item)
+### Success Response (single item)
 ```json
 {
   "data": {
@@ -67,7 +67,7 @@ Never use `GET` to modify data. Never use `POST` for search (use query params in
 }
 ```
 
-### Success response (list)
+### Success Response (list)
 ```json
 {
   "data": [ ... ],
@@ -93,7 +93,7 @@ GET /api/v1/users?page=2&page_size=20
 | `page` | 1 | — |
 | `page_size` | 20 | 100 |
 
-## 6. Filtering, sorting, search
+## 6. Filtering, Sorting, Search
 
 ```
 GET /api/v1/users?is_active=true&role=admin          ← filter
@@ -109,7 +109,7 @@ Never expose raw DB column names in filters — use a whitelist of allowed filte
 - Old versions deprecated with `Sunset` and `Deprecation` headers before removal.
 - Minimum 3 months deprecation window.
 
-## 8. API documentation
+## 8. API Documentation
 
 Every endpoint must have:
 - Summary (one line)
@@ -120,12 +120,12 @@ Every endpoint must have:
 
 Use **drf-spectacular** (DRF) or **FastAPI's built-in OpenAPI** generation.
 
-## 9. Datetime format
+## 9. Datetime Format
 
 Always ISO 8601 UTC: `"2026-01-15T10:30:00Z"`
 
 Never return Unix timestamps to API consumers.
 
-## 10. Sensitive fields — never return
+## 10. Sensitive Fields — Never Return
 
 `password_hash`, `secret_key`, `internal_id`, `ssn`, `raw_token`, `salt`

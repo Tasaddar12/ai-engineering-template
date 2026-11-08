@@ -1,9 +1,9 @@
-# Use property instead of getters [MEDIUM]
+# Use Property Instead of Getters [MEDIUM]
 
 ## Description
 Python's `@property` decorator provides attribute-style access while allowing custom logic. This is more Pythonic than Java-style getter/setter methods and allows adding validation or computation without changing the API.
 
-## Bad example
+## Bad Example
 ```python
 class Circle:
     def __init__(self, radius: float) -> None:
@@ -28,7 +28,7 @@ circle.set_radius(10)
 area = circle.get_area()
 ```
 
-## Good example
+## Good Example
 ```python
 import math
 

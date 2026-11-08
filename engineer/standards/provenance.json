@@ -13,23 +13,10 @@
           "sha256": "33e093a1ceeb7585c7f98bc0055f2f1dfafbe5c3112abe0103d5c806c03e754b"
         }
       ],
-      "sha256": "d3bf5cb9938b2fde4e718463ae9a20de1bd5b250728f5323a0a78858abb09a78",
+      "sha256": "33e093a1ceeb7585c7f98bc0055f2f1dfafbe5c3112abe0103d5c806c03e754b",
       "source_selection_sha256": "33e093a1ceeb7585c7f98bc0055f2f1dfafbe5c3112abe0103d5c806c03e754b",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Resource Management with async with [HIGH]",
-            "after": "# Resource management with async with [HIGH]"
-          },
-          {
-            "before": "## Bad Example",
-            "after": "## Bad example"
-          },
-          {
-            "before": "## Good Example",
-            "after": "## Good example"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -50,23 +37,10 @@
           "sha256": "bb40c4e9bbfcc7d2e56767135d175212dc264413bde1c58e9557a07787752ac5"
         }
       ],
-      "sha256": "125b7716a908f07516652f460e7966adc1a9f6949a7549dba79f043145bd9f29",
+      "sha256": "bb40c4e9bbfcc7d2e56767135d175212dc264413bde1c58e9557a07787752ac5",
       "source_selection_sha256": "bb40c4e9bbfcc7d2e56767135d175212dc264413bde1c58e9557a07787752ac5",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Proper Background Task Creation [HIGH]",
-            "after": "# Proper background task creation [HIGH]"
-          },
-          {
-            "before": "## Bad Example",
-            "after": "## Bad example"
-          },
-          {
-            "before": "## Good Example",
-            "after": "## Good example"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -87,23 +61,10 @@
           "sha256": "befe16d5770d62c1e8d777c2d7305ff1bd7a27f1e379fadba9816964d5e81c9b"
         }
       ],
-      "sha256": "59e394d1477a5f0e8235e886fe0f243b827c1f2a96b767639677f12eee571fa4",
+      "sha256": "befe16d5770d62c1e8d777c2d7305ff1bd7a27f1e379fadba9816964d5e81c9b",
       "source_selection_sha256": "befe16d5770d62c1e8d777c2d7305ff1bd7a27f1e379fadba9816964d5e81c9b",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Use asyncio.gather for Independent Tasks [HIGH]",
-            "after": "# Use asyncio.gather for independent tasks [HIGH]"
-          },
-          {
-            "before": "## Bad Example",
-            "after": "## Bad example"
-          },
-          {
-            "before": "## Good Example",
-            "after": "## Good example"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -124,23 +85,10 @@
           "sha256": "31cd8f5eff0096bbb303a32801ea49add82f4f7b02817c9a141b8227497f1867"
         }
       ],
-      "sha256": "4adeb9fb0c22978b4186512293fa127658a531edc923f3bbaf12c63d3af79a20",
+      "sha256": "31cd8f5eff0096bbb303a32801ea49add82f4f7b02817c9a141b8227497f1867",
       "source_selection_sha256": "31cd8f5eff0096bbb303a32801ea49add82f4f7b02817c9a141b8227497f1867",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Limit Concurrency with Semaphores [HIGH]",
-            "after": "# Limit concurrency with semaphores [HIGH]"
-          },
-          {
-            "before": "## Bad Example",
-            "after": "## Bad example"
-          },
-          {
-            "before": "## Good Example",
-            "after": "## Good example"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -161,23 +109,10 @@
           "sha256": "530b90c8cd2e8cf8a1dad0d3f76f9935ea81c32ada03e0b1d3f4a9eefb68258d"
         }
       ],
-      "sha256": "6e0bab4528b3ce68b8824d4790d739a3dd2973d59abcb822f3f5a9f78baba875",
+      "sha256": "530b90c8cd2e8cf8a1dad0d3f76f9935ea81c32ada03e0b1d3f4a9eefb68258d",
       "source_selection_sha256": "530b90c8cd2e8cf8a1dad0d3f76f9935ea81c32ada03e0b1d3f4a9eefb68258d",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Reduce Nesting with Early Returns [HIGH]",
-            "after": "# Reduce nesting with early returns [HIGH]"
-          },
-          {
-            "before": "## Bad Example",
-            "after": "## Bad example"
-          },
-          {
-            "before": "## Good Example",
-            "after": "## Good example"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -198,31 +133,10 @@
           "sha256": "838c64c26a664b69e87c5928f84f71acab1c1971899ea64ccf208481809c2df7"
         }
       ],
-      "sha256": "9e29d14d6f9681649d404b3f5e65f740d534e60c549eb02e50de0525274472b2",
+      "sha256": "838c64c26a664b69e87c5928f84f71acab1c1971899ea64ccf208481809c2df7",
       "source_selection_sha256": "838c64c26a664b69e87c5928f84f71acab1c1971899ea64ccf208481809c2df7",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Software Design Philosophy [HIGH]",
-            "after": "# Software design philosophy [HIGH]"
-          },
-          {
-            "before": "## DRY - Don't Repeat Yourself",
-            "after": "## DRY - don't repeat yourself"
-          },
-          {
-            "before": "## YAGNI - You Aren't Gonna Need It",
-            "after": "## YAGNI - you aren't gonna need it"
-          },
-          {
-            "before": "## KISS - Keep It Simple, Stupid",
-            "after": "## KISS - keep it simple, stupid"
-          },
-          {
-            "before": "## How They Work Together",
-            "after": "## How they work together"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -243,23 +157,10 @@
           "sha256": "7d02f069f49ada8d24f18070382e7bd910a7985c24e7d133dd397f793c311531"
         }
       ],
-      "sha256": "9fd0e5ee405685464efc55279cbcdc0d94403c26d1c9bc6ca0f834ce495cd18b",
+      "sha256": "7d02f069f49ada8d24f18070382e7bd910a7985c24e7d133dd397f793c311531",
       "source_selection_sha256": "7d02f069f49ada8d24f18070382e7bd910a7985c24e7d133dd397f793c311531",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Single Responsibility Principle [HIGH]",
-            "after": "# Single responsibility principle [HIGH]"
-          },
-          {
-            "before": "## Bad Example",
-            "after": "## Bad example"
-          },
-          {
-            "before": "## Good Example",
-            "after": "## Good example"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -280,23 +181,10 @@
           "sha256": "b8a56499584ed2cbe54b2c4bbd9a9c85dc2d18d563b57be5e438a183e4d6700f"
         }
       ],
-      "sha256": "ad35ea0dd6fc2b180873c874e0dee890b379c10ae38304079b6aba9fbb1b92ee",
+      "sha256": "b8a56499584ed2cbe54b2c4bbd9a9c85dc2d18d563b57be5e438a183e4d6700f",
       "source_selection_sha256": "b8a56499584ed2cbe54b2c4bbd9a9c85dc2d18d563b57be5e438a183e4d6700f",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Document Public APIs with Google Style Docstrings [HIGH]",
-            "after": "# Document public APIs with Google style docstrings [HIGH]"
-          },
-          {
-            "before": "## Bad Example",
-            "after": "## Bad example"
-          },
-          {
-            "before": "## Good Example",
-            "after": "## Good example"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -317,23 +205,10 @@
           "sha256": "fc3238745b153d834fb575557d86bbe0afac18ff154b965b5d357b2eeb7990fb"
         }
       ],
-      "sha256": "d92101df04ccd507bf3eda2c26d0828265efa808d2a561bf4ac76427392a685f",
+      "sha256": "fc3238745b153d834fb575557d86bbe0afac18ff154b965b5d357b2eeb7990fb",
       "source_selection_sha256": "fc3238745b153d834fb575557d86bbe0afac18ff154b965b5d357b2eeb7990fb",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Require Type Hints for Public APIs [HIGH]",
-            "after": "# Require type hints for public APIs [HIGH]"
-          },
-          {
-            "before": "## Bad Example",
-            "after": "## Bad example"
-          },
-          {
-            "before": "## Good Example",
-            "after": "## Good example"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -354,23 +229,10 @@
           "sha256": "3bb5499a59e68183e7d8b52cbe2873cd47cb555d9e22451b84bb90505ebb8634"
         }
       ],
-      "sha256": "d442ee645758811183707c61791aa3654fb24179e6dbfd8905979fc54f5b317e",
+      "sha256": "3bb5499a59e68183e7d8b52cbe2873cd47cb555d9e22451b84bb90505ebb8634",
       "source_selection_sha256": "3bb5499a59e68183e7d8b52cbe2873cd47cb555d9e22451b84bb90505ebb8634",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Never Swallow Exceptions [CRITICAL]",
-            "after": "# Never swallow exceptions [CRITICAL]"
-          },
-          {
-            "before": "## Bad Example",
-            "after": "## Bad example"
-          },
-          {
-            "before": "## Good Example",
-            "after": "## Good example"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -391,23 +253,10 @@
           "sha256": "2a6cdbb5f78e8d9f7515ebeab3bd36f0b4e2e899da648cb049b05833e9933dd2"
         }
       ],
-      "sha256": "4a2f92cda4a999864681460e12834da2ef2c140ce9e52d5d6e87a235d86cd819",
+      "sha256": "2a6cdbb5f78e8d9f7515ebeab3bd36f0b4e2e899da648cb049b05833e9933dd2",
       "source_selection_sha256": "2a6cdbb5f78e8d9f7515ebeab3bd36f0b4e2e899da648cb049b05833e9933dd2",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Use Dataclass for Data Containers [MEDIUM]",
-            "after": "# Use dataclass for data containers [MEDIUM]"
-          },
-          {
-            "before": "## Bad Example",
-            "after": "## Bad example"
-          },
-          {
-            "before": "## Good Example",
-            "after": "## Good example"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -428,23 +277,10 @@
           "sha256": "66577f38c2cbb363562d243139f160c7ca4bec440c16b5cb7ac4fc96d007bb95"
         }
       ],
-      "sha256": "2a497176424090478ff7d7e2448d4aff315e767451f8d2370f7b96deb9fdec75",
+      "sha256": "66577f38c2cbb363562d243139f160c7ca4bec440c16b5cb7ac4fc96d007bb95",
       "source_selection_sha256": "66577f38c2cbb363562d243139f160c7ca4bec440c16b5cb7ac4fc96d007bb95",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Use Property Instead of Getters [MEDIUM]",
-            "after": "# Use property instead of getters [MEDIUM]"
-          },
-          {
-            "before": "## Bad Example",
-            "after": "## Bad example"
-          },
-          {
-            "before": "## Good Example",
-            "after": "## Good example"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -465,23 +301,10 @@
           "sha256": "b56481b0fb703025c7b339ce64f924b1693b61f8ecaa2da46bb65b5ce80fdb75"
         }
       ],
-      "sha256": "6cc1e070e6fd9d26673cafac7f6dfcb5b6117dc827cd9cb784ed8e5deba5cecf",
+      "sha256": "b56481b0fb703025c7b339ce64f924b1693b61f8ecaa2da46bb65b5ce80fdb75",
       "source_selection_sha256": "b56481b0fb703025c7b339ce64f924b1693b61f8ecaa2da46bb65b5ce80fdb75",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Prefer Composition Over Inheritance [MEDIUM]",
-            "after": "# Prefer composition over inheritance [MEDIUM]"
-          },
-          {
-            "before": "## Bad Example",
-            "after": "## Bad example"
-          },
-          {
-            "before": "## Good Example",
-            "after": "## Good example"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -502,23 +325,10 @@
           "sha256": "c8b0f4c694624eefbe6e0a326031857bca51bcd9982e93e22424849798385765"
         }
       ],
-      "sha256": "67a06b41d97901e2405590d0e5240356eea0490fcec111dc7b079875252105b3",
+      "sha256": "c8b0f4c694624eefbe6e0a326031857bca51bcd9982e93e22424849798385765",
       "source_selection_sha256": "c8b0f4c694624eefbe6e0a326031857bca51bcd9982e93e22424849798385765",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Use dict.get() for Efficient Default Values [CRITICAL]",
-            "after": "# Use dict.get() for efficient default values [CRITICAL]"
-          },
-          {
-            "before": "## Bad Example",
-            "after": "## Bad example"
-          },
-          {
-            "before": "## Good Example",
-            "after": "## Good example"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -539,23 +349,10 @@
           "sha256": "18a82cfe274bb8adeaf0778e8ddf202868528080bb149ddfb01502aa39cc8992"
         }
       ],
-      "sha256": "ba1a339dad628baa5e41f7c191b6121c3b25b11455433ba0ada3a0bf507427c4",
+      "sha256": "18a82cfe274bb8adeaf0778e8ddf202868528080bb149ddfb01502aa39cc8992",
       "source_selection_sha256": "18a82cfe274bb8adeaf0778e8ddf202868528080bb149ddfb01502aa39cc8992",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Use Generators for Large Datasets [CRITICAL]",
-            "after": "# Use generators for large datasets [CRITICAL]"
-          },
-          {
-            "before": "## Bad Example",
-            "after": "## Bad example"
-          },
-          {
-            "before": "## Good Example",
-            "after": "## Good example"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -576,23 +373,10 @@
           "sha256": "fd262e11704b9a5db7c23c28a7bcd67d41dd216f9f23f315df81d72a3d03d1c3"
         }
       ],
-      "sha256": "dae12c181b0d8e768dce9bbbb97aca5b4cbf316ffef601b6c616b2517a1f3a2b",
+      "sha256": "fd262e11704b9a5db7c23c28a7bcd67d41dd216f9f23f315df81d72a3d03d1c3",
       "source_selection_sha256": "fd262e11704b9a5db7c23c28a7bcd67d41dd216f9f23f315df81d72a3d03d1c3",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Prefer List Comprehensions Over Loops [CRITICAL]",
-            "after": "# Prefer list comprehensions over loops [CRITICAL]"
-          },
-          {
-            "before": "## Bad Example",
-            "after": "## Bad example"
-          },
-          {
-            "before": "## Good Example",
-            "after": "## Good example"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -613,23 +397,10 @@
           "sha256": "ca5f59174a87ad635ce3a876abe2ea4f555f5f62207c0d36b9e33a8be41cbb96"
         }
       ],
-      "sha256": "2cae07990c101739212c6606afd97f4b23fcb7189b2be424a2490796ca6728fa",
+      "sha256": "ca5f59174a87ad635ce3a876abe2ea4f555f5f62207c0d36b9e33a8be41cbb96",
       "source_selection_sha256": "ca5f59174a87ad635ce3a876abe2ea4f555f5f62207c0d36b9e33a8be41cbb96",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Use Set for Fast Lookups [CRITICAL]",
-            "after": "# Use set for fast lookups [CRITICAL]"
-          },
-          {
-            "before": "## Bad Example",
-            "after": "## Bad example"
-          },
-          {
-            "before": "## Good Example",
-            "after": "## Good example"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -650,23 +421,10 @@
           "sha256": "401b59c946046ac43dea71fdeb2a2b89fe5112ab866dfb313f0e44d4b5a6f4b7"
         }
       ],
-      "sha256": "dbf45ba618796d125b118e5d0d7e96768f2026e6d2c72fa3230464104ed8078b",
+      "sha256": "74c54bbed6f364a7e5e8bc4a113531577f4ff26efb7e8e6dc0c6853da211049b",
       "source_selection_sha256": "401b59c946046ac43dea71fdeb2a2b89fe5112ab866dfb313f0e44d4b5a6f4b7",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Interface Segregation Principle [HIGH]",
-            "after": "# Interface segregation principle [HIGH]"
-          },
-          {
-            "before": "## Bad Example",
-            "after": "## Bad example"
-          },
-          {
-            "before": "## Good Example",
-            "after": "## Good example"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -687,23 +445,10 @@
           "sha256": "dad81c651bccdb9d8ce917b2a885a46c617fdf8593e568af0742fa3ff66d2114"
         }
       ],
-      "sha256": "2bc7c8d948c66ba4a226434d17d9daf816a786d4be1ac8634f934785cdfe9eb8",
+      "sha256": "009d3187d82e42df4bdddc28b9c62bfdfe3af69e53eff915a1f1a63770eaac12",
       "source_selection_sha256": "dad81c651bccdb9d8ce917b2a885a46c617fdf8593e568af0742fa3ff66d2114",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Liskov Substitution Principle [HIGH]",
-            "after": "# Liskov substitution principle [HIGH]"
-          },
-          {
-            "before": "## Bad Example",
-            "after": "## Bad example"
-          },
-          {
-            "before": "## Good Example",
-            "after": "## Good example"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -724,23 +469,10 @@
           "sha256": "062573d29b93dee352936b2fbfafea7dc61015fba3a8a3302299a1924adf5a14"
         }
       ],
-      "sha256": "9aa658da8b101a0402250e1a8c9f6baec020cf51a24a3bc462e5b2de92267938",
+      "sha256": "7cd5b9d26998368769baf8259d8d2945d0cb169918252d1a66959a176e50a16f",
       "source_selection_sha256": "062573d29b93dee352936b2fbfafea7dc61015fba3a8a3302299a1924adf5a14",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Use Pydantic for Boundary Data Validation [HIGH]",
-            "after": "# Use Pydantic for boundary data validation [HIGH]"
-          },
-          {
-            "before": "## Bad Example",
-            "after": "## Bad example"
-          },
-          {
-            "before": "## Good Example",
-            "after": "## Good example"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -761,23 +493,10 @@
           "sha256": "efeceefd3144551939465977e40e12435c9d862c387a6889bc2e2ff59b2cd56a"
         }
       ],
-      "sha256": "ec3cadccffb323011d359124058b30536b2695977cf45b4f292d20f3261660db",
+      "sha256": "efeceefd3144551939465977e40e12435c9d862c387a6889bc2e2ff59b2cd56a",
       "source_selection_sha256": "efeceefd3144551939465977e40e12435c9d862c387a6889bc2e2ff59b2cd56a",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Loose Coupling with Dependency Injection [HIGH]",
-            "after": "# Loose coupling with dependency injection [HIGH]"
-          },
-          {
-            "before": "## Bad Example",
-            "after": "## Bad example"
-          },
-          {
-            "before": "## Good Example",
-            "after": "## Good example"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -803,23 +522,10 @@
           "sha256": "edef445ceb7aafb1e7191691f064d82e17fc74a75f311f9f4cb4e3f9e493c4b4"
         }
       ],
-      "sha256": "419edfb9afe4e7d3e28e2b5fd430996a73ceb32d2fb8d66a2e177139182c49e1",
+      "sha256": "65d7df4135bfc082ef6bf74018f184228ca6ae9535985af53ab99ccfa1add5a5",
       "source_selection_sha256": "65d7df4135bfc082ef6bf74018f184228ca6ae9535985af53ab99ccfa1add5a5",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# Prefer Pure Functions Without Side Effects [HIGH]",
-            "after": "# Prefer pure functions without side effects [HIGH]"
-          },
-          {
-            "before": "## Bad Example",
-            "after": "## Bad example"
-          },
-          {
-            "before": "## Good Example",
-            "after": "## Good example"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 0,
         "collapsed_blank_lines": 0,
         "section_moves": [],
@@ -890,7 +596,7 @@
           "sha256": "a9ac2e333b182e7dd66f41a054a0a76840bbbd5216facb01ede199d8c7c7811b"
         }
       ],
-      "sha256": "42bd81292769796a56f6f33bb6c69bf8837338ce1e036cb1639fd42a620fd4e1",
+      "sha256": "e44d6f54002b2f5e508292b5db938a57b5dc7a05080cebffd2a4375bd98bd467",
       "source_line_count": 1793,
       "omissions": [
         {
@@ -948,300 +654,60 @@
       "editorial_changes": {
         "headings": [
           {
-            "before": "# Python Code Style & Conventions",
-            "after": "# Python code style & conventions"
-          },
-          {
             "before": "# Enterprise Standard — PEP 8 Complete, Version-Aware, 18+ Years Depth",
             "after": null
           },
           {
-            "before": "## PRIME DIRECTIVE",
-            "after": "## Rule precedence"
-          },
-          {
-            "before": "## 1. TOOLCHAIN",
-            "after": "## 1. Toolchain"
-          },
-          {
-            "before": "## 2. CODE LAYOUT",
-            "after": "## 2. Code layout"
-          },
-          {
-            "before": "### 2.2 Line Length",
-            "after": "### 2.2 Line length"
-          },
-          {
-            "before": "### 2.3 Binary Operator Line Breaks",
-            "after": "### 2.3 Binary operator line breaks"
-          },
-          {
-            "before": "### 2.4 Blank Lines",
-            "after": "### 2.4 Blank lines"
-          },
-          {
-            "before": "### 2.5 Source File Encoding",
-            "after": "### 2.5 Source file encoding"
-          },
-          {
-            "before": "## 3. IMPORTS",
-            "after": "## 3. Imports"
-          },
-          {
-            "before": "### 3.1 Grouping and Ordering",
-            "after": "### 3.1 Grouping and ordering"
-          },
-          {
-            "before": "### 3.2 Import Style Rules",
-            "after": "### 3.2 Import style rules"
-          },
-          {
-            "before": "### 3.3 Absolute vs Relative",
-            "after": "### 3.3 Absolute vs relative"
-          },
-          {
-            "before": "## 4. MODULE-LEVEL DUNDERS",
-            "after": "## 4. Module-level dunders"
-          },
-          {
-            "before": "## 5. STRING QUOTES",
-            "after": "## 5. String quotes"
-          },
-          {
-            "before": "## 6. WHITESPACE RULES",
-            "after": "## 6. Whitespace rules"
-          },
-          {
-            "before": "### 6.1 Pet Peeves (Never Do These)",
-            "after": "### 6.1 Pet peeves (never do these)"
-          },
-          {
-            "before": "### 6.2 Operator Spacing",
-            "after": "### 6.2 Operator spacing"
-          },
-          {
-            "before": "### 6.3 Compound Statements",
-            "after": "### 6.3 Compound statements"
-          },
-          {
-            "before": "### 6.4 Variable Annotations (PEP 526)",
-            "after": "### 6.4 Variable annotations (PEP 526)"
-          },
-          {
-            "before": "## 7. TRAILING COMMAS",
-            "after": "## 7. Trailing commas"
-          },
-          {
-            "before": "## 8. COMMENTS",
-            "after": "## 8. Comments"
-          },
-          {
-            "before": "### 8.1 Core Rules",
-            "after": "### 8.1 Core rules"
-          },
-          {
-            "before": "### 8.2 Block Comments",
-            "after": "### 8.2 Block comments"
-          },
-          {
-            "before": "### 8.3 Inline Comments",
-            "after": "### 8.3 Inline comments"
-          },
-          {
-            "before": "### 8.4 TODO / FIXME Convention (Team Standard)",
-            "after": "### 8.4 TODO / FIXME convention (team standard)"
-          },
-          {
-            "before": "## 9. DOCSTRINGS (PEP 257)",
-            "after": "## 9. Docstrings (PEP 257)"
-          },
-          {
-            "before": "### 9.1 What Must Have Docstrings",
-            "after": "### 9.1 What must have docstrings"
-          },
-          {
-            "before": "### 9.2 One-Line Docstrings",
-            "after": "### 9.2 One-line docstrings"
-          },
-          {
-            "before": "### 9.3 Multi-Line Docstrings (Google Style — Team Standard)",
-            "after": "### 9.3 Multi-line docstrings (Google style — team standard)"
-          },
-          {
-            "before": "### 9.4 Class Docstrings",
-            "after": "### 9.4 Class docstrings"
-          },
-          {
-            "before": "### 9.5 Module Docstrings",
-            "after": "### 9.5 Module docstrings"
-          },
-          {
-            "before": "## 10. NAMING CONVENTIONS",
-            "after": "## 10. Naming conventions"
-          },
-          {
-            "before": "### 10.1 Complete Reference",
-            "after": "### 10.1 Complete reference"
-          },
-          {
-            "before": "### 10.2 Names to Absolutely Avoid",
-            "after": "### 10.2 Names to absolutely avoid"
-          },
-          {
-            "before": "### 10.3 Naming Deep Guidelines",
-            "after": "### 10.3 Naming deep guidelines"
-          },
-          {
-            "before": "### 10.4 Public and Internal Interfaces",
-            "after": "### 10.4 Public and internal interfaces"
-          },
-          {
-            "before": "## 11. TYPE ANNOTATIONS",
-            "after": "## 11. Type annotations"
-          },
-          {
-            "before": "### 11.1 Version Compatibility Matrix",
-            "after": "### 11.1 Version compatibility matrix"
-          },
-          {
-            "before": "### 11.2 Version-Specific Strategies",
-            "after": "### 11.2 Version-specific strategies"
-          },
-          {
-            "before": "### 11.3 Key Annotation Patterns",
-            "after": "### 11.3 Key annotation patterns"
-          },
-          {
-            "before": "### 11.4 When Any Is Acceptable",
-            "after": "### 11.4 When Any is acceptable"
-          },
-          {
-            "before": "## 12. PROGRAMMING RECOMMENDATIONS",
-            "after": "## 12. Python language patterns"
-          },
-          {
-            "before": "### 12.1 Singleton Comparisons",
-            "after": "### 12.1 Singleton comparisons"
-          },
-          {
-            "before": "### 12.2 Boolean Comparisons",
-            "after": "### 12.2 Boolean comparisons"
-          },
-          {
-            "before": "### 12.3 Return Statement Consistency",
-            "after": "### 12.3 Return statement consistency"
-          },
-          {
             "before": "### 12.4 Exception Handling — Complete Reference",
-            "after": "### 12.4 Exception handling"
-          },
-          {
-            "before": "### 12.5 Context Managers",
-            "after": "### 12.5 Context managers"
-          },
-          {
-            "before": "### 12.6 String Operations",
-            "after": "### 12.6 String operations"
-          },
-          {
-            "before": "### 12.8 Rich Comparisons",
-            "after": "### 12.8 Rich comparisons"
-          },
-          {
-            "before": "### 12.9 Never Flow Control in Finally",
-            "after": "### 12.9 Never flow control in finally"
-          },
-          {
-            "before": "### 12.10 Mutable Default Arguments",
-            "after": "### 12.10 Mutable default arguments"
+            "after": "### 12.4 Exception Handling"
           },
           {
             "before": "## 12.11 Late Binding Closures",
-            "after": "### 12.11 Late binding closures"
+            "after": "### 12.11 Late Binding Closures"
           },
           {
             "before": "## 12.12 Python Idioms Reference",
-            "after": "### 12.12 Python idioms reference"
+            "after": "### 12.12 Python Idioms Reference"
           },
           {
             "before": "### Unpacking & Destructuring",
-            "after": "#### Unpacking & destructuring"
+            "after": "#### Unpacking & Destructuring"
           },
           {
             "before": "### List / Collection Construction",
-            "after": "#### List / collection construction"
+            "after": "#### List / Collection Construction"
           },
           {
             "before": "### String Building",
-            "after": "#### String building"
+            "after": "#### String Building"
           },
           {
             "before": "### Membership Testing: list vs set",
-            "after": "#### Membership testing: list vs set"
+            "after": "#### Membership Testing: list vs set"
           },
           {
             "before": "### Dictionary Access",
-            "after": "#### Dictionary access"
+            "after": "#### Dictionary Access"
           },
           {
             "before": "### Enumerate over Range+Index",
-            "after": "#### Enumerate over range+index"
+            "after": "#### Enumerate over Range+Index"
           },
           {
             "before": "## 12.13 Function Arguments — Design Rules",
-            "after": "### 12.13 Function arguments — design rules"
+            "after": "### 12.13 Function Arguments — Design Rules"
           },
           {
             "before": "## 12.14 Pure Functions & Minimising Side Effects",
-            "after": "### 12.14 Pure functions & minimising side effects"
+            "after": "### 12.14 Pure Functions & Minimising Side Effects"
           },
           {
             "before": "## 12.15 Variable Naming Under Dynamic Typing",
-            "after": "### 12.15 Variable naming under dynamic typing"
+            "after": "### 12.15 Variable Naming Under Dynamic Typing"
           },
           {
             "before": "## 13. ANTI-PATTERNS — PRODUCTION INCIDENT REFERENCE",
-            "after": "## 13. Anti-patterns"
-          },
-          {
-            "before": "### 13.1 Silent Exception Swallowing",
-            "after": "### 13.1 Silent Exception swallowing"
-          },
-          {
-            "before": "### 13.2 Overly Broad Exception Catching",
-            "after": "### 13.2 Overly broad Exception catching"
-          },
-          {
-            "before": "### 13.3 Global State",
-            "after": "### 13.3 Global state"
-          },
-          {
-            "before": "### 13.4 type() Instead of isinstance()",
-            "after": "### 13.4 type() instead of isinstance()"
-          },
-          {
-            "before": "### 13.5 String Formatting",
-            "after": "### 13.5 String formatting"
-          },
-          {
-            "before": "### 13.6 Suppression Comments (NOQA / type: ignore)",
-            "after": "### 13.6 Suppression comments (NOQA / type: ignore)"
-          },
-          {
-            "before": "## 14. VERSION COMPATIBILITY MATRIX",
-            "after": "## 14. Version compatibility matrix"
-          },
-          {
-            "before": "## 15. TOOLCHAIN CONFIGURATION",
-            "after": "## 15. Toolchain configuration"
-          },
-          {
-            "before": "### 15.2 pre-commit Configuration",
-            "after": "### 15.2 Pre-commit configuration"
-          },
-          {
-            "before": "## APPENDIX: VIOLATIONS QUICK REFERENCE",
-            "after": "## Appendix: violations reference"
+            "after": "## 13. ANTI-PATTERNS"
           }
         ],
         "removed_horizontal_rules": 23,
@@ -1297,7 +763,7 @@
           "sha256": "83cec950ebcdcdd9dc3285a665747b565ef965225334f4f8a8330fd83c611fb5"
         }
       ],
-      "sha256": "784f4e94b1c3c4970efece693eeb8dc29206de41e9de943966b8766ebbb04fb8",
+      "sha256": "a6278f4ae5782fa91a061b731d8d12e718df491b3d41abc69332a9871f814d35",
       "source_line_count": 415,
       "omissions": [
         {
@@ -1316,75 +782,47 @@
         "headings": [
           {
             "before": "# Python Project Structure — Enterprise Standard",
-            "after": "# Python project structure"
+            "after": "# Python Project Structure"
           },
           {
             "before": "## SECTION 1 — THE CORE PRINCIPLE",
-            "after": "## 1. The core principle"
+            "after": "## 1. THE CORE PRINCIPLE"
           },
           {
             "before": "## SECTION 2 — SRC LAYOUT vs FLAT LAYOUT",
-            "after": "## 2. src layout vs flat layout"
-          },
-          {
-            "before": "### 2.1 src/ Layout — for libraries and installable packages",
-            "after": "### 2.1 src/ layout — for libraries and installable packages"
-          },
-          {
-            "before": "### 2.2 Flat Layout — for deployed applications",
-            "after": "### 2.2 Flat layout — for deployed applications"
+            "after": "## 2. SRC LAYOUT vs FLAT LAYOUT"
           },
           {
             "before": "## SECTION 3 — WEB SERVICE LAYOUT",
-            "after": "## 3. Web service layout"
-          },
-          {
-            "before": "### Layer Responsibility Contract",
-            "after": "### Layer responsibility contract"
+            "after": "## 3. WEB SERVICE LAYOUT"
           },
           {
             "before": "## SECTION 4 — LIBRARY / PACKAGE LAYOUT",
-            "after": "## 4. Library / package layout"
+            "after": "## 4. LIBRARY / PACKAGE LAYOUT"
           },
           {
             "before": "## SECTION 5 — DATA PIPELINE / ETL LAYOUT",
-            "after": "## 5. Data pipeline / ETL layout"
+            "after": "## 5. DATA PIPELINE / ETL LAYOUT"
           },
           {
             "before": "## SECTION 6 — CLI TOOL LAYOUT",
-            "after": "## 6. CLI tool layout"
+            "after": "## 6. CLI TOOL LAYOUT"
           },
           {
             "before": "## SECTION 7 — ML / AI PROJECT LAYOUT",
-            "after": "## 7. ML / AI project layout"
+            "after": "## 7. ML / AI PROJECT LAYOUT"
           },
           {
             "before": "## SECTION 8 — FILE AND MODULE NAMING RULES",
-            "after": "## 8. File and module naming rules"
+            "after": "## 8. FILE AND MODULE NAMING RULES"
           },
           {
             "before": "## SECTION 9 — WHAT NEVER GOES WHERE",
-            "after": "## 9. Layer boundary prohibitions"
+            "after": "## 9. WHAT NEVER GOES WHERE"
           },
           {
             "before": "## SECTION 10 — MODULE & PACKAGE DESIGN RULES (Hitchhiker's Guide)",
-            "after": "## 10. Module & package design rules (Hitchhiker's guide)"
-          },
-          {
-            "before": "### Import Style: Explicitness Over Brevity",
-            "after": "### Import style: explicitness over brevity"
-          },
-          {
-            "before": "### `__init__.py` — Keep It Lean",
-            "after": "### `__init__.py` — keep it lean"
-          },
-          {
-            "before": "### Project Pitfalls to Avoid",
-            "after": "### Project pitfalls to avoid"
-          },
-          {
-            "before": "### Pure Functions vs Classes — When to Use Each",
-            "after": "### Pure functions vs classes — when to use each"
+            "after": "## 10. MODULE & PACKAGE DESIGN RULES (Hitchhiker's Guide)"
           }
         ],
         "removed_horizontal_rules": 10,
@@ -1447,7 +885,7 @@
           "sha256": "d716b97880c1de492f226ba21284d68d0a38129cdd3adf2e3be9d7827aea5d56"
         }
       ],
-      "sha256": "9614777b01e0a067255bcd73b906d81dac395c0ce292e2e1e547d19a3a1352f0",
+      "sha256": "3d6b47a2d5843ccfe8c2166b51201050f5b933c552fd79974a0198a99e5b808f",
       "source_line_count": 437,
       "omissions": [
         {
@@ -1500,47 +938,39 @@
           },
           {
             "before": "## SECTION 1 — LIBRARY CHOICE AND RATIONALE",
-            "after": "## 1. Library choice and rationale"
+            "after": "## 1. LIBRARY CHOICE AND RATIONALE"
           },
           {
             "before": "## SECTION 2 — CONFIGURATION",
-            "after": "## 2. Configuration"
+            "after": "## 2. CONFIGURATION"
           },
           {
             "before": "## SECTION 3 — GETTING A LOGGER",
-            "after": "## 3. Getting a logger"
+            "after": "## 3. GETTING A LOGGER"
           },
           {
             "before": "## SECTION 4 — LOG LEVELS — WHEN TO USE EACH",
-            "after": "## 4. Log levels — when to use each"
+            "after": "## 4. LOG LEVELS — WHEN TO USE EACH"
           },
           {
             "before": "## SECTION 5 — STRUCTURED FIELDS — CONSISTENCY ACROSS THOUSANDS OF LOGS",
-            "after": "## 5. Structured fields — consistency across thousands of logs"
-          },
-          {
-            "before": "### 5.1 Standard Field Vocabulary",
-            "after": "### 5.1 Standard field vocabulary"
-          },
-          {
-            "before": "### 5.2 Event Naming Convention",
-            "after": "### 5.2 Event naming convention"
+            "after": "## 5. STRUCTURED FIELDS — CONSISTENCY ACROSS THOUSANDS OF LOGS"
           },
           {
             "before": "## SECTION 6 — REQUEST-SCOPED CONTEXT BINDING",
-            "after": "## 6. Request-scoped context binding"
+            "after": "## 6. REQUEST-SCOPED CONTEXT BINDING"
           },
           {
             "before": "## SECTION 7 — LOGGING EXCEPTIONS",
-            "after": "## 7. Logging exceptions"
+            "after": "## 7. LOGGING EXCEPTIONS"
           },
           {
             "before": "## SECTION 8 — WHAT NEVER TO LOG",
-            "after": "## 8. Prohibited log data"
+            "after": "## 8. WHAT NEVER TO LOG"
           },
           {
             "before": "## SECTION 9 — SLOW QUERY LOGGING",
-            "after": "## 9. Slow query logging"
+            "after": "## 9. SLOW QUERY LOGGING"
           }
         ],
         "removed_horizontal_rules": 9,
@@ -1588,7 +1018,7 @@
           "sha256": "7f8275c30644b1a786f997f82ecf65e7d9560ce2c956af6e19df2798b737101d"
         }
       ],
-      "sha256": "809869ee70442ce1c3231dc0b80801c67c132e2ed6cfe914623074238fc8a8c0",
+      "sha256": "bb7759b608159a389029429beb6156d48da1422462a3a685fdb5a04fa7572506",
       "source_line_count": 221,
       "omissions": [
         {
@@ -1622,55 +1052,35 @@
         "headings": [
           {
             "before": "# Async Patterns — Enterprise Standard",
-            "after": "# Async patterns"
+            "after": "# Async Patterns"
           },
           {
             "before": "## SECTION 1 — TASK QUEUE (CELERY)",
-            "after": "## 1. Task queue (Celery)"
-          },
-          {
-            "before": "### Task Definition",
-            "after": "### Task definition"
+            "after": "## 1. TASK QUEUE (CELERY)"
           },
           {
             "before": "## SECTION 2 — RETRY STRATEGIES",
-            "after": "## 2. Retry strategies"
-          },
-          {
-            "before": "### Retry Rules",
-            "after": "### Retry rules"
+            "after": "## 2. RETRY STRATEGIES"
           },
           {
             "before": "## SECTION 3 — IDEMPOTENCY",
-            "after": "## 3. Idempotency"
-          },
-          {
-            "before": "### Idempotency Patterns",
-            "after": "### Idempotency patterns"
+            "after": "## 3. IDEMPOTENCY"
           },
           {
             "before": "## SECTION 4 — DEAD LETTER QUEUE (DLQ)",
-            "after": "## 4. Dead letter queue (DLQ)"
+            "after": "## 4. DEAD LETTER QUEUE (DLQ)"
           },
           {
             "before": "## SECTION 5 — EVENT-DRIVEN ARCHITECTURE",
-            "after": "## 5. Event-driven architecture"
-          },
-          {
-            "before": "### Domain Events",
-            "after": "### Domain events"
-          },
-          {
-            "before": "### Event Bus (Simple In-Process)",
-            "after": "### Event bus (simple in-process)"
+            "after": "## 5. EVENT-DRIVEN ARCHITECTURE"
           },
           {
             "before": "## SECTION 6 — ASYNC TASK PATTERNS (ARQ — Lightweight Alternative)",
-            "after": "## 6. Async task patterns (ARQ — lightweight alternative)"
+            "after": "## 6. ASYNC TASK PATTERNS (ARQ — Lightweight Alternative)"
           },
           {
             "before": "## SECTION 7 — RULES",
-            "after": "## 7. Rules"
+            "after": "## 7. RULES"
           }
         ],
         "removed_horizontal_rules": 6,
@@ -1718,7 +1128,7 @@
           "sha256": "47c06c561d5c327343685268a46b3391f3998eee890d2be51f0d21cc4a53ae6d"
         }
       ],
-      "sha256": "9fa57b52a6038c9a4782b58c65941ccf18145317136bda7d400dea5e2b98eed3",
+      "sha256": "eebb188caefe1425f57844a3f8e62f3485bb29cfff94d2a293d7fb81c535c7d9",
       "source_line_count": 266,
       "omissions": [
         {
@@ -1756,31 +1166,19 @@
           },
           {
             "before": "## SECTION 1 — ASYNC PROGRAMMING",
-            "after": "## 1. Async programming"
-          },
-          {
-            "before": "### 1.1 async def vs def — the decision rule",
-            "after": "### 1.1 Async def vs def — the decision rule"
-          },
-          {
-            "before": "### 1.2 Blocking I/O inside async context — always wrap",
-            "after": "### 1.2 Blocking i/o inside async context — always wrap"
-          },
-          {
-            "before": "### 1.3 Concurrent I/O — asyncio.gather()",
-            "after": "### 1.3 Concurrent i/o — asyncio.gather()"
+            "after": "## 1. ASYNC PROGRAMMING"
           },
           {
             "before": "## SECTION 2 — CACHING",
-            "after": "## 2. Caching"
+            "after": "## 2. CACHING"
           },
           {
             "before": "## SECTION 3 — N+1 QUERY PREVENTION",
-            "after": "## 3. N+1 query prevention"
+            "after": "## 3. N+1 QUERY PREVENTION"
           },
           {
             "before": "## SECTION 5 — RESOURCE MONITORING (production services)",
-            "after": "## 5. Resource monitoring (production services)"
+            "after": "## 5. RESOURCE MONITORING (production services)"
           }
         ],
         "removed_horizontal_rules": 4,
@@ -1813,7 +1211,7 @@
           "sha256": "2fa332e12bf06f431604792a755baf9c1d3d25ffbbd9f556c08e52cb3bdcf6be"
         }
       ],
-      "sha256": "27ead37fd3ffa78cb6f923a099c3a4365251c37de5233b1b41322c84b3a07e16",
+      "sha256": "7f64c9bd1c020d3d9cc57eb7a9b5698300c764cbfd70e2570ee635212ef04de8",
       "source_line_count": 195,
       "omissions": [
         {
@@ -1836,35 +1234,27 @@
           },
           {
             "before": "## SECTION 1 — OPENTELEMETRY SETUP",
-            "after": "## 1. OpenTelemetry setup"
+            "after": "## 1. OPENTELEMETRY SETUP"
           },
           {
             "before": "## SECTION 3 — CUSTOM SPANS",
-            "after": "## 3. Custom spans"
+            "after": "## 3. CUSTOM SPANS"
           },
           {
             "before": "## SECTION 4 — METRICS PATTERNS",
-            "after": "## 4. Metrics patterns"
+            "after": "## 4. METRICS PATTERNS"
           },
           {
             "before": "## SECTION 5 — STRUCTURED LOGS + TRACE CORRELATION",
-            "after": "## 5. Structured logs + trace correlation"
+            "after": "## 5. STRUCTURED LOGS + TRACE CORRELATION"
           },
           {
             "before": "## SECTION 6 — KEY METRICS TO TRACK (RED + USE)",
-            "after": "## 6. Key metrics to track (RED + USE)"
-          },
-          {
-            "before": "### RED Method (request-driven services):",
-            "after": "### RED method (request-driven services):"
-          },
-          {
-            "before": "### USE Method (resources):",
-            "after": "### USE method (resources):"
+            "after": "## 6. KEY METRICS TO TRACK (RED + USE)"
           },
           {
             "before": "## SECTION 7 — RULES",
-            "after": "## 7. Rules"
+            "after": "## 7. RULES"
           }
         ],
         "removed_horizontal_rules": 5,
@@ -1952,7 +1342,7 @@
           "sha256": "fc994faff69cc9d99f2e400941ccde069bc6bd67d366a0e5a3a040d36eec0eff"
         }
       ],
-      "sha256": "8a33d1ac4b8a2739e6b30c63dc49299fae4a4f9d7426a4f137186f0de0de5614",
+      "sha256": "cac5479164984a658d998a61d1808cc7c29b306e9310f2b72d8c7f9a7786bbe9",
       "source_line_count": 1018,
       "omissions": [
         {
@@ -2030,139 +1420,67 @@
           },
           {
             "before": "## SECTION 0 — TESTING PRINCIPLES (The Hitchhiker's Rules)",
-            "after": "## 0. Testing principles (the Hitchhiker's rules)"
+            "after": "## 0. TESTING PRINCIPLES (The Hitchhiker's Rules)"
           },
           {
             "before": "## SECTION 1 — TOOLCHAIN",
-            "after": "## 1. Toolchain"
+            "after": "## 1. TOOLCHAIN"
           },
           {
             "before": "## SECTION 2 — TEST CATEGORIES AND SCOPE",
-            "after": "## 2. Test categories and scope"
-          },
-          {
-            "before": "### 2.1 Unit Tests",
-            "after": "### 2.1 Unit tests"
-          },
-          {
-            "before": "### 2.2 Integration Tests",
-            "after": "### 2.2 Integration tests"
-          },
-          {
-            "before": "### 2.3 End-to-End Tests",
-            "after": "### 2.3 End-to-end tests"
-          },
-          {
-            "before": "### 2.4 Performance / Load Tests (Locust / k6)",
-            "after": "### 2.4 Performance / load tests (Locust / k6)"
+            "after": "## 2. TEST CATEGORIES AND SCOPE"
           },
           {
             "before": "## SECTION 3 — TEST STRUCTURE AND NAMING",
-            "after": "## 3. Test structure and naming"
-          },
-          {
-            "before": "### 3.2 AAA Pattern — every test is three sections",
-            "after": "### 3.2 AAA pattern — every test is three sections"
+            "after": "## 3. TEST STRUCTURE AND NAMING"
           },
           {
             "before": "## SECTION 4 — FIXTURES AND CONFTEST",
-            "after": "## 4. Fixtures and conftest"
+            "after": "## 4. FIXTURES AND CONFTEST"
           },
           {
             "before": "## SECTION 5 — FACTORIES",
-            "after": "## 5. Factories"
+            "after": "## 5. FACTORIES"
           },
           {
             "before": "## SECTION 6 — WHAT MUST BE TESTED",
-            "after": "## 6. Required test coverage"
+            "after": "## 6. WHAT MUST BE TESTED"
           },
           {
             "before": "## SECTION 7 — MOCKING GUIDELINES",
-            "after": "## 7. Mocking guidelines"
+            "after": "## 7. MOCKING GUIDELINES"
           },
           {
             "before": "## SECTION 8 — COVERAGE RULES",
-            "after": "## 8. Coverage rules"
+            "after": "## 8. COVERAGE RULES"
           },
           {
             "before": "## SECTION 10 — DJANGO-SPECIFIC TESTING",
-            "after": "## 10. Django-specific testing"
-          },
-          {
-            "before": "### 10.2 Preferred Django Assertion Methods",
-            "after": "### 10.2 Preferred Django assertion methods"
+            "after": "## 10. DJANGO-SPECIFIC TESTING"
           },
           {
             "before": "## SECTION 11 — PARAMETRIZE FOR COVERAGE BREADTH",
-            "after": "## 11. Parametrize for coverage breadth"
+            "after": "## 11. PARAMETRIZE FOR COVERAGE BREADTH"
           },
           {
             "before": "## SECTION 12 — ASSERT METHOD SELECTION GUIDE",
-            "after": "## 12. Assert method selection guide"
-          },
-          {
-            "before": "### 12.1 Equality & Identity",
-            "after": "### 12.1 Equality & identity"
-          },
-          {
-            "before": "### 12.2 Type & Membership",
-            "after": "### 12.2 Type & membership"
-          },
-          {
-            "before": "### 12.3 Numeric & Approximate",
-            "after": "### 12.3 Numeric & approximate"
-          },
-          {
-            "before": "### 12.5 Strings & Patterns",
-            "after": "### 12.5 Strings & patterns"
-          },
-          {
-            "before": "### 12.6 Exceptions & Warnings",
-            "after": "### 12.6 Exceptions & warnings"
-          },
-          {
-            "before": "### 12.7 Log Assertions",
-            "after": "### 12.7 Log assertions"
+            "after": "## 12. ASSERT METHOD SELECTION GUIDE"
           },
           {
             "before": "## SECTION 13 — SKIPPING TESTS & EXPECTED FAILURES",
-            "after": "## 13. Skipping tests & expected failures"
-          },
-          {
-            "before": "### 13.1 Skip Decorators",
-            "after": "### 13.1 Skip decorators"
-          },
-          {
-            "before": "### 13.2 Expected Failures",
-            "after": "### 13.2 Expected failures"
+            "after": "## 13. SKIPPING TESTS & EXPECTED FAILURES"
           },
           {
             "before": "## SECTION 14 — FIXTURE LIFECYCLE & CLEANUP",
-            "after": "## 14. Fixture lifecycle & cleanup"
-          },
-          {
-            "before": "### 14.1 Fixture Scope Hierarchy",
-            "after": "### 14.1 Fixture scope hierarchy"
-          },
-          {
-            "before": "### 14.2 setUp / tearDown — Per-Test Fixtures",
-            "after": "### 14.2 setUp / tearDown — per-test fixtures"
-          },
-          {
-            "before": "### 14.3 addCleanup — Guaranteed Cleanup (Prefer Over tearDown)",
-            "after": "### 14.3 addCleanup — guaranteed cleanup (prefer over tearDown)"
-          },
-          {
-            "before": "### 14.4 setUpClass / tearDownClass — Expensive Shared Resources",
-            "after": "### 14.4 setUpClass / tearDownClass — expensive shared resources"
+            "after": "## 14. FIXTURE LIFECYCLE & CLEANUP"
           },
           {
             "before": "## SECTION 15 — SUBTEST: MULTIPLE ASSERTIONS IN ONE TEST",
-            "after": "## 15. Subtest: multiple assertions in one test"
+            "after": "## 15. SUBTEST: MULTIPLE ASSERTIONS IN ONE TEST"
           },
           {
             "before": "## SECTION 16 — ASYNC TESTS (IsolatedAsyncioTestCase)",
-            "after": "## 16. Async tests (IsolatedAsyncioTestCase)"
+            "after": "## 16. ASYNC TESTS (IsolatedAsyncioTestCase)"
           }
         ],
         "removed_horizontal_rules": 16,
@@ -2210,7 +1528,7 @@
           "sha256": "e7df1ef6335e688538648015a1a7c1c51a6408b51fa081ca02a1b4398cc935e9"
         }
       ],
-      "sha256": "1425f2fa8d9ed4865f69b30d2bbddc0c412bdb8264e72bd1dca435cc014ee255",
+      "sha256": "751f61e023c9c535366f05119078057e939dbb5791954e8f4e6538a6cd350240",
       "source_line_count": 545,
       "omissions": [
         {
@@ -2244,39 +1562,39 @@
         "headings": [
           {
             "before": "# Error Handling — Enterprise Standard",
-            "after": "# Error handling"
+            "after": "# Error Handling"
           },
           {
             "before": "## SECTION 1 — EXCEPTION HIERARCHY DESIGN",
-            "after": "## 1. Exception hierarchy design"
+            "after": "## 1. EXCEPTION HIERARCHY DESIGN"
           },
           {
             "before": "## SECTION 2 — WHERE EXCEPTIONS ARE RAISED AND CAUGHT",
-            "after": "## 2. Where exceptions are raised and caught"
+            "after": "## 2. WHERE EXCEPTIONS ARE RAISED AND CAUGHT"
           },
           {
             "before": "## SECTION 3 — RAISING EXCEPTIONS CORRECTLY",
-            "after": "## 3. Raising exceptions correctly"
+            "after": "## 3. RAISING EXCEPTIONS CORRECTLY"
           },
           {
             "before": "## SECTION 4 — CATCHING EXCEPTIONS CORRECTLY",
-            "after": "## 4. Catching exceptions correctly"
+            "after": "## 4. CATCHING EXCEPTIONS CORRECTLY"
           },
           {
             "before": "## SECTION 5 — LOGGING AND EXCEPTIONS",
-            "after": "## 5. Logging and exceptions"
+            "after": "## 5. LOGGING AND EXCEPTIONS"
           },
           {
             "before": "## SECTION 6 — PYTHON 3.11+ EXCEPTION GROUPS",
-            "after": "## 6. Python 3.11+ exception groups"
+            "after": "## 6. PYTHON 3.11+ EXCEPTION GROUPS"
           },
           {
             "before": "## SECTION 7 — STANDARD ERROR RESPONSE SHAPE",
-            "after": "## 7. Standard error response shape"
+            "after": "## 7. STANDARD ERROR RESPONSE SHAPE"
           },
           {
             "before": "## SECTION 8 — ANTI-PATTERNS REFERENCE",
-            "after": "## 8. Anti-patterns reference"
+            "after": "## 8. ANTI-PATTERNS REFERENCE"
           }
         ],
         "removed_horizontal_rules": 8,
@@ -2299,7 +1617,7 @@
           "sha256": "8cfb17ccd1a59684e527495c6f2fc6fba8f8a859be2fe17b7dfff5bf4d5ae244"
         }
       ],
-      "sha256": "6204941dbc53c2667858a705e430ad0f5523a0a90aaeceb143e12f516922ab9b",
+      "sha256": "f081bb92b0650357c43ad865ee649e1a46e2adbb1c1a765ba78511ffee0e108c",
       "source_line_count": 170,
       "omissions": [],
       "source_selection_sha256": "8cfb17ccd1a59684e527495c6f2fc6fba8f8a859be2fe17b7dfff5bf4d5ae244",
@@ -2307,39 +1625,27 @@
         "headings": [
           {
             "before": "# Dependency Management — Enterprise Standard",
-            "after": "# Dependency management"
+            "after": "# Dependency Management"
           },
           {
             "before": "## SECTION 1 — PINNING STRATEGY",
-            "after": "## 1. Pinning strategy"
-          },
-          {
-            "before": "### Lock File",
-            "after": "### Lock file"
+            "after": "## 1. PINNING STRATEGY"
           },
           {
             "before": "## SECTION 2 — VULNERABILITY SCANNING",
-            "after": "## 2. Vulnerability scanning"
-          },
-          {
-            "before": "### Automated Scanning",
-            "after": "### Automated scanning"
+            "after": "## 2. VULNERABILITY SCANNING"
           },
           {
             "before": "## SECTION 3 — UPDATE CADENCE",
-            "after": "## 3. Update cadence"
-          },
-          {
-            "before": "### Renovate Configuration",
-            "after": "### Renovate configuration"
+            "after": "## 3. UPDATE CADENCE"
           },
           {
             "before": "## SECTION 4 — PRIVATE REGISTRY",
-            "after": "## 4. Private registry"
+            "after": "## 4. PRIVATE REGISTRY"
           },
           {
             "before": "## SECTION 5 — RULES SUMMARY",
-            "after": "## 5. Rules summary"
+            "after": "## 5. RULES SUMMARY"
           }
         ],
         "removed_horizontal_rules": 5,
@@ -2377,7 +1683,7 @@
           "sha256": "586aec9f0090f681bf9915f49a259bb8f08f6ffaaf5ad895a1d954e6e13a42da"
         }
       ],
-      "sha256": "361ce87fb574b86a5033210a4d39bfda7195580992cc39440365b54fa3495b88",
+      "sha256": "f5f59ef8504deb566a429fa958cf50372d0d65967bc42c6e519af40bb0af37bc",
       "source_line_count": 491,
       "omissions": [
         {
@@ -2405,31 +1711,23 @@
           },
           {
             "before": "## SECTION 1 — SECRETS MANAGEMENT",
-            "after": "## 1. Secrets management"
+            "after": "## 1. SECRETS MANAGEMENT"
           },
           {
             "before": "## SECTION 2 — AUTHENTICATION",
-            "after": "## 2. Authentication"
-          },
-          {
-            "before": "### 2.1 JWT Standards",
-            "after": "### 2.1 JWT standards"
-          },
-          {
-            "before": "### 2.2 Password Hashing",
-            "after": "### 2.2 Password hashing"
+            "after": "## 2. AUTHENTICATION"
           },
           {
             "before": "## SECTION 3 — INPUT VALIDATION",
-            "after": "## 3. Input validation"
+            "after": "## 3. INPUT VALIDATION"
           },
           {
             "before": "## SECTION 4 — SQL INJECTION PREVENTION",
-            "after": "## 4. SQL injection prevention"
+            "after": "## 4. SQL INJECTION PREVENTION"
           },
           {
             "before": "## SECTION 5 — RATE LIMITING",
-            "after": "## 5. Rate limiting"
+            "after": "## 5. RATE LIMITING"
           },
           {
             "before": "## SECTION 6 — CORS",
@@ -2437,15 +1735,15 @@
           },
           {
             "before": "## SECTION 7 — RESPONSE SANITISATION",
-            "after": "## 7. Response sanitisation"
+            "after": "## 7. RESPONSE SANITISATION"
           },
           {
             "before": "## SECTION 9 — SECURITY HEADERS (configure at reverse proxy or middleware)",
-            "after": "## 9. Security headers (configure at reverse proxy or middleware)"
+            "after": "## 9. SECURITY HEADERS (configure at reverse proxy or middleware)"
           },
           {
             "before": "## SECTION 10 — SECURITY CHECKLIST FOR CODE REVIEW",
-            "after": "## 10. Security checklist for code review"
+            "after": "## 10. SECURITY CHECKLIST FOR CODE REVIEW"
           }
         ],
         "removed_horizontal_rules": 9,
@@ -2498,7 +1796,7 @@
           "sha256": "52a561be204e1bf47ac73d3abc87dc6a88a0bb9132e781a5d3190aa6acd7dffb"
         }
       ],
-      "sha256": "3441d70dc1444abf6bc6b9c17a0cfa6cf89af86235681bf76f54a05c93969173",
+      "sha256": "b3bb7c706bcccf3108c0fcfd50aeacc50c18fcac9971aef3d89ce8c01643347e",
       "source_line_count": 462,
       "omissions": [
         {
@@ -2537,43 +1835,35 @@
         "headings": [
           {
             "before": "# Database Design — Enterprise Standard",
-            "after": "# Database design"
+            "after": "# Database Design"
           },
           {
             "before": "## SECTION 1 — MODEL FOUNDATION",
-            "after": "## 1. Model foundation"
-          },
-          {
-            "before": "### 1.1 Abstract Base Mixins — always use, never duplicate",
-            "after": "### 1.1 Abstract base mixins — always use, never duplicate"
-          },
-          {
-            "before": "### 1.2 Model Definition Standards",
-            "after": "### 1.2 Model definition standards"
+            "after": "## 1. MODEL FOUNDATION"
           },
           {
             "before": "## SECTION 2 — NAMING CONVENTIONS",
-            "after": "## 2. Naming conventions"
+            "after": "## 2. NAMING CONVENTIONS"
           },
           {
             "before": "## SECTION 3 — RELATIONSHIPS",
-            "after": "## 3. Relationships"
+            "after": "## 3. RELATIONSHIPS"
           },
           {
             "before": "## SECTION 4 — INDEXING STRATEGY",
-            "after": "## 4. Indexing strategy"
+            "after": "## 4. INDEXING STRATEGY"
           },
           {
             "before": "## SECTION 5 — MIGRATION DISCIPLINE (ALEMBIC)",
-            "after": "## 5. Migration discipline (Alembic)"
+            "after": "## 5. MIGRATION DISCIPLINE (ALEMBIC)"
           },
           {
             "before": "## SECTION 6 — QUERY PATTERNS",
-            "after": "## 6. Query patterns"
+            "after": "## 6. QUERY PATTERNS"
           },
           {
             "before": "## SECTION 7 — DECIMAL HANDLING FOR MONETARY VALUES",
-            "after": "## 7. Decimal handling for monetary values"
+            "after": "## 7. DECIMAL HANDLING FOR MONETARY VALUES"
           }
         ],
         "removed_horizontal_rules": 6,
@@ -2616,7 +1906,7 @@
           "sha256": "74a3fdba64256308c14d672573d6c1ec05d135b1f50734796a028ef47af03232"
         }
       ],
-      "sha256": "1accec83ff39ca0046a9d0e29707f96df16d5049c51b5e820b0aafbcd0574d86",
+      "sha256": "e716f5a7e4d0ef1401ed32f067f363de5bcfc6c446127d65424bbd275999305a",
       "source_line_count": 190,
       "omissions": [
         {
@@ -2645,51 +1935,31 @@
         "headings": [
           {
             "before": "# Data Migrations — Enterprise Standard",
-            "after": "# Data migrations"
+            "after": "# Data Migrations"
           },
           {
             "before": "## SECTION 1 — ZERO-DOWNTIME MIGRATION RULES",
-            "after": "## 1. Zero-downtime migration rules"
+            "after": "## 1. ZERO-DOWNTIME MIGRATION RULES"
           },
           {
             "before": "## SECTION 2 — EXPAND-CONTRACT PATTERN",
-            "after": "## 2. Expand-contract pattern"
-          },
-          {
-            "before": "### Phase 1: Expand (deploy with old + new)",
-            "after": "### Phase 1: expand (deploy with old + new)"
-          },
-          {
-            "before": "### Phase 3: Contract (remove old)",
-            "after": "### Phase 3: contract (remove old)"
+            "after": "## 2. EXPAND-CONTRACT PATTERN"
           },
           {
             "before": "## SECTION 3 — BACKFILL STRATEGIES",
-            "after": "## 3. Backfill strategies"
-          },
-          {
-            "before": "### Batch Processing (preferred)",
-            "after": "### Batch processing (preferred)"
-          },
-          {
-            "before": "### Rules for Backfills",
-            "after": "### Rules for backfills"
+            "after": "## 3. BACKFILL STRATEGIES"
           },
           {
             "before": "## SECTION 4 — DANGEROUS OPERATIONS REFERENCE",
-            "after": "## 4. Dangerous operations reference"
+            "after": "## 4. DANGEROUS OPERATIONS REFERENCE"
           },
           {
             "before": "## SECTION 5 — ALEMBIC BEST PRACTICES",
-            "after": "## 5. Alembic best practices"
-          },
-          {
-            "before": "### Migration File Rules",
-            "after": "### Migration file rules"
+            "after": "## 5. ALEMBIC BEST PRACTICES"
           },
           {
             "before": "## SECTION 6 — DJANGO MIGRATIONS SPECIFICS",
-            "after": "## 6. Django migrations specifics"
+            "after": "## 6. DJANGO MIGRATIONS SPECIFICS"
           }
         ],
         "removed_horizontal_rules": 6,
@@ -2727,7 +1997,7 @@
           "sha256": "f963f67ff24a9c554381dc023bf783ef80061a5cd70998fc90b507fbcc2acc2a"
         }
       ],
-      "sha256": "b4fcddc3048c316dd28ccced27358272e338d222a9876f1ec74501477a1ec749",
+      "sha256": "dc54e625998507d9eff942061077a0fb7d6944c992727c97530885fbcafd2a4f",
       "source_line_count": 171,
       "omissions": [
         {
@@ -2748,52 +2018,7 @@
       ],
       "source_selection_sha256": "bb5d9c0b48abd5de3a941e56edd4df05292ac926ac08f836bdf916f59c453b9a",
       "editorial_changes": {
-        "headings": [
-          {
-            "before": "# REST API Design Standards",
-            "after": "# REST API design"
-          },
-          {
-            "before": "## 1. URL Structure",
-            "after": "## 1. URL structure"
-          },
-          {
-            "before": "## 2. HTTP Methods",
-            "after": "## 2. HTTP methods"
-          },
-          {
-            "before": "## 3. HTTP Status Codes",
-            "after": "## 3. HTTP status codes"
-          },
-          {
-            "before": "## 4. Request / Response Shape",
-            "after": "## 4. Request / response shape"
-          },
-          {
-            "before": "### Success Response (single item)",
-            "after": "### Success response (single item)"
-          },
-          {
-            "before": "### Success Response (list)",
-            "after": "### Success response (list)"
-          },
-          {
-            "before": "## 6. Filtering, Sorting, Search",
-            "after": "## 6. Filtering, sorting, search"
-          },
-          {
-            "before": "## 8. API Documentation",
-            "after": "## 8. API documentation"
-          },
-          {
-            "before": "## 9. Datetime Format",
-            "after": "## 9. Datetime format"
-          },
-          {
-            "before": "## 10. Sensitive Fields — Never Return",
-            "after": "## 10. Sensitive fields — never return"
-          }
-        ],
+        "headings": [],
         "removed_horizontal_rules": 10,
         "collapsed_blank_lines": 11,
         "section_moves": [],
@@ -2849,7 +2074,7 @@
           "sha256": "4f71ec9f439152ab1dae9b6a5aa6b85d433f27e0c1d40dfc0fad85b2f13a15a1"
         }
       ],
-      "sha256": "2d573ee17d296f8073674786cf78702a951ad03050e6161403634e56a45475ff",
+      "sha256": "6246f8ed0bac7c0f32634f5158e24298acb81337695c50518750f8d92006df70",
       "source_line_count": 851,
       "omissions": [
         {
@@ -2897,84 +2122,12 @@
       "editorial_changes": {
         "headings": [
           {
-            "before": "## Project Structure",
-            "after": "## Project structure"
-          },
-          {
-            "before": "## App Factory",
-            "after": "## App factory"
-          },
-          {
-            "before": "## Extensions (Singleton Pattern)",
-            "after": "## Extensions (singleton pattern)"
-          },
-          {
-            "before": "## Blueprint + Route",
-            "after": "## Blueprint + route"
-          },
-          {
             "before": "## Error Handlers",
-            "after": "### Error handlers"
+            "after": "### Error Handlers"
           },
           {
             "before": "## Custom API Error Classes",
-            "after": "### Custom API error classes"
-          },
-          {
-            "before": "## Configuration — Class Hierarchy Pattern",
-            "after": "## Configuration — class hierarchy pattern"
-          },
-          {
-            "before": "## Application Context & `g`",
-            "after": "## Application context & `g`"
-          },
-          {
-            "before": "## Request Lifecycle & Hook Ordering",
-            "after": "## Request lifecycle & hook ordering"
-          },
-          {
-            "before": "## Class-Based Views (MethodView) — REST APIs",
-            "after": "## Class-based views (MethodView) — REST APIs"
-          },
-          {
-            "before": "## View Decorators",
-            "after": "## View decorators"
-          },
-          {
-            "before": "## Security Headers & Cookie Settings",
-            "after": "## Security headers & cookie settings"
-          },
-          {
-            "before": "## Celery Integration",
-            "after": "## Celery integration"
-          },
-          {
-            "before": "## Async Views (Flask 2.0+)",
-            "after": "## Async views (Flask 2.0+)"
-          },
-          {
-            "before": "## Flask Testing — Complete Patterns",
-            "after": "## Flask testing — complete patterns"
-          },
-          {
-            "before": "### Test Client & Fixtures",
-            "after": "### Test client & fixtures"
-          },
-          {
-            "before": "### Session Access & Mutation",
-            "after": "### Session access & mutation"
-          },
-          {
-            "before": "### Redirect Following & Context",
-            "after": "### Redirect following & context"
-          },
-          {
-            "before": "### CLI Command Testing",
-            "after": "### CLI command testing"
-          },
-          {
-            "before": "### App Context in Tests",
-            "after": "### App context in tests"
+            "after": "### Custom API Error Classes"
           }
         ],
         "removed_horizontal_rules": 15,
@@ -2983,13 +2136,13 @@
           {
             "section": "## Custom API Error Classes",
             "after_section": "## Error Handlers",
-            "new_parent": "## Error handling",
+            "new_parent": "## Error Handling",
             "original_block_sha256": "c1b2852ea5c612e79354a7f5602b98cb57c67403286f872cfb5035e015d3a9f1"
           }
         ],
         "added_headings": [
           "# Flask",
-          "## Error handling"
+          "## Error Handling"
         ],
         "content_sha256": "992027ce283bb86fc518bdefa5c18e1f9f8d8649aa6ed8a981cde0823b248eab",
         "examples_sha256": "2d6b55694e795ceacbe4e4980ac87244c569320f1431f2b8f9da4677d9d8a949"
@@ -3032,7 +2185,7 @@
           "sha256": "cdec83cca38fd44034dd548a06e8bb8da97befbc1d8baf586854dc8e29ee3830"
         }
       ],
-      "sha256": "220ceb3ebef005c63ceeaa4613818077e655bb55923d75a7476d81e3a637ba06",
+      "sha256": "7e8eba30880966317367a02ae770a05f5b5c5dc2ae6dd0a604ab41876bf8518f",
       "source_line_count": 301,
       "omissions": [
         {
@@ -3070,44 +2223,12 @@
       "editorial_changes": {
         "headings": [
           {
-            "before": "## Project Structure (FastAPI-specific additions)",
-            "after": "## Project structure (FastAPI-specific additions)"
-          },
-          {
-            "before": "## App Factory Pattern",
-            "after": "## App factory pattern"
-          },
-          {
-            "before": "## Router + Endpoint Pattern",
-            "after": "## Router + endpoint pattern"
-          },
-          {
-            "before": "## Pydantic Schemas",
-            "after": "## Pydantic schemas"
-          },
-          {
             "before": "## Database Session",
-            "after": "### Database session"
+            "after": "### Database Session"
           },
           {
             "before": "## ANNOTATED DEPENDENCIES (Python 3.9+)",
-            "after": "### Annotated dependencies (Python 3.9+)"
-          },
-          {
-            "before": "## Background Tasks",
-            "after": "## Background tasks"
-          },
-          {
-            "before": "## Health Check Endpoint",
-            "after": "## Health check endpoint"
-          },
-          {
-            "before": "## LIFESPAN CONTEXT MANAGER (replaces deprecated @app.on_event)",
-            "after": "## Lifespan context manager (replaces deprecated @app.on_event)"
-          },
-          {
-            "before": "## RORO IN FASTAPI ROUTES",
-            "after": "## RORO in FastAPI routes"
+            "after": "### ANNOTATED DEPENDENCIES (Python 3.9+)"
           }
         ],
         "removed_horizontal_rules": 10,
@@ -3145,7 +2266,7 @@
           "sha256": "0174caaede846eb0309d59f8cc2ad7a2635ec58afcdbfa41ecc092d463ab1d61"
         }
       ],
-      "sha256": "ab798c205be6e1787e2884c53669e880a65fa6f0f6ef217f8ae6d1573efc7d4e",
+      "sha256": "3da0f6d0ac7f5253a8a3fa00fd7aa20fdd57de089c290f41b024bd0cc8b9d870",
       "source_line_count": 309,
       "omissions": [
         {
@@ -3159,67 +2280,35 @@
         "headings": [
           {
             "before": "# API Authentication & Authorization — Enterprise Standard",
-            "after": "# API authentication & authorization"
+            "after": "# API Authentication & Authorization"
           },
           {
             "before": "## SECTION 1 — AUTHENTICATION METHODS",
-            "after": "## 1. Authentication methods"
+            "after": "## 1. AUTHENTICATION METHODS"
           },
           {
             "before": "## SECTION 2 — JWT LIFECYCLE",
-            "after": "## 2. JWT lifecycle"
-          },
-          {
-            "before": "### Token Structure",
-            "after": "### Token structure"
-          },
-          {
-            "before": "### Token Refresh Flow",
-            "after": "### Token refresh flow"
-          },
-          {
-            "before": "### Token Revocation",
-            "after": "### Token revocation"
+            "after": "## 2. JWT LIFECYCLE"
           },
           {
             "before": "## SECTION 3 — OAUTH2 FLOWS",
-            "after": "## 3. OAuth2 flows"
-          },
-          {
-            "before": "### Authorization Code Flow (user-facing apps)",
-            "after": "### Authorization code flow (user-facing apps)"
-          },
-          {
-            "before": "### Client Credentials Flow (service-to-service)",
-            "after": "### Client credentials flow (service-to-service)"
+            "after": "## 3. OAUTH2 FLOWS"
           },
           {
             "before": "## SECTION 4 — RBAC (Role-Based Access Control)",
-            "after": "## 4. RBAC (role-based access control)"
+            "after": "## 4. RBAC (Role-Based Access Control)"
           },
           {
             "before": "## SECTION 5 — ABAC (Attribute-Based Access Control)",
-            "after": "## 5. ABAC (attribute-based access control)"
+            "after": "## 5. ABAC (Attribute-Based Access Control)"
           },
           {
             "before": "## SECTION 6 — API KEY MANAGEMENT",
-            "after": "## 6. API key management"
-          },
-          {
-            "before": "### API Key Rules",
-            "after": "### API key rules"
+            "after": "## 6. API KEY MANAGEMENT"
           },
           {
             "before": "## SECTION 7 — SERVICE-TO-SERVICE AUTH",
-            "after": "## 7. Service-to-service auth"
-          },
-          {
-            "before": "### Option A: Signed JWTs (lightweight)",
-            "after": "### Option a: signed JWTs (lightweight)"
-          },
-          {
-            "before": "### Option B: mTLS (zero-trust)",
-            "after": "### Option b: mTLS (zero-trust)"
+            "after": "## 7. SERVICE-TO-SERVICE AUTH"
           }
         ],
         "removed_horizontal_rules": 7,
@@ -3262,7 +2351,7 @@
           "sha256": "c3877c52b58e3b3d59d1385f95900b522b8c45bfeb0f1ca5ec8c3cc642134366"
         }
       ],
-      "sha256": "305704e01215c1dce502896778d24608aecf70630981c0d6c95233b409350bda",
+      "sha256": "d14ad5b4dba1e4ad27740153dab5d765555268352fb80c9a15c788488d7d7ff9",
       "source_line_count": 247,
       "omissions": [
         {
@@ -3291,51 +2380,27 @@
         "headings": [
           {
             "before": "# Microservices Patterns — Enterprise Standard",
-            "after": "# Microservices patterns"
+            "after": "# Microservices Patterns"
           },
           {
             "before": "## SECTION 1 — SERVICE BOUNDARY RULES",
-            "after": "## 1. Service boundary rules"
-          },
-          {
-            "before": "### When to Split",
-            "after": "### When to split"
-          },
-          {
-            "before": "### Bounded Context Heuristic",
-            "after": "### Bounded context heuristic"
+            "after": "## 1. SERVICE BOUNDARY RULES"
           },
           {
             "before": "## SECTION 2 — INTER-SERVICE COMMUNICATION",
-            "after": "## 2. Inter-service communication"
-          },
-          {
-            "before": "### Asynchronous (Events)",
-            "after": "### Asynchronous (events)"
+            "after": "## 2. INTER-SERVICE COMMUNICATION"
           },
           {
             "before": "## SECTION 3 — API CONTRACTS",
-            "after": "## 3. API contracts"
-          },
-          {
-            "before": "### Contract-First Design",
-            "after": "### Contract-first design"
-          },
-          {
-            "before": "### Versioning Between Services",
-            "after": "### Versioning between services"
+            "after": "## 3. API CONTRACTS"
           },
           {
             "before": "## SECTION 4 — SHARED LIBRARIES",
-            "after": "## 4. Shared libraries"
-          },
-          {
-            "before": "### What to Share",
-            "after": "### What to share"
+            "after": "## 4. SHARED LIBRARIES"
           },
           {
             "before": "## SECTION 6 — DATA OWNERSHIP RULES",
-            "after": "## 6. Data ownership rules"
+            "after": "## 6. DATA OWNERSHIP RULES"
           }
         ],
         "removed_horizontal_rules": 5,
@@ -3363,7 +2428,7 @@
           "sha256": "b5a7bd4dba602863f28bc80bd3ec634c537388f369711d01cc79fb077af6bc79"
         }
       ],
-      "sha256": "9d421a253537826ffc8ec880d0f68a8543e795ee5e08e1e10a441f6ae38b35fb",
+      "sha256": "1e2791a82ccb625cb9742d0e485ea4e66568cb26d92042b550839c7aa75be218",
       "source_line_count": 188,
       "omissions": [
         {
@@ -3377,47 +2442,27 @@
         "headings": [
           {
             "before": "# Feature Flags — Enterprise Standard",
-            "after": "# Feature flags"
+            "after": "# Feature Flags"
           },
           {
             "before": "## SECTION 1 — FLAG TYPES",
-            "after": "## 1. Flag types"
+            "after": "## 1. FLAG TYPES"
           },
           {
             "before": "## SECTION 2 — IMPLEMENTATION PATTERN",
-            "after": "## 2. Implementation pattern"
-          },
-          {
-            "before": "### Simple Flag Service",
-            "after": "### Simple flag service"
-          },
-          {
-            "before": "### Usage in Code",
-            "after": "### Usage in code"
-          },
-          {
-            "before": "### Usage in Endpoints",
-            "after": "### Usage in endpoints"
+            "after": "## 2. IMPLEMENTATION PATTERN"
           },
           {
             "before": "## SECTION 3 — GRADUAL ROLLOUT STRATEGY",
-            "after": "## 3. Gradual rollout strategy"
-          },
-          {
-            "before": "### Rollout Rules",
-            "after": "### Rollout rules"
+            "after": "## 3. GRADUAL ROLLOUT STRATEGY"
           },
           {
             "before": "## SECTION 4 — FLAG LIFECYCLE",
-            "after": "## 4. Flag lifecycle"
-          },
-          {
-            "before": "### Cleanup Rules",
-            "after": "### Cleanup rules"
+            "after": "## 4. FLAG LIFECYCLE"
           },
           {
             "before": "## SECTION 6 — FLAG HYGIENE TRACKING",
-            "after": "## 6. Flag hygiene tracking"
+            "after": "## 6. FLAG HYGIENE TRACKING"
           }
         ],
         "removed_horizontal_rules": 5,
@@ -3445,7 +2490,7 @@
           "sha256": "15331d708e87c7fd8330ff88a55cf4b4c37ea39cd534797ab478325946a9b64a"
         }
       ],
-      "sha256": "3de56a135b853002f9e95d558fbe67a23ee5db1bb08bd5b30b106d1a66f81f8c",
+      "sha256": "2a9d6e324cf951d7a62cd2789eb9f7aaf44828ff6bb94d610f63ccfcb10f59ec",
       "source_line_count": 169,
       "omissions": [
         {
@@ -3468,19 +2513,19 @@
           },
           {
             "before": "## SECTION 1 — PIPELINE STAGES",
-            "after": "## 1. Pipeline stages"
+            "after": "## 1. PIPELINE STAGES"
           },
           {
             "before": "## SECTION 2 — GITHUB ACTIONS TEMPLATE",
-            "after": "## 2. GitHub Actions template"
+            "after": "## 2. GITHUB ACTIONS TEMPLATE"
           },
           {
             "before": "## SECTION 3 — RULES",
-            "after": "## 3. Rules"
+            "after": "## 3. RULES"
           },
           {
             "before": "## SECTION 4 — PR CHECKS (Required Status Checks)",
-            "after": "## 4. PR checks (required status checks)"
+            "after": "## 4. PR CHECKS (Required Status Checks)"
           }
         ],
         "removed_horizontal_rules": 5,
@@ -3503,7 +2548,7 @@
           "sha256": "3907d02a8b13eec111a526b18416532d93e628a83ab97308f367f7194ae51428"
         }
       ],
-      "sha256": "4437ddd9095518620c1c5299165728ed30030cbd5e9eed28f30165944b3feb77",
+      "sha256": "c70f6dd8141d38cc36aebda7885354637d617940092f42943ba6b8ae562266db",
       "source_line_count": 207,
       "omissions": [],
       "source_selection_sha256": "3907d02a8b13eec111a526b18416532d93e628a83ab97308f367f7194ae51428",
@@ -3515,7 +2560,7 @@
           },
           {
             "before": "## SECTION 1 — DOCKERFILE (Multi-Stage)",
-            "after": "## 1. Dockerfile (multi-stage)"
+            "after": "## 1. DOCKERFILE (Multi-Stage)"
           },
           {
             "before": "## SECTION 2 — .dockerignore",
@@ -3523,23 +2568,23 @@
           },
           {
             "before": "## SECTION 3 — HEALTH CHECK ENDPOINT",
-            "after": "## 3. Health check endpoint"
+            "after": "## 3. HEALTH CHECK ENDPOINT"
           },
           {
             "before": "## SECTION 4 — GRACEFUL SHUTDOWN",
-            "after": "## 4. Graceful shutdown"
+            "after": "## 4. GRACEFUL SHUTDOWN"
           },
           {
             "before": "## SECTION 5 — 12-FACTOR COMPLIANCE CHECKLIST",
-            "after": "## 5. 12-Factor compliance checklist"
+            "after": "## 5. 12-FACTOR COMPLIANCE CHECKLIST"
           },
           {
             "before": "## SECTION 6 — ENVIRONMENT CONFIGURATION",
-            "after": "## 6. Environment configuration"
+            "after": "## 6. ENVIRONMENT CONFIGURATION"
           },
           {
             "before": "## SECTION 7 — RULES",
-            "after": "## 7. Rules"
+            "after": "## 7. RULES"
           }
         ],
         "removed_horizontal_rules": 7,
@@ -3553,7 +2598,7 @@
   ],
   "editorial_basis_revision": "e24c1bab16092da4b67c78d8710268e6d000e094",
   "editorial_policy": {
-    "headings": "Recorded heading-only renames, hierarchy repairs, grouping headings and intact section moves.",
+    "headings": "Preserve original heading capitalization and retained wording. Only recorded boilerplate removal, hierarchy repairs, added grouping headings and intact section moves apply.",
     "spacing": "Remove horizontal rules outside fences and collapse repeated outside-fence blank lines.",
     "preservation": "Every original heading node retains its ordered direct body after spacing normalization; only the redundant style subtitle preamble merges into the title preamble. Fenced example blocks retain their full contents and multiplicity.",
     "digests": "content_sha256 hashes the sorted exact non-heading prose-line multiset; examples_sha256 hashes the sorted complete fenced-block multiset. Each uses UTF-8 compact JSON with sorted keys and ensure_ascii=false."

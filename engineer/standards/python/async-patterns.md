@@ -1,9 +1,9 @@
-# Async patterns
+# Async Patterns
 
 **Applies to:** Python services with background processing, event-driven workflows, or distributed tasks.
 **Stack:** Celery (heavy) / ARQ (lightweight) / asyncio native.
 
-## 1. Task queue (Celery)
+## 1. TASK QUEUE (CELERY)
 
 ### Setup
 
@@ -24,7 +24,7 @@ celery_app.config_from_object({
 })
 ```
 
-### Task definition
+### Task Definition
 
 ```python
 # app/workers/tasks.py
@@ -45,9 +45,9 @@ def send_welcome_email(self, user_id: int) -> None:
         raise self.retry(exc=exc)
 ```
 
-## 2. Retry strategies
+## 2. RETRY STRATEGIES
 
-### Retry rules
+### Retry Rules
 
 | Rule | Rationale |
 |------|-----------|
@@ -57,16 +57,16 @@ def send_welcome_email(self, user_id: int) -> None:
 | Log every retry with attempt number | Observability |
 | Set `task_time_limit` and `task_soft_time_limit` | Kill stuck tasks |
 
-## 3. Idempotency
+## 3. IDEMPOTENCY
 
 Every async task MUST be idempotent — safe to execute multiple times with the same input.
 
-### Idempotency patterns
+### Idempotency Patterns
 
 - **Idempotency key:** Store task ID + result; return cached result on replay.
 - **Database constraints:** Use unique constraints to prevent duplicate inserts.
 
-## 4. Dead letter queue (DLQ)
+## 4. DEAD LETTER QUEUE (DLQ)
 
 Tasks that exhaust retries must not be silently dropped.
 
@@ -84,9 +84,9 @@ def risky_task(self, data: dict) -> None:
         raise self.retry(exc=exc, countdown=2 ** self.request.retries)
 ```
 
-## 5. Event-driven architecture
+## 5. EVENT-DRIVEN ARCHITECTURE
 
-### Domain events
+### Domain Events
 
 ```python
 # app/events/base.py
@@ -114,7 +114,7 @@ class OrderCompleted(DomainEvent):
     total: str = "0"  # Decimal as string for serialization
 ```
 
-### Event bus (simple in-process)
+### Event Bus (Simple In-Process)
 
 ```python
 # app/events/bus.py
@@ -135,7 +135,7 @@ async def publish(event: DomainEvent) -> None:
         await handler(event)
 ```
 
-## 6. Async task patterns (ARQ — lightweight alternative)
+## 6. ASYNC TASK PATTERNS (ARQ — Lightweight Alternative)
 
 ```python
 # app/workers/arq_tasks.py
@@ -154,7 +154,7 @@ class WorkerSettings:
     job_timeout = 300
 ```
 
-## 7. Rules
+## 7. RULES
 
 | Rule | Rationale |
 |------|-----------|

@@ -1,9 +1,9 @@
-# Software design philosophy [HIGH]
+# Software Design Philosophy [HIGH]
 
 ## Description
 Core principles that guide good software design. These principles help avoid over-engineering, reduce maintenance burden, and keep code understandable.
 
-## DRY - don't repeat yourself
+## DRY - Don't Repeat Yourself
 
 Avoid duplicating knowledge or logic. When the same concept exists in multiple places, changes require updating all instances.
 
@@ -34,7 +34,7 @@ def update_email(user: User, email: str) -> None:
 
 **Note:** DRY applies to knowledge, not just code. Two similar-looking snippets may represent different concepts and shouldn't be merged.
 
-## YAGNI - you aren't gonna need it
+## YAGNI - You Aren't Gonna Need It
 
 Don't build features until they're actually needed. Speculative functionality adds complexity, maintenance burden, and often turns out unnecessary.
 
@@ -59,7 +59,7 @@ class DataProcessor:
 
 **Note:** This doesn't mean ignore architecture—it means don't implement features before requirements exist.
 
-## KISS - keep it simple, stupid
+## KISS - Keep It Simple, Stupid
 
 Prefer simple solutions over clever ones. Simple code is easier to read, debug, and modify.
 
@@ -91,7 +91,7 @@ result = reverser.reverse("hello")
 result = "hello"[::-1]
 ```
 
-## How they work together
+## How They Work Together
 
 | Situation | Principle |
 |-----------|-----------|

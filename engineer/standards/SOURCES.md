@@ -2,9 +2,9 @@
 # Standards sources
 
 Rule instructions, examples, notes, references and severity labels are preserved.
-Editorial cleanup normalizes headings and spacing and groups related framework
-sections without shortening their content. Larger source documents remain
-together; specialist examples remain separate. No replacement standards or
+Editorial cleanup repairs heading levels and spacing and groups related framework
+sections while preserving original heading capitalization and content. Larger
+source documents remain together; specialist examples remain separate. No replacement standards or
 corrected examples have been invented.
 
 | Source | Pinned revision | Retained material |
@@ -52,7 +52,7 @@ verbatim ranges in the edited destination.
   `editorial_changes` records heading replacements/removals, new grouping
   headings, intact section moves, horizontal-rule removal and blank-line cleanup.
 - Style subsections 12.11–12.15 now belong under section 12, with idiom children
-  one level deeper. Flask error sections share an Error handling parent; FastAPI
+  one level deeper. Flask error sections share an Error Handling parent; FastAPI
   database-session and dependency-annotation sections share Dependencies.
 - Five pre-existing user edits remove decorative comment markers in the style
   examples. Their exact before/after lines and input hash are recorded as
@@ -68,8 +68,9 @@ verbatim ranges in the edited destination.
 
 Substantive prose, lists and tables keep their order within every retained
 section. Only the redundant second style title is removed; its authority and
-applicability preamble remains under the main title. Heading-only wording and
-case changes preserve identifiers, attribution and priority labels. Separators
+applicability preamble remains under the main title. Retained heading text keeps
+its original capitalization, identifiers, attribution and priority labels;
+recorded boilerplate removal does not impose a new casing convention. Separators
 and repeated blank lines outside examples carry no rule content and are removed.
 Read the indexes and rules for task work; this manifest is for source maintenance.
 

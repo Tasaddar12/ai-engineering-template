@@ -1,9 +1,9 @@
-# Use dataclass for data containers [MEDIUM]
+# Use Dataclass for Data Containers [MEDIUM]
 
 ## Description
 For classes that primarily hold data, `@dataclass` automatically generates `__init__`, `__repr__`, `__eq__`, and other methods. This reduces boilerplate, prevents bugs, and makes intent clear.
 
-## Bad example
+## Bad Example
 ```python
 class User:
     def __init__(self, name: str, email: str, age: int) -> None:
@@ -23,7 +23,7 @@ class User:
         return hash((self.name, self.email, self.age))
 ```
 
-## Good example
+## Good Example
 ```python
 from dataclasses import dataclass, field
 

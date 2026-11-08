@@ -1,9 +1,9 @@
-# Dependency management
+# Dependency Management
 
 **Applies to:** All Python projects.
 **Tools:** pip, uv, pip-audit, Dependabot/Renovate.
 
-## 1. Pinning strategy
+## 1. PINNING STRATEGY
 
 ### pyproject.toml — pin to minor version
 
@@ -33,7 +33,7 @@ dev = [
 | Dev/test tools | Exact (`==X.Y.Z`) | Reproducible CI across all machines |
 | Libraries you publish | Loose (`>=X.Y`) | Don't constrain consumers |
 
-### Lock file
+### Lock File
 
 Always commit a lock file for applications:
 - `uv.lock` (if using uv)
@@ -47,9 +47,9 @@ uv pip compile pyproject.toml -o requirements.lock
 uv pip sync requirements.lock
 ```
 
-## 2. Vulnerability scanning
+## 2. VULNERABILITY SCANNING
 
-### Automated scanning
+### Automated Scanning
 
 ```yaml
 # .github/workflows/security.yml
@@ -88,7 +88,7 @@ jobs:
 | Medium (CVSS 4.0–6.9) | Schedule in next sprint | < 2 weeks |
 | Low (CVSS < 4.0) | Bundle with next regular update | < 1 month |
 
-## 3. Update cadence
+## 3. UPDATE CADENCE
 
 | Activity | Frequency |
 |----------|-----------|
@@ -98,7 +98,7 @@ jobs:
 | Full dependency audit | Monthly |
 | Lock file refresh | Weekly (automated via Renovate/Dependabot) |
 
-### Renovate configuration
+### Renovate Configuration
 
 ```json
 {
@@ -124,7 +124,7 @@ jobs:
 }
 ```
 
-## 4. Private registry
+## 4. PRIVATE REGISTRY
 
 For internal packages:
 
@@ -147,7 +147,7 @@ UV_EXTRA_INDEX_URL=https://${PYPI_TOKEN}@pypi.internal.company.com/simple
 - Internal packages follow the same versioning (semver) as external.
 - Pin internal packages to exact versions in consuming services.
 
-## 5. Rules summary
+## 5. RULES SUMMARY
 
 | Rule | Rationale |
 |------|-----------|

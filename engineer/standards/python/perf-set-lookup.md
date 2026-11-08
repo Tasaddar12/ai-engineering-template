@@ -1,9 +1,9 @@
-# Use set for fast lookups [CRITICAL]
+# Use Set for Fast Lookups [CRITICAL]
 
 ## Description
 The `in` operator on lists performs O(n) linear search, while sets use O(1) hash-based lookup. For repeated membership checks, converting to a set provides significant speedup even accounting for conversion cost.
 
-## Bad example
+## Bad Example
 ```python
 # Slow: repeated list search is O(n * m)
 allowed_users: list[str] = ["alice", "bob", "charlie", ...]  # large list
@@ -16,7 +16,7 @@ valid_ids: list[int] = [1, 2, 3, 4, 5, ...]  # large list
 result = [item for item in items if item.id in valid_ids]  # O(n * m)
 ```
 
-## Good example
+## Good Example
 ```python
 # Fast: set lookup is O(1)
 allowed_users: set[str] = {"alice", "bob", "charlie", ...}

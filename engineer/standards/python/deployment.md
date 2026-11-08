@@ -3,7 +3,7 @@
 **Applies to:** All Python projects deployed as containers or services.
 **Philosophy:** 12-factor app. Immutable artifacts. Infrastructure as code.
 
-## 1. Dockerfile (multi-stage)
+## 1. DOCKERFILE (Multi-Stage)
 
 ```dockerfile
 # syntax=docker/dockerfile:1
@@ -61,7 +61,7 @@ docs/
 .github/
 ```
 
-## 3. Health check endpoint
+## 3. HEALTH CHECK ENDPOINT
 
 ```python
 # app/api/v1/health.py
@@ -96,7 +96,7 @@ async def readiness_check() -> dict:
     return {"status": "ready", "checks": checks}
 ```
 
-## 4. Graceful shutdown
+## 4. GRACEFUL SHUTDOWN
 
 ```python
 # app/main.py
@@ -134,7 +134,7 @@ def handle_sigterm(signum, frame):
 signal.signal(signal.SIGTERM, handle_sigterm)
 ```
 
-## 5. 12-Factor compliance checklist
+## 5. 12-FACTOR COMPLIANCE CHECKLIST
 
 | Factor | Implementation |
 |--------|---------------|
@@ -151,7 +151,7 @@ signal.signal(signal.SIGTERM, handle_sigterm)
 | Logs | Emit to stdout as JSON; collected externally |
 | Admin processes | One-off tasks via `python -m app.scripts.X` |
 
-## 6. Environment configuration
+## 6. ENVIRONMENT CONFIGURATION
 
 ```yaml
 # docker-compose.yml (local development)
@@ -182,7 +182,7 @@ services:
     image: redis:7-alpine
 ```
 
-## 7. Rules
+## 7. RULES
 
 - Never install dev dependencies in production image.
 - Always run as non-root user.

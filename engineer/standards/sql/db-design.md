@@ -1,12 +1,12 @@
-# Database design
+# Database Design
 
 **Applies to:** All Python projects using a relational database.
 **ORMs covered:** SQLAlchemy 2.x (async), Django ORM.
 **Migration tools:** Alembic (SQLAlchemy), Django migrations.
 
-## 1. Model foundation
+## 1. MODEL FOUNDATION
 
-### 1.1 Abstract base mixins — always use, never duplicate
+### 1.1 Abstract Base Mixins — always use, never duplicate
 
 ```python
 # app/models/base.py
@@ -91,7 +91,7 @@ class SoftDeleteMixin:
         return self.deleted_at is not None
 ```
 
-### 1.2 Model definition standards
+### 1.2 Model Definition Standards
 
 ```python
 # app/models/user.py
@@ -159,7 +159,7 @@ class User(Base, TimestampMixin, UUIDPublicIdMixin):
         return f"User(id={self.id!r}, email={self.email!r}, role={self.role!r})"
 ```
 
-## 2. Naming conventions
+## 2. NAMING CONVENTIONS
 
 | Element | Convention | Example |
 |---|---|---|
@@ -175,7 +175,7 @@ class User(Base, TimestampMixin, UUIDPublicIdMixin):
 | Foreign key constraint | `fk_{table}_{col}_{ref_table}` | `fk_orders_user_id_users` |
 | Check constraint | `ck_{table}_{rule}` | `ck_orders_amount_positive` |
 
-## 3. Relationships
+## 3. RELATIONSHIPS
 
 ### 3.1 Always specify cascade and lazy loading explicitly
 
@@ -229,7 +229,7 @@ class OrderItem(Base, TimestampMixin):
     # Storing price at purchase time is important — product prices change
 ```
 
-## 4. Indexing strategy
+## 4. INDEXING STRATEGY
 
 ### 4.3 Advanced indexing
 
@@ -247,7 +247,7 @@ from sqlalchemy.dialects.postgresql import TSVECTOR
 Index("ix_products_search", "search_vector", postgresql_using="gin")
 ```
 
-## 5. Migration discipline (Alembic)
+## 5. MIGRATION DISCIPLINE (ALEMBIC)
 
 ### 5.1 Migration commit message format
 
@@ -315,7 +315,7 @@ op.drop_column("users", "old_column")
 - Migrations are part of every PR that changes a model — no model changes without migrations
 ```
 
-## 6. Query patterns
+## 6. QUERY PATTERNS
 
 ### 6.1 Avoid N+1 queries — always
 
@@ -345,7 +345,7 @@ users = await session.execute(
 )
 ```
 
-## 7. Decimal handling for monetary values
+## 7. DECIMAL HANDLING FOR MONETARY VALUES
 
 ```python
 # NEVER use float for money — IEEE 754 float arithmetic loses precision

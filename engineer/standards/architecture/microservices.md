@@ -1,10 +1,10 @@
-# Microservices patterns
+# Microservices Patterns
 
 **Applies to:** Teams running 2+ independently deployed Python services.
 
-## 1. Service boundary rules
+## 1. SERVICE BOUNDARY RULES
 
-### When to split
+### When to Split
 
 | Split when | Don't split when |
 |-----------|-----------------|
@@ -13,7 +13,7 @@
 | Different team ownership | Communication overhead exceeds benefit |
 | Fault isolation required (payment must not crash catalog) | You're splitting by technical layer (API service, DB service) |
 
-### Bounded context heuristic
+### Bounded Context Heuristic
 
 A service owns ONE bounded context from Domain-Driven Design:
 - **Order Service** — order lifecycle, cart, checkout
@@ -23,7 +23,7 @@ A service owns ONE bounded context from Domain-Driven Design:
 
 **Anti-pattern:** A "shared" service that every other service depends on. That's a monolith with extra network hops.
 
-## 2. Inter-service communication
+## 2. INTER-SERVICE COMMUNICATION
 
 ### Synchronous (HTTP/gRPC)
 
@@ -61,7 +61,7 @@ class UserClient:
 | Simple request-reply | Fan-out to multiple consumers |
 | Low latency required | Eventual consistency acceptable |
 
-### Asynchronous (events)
+### Asynchronous (Events)
 
 ```python
 # Order Service publishes event
@@ -81,22 +81,22 @@ async def send_order_confirmation(event: dict) -> None:
     )
 ```
 
-## 3. API contracts
+## 3. API CONTRACTS
 
-### Contract-first design
+### Contract-First Design
 
 Define the API contract BEFORE implementation:
 
-### Versioning between services
+### Versioning Between Services
 
 - Internal APIs use header versioning: `Accept: application/vnd.myapp.v2+json`
 - Breaking changes require a new version + migration period.
 - Consumer services declare which version they depend on.
 - Provider maintains N and N-1 versions simultaneously.
 
-## 4. Shared libraries
+## 4. SHARED LIBRARIES
 
-### What to share
+### What to Share
 
 | Share | Don't share |
 |-------|-------------|
@@ -126,7 +126,7 @@ packages/
 
 **Rule:** Shared libraries must be versioned and published to internal registry. Never use git submodules or path dependencies in production.
 
-## 6. Data ownership rules
+## 6. DATA OWNERSHIP RULES
 
 | Rule | Rationale |
 |------|-----------|

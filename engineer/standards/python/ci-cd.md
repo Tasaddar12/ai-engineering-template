@@ -3,7 +3,7 @@
 **Applies to:** All Python projects using GitHub Actions (adapt for GitLab CI / Azure Pipelines).
 **Pipeline philosophy:** Fail fast, fail cheap. Lint before test, test before build, build before deploy.
 
-## 1. Pipeline stages
+## 1. PIPELINE STAGES
 
 ```
 lint → type-check → test → build → deploy
@@ -11,7 +11,7 @@ lint → type-check → test → build → deploy
 
 Each stage gates the next. If lint fails, nothing else runs.
 
-## 2. GitHub Actions template
+## 2. GITHUB ACTIONS TEMPLATE
 
 ```yaml
 # .github/workflows/ci.yml
@@ -109,7 +109,7 @@ jobs:
           cache-to: type=gha,mode=max
 ```
 
-## 3. Rules
+## 3. RULES
 
 | Rule | Rationale |
 |------|-----------|
@@ -120,7 +120,7 @@ jobs:
 | Coverage gate at 80% minimum | Enforced via `--cov-fail-under` |
 | Build Docker image only on main | PRs validate; main deploys |
 
-## 4. PR checks (required status checks)
+## 4. PR CHECKS (Required Status Checks)
 
 Configure in repo settings → Branch protection:
 

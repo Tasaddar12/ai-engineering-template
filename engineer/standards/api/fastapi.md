@@ -13,7 +13,7 @@
 | Task Queue | Celery + Redis (or ARQ for lighter workloads) |
 | Settings | pydantic-settings |
 
-## Project structure (FastAPI-specific additions)
+## Project Structure (FastAPI-specific additions)
 
 ```
 app/
@@ -38,7 +38,7 @@ app/
 └── workers/                  ← Background task definitions
 ```
 
-## App factory pattern
+## App Factory Pattern
 
 ```python
 # app/main.py
@@ -68,7 +68,7 @@ def create_app() -> FastAPI:
 app = create_app()
 ```
 
-## Router + endpoint pattern
+## Router + Endpoint Pattern
 
 ```python
 # app/api/v1/users.py
@@ -100,7 +100,7 @@ async def create_user(
     return await service.create_user(data)
 ```
 
-## Pydantic schemas
+## Pydantic Schemas
 
 ```python
 # app/schemas/user.py
@@ -130,7 +130,7 @@ class UserListResponse(BaseModel):
 
 ## Dependencies
 
-### Database session
+### Database Session
 
 ```python
 # app/core/database.py
@@ -151,7 +151,7 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
             raise
 ```
 
-### Annotated dependencies (Python 3.9+)
+### ANNOTATED DEPENDENCIES (Python 3.9+)
 
 Define reusable dependency annotations at module level for cleaner route signatures:
 
@@ -175,7 +175,7 @@ async def list_orders(
     ...
 ```
 
-## Background tasks
+## Background Tasks
 
 For CPU-light tasks: use FastAPI `BackgroundTasks`.
 For heavy/reliable tasks: use **Celery**.
@@ -189,7 +189,7 @@ async def create_user(data: UserCreateRequest, background_tasks: BackgroundTasks
     return user
 ```
 
-## Health check endpoint
+## Health Check Endpoint
 
 Every service must expose:
 
@@ -200,7 +200,7 @@ async def health_check(session: AsyncSession = Depends(get_db)) -> dict:
     return {"status": "ok", "version": settings.app_version}
 ```
 
-## Lifespan context manager (replaces deprecated @app.on_event)
+## LIFESPAN CONTEXT MANAGER (replaces deprecated @app.on_event)
 
 Always use the `lifespan` context manager:
 
@@ -224,7 +224,7 @@ async def lifespan(app: FastAPI):
 
 ```
 
-## RORO in FastAPI routes
+## RORO IN FASTAPI ROUTES
 
 All routes receive a Pydantic request model (or query params for GETs) and return a Pydantic response model.
 
