@@ -18,10 +18,13 @@ for persistence and architecture for service boundaries or rollout. Select only
 the concerns actually involved. Unrelated domains are not required reading.
 
 Indexes assign stable descriptive routing IDs to retained documents or sections.
-The index tables are the only routing source: `engineer_run query standards-read`
-resolves IDs to exact sections at read time, and plans pin them per task in
-`<standards>`. Keep each row's first `§` the main section and write required
-companions as "include §N". The rule documents retain instructions,
+`engineer/standards/routing.json` is the routing source of truth:
+`engineer_run query standards-read` resolves IDs from it to exact sections at read
+time, and plans pin them per task in `<standards>`. The index tables are generated
+from it; edit the JSON, then run `python -I engineer/bin/lib/gen_standards_routing.py --write`.
+`--check` fails on stale tables or on menu text that disagrees with an entry's
+`section`, `whole` or `include §N` fields. Rename an ID by adding the old name to
+`aliases` so pinned plans keep resolving. The rule documents retain instructions,
 examples and original heading capitalization; levels, grouping and spacing are
 edited for navigation.
 Attribution, source selections and editorial changes are recorded in

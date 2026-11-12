@@ -77,11 +77,13 @@ Plan and evidence gates include `verify.plan-structure`, `plan.task-structure`,
 `planning.integrity` fails on malformed record frontmatter;
 `planning.validate` reports the same findings without blocking.
 
-`standards-read` resolves routing IDs from the domain index tables in
-`engineer/standards/*/index.md`, the only routing source, to exact sections. It
-adds the document preamble, enclosing ancestor introductions and required
-companions: a row's `include §N` and an index's ``Every `style.*` row includes``
-line. Overlapping ranges merge per document. `id@§N` or `id@Heading` selects
+`standards-read` resolves routing IDs from `engineer/standards/routing.json`
+(including `aliases` for renamed IDs) to exact sections. It adds the document
+preamble, enclosing ancestor introductions and required companions: an entry's
+`includes` and its domain's `prefix_includes`. The index tables in
+`engineer/standards/*/index.md` are generated from the JSON by
+`python -I engineer/bin/lib/gen_standards_routing.py --write`; `--check` fails
+when a table is stale. Overlapping ranges merge per document. `id@§N` or `id@Heading` selects
 another section of the same document. `--plan` collects IDs from task
 `<standards>` fields, narrowed by `--task N`. `--raw` prints the text; JSON
 returns `ids`, `chars`, `documents` and `text`. Unknown IDs fail with

@@ -1,53 +1,143 @@
 """Resolve standards routing IDs to the exact sections of the curated standards.
 
-The domain indexes under ``engineer/standards/*/index.md`` are the only routing
-source. Each table row maps an ID suffix to a document and, unless the document
-is marked **whole**, a main section selector (``§N`` or heading text). Offsets
-are computed at read time; nothing about line positions is stored.
+``engineer/standards/routing.json`` is the routing source of truth; the index
+tables are generated from it by ``gen_standards_routing``. Each entry maps an ID
+to a document and, unless the document is read **whole**, a main section
+selector (``§N`` number or heading text). Offsets are computed at read time;
+nothing about line positions is stored.
 """
+import json
 import re
+from pathlib import Path
 from .core import Failure, read
 from .markdown_sectionizer import tokenize_headings
 from . import models
 
-ROW = re.compile(r"^\| `([\w.-]+)` — ([^|]+?) \| (.+?) \|\s*$")
-PATH = re.compile(r"`(engineer/standards/[^`]+\.md)`")
+ROUTING = "engineer/standards/routing.json"
+# Consistency between an entry's rendered menu text and its structured fields.
 MAIN = re.compile(r"\s*§(.+?)(?=;|\s+or\s|$)")
 NUMBER = re.compile(r"\d+(?:\.\d+)*")
 INCLUDE = re.compile(r"\binclude [^§;|]*?§(\d+(?:\.\d+)*)")
-EVERY = re.compile(r"Every `([\w.-]+)\.\*` row includes `(engineer/standards/[^`]+\.md)` §([^.\n]+)\.")
+ID = re.compile(r"[a-z]+(?:\.[a-z0-9-]+)+")
+ENTRY_KEYS = {"id", "concern", "path", "section", "whole", "includes", "menu"}
 
 
 def _base():
     return models.NAMESPACE
 
 
+def load_routing(root=None):
+    path = Path(root or _base())/ROUTING
+    if not path.is_file():
+        raise Failure("standards-routing-missing", f"{ROUTING} does not exist", 2)
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except ValueError as exc:
+        raise Failure("standards-routing-invalid", f"{ROUTING}: {exc}", 2)
+
+
+def _menu_section(menu):
+    """The main selector a rendered menu shows: a section number, or heading text up to ';' / ' or '."""
+    main = MAIN.match(menu)
+    if not main:
+        return None
+    text = main.group(1).strip()
+    number = NUMBER.match(text)
+    return number.group(0) if number else text
+
+
+def validate_routing(data, root=None):
+    """Structural findings for routing.json: schema, IDs, paths and menu/field agreement."""
+    base, findings, seen = Path(root or _base()), [], set()
+    if not isinstance(data, dict) or data.get("schema") != 1:
+        return ["schema must be 1"]
+    if not isinstance(data.get("domains"), list) or not isinstance(data.get("aliases", {}), dict):
+        return ["domains must be a list and aliases an object"]
+    names = [domain.get("domain") if isinstance(domain, dict) else None for domain in data["domains"]]
+    if names != sorted(n for n in names if isinstance(n, str)) or len(set(names)) != len(names):
+        findings.append("domains must be unique and sorted by name")
+    for domain in data["domains"]:
+        if not isinstance(domain, dict) or not {"domain", "index", "groups"} <= set(domain) or not isinstance(domain["groups"], list):
+            findings.append("each domain needs domain, index and a groups list")
+            continue
+        name, regions, suffixes = domain["domain"], set(), []
+        for group in domain["groups"]:
+            if not isinstance(group, dict) or set(group) != {"region", "entries"} or not isinstance(group["entries"], list):
+                findings.append(f"{name}: each group needs exactly region and an entries list")
+                continue
+            if group["region"] in regions:
+                findings.append(f"{name}: duplicate region {group['region']}")
+            regions.add(group["region"])
+            suffixes += [e.get("id", "")[len(name) + 1:] for e in group["entries"] if isinstance(e, dict)]
+        for prefix in domain.get("prefix_includes", []):
+            if not isinstance(prefix, dict) or set(prefix) != {"prefix", "path", "section"}:
+                findings.append(f"{name}: each prefix include needs exactly prefix, path and section")
+                continue
+            if not (base/prefix["path"]).is_file():
+                findings.append(f"{name}: prefix include {prefix['path']} does not exist")
+            if not any(s.startswith(prefix["prefix"] + ".") for s in suffixes):
+                findings.append(f"{name}: prefix include {prefix['prefix']}.* matches no entry")
+        for group in domain["groups"]:
+            if not isinstance(group, dict) or not isinstance(group.get("entries"), list):
+                continue
+            for entry in group["entries"]:
+                rid = entry.get("id", "?") if isinstance(entry, dict) else "?"
+                if not isinstance(entry, dict) or set(entry) != ENTRY_KEYS:
+                    findings.append(f"{rid}: keys must be {sorted(ENTRY_KEYS)}")
+                    continue
+                if "|" in entry["concern"] + entry["menu"]:
+                    findings.append(f"{rid}: concern and menu must not contain '|'")
+                if not ID.fullmatch(rid) or not rid.startswith(name + "."):
+                    findings.append(f"{rid}: ID must start with '{name}.' and use lowercase dotted words")
+                if rid in seen:
+                    findings.append(f"{rid}: duplicate ID")
+                seen.add(rid)
+                if not entry["path"].startswith("engineer/standards/") or not (base/entry["path"]).is_file():
+                    findings.append(f"{rid}: {entry['path']} does not exist")
+                menu = entry["menu"]
+                if entry["whole"] == (entry["section"] is not None):
+                    findings.append(f"{rid}: set exactly one of section or whole")
+                elif entry["whole"] and "**whole**" not in menu:
+                    findings.append(f"{rid}: whole entry menu must say **whole**")
+                elif not entry["whole"] and _menu_section(menu) != entry["section"]:
+                    findings.append(f"{rid}: menu must start with §{entry['section']}")
+                if INCLUDE.findall(menu) != entry["includes"]:
+                    findings.append(f"{rid}: includes must match the menu's 'include §N' text")
+    for alias, target in data.get("aliases", {}).items():
+        if alias in seen:
+            findings.append(f"alias {alias} shadows an ID")
+        if target not in seen:
+            findings.append(f"alias {alias} targets unknown ID {target}")
+    return findings
+
+
+def checked_routing():
+    """Load routing.json and fail closed with a structured error when it is malformed."""
+    data = load_routing()
+    findings = validate_routing(data)
+    if findings:
+        raise Failure("standards-routing-invalid", "; ".join(findings[:5]), 2, findings=findings)
+    return data
+
+
 def catalog():
     """Every routing ID with its concern, document, main selector and required companions."""
     entries = {}
-    for index in sorted((_base()/"engineer/standards").glob("*/index.md")):
-        domain, text = index.parent.name, read(index)
-        every = [(prefix, path, selector.strip()) for prefix, path, selector in EVERY.findall(text)]
-        for line in text.splitlines():
-            row = ROW.match(line)
-            if not row:
-                continue
-            suffix, concern, cell = row.groups()
-            found = PATH.search(cell)
-            if not found:
-                raise Failure("standards-index-invalid", f"No standards path in {index.name} row {suffix}", 2)
-            rest = cell[found.end():]
-            main = MAIN.match(rest)
-            selector = None
-            if main:
-                number = NUMBER.match(main.group(1).strip())
-                selector = number.group(0) if number else main.group(1).strip()
-            includes = [(path, sel) for prefix, path, sel in every if suffix.startswith(prefix + ".")]
-            includes += [(found.group(1), sel) for sel in INCLUDE.findall(rest)]
-            entries[f"{domain}.{suffix}"] = {
-                "concern": concern.strip(), "path": found.group(1), "selector": selector,
-                "whole": "**whole**" in rest, "includes": includes}
+    for domain in checked_routing()["domains"]:
+        name = domain["domain"]
+        for group in domain["groups"]:
+            for entry in group["entries"]:
+                suffix = entry["id"][len(name) + 1:]
+                includes = [(p["path"], p["section"]) for p in domain.get("prefix_includes", [])
+                            if suffix.startswith(p["prefix"] + ".")]
+                includes += [(entry["path"], section) for section in entry["includes"]]
+                entries[entry["id"]] = {"concern": entry["concern"], "path": entry["path"],
+                                        "selector": entry["section"], "whole": entry["whole"], "includes": includes}
     return entries
+
+
+def aliases():
+    return checked_routing().get("aliases", {})
 
 
 def _norm(text):
@@ -118,10 +208,10 @@ def split_ids(values):
 
 def resolve(ids):
     """Resolve IDs (optionally ``id@selector``) into per-document text blocks in request order."""
-    entries, files = catalog(), {}
+    entries, renamed, files = catalog(), aliases(), {}
     for requested in ids:
         rid, _, alternative = requested.partition("@")
-        entry = entries.get(rid)
+        entry = entries.get(renamed.get(rid, rid))
         if entry is None:
             raise Failure("unknown-standard", f"Unknown standards routing ID: {rid}", 2, id=rid)
         selector = alternative.lstrip("§").strip() or entry["selector"]
@@ -193,8 +283,10 @@ def list_command(args):
 
 
 def validate_catalog():
-    """Resolve every row's main section and companions; return findings."""
-    findings = []
+    """Structural findings plus every row's main section and companions resolving to real headings."""
+    findings = validate_routing(load_routing())
+    if findings:
+        return findings
     for rid, entry in catalog().items():
         if entry["selector"] is None and not entry["whole"]:
             findings.append(f"{rid}: neither a §selector nor **whole**")

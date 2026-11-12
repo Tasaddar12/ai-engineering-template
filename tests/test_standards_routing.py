@@ -80,6 +80,8 @@ class StandardsRead(RuntimeCase):
         self.assertEqual(len(standards.catalog()), everything)
         self.assertTrue(sql["standards"] and all(row["id"].startswith("sql.") for row in sql["standards"]))
         self.cli("standards-list", "cobol", status=2, raw=True)
+        domains = [row["id"].split(".", 1)[0] for row in self.cli("standards-list")["standards"]]
+        self.assertEqual(sorted(set(domains)), list(dict.fromkeys(domains)))
 
 
 class PinnedStandards(RuntimeCase):

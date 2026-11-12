@@ -1,0 +1,976 @@
+{
+  "schema": 1,
+  "aliases": {},
+  "domains": [
+    {
+      "domain": "api",
+      "index": "engineer/standards/api/index.md",
+      "prefix_includes": [],
+      "groups": [
+        {
+          "region": "routes",
+          "entries": [
+            {
+              "id": "api.rest.resources",
+              "concern": "resource and method contracts",
+              "path": "engineer/standards/api/design.md",
+              "section": "1",
+              "whole": false,
+              "includes": [],
+              "menu": " §1; methods §2 or status codes §3"
+            },
+            {
+              "id": "api.rest.payloads",
+              "concern": "request/success shapes",
+              "path": "engineer/standards/api/design.md",
+              "section": "4",
+              "whole": false,
+              "includes": [],
+              "menu": " §4; select request, single-item or list child"
+            },
+            {
+              "id": "api.rest.collections",
+              "concern": "list contracts",
+              "path": "engineer/standards/api/design.md",
+              "section": "5",
+              "whole": false,
+              "includes": [],
+              "menu": " §5; filtering/sorting/search §6"
+            },
+            {
+              "id": "api.rest.evolution",
+              "concern": "contract evolution",
+              "path": "engineer/standards/api/design.md",
+              "section": "7",
+              "whole": false,
+              "includes": [],
+              "menu": " §7 or documentation §8"
+            },
+            {
+              "id": "api.rest.fields",
+              "concern": "field representation",
+              "path": "engineer/standards/api/design.md",
+              "section": "9",
+              "whole": false,
+              "includes": [],
+              "menu": " §9 or sensitive fields §10"
+            },
+            {
+              "id": "api.auth.methods",
+              "concern": "authentication selection",
+              "path": "engineer/standards/api/authentication.md",
+              "section": "1",
+              "whole": false,
+              "includes": [],
+              "menu": " §1"
+            },
+            {
+              "id": "api.auth.jwt",
+              "concern": "token lifecycle",
+              "path": "engineer/standards/api/authentication.md",
+              "section": "2",
+              "whole": false,
+              "includes": [],
+              "menu": " §2; select structure, refresh or revocation"
+            },
+            {
+              "id": "api.auth.oauth",
+              "concern": "OAuth2 flows",
+              "path": "engineer/standards/api/authentication.md",
+              "section": "3",
+              "whole": false,
+              "includes": [],
+              "menu": " §3; select authorization-code or client-credentials child"
+            },
+            {
+              "id": "api.auth.permissions",
+              "concern": "authorization",
+              "path": "engineer/standards/api/authentication.md",
+              "section": "4",
+              "whole": false,
+              "includes": [],
+              "menu": " §4 RBAC or §5 ABAC"
+            },
+            {
+              "id": "api.auth.keys",
+              "concern": "API keys",
+              "path": "engineer/standards/api/authentication.md",
+              "section": "6",
+              "whole": false,
+              "includes": [],
+              "menu": " §6"
+            },
+            {
+              "id": "api.auth.services",
+              "concern": "service authentication",
+              "path": "engineer/standards/api/authentication.md",
+              "section": "7",
+              "whole": false,
+              "includes": [],
+              "menu": " §7"
+            },
+            {
+              "id": "api.flask.setup",
+              "concern": "Flask initialization",
+              "path": "engineer/standards/api/flask.md",
+              "section": "App Factory",
+              "whole": false,
+              "includes": [],
+              "menu": " §App Factory; Stack, Project Structure, Extensions or Configuration as needed"
+            },
+            {
+              "id": "api.flask.routes",
+              "concern": "Flask request handling",
+              "path": "engineer/standards/api/flask.md",
+              "section": "Blueprint + Route",
+              "whole": false,
+              "includes": [],
+              "menu": " §Blueprint + Route; MethodView, View Decorators or Request Lifecycle & Hook Ordering"
+            },
+            {
+              "id": "api.flask.errors",
+              "concern": "Flask error responses",
+              "path": "engineer/standards/api/flask.md",
+              "section": "Error Handling",
+              "whole": false,
+              "includes": [],
+              "menu": " §Error Handling; select Error Handlers or Custom API Error Classes"
+            },
+            {
+              "id": "api.flask.context",
+              "concern": "Flask resource lifetime",
+              "path": "engineer/standards/api/flask.md",
+              "section": "Application Context & `g`",
+              "whole": false,
+              "includes": [],
+              "menu": " §Application Context & `g`"
+            },
+            {
+              "id": "api.flask.security",
+              "concern": "headers and cookies",
+              "path": "engineer/standards/api/flask.md",
+              "section": "Security Headers & Cookie Settings",
+              "whole": false,
+              "includes": [],
+              "menu": " §Security Headers & Cookie Settings"
+            },
+            {
+              "id": "api.flask.jobs",
+              "concern": "workers and async views",
+              "path": "engineer/standards/api/flask.md",
+              "section": "Celery Integration",
+              "whole": false,
+              "includes": [],
+              "menu": " §Celery Integration or Async Views (Flask 2.0+)"
+            },
+            {
+              "id": "api.flask.testing",
+              "concern": "Flask tests",
+              "path": "engineer/standards/api/flask.md",
+              "section": "Flask Testing — Complete Patterns",
+              "whole": false,
+              "includes": [],
+              "menu": " §Flask Testing — Complete Patterns; select client/fixtures, session access, redirects/context, CLI or app-context child"
+            },
+            {
+              "id": "api.fastapi.setup",
+              "concern": "FastAPI initialization",
+              "path": "engineer/standards/api/fastapi.md",
+              "section": "App Factory Pattern",
+              "whole": false,
+              "includes": [],
+              "menu": " §App Factory Pattern; Stack or Project Structure as needed"
+            },
+            {
+              "id": "api.fastapi.routes",
+              "concern": "FastAPI contracts",
+              "path": "engineer/standards/api/fastapi.md",
+              "section": "Router + Endpoint Pattern",
+              "whole": false,
+              "includes": [],
+              "menu": " §Router + Endpoint Pattern; Pydantic Schemas or RORO IN FASTAPI ROUTES"
+            },
+            {
+              "id": "api.fastapi.dependencies",
+              "concern": "request dependencies",
+              "path": "engineer/standards/api/fastapi.md",
+              "section": "Dependencies",
+              "whole": false,
+              "includes": [],
+              "menu": " §Dependencies; select Database Session or ANNOTATED DEPENDENCIES (Python 3.9+)"
+            },
+            {
+              "id": "api.fastapi.lifecycle",
+              "concern": "FastAPI lifecycle",
+              "path": "engineer/standards/api/fastapi.md",
+              "section": "LIFESPAN CONTEXT MANAGER (replaces deprecated @app.on_event)",
+              "whole": false,
+              "includes": [],
+              "menu": " §LIFESPAN CONTEXT MANAGER (replaces deprecated @app.on_event); Health Check Endpoint or Background Tasks"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "domain": "architecture",
+      "index": "engineer/standards/architecture/index.md",
+      "prefix_includes": [],
+      "groups": [
+        {
+          "region": "routes",
+          "entries": [
+            {
+              "id": "architecture.services.boundaries",
+              "concern": "splitting services",
+              "path": "engineer/standards/architecture/microservices.md",
+              "section": "1",
+              "whole": false,
+              "includes": [],
+              "menu": " §1; When to Split or Bounded Context Heuristic"
+            },
+            {
+              "id": "architecture.services.communication",
+              "concern": "sync vs events",
+              "path": "engineer/standards/architecture/microservices.md",
+              "section": "2",
+              "whole": false,
+              "includes": [],
+              "menu": " §2; select transport and decision guidance"
+            },
+            {
+              "id": "architecture.services.contracts",
+              "concern": "inter-service contracts",
+              "path": "engineer/standards/architecture/microservices.md",
+              "section": "3",
+              "whole": false,
+              "includes": [],
+              "menu": " §3"
+            },
+            {
+              "id": "architecture.services.libraries",
+              "concern": "shared code ownership",
+              "path": "engineer/standards/architecture/microservices.md",
+              "section": "4",
+              "whole": false,
+              "includes": [],
+              "menu": " §4"
+            },
+            {
+              "id": "architecture.services.data",
+              "concern": "service data ownership",
+              "path": "engineer/standards/architecture/microservices.md",
+              "section": "6",
+              "whole": false,
+              "includes": [],
+              "menu": " §6"
+            },
+            {
+              "id": "architecture.flags.types",
+              "concern": "flag selection",
+              "path": "engineer/standards/architecture/feature-flags.md",
+              "section": "1",
+              "whole": false,
+              "includes": [],
+              "menu": " §1"
+            },
+            {
+              "id": "architecture.flags.implementation",
+              "concern": "evaluation and usage",
+              "path": "engineer/standards/architecture/feature-flags.md",
+              "section": "2",
+              "whole": false,
+              "includes": [],
+              "menu": " §2; select service, code or endpoint child"
+            },
+            {
+              "id": "architecture.flags.rollout",
+              "concern": "gradual rollout",
+              "path": "engineer/standards/architecture/feature-flags.md",
+              "section": "3",
+              "whole": false,
+              "includes": [],
+              "menu": " §3"
+            },
+            {
+              "id": "architecture.flags.lifecycle",
+              "concern": "expiry and cleanup",
+              "path": "engineer/standards/architecture/feature-flags.md",
+              "section": "4",
+              "whole": false,
+              "includes": [],
+              "menu": " §4"
+            },
+            {
+              "id": "architecture.flags.registry",
+              "concern": "flag tracking",
+              "path": "engineer/standards/architecture/feature-flags.md",
+              "section": "6",
+              "whole": false,
+              "includes": [],
+              "menu": " §6"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "domain": "python",
+      "index": "engineer/standards/python/index.md",
+      "prefix_includes": [
+        {
+          "prefix": "style",
+          "path": "engineer/standards/python/code-style.md",
+          "section": "PRIME DIRECTIVE"
+        }
+      ],
+      "groups": [
+        {
+          "region": "style-and-contracts",
+          "entries": [
+            {
+              "id": "python.style.layout",
+              "concern": "layout and whitespace",
+              "path": "engineer/standards/python/code-style.md",
+              "section": "2",
+              "whole": false,
+              "includes": [],
+              "menu": " §2; quotes §5, whitespace §6 or commas §7"
+            },
+            {
+              "id": "python.style.imports",
+              "concern": "import ordering and paths",
+              "path": "engineer/standards/python/code-style.md",
+              "section": "3",
+              "whole": false,
+              "includes": [],
+              "menu": " §3; module dunders §4"
+            },
+            {
+              "id": "python.style.comments",
+              "concern": "comments and TODOs",
+              "path": "engineer/standards/python/code-style.md",
+              "section": "8",
+              "whole": false,
+              "includes": [],
+              "menu": " §8"
+            },
+            {
+              "id": "python.style.docstrings",
+              "concern": "detailed formats",
+              "path": "engineer/standards/python/code-style.md",
+              "section": "9",
+              "whole": false,
+              "includes": [],
+              "menu": " §9; select docstring kind"
+            },
+            {
+              "id": "python.style.naming",
+              "concern": "naming and visibility",
+              "path": "engineer/standards/python/code-style.md",
+              "section": "10",
+              "whole": false,
+              "includes": [],
+              "menu": " §10"
+            },
+            {
+              "id": "python.style.annotations",
+              "concern": "version-sensitive typing",
+              "path": "engineer/standards/python/code-style.md",
+              "section": "11",
+              "whole": false,
+              "includes": [],
+              "menu": " §11; compatibility §11.1, version strategy §11.2, patterns §11.3 or Any §11.4"
+            },
+            {
+              "id": "python.style.expressions",
+              "concern": "language expressions",
+              "path": "engineer/standards/python/code-style.md",
+              "section": "12.1",
+              "whole": false,
+              "includes": [],
+              "menu": " §12.1; booleans §12.2, returns §12.3, strings §12.6, lambda §12.7, comparisons §12.8 or finally §12.9"
+            },
+            {
+              "id": "python.style.exceptions",
+              "concern": "exception syntax",
+              "path": "engineer/standards/python/code-style.md",
+              "section": "12.4",
+              "whole": false,
+              "includes": [],
+              "menu": " §12.4; context managers §12.5"
+            },
+            {
+              "id": "python.style.defaults",
+              "concern": "mutable defaults",
+              "path": "engineer/standards/python/code-style.md",
+              "section": "12.10",
+              "whole": false,
+              "includes": [],
+              "menu": " §12.10"
+            },
+            {
+              "id": "python.style.closures",
+              "concern": "loop-variable capture",
+              "path": "engineer/standards/python/code-style.md",
+              "section": "12.11",
+              "whole": false,
+              "includes": [],
+              "menu": " §12.11"
+            },
+            {
+              "id": "python.style.idioms",
+              "concern": "unpacking and collections",
+              "path": "engineer/standards/python/code-style.md",
+              "section": "12.12",
+              "whole": false,
+              "includes": [],
+              "menu": " §12.12; select named child"
+            },
+            {
+              "id": "python.style.arguments",
+              "concern": "argument design",
+              "path": "engineer/standards/python/code-style.md",
+              "section": "12.13",
+              "whole": false,
+              "includes": [],
+              "menu": " §12.13"
+            },
+            {
+              "id": "python.style.purity",
+              "concern": "side effects",
+              "path": "engineer/standards/python/code-style.md",
+              "section": "12.14",
+              "whole": false,
+              "includes": [],
+              "menu": " §12.14"
+            },
+            {
+              "id": "python.style.variable-types",
+              "concern": "stable variable meaning",
+              "path": "engineer/standards/python/code-style.md",
+              "section": "12.15",
+              "whole": false,
+              "includes": [],
+              "menu": " §12.15"
+            },
+            {
+              "id": "python.style.antipatterns",
+              "concern": "production pitfalls",
+              "path": "engineer/standards/python/code-style.md",
+              "section": "13.1",
+              "whole": false,
+              "includes": [],
+              "menu": " §13.1; broad catches §13.2, global state §13.3, type checks §13.4, formatting §13.5 or suppression §13.6"
+            },
+            {
+              "id": "python.style.tooling",
+              "concern": "tools and compatibility",
+              "path": "engineer/standards/python/code-style.md",
+              "section": "1",
+              "whole": false,
+              "includes": [],
+              "menu": " §1; version matrix §14, pyproject §15.1 or pre-commit §15.2"
+            },
+            {
+              "id": "python.contracts.types",
+              "concern": "public annotations",
+              "path": "engineer/standards/python/doc-type-hints.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**"
+            },
+            {
+              "id": "python.contracts.docstrings",
+              "concern": "public documentation",
+              "path": "engineer/standards/python/doc-docstring.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**"
+            }
+          ]
+        },
+        {
+          "region": "components-and-data",
+          "entries": [
+            {
+              "id": "python.structure.layout",
+              "concern": "package/application layout",
+              "path": "engineer/standards/python/folder-structure.md",
+              "section": "2",
+              "whole": false,
+              "includes": [],
+              "menu": " §2; choose archetype §3 web, §4 library, §5 ETL, §6 CLI or §7 ML"
+            },
+            {
+              "id": "python.structure.boundaries",
+              "concern": "module/layer ownership",
+              "path": "engineer/standards/python/folder-structure.md",
+              "section": "9",
+              "whole": false,
+              "includes": [
+                "1"
+              ],
+              "menu": " §9; naming §8 or module design §10; include core principle §1"
+            },
+            {
+              "id": "python.design.principles",
+              "concern": "DRY, YAGNI and KISS",
+              "path": "engineer/standards/python/design-philosophy.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**"
+            },
+            {
+              "id": "python.design.responsibility",
+              "concern": "cohesive components",
+              "path": "engineer/standards/python/design-single-responsibility.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**"
+            },
+            {
+              "id": "python.design.injection",
+              "concern": "explicit dependencies",
+              "path": "engineer/standards/python/design-dependency-injection.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**"
+            },
+            {
+              "id": "python.design.purity",
+              "concern": "transformations",
+              "path": "engineer/standards/python/design-pure-functions.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**"
+            },
+            {
+              "id": "python.design.guards",
+              "concern": "guard clauses",
+              "path": "engineer/standards/python/design-early-return.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**"
+            },
+            {
+              "id": "python.objects.composition",
+              "concern": "inheritance alternatives",
+              "path": "engineer/standards/python/oop-composition-over-inheritance.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**"
+            },
+            {
+              "id": "python.objects.interfaces",
+              "concern": "consumer interfaces",
+              "path": "engineer/standards/python/solid-isp.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**"
+            },
+            {
+              "id": "python.objects.substitution",
+              "concern": "substitutability",
+              "path": "engineer/standards/python/solid-lsp.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**"
+            },
+            {
+              "id": "python.objects.dataclasses",
+              "concern": "data containers",
+              "path": "engineer/standards/python/oop-dataclass.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**"
+            },
+            {
+              "id": "python.objects.properties",
+              "concern": "computed attributes",
+              "path": "engineer/standards/python/oop-property.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**"
+            },
+            {
+              "id": "python.validation.boundaries",
+              "concern": "external input",
+              "path": "engineer/standards/python/validation-pydantic.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**"
+            }
+          ]
+        },
+        {
+          "region": "errors-concurrency-and-performance",
+          "entries": [
+            {
+              "id": "python.errors.hierarchy",
+              "concern": "domain exceptions",
+              "path": "engineer/standards/python/error-handling.md",
+              "section": "1",
+              "whole": false,
+              "includes": [],
+              "menu": " §1"
+            },
+            {
+              "id": "python.errors.boundaries",
+              "concern": "catching and HTTP mapping",
+              "path": "engineer/standards/python/error-handling.md",
+              "section": "2",
+              "whole": false,
+              "includes": [],
+              "menu": " §2; response shape §7"
+            },
+            {
+              "id": "python.errors.chaining",
+              "concern": "preserve exception context",
+              "path": "engineer/standards/python/error-handling.md",
+              "section": "3.1",
+              "whole": false,
+              "includes": [],
+              "menu": " §3.1"
+            },
+            {
+              "id": "python.errors.catching",
+              "concern": "catch selection and scope",
+              "path": "engineer/standards/python/error-handling.md",
+              "section": "4.1",
+              "whole": false,
+              "includes": [],
+              "menu": " §4.1; minimal try §4.2 or OS errors §4.4"
+            },
+            {
+              "id": "python.errors.groups",
+              "concern": "concurrent failures, Python 3.11+",
+              "path": "engineer/standards/python/error-handling.md",
+              "section": "6",
+              "whole": false,
+              "includes": [],
+              "menu": " §6"
+            },
+            {
+              "id": "python.errors.observable",
+              "concern": "swallowed failures",
+              "path": "engineer/standards/python/error-no-silent-exceptions.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**; add `python.errors.hierarchy@§5` for logging integration"
+            },
+            {
+              "id": "python.async.resources",
+              "concern": "async cleanup",
+              "path": "engineer/standards/python/async-context-manager.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**"
+            },
+            {
+              "id": "python.async.gather",
+              "concern": "independent concurrent I/O",
+              "path": "engineer/standards/python/async-gather.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**"
+            },
+            {
+              "id": "python.async.tasks",
+              "concern": "task ownership and failures",
+              "path": "engineer/standards/python/async-create-task.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**"
+            },
+            {
+              "id": "python.async.limits",
+              "concern": "bounded concurrency",
+              "path": "engineer/standards/python/async-semaphore.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**"
+            },
+            {
+              "id": "python.jobs.delivery",
+              "concern": "queues and events",
+              "path": "engineer/standards/python/async-patterns.md",
+              "section": "1",
+              "whole": false,
+              "includes": [
+                "7"
+              ],
+              "menu": " §1; retries §2, idempotency §3, DLQ §4, events §5 or ARQ §6; include rules §7"
+            },
+            {
+              "id": "python.performance.services",
+              "concern": "service performance",
+              "path": "engineer/standards/python/performance.md",
+              "section": "1",
+              "whole": false,
+              "includes": [],
+              "menu": " §1; caching §2, N+1 §3 or monitoring §5"
+            },
+            {
+              "id": "python.performance.membership",
+              "concern": "repeated lookups",
+              "path": "engineer/standards/python/perf-set-lookup.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**"
+            },
+            {
+              "id": "python.performance.generators",
+              "concern": "large iterations",
+              "path": "engineer/standards/python/perf-generator-expression.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**"
+            },
+            {
+              "id": "python.performance.comprehensions",
+              "concern": "collections",
+              "path": "engineer/standards/python/perf-list-comprehension.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**"
+            },
+            {
+              "id": "python.performance.defaults",
+              "concern": "dictionary defaults",
+              "path": "engineer/standards/python/perf-dict-get.md",
+              "section": null,
+              "whole": true,
+              "includes": [],
+              "menu": ", **whole**"
+            }
+          ]
+        },
+        {
+          "region": "tests-and-operations",
+          "entries": [
+            {
+              "id": "python.testing.design",
+              "concern": "test scope and cases",
+              "path": "engineer/standards/python/testing.md",
+              "section": "0",
+              "whole": false,
+              "includes": [],
+              "menu": " §0; categories §2, naming/AAA §3 or required cases §6"
+            },
+            {
+              "id": "python.testing.fixtures",
+              "concern": "isolation and cleanup",
+              "path": "engineer/standards/python/testing.md",
+              "section": "4",
+              "whole": false,
+              "includes": [],
+              "menu": " §4; factories §5, mocking §7 or lifecycle §14"
+            },
+            {
+              "id": "python.testing.assertions",
+              "concern": "assertion selection",
+              "path": "engineer/standards/python/testing.md",
+              "section": "12",
+              "whole": false,
+              "includes": [],
+              "menu": " §12; select assertion family; Django §10"
+            },
+            {
+              "id": "python.testing.execution",
+              "concern": "tooling and variants",
+              "path": "engineer/standards/python/testing.md",
+              "section": "1",
+              "whole": false,
+              "includes": [],
+              "menu": " §1; coverage §8, parametrization §11, skips §13, subtests §15 or async §16"
+            },
+            {
+              "id": "python.logging.application",
+              "concern": "logging behavior",
+              "path": "engineer/standards/python/logging.md",
+              "section": "1",
+              "whole": false,
+              "includes": [],
+              "menu": " §1; configuration §2, logger §3, levels §4, fields §5, context §6, exceptions §7, sensitive data §8 or slow queries §9"
+            },
+            {
+              "id": "python.observability.services",
+              "concern": "tracing and metrics",
+              "path": "engineer/standards/python/observability.md",
+              "section": "1",
+              "whole": false,
+              "includes": [
+                "7"
+              ],
+              "menu": " §1; spans §3, metrics §4, correlation §5 or RED/USE §6; include rules §7"
+            },
+            {
+              "id": "python.security.boundaries",
+              "concern": "secrets and user data",
+              "path": "engineer/standards/python/security.md",
+              "section": "1",
+              "whole": false,
+              "includes": [],
+              "menu": " §1; authentication §2, validation §3, SQL parameters §4, rate limits §5, CORS §6, sanitization §7, headers §9 or review checklist §10"
+            },
+            {
+              "id": "python.dependencies.lifecycle",
+              "concern": "dependency changes",
+              "path": "engineer/standards/python/dependency-management.md",
+              "section": "1",
+              "whole": false,
+              "includes": [
+                "5"
+              ],
+              "menu": " §1; audits §2, updates §3 or registry §4; include rules §5"
+            },
+            {
+              "id": "python.ci.quality",
+              "concern": "pipeline quality gates",
+              "path": "engineer/standards/python/ci-cd.md",
+              "section": "1",
+              "whole": false,
+              "includes": [],
+              "menu": " §1; template §2, rules §3 or required checks §4"
+            },
+            {
+              "id": "python.deployment.services",
+              "concern": "service lifecycle",
+              "path": "engineer/standards/python/deployment.md",
+              "section": "1",
+              "whole": false,
+              "includes": [
+                "7"
+              ],
+              "menu": " §1; ignore file §2, health §3, shutdown §4, 12-factor §5 or configuration §6; include rules §7"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "domain": "sql",
+      "index": "engineer/standards/sql/index.md",
+      "prefix_includes": [],
+      "groups": [
+        {
+          "region": "routes",
+          "entries": [
+            {
+              "id": "sql.models.foundation",
+              "concern": "ORM model design",
+              "path": "engineer/standards/sql/db-design.md",
+              "section": "1",
+              "whole": false,
+              "includes": [],
+              "menu": " §1; naming §2 or relationships §3"
+            },
+            {
+              "id": "sql.models.indexes",
+              "concern": "partial/GIN indexes",
+              "path": "engineer/standards/sql/db-design.md",
+              "section": "4.3",
+              "whole": false,
+              "includes": [],
+              "menu": " §4.3"
+            },
+            {
+              "id": "sql.models.migrations",
+              "concern": "migration discipline",
+              "path": "engineer/standards/sql/db-design.md",
+              "section": "5",
+              "whole": false,
+              "includes": [],
+              "menu": " §5"
+            },
+            {
+              "id": "sql.queries.loading",
+              "concern": "relationship loading",
+              "path": "engineer/standards/sql/db-design.md",
+              "section": "6.1",
+              "whole": false,
+              "includes": [],
+              "menu": " §6.1"
+            },
+            {
+              "id": "sql.values.money",
+              "concern": "decimal values",
+              "path": "engineer/standards/sql/db-design.md",
+              "section": "7",
+              "whole": false,
+              "includes": [],
+              "menu": " §7"
+            },
+            {
+              "id": "sql.migrations.rollout",
+              "concern": "safe schema rollout",
+              "path": "engineer/standards/sql/data-migrations.md",
+              "section": "1",
+              "whole": false,
+              "includes": [],
+              "menu": " §1; expand/contract §2"
+            },
+            {
+              "id": "sql.migrations.backfills",
+              "concern": "committed batch backfills",
+              "path": "engineer/standards/sql/data-migrations.md",
+              "section": "3",
+              "whole": false,
+              "includes": [],
+              "menu": " §3"
+            },
+            {
+              "id": "sql.migrations.hazards",
+              "concern": "dangerous operations",
+              "path": "engineer/standards/sql/data-migrations.md",
+              "section": "4",
+              "whole": false,
+              "includes": [],
+              "menu": " §4"
+            },
+            {
+              "id": "sql.migrations.alembic",
+              "concern": "Alembic changes",
+              "path": "engineer/standards/sql/data-migrations.md",
+              "section": "5",
+              "whole": false,
+              "includes": [],
+              "menu": " §5"
+            },
+            {
+              "id": "sql.migrations.django",
+              "concern": "state/database separation",
+              "path": "engineer/standards/sql/data-migrations.md",
+              "section": "6",
+              "whole": false,
+              "includes": [],
+              "menu": " §6"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
