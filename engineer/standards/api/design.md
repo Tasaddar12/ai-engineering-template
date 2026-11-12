@@ -2,8 +2,6 @@
 
 > Consistent, predictable, versioned REST APIs.
 
----
-
 ## 1. URL Structure
 
 ```
@@ -18,8 +16,6 @@
 - **kebab-case** for multi-word resources: `/user-profiles`
 - Always version with `/v1/` — never unversioned URLs in production
 
----
-
 ## 2. HTTP Methods
 
 | Method | Use | Idempotent |
@@ -30,8 +26,6 @@
 | `DELETE` | Delete | ✅ |
 
 Never use `GET` to modify data. Never use `POST` for search (use query params instead).
-
----
 
 ## 3. HTTP Status Codes
 
@@ -48,8 +42,6 @@ Never use `GET` to modify data. Never use `POST` for search (use query params in
 | `422 Unprocessable Entity` | Schema/business validation failure |
 | `429 Too Many Requests` | Rate limit exceeded |
 | `500 Internal Server Error` | Unexpected server error |
-
----
 
 ## 4. Request / Response Shape
 
@@ -88,8 +80,6 @@ Never use `GET` to modify data. Never use `POST` for search (use query params in
 }
 ```
 
----
-
 ## 5. Pagination
 
 Always paginate list endpoints. Never return unbounded lists.
@@ -103,8 +93,6 @@ GET /api/v1/users?page=2&page_size=20
 | `page` | 1 | — |
 | `page_size` | 20 | 100 |
 
----
-
 ## 6. Filtering, Sorting, Search
 
 ```
@@ -115,16 +103,11 @@ GET /api/v1/users?search=jane                        ← full-text search
 
 Never expose raw DB column names in filters — use a whitelist of allowed filter fields.
 
----
-
 ## 7. Versioning
 
 - All breaking changes require a new version: `/api/v2/`.
 - Old versions deprecated with `Sunset` and `Deprecation` headers before removal.
 - Minimum 3 months deprecation window.
-
-
----
 
 ## 8. API Documentation
 
@@ -137,15 +120,11 @@ Every endpoint must have:
 
 Use **drf-spectacular** (DRF) or **FastAPI's built-in OpenAPI** generation.
 
----
-
 ## 9. Datetime Format
 
 Always ISO 8601 UTC: `"2026-01-15T10:30:00Z"`
 
 Never return Unix timestamps to API consumers.
-
----
 
 ## 10. Sensitive Fields — Never Return
 

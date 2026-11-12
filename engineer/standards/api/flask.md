@@ -1,3 +1,5 @@
+# Flask
+
 ## Stack
 
 | Layer | Library |
@@ -9,8 +11,6 @@
 | Auth | Flask-JWT-Extended |
 | Settings | python-decouple / pydantic-settings |
 | CLI | Click (built into Flask) |
-
----
 
 ## Project Structure
 
@@ -38,8 +38,6 @@ myapp/
 ├── .env.example
 └── pyproject.toml
 ```
-
----
 
 ## App Factory
 
@@ -70,8 +68,6 @@ def create_app(config_class: type = Config) -> Flask:
     return app
 ```
 
----
-
 ## Extensions (Singleton Pattern)
 
 ```python
@@ -84,8 +80,6 @@ db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
 ```
-
----
 
 ## Blueprint + Route
 
@@ -115,9 +109,9 @@ def get_user(user_id: int):
     return response_schema.dump(user), 200
 ```
 
----
+## Error Handling
 
-## Error Handlers
+### Error Handlers
 
 ```python
 # app/errors.py
@@ -145,177 +139,7 @@ def register_error_handlers(app: Flask) -> None:
         return jsonify({"error": {"code": "NOT_FOUND", "message": "Route not found."}}), 404
 ```
 
----
-
-## Configuration — Class Hierarchy Pattern
-
-Never put secrets or environment-specific values directly in code.
-Use a class hierarchy with environment-variable switching:
-
-
-**Rules:**
-- `from_prefixed_env()` reads all `FLASK_*` env vars and maps them into config. Use this in production.
-- Never access `app.config` at module import time — only inside factory functions or `before_request`.
-- Load config **before** calling `extension.init_app(app)` so extensions see config at startup.
-
----
-
-## Application Context & `g`
-
-The `g` object stores **request-scoped** data (resources created and torn down per request).
-It is **not** a cross-request cache — data on `g` dies when the request ends.
-
-```python
-# app/database.py
-from flask import g
-from app.extensions import db
-
-def get_db_connection():
-    """Return the same DB connection for the entire request, create if missing."""
-    if "db_conn" not in g:
-        g.db_conn = db.engine.connect()
-    return g.db_conn
-
-# Register teardown — always closes the connection even if view raised an exception
-def teardown_db(exception: BaseException | None) -> None:
-    """Close DB connection when app context pops (end of request or CLI command)."""
-    conn = g.pop("db_conn", None)
-    if conn is not None:
-        conn.close()
-
-# Register in factory:
-# app.teardown_appcontext(teardown_db)
-```
-
-**Pattern — get_X / teardown_X:**
-```python
-# Any resource that should be created once per request follows this pattern:
-# 1. get_X() — creates and caches on g if not already there
-# 2. teardown_X() — closes/releases; registered with @app.teardown_appcontext
-
-from werkzeug.local import LocalProxy
-db_conn = LocalProxy(get_db_connection)  # access db_conn like a normal object
-```
-
-**Rules:**
-- Use `g` for request-scoped resources (DB connections, current user cache, feature flags).
-- Use `session` for data that must persist across requests (user login state).
-- Use `current_app.extensions["my_ext"]` for app-level shared state.
-- `g` is reset fresh for every request and every CLI command invocation.
-
----
-
-## Request Lifecycle & Hook Ordering
-
-```
-before_request()           ← runs before every view; returning a value short-circuits the view
-  │
-  ▼
-view function()            ← the matched route handler
-  │
-  ▼
-after_request(response)    ← runs after every successful view; must return a response
-  │
-  ▼
-teardown_request(exc)      ← always runs, even after errors; receives exception or None
-  │
-  ▼ (context pops)
-teardown_appcontext(exc)   ← always runs when context is removed (end of request + CLI)
-```
-
-```python
-# app/blueprints/auth/routes.py
-from flask import g, request, jsonify, abort
-from app.services.auth_service import AuthService
-
-auth_bp = Blueprint("auth", __name__)
-
-@auth_bp.before_request
-def load_authenticated_user() -> None:
-    """Attach the current user to g before every request in this blueprint."""
-    token = request.headers.get("Authorization", "").removeprefix("Bearer ")
-    g.current_user = AuthService.get_user_from_token(token) if token else None
-
-@auth_bp.after_request
-def add_security_headers(response):
-    """Attach security headers to every response from this blueprint."""
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    return response
-```
-
-**Rules:**
-- `before_request` returning a value **skips** the view entirely — use for auth checks.
-- `after_request` **must always return** a response object — returning `None` is a bug.
-- `teardown_request` receives the exception (or `None`) — use for resource cleanup, NOT for error responses.
-- Blueprint hooks only run for requests that match that blueprint's routes.
-
----
-
-## Class-Based Views (MethodView) — REST APIs
-
-`MethodView` dispatches HTTP methods to same-named class methods. Best for resource APIs:
-
-```python
-# app/blueprints/users/views.py
-from flask import request, jsonify
-from flask.views import MethodView
-from flask_jwt_extended import jwt_required
-from app.services.user_service import UserService
-from app.schemas.user import UserCreateSchema, UserUpdateSchema, UserResponseSchema
-
-response_schema = UserResponseSchema()
-
-class UserItemView(MethodView):
-    """Single user resource — GET, PATCH, DELETE."""
-
-    decorators = [jwt_required()]  # applied to all methods automatically
-
-    def get(self, user_id: int):
-        """Return a single user."""
-        user = UserService.get_or_404(user_id)
-        return jsonify(response_schema.dump(user))
-
-    def patch(self, user_id: int):
-        """Partially update a user."""
-        schema = UserUpdateSchema()
-        data = schema.load(request.json or {})
-        user = UserService.update(user_id, **data)
-        return jsonify(response_schema.dump(user))
-
-    def delete(self, user_id: int):
-        """Delete a user."""
-        UserService.delete(user_id)
-        return "", 204
-
-
-class UserListView(MethodView):
-    """User collection — GET (list), POST (create)."""
-
-
-    @jwt_required()
-    def post(self):
-        """Create a new user."""
-        schema = UserCreateSchema()
-        data = schema.load(request.json or {})
-        user = UserService.create(**data)
-        return jsonify(response_schema.dump(user)), 201
-
-
-# Register in factory or blueprint:
-def register_user_views(app_or_bp) -> None:
-    user_item = UserItemView.as_view("user-item")
-    user_list = UserListView.as_view("user-list")
-    app_or_bp.add_url_rule("/users/<int:user_id>", view_func=user_item)
-    app_or_bp.add_url_rule("/users/", view_func=user_list)
-```
-
-**Rule:** Set `init_every_request = False` when the view stores state in `__init__` that is
-safe to reuse across requests (e.g. a schema instance). The default creates a new instance
-per request, which is safer but slower.
-
----
-
-## Custom API Error Classes
+### Custom API Error Classes
 
 ```python
 # app/errors.py
@@ -388,7 +212,164 @@ def register_error_handlers(app: Flask) -> None:
 errors from URLs that don't match any blueprint route are never dispatched to a blueprint-level
 error handler. Always register `404` and `405` handlers at the **application level**.
 
----
+## Configuration — Class Hierarchy Pattern
+
+Never put secrets or environment-specific values directly in code.
+Use a class hierarchy with environment-variable switching:
+
+**Rules:**
+- `from_prefixed_env()` reads all `FLASK_*` env vars and maps them into config. Use this in production.
+- Never access `app.config` at module import time — only inside factory functions or `before_request`.
+- Load config **before** calling `extension.init_app(app)` so extensions see config at startup.
+
+## Application Context & `g`
+
+The `g` object stores **request-scoped** data (resources created and torn down per request).
+It is **not** a cross-request cache — data on `g` dies when the request ends.
+
+```python
+# app/database.py
+from flask import g
+from app.extensions import db
+
+def get_db_connection():
+    """Return the same DB connection for the entire request, create if missing."""
+    if "db_conn" not in g:
+        g.db_conn = db.engine.connect()
+    return g.db_conn
+
+# Register teardown — always closes the connection even if view raised an exception
+def teardown_db(exception: BaseException | None) -> None:
+    """Close DB connection when app context pops (end of request or CLI command)."""
+    conn = g.pop("db_conn", None)
+    if conn is not None:
+        conn.close()
+
+# Register in factory:
+# app.teardown_appcontext(teardown_db)
+```
+
+**Pattern — get_X / teardown_X:**
+```python
+# Any resource that should be created once per request follows this pattern:
+# 1. get_X() — creates and caches on g if not already there
+# 2. teardown_X() — closes/releases; registered with @app.teardown_appcontext
+
+from werkzeug.local import LocalProxy
+db_conn = LocalProxy(get_db_connection)  # access db_conn like a normal object
+```
+
+**Rules:**
+- Use `g` for request-scoped resources (DB connections, current user cache, feature flags).
+- Use `session` for data that must persist across requests (user login state).
+- Use `current_app.extensions["my_ext"]` for app-level shared state.
+- `g` is reset fresh for every request and every CLI command invocation.
+
+## Request Lifecycle & Hook Ordering
+
+```
+before_request()           ← runs before every view; returning a value short-circuits the view
+  │
+  ▼
+view function()            ← the matched route handler
+  │
+  ▼
+after_request(response)    ← runs after every successful view; must return a response
+  │
+  ▼
+teardown_request(exc)      ← always runs, even after errors; receives exception or None
+  │
+  ▼ (context pops)
+teardown_appcontext(exc)   ← always runs when context is removed (end of request + CLI)
+```
+
+```python
+# app/blueprints/auth/routes.py
+from flask import g, request, jsonify, abort
+from app.services.auth_service import AuthService
+
+auth_bp = Blueprint("auth", __name__)
+
+@auth_bp.before_request
+def load_authenticated_user() -> None:
+    """Attach the current user to g before every request in this blueprint."""
+    token = request.headers.get("Authorization", "").removeprefix("Bearer ")
+    g.current_user = AuthService.get_user_from_token(token) if token else None
+
+@auth_bp.after_request
+def add_security_headers(response):
+    """Attach security headers to every response from this blueprint."""
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+```
+
+**Rules:**
+- `before_request` returning a value **skips** the view entirely — use for auth checks.
+- `after_request` **must always return** a response object — returning `None` is a bug.
+- `teardown_request` receives the exception (or `None`) — use for resource cleanup, NOT for error responses.
+- Blueprint hooks only run for requests that match that blueprint's routes.
+
+## Class-Based Views (MethodView) — REST APIs
+
+`MethodView` dispatches HTTP methods to same-named class methods. Best for resource APIs:
+
+```python
+# app/blueprints/users/views.py
+from flask import request, jsonify
+from flask.views import MethodView
+from flask_jwt_extended import jwt_required
+from app.services.user_service import UserService
+from app.schemas.user import UserCreateSchema, UserUpdateSchema, UserResponseSchema
+
+response_schema = UserResponseSchema()
+
+class UserItemView(MethodView):
+    """Single user resource — GET, PATCH, DELETE."""
+
+    decorators = [jwt_required()]  # applied to all methods automatically
+
+    def get(self, user_id: int):
+        """Return a single user."""
+        user = UserService.get_or_404(user_id)
+        return jsonify(response_schema.dump(user))
+
+    def patch(self, user_id: int):
+        """Partially update a user."""
+        schema = UserUpdateSchema()
+        data = schema.load(request.json or {})
+        user = UserService.update(user_id, **data)
+        return jsonify(response_schema.dump(user))
+
+    def delete(self, user_id: int):
+        """Delete a user."""
+        UserService.delete(user_id)
+        return "", 204
+
+
+class UserListView(MethodView):
+    """User collection — GET (list), POST (create)."""
+
+
+    @jwt_required()
+    def post(self):
+        """Create a new user."""
+        schema = UserCreateSchema()
+        data = schema.load(request.json or {})
+        user = UserService.create(**data)
+        return jsonify(response_schema.dump(user)), 201
+
+
+# Register in factory or blueprint:
+def register_user_views(app_or_bp) -> None:
+    user_item = UserItemView.as_view("user-item")
+    user_list = UserListView.as_view("user-list")
+    app_or_bp.add_url_rule("/users/<int:user_id>", view_func=user_item)
+    app_or_bp.add_url_rule("/users/", view_func=user_list)
+```
+
+**Rule:** Set `init_every_request = False` when the view stores state in `__init__` that is
+safe to reuse across requests (e.g. a schema instance). The default creates a new instance
+per request, which is safer but slower.
 
 ## View Decorators
 
@@ -437,8 +418,6 @@ def admin_panel():
 - Always use `@functools.wraps(f)` — preserves function name, docstring, and signature.
 - `@app.route` must be the **outermost** decorator; custom decorators go **inside** it.
 - For `MethodView`, use the `decorators` class attribute instead of stacking on each method.
-
----
 
 ## Security Headers & Cookie Settings
 
@@ -509,8 +488,6 @@ csrf = CSRFProtect()
 csrf.init_app(app)  # protects all POST/PUT/PATCH/DELETE form endpoints
 ```
 
----
-
 ## Celery Integration
 
 ```python
@@ -549,11 +526,8 @@ def send_welcome_email(user_id: int) -> dict:
     return {"status": "sent", "user_id": user_id}
 ```
 
-
 **Rule:** `shared_task` works without importing a specific Celery instance — it uses the default
 set by `celery_app.set_default()`. This avoids circular imports between tasks and the factory.
-
----
 
 ## Async Views (Flask 2.0+)
 
@@ -600,8 +574,6 @@ def good_background():
     long_running_task.delay()           # ✅ runs in Celery worker process
     return "ok"
 ```
-
----
 
 ## Flask Testing — Complete Patterns
 

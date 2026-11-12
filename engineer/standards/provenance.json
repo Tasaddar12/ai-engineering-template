@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "files": [
     {
       "destination": "python/async-context-manager.md",
@@ -13,7 +13,17 @@
           "sha256": "33e093a1ceeb7585c7f98bc0055f2f1dfafbe5c3112abe0103d5c806c03e754b"
         }
       ],
-      "sha256": "33e093a1ceeb7585c7f98bc0055f2f1dfafbe5c3112abe0103d5c806c03e754b"
+      "sha256": "33e093a1ceeb7585c7f98bc0055f2f1dfafbe5c3112abe0103d5c806c03e754b",
+      "source_selection_sha256": "33e093a1ceeb7585c7f98bc0055f2f1dfafbe5c3112abe0103d5c806c03e754b",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "c320808e873b98f21a0d643879eba79fdd79bde743226e4a08d64c2f8ed17893",
+        "examples_sha256": "5412fd914496e621a4a891bed833dbb20c155027fcd5c8a922d41896aff52f7d"
+      }
     },
     {
       "destination": "python/async-create-task.md",
@@ -27,7 +37,17 @@
           "sha256": "bb40c4e9bbfcc7d2e56767135d175212dc264413bde1c58e9557a07787752ac5"
         }
       ],
-      "sha256": "bb40c4e9bbfcc7d2e56767135d175212dc264413bde1c58e9557a07787752ac5"
+      "sha256": "bb40c4e9bbfcc7d2e56767135d175212dc264413bde1c58e9557a07787752ac5",
+      "source_selection_sha256": "bb40c4e9bbfcc7d2e56767135d175212dc264413bde1c58e9557a07787752ac5",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "aaa60b68c5eee3e136c45c242b936438f0f3121bd334c252fd54018dd150bd6c",
+        "examples_sha256": "e1e1302659784ba5b4e1cc44d0679b2fcd88985d3037742a0bbab02a5e80af98"
+      }
     },
     {
       "destination": "python/async-gather.md",
@@ -41,7 +61,17 @@
           "sha256": "befe16d5770d62c1e8d777c2d7305ff1bd7a27f1e379fadba9816964d5e81c9b"
         }
       ],
-      "sha256": "befe16d5770d62c1e8d777c2d7305ff1bd7a27f1e379fadba9816964d5e81c9b"
+      "sha256": "befe16d5770d62c1e8d777c2d7305ff1bd7a27f1e379fadba9816964d5e81c9b",
+      "source_selection_sha256": "befe16d5770d62c1e8d777c2d7305ff1bd7a27f1e379fadba9816964d5e81c9b",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "2b405d31a8fb9cc0c32490746b4784d5770f59fa750c7fffb03fd6872914194c",
+        "examples_sha256": "1984bc04fdb4255e13986a66d9caf73f6337bb01ccb8ab7541a0b13195baa542"
+      }
     },
     {
       "destination": "python/async-semaphore.md",
@@ -55,7 +85,17 @@
           "sha256": "31cd8f5eff0096bbb303a32801ea49add82f4f7b02817c9a141b8227497f1867"
         }
       ],
-      "sha256": "31cd8f5eff0096bbb303a32801ea49add82f4f7b02817c9a141b8227497f1867"
+      "sha256": "31cd8f5eff0096bbb303a32801ea49add82f4f7b02817c9a141b8227497f1867",
+      "source_selection_sha256": "31cd8f5eff0096bbb303a32801ea49add82f4f7b02817c9a141b8227497f1867",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "25c1bb5ad164d852e49751076140d49d9502a49f0a7cbe312a2687f30cd8b02d",
+        "examples_sha256": "7bd05e5c72bd11102a9c8e303d9b3b82149f94002d63ae3cf8d9fde6bc789cc6"
+      }
     },
     {
       "destination": "python/design-early-return.md",
@@ -69,7 +109,17 @@
           "sha256": "530b90c8cd2e8cf8a1dad0d3f76f9935ea81c32ada03e0b1d3f4a9eefb68258d"
         }
       ],
-      "sha256": "530b90c8cd2e8cf8a1dad0d3f76f9935ea81c32ada03e0b1d3f4a9eefb68258d"
+      "sha256": "530b90c8cd2e8cf8a1dad0d3f76f9935ea81c32ada03e0b1d3f4a9eefb68258d",
+      "source_selection_sha256": "530b90c8cd2e8cf8a1dad0d3f76f9935ea81c32ada03e0b1d3f4a9eefb68258d",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "4238ee0d1c5a66e56a62bdc344508c4cfd370ff1239d7f20f1c057372a0b6f86",
+        "examples_sha256": "7208f6c78e8d7bbe31617f0f345bc39a6b5f6015a5b908813bc5df061ff082e4"
+      }
     },
     {
       "destination": "python/design-philosophy.md",
@@ -83,7 +133,17 @@
           "sha256": "838c64c26a664b69e87c5928f84f71acab1c1971899ea64ccf208481809c2df7"
         }
       ],
-      "sha256": "838c64c26a664b69e87c5928f84f71acab1c1971899ea64ccf208481809c2df7"
+      "sha256": "838c64c26a664b69e87c5928f84f71acab1c1971899ea64ccf208481809c2df7",
+      "source_selection_sha256": "838c64c26a664b69e87c5928f84f71acab1c1971899ea64ccf208481809c2df7",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "3a3e08366382de36064839d0110a6641d4e8a9433fa821abd27d964f64e34d12",
+        "examples_sha256": "ed07fe1f654215f81f9bcf356788f421bc97568bce9a899a17796d2aa95b59c2"
+      }
     },
     {
       "destination": "python/design-single-responsibility.md",
@@ -97,7 +157,17 @@
           "sha256": "7d02f069f49ada8d24f18070382e7bd910a7985c24e7d133dd397f793c311531"
         }
       ],
-      "sha256": "7d02f069f49ada8d24f18070382e7bd910a7985c24e7d133dd397f793c311531"
+      "sha256": "7d02f069f49ada8d24f18070382e7bd910a7985c24e7d133dd397f793c311531",
+      "source_selection_sha256": "7d02f069f49ada8d24f18070382e7bd910a7985c24e7d133dd397f793c311531",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "81898fa71fc1c5280bca043bec898a2755fb646d5057df3e2729ac4dbb36750a",
+        "examples_sha256": "d0527b9a44be0339f310c426209d7385fa80697c8a3967eb79ed6f516444288e"
+      }
     },
     {
       "destination": "python/doc-docstring.md",
@@ -111,7 +181,17 @@
           "sha256": "b8a56499584ed2cbe54b2c4bbd9a9c85dc2d18d563b57be5e438a183e4d6700f"
         }
       ],
-      "sha256": "b8a56499584ed2cbe54b2c4bbd9a9c85dc2d18d563b57be5e438a183e4d6700f"
+      "sha256": "b8a56499584ed2cbe54b2c4bbd9a9c85dc2d18d563b57be5e438a183e4d6700f",
+      "source_selection_sha256": "b8a56499584ed2cbe54b2c4bbd9a9c85dc2d18d563b57be5e438a183e4d6700f",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "a9ee9a40b240102d9fe7df04eab8a59e0bdbe948950174d5e74a58eed4f53b1d",
+        "examples_sha256": "fb6c42affd05330562121e911058e11606b5661d274d3aebce28afb6c640b0d1"
+      }
     },
     {
       "destination": "python/doc-type-hints.md",
@@ -125,7 +205,17 @@
           "sha256": "fc3238745b153d834fb575557d86bbe0afac18ff154b965b5d357b2eeb7990fb"
         }
       ],
-      "sha256": "fc3238745b153d834fb575557d86bbe0afac18ff154b965b5d357b2eeb7990fb"
+      "sha256": "fc3238745b153d834fb575557d86bbe0afac18ff154b965b5d357b2eeb7990fb",
+      "source_selection_sha256": "fc3238745b153d834fb575557d86bbe0afac18ff154b965b5d357b2eeb7990fb",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "cf21e350aedd6aa9f40e99145b03998373a29827f50838a21f780f48c36c5835",
+        "examples_sha256": "3f0aae4e6d0dc848158b0bfa0757efebe9761869e9c20a55766f0d2487265a78"
+      }
     },
     {
       "destination": "python/error-no-silent-exceptions.md",
@@ -139,7 +229,17 @@
           "sha256": "3bb5499a59e68183e7d8b52cbe2873cd47cb555d9e22451b84bb90505ebb8634"
         }
       ],
-      "sha256": "3bb5499a59e68183e7d8b52cbe2873cd47cb555d9e22451b84bb90505ebb8634"
+      "sha256": "3bb5499a59e68183e7d8b52cbe2873cd47cb555d9e22451b84bb90505ebb8634",
+      "source_selection_sha256": "3bb5499a59e68183e7d8b52cbe2873cd47cb555d9e22451b84bb90505ebb8634",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "d39c41ff03ca274286c9bb0e408bd751e4aff84de134ffc7dacd1b9c7fc8cce7",
+        "examples_sha256": "8fb712707c2a05dd576eddbbd3f27a1d08cdbd9d66d18e48bf8fcdf249e3983a"
+      }
     },
     {
       "destination": "python/oop-dataclass.md",
@@ -153,7 +253,17 @@
           "sha256": "2a6cdbb5f78e8d9f7515ebeab3bd36f0b4e2e899da648cb049b05833e9933dd2"
         }
       ],
-      "sha256": "2a6cdbb5f78e8d9f7515ebeab3bd36f0b4e2e899da648cb049b05833e9933dd2"
+      "sha256": "2a6cdbb5f78e8d9f7515ebeab3bd36f0b4e2e899da648cb049b05833e9933dd2",
+      "source_selection_sha256": "2a6cdbb5f78e8d9f7515ebeab3bd36f0b4e2e899da648cb049b05833e9933dd2",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "01fa761637a249d278ee74f1cef65f0e1c8f1b94ee7c901958eaf637d7046395",
+        "examples_sha256": "a41b9563a09929d3e27dca443b9244d48bc47ce17959dfa4c4658349f508a90d"
+      }
     },
     {
       "destination": "python/oop-property.md",
@@ -167,7 +277,17 @@
           "sha256": "66577f38c2cbb363562d243139f160c7ca4bec440c16b5cb7ac4fc96d007bb95"
         }
       ],
-      "sha256": "66577f38c2cbb363562d243139f160c7ca4bec440c16b5cb7ac4fc96d007bb95"
+      "sha256": "66577f38c2cbb363562d243139f160c7ca4bec440c16b5cb7ac4fc96d007bb95",
+      "source_selection_sha256": "66577f38c2cbb363562d243139f160c7ca4bec440c16b5cb7ac4fc96d007bb95",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "d78ff4974bd55cf4804447fa01ef7998bc94b08f8070b8802fafc63daa29e431",
+        "examples_sha256": "8d89bced42680323df4047869cf07de470d2c0df8ecfffaa9b6ea450cee4981b"
+      }
     },
     {
       "destination": "python/oop-composition-over-inheritance.md",
@@ -181,7 +301,17 @@
           "sha256": "b56481b0fb703025c7b339ce64f924b1693b61f8ecaa2da46bb65b5ce80fdb75"
         }
       ],
-      "sha256": "b56481b0fb703025c7b339ce64f924b1693b61f8ecaa2da46bb65b5ce80fdb75"
+      "sha256": "b56481b0fb703025c7b339ce64f924b1693b61f8ecaa2da46bb65b5ce80fdb75",
+      "source_selection_sha256": "b56481b0fb703025c7b339ce64f924b1693b61f8ecaa2da46bb65b5ce80fdb75",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "ce1c3238284d30222c3ef2c11f850ec57b9ba19cefe2b1c742a9edffcd840723",
+        "examples_sha256": "a951aed497e11cd5d6ae4e8413e8c0f63e7f0ae3e2a20a5e21b4d6609f1781af"
+      }
     },
     {
       "destination": "python/perf-dict-get.md",
@@ -195,7 +325,17 @@
           "sha256": "c8b0f4c694624eefbe6e0a326031857bca51bcd9982e93e22424849798385765"
         }
       ],
-      "sha256": "c8b0f4c694624eefbe6e0a326031857bca51bcd9982e93e22424849798385765"
+      "sha256": "c8b0f4c694624eefbe6e0a326031857bca51bcd9982e93e22424849798385765",
+      "source_selection_sha256": "c8b0f4c694624eefbe6e0a326031857bca51bcd9982e93e22424849798385765",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "02b8e1663a4f71c8c4e7dfba4d1c994c23f3eba3a447ec0ded971eeb0b859013",
+        "examples_sha256": "87b4f0327d104c8f551c0bddc4ce7c7c240d83ee84d8a63c88c9b5fbdba0ca39"
+      }
     },
     {
       "destination": "python/perf-generator-expression.md",
@@ -209,7 +349,17 @@
           "sha256": "18a82cfe274bb8adeaf0778e8ddf202868528080bb149ddfb01502aa39cc8992"
         }
       ],
-      "sha256": "18a82cfe274bb8adeaf0778e8ddf202868528080bb149ddfb01502aa39cc8992"
+      "sha256": "18a82cfe274bb8adeaf0778e8ddf202868528080bb149ddfb01502aa39cc8992",
+      "source_selection_sha256": "18a82cfe274bb8adeaf0778e8ddf202868528080bb149ddfb01502aa39cc8992",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "ef4d0c12386e34bc14f1e18c8a534a5aaeb24d07d5e85964ba31c68669d7691f",
+        "examples_sha256": "ac50e391ec932231404b13c2013618893160cb72910c494692fc90415dc355ce"
+      }
     },
     {
       "destination": "python/perf-list-comprehension.md",
@@ -223,7 +373,17 @@
           "sha256": "fd262e11704b9a5db7c23c28a7bcd67d41dd216f9f23f315df81d72a3d03d1c3"
         }
       ],
-      "sha256": "fd262e11704b9a5db7c23c28a7bcd67d41dd216f9f23f315df81d72a3d03d1c3"
+      "sha256": "fd262e11704b9a5db7c23c28a7bcd67d41dd216f9f23f315df81d72a3d03d1c3",
+      "source_selection_sha256": "fd262e11704b9a5db7c23c28a7bcd67d41dd216f9f23f315df81d72a3d03d1c3",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "9dd04ae1506db5b95394f9e1a61ee522bab12d8d4914a04c216b5cd6b5cc6075",
+        "examples_sha256": "7e32f5bdadc5fb080c2a356ccac113719c6f66e087b538a3f4c35dd91d3cb1b9"
+      }
     },
     {
       "destination": "python/perf-set-lookup.md",
@@ -237,7 +397,17 @@
           "sha256": "ca5f59174a87ad635ce3a876abe2ea4f555f5f62207c0d36b9e33a8be41cbb96"
         }
       ],
-      "sha256": "ca5f59174a87ad635ce3a876abe2ea4f555f5f62207c0d36b9e33a8be41cbb96"
+      "sha256": "ca5f59174a87ad635ce3a876abe2ea4f555f5f62207c0d36b9e33a8be41cbb96",
+      "source_selection_sha256": "ca5f59174a87ad635ce3a876abe2ea4f555f5f62207c0d36b9e33a8be41cbb96",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "5a38aea08fa49c2ee95e21c173552a06d6c03f53bdb5c21e9eff8d39ab0e2802",
+        "examples_sha256": "4d99ac1b1af3f7e10540905483587c6f944f0457c4bb9d137cb1bc9458e6183c"
+      }
     },
     {
       "destination": "python/solid-isp.md",
@@ -251,7 +421,17 @@
           "sha256": "401b59c946046ac43dea71fdeb2a2b89fe5112ab866dfb313f0e44d4b5a6f4b7"
         }
       ],
-      "sha256": "401b59c946046ac43dea71fdeb2a2b89fe5112ab866dfb313f0e44d4b5a6f4b7"
+      "sha256": "74c54bbed6f364a7e5e8bc4a113531577f4ff26efb7e8e6dc0c6853da211049b",
+      "source_selection_sha256": "401b59c946046ac43dea71fdeb2a2b89fe5112ab866dfb313f0e44d4b5a6f4b7",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "68fdfd65118b0e659a3b490804249fdb184ed0d916ed270fc834fda0e000c44a",
+        "examples_sha256": "9dbe945cf4eded4331f034cb9c9e6d9cad9fbfb0996a16394ba7fd0a994013a3"
+      }
     },
     {
       "destination": "python/solid-lsp.md",
@@ -265,7 +445,17 @@
           "sha256": "dad81c651bccdb9d8ce917b2a885a46c617fdf8593e568af0742fa3ff66d2114"
         }
       ],
-      "sha256": "dad81c651bccdb9d8ce917b2a885a46c617fdf8593e568af0742fa3ff66d2114"
+      "sha256": "009d3187d82e42df4bdddc28b9c62bfdfe3af69e53eff915a1f1a63770eaac12",
+      "source_selection_sha256": "dad81c651bccdb9d8ce917b2a885a46c617fdf8593e568af0742fa3ff66d2114",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "676fe2875500b52e718d429b0145e60849ee550373e8667ac891e0b7de6f0958",
+        "examples_sha256": "d35978c7f205d7f9166c453c5b8540f5ecf30156aa8690b5dc4a60703337c084"
+      }
     },
     {
       "destination": "python/validation-pydantic.md",
@@ -279,7 +469,17 @@
           "sha256": "062573d29b93dee352936b2fbfafea7dc61015fba3a8a3302299a1924adf5a14"
         }
       ],
-      "sha256": "062573d29b93dee352936b2fbfafea7dc61015fba3a8a3302299a1924adf5a14"
+      "sha256": "7cd5b9d26998368769baf8259d8d2945d0cb169918252d1a66959a176e50a16f",
+      "source_selection_sha256": "062573d29b93dee352936b2fbfafea7dc61015fba3a8a3302299a1924adf5a14",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "c7688d6bca29f04f4b60027ff1671f6f9cc552a122cc192f4cf1261f4a6b3c79",
+        "examples_sha256": "0ba53243c1bcba58d678514790020a1bf08ffc6485b0b3d915ef6d741415a291"
+      }
     },
     {
       "destination": "python/design-dependency-injection.md",
@@ -293,7 +493,17 @@
           "sha256": "efeceefd3144551939465977e40e12435c9d862c387a6889bc2e2ff59b2cd56a"
         }
       ],
-      "sha256": "efeceefd3144551939465977e40e12435c9d862c387a6889bc2e2ff59b2cd56a"
+      "sha256": "efeceefd3144551939465977e40e12435c9d862c387a6889bc2e2ff59b2cd56a",
+      "source_selection_sha256": "efeceefd3144551939465977e40e12435c9d862c387a6889bc2e2ff59b2cd56a",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "4c1b3f5e6e1d18b632b3141bd586ad7f1e1368d27af886b627497d38547ea366",
+        "examples_sha256": "236e8743efc48c52f8d6cc4f6d17332e1b02d774ed8be8c43074f641379be73b"
+      }
     },
     {
       "destination": "python/design-pure-functions.md",
@@ -312,7 +522,17 @@
           "sha256": "edef445ceb7aafb1e7191691f064d82e17fc74a75f311f9f4cb4e3f9e493c4b4"
         }
       ],
-      "sha256": "65d7df4135bfc082ef6bf74018f184228ca6ae9535985af53ab99ccfa1add5a5"
+      "sha256": "65d7df4135bfc082ef6bf74018f184228ca6ae9535985af53ab99ccfa1add5a5",
+      "source_selection_sha256": "65d7df4135bfc082ef6bf74018f184228ca6ae9535985af53ab99ccfa1add5a5",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 0,
+        "collapsed_blank_lines": 0,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "782180ab0cb756b336f074c875e6319e79caad703cf905aba2a5e7f56922f386",
+        "examples_sha256": "f4dc1d5d0046d54566c85660991d3bdee65ee777c5bd7ff9a0cce68a2aefaf60"
+      }
     },
     {
       "destination": "python/code-style.md",
@@ -376,7 +596,7 @@
           "sha256": "a9ac2e333b182e7dd66f41a054a0a76840bbbd5216facb01ede199d8c7c7811b"
         }
       ],
-      "sha256": "03cc60fb2b882c9f208330a3c4a2363bf8e52b6e38debb731ec0c2ffbd680eb4",
+      "sha256": "e44d6f54002b2f5e508292b5db938a57b5dc7a05080cebffd2a4375bd98bd467",
       "source_line_count": 1793,
       "omissions": [
         {
@@ -429,7 +649,97 @@
           "end_line": 1660,
           "reason": "These framework versions do not all require Python 3.10."
         }
-      ]
+      ],
+      "source_selection_sha256": "03cc60fb2b882c9f208330a3c4a2363bf8e52b6e38debb731ec0c2ffbd680eb4",
+      "editorial_changes": {
+        "headings": [
+          {
+            "before": "# Enterprise Standard — PEP 8 Complete, Version-Aware, 18+ Years Depth",
+            "after": null
+          },
+          {
+            "before": "### 12.4 Exception Handling — Complete Reference",
+            "after": "### 12.4 Exception Handling"
+          },
+          {
+            "before": "## 12.11 Late Binding Closures",
+            "after": "### 12.11 Late Binding Closures"
+          },
+          {
+            "before": "## 12.12 Python Idioms Reference",
+            "after": "### 12.12 Python Idioms Reference"
+          },
+          {
+            "before": "### Unpacking & Destructuring",
+            "after": "#### Unpacking & Destructuring"
+          },
+          {
+            "before": "### List / Collection Construction",
+            "after": "#### List / Collection Construction"
+          },
+          {
+            "before": "### String Building",
+            "after": "#### String Building"
+          },
+          {
+            "before": "### Membership Testing: list vs set",
+            "after": "#### Membership Testing: list vs set"
+          },
+          {
+            "before": "### Dictionary Access",
+            "after": "#### Dictionary Access"
+          },
+          {
+            "before": "### Enumerate over Range+Index",
+            "after": "#### Enumerate over Range+Index"
+          },
+          {
+            "before": "## 12.13 Function Arguments — Design Rules",
+            "after": "### 12.13 Function Arguments — Design Rules"
+          },
+          {
+            "before": "## 12.14 Pure Functions & Minimising Side Effects",
+            "after": "### 12.14 Pure Functions & Minimising Side Effects"
+          },
+          {
+            "before": "## 12.15 Variable Naming Under Dynamic Typing",
+            "after": "### 12.15 Variable Naming Under Dynamic Typing"
+          },
+          {
+            "before": "## 13. ANTI-PATTERNS — PRODUCTION INCIDENT REFERENCE",
+            "after": "## 13. ANTI-PATTERNS"
+          }
+        ],
+        "removed_horizontal_rules": 23,
+        "collapsed_blank_lines": 23,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "ced53e7b94134db6f48a6ca5254231b2ac865d9c7be82f2a95af175e482f767f",
+        "examples_sha256": "6ee79b09db86469e1947b9c3067b6696551ab68c85f7a51c19b3e53daa409095",
+        "input_sha256": "5666bd49ac9c03cba97e5fc5d2cb7b3f6eeaaac2501e1a8597378475a38b243b",
+        "retained_user_edits": [
+          {
+            "before": "# ✅ ALLOWED — plain variable access",
+            "after": "# ALLOWED — plain variable access"
+          },
+          {
+            "before": "# ❌ DISALLOWED — function calls inside braces",
+            "after": "# DISALLOWED — function calls inside braces"
+          },
+          {
+            "before": "# ✅ CORRECT — extract to a local variable first",
+            "after": "# CORRECT — extract to a local variable first"
+          },
+          {
+            "before": "raise ValidationError(f\"User {username} not found\")   # ❌",
+            "after": "raise ValidationError(f\"User {username} not found\")"
+          },
+          {
+            "before": "raise ValidationError(_(\"User %(username)s not found\") % {\"username\": username})  # ✅",
+            "after": "raise ValidationError(_(\"User %(username)s not found\") % {\"username\": username})"
+          }
+        ]
+      }
     },
     {
       "destination": "python/folder-structure.md",
@@ -453,7 +763,7 @@
           "sha256": "83cec950ebcdcdd9dc3285a665747b565ef965225334f4f8a8330fd83c611fb5"
         }
       ],
-      "sha256": "9585bba3d4faa8b8249e63b1d52057cb326fc5206d7e584dee6ab7fd664ff78b",
+      "sha256": "a6278f4ae5782fa91a061b731d8d12e718df491b3d41abc69332a9871f814d35",
       "source_line_count": 415,
       "omissions": [
         {
@@ -466,7 +776,62 @@
           "end_line": 385,
           "reason": "Filesystem reads and writes are not pure functions."
         }
-      ]
+      ],
+      "source_selection_sha256": "9585bba3d4faa8b8249e63b1d52057cb326fc5206d7e584dee6ab7fd664ff78b",
+      "editorial_changes": {
+        "headings": [
+          {
+            "before": "# Python Project Structure — Enterprise Standard",
+            "after": "# Python Project Structure"
+          },
+          {
+            "before": "## SECTION 1 — THE CORE PRINCIPLE",
+            "after": "## 1. THE CORE PRINCIPLE"
+          },
+          {
+            "before": "## SECTION 2 — SRC LAYOUT vs FLAT LAYOUT",
+            "after": "## 2. SRC LAYOUT vs FLAT LAYOUT"
+          },
+          {
+            "before": "## SECTION 3 — WEB SERVICE LAYOUT",
+            "after": "## 3. WEB SERVICE LAYOUT"
+          },
+          {
+            "before": "## SECTION 4 — LIBRARY / PACKAGE LAYOUT",
+            "after": "## 4. LIBRARY / PACKAGE LAYOUT"
+          },
+          {
+            "before": "## SECTION 5 — DATA PIPELINE / ETL LAYOUT",
+            "after": "## 5. DATA PIPELINE / ETL LAYOUT"
+          },
+          {
+            "before": "## SECTION 6 — CLI TOOL LAYOUT",
+            "after": "## 6. CLI TOOL LAYOUT"
+          },
+          {
+            "before": "## SECTION 7 — ML / AI PROJECT LAYOUT",
+            "after": "## 7. ML / AI PROJECT LAYOUT"
+          },
+          {
+            "before": "## SECTION 8 — FILE AND MODULE NAMING RULES",
+            "after": "## 8. FILE AND MODULE NAMING RULES"
+          },
+          {
+            "before": "## SECTION 9 — WHAT NEVER GOES WHERE",
+            "after": "## 9. WHAT NEVER GOES WHERE"
+          },
+          {
+            "before": "## SECTION 10 — MODULE & PACKAGE DESIGN RULES (Hitchhiker's Guide)",
+            "after": "## 10. MODULE & PACKAGE DESIGN RULES (Hitchhiker's Guide)"
+          }
+        ],
+        "removed_horizontal_rules": 10,
+        "collapsed_blank_lines": 10,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "40112688e6ffa61dad003d63424445bdab2375a5d081aba3181066a8fea80e5b",
+        "examples_sha256": "fc14c44760605b62c067fd2d8790751aa76528cfedbb73ddcf30c82e4c839de9"
+      }
     },
     {
       "destination": "python/logging.md",
@@ -520,7 +885,7 @@
           "sha256": "d716b97880c1de492f226ba21284d68d0a38129cdd3adf2e3be9d7827aea5d56"
         }
       ],
-      "sha256": "c7fbb67729f58c4afb30e47d327b7de14ee5fb8f0637aaec943443f399f2fc87",
+      "sha256": "3d6b47a2d5843ccfe8c2166b51201050f5b933c552fd79974a0198a99e5b808f",
       "source_line_count": 437,
       "omissions": [
         {
@@ -563,7 +928,58 @@
           "end_line": 434,
           "reason": "SQLAlchemy exception strings and tracebacks may include sensitive SQL parameters."
         }
-      ]
+      ],
+      "source_selection_sha256": "c7fbb67729f58c4afb30e47d327b7de14ee5fb8f0637aaec943443f399f2fc87",
+      "editorial_changes": {
+        "headings": [
+          {
+            "before": "# Logging — Enterprise Standard",
+            "after": "# Logging"
+          },
+          {
+            "before": "## SECTION 1 — LIBRARY CHOICE AND RATIONALE",
+            "after": "## 1. LIBRARY CHOICE AND RATIONALE"
+          },
+          {
+            "before": "## SECTION 2 — CONFIGURATION",
+            "after": "## 2. CONFIGURATION"
+          },
+          {
+            "before": "## SECTION 3 — GETTING A LOGGER",
+            "after": "## 3. GETTING A LOGGER"
+          },
+          {
+            "before": "## SECTION 4 — LOG LEVELS — WHEN TO USE EACH",
+            "after": "## 4. LOG LEVELS — WHEN TO USE EACH"
+          },
+          {
+            "before": "## SECTION 5 — STRUCTURED FIELDS — CONSISTENCY ACROSS THOUSANDS OF LOGS",
+            "after": "## 5. STRUCTURED FIELDS — CONSISTENCY ACROSS THOUSANDS OF LOGS"
+          },
+          {
+            "before": "## SECTION 6 — REQUEST-SCOPED CONTEXT BINDING",
+            "after": "## 6. REQUEST-SCOPED CONTEXT BINDING"
+          },
+          {
+            "before": "## SECTION 7 — LOGGING EXCEPTIONS",
+            "after": "## 7. LOGGING EXCEPTIONS"
+          },
+          {
+            "before": "## SECTION 8 — WHAT NEVER TO LOG",
+            "after": "## 8. WHAT NEVER TO LOG"
+          },
+          {
+            "before": "## SECTION 9 — SLOW QUERY LOGGING",
+            "after": "## 9. SLOW QUERY LOGGING"
+          }
+        ],
+        "removed_horizontal_rules": 9,
+        "collapsed_blank_lines": 9,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "23913e9309a12e323efc4b37b34843413665d481f2ca2f50ac98a65f63f3f31e",
+        "examples_sha256": "bf3ec96c1bd246ddb6c4537e2f3f1ae83e7438c5a8781127820f69a59f861136"
+      }
     },
     {
       "destination": "python/async-patterns.md",
@@ -602,7 +1018,7 @@
           "sha256": "7f8275c30644b1a786f997f82ecf65e7d9560ce2c956af6e19df2798b737101d"
         }
       ],
-      "sha256": "f28efeb9942b7d82f612914864723c5d0856ea9476ee3b773f81d0bb0a1bd748",
+      "sha256": "bb7759b608159a389029429beb6156d48da1422462a3a685fdb5a04fa7572506",
       "source_line_count": 221,
       "omissions": [
         {
@@ -630,7 +1046,50 @@
           "end_line": 188,
           "reason": "Built-in hash(password) is not a secure password hash."
         }
-      ]
+      ],
+      "source_selection_sha256": "f28efeb9942b7d82f612914864723c5d0856ea9476ee3b773f81d0bb0a1bd748",
+      "editorial_changes": {
+        "headings": [
+          {
+            "before": "# Async Patterns — Enterprise Standard",
+            "after": "# Async Patterns"
+          },
+          {
+            "before": "## SECTION 1 — TASK QUEUE (CELERY)",
+            "after": "## 1. TASK QUEUE (CELERY)"
+          },
+          {
+            "before": "## SECTION 2 — RETRY STRATEGIES",
+            "after": "## 2. RETRY STRATEGIES"
+          },
+          {
+            "before": "## SECTION 3 — IDEMPOTENCY",
+            "after": "## 3. IDEMPOTENCY"
+          },
+          {
+            "before": "## SECTION 4 — DEAD LETTER QUEUE (DLQ)",
+            "after": "## 4. DEAD LETTER QUEUE (DLQ)"
+          },
+          {
+            "before": "## SECTION 5 — EVENT-DRIVEN ARCHITECTURE",
+            "after": "## 5. EVENT-DRIVEN ARCHITECTURE"
+          },
+          {
+            "before": "## SECTION 6 — ASYNC TASK PATTERNS (ARQ — Lightweight Alternative)",
+            "after": "## 6. ASYNC TASK PATTERNS (ARQ — Lightweight Alternative)"
+          },
+          {
+            "before": "## SECTION 7 — RULES",
+            "after": "## 7. RULES"
+          }
+        ],
+        "removed_horizontal_rules": 6,
+        "collapsed_blank_lines": 7,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "24212a38d86139fc7192f674cca4e44d4563197b93609c568c07c554fbe138bc",
+        "examples_sha256": "3dfc7a94750761ecf94cfefafb0f553efcda1616ef9fc71b153a07f8c39df146"
+      }
     },
     {
       "destination": "python/performance.md",
@@ -669,7 +1128,7 @@
           "sha256": "47c06c561d5c327343685268a46b3391f3998eee890d2be51f0d21cc4a53ae6d"
         }
       ],
-      "sha256": "11ad8f157a133d92c9db3983c0e9de5732ed6fd6e697b00ec492da5a7594b472",
+      "sha256": "eebb188caefe1425f57844a3f8e62f3485bb29cfff94d2a293d7fb81c535c7d9",
       "source_line_count": 266,
       "omissions": [
         {
@@ -697,7 +1156,38 @@
           "end_line": 265,
           "reason": "psutil.cpu_percent(interval=1) blocks inside the async function."
         }
-      ]
+      ],
+      "source_selection_sha256": "11ad8f157a133d92c9db3983c0e9de5732ed6fd6e697b00ec492da5a7594b472",
+      "editorial_changes": {
+        "headings": [
+          {
+            "before": "# Performance — Enterprise Standard",
+            "after": "# Performance"
+          },
+          {
+            "before": "## SECTION 1 — ASYNC PROGRAMMING",
+            "after": "## 1. ASYNC PROGRAMMING"
+          },
+          {
+            "before": "## SECTION 2 — CACHING",
+            "after": "## 2. CACHING"
+          },
+          {
+            "before": "## SECTION 3 — N+1 QUERY PREVENTION",
+            "after": "## 3. N+1 QUERY PREVENTION"
+          },
+          {
+            "before": "## SECTION 5 — RESOURCE MONITORING (production services)",
+            "after": "## 5. RESOURCE MONITORING (production services)"
+          }
+        ],
+        "removed_horizontal_rules": 4,
+        "collapsed_blank_lines": 4,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "2f9d391b2e226b7d60d87490f866d848d2a81f66ad2e928b9a0bc052bc4958df",
+        "examples_sha256": "a3de7d79a74f173f3133f02f75ab43895e4647a5f914908d9523f195553ddba2"
+      }
     },
     {
       "destination": "python/observability.md",
@@ -721,7 +1211,7 @@
           "sha256": "2fa332e12bf06f431604792a755baf9c1d3d25ffbbd9f556c08e52cb3bdcf6be"
         }
       ],
-      "sha256": "00970544e7b5339c92e43c85a1584762cb72f3b84e2596608af8940eed1975fc",
+      "sha256": "7f64c9bd1c020d3d9cc57eb7a9b5698300c764cbfd70e2570ee635212ef04de8",
       "source_line_count": 195,
       "omissions": [
         {
@@ -734,7 +1224,46 @@
           "end_line": 138,
           "reason": "Raw request paths create unbounded metric-label cardinality."
         }
-      ]
+      ],
+      "source_selection_sha256": "00970544e7b5339c92e43c85a1584762cb72f3b84e2596608af8940eed1975fc",
+      "editorial_changes": {
+        "headings": [
+          {
+            "before": "# Observability — Enterprise Standard",
+            "after": "# Observability"
+          },
+          {
+            "before": "## SECTION 1 — OPENTELEMETRY SETUP",
+            "after": "## 1. OPENTELEMETRY SETUP"
+          },
+          {
+            "before": "## SECTION 3 — CUSTOM SPANS",
+            "after": "## 3. CUSTOM SPANS"
+          },
+          {
+            "before": "## SECTION 4 — METRICS PATTERNS",
+            "after": "## 4. METRICS PATTERNS"
+          },
+          {
+            "before": "## SECTION 5 — STRUCTURED LOGS + TRACE CORRELATION",
+            "after": "## 5. STRUCTURED LOGS + TRACE CORRELATION"
+          },
+          {
+            "before": "## SECTION 6 — KEY METRICS TO TRACK (RED + USE)",
+            "after": "## 6. KEY METRICS TO TRACK (RED + USE)"
+          },
+          {
+            "before": "## SECTION 7 — RULES",
+            "after": "## 7. RULES"
+          }
+        ],
+        "removed_horizontal_rules": 5,
+        "collapsed_blank_lines": 6,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "617d5517645584d0aec6d21db2ee6db8a831f2efff4768e92be081be8ab1bfa7",
+        "examples_sha256": "e78c2e9db7f2d284bc6031086f9ad506155111d0682c1fee5e272be248b6d38d"
+      }
     },
     {
       "destination": "python/testing.md",
@@ -813,7 +1342,7 @@
           "sha256": "fc994faff69cc9d99f2e400941ccde069bc6bd67d366a0e5a3a040d36eec0eff"
         }
       ],
-      "sha256": "a67c8a68a6ea00f4af88fb929d4ab0afb5d5dab9ed405022f640ad5e87385a69",
+      "sha256": "cac5479164984a658d998a61d1808cc7c29b306e9310f2b72d8c7f9a7786bbe9",
       "source_line_count": 1018,
       "omissions": [
         {
@@ -881,7 +1410,86 @@
           "end_line": 942,
           "reason": "The unqualified unittest example uses Django-only assertRaisesMessage."
         }
-      ]
+      ],
+      "source_selection_sha256": "a67c8a68a6ea00f4af88fb929d4ab0afb5d5dab9ed405022f640ad5e87385a69",
+      "editorial_changes": {
+        "headings": [
+          {
+            "before": "# Testing — Enterprise Standard",
+            "after": "# Testing"
+          },
+          {
+            "before": "## SECTION 0 — TESTING PRINCIPLES (The Hitchhiker's Rules)",
+            "after": "## 0. TESTING PRINCIPLES (The Hitchhiker's Rules)"
+          },
+          {
+            "before": "## SECTION 1 — TOOLCHAIN",
+            "after": "## 1. TOOLCHAIN"
+          },
+          {
+            "before": "## SECTION 2 — TEST CATEGORIES AND SCOPE",
+            "after": "## 2. TEST CATEGORIES AND SCOPE"
+          },
+          {
+            "before": "## SECTION 3 — TEST STRUCTURE AND NAMING",
+            "after": "## 3. TEST STRUCTURE AND NAMING"
+          },
+          {
+            "before": "## SECTION 4 — FIXTURES AND CONFTEST",
+            "after": "## 4. FIXTURES AND CONFTEST"
+          },
+          {
+            "before": "## SECTION 5 — FACTORIES",
+            "after": "## 5. FACTORIES"
+          },
+          {
+            "before": "## SECTION 6 — WHAT MUST BE TESTED",
+            "after": "## 6. WHAT MUST BE TESTED"
+          },
+          {
+            "before": "## SECTION 7 — MOCKING GUIDELINES",
+            "after": "## 7. MOCKING GUIDELINES"
+          },
+          {
+            "before": "## SECTION 8 — COVERAGE RULES",
+            "after": "## 8. COVERAGE RULES"
+          },
+          {
+            "before": "## SECTION 10 — DJANGO-SPECIFIC TESTING",
+            "after": "## 10. DJANGO-SPECIFIC TESTING"
+          },
+          {
+            "before": "## SECTION 11 — PARAMETRIZE FOR COVERAGE BREADTH",
+            "after": "## 11. PARAMETRIZE FOR COVERAGE BREADTH"
+          },
+          {
+            "before": "## SECTION 12 — ASSERT METHOD SELECTION GUIDE",
+            "after": "## 12. ASSERT METHOD SELECTION GUIDE"
+          },
+          {
+            "before": "## SECTION 13 — SKIPPING TESTS & EXPECTED FAILURES",
+            "after": "## 13. SKIPPING TESTS & EXPECTED FAILURES"
+          },
+          {
+            "before": "## SECTION 14 — FIXTURE LIFECYCLE & CLEANUP",
+            "after": "## 14. FIXTURE LIFECYCLE & CLEANUP"
+          },
+          {
+            "before": "## SECTION 15 — SUBTEST: MULTIPLE ASSERTIONS IN ONE TEST",
+            "after": "## 15. SUBTEST: MULTIPLE ASSERTIONS IN ONE TEST"
+          },
+          {
+            "before": "## SECTION 16 — ASYNC TESTS (IsolatedAsyncioTestCase)",
+            "after": "## 16. ASYNC TESTS (IsolatedAsyncioTestCase)"
+          }
+        ],
+        "removed_horizontal_rules": 16,
+        "collapsed_blank_lines": 17,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "a1696203b90ed8b2305d5c69d153181e78a00990b56f836ea307fc835409584d",
+        "examples_sha256": "e647cfa978ba9e2156c1ad78d4e7740f3155a19487ce3ca911a264044a39fe9e"
+      }
     },
     {
       "destination": "python/error-handling.md",
@@ -920,7 +1528,7 @@
           "sha256": "e7df1ef6335e688538648015a1a7c1c51a6408b51fa081ca02a1b4398cc935e9"
         }
       ],
-      "sha256": "9ad5e15ddad6d228aba2e361382e139796eac642c8f98e548a44385098381a06",
+      "sha256": "751f61e023c9c535366f05119078057e939dbb5791954e8f4e6538a6cd350240",
       "source_line_count": 545,
       "omissions": [
         {
@@ -948,7 +1556,54 @@
           "end_line": 439,
           "reason": "A version conditional cannot protect Python 3.11 syntax from an older parser."
         }
-      ]
+      ],
+      "source_selection_sha256": "9ad5e15ddad6d228aba2e361382e139796eac642c8f98e548a44385098381a06",
+      "editorial_changes": {
+        "headings": [
+          {
+            "before": "# Error Handling — Enterprise Standard",
+            "after": "# Error Handling"
+          },
+          {
+            "before": "## SECTION 1 — EXCEPTION HIERARCHY DESIGN",
+            "after": "## 1. EXCEPTION HIERARCHY DESIGN"
+          },
+          {
+            "before": "## SECTION 2 — WHERE EXCEPTIONS ARE RAISED AND CAUGHT",
+            "after": "## 2. WHERE EXCEPTIONS ARE RAISED AND CAUGHT"
+          },
+          {
+            "before": "## SECTION 3 — RAISING EXCEPTIONS CORRECTLY",
+            "after": "## 3. RAISING EXCEPTIONS CORRECTLY"
+          },
+          {
+            "before": "## SECTION 4 — CATCHING EXCEPTIONS CORRECTLY",
+            "after": "## 4. CATCHING EXCEPTIONS CORRECTLY"
+          },
+          {
+            "before": "## SECTION 5 — LOGGING AND EXCEPTIONS",
+            "after": "## 5. LOGGING AND EXCEPTIONS"
+          },
+          {
+            "before": "## SECTION 6 — PYTHON 3.11+ EXCEPTION GROUPS",
+            "after": "## 6. PYTHON 3.11+ EXCEPTION GROUPS"
+          },
+          {
+            "before": "## SECTION 7 — STANDARD ERROR RESPONSE SHAPE",
+            "after": "## 7. STANDARD ERROR RESPONSE SHAPE"
+          },
+          {
+            "before": "## SECTION 8 — ANTI-PATTERNS REFERENCE",
+            "after": "## 8. ANTI-PATTERNS REFERENCE"
+          }
+        ],
+        "removed_horizontal_rules": 8,
+        "collapsed_blank_lines": 8,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "471e0de8be116beaedd9c5e002792d131d07cbabc509490b47dac3d561e63d44",
+        "examples_sha256": "b40ca88fbbd1795a49ec14a9cc7d010c274fb108d6953cf697b78b71fccaf12d"
+      }
     },
     {
       "destination": "python/dependency-management.md",
@@ -962,9 +1617,44 @@
           "sha256": "8cfb17ccd1a59684e527495c6f2fc6fba8f8a859be2fe17b7dfff5bf4d5ae244"
         }
       ],
-      "sha256": "8cfb17ccd1a59684e527495c6f2fc6fba8f8a859be2fe17b7dfff5bf4d5ae244",
+      "sha256": "f081bb92b0650357c43ad865ee649e1a46e2adbb1c1a765ba78511ffee0e108c",
       "source_line_count": 170,
-      "omissions": []
+      "omissions": [],
+      "source_selection_sha256": "8cfb17ccd1a59684e527495c6f2fc6fba8f8a859be2fe17b7dfff5bf4d5ae244",
+      "editorial_changes": {
+        "headings": [
+          {
+            "before": "# Dependency Management — Enterprise Standard",
+            "after": "# Dependency Management"
+          },
+          {
+            "before": "## SECTION 1 — PINNING STRATEGY",
+            "after": "## 1. PINNING STRATEGY"
+          },
+          {
+            "before": "## SECTION 2 — VULNERABILITY SCANNING",
+            "after": "## 2. VULNERABILITY SCANNING"
+          },
+          {
+            "before": "## SECTION 3 — UPDATE CADENCE",
+            "after": "## 3. UPDATE CADENCE"
+          },
+          {
+            "before": "## SECTION 4 — PRIVATE REGISTRY",
+            "after": "## 4. PRIVATE REGISTRY"
+          },
+          {
+            "before": "## SECTION 5 — RULES SUMMARY",
+            "after": "## 5. RULES SUMMARY"
+          }
+        ],
+        "removed_horizontal_rules": 5,
+        "collapsed_blank_lines": 5,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "7a1097b8eb092cdbc3633401add363caabda32726541c1c30191efdc50299817",
+        "examples_sha256": "dc055b1bb53c9dd6cfb9c501adf32c14929a62117948d6ddb791fc85421f7d56"
+      }
     },
     {
       "destination": "python/security.md",
@@ -993,7 +1683,7 @@
           "sha256": "586aec9f0090f681bf9915f49a259bb8f08f6ffaaf5ad895a1d954e6e13a42da"
         }
       ],
-      "sha256": "a4a819915d66f7611afe5a9e74c0f68185784bcc0b6b0eb2428e3db569aeeff3",
+      "sha256": "f5f59ef8504deb566a429fa958cf50372d0d65967bc42c6e519af40bb0af37bc",
       "source_line_count": 491,
       "omissions": [
         {
@@ -1011,7 +1701,58 @@
           "end_line": 442,
           "reason": "Duplicate dependency pinning recipe conflicts with the more complete dependency-management document, and pip-audit has no --fail-on-vuln flag."
         }
-      ]
+      ],
+      "source_selection_sha256": "a4a819915d66f7611afe5a9e74c0f68185784bcc0b6b0eb2428e3db569aeeff3",
+      "editorial_changes": {
+        "headings": [
+          {
+            "before": "# Security — Enterprise Standard",
+            "after": "# Security"
+          },
+          {
+            "before": "## SECTION 1 — SECRETS MANAGEMENT",
+            "after": "## 1. SECRETS MANAGEMENT"
+          },
+          {
+            "before": "## SECTION 2 — AUTHENTICATION",
+            "after": "## 2. AUTHENTICATION"
+          },
+          {
+            "before": "## SECTION 3 — INPUT VALIDATION",
+            "after": "## 3. INPUT VALIDATION"
+          },
+          {
+            "before": "## SECTION 4 — SQL INJECTION PREVENTION",
+            "after": "## 4. SQL INJECTION PREVENTION"
+          },
+          {
+            "before": "## SECTION 5 — RATE LIMITING",
+            "after": "## 5. RATE LIMITING"
+          },
+          {
+            "before": "## SECTION 6 — CORS",
+            "after": "## 6. CORS"
+          },
+          {
+            "before": "## SECTION 7 — RESPONSE SANITISATION",
+            "after": "## 7. RESPONSE SANITISATION"
+          },
+          {
+            "before": "## SECTION 9 — SECURITY HEADERS (configure at reverse proxy or middleware)",
+            "after": "## 9. SECURITY HEADERS (configure at reverse proxy or middleware)"
+          },
+          {
+            "before": "## SECTION 10 — SECURITY CHECKLIST FOR CODE REVIEW",
+            "after": "## 10. SECURITY CHECKLIST FOR CODE REVIEW"
+          }
+        ],
+        "removed_horizontal_rules": 9,
+        "collapsed_blank_lines": 10,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "7b54f1aa9bbc86873357b5e0e9955cfe30704d043b987676ea3ea172e849ed9d",
+        "examples_sha256": "78fe351a5391c36dc589a8879e7337851573edaed55ce748a3f28485a7e5888f"
+      }
     },
     {
       "destination": "sql/db-design.md",
@@ -1055,7 +1796,7 @@
           "sha256": "52a561be204e1bf47ac73d3abc87dc6a88a0bb9132e781a5d3190aa6acd7dffb"
         }
       ],
-      "sha256": "85356e47907249e5dd44ccd6e56c9e291f7e42c6c2534efffb6664b44967e227",
+      "sha256": "b3bb7c706bcccf3108c0fcfd50aeacc50c18fcac9971aef3d89ce8c01643347e",
       "source_line_count": 462,
       "omissions": [
         {
@@ -1088,7 +1829,50 @@
           "end_line": 436,
           "reason": "Timestamp-only ordering is not stable pagination."
         }
-      ]
+      ],
+      "source_selection_sha256": "85356e47907249e5dd44ccd6e56c9e291f7e42c6c2534efffb6664b44967e227",
+      "editorial_changes": {
+        "headings": [
+          {
+            "before": "# Database Design — Enterprise Standard",
+            "after": "# Database Design"
+          },
+          {
+            "before": "## SECTION 1 — MODEL FOUNDATION",
+            "after": "## 1. MODEL FOUNDATION"
+          },
+          {
+            "before": "## SECTION 2 — NAMING CONVENTIONS",
+            "after": "## 2. NAMING CONVENTIONS"
+          },
+          {
+            "before": "## SECTION 3 — RELATIONSHIPS",
+            "after": "## 3. RELATIONSHIPS"
+          },
+          {
+            "before": "## SECTION 4 — INDEXING STRATEGY",
+            "after": "## 4. INDEXING STRATEGY"
+          },
+          {
+            "before": "## SECTION 5 — MIGRATION DISCIPLINE (ALEMBIC)",
+            "after": "## 5. MIGRATION DISCIPLINE (ALEMBIC)"
+          },
+          {
+            "before": "## SECTION 6 — QUERY PATTERNS",
+            "after": "## 6. QUERY PATTERNS"
+          },
+          {
+            "before": "## SECTION 7 — DECIMAL HANDLING FOR MONETARY VALUES",
+            "after": "## 7. DECIMAL HANDLING FOR MONETARY VALUES"
+          }
+        ],
+        "removed_horizontal_rules": 6,
+        "collapsed_blank_lines": 6,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "9ecdc386bce2c26ad3dde3067b2baf510d83586befe9ac11979bdfb2b585ecee",
+        "examples_sha256": "e19510d82630d3535627e5a45e3cead56cc365b808381cd8087ad5a66c80a1d8"
+      }
     },
     {
       "destination": "sql/data-migrations.md",
@@ -1122,7 +1906,7 @@
           "sha256": "74a3fdba64256308c14d672573d6c1ec05d135b1f50734796a028ef47af03232"
         }
       ],
-      "sha256": "0b336aa0d8e3a04e8edaa8dbd97b50dcc916a0e6c289b310011bf9fc27a6f161",
+      "sha256": "e716f5a7e4d0ef1401ed32f067f363de5bcfc6c446127d65424bbd275999305a",
       "source_line_count": 190,
       "omissions": [
         {
@@ -1145,7 +1929,46 @@
           "end_line": 181,
           "reason": "The example does run database_operations DDL, contrary to its comment."
         }
-      ]
+      ],
+      "source_selection_sha256": "0b336aa0d8e3a04e8edaa8dbd97b50dcc916a0e6c289b310011bf9fc27a6f161",
+      "editorial_changes": {
+        "headings": [
+          {
+            "before": "# Data Migrations — Enterprise Standard",
+            "after": "# Data Migrations"
+          },
+          {
+            "before": "## SECTION 1 — ZERO-DOWNTIME MIGRATION RULES",
+            "after": "## 1. ZERO-DOWNTIME MIGRATION RULES"
+          },
+          {
+            "before": "## SECTION 2 — EXPAND-CONTRACT PATTERN",
+            "after": "## 2. EXPAND-CONTRACT PATTERN"
+          },
+          {
+            "before": "## SECTION 3 — BACKFILL STRATEGIES",
+            "after": "## 3. BACKFILL STRATEGIES"
+          },
+          {
+            "before": "## SECTION 4 — DANGEROUS OPERATIONS REFERENCE",
+            "after": "## 4. DANGEROUS OPERATIONS REFERENCE"
+          },
+          {
+            "before": "## SECTION 5 — ALEMBIC BEST PRACTICES",
+            "after": "## 5. ALEMBIC BEST PRACTICES"
+          },
+          {
+            "before": "## SECTION 6 — DJANGO MIGRATIONS SPECIFICS",
+            "after": "## 6. DJANGO MIGRATIONS SPECIFICS"
+          }
+        ],
+        "removed_horizontal_rules": 6,
+        "collapsed_blank_lines": 6,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "0b7cde11972482c40841a4061220de32a49e0a55e7cfcf0a7ae241cf4596492f",
+        "examples_sha256": "c112d4d77a2b66fe27620109d7fe1937b5f6df802e73998406ce89afd1535043"
+      }
     },
     {
       "destination": "api/design.md",
@@ -1174,7 +1997,7 @@
           "sha256": "f963f67ff24a9c554381dc023bf783ef80061a5cd70998fc90b507fbcc2acc2a"
         }
       ],
-      "sha256": "bb5d9c0b48abd5de3a941e56edd4df05292ac926ac08f836bdf916f59c453b9a",
+      "sha256": "dc54e625998507d9eff942061077a0fb7d6944c992727c97530885fbcafd2a4f",
       "source_line_count": 171,
       "omissions": [
         {
@@ -1192,7 +2015,17 @@
           "end_line": 144,
           "reason": "Deprecation header uses the obsolete HTTP-date form rather than a structured date."
         }
-      ]
+      ],
+      "source_selection_sha256": "bb5d9c0b48abd5de3a941e56edd4df05292ac926ac08f836bdf916f59c453b9a",
+      "editorial_changes": {
+        "headings": [],
+        "removed_horizontal_rules": 10,
+        "collapsed_blank_lines": 11,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "661fff95fccba5ad78d7fc7c45281030c7eab62f5e18d12d86c6ec44e4c450b8",
+        "examples_sha256": "d1ec070450d4f96a1f07700a66c2a13c35db8da759cdd448e8bc95892fd7b1db"
+      }
     },
     {
       "destination": "api/flask.md",
@@ -1241,7 +2074,7 @@
           "sha256": "4f71ec9f439152ab1dae9b6a5aa6b85d433f27e0c1d40dfc0fad85b2f13a15a1"
         }
       ],
-      "sha256": "4c6500d31ca24278f7d1afc4d16f83ec8eea1a9c6d948769dca16128508b4f9b",
+      "sha256": "6246f8ed0bac7c0f32634f5158e24298acb81337695c50518750f8d92006df70",
       "source_line_count": 851,
       "omissions": [
         {
@@ -1284,7 +2117,36 @@
           "end_line": 696,
           "reason": "The worker commands reference an app:celery_app export that the shown factory never defines."
         }
-      ]
+      ],
+      "source_selection_sha256": "4c6500d31ca24278f7d1afc4d16f83ec8eea1a9c6d948769dca16128508b4f9b",
+      "editorial_changes": {
+        "headings": [
+          {
+            "before": "## Error Handlers",
+            "after": "### Error Handlers"
+          },
+          {
+            "before": "## Custom API Error Classes",
+            "after": "### Custom API Error Classes"
+          }
+        ],
+        "removed_horizontal_rules": 15,
+        "collapsed_blank_lines": 17,
+        "section_moves": [
+          {
+            "section": "## Custom API Error Classes",
+            "after_section": "## Error Handlers",
+            "new_parent": "## Error Handling",
+            "original_block_sha256": "c1b2852ea5c612e79354a7f5602b98cb57c67403286f872cfb5035e015d3a9f1"
+          }
+        ],
+        "added_headings": [
+          "# Flask",
+          "## Error Handling"
+        ],
+        "content_sha256": "992027ce283bb86fc518bdefa5c18e1f9f8d8649aa6ed8a981cde0823b248eab",
+        "examples_sha256": "2d6b55694e795ceacbe4e4980ac87244c569320f1431f2b8f9da4677d9d8a949"
+      }
     },
     {
       "destination": "api/fastapi.md",
@@ -1323,7 +2185,7 @@
           "sha256": "cdec83cca38fd44034dd548a06e8bb8da97befbc1d8baf586854dc8e29ee3830"
         }
       ],
-      "sha256": "6e86f3d18e76c4af9a0463f44a83cb7ba7837aaf4021155d27bd4cbbbb299396",
+      "sha256": "7e8eba30880966317367a02ae770a05f5b5c5dc2ae6dd0a604ab41876bf8518f",
       "source_line_count": 301,
       "omissions": [
         {
@@ -1356,7 +2218,36 @@
           "end_line": 288,
           "reason": "Blanket dict prohibition conflicts with health checks and accepted framework response shapes."
         }
-      ]
+      ],
+      "source_selection_sha256": "6e86f3d18e76c4af9a0463f44a83cb7ba7837aaf4021155d27bd4cbbbb299396",
+      "editorial_changes": {
+        "headings": [
+          {
+            "before": "## Database Session",
+            "after": "### Database Session"
+          },
+          {
+            "before": "## ANNOTATED DEPENDENCIES (Python 3.9+)",
+            "after": "### ANNOTATED DEPENDENCIES (Python 3.9+)"
+          }
+        ],
+        "removed_horizontal_rules": 10,
+        "collapsed_blank_lines": 10,
+        "section_moves": [
+          {
+            "section": "## ANNOTATED DEPENDENCIES (Python 3.9+)",
+            "after_section": "## Database Session",
+            "new_parent": "## Dependencies",
+            "original_block_sha256": "7d6903595eb9c2b89791fc0919d4bdbd915be01f0d6e373c356e0893b53fa225"
+          }
+        ],
+        "added_headings": [
+          "# FastAPI",
+          "## Dependencies"
+        ],
+        "content_sha256": "a9837fc0bce2779533af575a8099d001f06f4c314f932e5105c2bef80a832e4c",
+        "examples_sha256": "017481f1c8eb18aa59aa6963c1bd8f6066659c947364c97e2df32a9a945aa916"
+      }
     },
     {
       "destination": "api/authentication.md",
@@ -1375,7 +2266,7 @@
           "sha256": "0174caaede846eb0309d59f8cc2ad7a2635ec58afcdbfa41ecc092d463ab1d61"
         }
       ],
-      "sha256": "a466aeebd64106f2abd44f85e53f5d1381dbed352ccdb267a1c93fa1768d4096",
+      "sha256": "3da0f6d0ac7f5253a8a3fa00fd7aa20fdd57de089c290f41b024bd0cc8b9d870",
       "source_line_count": 309,
       "omissions": [
         {
@@ -1383,7 +2274,50 @@
           "end_line": 78,
           "reason": "The token-pair example omits jti required by the retained revocation pattern and can issue identical refresh tokens within one second; its verification also does not require expiry or verify token type."
         }
-      ]
+      ],
+      "source_selection_sha256": "a466aeebd64106f2abd44f85e53f5d1381dbed352ccdb267a1c93fa1768d4096",
+      "editorial_changes": {
+        "headings": [
+          {
+            "before": "# API Authentication & Authorization — Enterprise Standard",
+            "after": "# API Authentication & Authorization"
+          },
+          {
+            "before": "## SECTION 1 — AUTHENTICATION METHODS",
+            "after": "## 1. AUTHENTICATION METHODS"
+          },
+          {
+            "before": "## SECTION 2 — JWT LIFECYCLE",
+            "after": "## 2. JWT LIFECYCLE"
+          },
+          {
+            "before": "## SECTION 3 — OAUTH2 FLOWS",
+            "after": "## 3. OAUTH2 FLOWS"
+          },
+          {
+            "before": "## SECTION 4 — RBAC (Role-Based Access Control)",
+            "after": "## 4. RBAC (Role-Based Access Control)"
+          },
+          {
+            "before": "## SECTION 5 — ABAC (Attribute-Based Access Control)",
+            "after": "## 5. ABAC (Attribute-Based Access Control)"
+          },
+          {
+            "before": "## SECTION 6 — API KEY MANAGEMENT",
+            "after": "## 6. API KEY MANAGEMENT"
+          },
+          {
+            "before": "## SECTION 7 — SERVICE-TO-SERVICE AUTH",
+            "after": "## 7. SERVICE-TO-SERVICE AUTH"
+          }
+        ],
+        "removed_horizontal_rules": 7,
+        "collapsed_blank_lines": 7,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "4d012a0a3132b4d98630555bd4fe0d18baf9a14170165b02b3e7ca4c505ad3e5",
+        "examples_sha256": "b7fa65800f4bc39fe50efae9d994e449899b066d202e8d2f1744b53f494c82e0"
+      }
     },
     {
       "destination": "architecture/microservices.md",
@@ -1417,7 +2351,7 @@
           "sha256": "c3877c52b58e3b3d59d1385f95900b522b8c45bfeb0f1ca5ec8c3cc642134366"
         }
       ],
-      "sha256": "81947b01e72e165920a9af60970d44b4049133c9ef23a2fb0664f73ee570c6c8",
+      "sha256": "d14ad5b4dba1e4ad27740153dab5d765555268352fb80c9a15c788488d7d7ff9",
       "source_line_count": 247,
       "omissions": [
         {
@@ -1440,7 +2374,42 @@
           "end_line": 238,
           "reason": "The half-open circuit breaker allows concurrent probes, and the fallback indexes None on a 404 response."
         }
-      ]
+      ],
+      "source_selection_sha256": "81947b01e72e165920a9af60970d44b4049133c9ef23a2fb0664f73ee570c6c8",
+      "editorial_changes": {
+        "headings": [
+          {
+            "before": "# Microservices Patterns — Enterprise Standard",
+            "after": "# Microservices Patterns"
+          },
+          {
+            "before": "## SECTION 1 — SERVICE BOUNDARY RULES",
+            "after": "## 1. SERVICE BOUNDARY RULES"
+          },
+          {
+            "before": "## SECTION 2 — INTER-SERVICE COMMUNICATION",
+            "after": "## 2. INTER-SERVICE COMMUNICATION"
+          },
+          {
+            "before": "## SECTION 3 — API CONTRACTS",
+            "after": "## 3. API CONTRACTS"
+          },
+          {
+            "before": "## SECTION 4 — SHARED LIBRARIES",
+            "after": "## 4. SHARED LIBRARIES"
+          },
+          {
+            "before": "## SECTION 6 — DATA OWNERSHIP RULES",
+            "after": "## 6. DATA OWNERSHIP RULES"
+          }
+        ],
+        "removed_horizontal_rules": 5,
+        "collapsed_blank_lines": 6,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "7a56cdfb34068592a578b57d16dabc0e0e48cf8e286b0491cdc11b1b0b0d2371",
+        "examples_sha256": "41947637568ccecc90c96ade3d377a58ce039e87f56cd836060c3e2a5c28dfe9"
+      }
     },
     {
       "destination": "architecture/feature-flags.md",
@@ -1459,7 +2428,7 @@
           "sha256": "b5a7bd4dba602863f28bc80bd3ec634c537388f369711d01cc79fb077af6bc79"
         }
       ],
-      "sha256": "b4ee79494e65874d3292e0e29d55f017bc74ae0292bf40c4751d7222444eb574",
+      "sha256": "1e2791a82ccb625cb9742d0e485ea4e66568cb26d92042b550839c7aa75be218",
       "source_line_count": 188,
       "omissions": [
         {
@@ -1467,7 +2436,42 @@
           "end_line": 170,
           "reason": "The testing functions use await inside synchronous def functions."
         }
-      ]
+      ],
+      "source_selection_sha256": "b4ee79494e65874d3292e0e29d55f017bc74ae0292bf40c4751d7222444eb574",
+      "editorial_changes": {
+        "headings": [
+          {
+            "before": "# Feature Flags — Enterprise Standard",
+            "after": "# Feature Flags"
+          },
+          {
+            "before": "## SECTION 1 — FLAG TYPES",
+            "after": "## 1. FLAG TYPES"
+          },
+          {
+            "before": "## SECTION 2 — IMPLEMENTATION PATTERN",
+            "after": "## 2. IMPLEMENTATION PATTERN"
+          },
+          {
+            "before": "## SECTION 3 — GRADUAL ROLLOUT STRATEGY",
+            "after": "## 3. GRADUAL ROLLOUT STRATEGY"
+          },
+          {
+            "before": "## SECTION 4 — FLAG LIFECYCLE",
+            "after": "## 4. FLAG LIFECYCLE"
+          },
+          {
+            "before": "## SECTION 6 — FLAG HYGIENE TRACKING",
+            "after": "## 6. FLAG HYGIENE TRACKING"
+          }
+        ],
+        "removed_horizontal_rules": 5,
+        "collapsed_blank_lines": 6,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "e1610f6db17933d60d667c1446047305c6e14479c39ab4ad5bbb667c3d1dce7b",
+        "examples_sha256": "5548301521db60ef1fcec2961bb67bf6a4fceea96e0b80f9879367a0fb1f03e8"
+      }
     },
     {
       "destination": "python/ci-cd.md",
@@ -1486,7 +2490,7 @@
           "sha256": "15331d708e87c7fd8330ff88a55cf4b4c37ea39cd534797ab478325946a9b64a"
         }
       ],
-      "sha256": "b2c69abf49485e5cc74718deffeafa5c64322236fd0274cc34e7de8378eebd1c",
+      "sha256": "2a9d6e324cf951d7a62cd2789eb9f7aaf44828ff6bb94d610f63ccfcb10f59ec",
       "source_line_count": 169,
       "omissions": [
         {
@@ -1499,7 +2503,38 @@
           "end_line": 169,
           "reason": "The release recipe lacks registry login and package/release write permissions and does not itself deploy production."
         }
-      ]
+      ],
+      "source_selection_sha256": "b2c69abf49485e5cc74718deffeafa5c64322236fd0274cc34e7de8378eebd1c",
+      "editorial_changes": {
+        "headings": [
+          {
+            "before": "# CI/CD — Enterprise Standard",
+            "after": "# CI/CD"
+          },
+          {
+            "before": "## SECTION 1 — PIPELINE STAGES",
+            "after": "## 1. PIPELINE STAGES"
+          },
+          {
+            "before": "## SECTION 2 — GITHUB ACTIONS TEMPLATE",
+            "after": "## 2. GITHUB ACTIONS TEMPLATE"
+          },
+          {
+            "before": "## SECTION 3 — RULES",
+            "after": "## 3. RULES"
+          },
+          {
+            "before": "## SECTION 4 — PR CHECKS (Required Status Checks)",
+            "after": "## 4. PR CHECKS (Required Status Checks)"
+          }
+        ],
+        "removed_horizontal_rules": 5,
+        "collapsed_blank_lines": 4,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "82d8a8d0a7731cb19e904e04cbb745c7ddeedce03562b29f6ab01babadd2a906",
+        "examples_sha256": "36439f5cab668a66354e1bbc6861c3c5667bc9a586dfd79284e58a7d1fb46e32"
+      }
     },
     {
       "destination": "python/deployment.md",
@@ -1513,9 +2548,59 @@
           "sha256": "3907d02a8b13eec111a526b18416532d93e628a83ab97308f367f7194ae51428"
         }
       ],
-      "sha256": "3907d02a8b13eec111a526b18416532d93e628a83ab97308f367f7194ae51428",
+      "sha256": "c70f6dd8141d38cc36aebda7885354637d617940092f42943ba6b8ae562266db",
       "source_line_count": 207,
-      "omissions": []
+      "omissions": [],
+      "source_selection_sha256": "3907d02a8b13eec111a526b18416532d93e628a83ab97308f367f7194ae51428",
+      "editorial_changes": {
+        "headings": [
+          {
+            "before": "# Deployment — Enterprise Standard",
+            "after": "# Deployment"
+          },
+          {
+            "before": "## SECTION 1 — DOCKERFILE (Multi-Stage)",
+            "after": "## 1. DOCKERFILE (Multi-Stage)"
+          },
+          {
+            "before": "## SECTION 2 — .dockerignore",
+            "after": "## 2. .dockerignore"
+          },
+          {
+            "before": "## SECTION 3 — HEALTH CHECK ENDPOINT",
+            "after": "## 3. HEALTH CHECK ENDPOINT"
+          },
+          {
+            "before": "## SECTION 4 — GRACEFUL SHUTDOWN",
+            "after": "## 4. GRACEFUL SHUTDOWN"
+          },
+          {
+            "before": "## SECTION 5 — 12-FACTOR COMPLIANCE CHECKLIST",
+            "after": "## 5. 12-FACTOR COMPLIANCE CHECKLIST"
+          },
+          {
+            "before": "## SECTION 6 — ENVIRONMENT CONFIGURATION",
+            "after": "## 6. ENVIRONMENT CONFIGURATION"
+          },
+          {
+            "before": "## SECTION 7 — RULES",
+            "after": "## 7. RULES"
+          }
+        ],
+        "removed_horizontal_rules": 7,
+        "collapsed_blank_lines": 7,
+        "section_moves": [],
+        "added_headings": [],
+        "content_sha256": "0753778af463862f833d14ef4ceb46401fe7746bd846b47c1b37eaddc5b7b9eb",
+        "examples_sha256": "80b6aa1d0507c71bdcbf9cec9d133fa15dfc236c9d400014b0b8375ccce86667"
+      }
     }
-  ]
+  ],
+  "editorial_basis_revision": "e24c1bab16092da4b67c78d8710268e6d000e094",
+  "editorial_policy": {
+    "headings": "Preserve original heading capitalization and retained wording. Only recorded boilerplate removal, hierarchy repairs, added grouping headings and intact section moves apply.",
+    "spacing": "Remove horizontal rules outside fences and collapse repeated outside-fence blank lines.",
+    "preservation": "Every original heading node retains its ordered direct body after spacing normalization; only the redundant style subtitle preamble merges into the title preamble. Fenced example blocks retain their full contents and multiplicity.",
+    "digests": "content_sha256 hashes the sorted exact non-heading prose-line multiset; examples_sha256 hashes the sorted complete fenced-block multiset. Each uses UTF-8 compact JSON with sorted keys and ensure_ascii=false."
+  }
 }

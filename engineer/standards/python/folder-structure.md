@@ -1,11 +1,9 @@
-# Python Project Structure — Enterprise Standard
+# Python Project Structure
 
 **Applies to:** All Python project types. Each section tagged with project archetype.
 **Version:** Python 3.7+. Version-specific options noted per section.
 
----
-
-## SECTION 1 — THE CORE PRINCIPLE
+## 1. THE CORE PRINCIPLE
 
 There is no universal folder structure — there are structures suited to the problem. This skill defines invariant rules that govern any structure, plus canonical layouts for the five most common Python project archetypes:
 
@@ -23,9 +21,7 @@ There is no universal folder structure — there are structures suited to the pr
 - No business logic in `__init__.py` — only re-exports or empty.
 - No circular imports — enforced architecturally by layer discipline.
 
----
-
-## SECTION 2 — SRC LAYOUT vs FLAT LAYOUT
+## 2. SRC LAYOUT vs FLAT LAYOUT
 
 ### 2.1 src/ Layout — for libraries and installable packages
 
@@ -56,9 +52,7 @@ my-app/
 
 **Use when:** Web services, CLIs, data pipelines — deployed rather than installed.
 
----
-
-## SECTION 3 — WEB SERVICE LAYOUT
+## 3. WEB SERVICE LAYOUT
 
 ```
 my-service/
@@ -161,9 +155,7 @@ class UserRepository:
         ...
 ```
 
----
-
-## SECTION 4 — LIBRARY / PACKAGE LAYOUT
+## 4. LIBRARY / PACKAGE LAYOUT
 
 ```
 my-library/
@@ -190,9 +182,7 @@ my-library/
 - `py.typed` required for PEP 561 compliance.
 - Private implementation in `_internal/` — never documented or imported externally.
 
----
-
-## SECTION 5 — DATA PIPELINE / ETL LAYOUT
+## 5. DATA PIPELINE / ETL LAYOUT
 
 ```
 my-pipeline/
@@ -219,9 +209,7 @@ my-pipeline/
 └── pyproject.toml
 ```
 
----
-
-## SECTION 6 — CLI TOOL LAYOUT
+## 6. CLI TOOL LAYOUT
 
 ```
 my-cli/
@@ -246,9 +234,7 @@ my-cli/
 mycli = "mycli.cli:main"
 ```
 
----
-
-## SECTION 7 — ML / AI PROJECT LAYOUT
+## 7. ML / AI PROJECT LAYOUT
 
 ```
 my-ml-project/
@@ -282,9 +268,7 @@ my-ml-project/
 - Model configs are Pydantic models or dataclasses — never bare dicts.
 - Artifacts are gitignored; use DVC or artifact storage (MLflow, W&B).
 
----
-
-## SECTION 8 — FILE AND MODULE NAMING RULES
+## 8. FILE AND MODULE NAMING RULES
 
 ```
 Modules:     short, all_lowercase, underscores if necessary
@@ -302,9 +286,7 @@ __init__.py: re-exports only or empty; never business logic
 
 ```
 
----
-
-## SECTION 9 — WHAT NEVER GOES WHERE
+## 9. WHAT NEVER GOES WHERE
 
 | Location | Forbidden |
 |---|---|
@@ -319,9 +301,7 @@ __init__.py: re-exports only or empty; never business logic
 | `tests/` | Any production code path |
 | `scripts/` | Any code imported by the application |
 
----
-
-## SECTION 10 — MODULE & PACKAGE DESIGN RULES (Hitchhiker's Guide)
+## 10. MODULE & PACKAGE DESIGN RULES (Hitchhiker's Guide)
 
 ### Import Style: Explicitness Over Brevity
 

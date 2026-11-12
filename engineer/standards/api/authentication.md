@@ -1,11 +1,9 @@
-# API Authentication & Authorization — Enterprise Standard
+# API Authentication & Authorization
 
 **Applies to:** All Python APIs serving external or internal consumers.
 **Stack:** PyJWT / python-jose, OAuth2 (authlib), passlib, RBAC/ABAC patterns.
 
----
-
-## SECTION 1 — AUTHENTICATION METHODS
+## 1. AUTHENTICATION METHODS
 
 | Method | Use when | Security level |
 |--------|----------|---------------|
@@ -17,9 +15,7 @@
 
 **Rule:** Never use API keys as the sole auth for user-facing endpoints. API keys are for machine clients.
 
----
-
-## SECTION 2 — JWT LIFECYCLE
+## 2. JWT LIFECYCLE
 
 ### Token Structure
 
@@ -55,9 +51,7 @@ async def is_token_revoked(jti: str) -> bool:
     return await redis.exists(f"revoked:{jti}")
 ```
 
----
-
-## SECTION 3 — OAUTH2 FLOWS
+## 3. OAUTH2 FLOWS
 
 ### Authorization Code Flow (user-facing apps)
 
@@ -109,9 +103,7 @@ async def get_service_token() -> str:
         return response.json()["access_token"]
 ```
 
----
-
-## SECTION 4 — RBAC (Role-Based Access Control)
+## 4. RBAC (Role-Based Access Control)
 
 ```python
 # app/core/permissions.py
@@ -152,9 +144,7 @@ async def delete_user(user_id: int, user: User = require_permission("delete_any"
     ...
 ```
 
----
-
-## SECTION 5 — ABAC (Attribute-Based Access Control)
+## 5. ABAC (Attribute-Based Access Control)
 
 For complex authorization beyond roles:
 
@@ -198,9 +188,7 @@ def evaluate_policy(ctx: AccessContext) -> bool:
     return False
 ```
 
----
-
-## SECTION 6 — API KEY MANAGEMENT
+## 6. API KEY MANAGEMENT
 
 ```python
 # app/core/api_keys.py
@@ -231,9 +219,7 @@ def verify_api_key(raw_key: str, stored_hash: str) -> bool:
 - Rate-limit per key, not just per IP.
 - Log key usage for audit trail.
 
----
-
-## SECTION 7 — SERVICE-TO-SERVICE AUTH
+## 7. SERVICE-TO-SERVICE AUTH
 
 ### Option A: Signed JWTs (lightweight)
 

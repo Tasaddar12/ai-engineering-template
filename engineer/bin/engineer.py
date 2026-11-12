@@ -26,7 +26,7 @@ from lib import planning_integrity
 from lib import manager, pipelines, ideas
 from lib import archive as archive_service
 from lib import dispatch, installation, onboarding, planning, research, review_ledger, runtime_tools, specs, workflow_ops
-from lib import security_tracking, capabilities
+from lib import security_tracking, capabilities, standards
 from lib.core import Args, Failure, pick, raw, root, slug
 
 IDENTITY = {"packageName": "engineer-runtime", "contract": "2.0"}
@@ -58,6 +58,7 @@ def registry():
         "check.decision-coverage-plan": lambda a: decisions.coverage(a, "plan"),
         "check.decision-coverage-verify": lambda a: decisions.coverage(a, "verify"),
         "plan.task-structure": plans.structure, "verify.plan-structure": plans.validate,
+        "standards-read": standards.read_command, "standards-list": standards.list_command,
         "verification.status": verification.status, "verification.resolve-file": lambda a: str(verification.resolve_file(a.need())),
         "verification.fingerprint": verification.fingerprint, "verification.append-audit": verification.append_audit,
         "verification.run-checks": verification.run_checks, "verification.check-status": verification.check_status,

@@ -1,11 +1,9 @@
-# Dependency Management — Enterprise Standard
+# Dependency Management
 
 **Applies to:** All Python projects.
 **Tools:** pip, uv, pip-audit, Dependabot/Renovate.
 
----
-
-## SECTION 1 — PINNING STRATEGY
+## 1. PINNING STRATEGY
 
 ### pyproject.toml — pin to minor version
 
@@ -49,9 +47,7 @@ uv pip compile pyproject.toml -o requirements.lock
 uv pip sync requirements.lock
 ```
 
----
-
-## SECTION 2 — VULNERABILITY SCANNING
+## 2. VULNERABILITY SCANNING
 
 ### Automated Scanning
 
@@ -92,9 +88,7 @@ jobs:
 | Medium (CVSS 4.0–6.9) | Schedule in next sprint | < 2 weeks |
 | Low (CVSS < 4.0) | Bundle with next regular update | < 1 month |
 
----
-
-## SECTION 3 — UPDATE CADENCE
+## 3. UPDATE CADENCE
 
 | Activity | Frequency |
 |----------|-----------|
@@ -130,9 +124,7 @@ jobs:
 }
 ```
 
----
-
-## SECTION 4 — PRIVATE REGISTRY
+## 4. PRIVATE REGISTRY
 
 For internal packages:
 
@@ -155,9 +147,7 @@ UV_EXTRA_INDEX_URL=https://${PYPI_TOKEN}@pypi.internal.company.com/simple
 - Internal packages follow the same versioning (semver) as external.
 - Pin internal packages to exact versions in consuming services.
 
----
-
-## SECTION 5 — RULES SUMMARY
+## 5. RULES SUMMARY
 
 | Rule | Rationale |
 |------|-----------|

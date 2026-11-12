@@ -44,6 +44,8 @@ And stop.
 </step>
 
 <step name="execute_inline">
+For code changes, follow @~/.claude/engineer/references/coding-standards.md for task-scoped required reading.
+
 Do the work directly:
 
 1. Read the relevant file(s)

@@ -1,10 +1,8 @@
-# Microservices Patterns — Enterprise Standard
+# Microservices Patterns
 
 **Applies to:** Teams running 2+ independently deployed Python services.
 
----
-
-## SECTION 1 — SERVICE BOUNDARY RULES
+## 1. SERVICE BOUNDARY RULES
 
 ### When to Split
 
@@ -25,9 +23,7 @@ A service owns ONE bounded context from Domain-Driven Design:
 
 **Anti-pattern:** A "shared" service that every other service depends on. That's a monolith with extra network hops.
 
----
-
-## SECTION 2 — INTER-SERVICE COMMUNICATION
+## 2. INTER-SERVICE COMMUNICATION
 
 ### Synchronous (HTTP/gRPC)
 
@@ -85,14 +81,11 @@ async def send_order_confirmation(event: dict) -> None:
     )
 ```
 
----
-
-## SECTION 3 — API CONTRACTS
+## 3. API CONTRACTS
 
 ### Contract-First Design
 
 Define the API contract BEFORE implementation:
-
 
 ### Versioning Between Services
 
@@ -101,9 +94,7 @@ Define the API contract BEFORE implementation:
 - Consumer services declare which version they depend on.
 - Provider maintains N and N-1 versions simultaneously.
 
----
-
-## SECTION 4 — SHARED LIBRARIES
+## 4. SHARED LIBRARIES
 
 ### What to Share
 
@@ -135,9 +126,7 @@ packages/
 
 **Rule:** Shared libraries must be versioned and published to internal registry. Never use git submodules or path dependencies in production.
 
----
-
-## SECTION 6 — DATA OWNERSHIP RULES
+## 6. DATA OWNERSHIP RULES
 
 | Rule | Rationale |
 |------|-----------|

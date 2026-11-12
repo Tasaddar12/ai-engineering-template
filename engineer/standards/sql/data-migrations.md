@@ -1,12 +1,10 @@
-# Data Migrations — Enterprise Standard
+# Data Migrations
 
 **Applies to:** All Python projects with relational databases.
 **Tools:** Alembic (SQLAlchemy), Django migrations.
 **Principle:** Every migration must be deployable without downtime.
 
----
-
-## SECTION 1 — ZERO-DOWNTIME MIGRATION RULES
+## 1. ZERO-DOWNTIME MIGRATION RULES
 
 | Rule | Rationale |
 |------|-----------|
@@ -17,9 +15,7 @@
 | Separate schema migrations from data migrations | Schema = fast DDL; data = slow backfill |
 | Test migrations against a production-sized dataset | A 2-second migration on dev can be 2-hour lock on prod |
 
----
-
-## SECTION 2 — EXPAND-CONTRACT PATTERN
+## 2. EXPAND-CONTRACT PATTERN
 
 The safe way to make breaking schema changes:
 
@@ -53,9 +49,7 @@ def downgrade():
 - Deploy ONLY after all code references the new column.
 - Minimum 1 release cycle between expand and contract.
 
----
-
-## SECTION 3 — BACKFILL STRATEGIES
+## 3. BACKFILL STRATEGIES
 
 ### Batch Processing (preferred)
 
@@ -90,9 +84,7 @@ def backfill_in_batches(session):
 - Run backfills as background tasks (Celery), not inside migration files for large tables.
 - Add a progress column or flag to track completion.
 
----
-
-## SECTION 4 — DANGEROUS OPERATIONS REFERENCE
+## 4. DANGEROUS OPERATIONS REFERENCE
 
 | Operation | Risk | Safe Alternative |
 |-----------|------|-----------------|
@@ -104,9 +96,7 @@ def backfill_in_batches(session):
 | `CREATE INDEX` | Locks table on large datasets | `CREATE INDEX CONCURRENTLY` (Postgres) |
 | `DROP TABLE` | Data loss | Rename to `_deprecated_X`, drop after 30 days |
 
----
-
-## SECTION 5 — ALEMBIC BEST PRACTICES
+## 5. ALEMBIC BEST PRACTICES
 
 ```python
 # alembic/env.py — always include
@@ -130,9 +120,7 @@ def run_migrations_online():
 - Never import application models in migrations — use raw SQL or `op.*` only.
 - Pin the migration to a specific schema state (don't reference `models.py`).
 
----
-
-## SECTION 6 — DJANGO MIGRATIONS SPECIFICS
+## 6. DJANGO MIGRATIONS SPECIFICS
 
 ### Django `SeparateDatabaseAndState`
 

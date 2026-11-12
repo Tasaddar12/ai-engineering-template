@@ -1,11 +1,9 @@
-# Testing — Enterprise Standard
+# Testing
 
 **Applies to:** All Python projects.
 **Philosophy:** Tests are not verification — they are specification. Write them first when possible.
 
----
-
-## SECTION 0 — TESTING PRINCIPLES (The Hitchhiker's Rules)
+## 0. TESTING PRINCIPLES (The Hitchhiker's Rules)
 
 These principles apply regardless of framework (pytest, unittest, Django TestCase).
 They represent the community consensus on what makes a test suite genuinely useful.
@@ -43,9 +41,7 @@ by reading tests. Well-named, readable tests are onboarding documentation.
 **Debug using a test.** In the face of an ambiguous bug: don't add `print()` — write a test
 that isolates the failing case. The test documents the fix permanently.
 
----
-
-## SECTION 1 — TOOLCHAIN
+## 1. TOOLCHAIN
 
 | Tool | Role |
 |---|---|
@@ -94,9 +90,7 @@ exclude_lines = [
 ]
 ```
 
----
-
-## SECTION 2 — TEST CATEGORIES AND SCOPE
+## 2. TEST CATEGORIES AND SCOPE
 
 ### 2.1 Unit Tests
 
@@ -124,9 +118,7 @@ exclude_lines = [
 - Separate from pytest; in `tests/performance/` or dedicated repo.
 - Never mixed with unit or integration tests.
 
----
-
-## SECTION 3 — TEST STRUCTURE AND NAMING
+## 3. TEST STRUCTURE AND NAMING
 
 ### 3.1 File and class naming
 
@@ -171,9 +163,7 @@ async def test_create_order_with_valid_data_returns_persisted_order(
     assert call_args.user_id == 42
 ```
 
----
-
-## SECTION 4 — FIXTURES AND CONFTEST
+## 4. FIXTURES AND CONFTEST
 
 ### 4.1 Conftest hierarchy
 
@@ -236,9 +226,7 @@ def postgres_container():
 
 ```
 
----
-
-## SECTION 5 — FACTORIES
+## 5. FACTORIES
 
 Never hardcode test data inline. Always use factory_boy factories.
 
@@ -300,9 +288,7 @@ class ExpensiveProductFactory(ProductFactory):
     price = Decimal("999.99")
 ```
 
----
-
-## SECTION 6 — WHAT MUST BE TESTED
+## 6. WHAT MUST BE TESTED
 
 | Must test | Why |
 |---|---|
@@ -322,9 +308,7 @@ class ExpensiveProductFactory(ProductFactory):
 | Trivial property accessors with no logic | No branch to test |
 | `__repr__` and `__str__` | Unless they contain logic |
 
----
-
-## SECTION 7 — MOCKING GUIDELINES
+## 7. MOCKING GUIDELINES
 
 ```python
 # Mock at the boundary closest to the test — not at the framework level
@@ -353,9 +337,7 @@ async def test_get_user_unit():  # this is an integration test, not a unit test
     ...
 ```
 
----
-
-## SECTION 8 — COVERAGE RULES
+## 8. COVERAGE RULES
 
 ```
 Minimum overall coverage:              80% (CI fails below this)
@@ -367,9 +349,7 @@ Happy paths only is not enough:        every raise statement needs a test
 
 **Coverage is a floor, not a goal.** 100% coverage with weak assertions is useless. 85% coverage with strong assertions that test real behaviour is far more valuable.
 
----
-
-## SECTION 10 — DJANGO-SPECIFIC TESTING
+## 10. DJANGO-SPECIFIC TESTING
 
 ### 10.1 TestCase vs TransactionTestCase
 
@@ -426,9 +406,7 @@ class TestMyView(TestCase):
 - Use `assertIs(result, True)` / `assertIs(result, False)` over `assertTrue()` / `assertFalse()` to verify the actual bool value, not just truthiness.
 - In test docstrings, state the **expected behaviour**: `"Returns 404 when post is unpublished"` not `"Tests that 404 is returned"`.
 
----
-
-## SECTION 11 — PARAMETRIZE FOR COVERAGE BREADTH
+## 11. PARAMETRIZE FOR COVERAGE BREADTH
 
 ```python
 @pytest.mark.parametrize("quantity,expected_total", [
@@ -446,9 +424,7 @@ async def test_order_total_calculation(
     assert total == expected_total
 ```
 
----
-
-## SECTION 12 — ASSERT METHOD SELECTION GUIDE
+## 12. ASSERT METHOD SELECTION GUIDE
 
 Choosing the wrong assert method gives poor failure messages. Always pick the most
 specific method available. This table is the reference used by agents when generating tests.
@@ -584,9 +560,7 @@ class TestOrderService(TestCase):
 - `log_ctx.output` is a list of strings in format `"LEVEL:logger_name:message"`.
 - `log_ctx.records` gives raw `LogRecord` objects for deeper inspection.
 
----
-
-## SECTION 13 — SKIPPING TESTS & EXPECTED FAILURES
+## 13. SKIPPING TESTS & EXPECTED FAILURES
 
 ### 13.1 Skip Decorators
 
@@ -658,9 +632,7 @@ class TestKnownBugs(TestCase):
   flaky tests. Remove the decorator the moment the bug is fixed.
 - Every `skip` call must include a reason string. Never: `@unittest.skip("")`.
 
----
-
-## SECTION 14 — FIXTURE LIFECYCLE & CLEANUP
+## 14. FIXTURE LIFECYCLE & CLEANUP
 
 ### 14.1 Fixture Scope Hierarchy
 
@@ -757,14 +729,11 @@ def tearDownModule() -> None:
     pass  # prefer addModuleCleanup above instead
 ```
 
----
-
-## SECTION 15 — SUBTEST: MULTIPLE ASSERTIONS IN ONE TEST
+## 15. SUBTEST: MULTIPLE ASSERTIONS IN ONE TEST
 
 `self.subTest()` lets you run multiple related assertions in a single test method while
 still reporting each failure independently. This is the `unittest` equivalent of
 `@pytest.mark.parametrize` for use inside `TestCase` classes:
-
 
 **Without `subTest`:** First failure stops all remaining iterations — you only see one failure.
 **With `subTest`:** All iterations run; each failure is reported individually with the parameter value.
@@ -791,9 +760,7 @@ class TestSlugifier(TestCase):
   for code that must use `unittest.TestCase` (Django tests, legacy code).
 - Always pass meaningful keyword args to `subTest` — they appear in failure output.
 
----
-
-## SECTION 16 — ASYNC TESTS (IsolatedAsyncioTestCase)
+## 16. ASYNC TESTS (IsolatedAsyncioTestCase)
 
 For testing async code without pytest-asyncio:
 

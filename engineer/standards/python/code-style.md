@@ -1,10 +1,7 @@
 # Python Code Style & Conventions
-# Enterprise Standard — PEP 8 Complete, Version-Aware, 18+ Years Depth
 
 > Authority: PEP 8 (active, revised 2025-04-04), PEP 257, PEP 484, PEP 526, PEP 604, PEP 695.
 > Applies to: Python 3.8 through 3.13+. Version deltas called out explicitly.
-
----
 
 ## PRIME DIRECTIVE
 
@@ -19,8 +16,6 @@ Rules have priorities:
 Know when to deviate. Document why with a comment when you do.
 Never break backwards compatibility just to comply with a style rule.
 
----
-
 ## 1. TOOLCHAIN
 
 | Tool | Role | Min Version |
@@ -32,8 +27,6 @@ Never break backwards compatibility just to comply with a style rule.
 
 Black was the prior standard. Ruff's formatter is Black-compatible and faster.
 Never use both Ruff formatter AND Black in the same project.
-
----
 
 ## 2. CODE LAYOUT
 
@@ -204,8 +197,6 @@ Always UTF-8. Never add encoding declaration in Python 3 — it is redundant.
 # -*- coding: utf-8 -*-
 ```
 
----
-
 ## 3. IMPORTS
 
 ### 3.1 Grouping and Ordering
@@ -278,8 +269,6 @@ from .sibling_module import SomeClass
 from ..parent_module import ParentClass
 ```
 
----
-
 ## 4. MODULE-LEVEL DUNDERS
 
 After module docstring, before regular imports. `from __future__` comes before dunders.
@@ -296,8 +285,6 @@ __author__ = "AurigaIT Engineering"
 import os
 from typing import Any
 ```
-
----
 
 ## 5. STRING QUOTES
 
@@ -316,8 +303,6 @@ docstring = """This is a docstring."""
 full_name = f"Hello, {first_name} {last_name}!"
 
 ```
-
----
 
 ## 6. WHITESPACE RULES
 
@@ -423,8 +408,6 @@ code : int         # Space before colon
 result: int=0      # No spaces around = when annotation present
 ```
 
----
-
 ## 7. TRAILING COMMAS
 
 ```python
@@ -455,8 +438,6 @@ Why this matters at scale: Without trailing commas, adding one item to a 20-item
 diffs as 2 lines (comma on prev item + new item). With trailing commas, it's 1 line.
 Across hundreds of PRs per day in a large team, this dramatically reduces review noise
 and false blame in git blame.
-
----
 
 ## 8. COMMENTS
 
@@ -520,8 +501,6 @@ counter = 0  # Set counter to zero
 # HACK(nishant): Gateway returns 200 on auth failure; check body instead. GW-1234
 # FIXME(rishap): Race condition in concurrent writes. ENG-5678
 ```
-
----
 
 ## 9. DOCSTRINGS (PEP 257)
 
@@ -652,8 +631,6 @@ Public API:
     deactivate_user: Soft-delete a user account.
 """
 ```
-
----
 
 ## 10. NAMING CONVENTIONS
 
@@ -801,8 +778,6 @@ __all__ = [
 ]
 ```
 
----
-
 ## 11. TYPE ANNOTATIONS
 
 ### 11.1 Version Compatibility Matrix
@@ -933,8 +908,6 @@ def process(x: Any) -> Any:  # Defeats type checking
     ...
 ```
 
----
-
 ## 12. PROGRAMMING RECOMMENDATIONS
 
 ### 12.1 Singleton Comparisons
@@ -990,7 +963,7 @@ def find_user(user_id: int) -> User | None:
     # Implicit return None — mypy catches this, humans miss it
 ```
 
-### 12.4 Exception Handling — Complete Reference
+### 12.4 Exception Handling
 
 ```python
 # Correct — specific exception, minimum code in try, else for success path
@@ -1199,9 +1172,7 @@ class Config:
     headers: dict[str, str] = field(default_factory=dict)
 ```
 
----
-
-## 12.11 Late Binding Closures
+### 12.11 Late Binding Closures
 
 Python closures bind variables **by reference at call time**, not at definition time.
 This is a common source of bugs when generating functions in loops:
@@ -1235,11 +1206,9 @@ def make_multipliers():
 always capture the current value via a default argument `i=i` or `functools.partial`.
 This is not specific to `lambda` — regular `def` inside a loop has identical behaviour.
 
----
+### 12.12 Python Idioms Reference
 
-## 12.12 Python Idioms Reference
-
-### Unpacking & Destructuring
+#### Unpacking & Destructuring
 
 ```python
 # Basic tuple/list unpacking
@@ -1257,7 +1226,7 @@ first, *middle, last = [1, 2, 3, 4] # first=1, middle=[2,3], last=4
 basename, __, ext = "archive.tar.gz".rpartition(".")
 ```
 
-### List / Collection Construction
+#### List / Collection Construction
 
 ```python
 # WRONG — [[]]*4 creates 4 references to the SAME list
@@ -1274,7 +1243,7 @@ print(four_lists)  # [['x'], [], [], []] ✅
 four_nones = [None] * 4   # safe; None is immutable
 ```
 
-### String Building
+#### String Building
 
 ```python
 parts = ["s", "p", "a", "m"]
@@ -1287,7 +1256,7 @@ result = "".join(parts)
 full_name = first_name + " " + last_name
 ```
 
-### Membership Testing: list vs set
+#### Membership Testing: list vs set
 
 ```python
 # list membership: O(n) — scans every element
@@ -1307,7 +1276,7 @@ def is_valid_status(status: str) -> bool:
     return status in VALID_STATUSES  # O(1) always
 ```
 
-### Dictionary Access
+#### Dictionary Access
 
 ```python
 d = {"host": "localhost", "port": 5432}
@@ -1323,7 +1292,7 @@ if "timeout" in d:
     timeout = d["timeout"]
 ```
 
-### Enumerate over Range+Index
+#### Enumerate over Range+Index
 
 ```python
 items = ["alpha", "beta", "gamma"]
@@ -1341,9 +1310,7 @@ for i, item in enumerate(items, start=1):
     print(f"{i}: {item}")
 ```
 
----
-
-## 12.13 Function Arguments — Design Rules
+### 12.13 Function Arguments — Design Rules
 
 ```python
 # ✅ Positional: few args, natural order, obvious meaning
@@ -1371,9 +1338,7 @@ def process(*args, **kwargs): ...   # What does this actually take?
 - Use `None` as the sentinel for "not provided", never a mutable default.
 - Rename `*args` / `**kwargs` when clearer names exist: `*events`, `**context`.
 
----
-
-## 12.14 Pure Functions & Minimising Side Effects
+### 12.14 Pure Functions & Minimising Side Effects
 
 **Pure functions** always produce the same output for the same input and have no side effects.
 They are easier to test, refactor, and reason about.
@@ -1405,9 +1370,7 @@ final_price = calculate_discount_price(product.price, is_weekend)
 - Avoid functions that modify objects they didn't create (hidden coupling).
 - Avoid module-level mutable state — it creates race conditions in multi-process web apps.
 
----
-
-## 12.15 Variable Naming Under Dynamic Typing
+### 12.15 Variable Naming Under Dynamic Typing
 
 Reassigning a variable to a different type within the same scope destroys readability.
 Type checkers (mypy, pyright) will catch this, but the convention must be proactive:
@@ -1439,9 +1402,7 @@ answer = format_answer(1)
 - When a value must be transformed through multiple types, give each stage a name.
 - Rely on type annotations + mypy to enforce this automatically.
 
----
-
-## 13. ANTI-PATTERNS — PRODUCTION INCIDENT REFERENCE
+## 13. ANTI-PATTERNS
 
 Each pattern below has caused a real production incident.
 
@@ -1537,16 +1498,16 @@ result = "".join(str(item) for item in items)
 **F-string expression constraints** (Django coding style — applies to all projects):
 
 ```python
-# ✅ ALLOWED — plain variable access
+# ALLOWED — plain variable access
 f"Hello {user}"
 f"Hello {user.name}"
 f"Hello {self.user.name}"
 
-# ❌ DISALLOWED — function calls inside braces
+# DISALLOWED — function calls inside braces
 f"Hello {get_user()}"
 f"Age: {user.age * 365.25} days"
 
-# ✅ CORRECT — extract to a local variable first
+# CORRECT — extract to a local variable first
 user = get_user()
 f"Hello {user}"
 
@@ -1561,13 +1522,11 @@ Use `%`-style formatting with `gettext` instead:
 ```python
 # WRONG — f-strings are not translatable
 from django.utils.translation import gettext as _
-raise ValidationError(f"User {username} not found")   # ❌
+raise ValidationError(f"User {username} not found")
 
 # CORRECT
-raise ValidationError(_("User %(username)s not found") % {"username": username})  # ✅
+raise ValidationError(_("User %(username)s not found") % {"username": username})
 ```
-
----
 
 ### 13.6 Suppression Comments (NOQA / type: ignore)
 
@@ -1596,8 +1555,6 @@ def func(foo, bar):  # pylint: disable=unused-argument
 - If the explanation doesn't fit on the same line, add a comment above prefixed with the tool name: `# MYPY NOTE:`, `# PYLINT NOTE:`, `# RUFF NOTE:`.
 - Suppressions require code review approval — treat them as technical debt.
 
----
-
 ## 14. VERSION COMPATIBILITY MATRIX
 
 | Feature | 3.6 | 3.7 | 3.8 | 3.9 | 3.10 | 3.11 | 3.12 | 3.13 |
@@ -1618,8 +1575,6 @@ def func(foo, bar):  # pylint: disable=unused-argument
 | Free-threaded (GIL optional) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
 
 Minimum for new projects: Python 3.10.
-
----
 
 ## 15. TOOLCHAIN CONFIGURATION
 
@@ -1718,8 +1673,6 @@ repos:
       - id: check-added-large-files
         args: ["--maxkb=500"]
 ```
-
----
 
 ## APPENDIX: VIOLATIONS QUICK REFERENCE
 

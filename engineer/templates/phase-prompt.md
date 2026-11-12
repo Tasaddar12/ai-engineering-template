@@ -71,6 +71,7 @@ Output: [What artifacts will be created]
   <name>Task 1: [Action-oriented name]</name>
   <files>path/to/file.ext, another/file.ext</files>
   <read_first>path/to/reference.ext, path/to/source-of-truth.ext</read_first>
+  <standards>python.contracts.types, python.errors.chaining</standards> <!-- code tasks only: IDs from standards-list; omit the element otherwise -->
   <action>[Specific implementation - what to do, how to do it, what to avoid and WHY. Include CONCRETE values: exact identifiers, parameters, expected outputs, file paths, command arguments. Never say "align X with Y" without specifying the exact target state.]</action>
   <verify>[Command or check to prove it worked]</verify>
   <acceptance_criteria>

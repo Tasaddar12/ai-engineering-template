@@ -26,6 +26,8 @@ Orchestrator coordinates, not executes. Each subagent loads the full execute-pla
   Code), you MUST spawn executor agents — inline execution is not authorized. Check for
   actual tool availability, not runtime name.
 
+  Inline executor fallback must follow @~/.claude/engineer/references/coding-standards.md for task-scoped required reading before code changes.
+
 **Fallback rule:** If a spawned agent completes its work (commits visible, SUMMARY.md exists) but
 the orchestrator never receives the completion signal, treat it as successful based on spot-checks
 and continue to the next wave/plan. Never block indefinitely waiting for a signal — always verify

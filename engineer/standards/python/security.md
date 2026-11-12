@@ -1,11 +1,9 @@
-# Security — Enterprise Standard
+# Security
 
 **Applies to:** All Python projects handling user data, authentication, or external APIs.
 **Authority:** OWASP Top 10 (2021), CWE/SANS Top 25, PCI DSS for payment code, GDPR for PII handling.
 
----
-
-## SECTION 1 — SECRETS MANAGEMENT
+## 1. SECRETS MANAGEMENT
 
 ### 1.1 Non-negotiable rules
 
@@ -89,9 +87,7 @@ Never use `.env` files in production environments. Use:
 - Azure Key Vault
 - Kubernetes Secrets (with encryption at rest)
 
----
-
-## SECTION 2 — AUTHENTICATION
+## 2. AUTHENTICATION
 
 ### 2.1 JWT Standards
 
@@ -224,9 +220,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return _pwd_context.verify(plain_password, hashed_password)
 ```
 
----
-
-## SECTION 3 — INPUT VALIDATION
+## 3. INPUT VALIDATION
 
 ### 3.1 All user input must pass through Pydantic before use
 
@@ -301,9 +295,7 @@ class UserCreateRequest(BaseModel):
         return self
 ```
 
----
-
-## SECTION 4 — SQL INJECTION PREVENTION
+## 4. SQL INJECTION PREVENTION
 
 ```python
 # CORRECT — ORM with parameterised queries (always safe)
@@ -327,9 +319,7 @@ result = await session.execute(
 query = "SELECT * FROM users WHERE name = '{}'".format(name)   # CRITICAL VULNERABILITY
 ```
 
----
-
-## SECTION 5 — RATE LIMITING
+## 5. RATE LIMITING
 
 ```python
 # Apply to all authentication endpoints and public-facing APIs
@@ -361,9 +351,7 @@ async def list_users(request: Request):
     ...
 ```
 
----
-
-## SECTION 6 — CORS
+## 6. CORS
 
 ```python
 
@@ -381,9 +369,7 @@ app.add_middleware(
 )
 ```
 
----
-
-## SECTION 7 — RESPONSE SANITISATION
+## 7. RESPONSE SANITISATION
 
 ```python
 # RULE: response schemas are always distinct from ORM models
@@ -413,10 +399,7 @@ async def get_user(id: int) -> UserResponse:
     return UserResponse.model_validate(user)   # Pydantic strips anything not in schema
 ```
 
----
-
-
-## SECTION 9 — SECURITY HEADERS (configure at reverse proxy or middleware)
+## 9. SECURITY HEADERS (configure at reverse proxy or middleware)
 
 ```python
 # Apply via middleware in Python if reverse proxy is not available
@@ -443,9 +426,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 ```
 
----
-
-## SECTION 10 — SECURITY CHECKLIST FOR CODE REVIEW
+## 10. SECURITY CHECKLIST FOR CODE REVIEW
 
 Use this before approving any PR touching auth, payment, or user data:
 

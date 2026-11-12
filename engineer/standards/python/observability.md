@@ -1,11 +1,9 @@
-# Observability — Enterprise Standard
+# Observability
 
 **Applies to:** All Python services deployed to production.
 **Stack:** OpenTelemetry (traces + metrics) + structlog (logs). The three pillars.
 
----
-
-## SECTION 1 — OPENTELEMETRY SETUP
+## 1. OPENTELEMETRY SETUP
 
 ```bash
 pip install opentelemetry-api opentelemetry-sdk \
@@ -45,9 +43,7 @@ def configure_telemetry(service_name: str, service_version: str) -> None:
     metrics.set_meter_provider(meter_provider)
 ```
 
----
-
-## SECTION 3 — CUSTOM SPANS
+## 3. CUSTOM SPANS
 
 ```python
 from opentelemetry import trace
@@ -69,9 +65,7 @@ async def process_order(order_id: int) -> Order:
         return order
 ```
 
----
-
-## SECTION 4 — METRICS PATTERNS
+## 4. METRICS PATTERNS
 
 ```python
 from opentelemetry import metrics
@@ -98,8 +92,7 @@ active_connections = meter.create_up_down_counter(
 )
 ```
 
-
-## SECTION 5 — STRUCTURED LOGS + TRACE CORRELATION
+## 5. STRUCTURED LOGS + TRACE CORRELATION
 
 ```python
 # Inject trace_id into every log line
@@ -124,9 +117,7 @@ structlog.configure(
 )
 ```
 
----
-
-## SECTION 6 — KEY METRICS TO TRACK (RED + USE)
+## 6. KEY METRICS TO TRACK (RED + USE)
 
 ### RED Method (request-driven services):
 
@@ -144,9 +135,7 @@ structlog.configure(
 | **S**aturation | Queue depth, thread pool exhaustion | Growing unbounded |
 | **E**rrors | Connection failures, OOM kills | Any occurrence |
 
----
-
-## SECTION 7 — RULES
+## 7. RULES
 
 - Every service MUST export traces and metrics to an OTLP collector.
 - Trace IDs MUST appear in log lines for correlation.

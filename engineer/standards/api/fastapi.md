@@ -1,3 +1,5 @@
+# FastAPI
+
 ## Stack
 
 | Layer | Library |
@@ -10,8 +12,6 @@
 | HTTP Client | httpx (async) |
 | Task Queue | Celery + Redis (or ARQ for lighter workloads) |
 | Settings | pydantic-settings |
-
----
 
 ## Project Structure (FastAPI-specific additions)
 
@@ -37,8 +37,6 @@ app/
 ├── services/
 └── workers/                  ← Background task definitions
 ```
-
----
 
 ## App Factory Pattern
 
@@ -69,8 +67,6 @@ def create_app() -> FastAPI:
 
 app = create_app()
 ```
-
----
 
 ## Router + Endpoint Pattern
 
@@ -104,8 +100,6 @@ async def create_user(
     return await service.create_user(data)
 ```
 
----
-
 ## Pydantic Schemas
 
 ```python
@@ -134,9 +128,9 @@ class UserListResponse(BaseModel):
     page_size: int
 ```
 
----
+## Dependencies
 
-## Database Session
+### Database Session
 
 ```python
 # app/core/database.py
@@ -157,7 +151,29 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
             raise
 ```
 
----
+### ANNOTATED DEPENDENCIES (Python 3.9+)
+
+Define reusable dependency annotations at module level for cleaner route signatures:
+
+```python
+from typing import Annotated
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+# Define once in deps.py
+DbSession = Annotated[AsyncSession, Depends(get_db)]
+CurrentUser = Annotated[User, Depends(get_current_user)]
+AdminUser = Annotated[User, Depends(require_admin)]
+
+# Use cleanly in every route
+@router.get("/orders/", response_model=OrderListResponse)
+async def list_orders(
+    db: DbSession,
+    current_user: CurrentUser,
+    page: int = 1,
+) -> OrderListResponse:
+    ...
+```
 
 ## Background Tasks
 
@@ -173,8 +189,6 @@ async def create_user(data: UserCreateRequest, background_tasks: BackgroundTasks
     return user
 ```
 
----
-
 ## Health Check Endpoint
 
 Every service must expose:
@@ -185,8 +199,6 @@ async def health_check(session: AsyncSession = Depends(get_db)) -> dict:
     await session.execute(text("SELECT 1"))
     return {"status": "ok", "version": settings.app_version}
 ```
-
----
 
 ## LIFESPAN CONTEXT MANAGER (replaces deprecated @app.on_event)
 
@@ -211,34 +223,6 @@ async def lifespan(app: FastAPI):
 
 
 ```
-
----
-
-## ANNOTATED DEPENDENCIES (Python 3.9+)
-
-Define reusable dependency annotations at module level for cleaner route signatures:
-
-```python
-from typing import Annotated
-from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-
-# Define once in deps.py
-DbSession = Annotated[AsyncSession, Depends(get_db)]
-CurrentUser = Annotated[User, Depends(get_current_user)]
-AdminUser = Annotated[User, Depends(require_admin)]
-
-# Use cleanly in every route
-@router.get("/orders/", response_model=OrderListResponse)
-async def list_orders(
-    db: DbSession,
-    current_user: CurrentUser,
-    page: int = 1,
-) -> OrderListResponse:
-    ...
-```
-
----
 
 ## RORO IN FASTAPI ROUTES
 

@@ -1,11 +1,9 @@
-# Logging — Enterprise Standard
+# Logging
 
 **Applies to:** All Python projects in all deployment environments.
 **No print() in production code. Ever.**
 
----
-
-## SECTION 1 — LIBRARY CHOICE AND RATIONALE
+## 1. LIBRARY CHOICE AND RATIONALE
 
 Use **structlog** for all application logging. It wraps Python's stdlib `logging` and adds:
 - Structured key-value output (JSON in production, colored console in dev)
@@ -24,9 +22,7 @@ import logging
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 ```
 
----
-
-## SECTION 2 — CONFIGURATION
+## 2. CONFIGURATION
 
 ```python
 # app/core/logging.py
@@ -99,9 +95,7 @@ def configure_logging(
     )
 ```
 
----
-
-## SECTION 3 — GETTING A LOGGER
+## 3. GETTING A LOGGER
 
 ```python
 # Every module declares its own logger — never pass logger instances around
@@ -119,9 +113,7 @@ class UserService:
         ...
 ```
 
----
-
-## SECTION 4 — LOG LEVELS — WHEN TO USE EACH
+## 4. LOG LEVELS — WHEN TO USE EACH
 
 | Level | Use when | Examples |
 |---|---|---|
@@ -168,9 +160,7 @@ logger.error(
 
 ```
 
----
-
-## SECTION 5 — STRUCTURED FIELDS — CONSISTENCY ACROSS THOUSANDS OF LOGS
+## 5. STRUCTURED FIELDS — CONSISTENCY ACROSS THOUSANDS OF LOGS
 
 All log entries for a given event type must use identical field names. Inconsistent field names make log aggregation (Datadog, Splunk, CloudWatch Insights) impossible at scale.
 
@@ -224,9 +214,7 @@ Examples:
   db_query_slow             # with duration_ms field
 ```
 
----
-
-## SECTION 6 — REQUEST-SCOPED CONTEXT BINDING
+## 6. REQUEST-SCOPED CONTEXT BINDING
 
 Bind context once per request; structlog carries it automatically to all log calls within that request — no need to pass fields manually.
 
@@ -288,9 +276,7 @@ def bind_user_context(user_id: int, tenant_id: int) -> None:
     )
 ```
 
----
-
-## SECTION 7 — LOGGING EXCEPTIONS
+## 7. LOGGING EXCEPTIONS
 
 ```python
 # CORRECT — log before re-raising; exc_info=True attaches full traceback
@@ -322,9 +308,7 @@ except SomeError as exc:
     logger.error("failed", error=str(exc))   # error silently swallowed; caller gets None
 ```
 
----
-
-## SECTION 8 — WHAT NEVER TO LOG
+## 8. WHAT NEVER TO LOG
 
 These are security requirements — violations can cause compliance incidents.
 
@@ -351,9 +335,7 @@ logger.info("payment_attempted", card_number=card.number)
 logger.info("payment_attempted", card_last4=card.number[-4:])
 ```
 
----
-
-## SECTION 9 — SLOW QUERY LOGGING
+## 9. SLOW QUERY LOGGING
 
 Always instrument database operations for slow query detection.
 

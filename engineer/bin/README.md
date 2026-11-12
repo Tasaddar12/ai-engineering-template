@@ -77,6 +77,29 @@ Plan and evidence gates include `verify.plan-structure`, `plan.task-structure`,
 `planning.integrity` fails on malformed record frontmatter;
 `planning.validate` reports the same findings without blocking.
 
+`standards-read` resolves routing IDs from `engineer/standards/routing.json`
+(including `aliases` for renamed IDs) to exact sections. It adds the document
+preamble, enclosing ancestor introductions and required companions: an entry's
+`includes` and its domain's `prefix_includes`. The index tables in
+`engineer/standards/*/index.md` are generated from the JSON by
+`python -I engineer/bin/lib/gen_standards_routing.py --write`; `--check` fails
+when a table is stale. Overlapping ranges merge per document. `id@§N` or `id@Heading` selects
+another section of the same document. `--plan` collects IDs from task
+`<standards>` fields, narrowed by `--task N`. `--raw` prints the text; JSON
+returns `ids`, `chars`, `documents` and `text`. Unknown IDs fail with
+`unknown-standard` (exit 2), absent headings with `standards-heading-missing` and
+absent documents with `standards-document-missing`. A plan that pins nothing
+fails with `no-pinned-standards` (exit 3); fall back to `standards-list`.
+`standards-list [domain]` prints IDs and concerns. `verify.plan-structure`
+rejects unknown IDs in a task's `<standards>` field.
+
+```sh
+engineer_run query standards-list python --raw
+engineer_run query standards-read python.contracts.types python.errors.chaining --raw
+engineer_run query standards-read python.style.layout@§2.4 --pick documents
+engineer_run query standards-read --plan path/to/PLAN.md --task 2 --raw
+```
+
 Every invocation captures planning-file digests and schema findings before and
 after dispatch. Read-only verbs fail if planning content changed, and new schema
 corruption fails a mutation. Existing corruption is reported as a warning so a
@@ -304,7 +327,7 @@ passed as one shell argument. `--raw`, `--json`, and `--pick FIELD` are global.
 | `frontmatter.get` | `PATH [--field DOTTED_FIELD]` | frontmatter map or field |
 | `frontmatter.set` | `PATH --field DOTTED_FIELD --value YAML_OR_JSON_VALUE` | updated field/path |
 | `frontmatter.validate` | `PATH --schema plan|summary|verification` | `valid, errors[]`; invalid exits 1 |
-| `plan.task-structure` | `PLAN_PATH` | `tasks[], count`; each task has name/type/tdd/files/read_first/action/verify/done |
+| `plan.task-structure` | `PLAN_PATH` | `tasks[], count`; each task has name/type/tdd/files/read_first/standards/action/verify/done |
 | `verify.plan-structure` | `PLAN_PATH` | `valid, errors[], task_count`; invalid exits 1 |
 | `verify.artifacts`, `verify.key-links` | `PLAN_PATH` | `valid, findings[]`; missing/stub/unwired obligation exits 1 |
 | `verify.commits` | `SHA...` | `valid, missing[]`; absent/nonancestor commits exit 1 |

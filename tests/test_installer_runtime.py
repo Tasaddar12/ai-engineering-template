@@ -146,6 +146,48 @@ else:
                                              cwd=self.target, capture_output=True, text=True, encoding='utf-8')
                     self.assertEqual(0, checked.returncode, checked.stdout + checked.stderr)
 
+    def test_task_scoped_standards_install_for_both_hosts_and_scopes(self):
+        roles = ('executor', 'code-reviewer', 'code-fixer', 'planner', 'verifier', 'debugger')
+        standards = ROOT / 'engineer/standards'
+        for host in ('codex', 'claude'):
+            for scope in ('local', 'global'):
+                with self.subTest(host=host, scope=scope):
+                    self.target = self.base / (host + '-' + scope)
+                    self.assertTrue(self.install(host, scope)['complete'])
+                    namespace = self.target / ('.' + host)
+                    reference_namespace = installer.reference_namespace(host, scope)
+                    guide = namespace / 'engineer/references/coding-standards.md'
+                    guide_reference = (reference_namespace / 'engineer/references/coding-standards.md').as_posix()
+                    installed_standards = namespace / 'engineer/standards'
+                    self.assertIn('only the files matching', guide.read_text(encoding='utf-8'))
+                    self.assertTrue((guide.parent / '../standards/README.md').is_file())
+                    # The installed runtime resolves routing IDs against its own standards copy.
+                    pinned = subprocess.run([sys.executable, '-I', str(namespace / 'engineer/bin/engineer.py'), 'query',
+                                             'standards-read', 'python.errors.chaining', '--pick', 'documents'],
+                                            cwd=self.target, capture_output=True, text=True, encoding='utf-8')
+                    self.assertEqual(0, pinned.returncode, pinned.stderr)
+                    self.assertEqual('engineer/standards/python/error-handling.md', json.loads(pinned.stdout)[0]['path'])
+                    # Curated source text and license notices survive export unchanged.
+                    sources = [path for path in standards.rglob('*') if path.is_file()]
+                    self.assertTrue(sources)
+                    for source in sources:
+                        installed = installed_standards / source.relative_to(standards)
+                        self.assertEqual(source.read_bytes(), installed.read_bytes(), str(installed))
+                    for role in roles:
+                        method = namespace / 'agents' / (role + '.md')
+                        self.assertIn('@' + guide_reference, method.read_text(encoding='utf-8'))
+                        if host == 'codex':
+                            native = tomllib.loads(method.with_suffix('.toml').read_text(encoding='utf-8'))
+                            method_reference = (reference_namespace / 'agents' / (role + '.md')).as_posix()
+                            self.assertIn(method_reference, native['developer_instructions'])
+                    for workflow in ('fast', 'execute-phase'):
+                        text = (namespace / 'engineer/workflows' / (workflow + '.md')).read_text(encoding='utf-8')
+                        self.assertIn('@' + guide_reference, text)
+                    # Reference standards do not become callable skills.
+                    self.assertFalse(any(installed_standards.rglob('SKILL.md')))
+                    skills = self.target / ('.agents/skills' if host == 'codex' else '.claude/skills')
+                    self.assertFalse((skills / 'standards').exists())
+
     def test_project_github_templates_preserve_customizations_and_share_hosts(self):
         self.install('codex')
         self.assertTrue(self.install('claude')['complete'])

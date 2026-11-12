@@ -1,12 +1,10 @@
-# Database Design — Enterprise Standard
+# Database Design
 
 **Applies to:** All Python projects using a relational database.
 **ORMs covered:** SQLAlchemy 2.x (async), Django ORM.
 **Migration tools:** Alembic (SQLAlchemy), Django migrations.
 
----
-
-## SECTION 1 — MODEL FOUNDATION
+## 1. MODEL FOUNDATION
 
 ### 1.1 Abstract Base Mixins — always use, never duplicate
 
@@ -161,9 +159,7 @@ class User(Base, TimestampMixin, UUIDPublicIdMixin):
         return f"User(id={self.id!r}, email={self.email!r}, role={self.role!r})"
 ```
 
----
-
-## SECTION 2 — NAMING CONVENTIONS
+## 2. NAMING CONVENTIONS
 
 | Element | Convention | Example |
 |---|---|---|
@@ -179,9 +175,7 @@ class User(Base, TimestampMixin, UUIDPublicIdMixin):
 | Foreign key constraint | `fk_{table}_{col}_{ref_table}` | `fk_orders_user_id_users` |
 | Check constraint | `ck_{table}_{rule}` | `ck_orders_amount_positive` |
 
----
-
-## SECTION 3 — RELATIONSHIPS
+## 3. RELATIONSHIPS
 
 ### 3.1 Always specify cascade and lazy loading explicitly
 
@@ -235,9 +229,7 @@ class OrderItem(Base, TimestampMixin):
     # Storing price at purchase time is important — product prices change
 ```
 
----
-
-## SECTION 4 — INDEXING STRATEGY
+## 4. INDEXING STRATEGY
 
 ### 4.3 Advanced indexing
 
@@ -255,9 +247,7 @@ from sqlalchemy.dialects.postgresql import TSVECTOR
 Index("ix_products_search", "search_vector", postgresql_using="gin")
 ```
 
----
-
-## SECTION 5 — MIGRATION DISCIPLINE (ALEMBIC)
+## 5. MIGRATION DISCIPLINE (ALEMBIC)
 
 ### 5.1 Migration commit message format
 
@@ -325,9 +315,7 @@ op.drop_column("users", "old_column")
 - Migrations are part of every PR that changes a model — no model changes without migrations
 ```
 
----
-
-## SECTION 6 — QUERY PATTERNS
+## 6. QUERY PATTERNS
 
 ### 6.1 Avoid N+1 queries — always
 
@@ -357,7 +345,7 @@ users = await session.execute(
 )
 ```
 
-## SECTION 7 — DECIMAL HANDLING FOR MONETARY VALUES
+## 7. DECIMAL HANDLING FOR MONETARY VALUES
 
 ```python
 # NEVER use float for money — IEEE 754 float arithmetic loses precision

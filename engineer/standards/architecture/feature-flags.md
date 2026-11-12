@@ -1,11 +1,9 @@
-# Feature Flags — Enterprise Standard
+# Feature Flags
 
 **Applies to:** All Python services releasing features incrementally.
 **Tools:** LaunchDarkly, Unleash, Flagsmith, or custom implementation.
 
----
-
-## SECTION 1 — FLAG TYPES
+## 1. FLAG TYPES
 
 | Type | Purpose | Lifetime | Example |
 |------|---------|----------|---------|
@@ -14,9 +12,7 @@
 | Ops flag | Kill switch for degraded mode | Permanent | `disable_external_payments` |
 | Permission flag | Feature gating per plan/tier | Permanent | `feature_advanced_analytics` |
 
----
-
-## SECTION 2 — IMPLEMENTATION PATTERN
+## 2. IMPLEMENTATION PATTERN
 
 ### Simple Flag Service
 
@@ -90,9 +86,7 @@ async def get_dashboard(user: User = Depends(get_current_user)):
     return data
 ```
 
----
-
-## SECTION 3 — GRADUAL ROLLOUT STRATEGY
+## 3. GRADUAL ROLLOUT STRATEGY
 
 ```
 Day 1:   1% (internal team only)
@@ -113,9 +107,7 @@ Day 14: Remove flag (cleanup)
 | Log which variant a user received | Debug issues per-variant |
 | Never nest flags (flag inside flag) | Combinatorial explosion |
 
----
-
-## SECTION 4 — FLAG LIFECYCLE
+## 4. FLAG LIFECYCLE
 
 ```
 CREATED → ACTIVE → ROLLED_OUT → CLEANUP → REMOVED
@@ -138,10 +130,7 @@ CREATED → ACTIVE → ROLLED_OUT → CLEANUP → REMOVED
 
 **Anti-pattern:** Flags that live for months. They become tech debt and make code unreadable.
 
----
-
-
-## SECTION 6 — FLAG HYGIENE TRACKING
+## 6. FLAG HYGIENE TRACKING
 
 Maintain a flag registry (spreadsheet, Notion, or in-code):
 

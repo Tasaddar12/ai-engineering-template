@@ -1,11 +1,9 @@
-# Performance — Enterprise Standard
+# Performance
 
 **Applies to:** All Python projects. Specific sections tagged by project type.
 **Sources:** RORO pattern, async best practices, caching strategies from awesome-cursorrules community audit.
 
----
-
-## SECTION 1 — ASYNC PROGRAMMING
+## 1. ASYNC PROGRAMMING
 
 ### 1.1 async def vs def — the decision rule
 
@@ -67,9 +65,7 @@ async def get_dashboard_data(user_id: int) -> DashboardData:
 
 ```
 
----
-
-## SECTION 2 — CACHING
+## 2. CACHING
 
 ### 2.1 Function-level caching with functools
 
@@ -140,9 +136,7 @@ async def get_config(tenant_id: int) -> TenantConfig:
 
 ```
 
----
-
-## SECTION 3 — N+1 QUERY PREVENTION
+## 3. N+1 QUERY PREVENTION
 
 ### 3.1 SQLAlchemy — joinedload vs selectinload
 
@@ -188,9 +182,7 @@ users = User.objects.annotate(order_count=Count("orders")).filter(is_active=True
 # Now user.order_count is available without extra queries
 ```
 
----
-
-## SECTION 5 — RESOURCE MONITORING (production services)
+## 5. RESOURCE MONITORING (production services)
 
 ```python
 # Use psutil for resource monitoring in long-running services

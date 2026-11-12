@@ -1,11 +1,9 @@
-# Async Patterns — Enterprise Standard
+# Async Patterns
 
 **Applies to:** Python services with background processing, event-driven workflows, or distributed tasks.
 **Stack:** Celery (heavy) / ARQ (lightweight) / asyncio native.
 
----
-
-## SECTION 1 — TASK QUEUE (CELERY)
+## 1. TASK QUEUE (CELERY)
 
 ### Setup
 
@@ -47,9 +45,7 @@ def send_welcome_email(self, user_id: int) -> None:
         raise self.retry(exc=exc)
 ```
 
----
-
-## SECTION 2 — RETRY STRATEGIES
+## 2. RETRY STRATEGIES
 
 ### Retry Rules
 
@@ -61,9 +57,7 @@ def send_welcome_email(self, user_id: int) -> None:
 | Log every retry with attempt number | Observability |
 | Set `task_time_limit` and `task_soft_time_limit` | Kill stuck tasks |
 
----
-
-## SECTION 3 — IDEMPOTENCY
+## 3. IDEMPOTENCY
 
 Every async task MUST be idempotent — safe to execute multiple times with the same input.
 
@@ -72,9 +66,7 @@ Every async task MUST be idempotent — safe to execute multiple times with the 
 - **Idempotency key:** Store task ID + result; return cached result on replay.
 - **Database constraints:** Use unique constraints to prevent duplicate inserts.
 
----
-
-## SECTION 4 — DEAD LETTER QUEUE (DLQ)
+## 4. DEAD LETTER QUEUE (DLQ)
 
 Tasks that exhaust retries must not be silently dropped.
 
@@ -92,9 +84,7 @@ def risky_task(self, data: dict) -> None:
         raise self.retry(exc=exc, countdown=2 ** self.request.retries)
 ```
 
----
-
-## SECTION 5 — EVENT-DRIVEN ARCHITECTURE
+## 5. EVENT-DRIVEN ARCHITECTURE
 
 ### Domain Events
 
@@ -145,8 +135,7 @@ async def publish(event: DomainEvent) -> None:
         await handler(event)
 ```
 
-
-## SECTION 6 — ASYNC TASK PATTERNS (ARQ — Lightweight Alternative)
+## 6. ASYNC TASK PATTERNS (ARQ — Lightweight Alternative)
 
 ```python
 # app/workers/arq_tasks.py
@@ -165,9 +154,7 @@ class WorkerSettings:
     job_timeout = 300
 ```
 
----
-
-## SECTION 7 — RULES
+## 7. RULES
 
 | Rule | Rationale |
 |------|-----------|

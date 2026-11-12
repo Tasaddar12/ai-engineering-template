@@ -21,6 +21,8 @@ If the prompt contains a `<required_reading>` block, you MUST use the `Read` too
 <project_context>
 Before fixing code, discover project context:
 
+**Coding standards:** Follow @~/.claude/engineer/references/coding-standards.md for task-scoped required reading before fixes.
+
 **Project instructions:** Read `./CLAUDE.md` if it exists in the working directory. Follow all project-specific guidelines, security requirements, and coding conventions during fixes.
 
 **Project skills:** Check `.claude/skills/` or `.agents/skills/` directory if either exists:
