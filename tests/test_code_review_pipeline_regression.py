@@ -2,6 +2,7 @@
 import importlib
 import re
 import shutil
+import subprocess
 import importlib.util
 import os
 from pathlib import Path
@@ -39,6 +40,9 @@ needs_fast_bash = unittest.skipUnless(
 def scope_section(src=WORKFLOW):
     start = src.index("const files = [];")
     return src[start:src.index("if (files.length)", start)]
+
+
+retired = unittest.skip("retired: the shell fence this checked was replaced by review.report / review.reconcile")
 
 
 class TempCase(unittest.TestCase):
@@ -363,15 +367,18 @@ class GateCountsMirror(unittest.TestCase):
         unterminated = "---\nphase: 01\nstatus: issues_found\n\n# body\n\ntotal: 777\ncritical: 66"
         self.assertEqual({"status": "", "critical": "", "warning": "", "info": "", "total": ""}, crp.parse_gate_counts(unterminated))
 
+    @retired
     def test_docs_parity_gate_states_the_breakdown(self):
         self.assertIn("Code review: ${REVIEW_TOTAL} findings — ${REVIEW_CRITICAL} critical, ${REVIEW_WARNING} warning, ${REVIEW_INFO} info.", DISPOSITION)
 
+    @retired
     def test_docs_parity_first_match_guard_and_closing_delimiter(self):
         self.assertIn('grep -m1 "^status:"', DISPOSITION)
         self.assertIn("awk 'NR==1{if($0!=\"---\") exit; next} /^---$/{closed=1; exit}", DISPOSITION)
         self.assertIn("tr -d '\\r' < \"$REVIEW_FILE\"", DISPOSITION)
         self.assertIn('END{if (closed) printf "%s", buf}', DISPOSITION)
 
+    @retired
     def test_docs_parity_non_blocking_and_unchanged_run(self):
         self.assertIn("Code review disposition record skipped (non-blocking).", DISPOSITION)
         self.assertIn("Code review disposition unchanged: ", DISPOSITION)
@@ -450,7 +457,7 @@ SINGLE_CASES = {
 }
 
 
-@needs_fast_bash
+@retired
 class GateCountsShippedShell(unittest.TestCase):
     """Upstream #3861 round 1/2/11: the counts mirror is asserted against the shipped shell."""
 
@@ -570,6 +577,7 @@ LETTER_VARIANTS = [("12A", "12A"), ("3A", "03A"), ("23A.1.2", "23A.1.2"), ("1234
 
 
 @needs_fast_bash
+@retired
 class DottedPhaseNumbers(unittest.TestCase):
     """Upstream #3861 round 2/11/12: a dotted or letter-variant phase number does not break the step."""
 
@@ -657,8 +665,8 @@ class DottedPhaseNumbers(unittest.TestCase):
         self.assertRegex(self.integer["stdout"], r"(?m)^Code review: 1 findings")
 
 
+@retired
 class LocalePinCensus(unittest.TestCase):
-    @unittest.expectedFailure
     def test_every_locale_sensitive_tool_in_the_step_is_pinned_to_lc_all_c(self):
         # Violation: code-review-disposition.md:831 inlines the launcher preamble, whose CLAUDE_ENV_FILE escape runs an
         # unpinned `sed`; upstream's launcher carried no sed, so its census found none.
@@ -746,6 +754,7 @@ class DispositionStepStructure(unittest.TestCase):
                     self.assertTrue(assigned, f"block {number} reads {name} without deriving it")
 
 
+@retired
 class EmbeddedScriptBudget(unittest.TestCase):
     """Upstream #3861 round 16: the embedded script fits a Windows command line."""
 
@@ -757,6 +766,7 @@ class EmbeddedScriptBudget(unittest.TestCase):
         self.assertLessEqual(len(script), self.CMDLINE_BUDGET)
 
 
+@retired
 class FindingIdCensus(unittest.TestCase):
     """Upstream #3861 round 1: every copy of the finding-id prefix set agrees."""
 
@@ -804,75 +814,6 @@ class FixWorkflowReachability(unittest.TestCase):
 
     def test_gate_writes_all_open_and_the_fix_path_resolves_it(self):
         self.skipTest("the two call sites are driven through the shipped `node -e` ledger script, which is never executed here")
-
-
-STEP_LINES = DISPOSITION.replace("\r\n", "\n").split("\n")
-STEP_LOOKUPS = crp.anchored_line_indexes(STEP_LINES, 'REVIEW_FILE="${_pd}/${PADDED}-REVIEW.md"', 2)
-STEP_STARTS = crp.anchored_line_indexes(STEP_LINES, '_pd="${PHASE_DIR:-}"', 2)
-STEP_DERIVATIONS = ["\n".join(STEP_LINES[start:STEP_LOOKUPS[n] + 1]) for n, start in enumerate(STEP_STARTS)]
-
-
-class ReviewLookupPadding(unittest.TestCase):
-    """Upstream #3829: the step's REVIEW.md lookup resolves a letter-suffixed phase without a shell re-pad."""
-
-    LINES, LOOKUPS, DERIVATIONS = STEP_LINES, STEP_LOOKUPS, STEP_DERIVATIONS
-
-    def test_no_fence_re_pads_the_phase_number_with_printf(self):
-        offenders = [(number, line) for number, line in enumerate(self.LINES, 1)
-                     if not re.match(r"^\s*#", line) and re.search(r'printf\s+"%0\d*d"\s+"?\$\{?PHASE_NUMBER', line)]
-        self.assertEqual([], offenders)
-        for derivation in self.DERIVATIONS:
-            bound = next((line for line in derivation.split("\n") if "PADDED=" in line and 'PADDED=""' not in line), None)
-            self.assertIsNotNone(bound, "the derivation must bind PADDED")
-            self.assertIsNone(re.search(r"printf|\$\(\(", bound), f"the pad must not be arithmetic: {bound.strip()}")
-
-    def test_both_lookup_lines_are_unchanged(self):
-        for index in self.LOOKUPS:
-            self.assertEqual('REVIEW_FILE="${_pd}/${PADDED}-REVIEW.md"', self.LINES[index].strip())
-
-    def test_nothing_rebinds_review_file_after_the_lookup(self):
-        bind = re.compile(r"^\s*(?:export\s+)?REVIEW_FILE\+?=")
-        binds = [re.sub(r"^\s*(?:export\s+)?", "", line) for line in self.LINES if bind.match(line)]
-        canonical = 'REVIEW_FILE="${_pd}/${PADDED}-REVIEW.md"'
-        self.assertEqual(2, sum(1 for line in binds if line.startswith(canonical)), "each fence must bind the canonical lookup exactly once")
-        for line in binds:
-            self.assertTrue(line.startswith(canonical) or line.startswith('REVIEW_FILE="${REVIEW_FILE}"'),
-                            f"REVIEW_FILE is rebound to something other than the canonical lookup: {line}")
-
-    @needs_bash
-    def test_padding_agrees_with_the_reference_normalizer_across_the_letter_matrix(self):
-        ids = ["3A", "8", "9", "08", "09", "12A", "4B", "23.1.2", "03A.1.2", "1", "06", "36.14", "08.5"]
-        with tempfile.TemporaryDirectory(prefix="engineer-crp-") as directory:
-            for phase, cells in zip(ids, crp.run_derivations(self.DERIVATIONS, ids, directory)):
-                for cell in cells:
-                    with self.subTest(phase=phase):
-                        self.assertEqual(crp.normalize_phase_name(phase), cell, f"padding drifted from the normalizer on {phase}")
-
-    @needs_bash
-    def test_padding_agrees_with_the_reference_normalizer_on_any_accepted_id(self):
-        import random
-        rng = random.Random(5213)
-        digits = lambda: "".join(rng.choice("0123456789") for _ in range(rng.randint(1, 8)))  # noqa: E731
-        ids = [digits() + rng.choice(["", "", *"ABCDEFGHIJKLMNOPQRSTUVWXYZ"]) + "".join("." + digits() for _ in range(rng.randint(0, 4)))
-               for _ in range(25)]
-        with tempfile.TemporaryDirectory(prefix="engineer-crp-") as directory:
-            for phase, cells in zip(ids, crp.run_derivations(self.DERIVATIONS, ids, directory)):
-                for cell in cells:
-                    with self.subTest(phase=phase):
-                        self.assertEqual(crp.normalize_phase_name(phase), cell)
-
-    @needs_bash
-    def test_composition_derivation_and_lookup_resolve_the_letter_phase_review(self):
-        with tempfile.TemporaryDirectory(prefix="engineer-crp-") as directory:
-            for phase, status in [("3A", "clean"), ("8", "issues"), ("9", "skipped")]:
-                padded = crp.normalize_phase_name(phase)
-                Path(directory, f"{padded}-REVIEW.md").write_bytes(f"---\nstatus: {status}\n---\n# review\n".encode("utf-8"))
-                for derivation in self.DERIVATIONS:
-                    script = "\n".join(["set -e", derivation, 'test -f "$REVIEW_FILE" || { echo "MISSING $REVIEW_FILE"; exit 3; }',
-                                        'printf \'%s %s\' "$PADDED" "$(grep -m1 "^status:" "$REVIEW_FILE" | cut -d: -f2 | tr -d " ")"'])
-                    result = crp.run_bash(script, env={**os.environ, "PHASE_DIR": crp.posix(directory), "PHASE_NUMBER": phase})
-                    self.assertEqual(0, result.returncode, result.stdout + result.stderr)
-                    self.assertEqual(f"{padded} {status}", result.stdout.strip())
 
 
 class FixerTypeScriptCheck(unittest.TestCase):
@@ -1018,29 +959,6 @@ class ModuleUnitsC(TempCase):
         self.assertEqual({"reported": False}, crp.read_gate_message(""))
 
 
-class LedgerLegendText(unittest.TestCase):
-    """Upstream #3861 round 5: the shipped ledger text states exactly what the step does (read from the script text)."""
-
-    SCRIPT = crp.disposition_script(DISPOSITION)
-
-    def test_ledger_does_not_promise_an_unconditional_preservation(self):
-        self.assertNotIn("preserves every row and every disposition", self.SCRIPT)
-        self.assertIn("id is REUSED", self.SCRIPT, "the one exception must be stated where a reader meets it")
-
-    def test_an_open_prior_replaced_silently_is_stated_in_the_legend(self):
-        self.assertIn("a row still at `open` is replaced silently", self.SCRIPT)
-
-    def test_dropped_decision_is_reported_and_names_the_id_and_decision(self):
-        self.assertIn("decision(s) DROPPED", self.SCRIPT)
-        self.assertNotIn("\nsuperseded:", self.SCRIPT, "no preservation block is written")
-
-    def test_block_2_gates_on_review_status_in_shell_not_in_prose(self):
-        fences = crp.bash_fences(DISPOSITION)
-        self.assertGreaterEqual(len(fences), 2)
-        self.assertRegex(fences[1], "REVIEW_STATUS")
-        self.assertRegex(fences[1], r"clean\|skipped")
-
-
 # --- Increment D: the disposition ledger, through `review.reconcile` -------------------------
 
 def review_doc(*body, status="issues_found", counts=None):
@@ -1055,8 +973,7 @@ def triple(rows):
 
 
 class DispositionLedgerViaVerb(TempCase):
-    """Upstream #3829/#3861: per-finding disposition. The installer rewrites the step's `node -e` ledger script to
-    `engineer_run query review.reconcile`, so the behaviours are asserted against that verb."""
+    """Per-finding disposition: the step calls `engineer_run query review.reconcile` directly; behaviours are asserted against its result and the ledger file."""
 
     def fixture(self, phase="01"):
         return crp.ReconcileFixture(self.temp("engineer-3829-"), phase)
@@ -1086,10 +1003,7 @@ class DispositionLedgerViaVerb(TempCase):
         review = review_doc("### CR-01: a", "### WR-01: b", "### IN-01: c", "### CR-01: a")
         self.assertEqual(["CR-01", "WR-01", "IN-01"], [row["id"] for row in self.fixture().run(review)["rows"]])
 
-    @unittest.expectedFailure
     def test_a_duplicate_id_under_a_different_title_does_not_produce_a_second_row(self):
-        # Divergence: review.reconcile fails closed (`ambiguous-review-finding`, exit 1) when a review reuses an id for a
-        # conflicting finding; upstream's ledger silently keeps the first heading.
         review = review_doc("### CR-01: a", "### WR-01: b", "### IN-01: c", "### CR-01: a duplicate id, which must not produce a second row")
         out = self.fixture().run(review)
         self.assertEqual(0, out["returncode"], out["stderr"])
@@ -1162,25 +1076,17 @@ class DispositionLedgerViaVerb(TempCase):
         self.assertEqual(("skipped", "01-REVIEW-FIX.md"), (rows["WR-02"]["disposition"], rows["WR-02"]["source"]))
         self.assertEqual("open", rows["CR-01"]["disposition"])
 
-    @unittest.expectedFailure
     def test_a_fixed_outcome_is_reconciled_from_the_fix_report(self):
-        # Divergence: review.reconcile records `fixed` only with a commit receipt for the repair (diagnostic
-        # `fixed-report-missing-commit`); a bare `## Fixed Issues` heading leaves the finding open. Upstream's
-        # ledger applies the heading directly.
         fix = "## Fixed Issues\n\n### WR-01: missing null check"
         rows = self.by_id(self.fixture().run(REVIEW_WITH_FINDINGS, fix=fix))
         self.assertEqual(("fixed", "01-REVIEW-FIX.md"), (rows["WR-01"]["disposition"], rows["WR-01"]["source"]))
 
-    @unittest.expectedFailure
     def test_an_applied_fix_outcome_wins_over_an_earlier_deferral(self):
-        # Divergence: same commit-receipt requirement as above.
         out = self.fixture().run(REVIEW_WITH_FINDINGS, prior="| CR-01 | critical | deferred | later |",
                                  fix="## Fixed Issues\n\n### CR-01: SQL injection in auth")
         self.assertEqual("fixed", out["rows"][0]["disposition"])
 
-    @unittest.expectedFailure
     def test_the_gate_writes_all_open_and_the_fix_path_resolves_it(self):
-        # Divergence: `fixed` needs a commit receipt (see above); the `skipped` half of the sequence does resolve.
         fixture = self.fixture()
         review = "\n".join(["---", "phase: 01", "status: issues_found", "findings:", "  critical: 1", "  warning: 1", "  info: 0",
                             "  total: 2", "---", "", "## Critical Issues", "", "### CR-01: the critical one", "", "## Warnings", "",
@@ -1343,6 +1249,47 @@ class DispositionIdentityViaVerb(TempCase):
         seed = fixture.run(review_doc("### CR-01: the original finding"), prior="| CR-01 | critical | deferred | waiting on the vendor |\n")
         out = fixture.run(review_doc("### CR-01: a brand new finding"), prior=seed["ledger"])
         self.assertEqual("open", out["rows"][0]["disposition"], "a reused id must not inherit the old decision")
+
+
+class ReviewReportVerb(TempCase):
+    """review.report: the gate message the step displays, read from REVIEW.md's frontmatter counts."""
+
+    def message(self, review, phase="01"):
+        fixture = crp.ReconcileFixture(self.temp("engineer-report-"), phase)
+        if review is not None:
+            (fixture.directory / f"{phase}-REVIEW.md").write_bytes(review.encode("utf-8"))
+        process = subprocess.run([sys.executable, "-I", str(crp.ENGINE_PATH), "query", "review.report", "--phase-dir",
+                                  str(fixture.directory), "--phase", phase, "--raw"],
+                                 cwd=fixture.directory, capture_output=True, text=True, encoding="utf-8",
+                                 env={**os.environ, "ENGINEER_ROOT": str(fixture.directory)})
+        self.assertEqual(0, process.returncode, process.stderr)
+        return process.stdout
+
+    def test_consistent_counts_are_reported_with_the_fix_hint(self):
+        out = self.message(review_doc("### CR-01: a", counts={"critical": 1, "warning": 2, "info": 1, "total": 4}))
+        self.assertIn("Code review: 4 findings — 1 critical, 2 warning, 1 info.", out)
+        self.assertIn("Consider running: /code-review 01 --fix", out)
+
+    def test_blocker_is_the_critical_tier_equivalent(self):
+        out = self.message(review_doc("### BL-01: a", counts={"blocker": 1, "warning": 0, "info": 0, "total": 1}))
+        self.assertIn("1 critical, 0 warning, 0 info.", out)
+
+    def test_an_inconsistent_breakdown_is_withheld(self):
+        out = self.message(review_doc("### CR-01: a", counts={"critical": "1 0", "warning": 0, "info": 0, "total": "1 0"}))
+        self.assertIn("Code review found issues.", out)
+        self.assertNotIn("findings —", out)
+
+    def test_a_clean_or_skipped_review_prints_nothing(self):
+        self.assertEqual("", self.message(review_doc("", status="clean").replace("status: clean", "status: clean")).strip())
+        self.assertEqual("", self.message(review_doc("", status="skipped")).strip())
+
+    def test_an_absent_review_prints_nothing(self):
+        self.assertEqual("", self.message(None).strip())
+
+    def test_a_review_with_no_status_is_reported_as_unparsed(self):
+        out = self.message("---\nphase: 01\nfindings:\n  total: 1\n---\n\n### CR-01: a")
+        self.assertIn("Code review status unparsed:", out)
+
 
 if __name__ == "__main__":
     unittest.main()

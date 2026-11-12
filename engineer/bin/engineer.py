@@ -107,6 +107,8 @@ def registry():
         "review.scope": workflow_ops.review_scope,
         "review.disposition": workflow_ops.review_disposition,
         "review.reconcile": review_ledger.reconcile,
+        "review.report": review_ledger.report,
+        "review.disposition-path": review_ledger.disposition_path,
         "update-context": installation.context,
         "update.changes": installation.changes,
         "stamp-codebase-map": codebase.stamp,

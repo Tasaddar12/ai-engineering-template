@@ -269,7 +269,7 @@ Regenerate with `python -I scripts/inventory.py --apply`; compare with `--check`
 | `engineer/workflows/docs-update/steps/dispatch-monorepo-packages.md` | reconciled | 51 |
 | `engineer/workflows/edit-phase.md` | reconciled | 368 |
 | `engineer/workflows/execute-phase.md` | reconciled | 1438 |
-| `engineer/workflows/execute-phase/steps/code-review-disposition.md` | reconciled | 1060 |
+| `engineer/workflows/execute-phase/steps/code-review-disposition.md` | reconciled | 38 |
 | `engineer/workflows/execute-phase/steps/codebase-drift-gate.md` | reconciled | 127 |
 | `engineer/workflows/execute-phase/steps/completion-reconciliation.md` | reconciled | 100 |
 | `engineer/workflows/execute-phase/steps/executor-isolation-dispatch.md` | reconciled | 415 |
