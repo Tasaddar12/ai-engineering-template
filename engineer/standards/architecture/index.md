@@ -1,22 +1,22 @@
 <!-- generated-by: doc-writer -->
 # Architecture routing
 
-Use the [bounded-read procedure](../../references/coding-standards.md#bounded-reads).
+Use the Bounded reads rules in `engineer/standards/README.md`.
 IDs have the prefix `architecture.`. Select the applicable section or child.
 
 | ID suffix / concern | Reference and section selectors |
 |---|---|
-| `services.boundaries` — splitting services | [Microservices §1](microservices.md#1-service-boundary-rules); When to Split or Bounded Context Heuristic |
-| `services.communication` — sync vs events | [Microservices §2](microservices.md#2-inter-service-communication); select transport and decision guidance |
-| `services.contracts` — inter-service contracts | [Microservices §3](microservices.md#3-api-contracts) |
-| `services.libraries` — shared code ownership | [Microservices §4](microservices.md#4-shared-libraries) |
-| `services.data` — service data ownership | [Microservices §6](microservices.md#6-data-ownership-rules) |
-| `flags.types` — flag selection | [Feature flags §1](feature-flags.md#1-flag-types) |
-| `flags.implementation` — evaluation and usage | [Feature flags §2](feature-flags.md#2-implementation-pattern); select service, code or endpoint child |
-| `flags.rollout` — gradual rollout | [Feature flags §3](feature-flags.md#3-gradual-rollout-strategy) |
-| `flags.lifecycle` — expiry and cleanup | [Feature flags §4](feature-flags.md#4-flag-lifecycle) |
-| `flags.registry` — flag tracking | [Feature flags §6](feature-flags.md#6-flag-hygiene-tracking) |
+| `services.boundaries` — splitting services | `engineer/standards/architecture/microservices.md` §1; When to Split or Bounded Context Heuristic |
+| `services.communication` — sync vs events | `engineer/standards/architecture/microservices.md` §2; select transport and decision guidance |
+| `services.contracts` — inter-service contracts | `engineer/standards/architecture/microservices.md` §3 |
+| `services.libraries` — shared code ownership | `engineer/standards/architecture/microservices.md` §4 |
+| `services.data` — service data ownership | `engineer/standards/architecture/microservices.md` §6 |
+| `flags.types` — flag selection | `engineer/standards/architecture/feature-flags.md` §1 |
+| `flags.implementation` — evaluation and usage | `engineer/standards/architecture/feature-flags.md` §2; select service, code or endpoint child |
+| `flags.rollout` — gradual rollout | `engineer/standards/architecture/feature-flags.md` §3 |
+| `flags.lifecycle` — expiry and cleanup | `engineer/standards/architecture/feature-flags.md` §4 |
+| `flags.registry` — flag tracking | `engineer/standards/architecture/feature-flags.md` §6 |
 
-Add [API](../api/index.md) for contracts/authentication,
-[SQL](../sql/index.md) for schema/data changes and
-[Python](../python/index.md) for implementation concerns.
+Add `engineer/standards/api/index.md` for contracts/authentication,
+`engineer/standards/sql/index.md` for schema/data changes and
+`engineer/standards/python/index.md` for implementation concerns.
