@@ -10,7 +10,7 @@ or boundary details. Do not automatically read overlapping references twice.
 
 ## Style and contracts
 
-For style decisions, also read `engineer/standards/python/code-style.md` §PRIME DIRECTIVE.
+Every `style.*` row includes `engineer/standards/python/code-style.md` §PRIME DIRECTIVE.
 
 | ID suffix / concern | Reference and section selectors |
 |---|---|

@@ -2,6 +2,20 @@
 
 Read before planning, implementing, fixing, investigating, verifying or reviewing code.
 
+## Load Standards
+
+| Situation | Run |
+|---|---|
+| Your task has a `<standards>` field | `engineer_run query standards-read <ids> --raw` |
+| Reviewing, fixing or verifying planned work | `engineer_run query standards-read --plan <PLAN.md> --raw` |
+| No pinned IDs (`no-pinned-standards`, planning, quick or debug work) | `engineer_run query standards-list <domain> --raw`, pick IDs, then `standards-read` |
+| Runtime unavailable | Route by hand using Where to Read below |
+
+Quote an ID with a heading selector: `standards-read "python.errors.hierarchy@Exception chaining"`.
+
+`standards-read` returns only the selected sections with their required context.
+Do not also open the index or the full document for the same IDs.
+
 ## Where to Read
 
 | Task touches | Open |

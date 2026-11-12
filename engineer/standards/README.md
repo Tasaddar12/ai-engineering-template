@@ -17,8 +17,11 @@ Domains combine: a Python endpoint can require Python and API references; add SQ
 for persistence and architecture for service boundaries or rollout. Select only
 the concerns actually involved. Unrelated domains are not required reading.
 
-Indexes assign stable descriptive routing IDs to retained documents or sections;
-the IDs are reading aliases, not commands. The rule documents retain instructions,
+Indexes assign stable descriptive routing IDs to retained documents or sections.
+The index tables are the only routing source: `engineer_run query standards-read`
+resolves IDs to exact sections at read time, and plans pin them per task in
+`<standards>`. Keep each row's first `§` the main section and write required
+companions as "include §N". The rule documents retain instructions,
 examples and original heading capitalization; levels, grouping and spacing are
 edited for navigation.
 Attribution, source selections and editorial changes are recorded in

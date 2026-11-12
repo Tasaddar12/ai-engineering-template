@@ -647,6 +647,8 @@ Every task MUST include these fields — they are NOT optional:
    - Do not include full file contents, fenced code blocks, or complete implementations in `<action>`
    - The executor should understand the intended target state from `<action>` and use `<read_first>` files for current implementation details, patterns, and source-of-truth context
 
+**Optional `<standards>` (code tasks only; omit the element otherwise)** — Routing IDs from `engineer_run query standards-list`, comma-separated, e.g. `python.contracts.types, python.errors.chaining`. `id@§N` picks another section of the same document. `verify.plan-structure` rejects unknown IDs.
+
 **Why this matters:** Executor agents work from the plan text. Vague instructions like "update the config to match production" produce shallow one-line changes. Concrete instructions like "add DATABASE_URL, set POOL_SIZE=20, add REDIS_URL, and read config/runtime.ts before editing" produce complete work without turning the planner into the executor.
 </deep_work_rules>
 

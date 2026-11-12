@@ -161,6 +161,12 @@ else:
                     installed_standards = namespace / 'engineer/standards'
                     self.assertIn('only the files matching', guide.read_text(encoding='utf-8'))
                     self.assertTrue((guide.parent / '../standards/README.md').is_file())
+                    # The installed runtime resolves routing IDs against its own standards copy.
+                    pinned = subprocess.run([sys.executable, '-I', str(namespace / 'engineer/bin/engineer.py'), 'query',
+                                             'standards-read', 'python.errors.chaining', '--pick', 'documents'],
+                                            cwd=self.target, capture_output=True, text=True, encoding='utf-8')
+                    self.assertEqual(0, pinned.returncode, pinned.stderr)
+                    self.assertEqual('engineer/standards/python/error-handling.md', json.loads(pinned.stdout)[0]['path'])
                     # Curated source text and license notices survive export unchanged.
                     sources = [path for path in standards.rglob('*') if path.is_file()]
                     self.assertTrue(sources)

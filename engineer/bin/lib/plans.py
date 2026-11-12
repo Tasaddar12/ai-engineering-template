@@ -4,7 +4,7 @@ import re
 import shlex
 from .core import Failure, read, root, safe_path
 from .text import split_frontmatter
-from . import frontmatter, records
+from . import frontmatter, records, standards
 
 
 def tasks(content):
@@ -12,7 +12,7 @@ def tasks(content):
     for match in re.finditer(r"<task\b([^>]*)>(.*?)</task>", content, re.S):
         attrs = dict(re.findall(r'([\w-]+)=["\']([^"\']*)["\']', match.group(1)))
         task = {"type": attrs.get("type", "auto"), "tdd": attrs.get("tdd", "false").lower() == "true"}
-        for name in ("name", "files", "read_first", "action", "verify", "done"):
+        for name in ("name", "files", "read_first", "standards", "action", "verify", "done"):
             child = re.search(rf"<{name}\b[^>]*>(.*?)</{name}>", match.group(2), re.S)
             task[name] = child.group(1).strip() if child else ""
         result.append(task)
@@ -36,6 +36,11 @@ def validate(args):
     if not parsed:
         findings.append("Plan has no tasks")
     for index, task in enumerate(parsed, 1):
+        if task["standards"]:
+            try:
+                standards.resolve(standards.split_ids([task["standards"]]))
+            except Failure as exc:
+                findings.append(f"Task {index}: standards: {exc.message}")
         if task["type"].startswith("checkpoint:"):
             continue
         for key in ("files", "action", "verify", "done"):
