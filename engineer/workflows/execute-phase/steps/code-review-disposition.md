@@ -5,10 +5,9 @@ Apply response_language to all user-facing prose — narration between tool call
 Read and executed by the `code_review_gate` step of `execute-phase/steps/verify-phase-goal.md` (the shared verification action `execute-phase.md`'s `verify_phase_goal` runs), immediately after code review
 returns. It consumes `PHASE_DIR` and `PHASE_NUMBER` and derives everything else.
 
-It lives here rather than inline in the parent because `execute-phase.md` sits against two size
-ceilings — the XL hard cap in `tests/workflow-size-budget.test.cjs` and the frozen ADR-857
-pre-phase-6 ceiling in `tests/claude-orchestration.test.cjs` — and both are red lines to be kept
-under, not budgets to spend.
+It lives here rather than inline in the parent because `execute-phase.md` is held to a workflow size
+cap (`engineer/bin/lib/workflow_size_budget.py`, enforced by `tests/test_workflow_size_budget.py`).
+Keep the parent under that cap.
 
 **What it is for.** The counts the gate prints say how many findings there were, not what happened
 to any of them. Without a record, the phase directory carries no answer to *what happened to CR-01*
