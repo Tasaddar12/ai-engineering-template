@@ -33,14 +33,14 @@ Read the sections an index row selects, not whole documents.
 | Step | Do |
 |---|---|
 | Pick | One routing row. Several listed sections are alternatives — take only what the task needs. |
-| Locate | Find the heading with a heading-only search or outline. Ignore headings inside code fences. |
-| Read | From the heading to the next heading of equal or higher level, or EOF. Keep subsections and full examples. |
-| Widen | Add the applicability notes, enclosing intro rules and prerequisites the section depends on. |
+| Locate | Find the actual heading text and level with a heading-only search or outline. Ignore headings inside code fences. |
+| Read | Use offset/limit or a line range: from the heading to the next heading of equal or higher level, or EOF. Keep subsections and full examples. An anchor alone does not mark where a read ends. |
+| Widen | Add the applicability notes, enclosing intro rules and prerequisites the section depends on. Widen again when the task raises new concerns. |
 
 **Whole rules:** an entry marked **whole** is a focused rule — read all of it,
 including the bad/good examples.
 
-- **Already in context?** Reuse it; don't read it again.
-- **Handing off?** Pass routing IDs, not copied standards.
+- **Already in context?** Reuse it; don't read it again. Merge overlapping reads.
+- **Handing off?** Pass routing IDs, not copied standards. Each independent agent reads its own sections.
 - **Heading missing or ambiguous?** Report a routing gap; don't fall back to reading the whole document.
 - **Never** truncate instructions to save tokens. Line offsets are found at read time, not stored.

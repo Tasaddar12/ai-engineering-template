@@ -15,8 +15,9 @@ Read before planning, implementing, fixing, investigating, verifying or reviewin
 Domains combine — open every index the task touches. Read only the files matching
 the task's language, framework and design concerns.
 
-**How to read:** Each index row selects sections. Read those sections only, using
-the Bounded reads rules in `engineer/standards/README.md`.
+**How to read:** Outline the index's headings first and read only the tables the
+task touches. Each row selects sections; read those only, using the Bounded reads
+rules in `engineer/standards/README.md`.
 
 ## Missing or Conflicting Coverage
 
