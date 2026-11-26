@@ -2,7 +2,7 @@
 name: execute-phase
 description: SDD phase execution — execute all plans in a phase with dependency-aware wave parallelization
 argument-hint: "<phase-number> [--wave N] [--gaps-only] [--interactive] [--tdd]"
-effort: max
+effort: xhigh
 allowed-tools:
   - Read
   - Write

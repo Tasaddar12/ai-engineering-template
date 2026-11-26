@@ -2,7 +2,7 @@
 name: plan-phase
 description: Create detailed phase plan (PLAN.md) with verification loop
 argument-hint: "[phase] [--auto] [--research] [--skip-research] [--gaps] [--skip-verify] [--skip-ui] [--reviews] [--text] [--tdd] [--granularity <coarse|standard|fine>] [--no-reversibility-gates]"
-effort: max
+effort: xhigh
 allowed-tools:
   - Read
   - Write
